@@ -2,18 +2,37 @@
 
 This project uses **Alembic** for schema; after clone run `scripts\migrate.bat` or `scripts\run_all.bat`.
 
-## First-time push (already committed locally)
+## Local repository (already done)
 
-1. Create an empty repository on GitHub (no README/license — we already have them).
+- Branch: `main`
+- Commits: initial app + cleanup (exclude logs and extension `.pem`/`.crx`)
+- Run `git log --oneline` to verify
+
+Set your identity once (repo-local is fine):
+
+```bat
+git config user.name "Your Name"
+git config user.email "you@example.com"
+```
+
+## Push to GitHub (one-time)
+
+**Option A — GitHub CLI** (installed via winget):
+
+```bat
+gh auth login
+gh repo create cognitive-aware-learning-tutor --private --source=. --remote=origin --push
+```
+
+**Option B — Manual**
+
+1. Create an empty repository on GitHub (no README/license).
 2. In the project folder:
 
 ```bat
 git remote add origin https://github.com/YOUR_USER/cognitive-aware-learning-tutor.git
-git branch -M main
 git push -u origin main
 ```
-
-Replace the URL with your repository.
 
 ## Clone on another machine
 

@@ -1,0 +1,45 @@
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+dist/
+build/
+
+# Node / frontend
+node_modules/
+dist/
+.vite/
+
+# Environment & secrets
+.env
+.env.*
+!.env.example
+
+# IDE / OS
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
+
+# Runtime data (regenerated locally)
+data/logs/
+data/plate_images/
+*.db-journal
+
+# Optional: uncomment to omit local SQLite (run alembic + seed after clone)
+# data/vocab_app.db
+
+# Browser extension dev profiles (large, machine-specific)
+.browser-profiles/
+
+# Cursor local state (not needed on GitHub)
+.cursor/
+
+# Reference / duplicate projects (keep locally; clone main app only)
+refernces/

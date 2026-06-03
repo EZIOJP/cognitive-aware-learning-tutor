@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SelfTracker</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Space+Grotesk:wght@300;500;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    width: 320px;
+    min-height: 420px;
+    background: #0a0a0f;
+    color: #e8e8f0;
+    font-family: 'Space Grotesk', sans-serif;
+    padding: 20px;
+    overflow: hidden;
+  }
+
+  .header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid #1e1e2e;
+    padding-bottom: 14px;
+  }
+
+  .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #00ff88;
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  h1 {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: #fff;
+  }
+
+  .current-session {
+    background: #111120;
+    border: 1px solid #1e1e38;
+    border-radius: 8px;
+    padding: 14px;
+    margin-bottom: 16px;
+  }
+
+  .label {
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #555570;
+    margin-bottom: 4px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .site-name {
+    font-size: 14px;
+    font-weight: 500;
+    color: #00ff88;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .category-badge {
+    display: inline-block;
+    margin-top: 8px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: 0.05em;
+    background: #1a1a30;
+    border: 1px solid #2a2a50;
+    color: #8888cc;
+  }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+
+  .stat-box {
+    background: #111120;
+    border: 1px solid #1e1e38;
+    border-radius: 8px;
+    padding: 12px;
+  }
+
+  .stat-value {
+    font-size: 22px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #fff;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  .stat-value.accent { color: #00ff88; }
+  .stat-value.warn { color: #ff6644; }
+  .stat-value.info { color: #4488ff; }
+
+  .top-categories {
+    background: #111120;
+    border: 1px solid #1e1e38;
+    border-radius: 8px;
+    padding: 14px;
+    margin-bottom: 16px;
+  }
+
+  .cat-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+
+  .cat-row:last-child { margin-bottom: 0; }
+
+  .cat-name {
+    font-size: 11px;
+    color: #aaaacc;
+  }
+
+  .cat-bar-wrap {
+    flex: 1;
+    margin: 0 10px;
+    height: 4px;
+    background: #1e1e38;
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .cat-bar {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.5s ease;
+  }
+
+  .cat-time {
+    font-size: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #555570;
+    min-width: 36px;
+    text-align: right;
+  }
+
+  .btn-row {
+    display: flex;
+    gap: 8px;
+  }
+
+  button {
+    flex: 1;
+    padding: 9px 12px;
+    border-radius: 6px;
+    border: 1px solid #2a2a44;
+    background: #111120;
+    color: #aaaacc;
+    font-size: 11px;
+    font-family: 'Space Grotesk', sans-serif;
+    cursor: pointer;
+    letter-spacing: 0.05em;
+    transition: all 0.15s;
+  }
+
+  button:hover {
+    background: #1a1a30;
+    color: #fff;
+    border-color: #4444aa;
+  }
+
+  button.primary {
+    background: #1a3a25;
+    color: #00ff88;
+    border-color: #00ff88;
+  }
+
+  button.primary:hover {
+    background: #00ff88;
+    color: #0a0a0f;
+  }
+
+  .footer {
+    margin-top: 12px;
+    text-align: center;
+    font-size: 9px;
+    color: #333350;
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: 0.1em;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="dot"></div>
+  <h1>SelfTracker</h1>
+</div>
+
+<div class="current-session">
+  <div class="label">Currently Tracking</div>
+  <div class="site-name" id="currentSite">Loading...</div>
+  <div class="category-badge" id="currentCategory">—</div>
+</div>
+
+<div class="stats-grid">
+  <div class="stat-box">
+    <div class="stat-value accent" id="totalSessions">—</div>
+    <div class="label">Sessions Today</div>
+  </div>
+  <div class="stat-box">
+    <div class="stat-value info" id="tabSwitches">—</div>
+    <div class="label">Tab Switches</div>
+  </div>
+  <div class="stat-box">
+    <div class="stat-value" id="productiveTime">—</div>
+    <div class="label">Productive (min)</div>
+  </div>
+  <div class="stat-box">
+    <div class="stat-value warn" id="leisureTime">—</div>
+    <div class="label">Leisure (min)</div>
+  </div>
+</div>
+
+<div class="top-categories">
+  <div class="label" style="margin-bottom:10px">Top Categories Today</div>
+  <div id="catList">
+    <div class="cat-row"><span class="cat-name" style="color:#555570">No data yet</span></div>
+  </div>
+</div>
+
+<div class="btn-row">
+  <button class="primary" id="openDash">📊 Full Dashboard</button>
+  <button id="exportBtn">⬇ Export CSV</button>
+</div>
+
+<div class="footer">TRACKING ACTIVE · STORING LOCALLY</div>
+
+<script>
+const CATEGORY_COLORS = {
+  'Dev / Docs': '#00ff88',
+  'Research': '#44ffcc',
+  'Coursework': '#88ffaa',
+  'Knowledge Work': '#aaffcc',
+  'Design': '#44aaff',
+  'Admin / Email': '#aaaaff',
+  'Communication': '#8888ff',
+  'News': '#ffcc44',
+  'Browsing': '#ff8844',
+  'Music': '#ff44ff',
+  'Shopping': '#ff6644',
+  'Social Media': '#ff4444',
+  'Video / Streaming': '#ff6644',
+  'Gaming': '#ff8844',
+  'Idle / New Tab': '#333350',
+  'Unknown': '#444460'
+};
+
+function formatMin(seconds) {
+  return Math.round(seconds / 60);
+}
+
+function load() {
+  chrome.storage.local.get(['dailyLog', 'tabSwitchCount', 'liveEntry'], (result) => {
+    const log = result.dailyLog || [];
+    const live = result.liveEntry;
+
+    // Current session
+    if (live) {
+      try {
+        const domain = new URL(live.url).hostname.replace('www.', '');
+        document.getElementById('currentSite').textContent = domain || live.title;
+      } catch {
+        document.getElementById('currentSite').textContent = live.title || 'Unknown';
+      }
+      document.getElementById('currentCategory').textContent = live.category || '—';
+    }
+
+    // Stats
+    document.getElementById('totalSessions').textContent = log.length;
+    document.getElementById('tabSwitches').textContent = result.tabSwitchCount || 0;
+
+    const PRODUCTIVE = ['Dev / Docs', 'Research', 'Coursework', 'Knowledge Work', 'Design'];
+    const LEISURE = ['Social Media', 'Video / Streaming', 'Gaming', 'Shopping', 'Music'];
+
+    const prodSec = log.filter(e => PRODUCTIVE.includes(e.category)).reduce((s, e) => s + e.duration_seconds, 0);
+    const leiSec = log.filter(e => LEISURE.includes(e.category)).reduce((s, e) => s + e.duration_seconds, 0);
+
+    document.getElementById('productiveTime').textContent = formatMin(prodSec);
+    document.getElementById('leisureTime').textContent = formatMin(leiSec);
+
+    // Categories
+    const catTotals = {};
+    log.forEach(e => {
+      catTotals[e.category] = (catTotals[e.category] || 0) + e.duration_seconds;
+    });
+
+    const sorted = Object.entries(catTotals).sort((a, b) => b[1] - a[1]).slice(0, 5);
+    const maxVal = sorted[0]?.[1] || 1;
+
+    if (sorted.length > 0) {
+      document.getElementById('catList').innerHTML = sorted.map(([cat, sec]) => `
+        <div class="cat-row">
+          <span class="cat-name">${cat}</span>
+          <div class="cat-bar-wrap">
+            <div class="cat-bar" style="width:${Math.round((sec/maxVal)*100)}%;background:${CATEGORY_COLORS[cat] || '#4444aa'}"></div>
+          </div>
+          <span class="cat-time">${formatMin(sec)}m</span>
+        </div>
+      `).join('');
+    }
+  });
+}
+
+document.getElementById('openDash').addEventListener('click', () => {
+  chrome.tabs.create({ url: chrome.runtime.getURL('dashboard.html') });
+});
+
+document.getElementById('exportBtn').addEventListener('click', () => {
+  chrome.storage.local.get(['dailyLog'], (result) => {
+    const log = result.dailyLog || [];
+    if (!log.length) { alert('No data to export yet.'); return; }
+
+    const headers = Object.keys(log[0]).join(',');
+    const rows = log.map(e => Object.values(e).map(v => `"${v}"`).join(','));
+    const csv = [headers, ...rows].join('\n');
+
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `DSC_browser_behavior_${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+});
+
+load();
+setInterval(load, 5000);
+</script>
+
+</body>
+</html>

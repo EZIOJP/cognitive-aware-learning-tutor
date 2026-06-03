@@ -1,0 +1,169 @@
+The Current Bottleneck: Data Isolation
+Right now, your extension is completely self-contained. content.js captures your behavioral deep context, sends it to background.js, and background.js locks it entirely inside browser memory using chrome.storage.local.
+
+Because it stays inside the browser sandbox:
+
+Your local Python backend cannot see your behavior in real-time.
+
+Your local LLaVA/Ollama models cannot analyze the scraped_text_preview to dynamically update your attention or productivity classification.
+
+The hardcoded heuristic rules inside classifyUrl (checking if strings match "github", "youtube", etc.) are doing all the classification work instead of leveraging a dynamic AI.
+
+The Upgrade: Bridging to FastAPI
+To turn this into a live feed for your AI tutor dataset, we need background.js to stream these behavioral updates directly to your local FastAPI server over a permanent WebSocket connection.
+
+Here is the exact modification required to bridge your existing extension to your Python server.
+
+1. Update background.js to Stream via WebSocket
+Open your background.js file. We will establish a auto-reconnecting WebSocket client at the top of the script that automatically pipes every BEHAVIORAL_UPDATE out of the browser sandbox down to http://localhost:8000/ws/behavior.
+
+Replace the BEHAVIORAL_UPDATE message listener block in your background.js with this production-ready network stream handler:
+
+JavaScript
+// ── Establish Reconnecting WebSocket to FastAPI ──────────────────
+let ws = null;
+
+function connectWebSocket() {
+  ws = new WebSocket('ws://localhost:8000/ws/behavior');
+
+  ws.onopen = () => {
+    console.log('🔌 Connected to FastAPI Behavioral Stream');
+  };
+
+  ws.onclose = () => {
+    console.log('🔌 WebSocket disconnected. Retrying in 5 seconds...');
+    setTimeout(connectWebSocket, 5000);
+  };
+
+  ws.onerror = (err) => {
+    console.error('WebSocket Error:', err);
+  };
+}
+
+// Initialize connection on background worker startup
+connectWebSocket();
+
+// ── Message from content script (behavioral data) ─────────
+chrome.runtime.onMessage.addListener((msg, sender) => {
+  if (msg.type === 'BEHAVIORAL_UPDATE') {
+    const rawPayload = {
+      timestamp: Date.now(),
+      url: sender.tab?.url || '',
+      domain: sender.tab?.url ? new URL(sender.tab.url).hostname : '',
+      ...msg.data
+    };
+
+    // 1. Keep your existing local storage backup
+    chrome.storage.local.get(['behavioralLog'], (result) => {
+      const log = result.behavioralLog || [];
+      log.push(rawPayload);
+      if (log.length > 2000) log.splice(0, log.length - 2000);
+      chrome.storage.local.set({ behavioralLog: log });
+    });
+
+    // 2. PIPE LIVE DATA TO FASTAPI VIA WEBSOCKET
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify(rawPayload));
+    }
+  }
+
+  // Keep existing GET_STATS and EXPORT_CSV listener logic intact below...
+  if (msg.type === 'GET_STATS') {
+    chrome.storage.local.get(['dailyLog', 'behavioralLog', 'tabSwitchCount', 'liveEntry'], (result) => {
+      chrome.runtime.sendMessage({ type: 'STATS_RESPONSE', data: result });
+    });
+  }
+});
+2. The Python Backend Architecture (FastAPI + Ollama)
+Now that your browser extension is blasting data out of port 8000, you need the corresponding FastAPI consumer to catch it, pass it to your local LLM for context classification, and log it to your DSC_ files.
+
+Here is the Python script to run alongside your extension:
+
+Python
+import asyncio
+import json
+import os
+from datetime import datetime
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+import requests
+
+app = FastAPI(title="SelfTracker AI Core")
+
+# Directory where your data science logs are stored
+LOG_DIR = "./data_logs"
+os.makedirs(LOG_DIR, exist_ok=True)
+
+def classify_activity_with_ollama(title: str, text_preview: str) -> dict:
+    """
+    Pipes the scraped browser content directly to your local RTX 5060 
+    via Ollama to determine true context and cognitive intent.
+    """
+    prompt = f"""
+    Analyze this user's active browser context and categorize it cleanly.
+    Webpage Title: {title}
+    Text Sneak-Peek: {text_preview}
+
+    Respond strictly in valid JSON format with exactly two keys:
+    "category": Choose exactly from [Productive Research, Coursework, Leisure, Gaming, Admin, Unknown]
+    "reasoning": A one-sentence explanation of why.
+    """
+    try:
+        response = requests.post(
+            "http://localhost:11434/api/generate",
+            json={
+                "model": "llama3", # or mistral / phi3 depending on what you pulled
+                "prompt": prompt,
+                "stream": False,
+                "format": "json"
+            },
+            timeout=3
+        )
+        return json.loads(response.json()["response"])
+    except Exception:
+        # Fallback if Ollama is asleep or processing something else
+        return {"category": "Unclassified", "reasoning": "Local LLM timeout"}
+
+@app.websocket("/ws/behavior")
+async def websocket_endpoint(websocket: WebSocket):
+    await websocket.accept()
+    print("🚀 Browser Extension connected to processing pipeline.")
+    
+    # Generate an immutable filename for today's data science collection
+    today_str = datetime.now().strftime("%Y-%m-%d")
+    csv_path = os.path.join(LOG_DIR, f"DSC_browser_behavior_{today_str}.csv")
+    
+    # Write CSV headers if file doesn't exist
+    if not os.path.exists(csv_path):
+        with open(csv_path, "w", encoding="utf-8") as f:
+            f.write("timestamp,domain,interaction_mode,category,page_title\n")
+
+    try:
+        while True:
+            # Receive raw payload from background.js
+            data = await websocket.receive_text()
+            payload = json.loads(data)
+            
+            # Send to local LLM for dynamic classification
+            ai_analysis = classify_activity_with_ollama(
+                payload.get("page_title", ""), 
+                payload.get("scraped_text_preview", "")
+            )
+            
+            # Merge payloads
+            payload["ai_category"] = ai_analysis.get("category")
+            print(f"🌐 [{payload['ai_category']}] User is currently: {payload['interaction_mode']} -> {payload['page_title'][:40]}...")
+            
+            # Log directly to your data science file
+            with open(csv_path, "a", encoding="utf-8") as f:
+                f.write(f"{payload['timestamp']},{payload['domain']},{payload['interaction_mode']},{payload['ai_category']},{payload['page_title']}\n")
+                
+    except WebSocketDisconnect:
+        print("🔌 Extension disconnected from stream.")
+Next Steps for Verification
+Open Chrome, go to chrome://extensions/, click Load Unpacked, and select your extension folder to load it with the updated background.js.
+
+Run the FastAPI Python backend on your laptop.
+
+Open a new browser tab and begin reading a technical article or coursework document.
+
+Monitor your terminal output to verify that your browser interactions are successfully escaping the browser sandbox, logging locally under your DSC_ data pipeline, and printing classifications straight to your console.

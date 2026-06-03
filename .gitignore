@@ -29,7 +29,10 @@ Thumbs.db
 
 # Runtime data (regenerated locally)
 data/logs/
+data_logs/
 data/plate_images/
+*.pem
+*.crx
 *.db-journal
 
 # Optional: uncomment to omit local SQLite (run alembic + seed after clone)

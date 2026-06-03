@@ -84,9 +84,14 @@ export default function SettingsHubPage() {
         <p className="text-sm text-muted-foreground mb-3">
           Enable or disable study modules.
         </p>
-        <Link to="/settings/plugins" className="text-sm text-primary hover:underline">
-          Manage plugins →
-        </Link>
+        <div className="flex flex-col gap-1">
+          <Link to="/settings/plugins" className="text-sm text-primary hover:underline">
+            Manage plugins →
+          </Link>
+          <Link to="/settings/features" className="text-sm text-primary hover:underline">
+            Feature Studio (custom metrics) →
+          </Link>
+        </div>
       </Card>
     </div>
   );

@@ -1,54 +1,58 @@
 # Roadmap
 
-## Phase 0: Project Tracking
+## Philosophy
 
-- [x] Add README and architecture docs
-- [x] Add setup/command docs
-- [x] Add Windows batch files
-- [x] Add repo-local project status files
-- [x] Add prototype admin password visibility/reset flow
+**Ship software first** on any PC (no GPU, no ESP32). Hardware and local AI are **plug-in upgrades** that motivate purchases — they are not blockers for GRE, math, life tracking, or the hub.
 
-## Phase 1: Finalize GRE Vocabulary
+See **[HARDWARE_AND_AI_LATER.md](./HARDWARE_AND_AI_LATER.md)** for the buy-when-ready guide.
 
-- [ ] Audit Read Mode route
-- [ ] Audit low mastery route
-- [ ] Audit due review route
-- [ ] Audit Cycle Manager dashboard
-- [ ] Audit read -> quiz -> report flow
-- [ ] Fix progress persistence gaps
-- [ ] Add clean reset/export/import admin workflows
-- [ ] Add clear empty/loading/error states
-- [ ] Run production build
+---
 
-## Phase 2: Smart Pomodoro Software Loop
+## Done (2026-06) — software path
 
-- [ ] Add Python UDP spoofer
-- [ ] Wire FastAPI UDP -> WebSocket loop
-- [ ] Connect frontend to real WebSocket stream
-- [ ] Keep simulated EEG as fallback
-- [ ] Add stuckness score prototype
-- [ ] Render AI tutor intervention in the visible app
+- [x] Modular plugins + Feature Studio + hub export
+- [x] Math Tutor plugin + **rule-based Ask tutor** (no Ollama required)
+- [x] EEG + NutriNode optional plugins with **simulation / manual** defaults
+- [x] Dashboard AI review, layout sync, browser stats
+- [x] EEG WebSocket + UDP service (`EEG_ENABLED`) — waiting on your ESP32 firmware
+- [x] Face calibration + Python mirror (webcam when laptop is back)
+- [x] `OLLAMA_ENABLED=0` by default — opt-in local LLM later
+- [x] Firmware placeholder docs (`docs/firmware/`)
 
-## Phase 3: Local AI Tutor
+---
 
-- [ ] Install Ollama
-- [ ] Pull LLaVA model
-- [ ] Send canvas snapshots to backend
-- [ ] Get math whiteboard OCR/understanding working
-- [ ] Return Socratic hints
+## Phase 1 — GRE Vocabulary polish (no hardware) ✅
 
-## Phase 4: Hardware
+- [x] Audit read / cycle / low-mastery routes — API wired; see [GRE_VOCAB_PHASE1.md](./GRE_VOCAB_PHASE1.md)
+- [x] Empty and error states (hub, read, cycle, admin)
+- [x] Admin reset/export workflows (group JSON/CSV, fixed import/export bugs)
+- [x] `POST /progress/{word_id}/read` for server-backed Read Mode
 
-- [ ] Buy BioAmp EXG Pill
-- [ ] Wire BioAmp to ESP32-S3
-- [ ] Stream raw samples over UDP
-- [ ] Replace Python spoofer with hardware stream
-- [ ] Add DSC-prefixed local session logs
+**You can use the app fully during this phase without boards or GPU.**
 
-## Phase 5: Data Flywheel
+---
 
-- [ ] Log study sessions locally
-- [ ] Add topic complaint flow
-- [ ] Cross-reference complaints with stress/stuckness logs
-- [ ] Personalize future hints
+## Phase 2 — Real hardware (when you buy ESP32)
 
+- [ ] Flash EEG firmware → UDP :5005 → `/ws/eeg` → hub `eeg_attention`
+- [ ] Flash NutriNode firmware → ingest / live WS
+- [ ] Face tracker reads calibration JSON from hub
+
+App side: **ready**. See `docs/firmware/EEG_ESP32.md` and `NUTRI_ESP32.md`.
+
+---
+
+## Phase 3 — Math AI (optional, after laptop repair)
+
+- [x] Rule-based tutor hints (default)
+- [ ] Enable `OLLAMA_ENABLED=1` + vision model for whiteboard snapshots
+- [ ] EEG + face triggers on practice page (data paths exist)
+
+---
+
+## Phase 4 — Platform (later)
+
+- [ ] Community plugin
+- [ ] User webhooks / sandbox ingest scripts
+- [ ] Cloud API option for hints (no local GPU)
+- [ ] PostgreSQL + production Docker

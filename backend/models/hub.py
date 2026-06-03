@@ -21,13 +21,32 @@ class ReadingDefinition(Base):
     __tablename__ = "reading_definitions"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), nullable=True, index=True
+    )
     slug: Mapped[str] = mapped_column(String(80), unique=True, index=True)
     label: Mapped[str] = mapped_column(String(160))
     unit: Mapped[str | None] = mapped_column(String(40), nullable=True)
     source_type: Mapped[str] = mapped_column(String(20), default="manual")
-    feature_id: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    feature_id: Mapped[str | None] = mapped_column(String(80), nullable=True)
     schema_json: Mapped[str | None] = mapped_column(Text, nullable=True)
     is_system: Mapped[bool] = mapped_column(Boolean, default=True)
+
+
+class UserFeature(Base):
+    """User-created feature module (custom metrics, no deploy required)."""
+
+    __tablename__ = "user_features"
+    __table_args__ = (UniqueConstraint("user_id", "feature_id", name="uq_user_feature"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    feature_id: Mapped[str] = mapped_column(String(80))
+    name: Mapped[str] = mapped_column(String(160))
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+    config_json: Mapped[str] = mapped_column(Text, default="{}")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC))
 
 
 class ActivitySession(Base):

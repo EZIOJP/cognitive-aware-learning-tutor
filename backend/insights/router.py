@@ -55,12 +55,16 @@ def insights_review(db: Session = Depends(get_db), user: User = Depends(get_curr
     steps = []
     if data["sleep_minutes"] < 420:
         steps.append("Aim for 7+ hours of sleep tonight.")
+    if data["productive_minutes"] < 120:
+        steps.append("Schedule a 2-hour deep-work block with the browser extension on.")
     if data["study_minutes"] < 60:
         steps.append("Block 25 minutes for focused study.")
+    if data["vocab_events"] == 0:
+        steps.append("Run one GRE vocab cycle to keep retention sharp.")
     if data["math_attempts"] == 0:
-        steps.append("Complete one math practice set.")
+        steps.append("Complete one math practice set (enable Math Tutor plugin).")
     if not steps:
-        steps.append("Maintain today's habits.")
+        steps.append("Maintain today's habits — metrics look balanced.")
 
     return ReviewOut(
         comments=comments,

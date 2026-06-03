@@ -6,7 +6,7 @@ import {
   useCallback,
   type ReactNode,
 } from "react";
-import { putLifeDaily } from "../api/hubClient";
+import { fetchLifeDaily, putLifeDaily } from "../api/hubClient";
 
 // ─────────────────────────────────────────────────────────
 // Types
@@ -130,18 +130,52 @@ export function GoalTrackerProvider({ children }: { children: ReactNode }) {
   const [today, setToday] = useState<DailyEntry>(emptyEntry);
   const [history, setHistory] = useState<DailyEntry[]>([]);
 
-  // Load from localStorage on mount
-  useEffect(() => {
-    try {
-      const key = todayKey();
-      const raw = localStorage.getItem(`life:${key}`);
-      if (raw) setToday({ ...emptyEntry(), ...JSON.parse(raw) });
+  function apiToEntry(row: Awaited<ReturnType<typeof fetchLifeDaily>>): Partial<DailyEntry> | null {
+    if (!row || row.empty) return null;
+    return {
+      date: row.date?.slice(0, 10) || todayKey(),
+      sleepHours: row.sleep_hours ?? 0,
+      sleepQuality: row.sleep_quality ?? 3,
+      exerciseMinutes: row.exercise_minutes ?? 0,
+      waterGlasses: row.water_glasses ?? 0,
+      mealsHealthy: row.meals_healthy ?? 0,
+      studyMinutes: row.study_minutes ?? 0,
+      tasksCompleted: row.tasks_completed ?? 0,
+      deepWorkBlocks: row.deep_work_blocks ?? 0,
+      screenTimeHours: row.screen_time_hours ?? 0,
+      socialMediaMinutes: row.social_media_minutes ?? 0,
+      outdoorMinutes: row.outdoor_minutes ?? 0,
+      moodScore: row.mood_score ?? 3,
+      stressLevel: row.stress_level ?? 3,
+      meditationMinutes: row.meditation_minutes ?? 0,
+    };
+  }
 
-      const hist = JSON.parse(localStorage.getItem("life:history") || "[]");
-      setHistory(hist);
-    } catch {
-      /* ignore */
-    }
+  useEffect(() => {
+    const key = todayKey();
+    let cancelled = false;
+
+    (async () => {
+      const remote = await fetchLifeDaily("today");
+      if (cancelled) return;
+      const fromApi = apiToEntry(remote);
+      try {
+        const raw = localStorage.getItem(`life:${key}`);
+        const local = raw ? { ...emptyEntry(), ...JSON.parse(raw) } : emptyEntry();
+        const merged = fromApi ? { ...local, ...fromApi, date: key } : local;
+        setToday(merged);
+        localStorage.setItem(`life:${key}`, JSON.stringify(merged));
+
+        const hist = JSON.parse(localStorage.getItem("life:history") || "[]");
+        setHistory(hist);
+      } catch {
+        if (fromApi) setToday({ ...emptyEntry(), ...fromApi, date: key });
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const updateToday = useCallback((patch: Partial<DailyEntry>) => {

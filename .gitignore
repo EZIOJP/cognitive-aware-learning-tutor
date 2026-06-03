@@ -19,6 +19,9 @@ dist/
 .env
 .env.*
 !.env.example
+.env.stitch.local
+docs/stitch-output/
+docs/stitch-export/
 
 # IDE / OS
 .idea/

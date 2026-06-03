@@ -2,65 +2,53 @@
 
 Last updated: 2026-06-02
 
-## Current Focus
+## Current focus
 
-**Backend complete** (hub, life, vocab DB, math bank, migrations, Docker, GDPR export).
-**Frontend deferred** — finalize UI from `docs/STITCH_DESIGN_SPEC.md` in Stitch first.
+Modular **hub + plugins** platform: users enable modules, add custom features/metrics, and drive a customizable dashboard from central data.
 
-## Current Product Shape
+## Working now
 
-The project is a local-first study dashboard with:
+- **Core hub**: readings, rollups, life daily log, `GET/PUT /api/hub/dashboard-layout`
+- **Plugins** (toggle + server sync): Core Hub, Math Tutor, GRE Vocab, Life Tracker, EEG, Focus Mirror, NutriNode
+- **Feature Studio**: create/edit/delete custom features, export JSON/CSV
+- **Dashboard**: 24h Life Clock, AI review card, drag/resize layout (local + server when signed in)
+- **Behavior extension** → hub `browser_event` + richer stats API
+- **Python focus mirror** (`backend/face_tracker.py`) + calibration UI (`/focus/calibrate`)
+- **Math tutor hint** — rule-based by default; Ollama only if `OLLAMA_ENABLED=1`
+- **EEG**: `GET /ws/eeg` + optional UDP (`EEG_ENABLED=1`, port 5005); frontend uses WS when simulation off
+- Vocab, math bank, Docker compose, Alembic through `0006_user_features`
 
-- GRE vocabulary read and cycle flows
-- Admin panel for users and word management
-- Math whiteboard prototype
-- Pomodoro dock
-- Simulated cognitive load / EEG indicators
-- FastAPI vocab backend
-- FastAPI EEG backend reference
+## Run locally
 
-## Working Now
+```bat
+run.bat
+```
 
-- Frontend builds with `npm.cmd run build`
-- App routes are wired through React Router
-- Vocab words load from `public/data/words.json`
-- Vocab progress can persist locally and through backend paths
-- Admin user exists for prototype use
-- Admin panel can view users, reset progress, import/export words, and edit words
-- Prototype admin password visibility/reset flow exists
+(`run.bat` runs migrations automatically.) Daily checklist: **[WORKING_PRODUCT.md](./WORKING_PRODUCT.md)**.
 
-## Known Prototype Credentials
+Optional:
+
+```bat
+set EEG_ENABLED=1
+scripts\run_face_tracker.bat
+```
+
+## Prototype login
 
 ```text
 username: admin
 password: admin123
 ```
 
-## Important Prototype Warning
+## GRE Phase 1 (done)
 
-Admin password visibility is intentionally prototype-only. It exists because this
-is a local study project and passwords are easy to forget during development.
-Remove the plain-password field before any real deployment.
+- Read / cycle / low-mastery use API when signed in; `POST /progress/{id}/read`
+- Hub + cycle empty/error states; admin group export — [GRE_VOCAB_PHASE1.md](./GRE_VOCAB_PHASE1.md)
 
-## Documentation map
+## Next (see docs/ROADMAP.md)
 
-- Repo layout (all folders): `docs/PROJECT_LAYOUT.md`
-- Vocab components + API: `docs/FILE_MAP.md`
-- Session checklist: `docs/SESSION_LOG.md`
-- Doc index: `docs/README.md`
-
-## Backend (done)
-
-- Alembic through `0005_words_hub` (words table, session linkage)
-- Unified API error envelope; production password masking
-- Behavior stats from hub DB (+ CSV fallback)
-- Hub sessions linked to vocab quiz and math practice
-- `GET /api/account/export` (GDPR-style)
-- `docker-compose.yml` + `Dockerfile.backend`
-
-## Next Engineering Target (frontend, after Stitch)
-
-1. Implement screens from Stitch mocks
-2. Wire OpenAPI client (remove JSON-only vocab paths where possible)
-3. Validate Read / Cycle / quiz flows against live API
-
+- Phase 2 hardware (ESP32) when boards arrive
+- Ollama vision on whiteboard snapshots
+- Community module
+- User-defined ingest handlers (JS / FastAPI webhooks)
+- PostgreSQL + production hardening

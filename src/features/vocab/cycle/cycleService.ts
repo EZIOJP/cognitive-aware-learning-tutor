@@ -1,4 +1,11 @@
 import {
+  fetchGroupsDetailedApi,
+  fetchProgressSummary,
+  fetchQuizDashboard,
+  fetchWordsByGroup,
+  hasVocabApi,
+} from "../../../api/vocabClient";
+import {
   ensureWordsLoaded,
   mergeWord,
   loadWordsForRead,
@@ -30,6 +37,12 @@ export function markGroupStudied(groupNumber: number) {
 }
 
 export async function getGroupsDetailed(): Promise<GroupSummary[]> {
+  if (hasVocabApi()) {
+    const remote = await fetchGroupsDetailedApi();
+    if (remote) return remote;
+    throw new Error("Could not load groups from the server. Sign in and ensure the API is running.");
+  }
+
   const words = await ensureWordsLoaded();
   const progressMap = JSON.parse(
     localStorage.getItem("vocab:user-progress") || "{}"
@@ -49,7 +62,7 @@ export async function getGroupsDetailed(): Promise<GroupSummary[]> {
     .sort(([a], [b]) => a - b)
     .map(([group_number, groupWords]) => {
       const mastered = groupWords.filter((w) => w.mastery >= MASTERY_MASTERED).length;
-      const notStarted = groupWords.filter((w) => w.mastery === 0).length;
+      const notStarted = groupWords.filter((w) => w.times_asked === 0).length;
       const needPractice = groupWords.filter(
         (w) => w.mastery > 0 && w.mastery < MASTERY_MASTERED
       ).length;
@@ -81,6 +94,31 @@ export async function getGroupsDetailed(): Promise<GroupSummary[]> {
 }
 
 export async function getDashboardStats() {
+  if (hasVocabApi()) {
+    const [dash, groups] = await Promise.all([
+      fetchQuizDashboard(),
+      fetchGroupsDetailedApi(),
+    ]);
+    if (!dash) {
+      throw new Error("Could not load vocab dashboard from the server.");
+    }
+    const summary = await fetchProgressSummary();
+    const allWords = await loadWordsForRead("all");
+    return {
+      total_groups: groups?.length ?? 0,
+      total_words: dash.total_words,
+      studied_words: dash.studied_words,
+      mastered: dash.mastered,
+      due_reviews: dash.due_reviews.count,
+      low_mastery: dash.low_mastery.count,
+      struggling: allWords.filter((w) => w.mastery < 0).length,
+      suspended_words: dash.suspended_words ?? summary?.suspended_words ?? 0,
+      overall_accuracy: Math.round(dash.overall_accuracy),
+      study_coverage_pct: Math.round(dash.study_coverage_pct),
+      last_activity: summary?.last_updated ?? null,
+    };
+  }
+
   const groups = await getGroupsDetailed();
   const all = await loadWordsForRead("all");
   const studied = all.filter((w) => w.times_asked > 0);
@@ -120,6 +158,13 @@ export async function getDashboardStats() {
 export async function loadGroupWords(
   groupNumber: number
 ): Promise<WordWithProgress[]> {
+  if (hasVocabApi()) {
+    const remote = await fetchWordsByGroup(groupNumber);
+    if (remote === null) {
+      throw new Error(`Could not load group ${groupNumber} from the server.`);
+    }
+    return remote;
+  }
   return loadWordsForRead("all", groupNumber);
 }
 

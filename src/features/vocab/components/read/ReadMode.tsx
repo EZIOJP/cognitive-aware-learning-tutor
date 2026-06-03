@@ -18,6 +18,7 @@ import {
 import { Input } from "../../../../app/components/ui/input";
 import { Progress } from "../../../../app/components/ui/progress";
 import type { WordWithProgress } from "../../types";
+import { hasVocabApi } from "../../../../api/vocabClient";
 import {
   loadWordsForRead,
   markWordRead,
@@ -200,6 +201,11 @@ export function ReadMode({
         total={total}
         progressPct={progressPct}
       />
+      <p className="text-[10px] text-muted-foreground px-1 -mt-1">
+        {hasVocabApi()
+          ? "Progress saves to your account when you advance."
+          : "Offline mode — sign in to sync progress."}
+      </p>
 
       <div className="flex-1 min-h-0">
         {current && <WordCard word={current} />}

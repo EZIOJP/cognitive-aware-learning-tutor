@@ -10,10 +10,17 @@ student work + behavior + biometric signals -> cognitive state classification ->
 
 ---
 
-## 🚀 What Works Now (Current Version Changes)
+## 🚀 What Works Now
+
+See **[docs/WORKING_PRODUCT.md](docs/WORKING_PRODUCT.md)** for the daily-use checklist.
+
+**No GPU or ESP32 yet?** The app is built for that — see **[docs/HARDWARE_AND_AI_LATER.md](docs/HARDWARE_AND_AI_LATER.md)**.
 
 ### 💻 Frontend & Dashboard UI
-- **Draggable & Persisted Dashboard Layout:** The homepage features draggable widget cards (Study Time, Vocab Progress, AI Reviews, Community, Browser Activity, and Life Score) whose arrangement is saved in `localStorage`.
+- **Modular plugins** (Math, Vocab, Life, EEG, Focus Mirror, NutriNode) synced to the server when signed in.
+- **Feature Studio** — users add custom features + metrics without redeploying.
+- **Draggable dashboard** with layout saved locally and to the hub when authenticated.
+- **AI Review** card from `/api/insights/review` + Life Clock from hub rollups.
 - **Advanced Theme Settings:** Upgraded settings page allowing users to customize hex accent colors, select background theme styles, and control dark/light mode intensity (contrast level).
 - **Life Tracker Dashboard & Page:** A dedicated health & wellness tracking suite (accessible via the ❤️ sidebar icon) assessing four pillars:
   - **Health:** Sleep hours/quality, exercise, water, healthy meals.
@@ -29,11 +36,11 @@ student work + behavior + biometric signals -> cognitive state classification ->
   - **Scalar Deep Scrape:** Collects current section/chapter, sidebar navigation progression, remaining page items, code-block presence, and computes estimated reading minutes left on the current document.
   - **Heuristic Idle & Active Tracker:** Tracks cursor velocity, clicks, keystroke count, and scrolls to flag active, skimming, reading, writing, or passive watching sessions.
 
-### ⚙️ Backend Data Pipelines
-- **FastAPI Integration Backend (`vocab_backend.py`):**
-  - **Behavioral WS Feed:** Processes payloads from the browser extension and saves logs in daily CSV formats (`data_logs/DSC_browser_behavior_*.csv`).
-  - **Aggregated Analytics API:** Calculates active domains, top categories, average daily productivity percentages, and event summaries.
-  - **Local Ollama AI Integration:** Classifies raw scrapings using a local LLM (`llama3`), featuring a graceful timeout fallback to heuristic classifiers if local server instances are unavailable or slow.
+### ⚙️ Backend (`backend/main.py`)
+- **Hub API:** readings, rollups, plugins, custom features, dashboard layout, export.
+- **Behavior extension:** WebSocket ingest + stats for the Life Tracker widget.
+- **Optional Ollama:** math tutor hints (`OLLAMA_URL`); browser scrape classification when Ollama is up.
+- **EEG / face:** WebSocket EEG, UDP port 5005, Python `face_tracker.py` → hub.
 
 ---
 
@@ -73,7 +80,7 @@ The future roadmap for the Cognitive-Aware Learning Tutor includes:
 run.bat
 ```
 
-First run installs Python + npm deps automatically. Opens vocab API (8000) and frontend (5173).
+First run installs Python + npm deps, runs migrations, and starts API (8000) + frontend (5173). Sign in with **admin / admin123**.
 
 Frontend only:
 

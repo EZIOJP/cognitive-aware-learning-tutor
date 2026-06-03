@@ -57,6 +57,9 @@ export default function AdminPanelPage() {
   const [passwordEdits, setPasswordEdits] = useState<Record<number, string>>({});
   const [file, setFile] = useState<File | null>(null);
   const [jsonInput, setJsonInput] = useState("");
+  const [exportGroup, setExportGroup] = useState("1");
+  const [exportIncludeProgress, setExportIncludeProgress] = useState(true);
+  const [statusMsg, setStatusMsg] = useState("");
 
   const load = async () => {
     if (!token) return;
@@ -165,23 +168,91 @@ export default function AdminPanelPage() {
 
   const importCsv = async () => {
     if (!token || !file) return;
-    const form = new FormData();
-    form.append("file", file);
-    await authFetch("/words/import/csv", token, { method: "POST", body: form });
-    setFile(null);
-    await load();
+    setError("");
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      await authFetch("/words/import/csv", token, { method: "POST", body: form });
+      setFile(null);
+      setStatusMsg("CSV import complete.");
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "CSV import failed");
+    }
   };
 
   const exportCsv = async () => {
     if (!token) return;
-    const { res } = await authFetch("/words/export/csv", token, { method: "GET" });
-    const blob = await res.blob();
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "vocab_words.csv";
-    a.click();
-    window.URL.revokeObjectURL(url);
+    setError("");
+    try {
+      const { res } = await authFetch("/words/export/csv", token, { method: "GET" });
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "vocab_words.csv";
+      a.click();
+      window.URL.revokeObjectURL(url);
+      setStatusMsg("Exported full word bank (CSV).");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Export failed");
+    }
+  };
+
+  const exportGroupJson = async () => {
+    if (!token) return;
+    const gn = Number.parseInt(exportGroup, 10);
+    if (!Number.isFinite(gn) || gn < 1) {
+      setError("Enter a valid group number (1+)");
+      return;
+    }
+    setError("");
+    try {
+      const q = exportIncludeProgress ? "?include_progress=true" : "";
+      const { res } = await authFetch(
+        `/words/export/group/${gn}${q}`,
+        token,
+        { method: "GET" }
+      );
+      const data = await res.json();
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `vocab_group_${gn}.json`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+      setStatusMsg(`Exported group ${gn} (JSON).`);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Group JSON export failed");
+    }
+  };
+
+  const exportGroupCsv = async () => {
+    if (!token) return;
+    const gn = Number.parseInt(exportGroup, 10);
+    if (!Number.isFinite(gn) || gn < 1) {
+      setError("Enter a valid group number (1+)");
+      return;
+    }
+    setError("");
+    try {
+      const { res } = await authFetch(
+        `/words/export/group/${gn}/csv`,
+        token,
+        { method: "GET" }
+      );
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `vocab_group_${gn}.csv`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+      setStatusMsg(`Exported group ${gn} (CSV).`);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Group CSV export failed");
+    }
   };
 
   const importJson = async () => {
@@ -250,7 +321,39 @@ export default function AdminPanelPage() {
       </Card>
 
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      {statusMsg ? <p className="text-sm text-emerald-500">{statusMsg}</p> : null}
       {loading ? <p className="text-sm text-muted-foreground">Loading…</p> : null}
+
+      <Card className="gloss-panel p-4 space-y-3">
+        <h3 className="font-semibold">Export by group</h3>
+        <p className="text-xs text-muted-foreground">
+          Download one group (30 words) as JSON (optional progress) or CSV for backup.
+        </p>
+        <div className="flex flex-wrap gap-2 items-center">
+          <Input
+            type="number"
+            min={1}
+            className="w-24"
+            value={exportGroup}
+            onChange={(e) => setExportGroup(e.target.value)}
+            placeholder="Group #"
+          />
+          <label className="flex items-center gap-2 text-xs text-muted-foreground">
+            <input
+              type="checkbox"
+              checked={exportIncludeProgress}
+              onChange={(e) => setExportIncludeProgress(e.target.checked)}
+            />
+            Include progress (JSON)
+          </label>
+          <Button variant="outline" onClick={exportGroupJson}>
+            Export group JSON
+          </Button>
+          <Button variant="outline" onClick={exportGroupCsv}>
+            Export group CSV
+          </Button>
+        </div>
+      </Card>
 
       <Card className="gloss-panel p-4 space-y-3">
         <h3 className="font-semibold">Import / Export CSV</h3>

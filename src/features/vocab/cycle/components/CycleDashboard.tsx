@@ -139,6 +139,23 @@ export function CycleDashboard({ onStartCycle }: CycleDashboardProps) {
         </Card>
       )}
 
+      {groups.length === 0 ? (
+        <Card className="gloss-panel p-8 text-center space-y-3">
+          <p className="text-muted-foreground">No vocabulary groups loaded.</p>
+          <p className="text-xs text-muted-foreground max-w-md mx-auto">
+            Sign in, start the API (`run.bat`), or import words in Admin → Import CSV/JSON.
+          </p>
+          <div className="flex flex-wrap justify-center gap-2">
+            <Button variant="outline" onClick={load}>
+              Retry
+            </Button>
+            <Button variant="outline" asChild>
+              <Link to="/gre-vocab">Back to hub</Link>
+            </Button>
+          </div>
+        </Card>
+      ) : null}
+
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         {groups.map((group) => {
           const status =

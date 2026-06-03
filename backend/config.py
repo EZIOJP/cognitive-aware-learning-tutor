@@ -20,6 +20,9 @@ class Settings(BaseSettings):
     mastery_mastered: int = 6
     words_source: str = "auto"
     seed_words_on_startup: bool = True
+    eeg_enabled: bool = False
+    eeg_udp_port: int = 5005
+    ollama_enabled: bool = False
 
 
 @lru_cache

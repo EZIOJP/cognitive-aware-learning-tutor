@@ -15,7 +15,8 @@ import { AddWordsPage } from "../pages/vocab/AddWordsPage";
 
 // Import registry and trigger registration of all plugins
 import "../plugins"; 
-import { usePlugins } from "../plugins/registry";
+import { PluginRegistryProvider, usePlugins } from "../plugins/registry";
+import { FeatureStudioPage } from "../pages/settings/FeatureStudioPage";
 
 function AppRoutes() {
   const { getRoutes, isLoaded } = usePlugins();
@@ -35,6 +36,7 @@ function AppRoutes() {
           <Route path="settings" element={<SettingsHubPage />} />
           <Route path="settings/theme" element={<ThemeSettingsPage />} />
           <Route path="settings/plugins" element={<PluginSettingsPage />} />
+          <Route path="settings/features" element={<FeatureStudioPage />} />
           <Route path="gre-vocab/add-words" element={<AddWordsPage />} />
           
           {/* Dynamically mount plugin routes */}
@@ -66,13 +68,15 @@ function DynamicProviders({ children }: { children: React.ReactNode }) {
 export default function App() {
   return (
     <ThemeProvider>
-      <StudySessionProvider>
-        <AuthProvider>
-          <DynamicProviders>
-            <AppRoutes />
-          </DynamicProviders>
-        </AuthProvider>
-      </StudySessionProvider>
+      <AuthProvider>
+        <PluginRegistryProvider>
+          <StudySessionProvider>
+            <DynamicProviders>
+              <AppRoutes />
+            </DynamicProviders>
+          </StudySessionProvider>
+        </PluginRegistryProvider>
+      </AuthProvider>
     </ThemeProvider>
   );
 }

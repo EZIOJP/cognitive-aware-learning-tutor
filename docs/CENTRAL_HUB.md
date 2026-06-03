@@ -9,7 +9,9 @@ The hub stores **reading definitions** (metric catalog) and **readings** (time-s
 - `sessions` — bounded activities (`vocab_quiz`, `math_practice`, etc.)
 - `life_daily_log` — one row per user per calendar day
 - `daily_rollups` — `segments_json`, productive/sleep minutes, counters
-- `user_plugins` — enabled plugins per user
+- `user_plugins` — enabled plugins per user (built-in + custom feature ids)
+- `user_features` — user-created feature modules (name, metrics, config)
+- `reading_definitions.user_id` — custom per-user metric slugs (`u{id}_{slug}`)
 - `quiz_sessions` — persistent vocab quiz state
 
 ## Writers

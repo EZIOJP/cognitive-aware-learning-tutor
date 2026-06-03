@@ -17,13 +17,9 @@ DEFAULT_DEFINITIONS = [
     ("steps", "Steps", "count", "batch", "health"),
 ]
 
-DEFAULT_PLUGINS = [
-    ("core", True),
-    ("gre-vocab", True),
-    ("life-tracker", True),
-    ("math-tutor", True),
-    ("nutrinode", False),
-]
+from backend.hub.services.catalog import default_plugin_toggles
+
+DEFAULT_PLUGINS = default_plugin_toggles()
 
 
 def seed_reading_definitions(db: Session) -> None:

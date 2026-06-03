@@ -5,6 +5,8 @@ import { ThemeToggle } from "../../components/theme/ThemeToggle";
 
 const ACCENT_OPTIONS = [
   { label: "Default", value: "default" },
+  { label: "Midnight Amber", value: "midnight-amber", hint: "Stitch Life Clock theme" },
+  { label: "Oceanic Aurora", value: "oceanic-aurora", hint: "Stitch teal life clock" },
   { label: "Emerald", value: "emerald" },
   { label: "Violet", value: "violet" },
   { label: "Rose", value: "rose" },
@@ -25,11 +27,17 @@ export default function ThemeSettingsPage() {
   const handleBack = () => navigate(-1);
 
   return (
-    <div className="p-6 max-w-md mx-auto">
-      <Link to="/settings" className="text-sm text-primary hover:underline mb-2 inline-block">
+    <div className="p-6 max-w-lg mx-auto space-y-4">
+      <Link to="/settings" className="text-sm text-primary hover:underline inline-block">
         ← Settings
       </Link>
-      <h2 className="text-2xl font-bold mb-4">Theme Settings</h2>
+      <div className="gloss-panel rounded-2xl p-6 space-y-6">
+      <div>
+        <h2 className="text-2xl font-bold">Theme Settings</h2>
+        <p className="text-sm text-muted-foreground mt-1">
+          Customize appearance — maps to your saved theme tokens
+        </p>
+      </div>
       <div className="flex items-center gap-3 mb-6">
         <ThemeToggle size="sm" />
         <span className="text-sm text-muted-foreground">Quick light / dark</span>
@@ -40,10 +48,14 @@ export default function ThemeSettingsPage() {
           {ACCENT_OPTIONS.map((opt) => (
             <button
               key={opt.value}
-              className={`p-2 rounded border ${accentColor === opt.value ? "border-2 border-primary" : "border"}`}
+              type="button"
+              className={`p-2 rounded border text-left ${accentColor === opt.value ? "border-2 border-primary" : "border"}`}
               onClick={() => setAccentColor(opt.value)}
             >
-              {opt.label}
+              <span className="block font-medium">{opt.label}</span>
+              {"hint" in opt && opt.hint ? (
+                <span className="block text-[10px] text-muted-foreground mt-0.5">{opt.hint}</span>
+              ) : null}
             </button>
           ))}
         </div>
@@ -87,12 +99,26 @@ export default function ThemeSettingsPage() {
           ))}
         </div>
       </section>
+      <div className="gloss-panel rounded-xl p-4 border border-border/40">
+        <p className="text-xs text-muted-foreground mb-2">Preview</p>
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center text-sm font-semibold">
+            Aa
+          </div>
+          <div>
+            <p className="text-sm font-medium">Study Hub card</p>
+            <p className="text-xs text-muted-foreground">Accent & radius apply globally</p>
+          </div>
+        </div>
+      </div>
       <button
-        className="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded"
+        type="button"
+        className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium"
         onClick={handleBack}
       >
         Back
       </button>
+      </div>
     </div>
   );
 }

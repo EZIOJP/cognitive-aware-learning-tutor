@@ -19,7 +19,7 @@ export default function LoginPage() {
     try {
       if (mode === "login") await login(username, password);
       else await register(username, password);
-      nav("/gre-vocab");
+      nav("/");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Auth failed");
     } finally {
@@ -30,9 +30,9 @@ export default function LoginPage() {
   return (
     <div className="h-full flex items-center justify-center p-4">
       <Card className="gloss-panel p-6 w-full max-w-sm">
-        <h2 className="text-xl font-semibold mb-1">Vocab Login</h2>
+        <h2 className="text-xl font-semibold mb-1">Sign in</h2>
         <p className="text-sm text-muted-foreground mb-4">
-          Use admin/admin123 to access admin panel.
+          Demo: admin / admin123 — syncs plugins, hub data, and AI review.
         </p>
         <div className="space-y-3">
           <Input

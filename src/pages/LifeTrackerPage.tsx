@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useGoalTracker, computeScores } from "../context/GoalTrackerContext";
-import { DayTimeTracker } from "../features/math/components/DayTimeTracker";
+import { LifeClockWidget } from "../components/hub/LifeClockWidget";
+import { FaceTrackerPanel } from "../components/face/FaceTrackerPanel";
+import { usePlugins } from "../plugins/registry";
 import { Moon, Dumbbell, Droplets, Brain, Monitor, TreePine, Smile, Clock, CheckSquare, TrendingUp, ChevronDown, ChevronUp, Flame } from "lucide-react";
 import { Card } from "../app/components/ui/card";
 
@@ -123,10 +125,13 @@ export function LifeTrackerPage() {
 
   // 7-day trend
   const last7 = history.slice(-7);
+  const { enabledIds } = usePlugins();
 
   return (
     <div className="h-full overflow-y-auto space-y-6 max-w-3xl">
-      <DayTimeTracker />
+      <LifeClockWidget compact showLegend={false} />
+
+      {enabledIds.includes("focus-mirror") && <FaceTrackerPanel />}
 
       {/* Header */}
       <div className="gloss-panel rounded-2xl p-6">

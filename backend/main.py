@@ -76,6 +76,9 @@ def _seed_math_templates(db: Session) -> None:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    import asyncio
+    import logging
+
     ensure_at_head()
     seed_reading_definitions(SessionLocal())
     with SessionLocal() as db:
@@ -89,7 +92,24 @@ async def lifespan(app: FastAPI):
             seed_user_plugins(db, demo.id)
         if settings.seed_words_on_startup:
             seed_words_from_json_if_empty(db)
+
+    eeg_task = None
+    if settings.eeg_enabled:
+        try:
+            from backend.eeg import service as eeg_service
+
+            await eeg_service.start_udp_server(settings.eeg_udp_port)
+            eeg_task = asyncio.create_task(eeg_service.broadcast_loop())
+            logging.getLogger("backend.main").info(
+                "EEG UDP on :%s, WebSocket /ws/eeg", settings.eeg_udp_port
+            )
+        except Exception as exc:
+            logging.getLogger("backend.main").warning("EEG startup failed: %s", exc)
+
     yield
+
+    if eeg_task:
+        eeg_task.cancel()
 
 
 app = FastAPI(
@@ -117,6 +137,13 @@ app.include_router(insights_router)
 app.include_router(behavior_router)
 app.include_router(account_router)
 
+try:
+    from backend.eeg.router import router as eeg_router
+
+    app.include_router(eeg_router)
+except ImportError:
+    pass
+
 
 @app.get("/health")
 def health():
@@ -130,6 +157,9 @@ def health():
         "schema_head": head,
         "schema_ok": current == head,
         "app_env": settings.app_env,
+        "eeg_enabled": settings.eeg_enabled,
+        "ollama_enabled": settings.ollama_enabled,
+        "dev_mode": settings.dev_mode,
     }
 
 
@@ -137,5 +167,9 @@ try:
     from backend.plugins.nutrinode_plugin import router as nutrinode_router
 
     app.include_router(nutrinode_router)
-except ImportError:
-    pass
+except ImportError as exc:
+    import logging
+
+    logging.getLogger("backend.main").warning(
+        "NutriNode plugin not loaded (nutrition WebSocket will 403): %s", exc
+    )

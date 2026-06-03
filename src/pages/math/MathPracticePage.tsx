@@ -41,8 +41,18 @@ export function MathPracticePage() {
   const { topicId = "algebra" } = useParams();
   const topic = getMathTopic(topicId);
   const { token } = useAuth();
-  const { handleCanvasChange, showDiagnostics, setShowDiagnostics, diagnosticsSummary, handleNewSession } =
-    useStudySession();
+  const {
+    handleCanvasChange,
+    showDiagnostics,
+    setShowDiagnostics,
+    diagnosticsSummary,
+    handleNewSession,
+    biometricData,
+    cognitiveLoad,
+  } = useStudySession();
+  const [tutorHint, setTutorHint] = useState<string | null>(null);
+  const [tutorUsesLlm, setTutorUsesLlm] = useState(false);
+  const [tutorLoading, setTutorLoading] = useState(false);
   const whiteboardRef = useRef<MathSplitWhiteboardHandle>(null);
 
   const localSet = LOCAL_QUESTION_SETS[topicId];
@@ -81,6 +91,32 @@ export function MathPracticePage() {
   useEffect(() => {
     if (!showResult && !complete) setQuestionStart(Date.now());
   }, [qIndex, showResult, complete]);
+
+  const askTutor = async () => {
+    if (!token) return;
+    setTutorLoading(true);
+    try {
+      const canvas = await whiteboardRef.current?.exportPng();
+      const latest = biometricData[biometricData.length - 1];
+      const res = await authFetch("/math/tutor/hint", token, {
+        method: "POST",
+        body: JSON.stringify({
+          canvas_image: canvas ?? "",
+          prompt: apiProblem?.prompt ?? currentLocal?.question ?? "",
+          topic: topic?.label ?? topicId,
+          gamma: latest?.gamma ?? 0,
+          attention: 0,
+        }),
+      });
+      const data = await res.json();
+      setTutorUsesLlm(Boolean(data.use_llm));
+      setTutorHint(`${data.hint}\n\n${data.question}`);
+    } catch {
+      setTutorHint("Could not reach tutor — check backend is running.");
+    } finally {
+      setTutorLoading(false);
+    }
+  };
 
   const loadApiProblem = useCallback(async () => {
     if (!token || useLocal) return;
@@ -276,6 +312,26 @@ export function MathPracticePage() {
                 onKeyDown={(e) => e.key === "Enter" && !showResult && submitLocal()}
                 placeholder="Your answer"
               />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="w-full"
+                disabled={tutorLoading}
+                onClick={() => void askTutor()}
+              >
+                {tutorLoading ? "Asking tutor…" : `Ask tutor (${cognitiveLoad} load)`}
+              </Button>
+              {tutorHint && (
+                <div className="space-y-1">
+                  <p className="text-[10px] text-muted-foreground">
+                    {tutorUsesLlm ? "Ollama tutor" : "Built-in coach (no GPU / AI required)"}
+                  </p>
+                  <p className="text-xs text-muted-foreground whitespace-pre-wrap border rounded-lg p-2 bg-muted/30">
+                    {tutorHint}
+                  </p>
+                </div>
+              )}
               {!showResult ? (
                 <Button onClick={submitLocal} disabled={!answer.trim()} className="w-full">
                   Submit
@@ -301,6 +357,26 @@ export function MathPracticePage() {
             </>
           ) : (
             <>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="w-full"
+                disabled={!token || tutorLoading}
+                onClick={() => void askTutor()}
+              >
+                {tutorLoading ? "Asking tutor…" : `Ask tutor (${cognitiveLoad} load)`}
+              </Button>
+              {tutorHint && (
+                <div className="space-y-1">
+                  <p className="text-[10px] text-muted-foreground">
+                    {tutorUsesLlm ? "Ollama tutor" : "Built-in coach (no GPU / AI required)"}
+                  </p>
+                  <p className="text-xs text-muted-foreground whitespace-pre-wrap border rounded-lg p-2 bg-muted/30">
+                    {tutorHint}
+                  </p>
+                </div>
+              )}
               {error && <p className="text-sm text-destructive">{error}</p>}
               {!token && (
                 <p className="text-sm text-muted-foreground">Log in for API-backed {topic?.label} drills.</p>

@@ -45,6 +45,13 @@ def test_quiz_start_returns_hub_session():
     assert body["hub_session_id"] is not None
 
 
+def test_life_daily_today_returns_iso_date():
+    r = client.get("/api/life/daily/today")
+    assert r.status_code == 200
+    data = r.json()
+    assert data["date"] == date.today().isoformat()
+
+
 def test_validation_error_envelope():
     r = client.put(f"/api/life/daily/{date.today().isoformat()}", json={})
     assert r.status_code in (200, 422)

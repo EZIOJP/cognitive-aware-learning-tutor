@@ -9,7 +9,7 @@ import { NutritionProvider } from "./NutritionContext";
 export const NutriNodePlugin: PluginDef = {
   id: "nutrinode",
   name: "NutriNode",
-  description: "Hardware-backed nutrition tracking using ESP32-CAM and Claude Vision.",
+  description: "Log meals manually today; ESP32 scale/board later (ingest paths ready). Live WS optional.",
   icon: Apple,
   isCore: false,
   Provider: NutritionProvider,

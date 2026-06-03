@@ -39,7 +39,13 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     );
   });
   const [accentColor, setAccentColor] = useState(() => {
-    return localStorage.getItem("accentColor") || "default";
+    const saved = localStorage.getItem("accentColor");
+    if (saved) return saved;
+    const prefersDark =
+      localStorage.getItem("theme") === "dark" ||
+      (!localStorage.getItem("theme") &&
+        window.matchMedia("(prefers-color-scheme: dark)").matches);
+    return prefersDark ? "midnight-amber" : "default";
   });
   const [radius, setRadius] = useState(() => {
     return localStorage.getItem("radius") || "md";
@@ -64,15 +70,35 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       violet: "#8b5cf6",
       rose: "#f43f5e",
       amber: "#f59e0b",
+      "midnight-amber": "#f59e0b",
+      "oceanic-aurora": "#06b6d4",
     };
-    
-    // If accentColor starts with #, treat it as a hex color
-    const primaryColor = accentColor.startsWith("#") ? accentColor : (accentMap[accentColor] || accentMap["default"]);
+
+    const isMidnightAmber = accentColor === "midnight-amber";
+    const isOceanic = accentColor === "oceanic-aurora";
+    root.setAttribute(
+      "data-accent-preset",
+      isMidnightAmber ? "midnight-amber" : isOceanic ? "oceanic-aurora" : accentColor
+    );
+
+    const primaryColor = accentColor.startsWith("#")
+      ? accentColor
+      : accentMap[accentColor] || accentMap.default;
     root.style.setProperty("--primary", primaryColor);
-    
-    // intensity mapping
-    // modify background based on intensity
-    if (isDarkMode) {
+    if (isMidnightAmber && isDarkMode) {
+      root.style.setProperty("--secondary", "#fbbf24");
+    }
+    if (isOceanic && isDarkMode) {
+      root.style.setProperty("--secondary", "#2dd4bf");
+    }
+
+    if (isMidnightAmber && isDarkMode) {
+      root.style.setProperty("--background", "#121212");
+      root.style.setProperty("--card", "#1a1a1a");
+    } else if (isOceanic && isDarkMode) {
+      root.style.setProperty("--background", "#0a191e");
+      root.style.setProperty("--card", "#112a32");
+    } else if (isDarkMode) {
       // dark mode: lower intensity = lighter gray, higher = pitch black
       // base dark mode bg might be hsl(240, 10%, 15%)
       // intensity 100 -> l=0%, intensity 0 -> l=30%

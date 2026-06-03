@@ -7,6 +7,7 @@ from backend.models.hub import (
     DailyRollup,
     Reading,
     ReadingDefinition,
+    UserFeature,
     UserPlugin,
 )
 from backend.models.life import LifeDailyLog
@@ -24,6 +25,7 @@ __all__ = [
     "ActivitySession",
     "DailyRollup",
     "UserPlugin",
+    "UserFeature",
     "LifeDailyLog",
     "Word",
 ]

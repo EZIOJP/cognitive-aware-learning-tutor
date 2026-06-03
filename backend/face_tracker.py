@@ -13,15 +13,20 @@ from pathlib import Path
 _ROOT = Path(__file__).resolve().parent.parent
 MODEL_PATH = str(_ROOT / "assets" / "face_landmarker.task")
 MODEL_URL = "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task"
-STATUS_URL = "http://localhost:8000/api/vocab/face/status"
+STATUS_URL = os.getenv("FACE_TRACKER_STATUS_URL", "http://localhost:8000/api/vocab/face/status")
+# Optional JWT from login — enables hub face_attention readings (POST /api/vocab/face/status).
+FACE_TRACKER_TOKEN = os.getenv("FACE_TRACKER_TOKEN", "").strip()
 
 
 def post_status(payload: dict) -> None:
     data = json.dumps(payload).encode("utf-8")
+    headers = {"Content-Type": "application/json"}
+    if FACE_TRACKER_TOKEN:
+        headers["Authorization"] = f"Bearer {FACE_TRACKER_TOKEN}"
     req = urllib.request.Request(
         STATUS_URL,
         data=data,
-        headers={"Content-Type": "application/json"},
+        headers=headers,
         method="POST",
     )
     try:
@@ -144,22 +149,26 @@ while cap.isOpened():
 
     status = infer_status(scores, blink_rate, face_detected)
 
-    if face_detected:
-        for face_landmarks in result.face_landmarks:
-            for landmark in face_landmarks:
-                x = int(landmark.x * frame.shape[1])
-                y = int(landmark.y * frame.shape[0])
-                cv2.circle(frame, (x, y), 1, (0, 255, 0), -1)
-
-    label = f"{status['attitude']} | attention {status['attention']}% | blinks {status['blink_rate']}/min"
-    cv2.putText(frame, label, (20, 35), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 255), 2)
-
     now = time.time()
     if now - last_post > 1:
         post_status(status)
         last_post = now
 
-    cv2.imshow("Attention & Attitude Tracker (ESC to close)", cv2.flip(frame, 1))
+    # Mirror video like a physical mirror; draw overlays AFTER flip so text stays readable.
+    mirrored = cv2.flip(frame, 1)
+    h, w = mirrored.shape[:2]
+
+    if face_detected:
+        for face_landmarks in result.face_landmarks:
+            for landmark in face_landmarks:
+                x = int((1.0 - landmark.x) * w)
+                y = int(landmark.y * h)
+                cv2.circle(mirrored, (x, y), 1, (0, 255, 0), -1)
+
+    label = f"{status['attitude']} | attention {status['attention']}% | blinks {status['blink_rate']}/min"
+    cv2.putText(mirrored, label, (20, 35), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 255), 2)
+
+    cv2.imshow("Focus Mirror - Python (ESC to close)", mirrored)
     if cv2.waitKey(5) & 0xFF == 27:
         break
 

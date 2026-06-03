@@ -20,7 +20,16 @@ export function NutritionWidget() {
         <div className="flex flex-col">
           <span className="text-2xl font-bold">{cal} <span className="text-sm font-normal text-muted-foreground">/ {calTarget} kcal</span></span>
         </div>
-        <div className={`w-2 h-2 rounded-full ${status === 'connected' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]' : 'bg-muted'}`} />
+        <div
+          className={`w-2 h-2 rounded-full ${
+            status === "connected"
+              ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]"
+              : status === "idle"
+                ? "bg-muted"
+                : "bg-amber-500/80"
+          }`}
+          title={status === "connected" ? "Live feed" : "REST / live feed off"}
+        />
       </div>
       
       <div className="space-y-2">

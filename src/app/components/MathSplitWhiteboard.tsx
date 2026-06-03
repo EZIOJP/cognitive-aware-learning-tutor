@@ -8,6 +8,7 @@ const COLORS = ["#000000", "#ef4444", "#3b82f6", "#22c55e", "#f59e0b"];
 
 export interface MathSplitWhiteboardHandle {
   clearAll: () => void;
+  exportPng: () => Promise<string | null>;
 }
 
 interface MathSplitWhiteboardProps {
@@ -29,7 +30,11 @@ export const MathSplitWhiteboard = forwardRef<MathSplitWhiteboardHandle, MathSpl
       onCanvasChange("");
     }, [onCanvasChange]);
 
-    useImperativeHandle(ref, () => ({ clearAll }), [clearAll]);
+    const exportPng = useCallback(async () => {
+      return (await mainRef.current?.exportImage("png")) ?? null;
+    }, []);
+
+    useImperativeHandle(ref, () => ({ clearAll, exportPng }), [clearAll, exportPng]);
 
     const stroke = tool === "pen" ? strokeColor : "transparent";
 

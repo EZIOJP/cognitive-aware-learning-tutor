@@ -4,6 +4,7 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from fastapi.responses import StreamingResponse
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from backend.core.auth import get_current_user, require_admin
@@ -152,3 +153,57 @@ def delete_question(
     row.is_active = False
     db.commit()
     return {"deleted": question_id, "soft": True}
+
+
+class TutorHintIn(BaseModel):
+    canvas_image: str = ""
+    prompt: str = ""
+    topic: str = ""
+    gamma: float = 0
+    attention: float = 0
+
+
+class TutorHintOut(BaseModel):
+    hint: str
+    question: str
+    detected_concept: str
+    use_llm: bool = False
+
+
+@router.post("/tutor/hint", response_model=TutorHintOut)
+def math_tutor_hint(
+    body: TutorHintIn,
+    user: User = Depends(get_current_user),
+):
+    """Rule-based coach by default; Ollama only when OLLAMA_ENABLED=1 and reachable."""
+    from backend.math.ollama_tutor import generate_tutor_hint, ollama_available
+    from backend.math.rule_tutor import rule_based_hint
+
+    ruled = rule_based_hint(
+        prompt=body.prompt,
+        topic=body.topic or "current problem",
+        gamma=body.gamma,
+        attention=body.attention,
+    )
+
+    if ollama_available():
+        llm = generate_tutor_hint(
+            prompt=body.prompt,
+            topic=ruled["detected_concept"],
+            gamma=body.gamma,
+            attention=body.attention,
+            canvas_image=body.canvas_image,
+        )
+        if llm:
+            return TutorHintOut(
+                hint=llm["hint"],
+                question=llm["question"],
+                detected_concept=llm.get("detected_concept", ruled["detected_concept"]),
+                use_llm=True,
+            )
+    return TutorHintOut(
+        hint=ruled["hint"],
+        question=ruled["question"],
+        detected_concept=ruled["detected_concept"],
+        use_llm=False,
+    )

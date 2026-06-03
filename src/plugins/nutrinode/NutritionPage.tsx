@@ -4,7 +4,8 @@ import { Card } from "../../app/components/ui/card";
 import { useNutrition } from "./NutritionContext";
 
 export function NutritionPage() {
-  const { status, todayTotals, todayMeals, logManualMeal, runPipeline } = useNutrition();
+  const { status, liveWsEnabled, setLiveWsEnabled, todayTotals, todayMeals, logManualMeal, runPipeline } =
+    useNutrition();
   const [pipelineInsights, setPipelineInsights] = useState<any>(null);
   const [isRunningPipeline, setIsRunningPipeline] = useState(false);
   const [manualFood, setManualFood] = useState("");
@@ -27,22 +28,43 @@ export function NutritionPage() {
 
   return (
     <div className="h-full overflow-y-auto max-w-5xl mx-auto space-y-6 p-4">
-      <header className="flex items-start justify-between">
+      <header className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-3">
             <Apple className="w-8 h-8 text-emerald-500" />
             NutriNode Dashboard
           </h1>
           <p className="text-muted-foreground mt-2">
-            Live hardware tracking and AI meal analysis. Status: 
-            <span className={`ml-2 px-2 py-1 text-xs rounded-full ${
-              status === "connected" ? "bg-emerald-500/20 text-emerald-500" : 
-              status === "error" ? "bg-red-500/20 text-red-500" : "bg-amber-500/20 text-amber-500"
-            }`}>
-              {status}
+            Manual logging uses REST. Live feed status:
+            <span
+              className={`ml-2 px-2 py-1 text-xs rounded-full ${
+                status === "connected"
+                  ? "bg-emerald-500/20 text-emerald-500"
+                  : status === "error"
+                    ? "bg-red-500/20 text-red-500"
+                    : status === "idle"
+                      ? "bg-muted text-muted-foreground"
+                      : "bg-amber-500/20 text-amber-500"
+              }`}
+            >
+              {liveWsEnabled ? status : "live feed off"}
             </span>
           </p>
         </div>
+        <label className="flex items-center gap-3 cursor-pointer rounded-xl border border-border/60 px-4 py-3 gloss-panel shrink-0">
+          <input
+            type="checkbox"
+            className="h-4 w-4 accent-emerald-500"
+            checked={liveWsEnabled}
+            onChange={(e) => setLiveWsEnabled(e.target.checked)}
+          />
+          <span className="text-sm">
+            <span className="font-medium block">Live hardware WebSocket</span>
+            <span className="text-muted-foreground text-xs">
+              Off by default — turn on when ESP32 / scale is connected
+            </span>
+          </span>
+        </label>
       </header>
 
       {/* Totals Row */}

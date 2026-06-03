@@ -24,6 +24,7 @@ All project docs live here. Use with the file kernel at repo root.
 | [MIGRATIONS.md](MIGRATIONS.md) | Alembic revisions |
 | [API_CONTRACT.md](API_CONTRACT.md) | HTTP API reference |
 | [DOCKER.md](DOCKER.md) | Container deployment |
+| [STITCH_MCP_SETUP.md](STITCH_MCP_SETUP.md) | Stitch MCP + generate scripts |
 | [CENTRAL_HUB.md](CENTRAL_HUB.md) | Hub metrics and ingest |
 | [STITCH_DESIGN_SPEC.md](STITCH_DESIGN_SPEC.md) — UI tokens, components, screens for Stitch/v0 |
 | [STITCH_PROMPT.txt](STITCH_PROMPT.txt) — short paste prompt for Stitch | Install and batch files |

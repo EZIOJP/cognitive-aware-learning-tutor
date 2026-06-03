@@ -8,6 +8,10 @@ import {
 } from "react";
 import type { BiometricData, CognitiveLoad } from "../types";
 import { config } from "../config";
+import { usePlugins } from "../plugins/registry";
+import { useAuth } from "./AuthContext";
+import { postHubReading } from "../api/hubClient";
+import { EEGWebSocketClient } from "../utils/websocket";
 
 interface StressPoint {
   concept: string;
@@ -60,6 +64,10 @@ export function useStudySession() {
 }
 
 export function StudySessionProvider({ children }: { children: ReactNode }) {
+  const { enabledIds, isLoaded } = usePlugins();
+  const { isAuthenticated } = useAuth();
+  const eegActive = isLoaded && enabledIds.includes("eeg");
+
   const [biometricData, setBiometricData] = useState<BiometricData[]>([]);
   const [cognitiveLoad, setCognitiveLoad] = useState<CognitiveLoad>("low");
   const [isConnected, setIsConnected] = useState(false);
@@ -91,7 +99,35 @@ export function StudySessionProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (!config.dev.useSimulatedData) return;
+    if (!eegActive) {
+      setIsConnected(false);
+      setBiometricData([]);
+      setCognitiveLoad("low");
+      return;
+    }
+
+    if (!config.dev.useSimulatedData) {
+      const client = new EEGWebSocketClient(config.backend.websocketUrl);
+      client.onConnectionChange(setIsConnected);
+      client.onData((data) => {
+        const newData: BiometricData = {
+          alpha: data.alpha,
+          beta: data.beta,
+          gamma: data.gamma,
+          timestamp: data.timestamp,
+        };
+        setBiometricData((prev) => [
+          ...prev.slice(-(config.visualization.maxDataPoints - 1)),
+          newData,
+        ]);
+        const { highThreshold, mediumThreshold } = config.cognitiveLoad;
+        if (data.gamma > highThreshold) setCognitiveLoad("high");
+        else if (data.gamma > mediumThreshold) setCognitiveLoad("medium");
+        else setCognitiveLoad("low");
+      });
+      client.connect();
+      return () => client.disconnect();
+    }
 
     const connectTimer = setTimeout(() => setIsConnected(true), 1000);
     const intervalMs = 1000 / config.dev.simulatedUpdateRate;
@@ -140,7 +176,18 @@ export function StudySessionProvider({ children }: { children: ReactNode }) {
       clearTimeout(connectTimer);
       clearInterval(dataInterval);
     };
-  }, [lastCanvasUpdate, showIntervention, triggerIntervention]);
+  }, [eegActive, lastCanvasUpdate, showIntervention, triggerIntervention]);
+
+  useEffect(() => {
+    if (!eegActive || !isAuthenticated) return;
+    const id = setInterval(() => {
+      const latest = biometricData[biometricData.length - 1];
+      if (!latest) return;
+      const attention = Math.max(0, Math.min(100, 100 - latest.gamma * 0.8));
+      void postHubReading("eeg_attention", Math.round(attention * 10) / 10);
+    }, 30_000);
+    return () => clearInterval(id);
+  }, [eegActive, isAuthenticated, biometricData]);
 
   const handleCanvasChange = useCallback((imageData: string) => {
     setCanvasImageData(imageData);

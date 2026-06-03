@@ -2,6 +2,11 @@ import { useState, useEffect } from "react";
 import { Wifi, WifiOff, TrendingUp } from "lucide-react";
 import { useGoalTracker } from "../context/GoalTrackerContext";
 
+const API_BASE =
+  (import.meta as { env?: { VITE_API_BASE?: string } }).env?.VITE_API_BASE ||
+  "http://localhost:8000";
+const TOKEN_KEY = "vocab:auth-token";
+
 interface BehaviorStats {
   connected: boolean;
   total_events: number;
@@ -18,10 +23,14 @@ export function BrowserActivityWidget() {
 
   const fetchStats = async () => {
     try {
-      const res = await fetch("http://localhost:8000/api/behavior/stats");
+      const headers: Record<string, string> = {};
+      const token = localStorage.getItem(TOKEN_KEY);
+      if (token) headers.Authorization = `Bearer ${token}`;
+      const res = await fetch(`${API_BASE}/api/behavior/stats`, { headers });
       if (res.ok) {
-        const data = await res.json();
-        setStats(data);
+        setStats(await res.json());
+      } else {
+        setStats(null);
       }
     } catch {
       setStats(null);
@@ -31,7 +40,7 @@ export function BrowserActivityWidget() {
   };
 
   useEffect(() => {
-    fetchStats();
+    void fetchStats();
     const interval = setInterval(fetchStats, 30_000);
     return () => clearInterval(interval);
   }, []);
@@ -43,7 +52,7 @@ export function BrowserActivityWidget() {
     return (
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
         <div className="w-3 h-3 rounded-full bg-muted animate-pulse" />
-        Connecting to extension...
+        Loading browser activity…
       </div>
     );
   }
@@ -56,18 +65,20 @@ export function BrowserActivityWidget() {
           <span>Extension not connected</span>
         </div>
         <p className="text-xs text-muted-foreground/60">
-          Install the SelfTracker extension and make sure the backend is running.
+          Install SelfTracker extension and sign in so events sync to the hub.
         </p>
       </div>
     );
   }
+
+  const cats = Object.entries(stats.category_breakdown || {}).slice(0, 4);
 
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2 text-xs text-emerald-400">
           <Wifi className="w-3.5 h-3.5" />
-          <span>Live · {stats.total_events} events today</span>
+          <span>Live · {stats.total_events} events</span>
         </div>
         <div className={`text-sm font-semibold ${scoreColor(stats.avg_productivity_score)}`}>
           <TrendingUp className="w-3.5 h-3.5 inline mr-1" />
@@ -79,13 +90,23 @@ export function BrowserActivityWidget() {
         Top mode: <span className="text-primary">{stats.top_category}</span>
       </div>
 
+      {cats.length > 0 && (
+        <div className="flex flex-wrap gap-1">
+          {cats.map(([cat, n]) => (
+            <span key={cat} className="text-[10px] px-1.5 py-0.5 rounded bg-muted/50">
+              {cat} {n}
+            </span>
+          ))}
+        </div>
+      )}
+
       {stats.top_domains.length > 0 && (
         <div className="space-y-1">
-          {stats.top_domains.slice(0, 3).map(({ domain, seconds }) => (
+          {stats.top_domains.slice(0, 5).map(({ domain, seconds }) => (
             <div key={domain} className="flex items-center justify-between text-xs">
-              <span className="text-muted-foreground truncate max-w-[140px]">{domain}</span>
+              <span className="text-muted-foreground truncate max-w-[160px]">{domain}</span>
               <span className="text-foreground/60 shrink-0">
-                {Math.floor(seconds / 60)}m {seconds % 60}s
+                {seconds >= 60 ? `${Math.floor(seconds / 60)}m` : `${seconds}s`}
               </span>
             </div>
           ))}
@@ -108,8 +129,17 @@ export function LifeScoreWidget() {
         <div className="relative w-14 h-14 shrink-0">
           <svg className="w-full h-full -rotate-90" viewBox="0 0 60 60">
             <circle cx="30" cy="30" r={r} fill="none" stroke="currentColor" strokeWidth="5" className="text-muted/30" />
-            <circle cx="30" cy="30" r={r} fill="none" stroke={scoreColor} strokeWidth="5" strokeLinecap="round"
-              strokeDasharray={`${dash} ${circ}`} className="transition-all duration-700" />
+            <circle
+              cx="30"
+              cy="30"
+              r={r}
+              fill="none"
+              stroke={scoreColor}
+              strokeWidth="5"
+              strokeLinecap="round"
+              strokeDasharray={`${dash} ${circ}`}
+              className="transition-all duration-700"
+            />
           </svg>
           <span className="absolute inset-0 flex items-center justify-center text-sm font-bold">{lifeScore}</span>
         </div>
@@ -128,7 +158,7 @@ export function LifeScoreWidget() {
           ))}
         </div>
       </div>
-      <p className="text-xs text-muted-foreground">Tap to log today's health, sleep & wellbeing →</p>
+      <p className="text-xs text-muted-foreground">Tap to log today&apos;s health, sleep & wellbeing →</p>
     </div>
   );
 }

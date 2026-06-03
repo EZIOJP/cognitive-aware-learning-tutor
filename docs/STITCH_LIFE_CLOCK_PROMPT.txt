@@ -1,0 +1,106 @@
+Design the "24-hour Life Clock" infographic widget — Cognitive-Aware Learning Tutor
+
+SCOPE
+- One primary component: DayTimeTracker (dashboard 2×2 widget) + compact variant (200px) for Life Tracker page header
+- Desktop-first; data-driven; no color palette instructions — focus on layout, typography hierarchy, data binding, and states only
+- Premium calm study app; glossy glass card container acceptable; Inter body, monospace for numeric clock
+
+DATA SOURCE (single endpoint)
+GET /api/hub/daily/today  (alias: /api/hub/daily/{YYYY-MM-DD})
+
+Response schema to design against:
+{
+  "date": "2026-06-02",
+  "segments": [
+    {
+      "label": "Sleep | Study | Math | Break | …",
+      "startHour": 0.0,
+      "endHour": 7.5,
+      "type": "sleep | study | math | break | productive"
+    }
+  ],
+  "productive_minutes": 120,
+  "sleep_minutes": 450,
+  "vocab_events": 5,
+  "math_attempts": 3,
+  "life_score": 72,
+  "time_left_hours": 8.2,
+  "percent_elapsed": 65.8,
+  "current_hour": 15.7,
+  "stats": {
+    "life_score": 72,
+    "math_attempts": 3,
+    "vocab_events": 5
+  }
+}
+
+INFOGRAPHIC STRUCTURE (280×280 default; compact 200×200)
+
+1) OUTER RING — 24-hour polar timeline
+   - Full circle = 24 hours (0 at top or 12-o'clock convention — pick one and document in spec)
+   - Each segment in `segments[]` is an arc from startHour → endHour (hours 0–24, fractional OK)
+   - Segment label on hover/tooltip: label + duration (endHour − startHour) in hours and minutes
+   - Segment type drives legend icon/category (sleep, study, math, break) — use pattern or icon, not color swatches in the brief
+   - Gaps in timeline = unlogged time (show as neutral track / dashed arc / "Unallocated")
+
+2) CENTER — live clock readout
+   - Primary: HH:MM (24h or 12h — specify)
+   - Secondary: small seconds or "now" indicator
+   - Optional tertiary: calendar date from `date`
+
+3) NOW MARKER
+   - Radial tick or needle at `current_hour` (0–24) on the ring
+   - Visually distinct from segment arcs (weight, dash, or icon)
+
+4) FOOTER METRICS ROW (below ring or card footer)
+   - Productive: format `productive_minutes` as "Xh Ym" (label exactly: **Productive**)
+   - Sleep: format `sleep_minutes` as "Xh Ym" (label exactly: **Sleep**)
+   - Day progress: horizontal bar bound to `percent_elapsed` (0–100%), caption **Day progress**
+   - Optional chip: **{time_left_hours}h left today** (1 decimal)
+
+5) LEGEND / DATA PANEL (compact table or icon list)
+   - One row per segment type present today
+   - Columns: Category | Start | End | Duration | % of day
+   - Derived: duration = endHour − startHour; % of day = duration / 24 × 100
+
+CARD CHROME (widget wrapper)
+- Title: **24-hour life clock**
+- Subtitle: **Track how your day is unfolding**
+- Drag handle (grip) when in dashboard customize mode
+- Grid span: 2×2 on Study Hub
+
+SECONDARY CONTEXT (Life Tracker page — same component, enriched)
+- Adjacent or below: large **{life_score}/100 Life Score** from same payload
+- Cross-link copy: data refreshes when user saves Life Tracker (`PUT /api/life/daily/{date}`)
+
+EMPTY / LOADING / ERROR STATES
+- Loading: skeleton ring + pulsing center time
+- Empty segments[]: ring shows full neutral track; center message: **Log your day in Life Tracker to fill the ring.**
+- Partial data: only arcs for provided segments; unallocated remainder visible
+- Error/offline: **Could not load today's timeline.** + retry affordance
+
+INTERACTION (annotate in spec)
+- Hover segment → tooltip with label, startHour, endHour, duration, type
+- Optional click segment → navigate to Life Tracker (deep link)
+- Reduced motion: static ring, no arc animation
+
+ACCESSIBILITY
+- Ring + legend: text alternatives for each segment (aria-label with times)
+- Progress bar: aria-valuenow = percent_elapsed
+- Do not rely on color alone to distinguish segment types — use labels, patterns, or icons
+
+DELIVERABLES
+1) Component spec sheet: measurements, typography scale, spacing
+2) Hi-fi widget: populated state (multi-segment day), compact variant
+3) Hi-fi: empty state, loading state
+4) Legend/table infographic layout
+5) Annotation map: each UI field → API field name
+6) Light + dark card surfaces (structure only — no color tokens in this brief)
+
+SAMPLE DATA SET (use for mock)
+segments: Sleep 0→7.5h, Study 7.5→9.5h, Math 9.5→10h
+productive_minutes: 120, sleep_minutes: 450, life_score: 72
+percent_elapsed: 65.8, time_left_hours: 8.2, current_hour: 15.7
+stats: math_attempts 3, vocab_events 5
+
+Do not design other dashboard widgets. Do not specify hex values or brand colors.

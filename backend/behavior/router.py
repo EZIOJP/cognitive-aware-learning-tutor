@@ -141,6 +141,39 @@ def _stats_from_csv(day_str: str) -> dict | None:
     }
 
 
+def _shape_stats_for_ui(raw: dict) -> dict:
+    """Normalize DB/CSV stats for dashboard widget."""
+    events = raw.get("events_today", 0)
+    domains = raw.get("domains") or []
+    categories = raw.get("categories") or []
+    top_domains = []
+    for item in domains[:8]:
+        if "seconds" in item:
+            top_domains.append({"domain": item["domain"], "seconds": int(item["seconds"])})
+        else:
+            top_domains.append({"domain": item["domain"], "seconds": int(item.get("count", 0)) * 30})
+    category_breakdown: dict[str, int] = {}
+    for item in categories:
+        category_breakdown[str(item.get("category", "other"))] = int(item.get("count", 0))
+    top_category = "other"
+    if category_breakdown:
+        top_category = max(category_breakdown, key=lambda k: category_breakdown[k])
+    productive = min(100, max(0, 40 + events // 5))
+    if category_breakdown.get("study", 0) > category_breakdown.get("social", 0):
+        productive = min(100, productive + 15)
+    return {
+        "connected": events > 0,
+        "total_events": events,
+        "top_category": top_category,
+        "avg_productivity_score": productive,
+        "top_domains": top_domains,
+        "recent_sites": [d["domain"] for d in top_domains[:5]],
+        "category_breakdown": category_breakdown,
+        "date": raw.get("date"),
+        "source": raw.get("source"),
+    }
+
+
 @router.get("/api/behavior/stats")
 def behavior_stats(
     day: str | None = Query(None, description="YYYY-MM-DD or today"),
@@ -156,7 +189,7 @@ def behavior_stats(
     if payload["events_today"] == 0:
         csv_stats = _stats_from_csv(d.isoformat())
         if csv_stats and csv_stats["events_today"] > 0:
-            return csv_stats
+            return _shape_stats_for_ui(csv_stats)
     if payload["events_today"] == 0:
-        payload["message"] = "No behavior data yet"
-    return payload
+        return _shape_stats_for_ui({**payload, "events_today": 0})
+    return _shape_stats_for_ui(payload)

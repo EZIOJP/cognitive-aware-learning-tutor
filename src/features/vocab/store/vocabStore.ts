@@ -1,6 +1,12 @@
 /**
- * Client-side vocab data — words.json + localStorage progress
+ * Vocab data — API when signed in, else words.json + localStorage progress
  */
+import {
+  fetchWordsForReadMode,
+  hasVocabApi,
+  recordWordReadApi,
+  type ReadListMode as ApiReadListMode,
+} from "../../../api/vocabClient";
 import type {
   VocabWord,
   WordProgress,
@@ -121,6 +127,16 @@ export async function loadWordsForRead(
   mode: ReadListMode,
   groupNumber?: number | null
 ): Promise<WordWithProgress[]> {
+  if (hasVocabApi()) {
+    const remote = await fetchWordsForReadMode(mode as ApiReadListMode, groupNumber);
+    if (remote) {
+      return remote.sort(
+        (a, b) =>
+          a.group_number - b.group_number || a.word.localeCompare(b.word)
+      );
+    }
+  }
+
   const words = await ensureWordsLoaded();
   const progressMap = loadProgressMap();
 
@@ -134,6 +150,13 @@ export async function loadWordsForRead(
 }
 
 export async function markWordRead(wordId: number): Promise<WordWithProgress> {
+  if (hasVocabApi()) {
+    await recordWordReadApi(wordId);
+    const refreshed = await fetchWordsForReadMode("all");
+    const hit = refreshed?.find((w) => w.id === wordId);
+    if (hit) return hit;
+  }
+
   const words = await ensureWordsLoaded();
   const word = words.find((w) => w.id === wordId);
   if (!word) throw new Error(`Word ${wordId} not found`);

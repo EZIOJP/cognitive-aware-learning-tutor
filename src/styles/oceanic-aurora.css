@@ -1,0 +1,46 @@
+/**
+ * Oceanic Aurora — Stitch "Life Clock - Oceanic Aurora Variant"
+ */
+
+[data-accent-preset="oceanic-aurora"].dark,
+[data-accent-preset="oceanic-aurora"][data-color-scheme="dark"] {
+  --background: #0a191e;
+  --foreground: #e2f1f1;
+  --card: #112a32;
+  --card-foreground: #e2f1f1;
+  --primary: #06b6d4;
+  --primary-foreground: #083344;
+  --secondary: #2dd4bf;
+  --secondary-foreground: #042f2e;
+  --muted: #15333d;
+  --muted-foreground: #94a3a8;
+  --accent: #164e63;
+  --accent-foreground: #ecfeff;
+  --border: rgba(255, 255, 255, 0.08);
+  --ring: #06b6d4;
+
+  --gloss-bg: #0a191e;
+  --gloss-surface: rgba(17, 42, 50, 0.85);
+  --gloss-border: rgba(255, 255, 255, 0.08);
+  --gloss-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+
+  --clock-sleep: #06b6d4;
+  --clock-study: #2dd4bf;
+  --clock-math: #4ade80;
+  --clock-break: #0891b2;
+  --clock-track: rgba(255, 255, 255, 0.05);
+  --clock-glow: rgba(6, 182, 212, 0.35);
+}
+
+[data-accent-preset="oceanic-aurora"].dark body,
+[data-accent-preset="oceanic-aurora"][data-color-scheme="dark"] body {
+  background-color: #0a191e;
+  background-image:
+    radial-gradient(circle at 0% 0%, rgba(6, 182, 212, 0.12) 0%, transparent 50%),
+    radial-gradient(circle at 100% 100%, rgba(45, 212, 191, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 50% 50%, rgba(74, 222, 128, 0.06) 0%, transparent 50%);
+}
+
+.life-clock-panel--oceanic {
+  box-shadow: 0 0 24px var(--clock-glow, rgba(6, 182, 212, 0.25));
+}

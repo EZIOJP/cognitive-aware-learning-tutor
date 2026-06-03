@@ -1,23 +1,38 @@
+import { Link } from "react-router";
 import { usePlugins } from "../../plugins/registry";
 import { Card } from "../../app/components/ui/card";
-import { Settings2, Power, PowerOff } from "lucide-react";
+import { Settings2, Power, PowerOff, Sparkles } from "lucide-react";
+import { HardwareReadinessCard } from "../../components/HardwareReadinessCard";
 
 export function PluginSettingsPage() {
-  const { allPlugins, enabledIds, togglePlugin, isLoaded } = usePlugins();
+  const { allPlugins, enabledIds, togglePlugin, isLoaded, syncError } = usePlugins();
 
   if (!isLoaded) return <div className="p-8">Loading plugins...</div>;
 
   return (
     <div className="h-full overflow-y-auto max-w-4xl mx-auto space-y-8 p-4">
-      <div>
-        <h1 className="text-3xl font-bold flex items-center gap-3">
-          <Settings2 className="w-8 h-8 text-primary" />
-          Plugin Manager
-        </h1>
-        <p className="text-muted-foreground mt-2">
-          Customize your LifeOS by turning features on or off. Core features cannot be disabled.
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold flex items-center gap-3">
+            <Settings2 className="w-8 h-8 text-primary" />
+            Plugin Manager
+          </h1>
+          <p className="text-muted-foreground mt-2">
+            Turn modules on or off (Math, EEG, Focus Mirror, nutrition, etc.). Syncs to your account when signed in.
+            Create custom features in Feature Studio.
+          </p>
+          {syncError ? <p className="text-sm text-amber-400 mt-2">{syncError}</p> : null}
+        </div>
+        <Link
+          to="/settings/features"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-violet-500/20 text-violet-300 hover:bg-violet-500/30 text-sm font-medium shrink-0"
+        >
+          <Sparkles className="w-4 h-4" />
+          Feature Studio
+        </Link>
       </div>
+
+      <HardwareReadinessCard />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {allPlugins.map((plugin) => {
@@ -43,17 +58,20 @@ export function PluginSettingsPage() {
                   <div>
                     <h3 className="font-semibold text-lg leading-tight">{plugin.name}</h3>
                     {plugin.isCore && (
-                      <span className="text-[10px] uppercase font-bold tracking-wider text-primary/70">Core Plugin</span>
+                      <span className="text-[10px] uppercase font-bold tracking-wider text-primary/70">
+                        Core Plugin
+                      </span>
                     )}
                   </div>
                 </div>
-                
+
                 {!plugin.isCore && (
                   <button
-                    onClick={() => togglePlugin(plugin.id, !isEnabled)}
+                    type="button"
+                    onClick={() => void togglePlugin(plugin.id, !isEnabled)}
                     className={`p-2 rounded-full transition-colors ${
-                      isEnabled 
-                        ? "bg-emerald-500/20 text-emerald-500 hover:bg-emerald-500/30" 
+                      isEnabled
+                        ? "bg-emerald-500/20 text-emerald-500 hover:bg-emerald-500/30"
                         : "bg-muted hover:bg-muted-foreground/20 text-muted-foreground"
                     }`}
                     title={isEnabled ? "Disable plugin" : "Enable plugin"}
@@ -62,11 +80,9 @@ export function PluginSettingsPage() {
                   </button>
                 )}
               </div>
-              
-              <p className="text-sm text-muted-foreground flex-1">
-                {plugin.description}
-              </p>
-              
+
+              <p className="text-sm text-muted-foreground flex-1">{plugin.description}</p>
+
               <div className="mt-4 pt-4 border-t border-border/50 flex flex-wrap gap-2">
                 {plugin.routes?.length ? (
                   <span className="text-[10px] px-2 py-1 rounded-md bg-muted text-muted-foreground">

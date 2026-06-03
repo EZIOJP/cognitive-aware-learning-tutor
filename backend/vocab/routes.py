@@ -15,7 +15,7 @@ try:
 except ImportError:
     sp = None
 
-from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
+from fastapi import APIRouter, Depends, File, Header, HTTPException, Query, UploadFile
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy.orm import Session
@@ -317,6 +317,9 @@ def register(body: RegisterBody, db: Session = Depends(get_db)):
     db.add(user)
     db.commit()
     db.refresh(user)
+    from backend.hub.services.seed import seed_user_plugins
+
+    seed_user_plugins(db, user.id)
     return {"token": token_for(user), "user": {"id": user.id, "username": user.username}}
 
 
@@ -477,10 +480,10 @@ def quiz_answer(
 ):
     sess = get_quiz_session(db, session_id, user.id)
     if not sess:
-        return {"error": "session not found"}
+        raise HTTPException(status_code=404, detail="Quiz session not found")
     w = next((x for x in sess["words"] if int(x["id"]) == body.word_id), None)
     if not w:
-        return {"error": "word not found"}
+        raise HTTPException(status_code=404, detail="Word not found in session")
     p = _get_or_create_progress(db, user.id, body.word_id)
     mastery_before = p.mastery
     is_correct = body.answer.strip() == str(w["meaning"]).strip()
@@ -557,6 +560,7 @@ def words_by_criteria(
     mastery_min: float | None = None,
     mastery_max: float | None = None,
     due_for_review: bool = False,
+    word_ids: str | None = None,
     limit: int = 50,
     offset: int = 0,
     db: Session = Depends(get_db),
@@ -564,6 +568,10 @@ def words_by_criteria(
 ):
     pmap = _progress_map_for_user(db, user.id)
     merged = [_merge_word(w, pmap.get(int(w["id"]))) for w in _load_words(db)]
+    if word_ids:
+        id_set = {int(x.strip()) for x in word_ids.split(",") if x.strip().isdigit()}
+        if id_set:
+            merged = [w for w in merged if int(w["id"]) in id_set]
     if group is not None:
         merged = [w for w in merged if int(w.get("group_number", 1)) == group]
     if mastery_min is not None:
@@ -691,7 +699,11 @@ async def import_words_csv(
 
 
 @router.post("/words/import/json")
-def import_words_json(body: JsonImportBody, _admin: User = Depends(require_admin)):
+def import_words_json(
+    body: JsonImportBody,
+    db: Session = Depends(get_db),
+    _admin: User = Depends(require_admin),
+):
     words = _load_words(db)
     by_word = {str(w["word"]).strip().lower(): w for w in words}
     next_id = max((int(w["id"]) for w in words), default=0) + 1
@@ -732,7 +744,10 @@ def import_words_json(body: JsonImportBody, _admin: User = Depends(require_admin
 
 
 @router.get("/words/export/csv")
-def export_words_csv(_admin: User = Depends(require_admin)):
+def export_words_csv(
+    db: Session = Depends(get_db),
+    _admin: User = Depends(require_admin),
+):
     words = _load_words(db)
     output = io.StringIO()
     writer = csv.writer(output)
@@ -779,6 +794,7 @@ def export_words_group_json(
 @router.get("/words/export/group/{group_number}/csv")
 def export_words_group_csv(
     group_number: int,
+    db: Session = Depends(get_db),
     _admin: User = Depends(require_admin),
 ):
     words = [w for w in _load_words(db) if int(w.get("group_number", 1)) == group_number]
@@ -803,6 +819,34 @@ def export_words_group_csv(
         media_type="text/csv",
         headers={"Content-Disposition": f"attachment; filename=vocab_group_{group_number}.csv"},
     )
+
+
+@router.post("/progress/{word_id}/read")
+def record_read_progress(
+    word_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Bump mastery when the learner advances in Read Mode (same gentle boost as a correct review)."""
+    _load_words(db)  # ensure word bank exists
+    p = _get_or_create_progress(db, user.id, word_id)
+    mastery_before = p.mastery
+    p.mastery += 1
+    p.times_asked += 1
+    p.times_correct += 1
+    p.consecutive_correct += 1
+    if p.mastery >= 3:
+        due, interval_days = _calc_next_due(p.mastery)
+        p.due_date = due
+        p.interval_days = interval_days
+    db.add(p)
+    db.commit()
+    db.refresh(p)
+    return {
+        "word_id": word_id,
+        "mastery_before": mastery_before,
+        "mastery_after": p.mastery,
+    }
 
 
 @router.patch("/progress/{word_id}")
@@ -1011,8 +1055,18 @@ def math_sessions(db: Session = Depends(get_db), user: User = Depends(get_curren
 def update_face_status(
     body: FaceStatusBody,
     db: Session = Depends(get_db),
-    user: User = Depends(get_current_user),
+    authorization: str | None = Header(None),
 ):
+    from backend.core.auth import decode_user, ensure_demo_user
+
+    user = None
+    if authorization and authorization.lower().startswith("bearer "):
+        token = authorization.split(" ", 1)[1].strip()
+        user = decode_user(token, db)
+    if user is None and get_settings().dev_mode:
+        user = ensure_demo_user(db)
+    if user is None:
+        raise HTTPException(status_code=401, detail="Authentication required")
     _face_status.update(body.model_dump())
     _face_status["updated_at"] = datetime.now(UTC).isoformat().replace("+00:00", "Z")
     if body.face_detected:

@@ -9,7 +9,28 @@ from sqlalchemy.orm import Session
 
 from backend.core.auth import get_current_user, require_admin
 from backend.db.session import get_db
-from backend.hub.schemas import PluginToggleIn, ReadingIn, ReadingsBatchIn, SessionPatchIn, SessionStartIn
+from backend.hub.schemas import (
+    AddMetricIn,
+    CustomFeatureIn,
+    CustomFeaturePatchIn,
+    DashboardLayoutIn,
+    PluginToggleIn,
+    ReadingIn,
+    ReadingsBatchIn,
+    SessionPatchIn,
+    SessionStartIn,
+)
+from backend.hub.services.catalog import catalog_for_ui
+from backend.hub.services.features import (
+    add_metric_to_feature,
+    create_custom_feature,
+    delete_custom_feature,
+    update_custom_feature,
+    list_custom_features,
+    list_metrics_for_user,
+    list_user_plugin_state,
+    set_user_plugin,
+)
 from backend.hub.services.ingest import insert_reading, insert_readings_batch
 from backend.hub.services.rollup import daily_payload, rebuild_daily_rollup
 from backend.models import ActivitySession, DailyRollup, LifeDailyLog, Reading, ReadingDefinition, User, UserPlugin
@@ -156,7 +177,8 @@ def export_hub_data(
 ):
     logs = db.query(LifeDailyLog).filter(LifeDailyLog.user_id == user.id).all()
     rollups = db.query(DailyRollup).filter(DailyRollup.user_id == user.id).all()
-    readings = db.query(Reading).filter(Reading.user_id == user.id).limit(5000).all()
+    readings = db.query(Reading).filter(Reading.user_id == user.id).order_by(Reading.recorded_at.desc()).limit(5000).all()
+    defn_map = {d.id: d.slug for d in db.query(ReadingDefinition).all()}
 
     payload = {
         "user_id": user.id,
@@ -166,6 +188,15 @@ def export_hub_data(
             for l in logs
         ],
         "rollups": [{"date": str(r.date), "productive_minutes": r.productive_minutes} for r in rollups],
+        "readings": [
+            {
+                "slug": defn_map.get(r.definition_id, "unknown"),
+                "recorded_at": r.recorded_at.isoformat() if r.recorded_at else None,
+                "value_numeric": r.value_numeric,
+                "source_device": r.source_device,
+            }
+            for r in readings
+        ],
         "readings_count": len(readings),
     }
 
@@ -184,15 +215,148 @@ def export_hub_data(
     return payload
 
 
+@router.get("/dashboard-layout")
+def get_dashboard_layout(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    row = (
+        db.query(UserPlugin)
+        .filter(UserPlugin.user_id == user.id, UserPlugin.plugin_id == "core")
+        .first()
+    )
+    if not row or not row.config_json:
+        return {"widget_state": {}, "widget_order": [], "focus_mode": False}
+    try:
+        cfg = json.loads(row.config_json)
+        return {
+            "widget_state": cfg.get("dashboard_widget_state", {}),
+            "widget_order": cfg.get("dashboard_widget_order", []),
+            "focus_mode": bool(cfg.get("dashboard_focus_mode", False)),
+        }
+    except json.JSONDecodeError:
+        return {"widget_state": {}, "widget_order": [], "focus_mode": False}
+
+
+@router.put("/dashboard-layout")
+def put_dashboard_layout(
+    body: DashboardLayoutIn,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    row = (
+        db.query(UserPlugin)
+        .filter(UserPlugin.user_id == user.id, UserPlugin.plugin_id == "core")
+        .first()
+    )
+    if not row:
+        row = UserPlugin(user_id=user.id, plugin_id="core", enabled=True, config_json="{}")
+        db.add(row)
+    try:
+        cfg = json.loads(row.config_json or "{}")
+    except json.JSONDecodeError:
+        cfg = {}
+    cfg["dashboard_widget_state"] = body.widget_state
+    cfg["dashboard_widget_order"] = body.widget_order
+    cfg["dashboard_focus_mode"] = body.focus_mode
+    row.config_json = json.dumps(cfg)
+    db.commit()
+    return {"status": "ok"}
+
+
+@router.get("/features/catalog")
+def features_catalog():
+    """Built-in modules users can enable (no code deploy)."""
+    return {"features": catalog_for_ui()}
+
+
+@router.get("/features/custom")
+def features_custom_list(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    return {"features": list_custom_features(db, user.id)}
+
+
+@router.post("/features/custom")
+def features_custom_create(
+    body: CustomFeatureIn,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    try:
+        feature = create_custom_feature(
+            db,
+            user.id,
+            name=body.name,
+            description=body.description,
+            feature_slug=body.feature_slug,
+            metrics=[m.model_dump() for m in body.metrics],
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    return feature
+
+
+@router.patch("/features/custom/{feature_id}")
+def features_custom_patch(
+    feature_id: str,
+    body: CustomFeaturePatchIn,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    try:
+        return update_custom_feature(
+            db,
+            user.id,
+            feature_id,
+            name=body.name,
+            description=body.description,
+            enabled=body.enabled,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+
+
+@router.delete("/features/custom/{feature_id}")
+def features_custom_delete(
+    feature_id: str,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    try:
+        delete_custom_feature(db, user.id, feature_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e
+    return {"status": "deleted", "feature_id": feature_id}
+
+
+@router.post("/features/custom/{feature_id}/metrics")
+def features_custom_add_metric(
+    feature_id: str,
+    body: AddMetricIn,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    try:
+        metric = add_metric_to_feature(
+            db,
+            user.id,
+            feature_id,
+            label=body.label,
+            slug=body.slug,
+            unit=body.unit,
+            source_type=body.source_type,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    return metric
+
+
+@router.get("/metrics")
+def metrics_list(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    return {"metrics": list_metrics_for_user(db, user.id)}
+
+
 @router.get("/plugins")
 def list_plugins(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    rows = db.query(UserPlugin).filter(UserPlugin.user_id == user.id).all()
-    return {
-        "plugins": [
-            {"plugin_id": r.plugin_id, "enabled": r.enabled, "config": json.loads(r.config_json or "{}")}
-            for r in rows
-        ]
-    }
+    plugins = list_user_plugin_state(db, user.id)
+    custom = list_custom_features(db, user.id)
+    return {"plugins": plugins, "custom_features": custom}
 
 
 @router.put("/plugins")
@@ -201,16 +365,7 @@ def set_plugin(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    row = (
-        db.query(UserPlugin)
-        .filter(UserPlugin.user_id == user.id, UserPlugin.plugin_id == body.plugin_id)
-        .first()
-    )
-    if not row:
-        row = UserPlugin(user_id=user.id, plugin_id=body.plugin_id)
-        db.add(row)
-    row.enabled = body.enabled
-    if body.config is not None:
-        row.config_json = json.dumps(body.config)
-    db.commit()
-    return {"plugin_id": row.plugin_id, "enabled": row.enabled}
+    try:
+        return set_user_plugin(db, user.id, body.plugin_id, body.enabled, body.config)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e

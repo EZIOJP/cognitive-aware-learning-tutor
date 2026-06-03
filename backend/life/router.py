@@ -14,6 +14,15 @@ from backend.models import LifeDailyLog, User
 router = APIRouter(prefix="/api/life", tags=["life"])
 
 
+def _resolve_day(day: str) -> date:
+    if day in ("today", "now"):
+        return date.today()
+    try:
+        return date.fromisoformat(day)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail="Invalid date") from e
+
+
 def _upsert_life_log(db: Session, user_id: int, d: date, body: LifeDailyIn) -> LifeDailyLog:
     row = db.query(LifeDailyLog).filter(LifeDailyLog.user_id == user_id, LifeDailyLog.date == d).first()
     if not row:
@@ -35,18 +44,12 @@ def get_life_daily(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    if day in ("today", "now"):
-        d = date.today()
-    else:
-        try:
-            d = date.fromisoformat(day)
-        except ValueError as e:
-            raise HTTPException(status_code=400, detail="Invalid date") from e
+    d = _resolve_day(day)
     row = db.query(LifeDailyLog).filter(LifeDailyLog.user_id == user.id, LifeDailyLog.date == d).first()
     if not row:
-        return {"date": day, "life_score": 0, "empty": True}
+        return {"date": d.isoformat(), "life_score": 0, "empty": True}
     return {
-        "date": day,
+        "date": d.isoformat(),
         "empty": False,
         "life_score": row.life_score,
         **{c.name: getattr(row, c.name) for c in LifeDailyLog.__table__.columns if c.name not in ("id", "user_id", "date")},
@@ -60,13 +63,7 @@ def put_life_daily(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    if day in ("today", "now"):
-        d = date.today()
-    else:
-        try:
-            d = date.fromisoformat(day)
-        except ValueError as e:
-            raise HTTPException(status_code=400, detail="Invalid date") from e
+    d = _resolve_day(day)
 
     row = _upsert_life_log(db, user.id, d, body)
 

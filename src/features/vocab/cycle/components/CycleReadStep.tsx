@@ -4,6 +4,7 @@ import { Button } from "../../../../app/components/ui/button";
 import { Progress } from "../../../../app/components/ui/progress";
 import type { WordWithProgress } from "../../types";
 import { WordCard } from "../../components/read/WordCard";
+import { markWordRead } from "../../store/vocabStore";
 
 interface CycleReadStepProps {
   words: WordWithProgress[];
@@ -28,6 +29,9 @@ export function CycleReadStep({
   const go = useCallback(
     (dir: number) => {
       if (total === 0) return;
+      if (dir > 0 && current) {
+        void markWordRead(current.id).catch(() => undefined);
+      }
       const next = index + dir;
       if (next >= total) {
         onComplete(words);
@@ -36,7 +40,7 @@ export function CycleReadStep({
       if (next < 0) return;
       setIndex(next);
     },
-    [index, total, words, onComplete]
+    [index, total, words, onComplete, current]
   );
 
   useEffect(() => {

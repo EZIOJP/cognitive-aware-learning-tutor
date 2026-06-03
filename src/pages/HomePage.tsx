@@ -9,7 +9,16 @@ import { Card } from "../app/components/ui/card";
 import { useStudySession } from "../context/StudySessionContext";
 import { usePlugins } from "../plugins/registry";
 import type { PluginWidget } from "../plugins/types";
-import { DayTimeTracker } from "../features/math/components/DayTimeTracker";
+import { LifeClockWidget } from "../components/hub/LifeClockWidget";
+import {
+  fetchHubDaily,
+  fetchInsightsDaily,
+  fetchDashboardLayout,
+  saveDashboardLayout,
+  type InsightsDailyPayload,
+} from "../api/hubClient";
+import { AiReviewWidget } from "../components/dashboard/AiReviewWidget";
+import { useAuth } from "../context/AuthContext";
 
 // ─── Per-widget saved state ────────────────────────────────────────────────
 interface WidgetState {
@@ -22,6 +31,7 @@ type WidgetStateMap = Record<string, WidgetState>;
 
 const LS_WIDGET_STATE = "dashboard:widget_state";
 const LS_WIDGET_ORDER = "dashboard:widget_order";
+const LS_FOCUS_MODE = "dashboard:focus_mode";
 
 function loadWidgetState(): WidgetStateMap {
   try {
@@ -41,10 +51,11 @@ const CORE_WIDGETS: PluginWidget[] = [
     title: "24-hour life clock",
     description: "Track how your day is unfolding",
     icon: Timer,
-    accent: "from-indigo-500/20 to-violet-500/10",
+    accent: "from-amber-500/20 to-orange-500/10",
     defaultColSpan: 2,
     defaultRowSpan: 2,
-    component: <DayTimeTracker compact />,
+    component: <LifeClockWidget embedded />,
+    to: "/life-tracker",
   },
   {
     id: "study-time",
@@ -58,18 +69,19 @@ const CORE_WIDGETS: PluginWidget[] = [
   {
     id: "ai-comments",
     type: "info",
-    title: "AI Review",
-    description: "You completed 45 vocabulary questions.",
-    content: "Excellent Retention",
+    title: "AI Review & Next Steps",
+    description: "Daily coach from your hub metrics.",
     icon: MessageSquare,
     accent: "from-blue-500/20 to-cyan-500/10",
+    defaultColSpan: 2,
+    component: <AiReviewWidget />,
   },
   {
     id: "community",
     type: "info",
     title: "Community",
-    description: "3 friends are currently studying.",
-    content: "Join Room",
+    description: "Study rooms and shared focus — coming soon.",
+    content: "Coming soon",
     icon: Users,
     accent: "from-rose-500/20 to-pink-500/10",
   },
@@ -215,75 +227,143 @@ function CustomizerDrawer({
 }
 
 // ─── Main HomePage ────────────────────────────────────────────────────────
+function greetingForHour(h: number): string {
+  if (h < 12) return "Good morning";
+  if (h < 17) return "Good afternoon";
+  return "Good evening";
+}
+
+const PERF_LABELS: Record<InsightsDailyPayload["overall_performance"], string> = {
+  excellent: "Excellent Retention",
+  good: "Good Progress",
+  "needs-improvement": "Needs Focus",
+};
+
 export function HomePage() {
   const [allWidgets, setAllWidgets] = useState<PluginWidget[]>([]);
   const [draggedIdx, setDraggedIdx] = useState<number | null>(null);
   const [customizerOpen, setCustomizerOpen] = useState(false);
   const [stateMap, setStateMap] = useState<WidgetStateMap>({});
+  const [insights, setInsights] = useState<InsightsDailyPayload | null>(null);
+  const [focusMode, setFocusMode] = useState(() => {
+    try {
+      return localStorage.getItem(LS_FOCUS_MODE) === "1";
+    } catch {
+      return false;
+    }
+  });
 
   const { sessionData, diagnosticsSummary } = useStudySession();
   const { getWidgets, isLoaded } = usePlugins();
+  const { user } = useAuth();
+
+  useEffect(() => {
+    fetchInsightsDaily().then(setInsights);
+    fetchHubDaily("today");
+  }, []);
 
   // Build widget list once plugins are loaded
   useEffect(() => {
     if (!isLoaded) return;
     const available = [...CORE_WIDGETS, ...getWidgets()];
 
-    // Restore order
-    try {
-      const savedOrder = localStorage.getItem(LS_WIDGET_ORDER);
-      if (savedOrder) {
-        const ids = JSON.parse(savedOrder) as string[];
-        const ordered = ids
-          .map((id) => available.find((w) => w.id === id))
-          .filter(Boolean) as PluginWidget[];
-        const missing = available.filter((w) => !ids.includes(w.id));
-        setAllWidgets([...ordered, ...missing]);
-      } else {
-        setAllWidgets(available);
-      }
-    } catch {
-      setAllWidgets(available);
-    }
+    const applyLayout = (
+      order: string[],
+      state: WidgetStateMap,
+      focus: boolean
+    ) => {
+      const ordered = order
+        .map((id) => available.find((w) => w.id === id))
+        .filter(Boolean) as PluginWidget[];
+      const missing = available.filter((w) => !order.includes(w.id));
+      setAllWidgets([...ordered, ...missing]);
+      setStateMap(state);
+      setFocusMode(focus);
+      localStorage.setItem(LS_WIDGET_ORDER, JSON.stringify([...ordered, ...missing].map((w) => w.id)));
+      saveWidgetState(state);
+      localStorage.setItem(LS_FOCUS_MODE, focus ? "1" : "0");
+    };
 
-    setStateMap(loadWidgetState());
+    void (async () => {
+      const remote = await fetchDashboardLayout();
+      if (remote?.widget_order?.length) {
+        applyLayout(
+          remote.widget_order,
+          (remote.widget_state as WidgetStateMap) ?? {},
+          Boolean(remote.focus_mode)
+        );
+        return;
+      }
+      try {
+        const savedOrder = localStorage.getItem(LS_WIDGET_ORDER);
+        if (savedOrder) {
+          const ids = JSON.parse(savedOrder) as string[];
+          applyLayout(ids, loadWidgetState(), localStorage.getItem(LS_FOCUS_MODE) === "1");
+        } else {
+          setAllWidgets(available);
+          setStateMap(loadWidgetState());
+        }
+      } catch {
+        setAllWidgets(available);
+        setStateMap(loadWidgetState());
+      }
+    })();
   }, [isLoaded]); // eslint-disable-line
+
+  const persistLayout = useCallback(
+    (widgets: PluginWidget[], state: WidgetStateMap, focus: boolean) => {
+      localStorage.setItem(LS_WIDGET_ORDER, JSON.stringify(widgets.map((w) => w.id)));
+      saveWidgetState(state);
+      localStorage.setItem(LS_FOCUS_MODE, focus ? "1" : "0");
+      void saveDashboardLayout({
+        widget_order: widgets.map((w) => w.id),
+        widget_state: state,
+        focus_mode: focus,
+      });
+    },
+    []
+  );
 
   // Dynamic core widget data
   const displayWidgets = allWidgets.map((w) => {
     if (w.id === "study-time") {
-      const d = diagnosticsSummary.duration;
-      return { ...w, content: `${Math.floor(d / 60)}m ${Math.floor(d % 60)}s today` };
-    }
-    if (w.id === "ai-comments") {
-      const perf = diagnosticsSummary.overallPerformance;
-      const msg =
-        perf === "excellent" ? "Looking great — keep the momentum!" :
-        perf === "good" ? "Good progress, stay focused!" :
-        "Take a breath, you've got this.";
+      const mins = insights?.study_minutes ?? Math.floor(diagnosticsSummary.duration / 60);
+      const vocab = insights?.vocab_events ?? 0;
       return {
         ...w,
-        description: `${msg} ${sessionData.interventionCount} AI hints so far.`,
-        content: perf === "excellent" ? "Excellent" : "Keep Going",
+        content: `${mins}m today`,
+        description:
+          vocab > 0
+            ? `${vocab} vocab events logged · ${insights?.productive_minutes ?? 0}m productive`
+            : "Log study time in Life Tracker for live stats",
       };
+    }
+    if (w.id === "ai-comments" && w.component) {
+      return w;
+    }
+    if (w.id === "life-clock") {
+      return { ...w, description: "Track how your day is unfolding" };
     }
     return w;
   });
 
   // Customizer helpers
-  const updateState = useCallback((id: string, patch: Partial<WidgetState>) => {
-    setStateMap((prev) => {
-      const defaults = allWidgets.find((w) => w.id === id);
-      const current = prev[id] ?? {
-        colSpan: defaults?.defaultColSpan ?? 1,
-        rowSpan: defaults?.defaultRowSpan ?? 1,
-        hidden: false,
-      };
-      const next = { ...prev, [id]: { ...current, ...patch } };
-      saveWidgetState(next);
-      return next;
-    });
-  }, [allWidgets]);
+  const updateState = useCallback(
+    (id: string, patch: Partial<WidgetState>) => {
+      setStateMap((prev) => {
+        const defaults = allWidgets.find((w) => w.id === id);
+        const current = prev[id] ?? {
+          colSpan: defaults?.defaultColSpan ?? 1,
+          rowSpan: defaults?.defaultRowSpan ?? 1,
+          hidden: false,
+        };
+        const next = { ...prev, [id]: { ...current, ...patch } };
+        persistLayout(allWidgets, next, focusMode);
+        return next;
+      });
+    },
+    [allWidgets, focusMode, persistLayout]
+  );
 
   const toggleHide = (id: string) => {
     const cur = stateMap[id]?.hidden ?? false;
@@ -301,7 +381,7 @@ export function HomePage() {
   const handleDragEnd = (e: React.DragEvent) => {
     setDraggedIdx(null);
     (e.currentTarget as HTMLElement).style.opacity = "1";
-    localStorage.setItem(LS_WIDGET_ORDER, JSON.stringify(allWidgets.map((w) => w.id)));
+    persistLayout(allWidgets, stateMap, focusMode);
   };
   const handleDragOver = (e: React.DragEvent, idx: number) => {
     e.preventDefault();
@@ -328,21 +408,58 @@ export function HomePage() {
             <Sparkles className="w-4 h-4" />
             <span className="text-xs font-medium uppercase tracking-wider">Dashboard</span>
           </div>
-          <h1 className="text-xl font-bold">Welcome back</h1>
+          <h1 className="text-xl font-bold">
+            {greetingForHour(new Date().getHours())}, {user?.username ?? "Learner"}
+          </h1>
+          <p className="text-sm text-muted-foreground">Your cognitive-aware command center</p>
         </div>
 
-        {/* Customise button — always visible */}
-        <button
-          id="dashboard-customize-btn"
-          onClick={() => setCustomizerOpen(true)}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium
-                     gloss-panel border border-border/50 hover:border-primary/50
-                     hover:text-primary transition-all duration-200"
-        >
-          <LayoutGrid className="w-4 h-4" />
-          Customize
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              setFocusMode((v) => {
+                const next = !v;
+                persistLayout(allWidgets, stateMap, next);
+                return next;
+              });
+            }}
+            className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium border transition-all ${
+              focusMode
+                ? "border-primary bg-primary/10 text-primary"
+                : "gloss-panel border-border/50 hover:border-primary/50"
+            }`}
+            title="Focus mode — life clock and study time only"
+          >
+            {focusMode ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+            Focus
+          </button>
+          <button
+            id="dashboard-customize-btn"
+            onClick={() => setCustomizerOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium
+                       gloss-panel border border-border/50 hover:border-primary/50
+                       hover:text-primary transition-all duration-200"
+          >
+            <LayoutGrid className="w-4 h-4" />
+            Customize
+          </button>
+        </div>
       </div>
+
+      {!user ? (
+        <div className="mx-4 mb-2 px-4 py-3 rounded-xl border border-primary/30 bg-primary/5 text-sm flex flex-wrap items-center justify-between gap-2 shrink-0">
+          <span>
+            Sign in to sync plugins, save your dashboard layout, and unlock AI review + hub export.
+          </span>
+          <Link
+            to="/login"
+            className="font-medium text-primary hover:underline"
+          >
+            Sign in (admin / admin123)
+          </Link>
+        </div>
+      ) : null}
 
       {/* ── Responsive full-bleed grid ───────────── */}
       <div
@@ -350,14 +467,9 @@ export function HomePage() {
         style={{ minHeight: 0 }}
       >
         <div
-          className="dashboard-grid"
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 320px), 1fr))",
-            gridAutoRows: "minmax(180px, auto)",
-            gap: "1rem",
-            alignContent: "start",
-          }}
+          className={`dashboard-grid--hub max-w-[1200px] mx-auto w-full ${
+            focusMode ? "dashboard-grid--focus" : ""
+          }`}
         >
           {visibleWidgets.map((widget, idx) => {
             const st = stateMap[widget.id] ?? {
@@ -437,7 +549,8 @@ export function HomePage() {
             return (
               <div
                 key={id}
-                draggable
+                data-widget-id={id}
+                draggable={!focusMode}
                 onDragStart={(e) => handleDragStart(e, idx)}
                 onDragEnd={handleDragEnd}
                 onDragOver={(e) => handleDragOver(e, idx)}
@@ -448,7 +561,7 @@ export function HomePage() {
                 }}
                 className="transition-all duration-300 cursor-grab active:cursor-grabbing"
               >
-                {to ? (
+                {to && id !== "community" ? (
                   <Link to={to} className="block h-full">
                     {cardBody}
                   </Link>

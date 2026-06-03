@@ -10,8 +10,10 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
+from backend.account.router import router as account_router
 from backend.behavior.router import router as behavior_router
 from backend.config import get_settings
+from backend.core.errors import register_exception_handlers
 from backend.core.auth import ensure_default_admin
 from backend.db.base import SessionLocal, engine
 from backend.db.migrate import ensure_at_head
@@ -23,6 +25,7 @@ from backend.math.router import router as math_router
 from backend.life.router import router as life_router
 from backend.models import User
 from backend.models.math import MathQuestionTemplate
+from backend.vocab.repository import seed_words_from_json_if_empty
 from backend.vocab.router import router as vocab_router
 
 settings = get_settings()
@@ -84,6 +87,8 @@ async def lifespan(app: FastAPI):
         demo = db.query(User).filter_by(username="demo").first()
         if demo:
             seed_user_plugins(db, demo.id)
+        if settings.seed_words_on_startup:
+            seed_words_from_json_if_empty(db)
     yield
 
 
@@ -92,6 +97,8 @@ app = FastAPI(
     version="2.0.0",
     lifespan=lifespan,
 )
+
+register_exception_handlers(app)
 
 origins = ["*"] if settings.cors_origins == "*" else settings.cors_origins.split(",")
 app.add_middleware(
@@ -108,11 +115,22 @@ app.include_router(hub_router)
 app.include_router(life_router)
 app.include_router(insights_router)
 app.include_router(behavior_router)
+app.include_router(account_router)
 
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "database": str(engine.url)}
+    from backend.db.migrate import get_revision_state
+
+    current, head = get_revision_state()
+    return {
+        "status": "ok",
+        "database": str(engine.url),
+        "schema_revision": current,
+        "schema_head": head,
+        "schema_ok": current == head,
+        "app_env": settings.app_env,
+    }
 
 
 try:

@@ -10,6 +10,7 @@
 | `0002_hub` | Hub, life log, quiz sessions |
 | `0003_math_bank` | `math_questions`; extends `math_attempts` (idempotent checks) |
 | `0004_reconcile` | **Idempotent repair** — missing tables/columns, `password_plain`, partial upgrades |
+| `0005_words_hub` | `words` table; `hub_session_id` on `quiz_sessions` and `math_attempts` |
 
 ## Everyday commands
 

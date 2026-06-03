@@ -80,6 +80,34 @@ Auth: Bearer JWT or demo user when no token.
 | WS | `/ws/behavior` |
 | GET | `/api/behavior/stats` |
 
+## Account (`/api/account`)
+
+| Method | Path | Notes |
+|--------|------|-------|
+| GET | `/export` | GDPR-style JSON (`?format=csv` for flat CSV) |
+
+## Behavior stats
+
+`GET /api/behavior/stats?day=today` — primary source: hub `browser_event` readings in DB; falls back to today's CSV if DB empty.
+
+WebSocket `WS /ws/behavior?token=<JWT>` — optional Bearer token; defaults to demo user.
+
 ## Errors
 
-HTTP 4xx/5xx with `{"detail": "..."}` (FastAPI default). Validate reading slugs against `reading_definitions`.
+Unified envelope:
+
+```json
+{
+  "error": {
+    "code": "validation_error",
+    "message": "Request validation failed",
+    "details": []
+  }
+}
+```
+
+Legacy FastAPI `{"detail": "..."}` is normalized for `HTTPException`. Validate reading slugs against `reading_definitions`.
+
+## Production
+
+Set `EXPOSE_PASSWORD_PLAIN=false`, `DEV_MODE=false`, strong `JWT_SECRET`. See `.env.example` and `docker-compose.yml`.

@@ -13,9 +13,13 @@ class Settings(BaseSettings):
     jwt_algo: str = "HS256"
     jwt_expire_minutes: int = 60 * 24 * 7
     dev_mode: bool = True
+    app_env: str = "development"
+    expose_password_plain: bool = True
     cors_origins: str = "*"
     group_size: int = 30
     mastery_mastered: int = 6
+    words_source: str = "auto"
+    seed_words_on_startup: bool = True
 
 
 @lru_cache

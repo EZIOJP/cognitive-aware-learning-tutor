@@ -20,6 +20,13 @@ All project docs live here. Use with the file kernel at repo root.
 | [TASKS.md](TASKS.md) | Kanban-style tasks |
 | [CURRENT_ARCHITECTURE.md](CURRENT_ARCHITECTURE.md) | System design |
 | [SETUP_AND_COMMANDS.md](SETUP_AND_COMMANDS.md) | Install and batch files |
+| [DATABASE.md](DATABASE.md) | Schema and env vars |
+| [MIGRATIONS.md](MIGRATIONS.md) | Alembic revisions |
+| [API_CONTRACT.md](API_CONTRACT.md) | HTTP API reference |
+| [DOCKER.md](DOCKER.md) | Container deployment |
+| [CENTRAL_HUB.md](CENTRAL_HUB.md) | Hub metrics and ingest |
+| [STITCH_DESIGN_SPEC.md](STITCH_DESIGN_SPEC.md) — UI tokens, components, screens for Stitch/v0 |
+| [STITCH_PROMPT.txt](STITCH_PROMPT.txt) — short paste prompt for Stitch | Install and batch files |
 | [VOCAB_EXECUTION_PLAN.md](VOCAB_EXECUTION_PLAN.md) | Vocab MVP steps |
 | [FUTURE_VISION.md](FUTURE_VISION.md) | Long-term vision |
 

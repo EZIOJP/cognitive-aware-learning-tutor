@@ -4,8 +4,8 @@ Last updated: 2026-06-02
 
 ## Current Focus
 
-Finalize the GRE Vocabulary MVP before expanding the biometric Smart Pomodoro
-system.
+**Backend complete** (hub, life, vocab DB, math bank, migrations, Docker, GDPR export).
+**Frontend deferred** — finalize UI from `docs/STITCH_DESIGN_SPEC.md` in Stitch first.
 
 ## Current Product Shape
 
@@ -49,13 +49,18 @@ Remove the plain-password field before any real deployment.
 - Session checklist: `docs/SESSION_LOG.md`
 - Doc index: `docs/README.md`
 
-## Next Engineering Target
+## Backend (done)
 
-Make vocab feel complete end to end:
+- Alembic through `0005_words_hub` (words table, session linkage)
+- Unified API error envelope; production password masking
+- Behavior stats from hub DB (+ CSV fallback)
+- Hub sessions linked to vocab quiz and math practice
+- `GET /api/account/export` (GDPR-style)
+- `docker-compose.yml` + `Dockerfile.backend`
 
-1. Validate Read Mode
-2. Validate Cycle Mode
-3. Validate quiz/report/low-mastery loop
-4. Validate backend auth and progress sync
-5. Clean UI states and empty states
+## Next Engineering Target (frontend, after Stitch)
+
+1. Implement screens from Stitch mocks
+2. Wire OpenAPI client (remove JSON-only vocab paths where possible)
+3. Validate Read / Cycle / quiz flows against live API
 

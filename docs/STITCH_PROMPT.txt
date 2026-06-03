@@ -1,0 +1,31 @@
+Design system + screens for "Study Hub" — Cognitive-Aware Learning Tutor
+
+STYLE
+- Premium calm study app, desktop-first 1440px
+- Glossy glass surfaces: frosted blur, soft border rgba(0,0,0,0.06), light shadow
+- Font: Inter body 16px, JetBrains Mono for clocks
+- Light: bg #FAFBFC, cards #FFFFFF, primary #1A1A2E, text #0A0A0B, muted #5C5F6B
+- Dark: bg #050505, cards #0C0C0C, primary #F5F5F7, muted #A1A1AA
+- Radius 10px default; accent presets emerald #10B981, violet #8B5CF6, rose #F43F5E, amber #F59E0B
+- Life clock ring segments: sleep #6366F1, study #3B82F6, math #10B981, break #8B5CF6
+- shadcn/ui components: Button, Card, Input, Badge, Switch, Slider, Tabs, Sheet, Dropdown
+
+SHELL
+- Left sidebar 224px (icons+labels): Home, Math Tutor, GRE Vocab, Life Tracker, Settings, Admin
+- Top bar: page title, connection dot, Pomodoro/Brain/Load chips, theme toggle, user menu
+- Main scroll area, widget grid 16px gap
+
+SCREENS (design all in light + dark)
+1) HOME "Study Hub" — headline "Good afternoon, Learner", subtitle "Your cognitive-aware command center", 4-col widget grid: (A) 2x2 life clock 24h ring with center HH:MM, stats Productive/Sleep, day progress bar (B) Study Time card "0m today" (C) AI Review "Excellent Retention" (D) Community placeholder. Customize layout button.
+
+2) LIFE TRACKER — full life clock, big "72/100 Life Score", form sections Health/Productivity/Digital/Mental with sliders and number inputs (Sleep hours, Study minutes, Mood 1-5, etc.), four small score rings, Save today button.
+
+3) GRE VOCAB hub — title, buttons Start study cycle / Browse & read / Add words, stats row Studied/Mastered/Due/Accuracy, grid of Group 1-30 cards with progress bars.
+
+4) GRE QUIZ — Question 3 of 10, word "gregarious", four stacked answer buttons, feedback state Correct green / Incorrect red.
+
+5) MATH PRACTICE — split: left timer, progress, prompt "Solve: 2x+5=13", answer input, Check answer; right whiteboard canvas with toolbar.
+
+6) THEME SETTINGS — light/dark toggle, accent swatches, radius sm/md/lg, intensity slider, preview card.
+
+Copy must match exactly. No new features. Deliver component states + 6 screens hi-fi.

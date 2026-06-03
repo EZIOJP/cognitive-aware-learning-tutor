@@ -27,6 +27,9 @@ from backend.core.auth import (
     token_for,
     verify_password,
 )
+from backend.core.serializers import user_admin_payload
+from backend.config import get_settings
+from backend.hub.services.sessions import get_or_open_activity_session, start_activity_session
 from backend.db.session import get_db
 from backend.math.services.randomizer import pick_practice_problem
 from backend.models import MathAttempt, MathQuestion, MathQuestionTemplate, User, WordProgress
@@ -43,12 +46,12 @@ MASTERY_MASTERED = 6
 GROUP_SIZE = 30
 
 
-def _load_words() -> list[dict[str, Any]]:
-    return load_words()
+def _load_words(db: Session) -> list[dict[str, Any]]:
+    return load_words(db)
 
 
-def _save_words(words: list[dict[str, Any]]) -> None:
-    save_words(words)
+def _save_words(db: Session, words: list[dict[str, Any]]) -> None:
+    save_words(words, db)
 
 
 def _to_iso_or_none(dt: datetime | None) -> str | None:
@@ -305,10 +308,11 @@ def register(body: RegisterBody, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="Username/password too short")
     if db.query(User).filter(User.username == username).first():
         raise HTTPException(status_code=409, detail="Username already exists")
+    settings = get_settings()
     user = User(
         username=username,
         password_hash=hash_password(body.password),
-        password_plain=body.password,
+        password_plain=body.password if settings.expose_password_plain else None,
     )
     db.add(user)
     db.commit()
@@ -337,7 +341,7 @@ def _progress_map_for_user(db: Session, user_id: int) -> dict[int, WordProgress]
 
 @router.get("/groups/detailed/")
 def groups_detailed(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    words = _load_words()
+    words = _load_words(db)
     pmap = _progress_map_for_user(db, user.id)
     merged = [_merge_word(w, pmap.get(int(w["id"]))) for w in words]
     grouped: dict[int, list[dict[str, Any]]] = {}
@@ -370,7 +374,7 @@ def groups_detailed(db: Session = Depends(get_db), user: User = Depends(get_curr
 
 @router.get("/quiz/dashboard/")
 def quiz_dashboard(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    words = _load_words()
+    words = _load_words(db)
     pmap = _progress_map_for_user(db, user.id)
     merged = [_merge_word(w, pmap.get(int(w["id"]))) for w in words]
     studied = [w for w in merged if int(w["times_asked"]) > 0]
@@ -397,17 +401,31 @@ def quiz_start(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    words = _load_words()
+    words = _load_words(db)
     if body.word_ids:
         pool = [w for w in words if int(w["id"]) in body.word_ids]
     elif body.group_number:
         pool = [w for w in words if int(w.get("group_number", 1)) == body.group_number]
     else:
         pool = words
-    session_id = create_quiz_session(
-        db, user_id=user.id, quiz_type=body.quiz_type, words=pool
+    hub_sess = start_activity_session(
+        db,
+        user_id=user.id,
+        session_type="vocab_quiz",
+        metadata={"quiz_type": body.quiz_type, "group_number": body.group_number},
     )
-    return {"session_id": session_id, "total_questions": len(pool)}
+    session_id = create_quiz_session(
+        db,
+        user_id=user.id,
+        quiz_type=body.quiz_type,
+        words=pool,
+        hub_session_id=hub_sess.id,
+    )
+    return {
+        "session_id": session_id,
+        "hub_session_id": hub_sess.id,
+        "total_questions": len(pool),
+    }
 
 
 @router.get("/quiz/adaptive/{session_id}/question/")
@@ -518,8 +536,10 @@ def quiz_complete(
     attempts = sess.get("attempts", [])
     correct = sum(1 for a in attempts if a["is_correct"])
     total = len(attempts)
-    complete_quiz_session(db, session_id, user.id)
-    on_vocab_quiz_complete(db, user.id, correct, total)
+    hub_session_id = complete_quiz_session(db, session_id, user.id)
+    on_vocab_quiz_complete(
+        db, user.id, correct, total, hub_session_id=hub_session_id
+    )
     return {
         "performance": {
             "total_questions": total,
@@ -543,7 +563,7 @@ def words_by_criteria(
     user: User = Depends(get_current_user),
 ):
     pmap = _progress_map_for_user(db, user.id)
-    merged = [_merge_word(w, pmap.get(int(w["id"]))) for w in _load_words()]
+    merged = [_merge_word(w, pmap.get(int(w["id"]))) for w in _load_words(db)]
     if group is not None:
         merged = [w for w in merged if int(w.get("group_number", 1)) == group]
     if mastery_min is not None:
@@ -566,20 +586,29 @@ def words_by_criteria(
 
 
 @router.put("/words/{word_id}")
-def update_word(word_id: int, body: WordUpdateBody, _admin: User = Depends(require_admin)):
-    words = _load_words()
+def update_word(
+    word_id: int,
+    body: WordUpdateBody,
+    db: Session = Depends(get_db),
+    _admin: User = Depends(require_admin),
+):
+    words = _load_words(db)
     idx = next((i for i, w in enumerate(words) if int(w["id"]) == word_id), -1)
     if idx < 0:
         raise HTTPException(status_code=404, detail="Word not found")
     patch = body.model_dump(exclude_none=True)
     words[idx] = {**words[idx], **patch}
-    _save_words(words)
+    _save_words(db, words)
     return words[idx]
 
 
 @router.post("/words")
-def create_word(body: WordCreateBody, _admin: User = Depends(require_admin)):
-    words = _load_words()
+def create_word(
+    body: WordCreateBody,
+    db: Session = Depends(get_db),
+    _admin: User = Depends(require_admin),
+):
+    words = _load_words(db)
     next_id = max((int(w["id"]) for w in words), default=0) + 1
     new_word = {
         "id": next_id,
@@ -597,31 +626,39 @@ def create_word(body: WordCreateBody, _admin: User = Depends(require_admin)):
     words.append(new_word)
     for i, w in enumerate(words):
         w["group_number"] = (i // GROUP_SIZE) + 1
-    _save_words(words)
+    _save_words(db, words)
     return new_word
 
 
 @router.delete("/words/{word_id}")
-def delete_word(word_id: int, _admin: User = Depends(require_admin)):
-    words = _load_words()
+def delete_word(
+    word_id: int,
+    db: Session = Depends(get_db),
+    _admin: User = Depends(require_admin),
+):
+    words = _load_words(db)
     filtered = [w for w in words if int(w["id"]) != word_id]
     if len(filtered) == len(words):
         raise HTTPException(status_code=404, detail="Word not found")
     for i, w in enumerate(filtered):
         w["group_number"] = (i // GROUP_SIZE) + 1
-    _save_words(filtered)
+    _save_words(db, filtered)
     return {"deleted": word_id}
 
 
 @router.post("/words/import/csv")
-async def import_words_csv(file: UploadFile = File(...), _admin: User = Depends(require_admin)):
+async def import_words_csv(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    _admin: User = Depends(require_admin),
+):
     content = await file.read()
     try:
         text = content.decode("utf-8")
     except UnicodeDecodeError as exc:
         raise HTTPException(status_code=400, detail="CSV must be utf-8") from exc
     reader = csv.DictReader(io.StringIO(text))
-    words = _load_words()
+    words = _load_words(db)
     by_word = {str(w["word"]).strip().lower(): w for w in words}
     next_id = max((int(w["id"]) for w in words), default=0) + 1
     added = 0
@@ -649,13 +686,13 @@ async def import_words_csv(file: UploadFile = File(...), _admin: User = Depends(
         added += 1
     for i, w in enumerate(words):
         w["group_number"] = (i // GROUP_SIZE) + 1
-    _save_words(words)
+    _save_words(db, words)
     return {"added": added, "skipped": skipped, "total_words": len(words)}
 
 
 @router.post("/words/import/json")
 def import_words_json(body: JsonImportBody, _admin: User = Depends(require_admin)):
-    words = _load_words()
+    words = _load_words(db)
     by_word = {str(w["word"]).strip().lower(): w for w in words}
     next_id = max((int(w["id"]) for w in words), default=0) + 1
     added = 0
@@ -690,13 +727,13 @@ def import_words_json(body: JsonImportBody, _admin: User = Depends(require_admin
 
     for i, w in enumerate(words):
         w["group_number"] = (i // GROUP_SIZE) + 1
-    _save_words(words)
+    _save_words(db, words)
     return {"added": added, "skipped": skipped, "total_words": len(words)}
 
 
 @router.get("/words/export/csv")
 def export_words_csv(_admin: User = Depends(require_admin)):
-    words = _load_words()
+    words = _load_words(db)
     output = io.StringIO()
     writer = csv.writer(output)
     writer.writerow(["id", "word", "meaning", "pronunciation", "group_number"])
@@ -718,7 +755,7 @@ def export_words_group_json(
     user: User = Depends(get_current_user),
 ):
     """Export one vocab group (full word objects) for backup, sharing, or external tools."""
-    words = [w for w in _load_words() if int(w.get("group_number", 1)) == group_number]
+    words = [w for w in _load_words(db) if int(w.get("group_number", 1)) == group_number]
     if not words:
         raise HTTPException(status_code=404, detail=f"Group {group_number} not found or empty")
     payload: dict[str, Any] = {
@@ -744,7 +781,7 @@ def export_words_group_csv(
     group_number: int,
     _admin: User = Depends(require_admin),
 ):
-    words = [w for w in _load_words() if int(w.get("group_number", 1)) == group_number]
+    words = [w for w in _load_words(db) if int(w.get("group_number", 1)) == group_number]
     if not words:
         raise HTTPException(status_code=404, detail=f"Group {group_number} not found or empty")
     output = io.StringIO()
@@ -868,8 +905,11 @@ def next_math_problem(
         pool = [t for t in templates if t.id not in recent_ids] or templates
         return _generate_math_problem(random.choice(pool))
 
+    hub_sess = get_or_open_activity_session(
+        db, user_id=user.id, session_type="math_practice", metadata={"topic": topic}
+    )
     problem = pick_practice_problem(db, topic, _from_template)
-    return {"problem": problem}
+    return {"problem": problem, "hub_session_id": hub_sess.id}
 
 
 def _normalize_math_answer(v: str) -> str:
@@ -891,6 +931,9 @@ def submit_math_attempt(body: MathAttemptBody, db: Session = Depends(get_db), us
     tpl = db.get(MathQuestionTemplate, body.template_id) if body.template_id else None
     base_points = tpl.points if tpl else 10
     mastery_delta = base_points if is_correct else -max(3, base_points // 2)
+    hub_sess = get_or_open_activity_session(
+        db, user_id=user.id, session_type="math_practice", metadata={"topic": body.topic}
+    )
     attempt = MathAttempt(
         user_id=user.id,
         template_id=body.template_id,
@@ -902,11 +945,12 @@ def submit_math_attempt(body: MathAttemptBody, db: Session = Depends(get_db), us
         user_answer=body.user_answer,
         is_correct=is_correct,
         mastery_delta=mastery_delta,
+        hub_session_id=hub_sess.id,
     )
     db.add(attempt)
     db.commit()
     db.refresh(attempt)
-    on_math_attempt(db, user.id, is_correct, body.topic)
+    on_math_attempt(db, user.id, is_correct, body.topic, hub_session_id=hub_sess.id)
     return {
         "is_correct": is_correct,
         "expected_answer": body.expected_answer,
@@ -991,15 +1035,11 @@ def admin_users(db: Session = Depends(get_db), _admin: User = Depends(require_ad
             WordProgress.user_id == u.id,
             WordProgress.mastery >= MASTERY_MASTERED,
         ).count()
-        out.append({
-            "id": u.id,
-            "username": u.username,
-            "password": u.password_plain or "(not stored - reset it)",
-            "created_at": _to_iso_or_none(u.created_at),
-            "is_admin": bool(u.is_admin),
-            "progress_rows": progress_count,
-            "mastered_rows": mastered_count,
-        })
+        out.append(
+            user_admin_payload(
+                u, progress_rows=progress_count, mastered_rows=mastered_count
+            )
+        )
     return {"users": out}
 
 
@@ -1029,17 +1069,21 @@ def admin_reset_user_password(
     user = db.get(User, user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+    settings = get_settings()
     user.password_hash = hash_password(body.password)
-    user.password_plain = body.password
+    if settings.expose_password_plain:
+        user.password_plain = body.password
     db.add(user)
     db.commit()
-    return {
+    out = {
         "status": "ok",
         "user_id": user_id,
         "username": user.username,
-        "password": body.password,
         "message": "Password reset",
     }
+    if settings.expose_password_plain:
+        out["password"] = body.password
+    return out
 
 
 @router.post("/admin/users/reset-all-progress")

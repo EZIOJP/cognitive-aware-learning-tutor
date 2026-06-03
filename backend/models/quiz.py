@@ -20,3 +20,6 @@ class QuizSession(Base):
     attempts_json: Mapped[str] = mapped_column(Text, default="[]")
     started_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC))
     completed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    hub_session_id: Mapped[int | None] = mapped_column(
+        ForeignKey("sessions.id", ondelete="SET NULL"), nullable=True, index=True
+    )

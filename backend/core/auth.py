@@ -36,11 +36,15 @@ def decode_user(token: str, db: Session) -> User | None:
 def ensure_demo_user(db: Session) -> User:
     demo = db.query(User).filter(User.username == "demo").first()
     if demo:
-        if not demo.password_plain:
+        if settings.expose_password_plain and not demo.password_plain:
             demo.password_plain = "demo"
             db.commit()
         return demo
-    demo = User(username="demo", password_hash=pwd_context.hash("demo"), password_plain="demo")
+    demo = User(
+        username="demo",
+        password_hash=pwd_context.hash("demo"),
+        password_plain="demo" if settings.expose_password_plain else None,
+    )
     db.add(demo)
     db.commit()
     db.refresh(demo)
@@ -54,7 +58,7 @@ def ensure_default_admin(db: Session) -> None:
         if not admin.is_admin:
             admin.is_admin = True
             changed = True
-        if not admin.password_plain:
+        if settings.expose_password_plain and not admin.password_plain:
             admin.password_plain = "admin123"
             changed = True
         if changed:
@@ -63,7 +67,7 @@ def ensure_default_admin(db: Session) -> None:
     admin = User(
         username="admin",
         password_hash=pwd_context.hash("admin123"),
-        password_plain="admin123",
+        password_plain="admin123" if settings.expose_password_plain else None,
         is_admin=True,
     )
     db.add(admin)

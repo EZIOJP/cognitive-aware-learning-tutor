@@ -1,32 +1,31 @@
-import json
-from pathlib import Path
+"""Word list helpers — delegates to repository (DB + JSON mirror)."""
+
+from __future__ import annotations
+
 from typing import Any
 
-from backend.paths import WORDS_PATH
+from sqlalchemy.orm import Session
 
-GROUP_SIZE = 30
+from backend.vocab.normalize import GROUP_SIZE, normalize_words
+from backend.vocab.repository import load_words as repo_load_words, replace_all_words
 
-
-def normalize_words(words: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    ordered = sorted(words, key=lambda w: int(w.get("id", 0)))
-    normalized: list[dict[str, Any]] = []
-    for i, w in enumerate(ordered):
-        nw = dict(w)
-        nw["group_number"] = (i // GROUP_SIZE) + 1
-        normalized.append(nw)
-    return normalized
+__all__ = [
+    "GROUP_SIZE",
+    "load_words",
+    "save_words",
+    "normalize_words",
+]
 
 
-def load_words() -> list[dict[str, Any]]:
-    if not WORDS_PATH.exists():
-        return []
-    with open(WORDS_PATH, encoding="utf-8") as f:
-        data = json.load(f)
-    words = data if isinstance(data, list) else data.get("words", [])
-    return normalize_words(words)
+def load_words(db: Session | None = None) -> list[dict[str, Any]]:
+    return repo_load_words(db)
 
 
-def save_words(words: list[dict[str, Any]]) -> None:
-    normalized = normalize_words(words)
-    with open(WORDS_PATH, "w", encoding="utf-8") as f:
-        json.dump(normalized, f, ensure_ascii=False, indent=2)
+def save_words(words: list[dict[str, Any]], db: Session | None = None) -> None:
+    if db is None:
+        from backend.db.base import SessionLocal
+
+        with SessionLocal() as session:
+            replace_all_words(session, words)
+        return
+    replace_all_words(db, words)

@@ -160,6 +160,7 @@ def export_hub_data(
 
     payload = {
         "user_id": user.id,
+        "full_export_path": "/api/account/export",
         "life_logs": [
             {"date": str(l.date), "life_score": l.life_score, "study_minutes": l.study_minutes}
             for l in logs

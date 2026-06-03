@@ -10,6 +10,7 @@ from backend.models.hub import (
     UserPlugin,
 )
 from backend.models.life import LifeDailyLog
+from backend.models.word import Word
 
 __all__ = [
     "User",
@@ -24,4 +25,5 @@ __all__ = [
     "DailyRollup",
     "UserPlugin",
     "LifeDailyLog",
+    "Word",
 ]

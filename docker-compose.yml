@@ -1,0 +1,21 @@
+# Local / staging stack — API only (frontend built separately or served by Vite).
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: sqlite:////app/data/vocab_app.db
+      JWT_SECRET: ${JWT_SECRET:-change-this-in-production}
+      DEV_MODE: "false"
+      APP_ENV: production
+      EXPOSE_PASSWORD_PLAIN: "false"
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173}
+    volumes:
+      - ./data:/app/data
+      - ./public/data:/app/public/data
+    command: >
+      sh -c "python -m alembic upgrade head &&
+             python -m uvicorn backend.main:app --host 0.0.0.0 --port 8000"

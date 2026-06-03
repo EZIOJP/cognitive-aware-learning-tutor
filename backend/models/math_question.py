@@ -48,4 +48,7 @@ class MathAttempt(Base):
     user_answer: Mapped[str] = mapped_column(String(500))
     is_correct: Mapped[bool] = mapped_column(Boolean, default=False)
     mastery_delta: Mapped[int] = mapped_column(Integer, default=0)
+    hub_session_id: Mapped[int | None] = mapped_column(
+        ForeignKey("sessions.id", ondelete="SET NULL"), nullable=True, index=True
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC))

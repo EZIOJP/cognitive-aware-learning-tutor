@@ -13,6 +13,7 @@ def create_quiz_session(
     user_id: int,
     quiz_type: str,
     words: list[dict[str, Any]],
+    hub_session_id: int | None = None,
 ) -> str:
     external_id = str(uuid.uuid4())
     row = QuizSession(
@@ -22,6 +23,7 @@ def create_quiz_session(
         word_ids_json=json.dumps([int(w["id"]) for w in words]),
         current_index=0,
         attempts_json="[]",
+        hub_session_id=hub_session_id,
     )
     db.add(row)
     db.commit()
@@ -40,9 +42,9 @@ def get_quiz_session(db: Session, external_id: str, user_id: int) -> dict[str, A
         return None
     words_cache = getattr(row, "_words_cache", None)
     if words_cache is None:
-        from backend.vocab.words import load_words
+        from backend.vocab.repository import load_words
 
-        all_words = load_words()
+        all_words = load_words(db)
         ids = set(json.loads(row.word_ids_json or "[]"))
         words_cache = [w for w in all_words if int(w["id"]) in ids] if ids else all_words
     return {
@@ -51,6 +53,7 @@ def get_quiz_session(db: Session, external_id: str, user_id: int) -> dict[str, A
         "index": row.current_index,
         "attempts": json.loads(row.attempts_json or "[]"),
         "quiz_type": row.quiz_type,
+        "hub_session_id": row.hub_session_id,
         "row": row,
     }
 
@@ -63,7 +66,7 @@ def save_quiz_session(db: Session, sess: dict[str, Any]) -> None:
     db.commit()
 
 
-def complete_quiz_session(db: Session, external_id: str, user_id: int) -> None:
+def complete_quiz_session(db: Session, external_id: str, user_id: int) -> int | None:
     row = (
         db.query(QuizSession)
         .filter(QuizSession.external_id == external_id, QuizSession.user_id == user_id)
@@ -74,3 +77,5 @@ def complete_quiz_session(db: Session, external_id: str, user_id: int) -> None:
 
         row.completed_at = datetime.now(UTC)
         db.commit()
+        return row.hub_session_id
+    return None

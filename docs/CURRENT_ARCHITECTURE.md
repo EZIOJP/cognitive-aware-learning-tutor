@@ -1,203 +1,146 @@
 # Current Architecture
 
-This document describes what exists in the project today.
+What exists in the project **today** (2026-06). For the target math vision pipeline, see [MATH_TUTOR_VISION_PIPELINE.md](./MATH_TUTOR_VISION_PIPELINE.md).
 
-## App Summary
+## App summary
 
-The app is a local React study dashboard with two major study areas:
-
-- GRE Vocabulary
-- Math Tutor / Smart Pomodoro prototype
-
-The application is currently frontend-first. Most GRE vocabulary progress is kept
-in browser `localStorage`. EEG/cognitive-load data is simulated in the frontend by
-default.
-
-## Frontend Stack
-
-- Vite 6
-- React 18
-- TypeScript-flavored TSX
-- React Router
-- Tailwind CSS 4
-- Radix UI primitives
-- shadcn-style local UI components
-- lucide-react icons
-- Recharts for charts
-- react-sketch-canvas for the math whiteboard
-- motion for animation
-
-## Frontend Entry Points
+Local-first study platform: **hub + plugins**, GRE vocab, math tutor, life tracker, optional EEG/NutriNode/focus mirror.
 
 ```text
-src/main.tsx
-src/app/App.tsx
-src/layout/AppShell.tsx
+React (Vite)  →  FastAPI backend/main.py  →  SQLite (vocab_app.db)
+                     ↳ hub, vocab, math, behavior, insights, EEG WS, plugins
 ```
 
-`src/app/App.tsx` defines the app routes:
+Daily checklist: [WORKING_PRODUCT.md](./WORKING_PRODUCT.md).
+
+## Frontend stack
+
+- Vite 6, React 18, TypeScript, React Router
+- Tailwind 4, Radix/shadcn-style UI, Recharts
+- **Math whiteboard:** `react-sketch-canvas` (`MathSplitWhiteboard.tsx`)
+- Plugins: `src/plugins/*` + `PluginRegistryProvider` (server sync)
+
+## Entry points
 
 ```text
-/                       Study Hub
-/math-tutor             Math Tutor prototype
-/gre-vocab              GRE Vocabulary hub
-/gre-vocab/read         Vocab read mode
-/gre-vocab/read/:mode   Filtered read modes
-/gre-vocab/cycle        Vocab cycle manager
-/settings/theme         Theme settings
+src/main.tsx → src/app/App.tsx → AppShell
 ```
 
-## Global Providers
+Key routes:
 
 ```text
-src/context/ThemeContext.tsx
-src/context/StudySessionContext.tsx
+/                         Hub dashboard (widgets, life clock, AI review)
+/math-tutor               Math hub
+/math-tutor/practice/:id  Practice + whiteboard + Ask tutor
+/gre-vocab                GRE hub (Phase 1 complete)
+/gre-vocab/read/:mode     Read modes (API when signed in)
+/gre-vocab/cycle          Read → quiz → report
+/settings/plugins         Plugin manager
+/settings/features        Feature Studio
+/focus/calibrate          Face calibration UI
+/admin                    Admin (words, users, export)
+/login
 ```
 
-`StudySessionContext` owns:
-
-- simulated biometric data
-- cognitive load state
-- connection state
-- canvas image state
-- intervention visibility state
-- session diagnostics summary
-
-Important config:
+## Global providers
 
 ```text
-src/config.ts
+AuthProvider → PluginRegistryProvider → StudySessionProvider → …
+ThemeContext, GoalTrackerContext, NutritionProvider (NutriNode)
 ```
 
-Current default:
+`StudySessionContext`:
 
-```ts
-config.dev.useSimulatedData = true
-config.intervention.enabled = false
-config.intervention.autoTrigger = false
-```
+- EEG stream when **eeg** plugin enabled (`useSimulatedData` default true)
+- Cognitive load from gamma thresholds
+- Canvas image state for math
+- Intervention flags (auto off: `config.intervention.enabled = false`)
+- Posts `eeg_attention` to hub every 30s when authenticated
 
-## GRE Vocabulary Architecture
+## Hub and plugins
 
-Main pages:
+Backend:
 
 ```text
-src/pages/GreVocabPage.tsx
-src/pages/vocab/VocabReadPage.tsx
-src/pages/vocab/VocabCyclePage.tsx
+backend/hub/router.py          readings, rollups, plugins, custom features, layout, export
+backend/hub/services/catalog.py
+backend/hub/services/features.py
+alembic/0006_user_features.py
 ```
 
-Core vocab logic:
+Frontend:
 
 ```text
-src/features/vocab/store/vocabStore.ts
-src/features/vocab/cycle/cycleService.ts
-src/features/vocab/components/read/ReadMode.tsx
-src/features/vocab/cycle/components/CycleManager.tsx
+src/api/hubClient.ts
+src/pages/settings/FeatureStudioPage.tsx
+src/plugins/PluginRegistryProvider.tsx
 ```
 
-Data source:
+Plugins: core hub, math-tutor, gre-vocab, life-tracker, eeg, focus-mirror, nutrinode.
+
+## GRE vocabulary
+
+- **Signed in:** `/api/vocab` — groups, adaptive quiz, `POST /progress/{id}/read`, by-criteria lists
+- **Guest:** `public/data/words.json` + `localStorage` fallback
+- Docs: [GRE_VOCAB_PHASE1.md](./GRE_VOCAB_PHASE1.md)
+
+## Math tutor
 
 ```text
-public/data/words.json
+src/pages/math/MathPracticePage.tsx
+src/app/components/MathSplitWhiteboard.tsx   exportPng → tutor hint
+backend/math/router.py                       POST /api/math/tutor/hint
+backend/math/rule_tutor.py                   default (no GPU)
+backend/math/ollama_tutor.py                 OLLAMA_ENABLED=1 only
 ```
 
-Progress storage:
+Not yet: auto stuckness, `/api/math/intervention`, OpenCV/OCR pipeline, structured Socratic JSON.
+
+## Focus mirror (Python, not browser)
 
 ```text
-localStorage key: vocab:user-progress
-localStorage key: vocab:group-progress
+backend/face_tracker.py          OpenCV + MediaPipe, mirrored video, readable HUD text
+scripts/run_face_tracker.bat
+POST /api/vocab/face/status      → hub face_attention (JWT or dev_mode)
 ```
 
-The vocab module dynamically assigns `group_number` values at 30 words per group.
+Browser `FaceMirror` / MediaPipe frontend was **removed**; use Python window only.
 
-## Math Tutor Architecture
-
-Main page:
+## EEG
 
 ```text
-src/pages/MathTutorPage.tsx
+backend/eeg/service.py           UDP :5005 when EEG_ENABLED=1
+backend/eeg/router.py            WebSocket /ws/eeg
+Frontend                         simulation default; WS when useSimulatedData false
 ```
 
-Components:
+## Behavior / life / NutriNode
+
+- Chrome extension → behavior WebSocket → hub
+- Life tracker daily log → hub rollups → Life Clock widget
+- NutriNode: manual meals + optional live WS (off by default)
+
+## Data storage
+
+| Data | Where |
+|------|--------|
+| Users, progress, hub | SQLite via SQLAlchemy |
+| Browser extension logs | `data_logs/DSC_browser_behavior_*.csv` |
+| Local DB file | `vocab_app.db` (gitignored in practice) |
+| Intervention flywheel (target) | `DSC_*.csv` + `data_logs/interventions/` — partial / example only |
+
+## Legacy reference files (do not treat as production entry)
 
 ```text
-src/app/components/MathWhiteboard.tsx
-src/app/components/PomodoroTimer.tsx
-src/app/components/BiometricMonitor.tsx
-src/app/components/AITutorIntervention.tsx
-src/app/components/PostSessionDiagnostics.tsx
+backend_example.py    UDP/FFT/intervention prototype
+vocab_backend.py        older vocab-only server
 ```
 
-Top-bar docks:
+Production API: **`backend/main.py`**.
 
-```text
-src/layout/topbar/PomodoroDock.tsx
-src/layout/topbar/BrainActivityDock.tsx
-src/layout/topbar/CognitiveLoadDock.tsx
-```
-
-Note: `AITutorIntervention` exists, but the intervention UI still needs to be
-mounted into the visible app flow before automatic interventions can be seen.
-
-## Backend Reference Architecture
-
-Reference backend:
-
-```text
-backend_example.py
-```
-
-It demonstrates:
-
-- UDP listener on port `5005`
-- raw EEG buffer
-- FFT band extraction with SciPy/NumPy
-- WebSocket endpoint at `/ws/eeg`
-- intervention endpoint at `/api/intervention`
-- session logging endpoint at `/api/log-session`
-- health endpoint at `/health`
-
-Reference vocab backend:
-
-```text
-vocab_backend.py
-```
-
-It provides a lightweight non-Django FastAPI vocab API that mirrors some older
-vocab app endpoints.
-
-## Current Data Flow
-
-Default frontend-only mode:
-
-```text
-StudySessionContext simulated data
-  -> biometricData[]
-  -> top-bar EEG display
-  -> cognitive load chip
-  -> diagnostics prototype
-```
-
-Reference real-data mode:
-
-```text
-ESP32-S3 or UDP spoofer
-  -> UDP port 5005
-  -> backend_example.py
-  -> FFT alpha/beta/gamma
-  -> WebSocket /ws/eeg
-  -> React dashboard
-```
-
-## Current Build Status
-
-The frontend builds with:
+## Build
 
 ```bat
-npm.cmd run build
+run.bat          migrations + API + frontend
+npm run build    succeeds (large chunk warning OK)
 ```
-
-Vite may warn that the main JavaScript chunk is larger than 500 kB. That is a
-performance warning, not a build failure.
-

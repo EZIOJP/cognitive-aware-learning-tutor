@@ -9,6 +9,7 @@ const COLORS = ["#000000", "#ef4444", "#3b82f6", "#22c55e", "#f59e0b"];
 export interface MathSplitWhiteboardHandle {
   clearAll: () => void;
   exportPng: () => Promise<string | null>;
+  exportPaths: () => Promise<import("react-sketch-canvas").CanvasPath[] | null>;
 }
 
 interface MathSplitWhiteboardProps {
@@ -34,7 +35,15 @@ export const MathSplitWhiteboard = forwardRef<MathSplitWhiteboardHandle, MathSpl
       return (await mainRef.current?.exportImage("png")) ?? null;
     }, []);
 
-    useImperativeHandle(ref, () => ({ clearAll, exportPng }), [clearAll, exportPng]);
+    const exportPaths = useCallback(async () => {
+      return (await mainRef.current?.exportPaths()) ?? null;
+    }, []);
+
+    useImperativeHandle(ref, () => ({ clearAll, exportPng, exportPaths }), [
+      clearAll,
+      exportPng,
+      exportPaths,
+    ]);
 
     const stroke = tool === "pen" ? strokeColor : "transparent";
 
@@ -85,7 +94,7 @@ export const MathSplitWhiteboard = forwardRef<MathSplitWhiteboardHandle, MathSpl
                 strokeWidth={strokeWidth}
                 eraserWidth={eraserWidth}
                 strokeColor={stroke}
-                canvasColor="transparent"
+                canvasColor="#ffffff"
                 onStroke={() => onCanvasChange(`stroke-${Date.now()}`)}
                 className="w-full h-full"
               />

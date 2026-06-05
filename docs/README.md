@@ -18,7 +18,11 @@ All project docs live here. Use with the file kernel at repo root.
 | [ROADMAP.md](ROADMAP.md) | Phases 0–5 |
 | [PROJECT_STATUS.md](PROJECT_STATUS.md) | What works now |
 | [TASKS.md](TASKS.md) | Kanban-style tasks |
-| [CURRENT_ARCHITECTURE.md](CURRENT_ARCHITECTURE.md) | System design |
+| [CURRENT_ARCHITECTURE.md](CURRENT_ARCHITECTURE.md) | System design (today) |
+| [MATH_TUTOR_VISION_PIPELINE.md](MATH_TUTOR_VISION_PIPELINE.md) | Math canvas, OCR, Ollama Socratic pipeline |
+| [HARDWARE_AND_AI_LATER.md](HARDWARE_AND_AI_LATER.md) | No GPU / no ESP32 path |
+| [WORKING_PRODUCT.md](WORKING_PRODUCT.md) | Daily-use checklist |
+| [GRE_VOCAB_PHASE1.md](GRE_VOCAB_PHASE1.md) | GRE Phase 1 complete |
 | [SETUP_AND_COMMANDS.md](SETUP_AND_COMMANDS.md) | Install and batch files |
 | [DATABASE.md](DATABASE.md) | Schema and env vars |
 | [MIGRATIONS.md](MIGRATIONS.md) | Alembic revisions |
@@ -29,7 +33,7 @@ All project docs live here. Use with the file kernel at repo root.
 | [STITCH_DESIGN_SPEC.md](STITCH_DESIGN_SPEC.md) — UI tokens, components, screens for Stitch/v0 |
 | [STITCH_PROMPT.txt](STITCH_PROMPT.txt) — short paste prompt for Stitch | Install and batch files |
 | [VOCAB_EXECUTION_PLAN.md](VOCAB_EXECUTION_PLAN.md) | Vocab MVP steps |
-| [FUTURE_VISION.md](FUTURE_VISION.md) | Long-term vision |
+| [FUTURE_VISION.md](FUTURE_VISION.md) | Long-term vision + Phase 3 map |
 
 ## Repo root guides
 

@@ -207,3 +207,39 @@ def math_tutor_hint(
         detected_concept=ruled["detected_concept"],
         use_llm=False,
     )
+
+
+class MathOcrIn(BaseModel):
+    canvas_image: str
+
+
+class MathOcrOut(BaseModel):
+    latex: str
+    incomplete_step: bool
+    confidence: float
+    preprocess_applied: bool
+
+
+@router.post("/ocr", response_model=MathOcrOut)
+def math_ocr(
+    body: MathOcrIn,
+    _user: User = Depends(get_current_user),
+):
+    """Handwritten math → LaTeX via pix2tex; SymPy marks incomplete steps."""
+    from backend.math.ocr_service import recognize_canvas
+
+    try:
+        result = recognize_canvas(body.canvas_image)
+    except ImportError as e:
+        raise HTTPException(status_code=503, detail=str(e)) from e
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"OCR failed: {e}") from e
+
+    return MathOcrOut(
+        latex=result.latex,
+        incomplete_step=result.incomplete_step,
+        confidence=result.confidence,
+        preprocess_applied=result.preprocess_applied,
+    )

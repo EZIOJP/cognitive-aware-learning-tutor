@@ -1,165 +1,106 @@
 # Future Vision
 
-This document captures the long-term Smart Pomodoro Study Companion roadmap.
+Long-term **Smart Pomodoro / cognitive-aware math tutor**. Detailed math+vision engineering spec: [MATH_TUTOR_VISION_PIPELINE.md](./MATH_TUTOR_VISION_PIPELINE.md).
 
-## Product Thesis
-
-The best consumer-facing version is not "an EEG app." The strongest product idea
-is:
+## Product thesis
 
 ```text
 An AI study companion that notices when the learner is stuck and gives the right
 hint at the right moment.
 ```
 
-Biometrics are a powerful optional signal. The core product value is timely,
-context-aware learning support.
+Biometrics (EEG, face, gaze) are **optional signals**. Core value = timely Socratic help on the whiteboard.
 
-## North Star
-
-Build a closed-loop local learning system:
+## North star loop
 
 ```text
 student writes math
-  -> app observes behavior and cognitive load
-  -> local AI reads the whiteboard
-  -> stuckness score triggers a Socratic hint
-  -> session logs improve future hints
+  → stroke + pause + (optional) EEG/face/gaze
+  → stuckness score
+  → cropped canvas snapshot
+  → OCR/LaTeX or vision fallback
+  → local Socratic hint (JSON, no full answer)
+  → session logs (DSC_*) for better future hints
 ```
 
-## Phase 1: Software MVP and Mock Data
+## Phase map (aligned with ROADMAP)
 
-Goal: prove the real-time software loop before buying hardware.
+| Roadmap | Vision | Hardware |
+|---------|--------|----------|
+| Phase 1 GRE | Done | None |
+| Phase 2 | Real EEG, Nutri ESP32, face calibration file | ESP32, webcam |
+| **Phase 3 Math AI** | Stuckness + OCR + structured Ollama | Laptop + GPU optional |
+| Phase 4 | Community, webhooks, production DB | Server |
 
-Tasks:
+### Phase 3 sub-phases (software-first)
 
-- Build or finalize the React canvas and dashboard
-- Add a Python UDP spoofer that emits fake high-speed EEG-like samples
-- Run FastAPI as the UDP-to-WebSocket router
-- Stream alpha/beta/gamma data into the frontend
-- Verify Pomodoro and cognitive-load UI react to thresholds
+See [MATH_TUTOR_VISION_PIPELINE.md](./MATH_TUTOR_VISION_PIPELINE.md):
 
-Mock data flow:
+- **3a** — Stuckness heuristic, debounced snapshots, intervention UI, CSV logging (**no GPU**)
+- **3b** — Ollama structured Socratic JSON + `keep_alive` VRAM policy
+- **3c** — OpenCV + Pix2Text/pix2tex + SymPy incomplete-step detection
+- **3d** — WebGazer + real EEG/face in stuckness weights
+
+**Today:** rule-based Ask tutor + manual hint; 3a is the next coding slice.
+
+## Vision stack choices (RTX 5060 / 8 GB)
+
+- **Canvas:** keep `react-sketch-canvas`; add `exportPaths`, coalesced pointer kinematics, bbox crop on export.
+- **Recognize:** Pix2Text or pix2tex → LaTeX → text LLM; LLaVA only when OCR marks incomplete or low confidence.
+- **Tutor:** Ollama with Pydantic `format=` schema; never send full history of base64 images—text hints + LaTeX only.
+- **VRAM:** one model resident during study; flush after Pomodoro break.
+
+## Stuckness score (v1 weights)
+
+Combine (tunable):
+
+- Gamma / cognitive load vs baseline
+- Canvas idle after last stroke
+- Eraser burst count
+- Wrong answer streak (math practice)
+- Face attention drop (Python mirror)
+- Later: gaze fixation on equation bbox (WebGazer)
+
+Do **not** trigger on gamma alone.
+
+## Data flywheel (Phase 4)
+
+Append-only CSVs (not SQLite blobs):
 
 ```text
-Python UDP spoofer
-  -> UDP localhost:5005
-  -> FastAPI data router
-  -> WebSocket ws://localhost:8000/ws/eeg
-  -> React dashboard
+DSC_Kinematics.csv      stroke velocity, paths, pauses
+DSC_Biometrics.csv      EEG bands, face_attention
+DSC_Interventions.csv   hint JSON, snapshot path, learner_recovered
 ```
 
-## Phase 2: Vision and Behavioral Tracking
+Snapshots on disk: `data_logs/interventions/{session_id}/`.
 
-Goal: prove local AI can understand the learner's whiteboard.
-
-Tasks:
-
-- Install Ollama locally
-- Pull `llava:7b`
-- Send base64 canvas images from React to FastAPI
-- Have LLaVA describe the visible math step
-- Generate targeted Socratic hints
-- Optionally add OpenCV/MediaPipe for blink and face-mesh signals
-
-Desired behavior:
-
-```text
-canvas pause + high stuckness score
-  -> screenshot canvas
-  -> LLaVA reads math
-  -> tutor asks a targeted question
-```
-
-## Phase 3: Hardware Acquisition and Assembly
-
-Goal: replace mock data with real EXG samples.
-
-Hardware:
-
-- ESP32-S3 board
-- BioAmp EXG Pill
-- sports sweatband
-- dry/snap electrodes
-- jumper wires
-- Lenovo LOQ laptop for processing
-
-Data flow:
-
-```text
-BioAmp EXG Pill
-  -> ESP32-S3 ADC at 250 Hz
-  -> UDP Wi-Fi packets
-  -> FastAPI
-  -> FFT
-  -> WebSocket
-  -> dashboard
-```
-
-Firmware note:
-
-If SD-card logging is added, file-scanning and file-writing logic should use the
-`DSC` prefix instead of old `test_` prefixes.
-
-## Phase 4: Closed-Loop Tutor and Data Flywheel
-
-Goal: convert sessions into a personal learning dataset.
-
-Tasks:
-
-- Implement stuckness score
-- Log session windows to CSV or JSONL
-- Store canvas snapshots at key moments
-- Store hints given and whether the learner recovered
-- Add complaint submission for difficult topics
-- Cross-reference complaints with biometric/behavioral logs
-- Restructure future hints based on personal learning patterns
-
-Example training/logging record:
+Example record:
 
 ```json
 {
-  "session_id": "local-001",
-  "topic": "gradient_descent",
-  "canvas_snapshot": "base64-or-file-reference",
-  "eeg_window": {
-    "alpha": 21.5,
-    "beta": 42.1,
-    "gamma": 78.4
-  },
-  "behavior": {
-    "canvas_inactive_seconds": 47,
-    "eraser_events": 3
-  },
+  "session_id": "hub-42",
+  "topic": "linear_equations",
+  "canvas_snapshot": "data_logs/interventions/hub-42/step3.png",
+  "eeg_window": { "gamma": 78.4 },
+  "behavior": { "canvas_inactive_seconds": 47, "eraser_events": 3 },
   "stuckness_score": 0.86,
-  "hint_given": "Which term changes when you take the partial derivative?",
+  "hint_given": "What operation undoes the constant on the left?",
   "learner_recovered": true
 }
 ```
 
-## Stuckness Score Moonshot
+## Consumer ladder
 
-Do not depend on gamma alone. A useful score should combine:
+1. **Software-only** stuckness-aware tutor (no ESP32, no Ollama required for rules)
+2. **Prosumer lab** — Ollama + optional EEG/face
+3. **Wearable ecosystem** — ESP32 EXG + polished hardware path
 
-- gamma spike relative to personal baseline
-- beta/gamma ratio
-- canvas inactivity
-- repeated erasing
-- repeated wrong answers
-- long pauses after a step
-- Pomodoro fatigue stage
-- self-reported confusion
+Finish (1) before buying hardware. See [HARDWARE_AND_AI_LATER.md](./HARDWARE_AND_AI_LATER.md).
 
-## Consumer Validity Notes
+## Out of scope for near term
 
-The consumer-valid product is the learning loop, not the hardware novelty.
-
-Recommended product ladder:
-
-1. Software-only stuckness-aware tutor
-2. Prosumer biometric learning lab
-3. Polished consumer wearable plus tutor ecosystem
-
-Finish the software-only learning value first. Add EEG only after the intervention
-loop is useful without hardware.
-
+- Cloud APIs (privacy-first local default)
+- Nougat full-document OCR (wrong tool for whiteboard crops)
+- Character-by-character CNN OCR (fails on connected handwriting; use LaTeX OCR or VLM fallback)
+- Continuous LLaVA on every frame

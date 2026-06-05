@@ -129,6 +129,9 @@ export function MathDashboardPage() {
             <Link to="/math-tutor/reports" className="block text-primary hover:underline">
               View all session reports →
             </Link>
+            <Link to="/math-tutor/recognize-test" className="block text-primary hover:underline">
+              Handwriting recognition test →
+            </Link>
             <p className="text-xs text-muted-foreground">
               Arithmetic & Algebra use the live API when logged in. Geometry, Calculus, and Trig use local drill sets.
             </p>

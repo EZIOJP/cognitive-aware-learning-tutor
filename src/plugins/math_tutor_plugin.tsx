@@ -5,6 +5,7 @@ import { MathDashboardPage } from "../pages/MathDashboardPage";
 import { MathTopicPage } from "../pages/math/MathTopicPage";
 import { MathPracticePage } from "../pages/math/MathPracticePage";
 import { MathReportsPage } from "../pages/math/MathReportsPage";
+import { MathRecognizeTestPage } from "../pages/math/MathRecognizeTestPage";
 
 export const MathTutorPlugin: PluginDef = {
   id: "math-tutor",
@@ -18,6 +19,7 @@ export const MathTutorPlugin: PluginDef = {
     { path: "math-tutor/topic/:topicId", element: <MathTopicPage /> },
     { path: "math-tutor/practice/:topicId", element: <MathPracticePage /> },
     { path: "math-tutor/reports", element: <MathReportsPage /> },
+    { path: "math-tutor/recognize-test", element: <MathRecognizeTestPage /> },
   ],
   navItems: [{ to: "/math-tutor", label: "Math Tutor", icon: Brain, end: false }],
 };

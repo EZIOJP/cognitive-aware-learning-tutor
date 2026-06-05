@@ -42,11 +42,13 @@ App side: **ready**. See `docs/firmware/EEG_ESP32.md` and `NUTRI_ESP32.md`.
 
 ---
 
-## Phase 3 — Math AI (optional, after laptop repair)
+## Phase 3 — Math AI (see [MATH_TUTOR_VISION_PIPELINE.md](./MATH_TUTOR_VISION_PIPELINE.md))
 
-- [x] Rule-based tutor hints (default)
-- [ ] Enable `OLLAMA_ENABLED=1` + vision model for whiteboard snapshots
-- [ ] EEG + face triggers on practice page (data paths exist)
+- [x] Rule-based tutor hints (default) + manual Ask tutor + `exportPng`
+- [ ] **3a** Stuckness heuristic, debounced canvas crop, intervention UI, DSC logging (no GPU)
+- [ ] **3b** Ollama structured Socratic JSON + `keep_alive` (`OLLAMA_ENABLED=1`)
+- [ ] **3c** OpenCV segment → Pix2Text/pix2tex → SymPy incomplete-step branch
+- [ ] **3d** EEG + face (+ optional WebGazer) in stuckness on practice page
 
 ---
 

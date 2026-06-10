@@ -1,6 +1,4 @@
-const HUB_BASE =
-  (import.meta as { env?: { VITE_API_BASE?: string } }).env?.VITE_API_BASE ||
-  "http://localhost:8000";
+import { resolveApiUrl } from "../utils/resolveBackendUrl";
 
 const TOKEN_KEY = "vocab:auth-token";
 
@@ -46,7 +44,7 @@ export type InsightsDailyPayload = {
 
 export async function fetchHubDaily(day = "today"): Promise<HubDailyPayload | null> {
   try {
-    const res = await fetch(`${HUB_BASE}/api/hub/daily/${day}`, { headers: hubHeaders() });
+    const res = await fetch(`${resolveApiUrl()}/api/hub/daily/${day}`, { headers: hubHeaders() });
     if (!res.ok) return null;
     return (await res.json()) as HubDailyPayload;
   } catch {
@@ -56,7 +54,7 @@ export async function fetchHubDaily(day = "today"): Promise<HubDailyPayload | nu
 
 export async function fetchInsightsDaily(): Promise<InsightsDailyPayload | null> {
   try {
-    const res = await fetch(`${HUB_BASE}/api/insights/daily`, { headers: hubHeaders() });
+    const res = await fetch(`${resolveApiUrl()}/api/insights/daily`, { headers: hubHeaders() });
     if (!res.ok) return null;
     return (await res.json()) as InsightsDailyPayload;
   } catch {
@@ -69,11 +67,12 @@ export type InsightsReviewPayload = {
   next_steps: string[];
   goals: string[];
   overall_performance: string;
+  source?: "gemma" | "template";
 };
 
 export async function fetchInsightsReview(): Promise<InsightsReviewPayload | null> {
   try {
-    const res = await fetch(`${HUB_BASE}/api/insights/review`, {
+    const res = await fetch(`${resolveApiUrl()}/api/insights/review`, {
       method: "POST",
       headers: hubHeaders(),
     });
@@ -92,7 +91,7 @@ export type DashboardLayoutPayload = {
 
 export async function fetchDashboardLayout(): Promise<DashboardLayoutPayload | null> {
   try {
-    const res = await fetch(`${HUB_BASE}/api/hub/dashboard-layout`, { headers: hubHeaders() });
+    const res = await fetch(`${resolveApiUrl()}/api/hub/dashboard-layout`, { headers: hubHeaders() });
     if (!res.ok) return null;
     return (await res.json()) as DashboardLayoutPayload;
   } catch {
@@ -102,7 +101,7 @@ export async function fetchDashboardLayout(): Promise<DashboardLayoutPayload | n
 
 export async function saveDashboardLayout(layout: DashboardLayoutPayload): Promise<boolean> {
   try {
-    const res = await fetch(`${HUB_BASE}/api/hub/dashboard-layout`, {
+    const res = await fetch(`${resolveApiUrl()}/api/hub/dashboard-layout`, {
       method: "PUT",
       headers: hubHeaders(),
       body: JSON.stringify(layout),
@@ -135,7 +134,7 @@ export type LifeDailyApi = {
 
 export async function fetchLifeDaily(day = "today"): Promise<LifeDailyApi | null> {
   try {
-    const res = await fetch(`${HUB_BASE}/api/life/daily/${day}`, { headers: hubHeaders() });
+    const res = await fetch(`${resolveApiUrl()}/api/life/daily/${day}`, { headers: hubHeaders() });
     if (!res.ok) return null;
     return (await res.json()) as LifeDailyApi;
   } catch {
@@ -148,7 +147,7 @@ export async function putLifeDaily(
   body: Record<string, number>
 ): Promise<{ life_score: number } | null> {
   try {
-    const res = await fetch(`${HUB_BASE}/api/life/daily/${day}`, {
+    const res = await fetch(`${resolveApiUrl()}/api/life/daily/${day}`, {
       method: "PUT",
       headers: hubHeaders(),
       body: JSON.stringify(body),
@@ -221,7 +220,7 @@ export type HubCatalogFeature = {
 
 export async function fetchFeaturesCatalog(): Promise<HubCatalogFeature[]> {
   try {
-    const res = await fetch(`${HUB_BASE}/api/hub/features/catalog`, { headers: hubHeaders() });
+    const res = await fetch(`${resolveApiUrl()}/api/hub/features/catalog`, { headers: hubHeaders() });
     if (!res.ok) return [];
     const data = await res.json();
     return data.features ?? [];
@@ -235,7 +234,7 @@ export async function fetchHubPluginsState(): Promise<{
   custom_features: HubCustomFeature[];
 } | null> {
   try {
-    const res = await fetch(`${HUB_BASE}/api/hub/plugins`, { headers: hubHeaders() });
+    const res = await fetch(`${resolveApiUrl()}/api/hub/plugins`, { headers: hubHeaders() });
     if (!res.ok) return null;
     return await res.json();
   } catch {
@@ -249,7 +248,7 @@ export async function setHubPlugin(
   config?: Record<string, unknown>
 ): Promise<boolean> {
   try {
-    const res = await fetch(`${HUB_BASE}/api/hub/plugins`, {
+    const res = await fetch(`${resolveApiUrl()}/api/hub/plugins`, {
       method: "PUT",
       headers: hubHeaders(),
       body: JSON.stringify({ plugin_id: pluginId, enabled, config }),
@@ -262,7 +261,7 @@ export async function setHubPlugin(
 
 export async function fetchHubMetrics(): Promise<HubMetricRow[]> {
   try {
-    const res = await fetch(`${HUB_BASE}/api/hub/metrics`, { headers: hubHeaders() });
+    const res = await fetch(`${resolveApiUrl()}/api/hub/metrics`, { headers: hubHeaders() });
     if (!res.ok) return [];
     const data = await res.json();
     return data.metrics ?? [];
@@ -273,7 +272,7 @@ export async function fetchHubMetrics(): Promise<HubMetricRow[]> {
 
 export async function fetchCustomFeatures(): Promise<HubCustomFeature[]> {
   try {
-    const res = await fetch(`${HUB_BASE}/api/hub/features/custom`, { headers: hubHeaders() });
+    const res = await fetch(`${resolveApiUrl()}/api/hub/features/custom`, { headers: hubHeaders() });
     if (!res.ok) return [];
     const data = await res.json();
     return data.features ?? [];
@@ -289,7 +288,7 @@ export async function createCustomFeature(body: {
   metrics: { label: string; slug: string; unit?: string; source_type?: string }[];
 }): Promise<HubCustomFeature | null> {
   try {
-    const res = await fetch(`${HUB_BASE}/api/hub/features/custom`, {
+    const res = await fetch(`${resolveApiUrl()}/api/hub/features/custom`, {
       method: "POST",
       headers: hubHeaders(),
       body: JSON.stringify(body),
@@ -308,7 +307,7 @@ export async function patchCustomFeature(
   featureId: string,
   body: { name?: string; description?: string | null; enabled?: boolean }
 ): Promise<HubCustomFeature | null> {
-  const res = await fetch(`${HUB_BASE}/api/hub/features/custom/${encodeURIComponent(featureId)}`, {
+  const res = await fetch(`${resolveApiUrl()}/api/hub/features/custom/${encodeURIComponent(featureId)}`, {
     method: "PATCH",
     headers: hubHeaders(),
     body: JSON.stringify(body),
@@ -322,7 +321,7 @@ export async function patchCustomFeature(
 
 export async function deleteCustomFeature(featureId: string): Promise<boolean> {
   try {
-    const res = await fetch(`${HUB_BASE}/api/hub/features/custom/${encodeURIComponent(featureId)}`, {
+    const res = await fetch(`${resolveApiUrl()}/api/hub/features/custom/${encodeURIComponent(featureId)}`, {
       method: "DELETE",
       headers: hubHeaders(),
     });
@@ -334,7 +333,7 @@ export async function deleteCustomFeature(featureId: string): Promise<boolean> {
 
 export async function downloadHubExport(format: "json" | "csv" = "json"): Promise<void> {
   const token = localStorage.getItem(TOKEN_KEY);
-  const res = await fetch(`${HUB_BASE}/api/hub/export?format=${format}`, {
+  const res = await fetch(`${resolveApiUrl()}/api/hub/export?format=${format}`, {
     headers: token ? { Authorization: `Bearer ${token}` } : {},
   });
   if (!res.ok) throw new Error(`Export failed (${res.status})`);
@@ -353,7 +352,7 @@ export async function postHubReading(
   clientEventId?: string
 ): Promise<boolean> {
   try {
-    const res = await fetch(`${HUB_BASE}/api/hub/readings`, {
+    const res = await fetch(`${resolveApiUrl()}/api/hub/readings`, {
       method: "POST",
       headers: hubHeaders(),
       body: JSON.stringify({

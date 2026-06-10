@@ -3,6 +3,8 @@ import { useLocation, useNavigate } from "react-router";
 import { CircleUserRound, LogOut, Shield, LogIn, Sparkles } from "lucide-react";
 import { ThemeToggle } from "../components/theme/ThemeToggle";
 import { useAuth } from "../context/AuthContext";
+import { useTheme } from "../context/ThemeContext";
+import { cn } from "../app/components/ui/utils";
 import { PomodoroDock } from "./topbar/PomodoroDock";
 import {
   DropdownMenu,
@@ -27,7 +29,12 @@ export function AppTopBar() {
   const nav = useNavigate();
   const { pathname } = useLocation();
   const { user, isAuthenticated, isAdmin, logout } = useAuth();
+  const { typographyPack, motionLevel } = useTheme();
   const title = PAGE_TITLES[pathname] ?? "Study Companion";
+  const titleClass =
+    typographyPack !== "study"
+      ? cn("hero-headline text-base", motionLevel === "hero" && "hero-text-shadow")
+      : "text-lg font-semibold tracking-tight";
 
   const [clickCount, setClickCount] = useState(0);
   const [secretRevealed, setSecretRevealed] = useState(false);
@@ -58,7 +65,7 @@ export function AppTopBar() {
           title="Click me 5 times quickly..."
         >
           <div className="flex items-center gap-2">
-            <h1 className="text-lg font-semibold tracking-tight truncate">{title}</h1>
+            <h1 className={cn("truncate", titleClass)}>{title}</h1>
             {secretRevealed && <Sparkles className="w-4 h-4 text-yellow-500 animate-pulse" />}
           </div>
           <p className="text-[11px] text-muted-foreground/70 hidden sm:block">

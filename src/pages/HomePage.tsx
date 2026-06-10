@@ -3,7 +3,7 @@ import { Link } from "react-router";
 import {
   Clock, MessageSquare, Users, GripVertical,
   Settings2, X, Eye, EyeOff, Maximize2, Minimize2,
-  ChevronLeft, ChevronRight, LayoutGrid, Sparkles, Timer
+  ChevronLeft, ChevronRight, LayoutGrid, Sparkles, Timer, Target, Bot, Plus
 } from "lucide-react";
 import { Card } from "../app/components/ui/card";
 import { useStudySession } from "../context/StudySessionContext";
@@ -19,6 +19,10 @@ import {
 } from "../api/hubClient";
 import { AiReviewWidget } from "../components/dashboard/AiReviewWidget";
 import { useAuth } from "../context/AuthContext";
+import { useTheme } from "../context/ThemeContext";
+import { HeroProgress, LemillionAssistant } from "../components/hero";
+import { WidgetPickerModal } from "../components/widgets/WidgetPickerModal";
+import { getCatalogEntry } from "../components/widgets/widgetCatalog";
 
 // ─── Per-widget saved state ────────────────────────────────────────────────
 interface WidgetState {
@@ -43,49 +47,104 @@ function saveWidgetState(m: WidgetStateMap) {
   localStorage.setItem(LS_WIDGET_STATE, JSON.stringify(m));
 }
 
+function performanceToPct(
+  perf: InsightsDailyPayload["overall_performance"] | undefined
+): number {
+  if (perf === "excellent") return 92;
+  if (perf === "good") return 68;
+  if (perf === "needs-improvement") return 38;
+  return 55;
+}
+
 // ─── Core widgets (always present, not from a plugin) ─────────────────────
-const CORE_WIDGETS: PluginWidget[] = [
-  {
-    id: "life-clock",
-    type: "info",
-    title: "24-hour life clock",
-    description: "Track how your day is unfolding",
-    icon: Timer,
-    accent: "from-amber-500/20 to-orange-500/10",
-    defaultColSpan: 2,
-    defaultRowSpan: 2,
-    component: <LifeClockWidget embedded />,
-    to: "/life-tracker",
-  },
-  {
-    id: "study-time",
-    type: "info",
-    title: "Study Time & Focus",
-    description: "Your focus is up 15% compared to yesterday. Keep it up!",
-    content: "0m today",
-    icon: Clock,
-    accent: "from-amber-500/20 to-orange-500/10",
-  },
-  {
-    id: "ai-comments",
-    type: "info",
-    title: "AI Review & Next Steps",
-    description: "Daily coach from your hub metrics.",
-    icon: MessageSquare,
-    accent: "from-blue-500/20 to-cyan-500/10",
-    defaultColSpan: 2,
-    component: <AiReviewWidget />,
-  },
-  {
-    id: "community",
-    type: "info",
-    title: "Community",
-    description: "Study rooms and shared focus — coming soon.",
-    content: "Coming soon",
-    icon: Users,
-    accent: "from-rose-500/20 to-pink-500/10",
-  },
-];
+function buildCoreWidgets(
+  themeWidgets: { lemillionAssistant: boolean; heroProgress: boolean },
+  insights: InsightsDailyPayload | null
+): PluginWidget[] {
+  const base: PluginWidget[] = [
+    {
+      id: "life-clock",
+      type: "info",
+      title: "24-hour life clock",
+      description: "Track how your day is unfolding",
+      icon: Timer,
+      accent: "from-amber-500/20 to-orange-500/10",
+      defaultColSpan: 2,
+      defaultRowSpan: 2,
+      component: <LifeClockWidget embedded />,
+      to: "/life-tracker",
+    },
+    {
+      id: "study-time",
+      type: "info",
+      title: "Study Time & Focus",
+      description: "Your focus is up 15% compared to yesterday. Keep it up!",
+      content: "0m today",
+      icon: Clock,
+      accent: "from-amber-500/20 to-orange-500/10",
+    },
+    {
+      id: "ai-comments",
+      type: "info",
+      title: "AI Review & Next Steps",
+      description: "Daily coach from your hub metrics.",
+      icon: MessageSquare,
+      accent: "from-blue-500/20 to-cyan-500/10",
+      defaultColSpan: 2,
+      component: <AiReviewWidget />,
+    },
+    {
+      id: "community",
+      type: "info",
+      title: "Community",
+      description: "Study rooms and shared focus — coming soon.",
+      content: "Coming soon",
+      icon: Users,
+      accent: "from-rose-500/20 to-pink-500/10",
+    },
+  ];
+
+  if (themeWidgets.lemillionAssistant) {
+    base.push({
+      id: "lemillion-assistant",
+      type: "info",
+      title: "Lemillion Coach",
+      description: "Motivational nudge from your hero theme.",
+      icon: Bot,
+      accent: "from-violet-500/20 to-indigo-500/10",
+      defaultColSpan: 1,
+      component: (
+        <LemillionAssistant
+          message={
+            insights
+              ? `Life score ${insights.life_score} · ${insights.study_minutes}m studied today. Stay on phase.`
+              : "Stay on phase — small wins compound into mastery."
+          }
+        />
+      ),
+    });
+  }
+
+  if (themeWidgets.heroProgress) {
+    base.push({
+      id: "hero-progress",
+      type: "info",
+      title: "Hero Progress",
+      description: "Daily performance at a glance.",
+      icon: Target,
+      accent: "from-emerald-500/20 to-teal-500/10",
+      defaultColSpan: 1,
+      component: (
+        <HeroProgress
+          value={performanceToPct(insights?.overall_performance)}
+          label="Today's momentum"
+        />
+      ),
+    });
+  }
+
+  return base;
+}
 
 // ─── Customizer Drawer ────────────────────────────────────────────────────
 interface CustomizerProps {
@@ -243,6 +302,7 @@ export function HomePage() {
   const [allWidgets, setAllWidgets] = useState<PluginWidget[]>([]);
   const [draggedIdx, setDraggedIdx] = useState<number | null>(null);
   const [customizerOpen, setCustomizerOpen] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
   const [stateMap, setStateMap] = useState<WidgetStateMap>({});
   const [insights, setInsights] = useState<InsightsDailyPayload | null>(null);
   const [focusMode, setFocusMode] = useState(() => {
@@ -256,49 +316,61 @@ export function HomePage() {
   const { sessionData, diagnosticsSummary } = useStudySession();
   const { getWidgets, isLoaded } = usePlugins();
   const { user } = useAuth();
+  const { widgets: themeWidgets } = useTheme();
 
   useEffect(() => {
     fetchInsightsDaily().then(setInsights);
     fetchHubDaily("today");
   }, []);
 
-  // Build widget list once plugins are loaded
+  // Build widget list once plugins are loaded (hero widgets gated by theme)
   useEffect(() => {
     if (!isLoaded) return;
-    const available = [...CORE_WIDGETS, ...getWidgets()];
+    const pluginWidgets = getWidgets();
+    const available = [
+      ...buildCoreWidgets(themeWidgets, insights),
+      ...pluginWidgets.filter((w) => !w.catalogOnly),
+    ];
 
-    const applyLayout = (
-      order: string[],
-      state: WidgetStateMap,
-      focus: boolean
-    ) => {
-      const ordered = order
-        .map((id) => available.find((w) => w.id === id))
-        .filter(Boolean) as PluginWidget[];
-      const missing = available.filter((w) => !order.includes(w.id));
-      setAllWidgets([...ordered, ...missing]);
-      setStateMap(state);
-      setFocusMode(focus);
-      localStorage.setItem(LS_WIDGET_ORDER, JSON.stringify([...ordered, ...missing].map((w) => w.id)));
-      saveWidgetState(state);
-      localStorage.setItem(LS_FOCUS_MODE, focus ? "1" : "0");
+    const resolveOrder = (order: string[]) => {
+      const resolved: PluginWidget[] = [];
+      for (const id of order) {
+        const fromAvailable = available.find((w) => w.id === id);
+        if (fromAvailable) {
+          resolved.push(fromAvailable);
+          continue;
+        }
+        const catalog = getCatalogEntry(id);
+        if (catalog) resolved.push(catalog);
+      }
+      return resolved;
     };
 
     void (async () => {
       const remote = await fetchDashboardLayout();
       if (remote?.widget_order?.length) {
-        applyLayout(
-          remote.widget_order,
-          (remote.widget_state as WidgetStateMap) ?? {},
-          Boolean(remote.focus_mode)
+        const ordered = resolveOrder(remote.widget_order);
+        const missing = available.filter((w) => !remote.widget_order!.includes(w.id));
+        setAllWidgets([...ordered, ...missing]);
+        setStateMap((remote.widget_state as WidgetStateMap) ?? {});
+        setFocusMode(Boolean(remote.focus_mode));
+        localStorage.setItem(
+          LS_WIDGET_ORDER,
+          JSON.stringify([...ordered, ...missing].map((w) => w.id))
         );
+        saveWidgetState((remote.widget_state as WidgetStateMap) ?? {});
+        localStorage.setItem(LS_FOCUS_MODE, remote.focus_mode ? "1" : "0");
         return;
       }
       try {
         const savedOrder = localStorage.getItem(LS_WIDGET_ORDER);
         if (savedOrder) {
           const ids = JSON.parse(savedOrder) as string[];
-          applyLayout(ids, loadWidgetState(), localStorage.getItem(LS_FOCUS_MODE) === "1");
+          const ordered = resolveOrder(ids);
+          const missing = available.filter((w) => !ids.includes(w.id));
+          setAllWidgets([...ordered, ...missing]);
+          setStateMap(loadWidgetState());
+          setFocusMode(localStorage.getItem(LS_FOCUS_MODE) === "1");
         } else {
           setAllWidgets(available);
           setStateMap(loadWidgetState());
@@ -308,7 +380,7 @@ export function HomePage() {
         setStateMap(loadWidgetState());
       }
     })();
-  }, [isLoaded]); // eslint-disable-line
+  }, [isLoaded, themeWidgets, insights]); // eslint-disable-line
 
   const persistLayout = useCallback(
     (widgets: PluginWidget[], state: WidgetStateMap, focus: boolean) => {
@@ -372,6 +444,27 @@ export function HomePage() {
   const setColSpan = (id: string, v: 1 | 2) => updateState(id, { colSpan: v });
   const setRowSpan = (id: string, v: 1 | 2) => updateState(id, { rowSpan: v });
 
+  const addWidgetFromCatalog = useCallback(
+    (widget: PluginWidget) => {
+      setAllWidgets((prev) => {
+        if (prev.some((w) => w.id === widget.id)) return prev;
+        const next = [...prev, widget];
+        const nextState = {
+          ...stateMap,
+          [widget.id]: {
+            colSpan: widget.defaultColSpan ?? 1,
+            rowSpan: widget.defaultRowSpan ?? 1,
+            hidden: false,
+          },
+        };
+        setStateMap(nextState);
+        persistLayout(next, nextState, focusMode);
+        return next;
+      });
+    },
+    [stateMap, focusMode, persistLayout]
+  );
+
   // Drag-to-reorder
   const handleDragStart = (e: React.DragEvent, idx: number) => {
     setDraggedIdx(idx);
@@ -433,6 +526,17 @@ export function HomePage() {
           >
             {focusMode ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
             Focus
+          </button>
+          <button
+            type="button"
+            onClick={() => setPickerOpen(true)}
+            className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium
+                       gloss-panel border border-border/50 hover:border-primary/50
+                       hover:text-primary transition-all duration-200"
+            title="Add widgets to dashboard"
+          >
+            <Plus className="w-4 h-4" />
+            Add Widget
           </button>
           <button
             id="dashboard-customize-btn"
@@ -601,6 +705,14 @@ export function HomePage() {
         onToggleHide={toggleHide}
         onColSpan={setColSpan}
         onRowSpan={setRowSpan}
+      />
+
+      <WidgetPickerModal
+        open={pickerOpen}
+        onClose={() => setPickerOpen(false)}
+        onAdd={addWidgetFromCatalog}
+        activeIds={new Set(allWidgets.map((w) => w.id))}
+        extraCatalog={getWidgets()}
       />
     </div>
   );

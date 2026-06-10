@@ -1,24 +1,14 @@
-# Math handwriting OCR (pix2tex / LaTeX-OCR)
-# Windows + Python 3.14: full `pip install pix2tex` may fail on stringzilla (needs MSVC).
-# Use the install script instead:
-#   scripts\install_ocr.bat
+# Math handwriting OCR — TexTeller 3 ONNX (CPU only, no pix2tex / no PyTorch)
+# Full guide: docs/DEPENDENCIES.md § Tier B
 #
-# Or manually:
-#   pip install pix2tex==0.1.4 --no-deps
-#   pip install albumentations==1.3.1 timm==0.5.4 x-transformers==0.15.0
-#   pip install torch torchvision einops munch transformers tokenizers pillow tqdm PyYAML pandas pyreadline3 opencv-python-headless
+# Python 3.14: pix2tex 0.1.4 fails (stringzilla wheel gap). TexTeller ONNX is the
+# supported path — do not pin pix2tex here. Optional Tier 0: NIM_API_KEY (Nemotron vision).
+#
+# Windows + Python 3.14: use scripts\install_ocr.bat or ./scripts/install_ocr.sh
+# First OCR request downloads ~1GB model weights from Hugging Face.
 
-pix2tex==0.1.4
-albumentations==1.3.1
-timm==0.5.4
-x-transformers==0.15.0
-einops>=0.6.0
-munch>=4.0.0
-transformers>=4.18.0
-tokenizers>=0.13.0
-torch>=2.0.0
-torchvision>=0.15.0
-PyYAML>=6.0
-pandas>=2.0.0
-pyreadline3>=3.4.0
+onnxruntime>=1.17
+optimum[onnxruntime]>=1.24
+transformers>=4.47,<5
+sentencepiece>=0.2.0
 opencv-python-headless>=4.8.0

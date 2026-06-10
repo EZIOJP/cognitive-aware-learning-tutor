@@ -9,6 +9,9 @@ interface AITutorInterventionProps {
     message: string;
     question: string;
     detectedConcept: string;
+    latex?: string;
+    incompleteStep?: boolean;
+    confidence?: number;
   } | null;
   onDismiss: () => void;
   onRespond: (response: string) => void;
@@ -55,6 +58,18 @@ export function AITutorIntervention({
                 </div>
 
                 <div className="space-y-3">
+                  {intervention.latex ? (
+                    <div className="p-2 rounded-md border bg-background/80">
+                      <p className="text-xs text-muted-foreground mb-1">
+                        Recognized from your board
+                        {intervention.incompleteStep ? " (incomplete step)" : ""}
+                        {typeof intervention.confidence === "number"
+                          ? ` · ${Math.round(intervention.confidence * 100)}%`
+                          : ""}
+                      </p>
+                      <code className="text-sm font-mono break-all">{intervention.latex}</code>
+                    </div>
+                  ) : null}
                   <p className="text-sm">{intervention.message}</p>
                   <div className="p-3 bg-muted rounded-lg">
                     <p className="text-sm font-medium">{intervention.question}</p>

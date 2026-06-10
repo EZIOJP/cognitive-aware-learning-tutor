@@ -15,10 +15,12 @@ Revision chain:
 3. `0003_math_bank` — `math_questions`, attempt linkage
 4. `0004_reconcile` — idempotent repair for legacy / partial DBs
 5. `0005_words_hub` — `words` table; `hub_session_id` on quiz + math attempts
+6. `0006_user_features` — user-defined features; per-user reading definitions
 
-```bat
-scripts\migrate.bat
-rem or: python -m alembic upgrade head
+```bash
+python -m alembic upgrade head
+# Windows: scripts\migrate.bat
+# Linux/macOS: ./scripts/migrate.sh
 ```
 
 `create_all()` is **disabled**; the API refuses to start in production mode if migrations are behind head.

@@ -24,7 +24,7 @@ See `.env.example`. In Compose, `DEV_MODE=false` enforces schema-at-head on star
 
 ## Without Docker
 
-```bat
-scripts\migrate.bat
+```bash
+python -m alembic upgrade head
 python -m uvicorn backend.main:app --host 0.0.0.0 --port 8000
 ```

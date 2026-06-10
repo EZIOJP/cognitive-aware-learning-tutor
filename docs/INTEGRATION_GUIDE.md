@@ -1,5 +1,8 @@
 # EEG AI Math Tutor - Integration Guide
 
+> **Install & run today:** See [DEPENDENCIES.md](./DEPENDENCIES.md) and [SETUP_AND_COMMANDS.md](./SETUP_AND_COMMANDS.md).  
+> Use `backend.main:app` (repo root), `npm install`, not `pnpm`.
+
 ## Overview
 
 This React application is the frontend for your cognitive-aware AI math tutor. It displays real-time EEG data, provides a digital whiteboard for solving math problems, and features AI interventions based on your cognitive load.

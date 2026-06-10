@@ -4,6 +4,7 @@ import { Settings2, Palette, Puzzle, Sun, Moon } from "lucide-react";
 import { ThemeToggle } from "../../components/theme/ThemeToggle";
 import { Card } from "../../app/components/ui/card";
 import { Button } from "../../app/components/ui/button";
+import { SettingsPageScroll } from "./SettingsPageScroll";
 
 const VARIANT_KEY = "themeToggleVariant";
 
@@ -24,7 +25,7 @@ export default function SettingsHubPage() {
   };
 
   return (
-    <div className="h-full overflow-y-auto p-6 max-w-lg mx-auto space-y-6">
+    <SettingsPageScroll className="p-6 max-w-lg mx-auto space-y-6">
       <div className="flex items-center gap-2">
         <Settings2 className="w-6 h-6" />
         <h1 className="text-2xl font-semibold">Settings</h1>
@@ -93,6 +94,6 @@ export default function SettingsHubPage() {
           </Link>
         </div>
       </Card>
-    </div>
+    </SettingsPageScroll>
   );
 }

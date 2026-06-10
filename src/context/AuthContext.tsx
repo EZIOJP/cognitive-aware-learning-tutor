@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { resolveApiUrl, resolveVocabApiUrl } from "../utils/resolveBackendUrl";
 
 interface AuthUser {
   id: number;
@@ -15,8 +16,6 @@ interface AuthContextValue {
   logout: () => void;
 }
 
-const API_BASE =
-  (import.meta as any).env?.VITE_VOCAB_API_BASE || "http://localhost:8000/api/vocab";
 const TOKEN_KEY = "vocab:auth-token";
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -27,10 +26,10 @@ async function apiFetch(path: string, init?: RequestInit, token?: string) {
   if (token) headers.set("Authorization", `Bearer ${token}`);
   let res: Response;
   try {
-    res = await fetch(`${API_BASE}${path}`, { ...init, headers });
+    res = await fetch(`${resolveVocabApiUrl()}${path}`, { ...init, headers });
   } catch {
     throw new Error(
-      "Cannot reach backend. Start FastAPI on http://localhost:8000 first."
+      `Cannot reach backend. Start FastAPI on ${resolveApiUrl()} first (or allow firewall ports 8000/5173 for WiFi).`
     );
   }
   const data = await res.json().catch(() => ({}));

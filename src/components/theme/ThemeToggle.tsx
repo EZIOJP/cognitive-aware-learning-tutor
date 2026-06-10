@@ -116,7 +116,7 @@ export function ThemeToggle({ className = "", size = "md", variant: variantProp 
         aria-label={`Switch to ${isDarkMode ? "light" : "dark"} mode`}
       >
         <motion.div
-          className="absolute top-0.5 left-0.5 rounded-full bg-white shadow flex items-center justify-center"
+          className="absolute top-0.5 left-0.5 rounded-full bg-card shadow flex items-center justify-center"
           style={{ width: thumb, height: thumb }}
           animate={{ x: isDarkMode ? trackW - thumb - 6 : 0 }}
           transition={{ type: "spring", stiffness: 500, damping: 30 }}

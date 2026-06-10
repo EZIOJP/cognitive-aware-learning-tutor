@@ -4,6 +4,7 @@ import {
   useState,
   useEffect,
   useCallback,
+  useRef,
   type ReactNode,
 } from "react";
 import type { BiometricData, CognitiveLoad } from "../types";
@@ -11,6 +12,7 @@ import { config } from "../config";
 import { usePlugins } from "../plugins/registry";
 import { useAuth } from "./AuthContext";
 import { postHubReading } from "../api/hubClient";
+import { patchInterventionRecover, postMathIntervention } from "../api/mathClient";
 import { EEGWebSocketClient } from "../utils/websocket";
 
 interface StressPoint {
@@ -25,6 +27,23 @@ interface SessionData {
   stressPoints: StressPoint[];
 }
 
+interface InterventionState {
+  message: string;
+  question: string;
+  detectedConcept: string;
+  sessionSnapshotId?: string;
+  latex?: string;
+  incompleteStep?: boolean;
+  confidence?: number;
+}
+
+export interface CanvasBridge {
+  exportPng: () => Promise<string | null>;
+  exportPaths: () => Promise<unknown[] | null>;
+  getEraserEventCount: () => number;
+  resetEraserCount: () => void;
+}
+
 interface StudySessionContextValue {
   biometricData: BiometricData[];
   cognitiveLoad: CognitiveLoad;
@@ -33,12 +52,11 @@ interface StudySessionContextValue {
   showIntervention: boolean;
   showDiagnostics: boolean;
   sessionData: SessionData;
-  intervention: {
-    message: string;
-    question: string;
-    detectedConcept: string;
-  };
+  intervention: InterventionState;
   handleCanvasChange: (imageData: string) => void;
+  notifyEraserStroke: () => void;
+  registerCanvasExporter: (fn: (() => Promise<string | null>) | null) => void;
+  registerCanvasBridge: (bridge: CanvasBridge | null) => void;
   handleInterventionDismiss: () => void;
   handleInterventionResponse: (response: string) => void;
   handleSessionComplete: () => void;
@@ -75,28 +93,131 @@ export function StudySessionProvider({ children }: { children: ReactNode }) {
   const [lastCanvasUpdate, setLastCanvasUpdate] = useState(Date.now());
   const [showIntervention, setShowIntervention] = useState(false);
   const [showDiagnostics, setShowDiagnostics] = useState(false);
+  const [intervention, setIntervention] = useState<InterventionState>({
+    message: "",
+    question: "",
+    detectedConcept: "",
+  });
   const [sessionData, setSessionData] = useState<SessionData>({
     startTime: Date.now(),
     interventionCount: 0,
     stressPoints: [],
   });
 
-  const triggerIntervention = useCallback((stressLevel: number) => {
-    if (!config.intervention.enabled) return;
-    setShowIntervention(true);
-    setSessionData((prev) => ({
-      ...prev,
-      interventionCount: prev.interventionCount + 1,
-      stressPoints: [
-        ...prev.stressPoints,
-        {
-          concept: "Matrix Operations",
-          stressLevel: Math.round(stressLevel),
-          timestamp: new Date().toISOString(),
-        },
-      ],
-    }));
+  const lastInterventionRef = useRef(0);
+  const eraserStrokesRef = useRef(0);
+  const canvasExporterRef = useRef<(() => Promise<string | null>) | null>(null);
+  const canvasBridgeRef = useRef<CanvasBridge | null>(null);
+  const interventionInFlightRef = useRef(false);
+
+  const registerCanvasExporter = useCallback((fn: (() => Promise<string | null>) | null) => {
+    canvasExporterRef.current = fn;
   }, []);
+
+  const registerCanvasBridge = useCallback((bridge: CanvasBridge | null) => {
+    canvasBridgeRef.current = bridge;
+  }, []);
+
+  const notifyEraserStroke = useCallback(() => {
+    eraserStrokesRef.current += 1;
+  }, []);
+
+  const applyInterventionResult = useCallback(
+    (result: {
+      hint: string;
+      question: string;
+      detected_concept: string;
+      session_snapshot_id: string;
+      triggered: boolean;
+      latex?: string;
+      incomplete_step?: boolean;
+      confidence?: number;
+    }) => {
+      if (!result.triggered) return;
+      setIntervention({
+        message: result.hint,
+        question: result.question,
+        detectedConcept: result.detected_concept,
+        sessionSnapshotId: result.session_snapshot_id,
+        latex: result.latex,
+        incompleteStep: result.incomplete_step,
+        confidence: result.confidence,
+      });
+      setShowIntervention(true);
+      lastInterventionRef.current = Date.now();
+      eraserStrokesRef.current = 0;
+      canvasBridgeRef.current?.resetEraserCount();
+      setSessionData((prev) => ({
+        ...prev,
+        interventionCount: prev.interventionCount + 1,
+        stressPoints: [
+          ...prev.stressPoints,
+          {
+            concept: result.detected_concept,
+            stressLevel: 70,
+            timestamp: new Date().toISOString(),
+          },
+        ],
+      }));
+    },
+    []
+  );
+
+  const requestIntervention = useCallback(async () => {
+    if (!config.intervention.enabled || !isAuthenticated) return;
+    if (interventionInFlightRef.current || showIntervention) return;
+
+    const now = Date.now();
+    const cooldownMs = config.intervention.minTimeBetweenInterventions * 1000;
+    if (now - lastInterventionRef.current < cooldownMs) return;
+
+    const idleSec = (now - lastCanvasUpdate) / 1000;
+    if (idleSec < config.intervention.inactivityThreshold) return;
+
+    const latest = biometricData[biometricData.length - 1];
+    const gamma = latest?.gamma ?? 55;
+    const attention = latest ? Math.max(0, 100 - latest.gamma * 0.8) : 60;
+    const eraserEvents =
+      canvasBridgeRef.current?.getEraserEventCount() ?? eraserStrokesRef.current;
+    const stuckness =
+      0.4 * Math.min(idleSec / 90, 1) +
+      0.3 * Math.min(eraserEvents / 5, 1) +
+      0.3 * Math.min(Math.max((gamma - 55) / 30, 0), 1);
+    if (stuckness < 0.5) return;
+
+    const bridge = canvasBridgeRef.current;
+    const png = bridge
+      ? await bridge.exportPng()
+      : await canvasExporterRef.current?.();
+    if (!png) return;
+
+    const paths = bridge ? await bridge.exportPaths() : null;
+    const pathsJson = paths ? JSON.stringify(paths) : undefined;
+
+    interventionInFlightRef.current = true;
+    try {
+      const result = await postMathIntervention({
+        canvas_image: png,
+        paths_json: pathsJson,
+        topic: "math practice",
+        gamma,
+        attention,
+        canvas_idle_seconds: idleSec,
+        eraser_events: eraserEvents,
+      });
+      applyInterventionResult(result);
+    } catch (e) {
+      if (config.dev.debug) console.warn("Intervention API failed:", e);
+    } finally {
+      interventionInFlightRef.current = false;
+    }
+  }, [
+    isAuthenticated,
+    showIntervention,
+    lastCanvasUpdate,
+    biometricData,
+    applyInterventionResult,
+  ]);
 
   useEffect(() => {
     if (!eegActive) {
@@ -156,27 +277,19 @@ export function StudySessionProvider({ children }: { children: ReactNode }) {
       if (avgGamma > highThreshold) setCognitiveLoad("high");
       else if (avgGamma > mediumThreshold) setCognitiveLoad("medium");
       else setCognitiveLoad("low");
-
-      const timeSinceLastUpdate = (now - lastCanvasUpdate) / 1000;
-      const { gammaThreshold, inactivityThreshold, autoTrigger } =
-        config.intervention;
-
-      if (
-        config.intervention.enabled &&
-        autoTrigger &&
-        avgGamma > gammaThreshold &&
-        timeSinceLastUpdate > inactivityThreshold &&
-        !showIntervention
-      ) {
-        triggerIntervention(avgGamma);
-      }
     }, intervalMs);
 
     return () => {
       clearTimeout(connectTimer);
       clearInterval(dataInterval);
     };
-  }, [eegActive, lastCanvasUpdate, showIntervention, triggerIntervention]);
+  }, [eegActive]);
+
+  useEffect(() => {
+    if (!config.intervention.enabled || !config.intervention.autoTrigger) return;
+    const id = setInterval(() => void requestIntervention(), 5000);
+    return () => clearInterval(id);
+  }, [requestIntervention]);
 
   useEffect(() => {
     if (!eegActive || !isAuthenticated) return;
@@ -194,12 +307,22 @@ export function StudySessionProvider({ children }: { children: ReactNode }) {
     setLastCanvasUpdate(Date.now());
   }, []);
 
-  const handleInterventionDismiss = () => setShowIntervention(false);
-
-  const handleInterventionResponse = (response: string) => {
-    console.log("User selected:", response);
+  const handleInterventionDismiss = useCallback(() => {
+    if (intervention.sessionSnapshotId) {
+      void patchInterventionRecover(intervention.sessionSnapshotId, "dismissed");
+    }
     setShowIntervention(false);
-  };
+  }, [intervention.sessionSnapshotId]);
+
+  const handleInterventionResponse = useCallback(
+    (response: string) => {
+      if (intervention.sessionSnapshotId) {
+        void patchInterventionRecover(intervention.sessionSnapshotId, `response:${response}`);
+      }
+      setShowIntervention(false);
+    },
+    [intervention.sessionSnapshotId]
+  );
 
   const handleSessionComplete = () => setShowDiagnostics(true);
 
@@ -211,38 +334,15 @@ export function StudySessionProvider({ children }: { children: ReactNode }) {
       stressPoints: [],
     });
     setBiometricData([]);
-  };
-
-  const intervention = {
-    message:
-      "Your cognitive load spiked right after setting up this matrix.",
-    question:
-      "Are you facing trouble with the cross-multiplication, or is it the negative signs?",
-    detectedConcept: "Matrix Cross-Multiplication",
+    lastInterventionRef.current = 0;
+    eraserStrokesRef.current = 0;
   };
 
   const diagnosticsSummary = {
     duration: (Date.now() - sessionData.startTime) / 1000,
     totalProblems: 3,
     interventions: sessionData.interventionCount,
-    stressPoints: [
-      ...sessionData.stressPoints,
-      {
-        concept: "Derivatives",
-        stressLevel: 45,
-        timestamp: new Date().toISOString(),
-      },
-      {
-        concept: "Integration",
-        stressLevel: 78,
-        timestamp: new Date().toISOString(),
-      },
-      {
-        concept: "Limits",
-        stressLevel: 32,
-        timestamp: new Date().toISOString(),
-      },
-    ],
+    stressPoints: sessionData.stressPoints,
     overallPerformance:
       sessionData.interventionCount < 3
         ? ("excellent" as const)
@@ -261,6 +361,9 @@ export function StudySessionProvider({ children }: { children: ReactNode }) {
         sessionData,
         intervention,
         handleCanvasChange,
+        notifyEraserStroke,
+        registerCanvasExporter,
+        registerCanvasBridge,
         handleInterventionDismiss,
         handleInterventionResponse,
         handleSessionComplete,

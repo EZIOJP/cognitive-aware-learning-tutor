@@ -1,0 +1,5 @@
+/**
+ * Lemillion hero presets — decorative only
+ * Semantic tokens (--background, --primary, etc.) are applied by ThemeProvider via applyThemeTokens.
+ * Body backgrounds: controlled by data-bg-style in theme-extras.css
+ */

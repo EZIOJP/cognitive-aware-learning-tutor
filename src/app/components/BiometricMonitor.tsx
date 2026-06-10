@@ -128,7 +128,7 @@ export function BiometricMonitor({ data, cognitiveLoad }: BiometricMonitorProps)
               {COGNITIVE_LOAD_PERCENT[cognitiveLoad]}
             </span>
           </div>
-          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+          <div className="w-full bg-muted rounded-full h-2">
             <div
               className={`h-2 rounded-full transition-[width] duration-300 ${getCognitiveLoadColor()}`}
               style={{ width: COGNITIVE_LOAD_PERCENT[cognitiveLoad] }}

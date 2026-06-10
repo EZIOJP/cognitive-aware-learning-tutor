@@ -8,7 +8,7 @@ echo Starting Cognitive-Aware Learning Tutor...
 echo   API:       http://localhost:8000/health
 echo   Frontend:  http://localhost:5173
 echo   Login:     admin / admin123
-echo.
+call "%~dp0print_lan_urls.bat"
 
 echo Applying database migrations...
 "%PY%" -m alembic upgrade head

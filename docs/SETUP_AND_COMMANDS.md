@@ -1,210 +1,138 @@
 # Setup, Dependencies, and Commands
 
-This document lists the libraries, commands, and Windows batch files used by the
-project.
+**Fresh machine?** Start with **[DEPENDENCIES.md](./DEPENDENCIES.md)** — Python/Node versions, optional OCR/Ollama, env vars, ports, and a verification checklist for Windows, Linux, and macOS.
 
-## System Requirements
+This page is the quick command reference.
 
-- Windows 10/11
-- Node.js 20 or newer recommended
-- npm
-- Python 3.10 or newer recommended
-- Optional: Ollama for local LLaVA vision models
-- Optional: ESP32-S3 hardware for future real EEG data
+---
 
-## Frontend Dependencies
+## System requirements
 
-Installed from `package.json`.
+| | |
+|--|--|
+| **Python** | 3.10 – 3.12 (3.11 recommended) |
+| **Node.js** | 20 LTS+ |
+| **OS** | Windows 10/11, Linux, macOS |
 
-Core:
+Optional: [Ollama](https://ollama.com), ESP32 hardware, webcam (focus mirror), Chrome (SelfTracker extension).
 
-- `vite`
-- `react`
-- `react-dom`
-- `react-router`
-- `react-router-dom`
-- `typescript-style TSX through Vite`
+---
 
-UI and styling:
+## One-command start
 
-- `tailwindcss`
-- `@tailwindcss/vite`
-- `@radix-ui/*`
-- `lucide-react`
-- `class-variance-authority`
-- `clsx`
-- `tailwind-merge`
-- `tw-animate-css`
-- `next-themes`
-- `@mui/material`
-- `@mui/icons-material`
-- `@emotion/react`
-- `@emotion/styled`
+### Windows
 
-Study UI:
-
-- `react-sketch-canvas`
-- `recharts`
-- `canvas-confetti`
-- `motion`
-- `date-fns`
-
-Form and interaction helpers:
-
-- `react-hook-form`
-- `cmdk`
-- `input-otp`
-- `react-day-picker`
-- `react-dnd`
-- `react-dnd-html5-backend`
-- `react-popper`
-- `@popperjs/core`
-- `react-resizable-panels`
-- `react-responsive-masonry`
-- `react-slick`
-- `embla-carousel-react`
-- `sonner`
-- `vaul`
-
-## Backend Dependencies
-
-Backend dependencies are listed in:
-
-```text
-backend/requirements.txt
+```bat
+run.bat
 ```
 
-Current backend requirements:
+First run: `.venv`, `pip install`, `npm install`, `alembic upgrade head`, then API + frontend.
 
-- `fastapi`
-- `uvicorn`
-- `websockets`
-- `numpy`
-- `scipy`
-- `pillow`
-- `pydantic`
-
-Future optional requirements:
-
-- `opencv-python`
-- `mediapipe`
-- `ollama`
-
-## Install (automatic)
-
-Double-click **`run.bat`** at the project root. On the **first run** it creates `.venv`, runs `pip install`, and `npm install`. Later runs skip install unless those folders are missing.
-
-To **force refresh** after dependency changes:
+Force refresh after `git pull` or dependency changes:
 
 ```bat
 scripts\setup.bat
 ```
 
-Manual install (optional):
+### Linux / macOS
 
-```bat
-python -m venv .venv
-.venv\Scripts\pip install -r backend\requirements.txt
-npm.cmd install
+```bash
+chmod +x scripts/*.sh
+./scripts/setup.sh      # first time or after dep changes
+./scripts/run_all.sh    # migrations + API + frontend
 ```
 
-Use `npm.cmd` on Windows to avoid PowerShell execution-policy issues.
+---
 
-## Run Frontend
+## Manual install
 
-```bat
-npm.cmd run dev
+```bash
+python3 -m venv .venv
+
+# Windows
+.venv\Scripts\activate
+# Linux/macOS
+source .venv/bin/activate
+
+pip install -U pip
+pip install -r backend/requirements.txt
+python -m alembic upgrade head
+
+npm install
+cp .env.example .env    # if .env missing
 ```
 
-or:
+Windows: use `npm.cmd` if PowerShell blocks `npm`.
 
-```bat
-scripts\run_frontend.bat
-```
+---
 
-Default URL:
+## Run services
 
-```text
-http://localhost:5173
-```
+| What | Windows | Linux/macOS |
+|------|---------|-------------|
+| **Full stack** | `run.bat` | `./scripts/run_all.sh` |
+| **API only** | `scripts\run_backend.bat` | `python -m uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload` |
+| **Frontend only** | `scripts\run_frontend.bat` | `npm run dev` |
+| **Migrations** | `scripts\migrate.bat` | `./scripts/migrate.sh` |
+| **Production build** | `scripts\build.bat` | `npm run build` |
 
-## Build Frontend
+### URLs
 
-```bat
-npm.cmd run build
-```
+| Service | URL |
+|---------|-----|
+| Frontend | http://localhost:5173 |
+| API health | http://localhost:8000/health |
+| Vocab API | http://localhost:8000/api/vocab |
+| OpenAPI | http://localhost:8000/openapi.json |
 
-or:
+Default login: **admin** / **admin123**
 
-```bat
-scripts\build.bat
-```
+---
 
-Build output:
+## Optional components
 
-```text
-dist/
-```
+| Component | Install | Run |
+|-----------|---------|-----|
+| **Math OCR** (pix2tex) | `scripts\install_ocr.bat` or `./scripts/install_ocr.sh` | `/math-tutor/recognize-test` |
+| **Focus mirror** | in core `requirements.txt` (opencv + mediapipe) | `scripts\run_face_tracker.bat` |
+| **Ollama LLM** | [ollama.com](https://ollama.com) + set `OLLAMA_ENABLED=1` in `.env` | `ollama pull llama3.2` |
+| **EEG hardware** | `EEG_ENABLED=1` in `.env` | `scripts\run_eeg.bat` (prototype) or main API |
+| **SelfTracker** | Load `selftracker-extension/` in Chrome | API must be on :8000 |
 
-## Run Vocab Backend
+See [DEPENDENCIES.md](./DEPENDENCIES.md) for tiers, env vars, and troubleshooting.
 
-```bat
-scripts\run_backend.bat
-```
+---
 
-Default URL:
+## Dependency files
 
-```text
-http://localhost:8000/api/vocab
-```
+| File | Contents |
+|------|----------|
+| `backend/requirements.txt` | Core Python (FastAPI, SQLAlchemy, OpenCV, MediaPipe, SymPy, …) |
+| `backend/requirements-ocr.txt` | pix2tex + PyTorch (optional) |
+| `package.json` / `package-lock.json` | React + Vite frontend |
+| `.env.example` | Environment template |
 
-## Run Frontend and Backend Together
+---
 
-```bat
-run.bat
-```
+## Scripts folder
 
-Installs deps once if needed, then opens the vocab API and frontend in separate windows.
+| Script | Platform | Purpose |
+|--------|----------|---------|
+| `run.bat` / `run_all.bat` | Windows | Full stack |
+| `setup.bat` | Windows | Force reinstall deps |
+| `setup.sh` / `run_all.sh` | Unix | Install / run |
+| `migrate.bat` / `migrate.sh` | Both | `alembic upgrade head` |
+| `install_ocr.bat` / `install_ocr.sh` | Both | Math OCR stack |
 
-## Optional: EEG Reference Backend
+Details: [scripts/README.md](../scripts/README.md)
 
-```bat
-scripts\run_eeg.bat
-```
+---
 
-Default URLs:
+## Related docs
 
-```text
-http://localhost:8000/health
-ws://localhost:8000/ws/eeg
-```
-
-## Useful Files
-
-```text
-README.md
-docs/CURRENT_ARCHITECTURE.md
-docs/FUTURE_VISION.md
-docs/SETUP_AND_COMMANDS.md
-backend/main.py
-docs/DATABASE.md
-docs/API_CONTRACT.md
-docs/CENTRAL_HUB.md
-backend/backend_example.py
-assets/esp32_firmware_example.cpp
-run.bat
-scripts/
-src/config.ts
-```
-
-## Important Config Flags
-
-```ts
-config.dev.useSimulatedData = true
-config.intervention.enabled = false
-config.intervention.autoTrigger = false
-```
-
-Change these later when connecting the real FastAPI WebSocket stream and AI
-intervention flow.
-
+- [DEPENDENCIES.md](./DEPENDENCIES.md) — master install guide
+- [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) — common errors
+- [MIGRATIONS.md](./MIGRATIONS.md) — database upgrades
+- [DATABASE.md](./DATABASE.md) — schema and env
+- [DOCKER.md](./DOCKER.md) — container API
+- [WORKING_PRODUCT.md](./WORKING_PRODUCT.md) — what works without hardware

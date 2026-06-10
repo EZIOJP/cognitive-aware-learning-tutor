@@ -17,6 +17,7 @@ class ReviewOut(BaseModel):
     next_steps: list[str]
     goals: list[str]
     overall_performance: str
+    source: str = "template"
 
 
 @router.get("/daily")
@@ -43,9 +44,7 @@ def insights_daily(db: Session = Depends(get_db), user: User = Depends(get_curre
     }
 
 
-@router.post("/review", response_model=ReviewOut)
-def insights_review(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    data = insights_daily(db=db, user=user)
+def _template_review(data: dict) -> ReviewOut:
     perf = data["overall_performance"]
     comments = {
         "excellent": "Strong day — keep your current rhythm.",
@@ -63,6 +62,9 @@ def insights_review(db: Session = Depends(get_db), user: User = Depends(get_curr
         steps.append("Run one GRE vocab cycle to keep retention sharp.")
     if data["math_attempts"] == 0:
         steps.append("Complete one math practice set (enable Math Tutor plugin).")
+    ocr_samples = data.get("ocr_samples", 0)
+    if ocr_samples and ocr_samples < 20:
+        steps.append(f"Keep training handwriting — {ocr_samples} OCR samples logged so far.")
     if not steps:
         steps.append("Maintain today's habits — metrics look balanced.")
 
@@ -71,4 +73,26 @@ def insights_review(db: Session = Depends(get_db), user: User = Depends(get_curr
         next_steps=steps,
         goals=["Protect sleep", "One focused study block", "Track mood daily"],
         overall_performance=perf,
+        source="template",
     )
+
+
+@router.post("/review", response_model=ReviewOut)
+async def insights_review(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    data = insights_daily(db=db, user=user)
+    from backend.math.training_log import training_stats_for_hub
+
+    data = {**data, **training_stats_for_hub(user.id)}
+
+    from backend.integrations.nim_client import nim_available
+
+    if nim_available():
+        try:
+            from backend.hub.services.gemma_review import generate_daily_review
+
+            gemma = await generate_daily_review(data, user_id=user.id)
+            return ReviewOut(**gemma)
+        except Exception:
+            pass
+
+    return _template_review(data)

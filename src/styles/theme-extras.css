@@ -1,0 +1,118 @@
+/**
+ * Button + background style modifiers (Theme Settings)
+ * html[data-button-style] html[data-bg-style]
+ */
+
+:root {
+  --btn-radius-override: var(--radius);
+  --btn-shadow: none;
+  --btn-border-width: 0px;
+}
+
+/* --- Button styles (shadcn Button uses data-slot="button") --- */
+[data-button-style="comic"] {
+  --btn-shadow: 4px 4px 0 rgba(0, 0, 0, 0.85);
+  --btn-border-width: 2px;
+}
+
+[data-button-style="gloss"] {
+  --btn-shadow: 0 2px 12px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.dark[data-button-style="gloss"],
+[data-color-scheme="dark"][data-button-style="gloss"] {
+  --btn-shadow: 0 2px 16px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+[data-button-style] [data-slot="button"]:not([data-variant="ghost"]):not([data-variant="link"]) {
+  border-radius: var(--btn-radius-override, var(--radius)) !important;
+}
+
+[data-button-style="comic"] [data-slot="button"][class*="bg-primary"],
+[data-button-style="comic"] [data-slot="button"][class*="bg-secondary"],
+[data-button-style="comic"] [data-slot="button"][class*="bg-destructive"] {
+  box-shadow: var(--btn-shadow);
+  border: var(--btn-border-width) solid rgba(0, 0, 0, 0.9);
+}
+
+[data-button-style="comic"] [data-slot="button"][class*="border"] {
+  box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.75);
+  border-width: 2px !important;
+}
+
+[data-button-style="gloss"] [data-slot="button"][class*="bg-primary"],
+[data-button-style="gloss"] [data-slot="button"][class*="bg-secondary"] {
+  box-shadow: var(--btn-shadow);
+}
+
+/* Native buttons on theme settings (non-shadcn) */
+[data-button-style="comic"] button.border-2.border-primary {
+  box-shadow: var(--btn-shadow);
+}
+
+/* --- Background styles --- */
+[data-bg-style="minimal"] body {
+  background-image: none !important;
+}
+
+[data-bg-style="solid"] body {
+  background-image: none !important;
+}
+
+[data-bg-style="gradient"] body {
+  background-image:
+    radial-gradient(
+      circle at 0% 0%,
+      color-mix(in srgb, var(--primary) 14%, transparent) 0%,
+      transparent 45%
+    ),
+    radial-gradient(
+      circle at 100% 100%,
+      color-mix(in srgb, var(--secondary, var(--primary)) 12%, transparent) 0%,
+      transparent 45%
+    ) !important;
+}
+
+[data-bg-style="spotlight"] body {
+  background-image: radial-gradient(
+    ellipse 70% 50% at 50% -10%,
+    color-mix(in srgb, var(--secondary, var(--primary)) 20%, transparent) 0%,
+    transparent 60%
+  ) !important;
+}
+
+[data-bg-style="halftone"] body {
+  background-image:
+    radial-gradient(
+      circle,
+      color-mix(in srgb, var(--foreground) 7%, transparent) 1px,
+      transparent 1px
+    ),
+    radial-gradient(
+      circle at 50% 0%,
+      color-mix(in srgb, var(--primary) 8%, transparent) 0%,
+      transparent 50%
+    ) !important;
+  background-size: 6px 6px, 100% 100% !important;
+}
+
+[data-bg-style="speed-lines"] body {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 12px,
+    color-mix(in srgb, var(--secondary, var(--primary)) 7%, transparent) 12px,
+    color-mix(in srgb, var(--secondary, var(--primary)) 7%, transparent) 14px
+  ) !important;
+}
+
+/* Preset-specific body glow (when bg-style is minimal/gradient, layer under extras) */
+[data-accent-preset="lemillion-heroic-spotlight"][data-bg-style="minimal"].dark body,
+[data-accent-preset="lemillion-heroic-spotlight"][data-bg-style="solid"].dark body {
+  background-color: var(--background);
+  background-image: radial-gradient(
+    ellipse 80% 50% at 50% 0%,
+    color-mix(in srgb, var(--secondary) 10%, transparent) 0%,
+    transparent 55%
+  ) !important;
+}

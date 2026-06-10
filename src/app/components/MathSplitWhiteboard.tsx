@@ -10,16 +10,20 @@ export interface MathSplitWhiteboardHandle {
   clearAll: () => void;
   exportPng: () => Promise<string | null>;
   exportPaths: () => Promise<import("react-sketch-canvas").CanvasPath[] | null>;
+  getEraserEventCount: () => number;
+  resetEraserCount: () => void;
 }
 
 interface MathSplitWhiteboardProps {
   onCanvasChange: (imageData: string) => void;
+  onEraserStroke?: () => void;
 }
 
 export const MathSplitWhiteboard = forwardRef<MathSplitWhiteboardHandle, MathSplitWhiteboardProps>(
-  function MathSplitWhiteboard({ onCanvasChange }, ref) {
+  function MathSplitWhiteboard({ onCanvasChange, onEraserStroke }, ref) {
     const mainRef = useRef<ReactSketchCanvasRef>(null);
     const roughRef = useRef<ReactSketchCanvasRef>(null);
+    const eraserCountRef = useRef(0);
     const [strokeWidth, setStrokeWidth] = useState(3);
     const [eraserWidth, setEraserWidth] = useState(12);
     const [tool, setTool] = useState<"pen" | "eraser">("pen");
@@ -39,11 +43,16 @@ export const MathSplitWhiteboard = forwardRef<MathSplitWhiteboardHandle, MathSpl
       return (await mainRef.current?.exportPaths()) ?? null;
     }, []);
 
-    useImperativeHandle(ref, () => ({ clearAll, exportPng, exportPaths }), [
-      clearAll,
-      exportPng,
-      exportPaths,
-    ]);
+    const getEraserEventCount = useCallback(() => eraserCountRef.current, []);
+    const resetEraserCount = useCallback(() => {
+      eraserCountRef.current = 0;
+    }, []);
+
+    useImperativeHandle(
+      ref,
+      () => ({ clearAll, exportPng, exportPaths, getEraserEventCount, resetEraserCount }),
+      [clearAll, exportPng, exportPaths, getEraserEventCount, resetEraserCount]
+    );
 
     const stroke = tool === "pen" ? strokeColor : "transparent";
 
@@ -95,7 +104,13 @@ export const MathSplitWhiteboard = forwardRef<MathSplitWhiteboardHandle, MathSpl
                 eraserWidth={eraserWidth}
                 strokeColor={stroke}
                 canvasColor="#ffffff"
-                onStroke={() => onCanvasChange(`stroke-${Date.now()}`)}
+                onStroke={() => {
+                  if (tool === "eraser") {
+                    eraserCountRef.current += 1;
+                    onEraserStroke?.();
+                  }
+                  onCanvasChange(`stroke-${Date.now()}`);
+                }}
                 className="w-full h-full"
               />
             </div>

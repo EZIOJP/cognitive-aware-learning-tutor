@@ -1,0 +1,93 @@
+{
+  "format_version": 2,
+  "min_samples_per_prompt": 3,
+  "default_target_samples": 5,
+  "retrain_threshold": 50,
+  "tiers": [
+    {
+      "id": "digits",
+      "label": "Digits 0–9",
+      "prompts": [
+        { "id": "d0", "text": "0", "target_latex": "0", "grid_cells": 1 },
+        { "id": "d1", "text": "1", "target_latex": "1", "grid_cells": 1 },
+        { "id": "d2", "text": "2", "target_latex": "2", "grid_cells": 1 },
+        { "id": "d3", "text": "3", "target_latex": "3", "grid_cells": 1 },
+        { "id": "d4", "text": "4", "target_latex": "4", "grid_cells": 1 },
+        { "id": "d5", "text": "5", "target_latex": "5", "grid_cells": 1 },
+        { "id": "d6", "text": "6", "target_latex": "6", "grid_cells": 1 },
+        { "id": "d7", "text": "7", "target_latex": "7", "grid_cells": 1 },
+        { "id": "d8", "text": "8", "target_latex": "8", "grid_cells": 1 },
+        { "id": "d9", "text": "9", "target_latex": "9", "grid_cells": 1 }
+      ]
+    },
+    {
+      "id": "multi_digit",
+      "label": "Multi-digit",
+      "prompts": [
+        { "id": "m12", "text": "12", "target_latex": "12", "grid_cells": 2 },
+        { "id": "m37", "text": "37", "target_latex": "37", "grid_cells": 2 },
+        { "id": "m105", "text": "105", "target_latex": "105", "grid_cells": 3 },
+        { "id": "m2024", "text": "2024", "target_latex": "2024", "grid_cells": 4 },
+        { "id": "m314", "text": "3.14", "target_latex": "3.14", "grid_cells": 4 }
+      ]
+    },
+    {
+      "id": "operators",
+      "label": "Operators",
+      "prompts": [
+        { "id": "op_plus", "text": "+", "target_latex": "+", "grid_cells": 1 },
+        { "id": "op_minus", "text": "−", "target_latex": "-", "grid_cells": 1 },
+        { "id": "op_times", "text": "×", "target_latex": "\\times", "grid_cells": 1 },
+        { "id": "op_div", "text": "÷", "target_latex": "\\div", "grid_cells": 1 },
+        { "id": "op_eq", "text": "=", "target_latex": "=", "grid_cells": 1 },
+        { "id": "op_ne", "text": "≠", "target_latex": "\\neq", "grid_cells": 1 },
+        { "id": "op_lt", "text": "<", "target_latex": "<", "grid_cells": 1 },
+        { "id": "op_gt", "text": ">", "target_latex": ">", "grid_cells": 1 },
+        { "id": "op_le", "text": "≤", "target_latex": "\\leq", "grid_cells": 1 },
+        { "id": "op_ge", "text": "≥", "target_latex": "\\geq", "grid_cells": 1 }
+      ]
+    },
+    {
+      "id": "variables",
+      "label": "Variables",
+      "prompts": [
+        { "id": "v_x", "text": "x", "target_latex": "x", "grid_cells": 1 },
+        { "id": "v_y", "text": "y", "target_latex": "y", "grid_cells": 1 },
+        { "id": "v_n", "text": "n", "target_latex": "n", "grid_cells": 1 },
+        { "id": "v_a", "text": "a", "target_latex": "a", "grid_cells": 1 },
+        { "id": "v_b", "text": "b", "target_latex": "b", "grid_cells": 1 },
+        { "id": "v_theta", "text": "θ", "target_latex": "\\theta", "grid_cells": 1 }
+      ]
+    },
+    {
+      "id": "symbols",
+      "label": "Greek & symbols",
+      "prompts": [
+        { "id": "s_pi", "text": "π", "target_latex": "\\pi", "grid_cells": 1 },
+        { "id": "s_sqrt", "text": "√", "target_latex": "\\sqrt{}", "grid_cells": 1 },
+        { "id": "s_int", "text": "∫", "target_latex": "\\int", "grid_cells": 1 },
+        { "id": "s_sum", "text": "Σ", "target_latex": "\\sum", "grid_cells": 1 },
+        { "id": "s_inf", "text": "∞", "target_latex": "\\infty", "grid_cells": 1 },
+        { "id": "s_paren", "text": "( )", "target_latex": "()", "grid_cells": 2 }
+      ]
+    },
+    {
+      "id": "fractions",
+      "label": "Fractions",
+      "prompts": [
+        { "id": "f_half", "text": "½", "target_latex": "\\frac{1}{2}", "grid_cells": 1 },
+        { "id": "f_three_quarter", "text": "¾", "target_latex": "\\frac{3}{4}", "grid_cells": 1 },
+        { "id": "f_ab", "text": "a/b", "target_latex": "\\frac{a}{b}", "grid_cells": 1 }
+      ]
+    },
+    {
+      "id": "equations",
+      "label": "Equations",
+      "prompts": [
+        { "id": "e1", "text": "x+2=5", "target_latex": "x+2=5", "grid_cells": 5 },
+        { "id": "e2", "text": "2x=8", "target_latex": "2x=8", "grid_cells": 4 },
+        { "id": "e3", "text": "x²+1", "target_latex": "x^2+1", "grid_cells": 3 }
+      ]
+    }
+  ]
+}

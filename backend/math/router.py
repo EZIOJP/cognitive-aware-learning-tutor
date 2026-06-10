@@ -211,6 +211,8 @@ def math_tutor_hint(
 
 class MathOcrIn(BaseModel):
     canvas_image: str
+    paths_json: str | None = None
+    ollama_vision_fallback: bool = True
 
 
 class MathOcrOut(BaseModel):
@@ -218,6 +220,71 @@ class MathOcrOut(BaseModel):
     incomplete_step: bool
     confidence: float
     preprocess_applied: bool
+    teacher_latex: str = ""
+    needs_review: bool = False
+    tier: str = "texteller"
+
+
+class MathEvalIn(BaseModel):
+    expression: str
+
+
+class MathEvalOut(BaseModel):
+    result: str
+    latex: str
+    steps: list[str]
+    ok: bool = True
+    error: str | None = None
+
+
+@router.post("/eval", response_model=MathEvalOut)
+def math_eval(
+    body: MathEvalIn,
+    _user: User = Depends(get_current_user),
+):
+    """SymPy simplify / integrate / diff / solve — CPU only, for hub calculator widget."""
+    from backend.math.eval_service import eval_expression
+
+    expr = (body.expression or "").strip()
+    if not expr:
+        raise HTTPException(status_code=400, detail="expression is required")
+    try:
+        out = eval_expression(expr)
+    except ValueError as e:
+        return MathEvalOut(result="", latex="", steps=[], ok=False, error=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Eval failed: {e}") from e
+    return MathEvalOut(**out)
+
+
+class MathOcrStatusOut(BaseModel):
+    texteller_available: bool
+    nim_teacher: bool
+    ollama_vision: bool
+    tier: str
+
+
+@router.get("/ocr/status", response_model=MathOcrStatusOut)
+def math_ocr_status(
+    _user: User = Depends(get_current_user),
+):
+    """OCR engine health — lets the UI show 'ready' vs 'install OCR deps'."""
+    import os
+
+    from backend.integrations.nim_client import nim_available
+    from backend.math.ocr_service import texteller_available
+    from backend.math.ollama_tutor import ollama_available
+
+    tex = texteller_available()
+    nim = nim_available()
+    ollama_vis = bool(ollama_available() and os.getenv("OLLAMA_VISION_MODEL", "").strip())
+    tier = "texteller" if tex else ("ollama_vision" if ollama_vis else "unavailable")
+    return MathOcrStatusOut(
+        texteller_available=tex,
+        nim_teacher=nim,
+        ollama_vision=ollama_vis,
+        tier=tier,
+    )
 
 
 @router.post("/ocr", response_model=MathOcrOut)
@@ -225,11 +292,15 @@ def math_ocr(
     body: MathOcrIn,
     _user: User = Depends(get_current_user),
 ):
-    """Handwritten math → LaTeX via pix2tex; SymPy marks incomplete steps."""
+    """Handwritten math → LaTeX via TexTeller ONNX (CPU); SymPy marks incomplete steps."""
     from backend.math.ocr_service import recognize_canvas
 
     try:
-        result = recognize_canvas(body.canvas_image)
+        result = recognize_canvas(
+            body.canvas_image,
+            paths_json=body.paths_json,
+            ollama_vision_fallback=body.ollama_vision_fallback,
+        )
     except ImportError as e:
         raise HTTPException(status_code=503, detail=str(e)) from e
     except ValueError as e:
@@ -242,4 +313,255 @@ def math_ocr(
         incomplete_step=result.incomplete_step,
         confidence=result.confidence,
         preprocess_applied=result.preprocess_applied,
+        teacher_latex=result.teacher_latex,
+        needs_review=result.needs_review,
+        tier=result.tier,
     )
+
+
+class MathInterventionIn(BaseModel):
+    canvas_image: str = ""
+    paths_json: str | None = None
+    prompt: str = ""
+    topic: str = ""
+    gamma: float = 55.0
+    attention: float = 60.0
+    canvas_idle_seconds: float = 0.0
+    eraser_events: int = 0
+    idle_seconds: float = 0.0
+    eraser_strokes: int = 0
+
+
+class MathInterventionOut(BaseModel):
+    session_snapshot_id: str
+    latex: str
+    incomplete_step: bool
+    confidence: float
+    stuckness: float
+    triggered: bool
+    hint: str
+    question: str
+    detected_concept: str
+    use_llm: bool = False
+
+
+class InterventionPatchIn(BaseModel):
+    notes: str = ""
+    learner_recovered: bool = True
+
+
+class InterventionCorrectIn(BaseModel):
+    correct_latex: str
+    notes: str = ""
+
+
+class InterventionPatchOut(BaseModel):
+    session_snapshot_id: str
+    status: str
+    ok: bool = True
+
+
+@router.post("/intervention", response_model=MathInterventionOut)
+def math_intervention(
+    body: MathInterventionIn,
+    user: User = Depends(get_current_user),
+):
+    """OCR + stuckness score → Socratic hint; logs DSC_interventions CSV + PNG."""
+    from backend.math.intervention_handler import build_intervention
+    from backend.math.intervention_log import log_intervention, new_snapshot_id
+
+    if not (body.canvas_image or "").strip():
+        raise HTTPException(status_code=400, detail="canvas_image is required")
+
+    snapshot_id = new_snapshot_id()
+    idle = body.canvas_idle_seconds or body.idle_seconds
+    erasers = body.eraser_events or body.eraser_strokes
+    try:
+        result = build_intervention(
+            canvas_image=body.canvas_image,
+            paths_json=body.paths_json,
+            prompt=body.prompt,
+            topic=body.topic,
+            gamma=body.gamma,
+            attention=body.attention,
+            canvas_idle_seconds=idle,
+            eraser_events=erasers,
+            snapshot_id=snapshot_id,
+        )
+    except ImportError as e:
+        raise HTTPException(status_code=503, detail=str(e)) from e
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Intervention failed: {e}") from e
+
+    log_intervention(
+        user_id=user.id,
+        canvas_image=body.canvas_image,
+        snapshot_id=result.session_snapshot_id,
+        topic=body.topic,
+        latex=result.latex,
+        teacher_latex=result.teacher_latex,
+        needs_review=result.needs_review,
+        incomplete_step=result.incomplete_step,
+        stuckness=result.stuckness,
+        gamma=body.gamma,
+        attention=body.attention,
+        idle_seconds=idle,
+        eraser_events=erasers,
+        hint=result.hint,
+        question=result.question,
+        detected_concept=result.detected_concept,
+        use_llm=result.use_llm,
+        status="spawned" if result.triggered else "low_signal",
+    )
+
+    return MathInterventionOut(
+        session_snapshot_id=result.session_snapshot_id,
+        latex=result.latex,
+        incomplete_step=result.incomplete_step,
+        confidence=result.confidence,
+        stuckness=result.stuckness,
+        triggered=result.triggered,
+        hint=result.hint,
+        question=result.question,
+        detected_concept=result.detected_concept,
+        use_llm=result.use_llm,
+    )
+
+
+@router.patch("/intervention/{snapshot_id}/recover", response_model=InterventionPatchOut)
+def math_intervention_recover(
+    snapshot_id: str,
+    body: InterventionPatchIn,
+    _user: User = Depends(get_current_user),
+):
+    """Student dismissed hint or resumed work."""
+    from backend.math.intervention_log import update_intervention_status
+
+    ok = update_intervention_status(
+        snapshot_id,
+        "recovered",
+        body.notes,
+        learner_recovered=body.learner_recovered,
+    )
+    if not ok:
+        raise HTTPException(status_code=404, detail="Intervention snapshot not found")
+    return InterventionPatchOut(session_snapshot_id=snapshot_id, status="recovered")
+
+
+@router.patch("/intervention/{snapshot_id}/correct", response_model=InterventionPatchOut)
+def math_intervention_correct(
+    snapshot_id: str,
+    body: InterventionCorrectIn,
+    user: User = Depends(get_current_user),
+):
+    """Admin/human correct LaTeX label → DSC_handwriting_dataset.csv."""
+    from backend.math.intervention_log import log_intervention_correction, update_intervention_status
+
+    latex = (body.correct_latex or "").strip()
+    if not latex:
+        raise HTTPException(status_code=400, detail="correct_latex is required")
+    ok = update_intervention_status(snapshot_id, "correct", body.notes, learner_recovered=True)
+    if not ok:
+        raise HTTPException(status_code=404, detail="Intervention snapshot not found")
+    log_intervention_correction(
+        snapshot_id=snapshot_id,
+        correct_latex=latex,
+        user_id=user.id,
+    )
+    return InterventionPatchOut(session_snapshot_id=snapshot_id, status="correct")
+
+
+class TrainSampleIn(BaseModel):
+    tier: str
+    prompt_id: str
+    prompt_text: str = ""
+    canvas_image: str
+    predicted_latex: str = ""
+    confirmed_latex: str | None = None
+    action: str  # confirm | correct
+
+
+class TrainSampleOut(BaseModel):
+    sample_id: str
+    confirmed_latex: str
+    teacher_latex: str = ""
+    agree: str
+
+
+@router.get("/train/curriculum")
+def train_curriculum(user: User = Depends(get_current_user)):
+    from backend.math.training_service import curriculum_with_progress
+
+    return curriculum_with_progress(user.id)
+
+
+@router.get("/train/progress")
+def train_progress(user: User = Depends(get_current_user)):
+    from backend.math.training_log import training_progress
+
+    return training_progress(user.id)
+
+
+@router.post("/train/sample", response_model=TrainSampleOut)
+async def train_sample(body: TrainSampleIn, user: User = Depends(get_current_user)):
+    from backend.integrations.nim_client import nim_available, nim_vision_latex
+    from backend.math.training_log import log_training_sample
+
+    if body.action not in ("confirm", "correct"):
+        raise HTTPException(status_code=400, detail="action must be confirm or correct")
+    if not (body.canvas_image or "").strip():
+        raise HTTPException(status_code=400, detail="canvas_image is required")
+
+    predicted = (body.predicted_latex or "").strip()
+    if body.action == "confirm":
+        confirmed = predicted
+    else:
+        confirmed = (body.confirmed_latex or "").strip()
+        if not confirmed:
+            raise HTTPException(status_code=400, detail="confirmed_latex required for correct action")
+
+    teacher_latex = ""
+    if body.action == "correct" and nim_available():
+        try:
+            teacher_latex = await nim_vision_latex(body.canvas_image)
+        except Exception:
+            teacher_latex = ""
+
+    sample_id = log_training_sample(
+        user_id=user.id,
+        tier=body.tier,
+        prompt_id=body.prompt_id,
+        prompt_text=body.prompt_text,
+        canvas_image=body.canvas_image,
+        predicted_latex=predicted,
+        confirmed_latex=confirmed,
+        teacher_latex=teacher_latex,
+        action=body.action,
+    )
+
+    agree = "true" if predicted == confirmed else ("teacher_match" if teacher_latex == confirmed else "corrected")
+    return TrainSampleOut(
+        sample_id=sample_id,
+        confirmed_latex=confirmed,
+        teacher_latex=teacher_latex,
+        agree=agree,
+    )
+
+
+@router.post("/train/retrain")
+def train_retrain_stub(
+    _user: User = Depends(get_current_user),
+    _admin: User = Depends(require_admin),
+):
+    """v1 stub — logs sample count; wire scripts/retrain_texteller.py in v2."""
+    from backend.math.training_log import _read_rows
+
+    total = len(_read_rows())
+    return {
+        "status": "stub",
+        "message": "Fine-tune job not wired yet. Dataset ready for export.",
+        "total_samples": total,
+        "retrain_at": 50,
+    }

@@ -19,6 +19,7 @@
  */
 
 import { BiometricData } from '../types';
+import { resolveApiUrl } from './resolveBackendUrl';
 
 export class EEGWebSocketClient {
   private ws: WebSocket | null = null;
@@ -149,7 +150,7 @@ export class EEGWebSocketClient {
 export async function requestAIIntervention(
   canvasImage: string,
   biometricData: BiometricData,
-  backendUrl: string = 'http://localhost:8000'
+  backendUrl: string = resolveApiUrl()
 ): Promise<{
   intervention: string;
   question: string;
@@ -202,7 +203,7 @@ export async function requestAIIntervention(
  */
 export async function logSessionData(
   sessionData: any,
-  backendUrl: string = 'http://localhost:8000'
+  backendUrl: string = resolveApiUrl()
 ): Promise<void> {
   try {
     await fetch(`${backendUrl}/api/log-session`, {

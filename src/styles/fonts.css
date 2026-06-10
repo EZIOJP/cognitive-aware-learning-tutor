@@ -1,0 +1,23 @@
+@import url("https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700&family=Montserrat:wght@700;900&family=Space+Grotesk:wght@500;700&family=Work+Sans:wght@400;500&display=swap");
+
+/* Typography packs — html[data-typography-pack] */
+html[data-typography-pack="study"] {
+  --font-display: inherit;
+  --font-headline: inherit;
+  --font-label: inherit;
+  --font-body: inherit;
+}
+
+html[data-typography-pack="hero"] {
+  --font-display: "Anton", sans-serif;
+  --font-headline: "Anton", sans-serif;
+  --font-label: "Space Grotesk", sans-serif;
+  --font-body: "Work Sans", sans-serif;
+}
+
+html[data-typography-pack="motivator"] {
+  --font-display: "Montserrat", sans-serif;
+  --font-headline: "Montserrat", sans-serif;
+  --font-label: "Inter", sans-serif;
+  --font-body: "Inter", sans-serif;
+}

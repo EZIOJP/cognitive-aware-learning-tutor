@@ -4,11 +4,12 @@ Use this checklist to run the app as a **complete local product** (not every fut
 
 ## 1. Start
 
-```bat
-run.bat
-```
+**Windows:** `run.bat`  
+**Linux/macOS:** `./scripts/setup.sh` then `./scripts/run_all.sh`
 
 Open http://localhost:5173 — login **admin** / **admin123**.
+
+Fresh machine: [DEPENDENCIES.md](./DEPENDENCIES.md)
 
 ## 2. First-time setup (5 minutes)
 

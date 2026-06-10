@@ -1,13 +1,16 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router";
+import { RefreshCw } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { fetchInsightsDaily, fetchInsightsReview, type InsightsDailyPayload } from "../../api/hubClient";
+import { Button } from "../../app/components/ui/button";
 
 type Review = {
   comments: string;
   next_steps: string[];
   goals: string[];
   overall_performance: string;
+  source?: "gemma" | "template";
 };
 
 const OFFLINE_TIPS = [
@@ -21,26 +24,26 @@ export function AiReviewWidget() {
   const [daily, setDaily] = useState<InsightsDailyPayload | null>(null);
   const [review, setReview] = useState<Review | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const loadReview = useCallback(async (isRefresh = false) => {
+    if (!isAuthenticated) {
+      setLoading(false);
+      return;
+    }
+    if (isRefresh) setRefreshing(true);
+    else setLoading(true);
+    const d = await fetchInsightsDaily();
+    const r = await fetchInsightsReview();
+    setDaily(d);
+    setReview(r);
+    setLoading(false);
+    setRefreshing(false);
+  }, [isAuthenticated]);
 
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      if (!isAuthenticated) {
-        setLoading(false);
-        return;
-      }
-      const d = await fetchInsightsDaily();
-      const r = await fetchInsightsReview();
-      if (!cancelled) {
-        setDaily(d);
-        setReview(r);
-        setLoading(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [isAuthenticated]);
+    void loadReview();
+  }, [loadReview]);
 
   if (!isAuthenticated) {
     return (
@@ -60,10 +63,24 @@ export function AiReviewWidget() {
   const perf = daily?.overall_performance ?? review?.overall_performance ?? "good";
   const label =
     perf === "excellent" ? "Excellent" : perf === "good" ? "On Track" : "Needs Focus";
+  const source = review?.source ?? "template";
 
   return (
     <div className="space-y-3 text-sm">
-      <p className="text-lg font-semibold text-primary">{label}</p>
+      <div className="flex items-start justify-between gap-2">
+        <p className="text-lg font-semibold text-primary">{label}</p>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="h-7 px-2 text-xs shrink-0"
+          disabled={refreshing}
+          onClick={() => void loadReview(true)}
+          title="Refresh review"
+        >
+          <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? "animate-spin" : ""}`} />
+        </Button>
+      </div>
       <p className="text-muted-foreground leading-relaxed">
         {review?.comments ?? "Log activity in Life Tracker or complete a quiz to build your review."}
       </p>
@@ -80,9 +97,14 @@ export function AiReviewWidget() {
           ))}
         </ul>
       ) : null}
-      <Link to="/life-tracker" className="text-xs text-primary hover:underline inline-block">
-        Log sleep & goals →
-      </Link>
+      <div className="flex items-center justify-between gap-2">
+        <Link to="/life-tracker" className="text-xs text-primary hover:underline">
+          Log sleep & goals →
+        </Link>
+        <span className="text-[10px] text-muted-foreground uppercase tracking-wide">
+          {source === "gemma" ? "Gemma" : "Template"}
+        </span>
+      </div>
     </div>
   );
 }

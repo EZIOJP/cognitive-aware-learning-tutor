@@ -1,5 +1,4 @@
-const API_BASE =
-  (import.meta as { env?: { VITE_API_BASE?: string } }).env?.VITE_API_BASE || "http://localhost:8000";
+import { resolveApiUrl } from "../utils/resolveBackendUrl";
 
 export type FaceStatus = {
   attention: number;
@@ -13,7 +12,7 @@ export type FaceStatus = {
 /** Poll status posted by `backend/face_tracker.py` (Python OpenCV mirror). */
 export async function fetchFaceStatus(): Promise<FaceStatus | null> {
   try {
-    const res = await fetch(`${API_BASE}/api/vocab/face/status`);
+    const res = await fetch(`${resolveApiUrl()}/api/vocab/face/status`);
     if (!res.ok) return null;
     const data = await res.json();
     const face = (data as { face?: FaceStatus })?.face;

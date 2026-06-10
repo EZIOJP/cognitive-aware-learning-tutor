@@ -23,6 +23,10 @@ class Settings(BaseSettings):
     eeg_enabled: bool = False
     eeg_udp_port: int = 5005
     ollama_enabled: bool = False
+    nim_api_key: str = ""
+    nim_model: str = "google/gemma-4-31b-it"
+    nim_vision_model: str = "nvidia/nemotron-nano-vl-8b-v1"
+    nim_base_url: str = "https://integrate.api.nvidia.com/v1"
 
 
 @lru_cache

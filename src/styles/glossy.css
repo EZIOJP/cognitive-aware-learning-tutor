@@ -1,8 +1,9 @@
 /* Glossy surfaces — bright white (light) / true black (dark) */
 
+/* Defaults — ThemeProvider overrides via inline vars when a preset is active */
 [data-color-scheme="light"] {
-  --gloss-bg: #ffffff;
-  --gloss-surface: rgba(255, 255, 255, 0.92);
+  --gloss-bg: var(--background, #ffffff);
+  --gloss-surface: color-mix(in srgb, var(--card, #ffffff) 92%, transparent);
   --gloss-border: rgba(0, 0, 0, 0.06);
   --gloss-shadow: 0 4px 24px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04);
   --gloss-highlight: linear-gradient(
@@ -13,8 +14,8 @@
 }
 
 [data-color-scheme="dark"] {
-  --gloss-bg: #050505;
-  --gloss-surface: rgba(12, 12, 12, 0.94);
+  --gloss-bg: var(--background, #050505);
+  --gloss-surface: color-mix(in srgb, var(--card, #0c0c0c) 92%, transparent);
   --gloss-border: rgba(255, 255, 255, 0.08);
   --gloss-shadow: 0 4px 32px rgba(0, 0, 0, 0.5), 0 0 1px rgba(255, 255, 255, 0.06);
   --gloss-highlight: linear-gradient(

@@ -2,9 +2,7 @@ import { useState, useEffect } from "react";
 import { Wifi, WifiOff, TrendingUp } from "lucide-react";
 import { useGoalTracker } from "../context/GoalTrackerContext";
 
-const API_BASE =
-  (import.meta as { env?: { VITE_API_BASE?: string } }).env?.VITE_API_BASE ||
-  "http://localhost:8000";
+import { resolveApiUrl } from "../utils/resolveBackendUrl";
 const TOKEN_KEY = "vocab:auth-token";
 
 interface BehaviorStats {
@@ -26,7 +24,7 @@ export function BrowserActivityWidget() {
       const headers: Record<string, string> = {};
       const token = localStorage.getItem(TOKEN_KEY);
       if (token) headers.Authorization = `Bearer ${token}`;
-      const res = await fetch(`${API_BASE}/api/behavior/stats`, { headers });
+      const res = await fetch(`${resolveApiUrl()}/api/behavior/stats`, { headers });
       if (res.ok) {
         setStats(await res.json());
       } else {

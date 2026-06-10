@@ -1,3 +1,5 @@
+import { resolveApiUrl, resolveWebSocketUrl } from './utils/resolveBackendUrl';
+
 /**
  * Configuration file for EEG AI Math Tutor
  * Modify these values to customize the application behavior
@@ -5,14 +7,15 @@
 
 export const config = {
   /**
-   * Backend connection settings
+   * Backend connection settings (auto-uses LAN IP when opened from another device)
    */
   backend: {
-    // WebSocket URL for real-time EEG data stream
-    websocketUrl: 'ws://localhost:8000/ws/eeg',
-
-    // HTTP URL for API calls (interventions, logging)
-    apiUrl: 'http://localhost:8000',
+    get websocketUrl() {
+      return resolveWebSocketUrl();
+    },
+    get apiUrl() {
+      return resolveApiUrl();
+    },
 
     // Reconnection settings
     maxReconnectAttempts: 5,
@@ -43,7 +46,7 @@ export const config = {
    */
   intervention: {
     // Master switch — set false to hide AI tutor popups (prototype)
-    enabled: false,
+    enabled: true,
 
     // Gamma threshold to trigger intervention
     gammaThreshold: 70,
@@ -55,7 +58,7 @@ export const config = {
     minTimeBetweenInterventions: 120,
 
     // Enable automatic interventions (vs manual trigger only)
-    autoTrigger: false,
+    autoTrigger: true,
   },
 
   /**

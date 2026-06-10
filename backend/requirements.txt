@@ -1,3 +1,8 @@
+# Cognitive-Aware Learning Tutor — core Python dependencies
+# Fresh machine guide: docs/DEPENDENCIES.md
+# Optional math OCR: backend/requirements-ocr.txt + scripts/install_ocr.bat|.sh
+# Recommended Python: 3.10–3.12
+
 fastapi>=0.111.0
 uvicorn[standard]>=0.30.0
 websockets>=12.0

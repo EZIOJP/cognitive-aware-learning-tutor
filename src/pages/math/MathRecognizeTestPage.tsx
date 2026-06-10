@@ -1,15 +1,13 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
 import { ArrowLeft, Loader2, ScanLine } from "lucide-react";
-import {
-  MathSplitWhiteboard,
-  type MathSplitWhiteboardHandle,
-} from "../../app/components/MathSplitWhiteboard";
+import { TldrawMathCanvas, type MathCanvasHandle } from "../../components/math-canvas";
 import { Badge } from "../../app/components/ui/badge";
 import { Button } from "../../app/components/ui/button";
 import { Card } from "../../app/components/ui/card";
 import { useAuth } from "../../context/AuthContext";
 import { config } from "../../config";
+import { fetchOcrStatus, type MathOcrStatus } from "../../api/mathClient";
 
 interface MathOcrResponse {
   latex: string;
@@ -42,11 +40,16 @@ async function postMathOcr(token: string | null, canvas_image: string): Promise<
 
 export function MathRecognizeTestPage() {
   const { token } = useAuth();
-  const whiteboardRef = useRef<MathSplitWhiteboardHandle>(null);
+  const canvasRef = useRef<MathCanvasHandle>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<MathOcrResponse | null>(null);
-  const [pathCount, setPathCount] = useState<number | null>(null);
+  const [shapeCount, setShapeCount] = useState<number | null>(null);
+  const [ocrStatus, setOcrStatus] = useState<MathOcrStatus | null>(null);
+
+  useEffect(() => {
+    void fetchOcrStatus().then(setOcrStatus);
+  }, []);
 
   const handleCanvasChange = useCallback(() => {
     setError(null);
@@ -56,16 +59,17 @@ export function MathRecognizeTestPage() {
     setLoading(true);
     setError(null);
     setResult(null);
-    setPathCount(null);
+    setShapeCount(null);
     try {
-      const paths = await whiteboardRef.current?.exportPaths();
-      if (paths) setPathCount(paths.length);
-
-      const png = await whiteboardRef.current?.exportPng();
-      if (!png || !paths?.length) {
-        setError(
-          "Nothing to recognize — draw on the Main workspace (left panel), not only Rough work."
-        );
+      const count = canvasRef.current?.getEditor()?.getCurrentPageShapeIds().size ?? 0;
+      setShapeCount(count);
+      if (!canvasRef.current?.hasContent()) {
+        setError("Nothing to recognize — draw on the canvas first.");
+        return;
+      }
+      const png = await canvasRef.current?.exportPng();
+      if (!png) {
+        setError("Canvas export failed — try drawing again.");
         return;
       }
       const data = await postMathOcr(token, png);
@@ -80,13 +84,20 @@ export function MathRecognizeTestPage() {
   return (
     <div className="h-full flex flex-col min-h-0 gap-3">
       <div className="flex items-center justify-between gap-2 shrink-0">
-        <Link
-          to="/math-tutor"
-          className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Math Tutor
-        </Link>
+        <div className="flex items-center gap-3">
+          <Link
+            to="/math-tutor"
+            className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Math Tutor
+          </Link>
+          {ocrStatus && (
+            <Badge variant={ocrStatus.texteller_available ? "default" : "destructive"}>
+              {ocrStatus.texteller_available ? "OCR ready" : "OCR not installed"}
+            </Badge>
+          )}
+        </div>
         <Button onClick={handleRecognize} disabled={loading}>
           {loading ? (
             <Loader2 className="w-4 h-4 animate-spin mr-2" />
@@ -98,15 +109,19 @@ export function MathRecognizeTestPage() {
       </div>
 
       <p className="text-sm text-muted-foreground shrink-0">
-        Draw on the <strong>Main workspace</strong> (left panel), then Recognize. Write digits large
-        and spaced (e.g. two separate circles for 0 0). Rough work is not sent to OCR. Install OCR
-        once with{" "}
+        Draw on the tldraw canvas (grid snap on), then Recognize. First request after a backend
+        restart takes ~15–20s while the model loads. Install OCR once with{" "}
         <code className="text-xs bg-muted px-1 rounded">scripts\install_ocr.bat</code>.
       </p>
 
       <div className="flex-1 flex flex-col lg:flex-row min-h-0 gap-3">
         <Card className="flex-1 min-h-[360px] flex flex-col overflow-hidden gloss-panel p-0">
-          <MathSplitWhiteboard ref={whiteboardRef} onCanvasChange={handleCanvasChange} />
+          <TldrawMathCanvas
+            ref={canvasRef}
+            persistenceKey="calt-recognize-test"
+            showGrid
+            onCanvasChange={handleCanvasChange}
+          />
         </Card>
 
         <Card className="w-full lg:w-[min(100%,320px)] shrink-0 p-4 flex flex-col gap-3 overflow-y-auto">
@@ -153,10 +168,8 @@ export function MathRecognizeTestPage() {
             </p>
           )}
 
-          {pathCount !== null && (
-            <p className="text-xs text-muted-foreground">
-              Main canvas stroke paths: {pathCount}
-            </p>
+          {shapeCount !== null && (
+            <p className="text-xs text-muted-foreground">Canvas shapes: {shapeCount}</p>
           )}
         </Card>
       </div>

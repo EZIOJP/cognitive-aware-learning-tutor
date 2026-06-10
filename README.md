@@ -67,6 +67,7 @@ The future roadmap for the Cognitive-Aware Learning Tutor includes:
 - [Current Architecture](docs/CURRENT_ARCHITECTURE.md)
 - [Future Vision](docs/FUTURE_VISION.md)
 - [Setup, Dependencies, and Commands](docs/SETUP_AND_COMMANDS.md)
+- [**Dependencies (fresh machine)**](docs/DEPENDENCIES.md)
 - [Original Integration Guide](docs/INTEGRATION_GUIDE.md)
 - [Troubleshooting](docs/TROUBLESHOOTING.md)
 
@@ -74,7 +75,9 @@ The future roadmap for the Cognitive-Aware Learning Tutor includes:
 
 ## ⚙️ Quick Start
 
-### 1. Start the app
+**New computer?** Read **[docs/DEPENDENCIES.md](docs/DEPENDENCIES.md)** first — versions, optional packages, env vars, and a verification checklist.
+
+### Windows
 
 ```bat
 run.bat
@@ -82,25 +85,33 @@ run.bat
 
 First run installs Python + npm deps, runs migrations, and starts API (8000) + frontend (5173). Sign in with **admin / admin123**.
 
-Frontend only:
-
-```bat
-scripts\run_frontend.bat
-```
-
-Visit: `http://localhost:5173`
-
-### 2. Backend only
-
-```bat
-scripts\run_backend.bat
-```
-
-After dependency changes:
+After `git pull` or dependency changes:
 
 ```bat
 scripts\setup.bat
 ```
+
+### Linux / macOS
+
+```bash
+chmod +x scripts/*.sh
+./scripts/setup.sh
+./scripts/run_all.sh
+```
+
+### Frontend or API only
+
+```bat
+scripts\run_frontend.bat    REM Windows
+scripts\run_backend.bat     REM Windows — full API (not vocab-only)
+```
+
+```bash
+npm run dev                 # frontend
+python -m uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
+```
+
+Visit: http://localhost:5173
 
 ### 3. Chrome SelfTracker Extension Installation
 1. Navigate to `chrome://extensions` in your Google Chrome browser.

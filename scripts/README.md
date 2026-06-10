@@ -1,41 +1,62 @@
 # Scripts
 
-Windows batch helpers. All scripts `cd` to the project root via `_common.bat`.
+Launch helpers for Windows (`.bat`) and Linux/macOS (`.sh`). All scripts run from the **repo root**.
+
+**Full install guide:** [docs/DEPENDENCIES.md](../docs/DEPENDENCIES.md)
+
+---
 
 ## Daily use
 
-| Script | Purpose |
-|--------|---------|
-| **`run.bat`** (project root) | Install deps **once** if missing, then start vocab API + frontend |
-| `run_all.bat` | Same as `run.bat` (called by root launcher) |
-| `run_backend.bat` | Vocab FastAPI only (`backend/vocab_backend.py`) |
-| `run_frontend.bat` | Vite dev server only |
+| Script | Platform | Purpose |
+|--------|----------|---------|
+| **`run.bat`** (repo root) | Windows | Install deps if missing, migrate, start API + frontend |
+| `run_all.bat` | Windows | Same (called by `run.bat`) |
+| `run_all.sh` | Linux/macOS | Migrate + API + frontend |
+| `run_backend.bat` | Windows | API only (`backend.main:app`) |
+| `run_frontend.bat` | Windows | Vite dev server |
 
-First run creates `.venv`, runs `pip install`, and `npm install`. Later runs skip install unless folders are missing.
+### Linux/macOS first-time setup
+
+```bash
+chmod +x scripts/setup.sh scripts/run_all.sh scripts/migrate.sh scripts/install_ocr.sh
+./scripts/setup.sh
+./scripts/run_all.sh
+```
+
+---
 
 ## Setup / build
 
-| Script | Purpose |
-|--------|---------|
-| `setup.bat` | Force refresh deps after `requirements.txt` or `package.json` changes |
-| `build.bat` | Production build → `dist/` |
+| Script | Platform | Purpose |
+|--------|----------|---------|
+| `setup.bat` | Windows | Force `pip` + `npm` refresh |
+| `setup.sh` | Linux/macOS | Create `.venv`, install deps, migrate, copy `.env` |
+| `build.bat` | Windows | `npm run build` → `dist/` |
+| `migrate.bat` / `migrate.sh` | Both | `alembic upgrade head` |
+
+---
 
 ## Optional tools
 
 | Script | Purpose |
 |--------|---------|
-| `run_eeg.bat` | EEG WebSocket prototype (`backend/backend_example.py`) — not the main app API |
-| `run_face_tracker.bat` | Face landmark tracker |
+| `install_ocr.bat` / `install_ocr.sh` | pix2tex math OCR (large PyTorch download) |
+| `run_face_tracker.bat` | Python webcam focus mirror → hub |
+| `run_eeg.bat` | Legacy EEG prototype (`backend_example.py`) — use main API for integrated stack |
 | `launch_selftracker_chrome.bat` | Chrome + SelfTracker extension |
 | `launch_selftracker_edge.bat` | Edge + SelfTracker extension |
 
+---
+
 ## URLs
 
-- Frontend: `http://localhost:5173`
-- Vocab API: `http://localhost:8000/api/vocab`
+- Frontend: http://localhost:5173
+- API: http://localhost:8000/health
+- Login: **admin** / **admin123**
 
-## Removed (consolidated)
+---
 
-- `run_vocab_backend.bat` → use `run_backend.bat`
-- `run_mock_stack.bat` → use `run.bat` / `run_all.bat`
-- `build_app.bat` → use `build.bat`
+## Shared Windows bootstrap
+
+`_common.bat` sets `ROOT`, activates `.venv`, and ensures deps are installed. Used by all `.bat` scripts.

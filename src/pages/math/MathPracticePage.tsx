@@ -1,10 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router";
 import { ArrowLeft, CheckCircle2, RefreshCw, XCircle } from "lucide-react";
-import {
-  MathSplitWhiteboard,
-  type MathSplitWhiteboardHandle,
-} from "../../app/components/MathSplitWhiteboard";
+import { TldrawMathCanvas, type MathCanvasHandle } from "../../components/math-canvas";
+import { AITutorIntervention } from "../../app/components/AITutorIntervention";
 import { PostSessionDiagnostics } from "../../app/components/PostSessionDiagnostics";
 import { Button } from "../../app/components/ui/button";
 import { Card } from "../../app/components/ui/card";
@@ -43,6 +41,13 @@ export function MathPracticePage() {
   const { token } = useAuth();
   const {
     handleCanvasChange,
+    notifyEraserStroke,
+    registerCanvasExporter,
+    registerCanvasBridge,
+    showIntervention,
+    intervention,
+    handleInterventionDismiss,
+    handleInterventionResponse,
     showDiagnostics,
     setShowDiagnostics,
     diagnosticsSummary,
@@ -53,7 +58,7 @@ export function MathPracticePage() {
   const [tutorHint, setTutorHint] = useState<string | null>(null);
   const [tutorUsesLlm, setTutorUsesLlm] = useState(false);
   const [tutorLoading, setTutorLoading] = useState(false);
-  const whiteboardRef = useRef<MathSplitWhiteboardHandle>(null);
+  const canvasRef = useRef<MathCanvasHandle>(null);
 
   const localSet = LOCAL_QUESTION_SETS[topicId];
   const useLocal = Boolean(localSet?.length);
@@ -96,7 +101,7 @@ export function MathPracticePage() {
     if (!token) return;
     setTutorLoading(true);
     try {
-      const canvas = await whiteboardRef.current?.exportPng();
+      const canvas = await canvasRef.current?.exportPng();
       const latest = biometricData[biometricData.length - 1];
       const res = await authFetch("/math/tutor/hint", token, {
         method: "POST",
@@ -129,7 +134,7 @@ export function MathPracticePage() {
       setAnswer("");
       setShowResult(false);
       setFeedback(null);
-      await whiteboardRef.current?.clearAll();
+      canvasRef.current?.clearAll();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not load problem");
     } finally {
@@ -140,6 +145,21 @@ export function MathPracticePage() {
   useEffect(() => {
     if (!useLocal) loadApiProblem();
   }, [useLocal, loadApiProblem]);
+
+  useEffect(() => {
+    const bridge = {
+      exportPng: () => canvasRef.current?.exportPng() ?? Promise.resolve(null),
+      exportPaths: () => canvasRef.current?.exportPaths() ?? Promise.resolve(null),
+      getEraserEventCount: () => canvasRef.current?.getEraserEventCount() ?? 0,
+      resetEraserCount: () => canvasRef.current?.resetEraserCount(),
+    };
+    registerCanvasExporter(bridge.exportPng);
+    registerCanvasBridge(bridge);
+    return () => {
+      registerCanvasExporter(null);
+      registerCanvasBridge(null);
+    };
+  }, [registerCanvasExporter, registerCanvasBridge]);
 
   const submitLocal = () => {
     if (!currentLocal || !answer.trim()) return;
@@ -163,7 +183,7 @@ export function MathPracticePage() {
 
   const nextLocal = async () => {
     if (!localSet) return;
-    await whiteboardRef.current?.clearAll();
+    canvasRef.current?.clearAll();
     if (qIndex < localSet.length - 1) {
       setQIndex((i) => i + 1);
       setAnswer("");
@@ -202,7 +222,7 @@ export function MathPracticePage() {
   };
 
   const nextApi = async () => {
-    await whiteboardRef.current?.clearAll();
+    canvasRef.current?.clearAll();
     loadApiProblem();
   };
 
@@ -422,11 +442,35 @@ export function MathPracticePage() {
           )}
         </div>
 
-        {/* Right: split whiteboard */}
+        {/* Right: tldraw canvas */}
         <div className="flex-1 min-h-[280px] min-w-0">
-          <MathSplitWhiteboard ref={whiteboardRef} onCanvasChange={handleCanvasChange} />
+          <TldrawMathCanvas
+            ref={canvasRef}
+            persistenceKey={`calt-practice-${topicId}`}
+            showGrid
+            onCanvasChange={handleCanvasChange}
+            onEraserStroke={notifyEraserStroke}
+          />
         </div>
       </div>
+
+      <AITutorIntervention
+        isVisible={showIntervention}
+        intervention={
+          intervention.message
+            ? {
+                message: intervention.message,
+                question: intervention.question,
+                detectedConcept: intervention.detectedConcept,
+                latex: intervention.latex,
+                incompleteStep: intervention.incompleteStep,
+                confidence: intervention.confidence,
+              }
+            : null
+        }
+        onDismiss={handleInterventionDismiss}
+        onRespond={handleInterventionResponse}
+      />
 
       {showDiagnostics && (
         <PostSessionDiagnostics

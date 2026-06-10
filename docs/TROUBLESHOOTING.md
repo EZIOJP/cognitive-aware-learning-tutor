@@ -1,17 +1,42 @@
 # 🔧 Troubleshooting Guide
 
-Common issues and their solutions for the EEG AI Math Tutor system.
+Common issues for the Cognitive-Aware Learning Tutor on **Windows, Linux, and macOS**.
+
+**Fresh clone failing?** Start with [DEPENDENCIES.md](./DEPENDENCIES.md) §11 (verification checklist) and [SETUP_AND_COMMANDS.md](./SETUP_AND_COMMANDS.md).
+
+**Canonical API entrypoint:** `python -m uvicorn backend.main:app` (from repo root).  
+Legacy name `backend.vocab_backend:app` is the same app (shim).
 
 ---
 
 ## Table of Contents
 
+0. [Fresh install / missing dependencies](#fresh-install--missing-dependencies)
 1. [Frontend Issues](#frontend-issues)
 2. [Backend Issues](#backend-issues)
 3. [ESP32/Hardware Issues](#esp32hardware-issues)
 4. [WebSocket Connection Issues](#websocket-connection-issues)
 5. [LLaVA/AI Issues](#llavaai-issues)
 6. [EEG Signal Quality Issues](#eeg-signal-quality-issues)
+
+---
+
+## Fresh install / missing dependencies
+
+| Symptom | Fix |
+|---------|-----|
+| `ModuleNotFoundError: No module named 'backend'` | Run uvicorn from **repo root**, not `backend/` |
+| `ModuleNotFoundError: fastapi` / `sqlalchemy` | Activate `.venv`, then `pip install -r backend/requirements.txt` |
+| `schema_ok: false` on `/health` | `python -m alembic upgrade head` |
+| `npm: command not found` | Install Node 20 LTS from [nodejs.org](https://nodejs.org) |
+| PowerShell blocks `npm` | Use `npm.cmd run dev` on Windows |
+| Empty vocab / no words | `SEED_WORDS_ON_STARTUP=true`; check `public/data/words.json` |
+| OCR page 503 / import error | Run `scripts\install_ocr.bat` or `./scripts/install_ocr.sh` |
+| `mediapipe` pip failure | Use Python 3.10–3.12; on Linux install `python3-dev` |
+| Port 8000 already in use | See [Backend Issues](#fastapi-wont-start) |
+| CORS errors from browser | Set `CORS_ORIGINS=*` or your frontend URL in `.env` |
+
+Full tier list: [DEPENDENCIES.md](./DEPENDENCIES.md)
 
 ---
 
@@ -23,9 +48,9 @@ Common issues and their solutions for the EEG AI Math Tutor system.
 
 **Solutions:**
 1. Check browser console for errors
-2. Ensure `react-sketch-canvas` is installed:
+2. Ensure dependencies are installed:
    ```bash
-   pnpm install
+   npm install
    ```
 3. Try refreshing the page
 4. Check if you're using a supported browser (Chrome, Firefox, Edge)
@@ -53,30 +78,29 @@ See [WebSocket Connection Issues](#websocket-connection-issues)
 
 ### FastAPI won't start
 
-**Symptoms:** `uvicorn backend_example:app` fails
+**Symptoms:** `uvicorn backend.main:app` fails
 
 **Solutions:**
 
 1. **Port already in use:**
    ```bash
-   # Check what's using port 8000
    # Linux/Mac:
    lsof -i :8000
    # Windows:
    netstat -ano | findstr :8000
 
    # Kill the process or use different port:
-   uvicorn backend_example:app --port 8001
+   python -m uvicorn backend.main:app --port 8001
    ```
 
 2. **Missing dependencies:**
    ```bash
-   pip install fastapi uvicorn websockets scipy numpy pillow
+   pip install -r backend/requirements.txt
    ```
 
-3. **Python version too old:**
+3. **Python version:**
    ```bash
-   python --version  # Need 3.8+
+   python --version  # Need 3.10–3.12 recommended
    ```
 
 ### UDP packets not received from ESP32
@@ -258,27 +282,21 @@ See [WebSocket Connection Issues](#websocket-connection-issues)
 
 1. **Backend not running:**
    ```bash
-   # In backend directory:
-   python backend_example.py
-   # Should see: "Uvicorn running on http://0.0.0.0:8000"
+   # From repo root:
+   python -m uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
+   # Or: run.bat / ./scripts/run_all.sh
    ```
 
 2. **Wrong URL:**
    ```typescript
-   // Check src/config.ts:
-   websocketUrl: 'ws://localhost:8000/ws/eeg'  // Not 'wss://' or 'http://'
+   // Check src/config.ts or .env VITE_API_BASE:
+   websocketUrl: 'ws://localhost:8000/ws/eeg'  // ws:// not http://
    ```
 
 3. **CORS issues:**
-   ```python
-   # In backend_example.py, verify:
-   app.add_middleware(
-       CORSMiddleware,
-       allow_origins=["*"],  # Or specific frontend URL
-       allow_credentials=True,
-       allow_methods=["*"],
-       allow_headers=["*"],
-   )
+   ```env
+   # In .env:
+   CORS_ORIGINS=*
    ```
 
 4. **Firewall blocking:**
@@ -578,10 +596,12 @@ ps aux | grep ollama
 
 | Issue | Most Common Cause | Quick Fix |
 |-------|------------------|-----------|
-| No WebSocket connection | Backend not running | `python backend_example.py` |
+| No WebSocket connection | Backend not running | `run.bat` or `uvicorn backend.main:app` |
+| schema_ok false | Migrations behind | `python -m alembic upgrade head` |
 | ESP32 won't connect | Wrong WiFi SSID/password | Double-check credentials |
 | No EEG data | Wiring wrong | Verify pin connections |
-| LLaVA errors | Model not downloaded | `ollama pull llava:13b` |
+| LLaVA errors | Model not downloaded | `ollama pull llava` |
+| OCR unavailable | pix2tex not installed | `scripts/install_ocr.bat` |
 | Noisy signal | Poor electrode contact | Clean skin, tighten sweatband |
 | Charts frozen | Frontend not updating | Refresh page, check console |
 

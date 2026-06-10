@@ -15,15 +15,17 @@ draw on whiteboard → stuckness score → cropped snapshot
 | Piece | Status | Location |
 |-------|--------|----------|
 | `react-sketch-canvas` whiteboard | Shipped | `src/app/components/MathSplitWhiteboard.tsx` |
-| Manual **Ask tutor** | Shipped (rule-based) | `POST /api/math/tutor/hint`, `backend/math/rule_tutor.py` |
+| Manual **Ask tutor** | Shipped (rule-based + optional Ollama) | `POST /api/math/tutor/hint`, `backend/math/rule_tutor.py` |
 | Optional Ollama hints | Opt-in (`OLLAMA_ENABLED=0`) | `backend/math/ollama_tutor.py` |
 | EEG simulation + hub metric | Shipped | `StudySessionContext`, `backend/eeg/` |
 | Python focus mirror (not browser) | Shipped | `backend/face_tracker.py` |
-| Auto intervention UI | Partial | `AITutorIntervention.tsx` exists; auto-trigger off in `config.ts` |
-| `/api/intervention` + DSC CSV flywheel | Not wired | Described in `backend_example.py` only |
+| Auto intervention UI | Shipped | `AITutorIntervention.tsx` on `MathPracticePage`; `config.intervention.autoTrigger` |
+| `POST /api/math/intervention` + DSC CSV | Shipped | `backend/math/intervention_handler.py`, `intervention_log.py` |
+| `POST /api/math/ocr` | Shipped | TexTeller ONNX (Python 3.14); multi-tier fallback |
+| Eraser + idle stuckness loop | Shipped | `StudySessionContext`, `MathSplitWhiteboard` handle |
+| NIM teacher (opt-in) | Shipped | `NIM_API_KEY` → Tier 0 in `ocr_service.py` |
 | WebGazer gaze | Not implemented | Research only |
-| Pix2Text / OpenCV / SymPy pipeline | Not implemented | Research only |
-| Pydantic structured Ollama output | Not implemented | Research only |
+| Pix2Text | Not implemented | TexTeller ONNX used instead of pix2tex on 3.14 |
 
 ## Recommended stack (8 GB VRAM)
 
@@ -31,96 +33,71 @@ draw on whiteboard → stuckness score → cropped snapshot
 
 1. **Trigger** — stuckness heuristic (pause + eraser + EEG sim + optional face attention), debounced snapshot.
 2. **Preprocess** — OpenCV: grayscale → dilate/erode → connected components → crop regions; mask scribble-dense areas using stroke overlap from `exportPaths()` when available.
-3. **Recognize** — prefer **Pix2Text** or **pix2tex** for LaTeX on crops; fall back to raw image for SymPy parse failures (“incomplete step”).
-4. **Tutor** — text LLM via Ollama (`llama3.2` ~2–4 GB) with **structured JSON** schema; use vision model (`llava`, `OLLAMA_VISION_MODEL`) only when OCR fails or step is incomplete.
-5. **VRAM** — `keep_alive=10m` during study; `keep_alive=0` after session; never stack multiple 7B models.
-
-| Approach | VRAM | Latency | Freehand math |
-|----------|------|---------|----------------|
-| LLaVA 7B only | ~4.5–5.5 GB | High | Hallucinates on messy strokes |
-| pix2tex + LLM | ~200 MB + LLM | Low | Good single equations |
-| Pix2Text + LLM | ~800 MB + LLM | Medium | Better messy layouts |
-| **Recommended** | Pix2Text/pix2tex → text LLM; LLaVA fallback | | |
+3. **Recognize** — TexTeller ONNX on crops; Ollama vision fallback; optional NIM Nemotron teacher label.
+4. **Tutor** — text LLM via Ollama (`qwen2.5-math:7b`) with LaTeX-aware prompts; vision model only when OCR incomplete.
+5. **VRAM** — `keep_alive=-1` during study session for math model; never stack multiple 7B models.
 
 ## Canvas telemetry (frontend)
 
-- **Library:** keep `react-sketch-canvas` — already has `exportImage`, `exportPaths`; matches research.
-- **Snapshots:** debounce on pause + eraser burst, not every frame; crop to stroke bounding box (track min/max x/y over 60s window).
-- **Kinematics:** `PointerEvent.getCoalescedEvents()` in a hook; log velocity + inter-stroke gaps; optional `DSC_Kinematics.csv` append.
-- **Paths API:** expose `exportPaths()` from `MathSplitWhiteboard` for backend scribble masking.
+- **Library:** `react-sketch-canvas` — `exportImage`, `exportPaths`, eraser counter on handle.
+- **Snapshots:** debounced on idle + stuckness score; paths JSON sent with intervention.
+- **Kinematics:** optional `DSC_Kinematics.csv` — not wired yet.
+- **Paths API:** `exportPaths()` + `getEraserEventCount()` on `MathSplitWhiteboardHandle`.
 
-## Backend endpoints (target)
+## Backend endpoints
 
 | Endpoint | Role |
 |----------|------|
-| `POST /api/math/tutor/hint` | Today: manual + rules; keep as fallback |
-| `POST /api/math/intervention` | New: stuckness-triggered pipeline |
-| `POST /api/math/ocr` | Optional: image → LaTeX + `incomplete_step` flag |
+| `POST /api/math/tutor/hint` | Manual + rules; fallback |
+| `POST /api/math/intervention` | Stuckness-triggered OCR → hint → DSC log |
+| `POST /api/math/ocr` | Image → LaTeX + `incomplete_step` + tiers |
+| `PATCH /api/math/intervention/{id}/recover` | Learner recovered / dismissed |
+| `PATCH /api/math/intervention/{id}/correct` | Human correct LaTeX → `DSC_handwriting_dataset.csv` |
 
-**Pydantic response (Ollama `format=` schema):**
+Store snapshots under `data_logs/interventions/{session_snapshot_id}.png`; index in `DSC_interventions_{date}.csv`.
 
-```python
-class SocraticIntervention(BaseModel):
-    mathematical_step_identified: str
-    point_of_confusion: str
-    socratic_hint_text: str
-    confidence_score: float  # 0.0–1.0
+## Stuckness score (heuristic v1 — shipped)
+
+```text
+stuckness = 0.4·min(idle/90,1) + 0.3·min(erasers/5,1) + 0.3·min((gamma-55)/30,1)
+fire when stuckness > 0.5 and idle ≥ 45s and cooldown ≥ 120s
 ```
-
-Store snapshots under `data_logs/interventions/{session_id}/`; index in `DSC_Interventions.csv`.
-
-## Stuckness score (heuristic v1)
-
-Combine (no GPU required for v1):
-
-- Canvas idle > N seconds after last stroke
-- Eraser events in last window
-- EEG gamma vs personal baseline (sim or real)
-- Optional: `face_attention` from Python mirror POST
-- Optional: WebGazer fixation on canvas bbox (later)
-
-Weights tunable; trigger only above threshold to save VRAM.
 
 ## Phased implementation (maps to ROADMAP Phase 3)
 
-### 3a — Software only (doable now, no GPU)
+### 3a — Software only
 
-- [ ] Stuckness heuristic + debounced `exportPng` crop
-- [ ] Mount `AITutorIntervention` on math practice when score fires
-- [ ] `POST /api/math/intervention` stub → rule tutor + log to CSV
-- [ ] `exportPaths()` + idle/eraser counters in `StudySessionContext`
+- [x] Stuckness heuristic + debounced `exportPng` crop
+- [x] Mount `AITutorIntervention` on math practice when score fires
+- [x] `POST /api/math/intervention` → OCR + rule/Ollama tutor + CSV log
+- [x] `exportPaths()` + idle/eraser counters in `StudySessionContext`
 
 ### 3b — After laptop / Ollama
 
-- [ ] Ollama structured JSON (`format=SocraticIntervention.schema`)
-- [ ] `OLLAMA_ENABLED=1`, `keep_alive` tuning
-- [ ] Optional `OLLAMA_VISION_MODEL` for incomplete steps only
+- [x] Ollama structured JSON (`SocraticHint` schema)
+- [ ] `OLLAMA_ENABLED=1` in production `.env` (opt-in per machine)
+- [x] `OLLAMA_VISION_MODEL` for incomplete steps (Tier 2 fallback)
 
 ### 3c — OCR pipeline (CPU OK)
 
-- [ ] OpenCV segmentation service
-- [ ] Pix2Text or pix2tex dependency (optional extra in `requirements.txt`)
-- [ ] SymPy validate LaTeX → `incomplete_step` branch
+- [x] OpenCV segmentation + paths masking in `ocr_service.py`
+- [x] TexTeller ONNX (replaces pix2tex on Python 3.14)
+- [x] SymPy validate LaTeX → `incomplete_step` + confidence gate
 
 ### 3d — Multimodal (Phase 2 hardware + optional WebGazer)
 
-- [ ] Real EEG in stuckness weights
+- [ ] Real EEG in stuckness weights (sim works today)
 - [ ] WebGazer.js gaze on canvas region
 - [ ] Face calibration JSON consumed by `face_tracker.py`
 
-## Dependencies to add (when implementing 3b–3c)
+## Dependencies (OCR tier)
 
 ```text
 opencv-python-headless
-pix2text   # or pix2tex
+onnxruntime + optimum + transformers  # TexTeller ONNX
 sympy
 ```
 
-Keep OCR **optional** so `run.bat` works on machines without GPU.
+Install: `scripts\install_ocr.bat` (Windows) or `./scripts/install_ocr.sh`.
 
-## References (external)
-
-- Canvas: [react-sketch-canvas](https://www.npmjs.com/package/react-sketch-canvas), Konva/Fabric comparison (Velt 2026)
-- OCR: PyImageSearch handwriting pipeline (contours + CNN); Pix2Text / pix2tex for LaTeX
-- Ollama: structured outputs, LLaVA vision models
-- Pedagogy: Socratic JSON + chain-of-thought fields before `socratic_hint_text`
+Optional: `NIM_API_KEY` for Nemotron vision teacher labels.

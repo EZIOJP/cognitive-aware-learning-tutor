@@ -1,5 +1,6 @@
 import json
 import os
+import signal
 import time
 import urllib.request
 
@@ -16,6 +17,23 @@ MODEL_URL = "https://storage.googleapis.com/mediapipe-models/face_landmarker/fac
 STATUS_URL = os.getenv("FACE_TRACKER_STATUS_URL", "http://localhost:8000/api/vocab/face/status")
 # Optional JWT from login — enables hub face_attention readings (POST /api/vocab/face/status).
 FACE_TRACKER_TOKEN = os.getenv("FACE_TRACKER_TOKEN", "").strip()
+_stop_requested = False
+
+
+def _opencv_gui_available() -> bool:
+    if os.getenv("FACE_TRACKER_HEADLESS", "").strip().lower() in ("1", "true", "yes"):
+        return False
+    try:
+        cv2.namedWindow("__face_tracker_probe__", cv2.WINDOW_NORMAL)
+        cv2.destroyWindow("__face_tracker_probe__")
+        return True
+    except cv2.error:
+        return False
+
+
+def _request_stop(*_args) -> None:
+    global _stop_requested
+    _stop_requested = True
 
 
 def post_status(payload: dict) -> None:
@@ -118,11 +136,22 @@ blink_events = 0
 blink_was_closed = False
 window_started = time.time()
 last_post = 0.0
+last_console = 0.0
+show_window = _opencv_gui_available()
 
-print("Starting MediaPipe attention tracker. Press ESC to exit.")
+signal.signal(signal.SIGINT, _request_stop)
+if hasattr(signal, "SIGBREAK"):
+    signal.signal(signal.SIGBREAK, _request_stop)
+
+if show_window:
+    print("Starting MediaPipe attention tracker. Press ESC to exit.")
+else:
+    print("OpenCV GUI unavailable (opencv-python-headless is installed).")
+    print("Running headless — attention data still posts to the hub. Press Ctrl+C to stop.")
+    print("For the mirror window: pip uninstall opencv-python-headless  (then restart this script)")
 print(f"Posting status to {STATUS_URL}")
 
-while cap.isOpened():
+while cap.isOpened() and not _stop_requested:
     success, frame = cap.read()
     if not success:
         continue
@@ -154,23 +183,29 @@ while cap.isOpened():
         post_status(status)
         last_post = now
 
-    # Mirror video like a physical mirror; draw overlays AFTER flip so text stays readable.
-    mirrored = cv2.flip(frame, 1)
-    h, w = mirrored.shape[:2]
-
-    if face_detected:
-        for face_landmarks in result.face_landmarks:
-            for landmark in face_landmarks:
-                x = int((1.0 - landmark.x) * w)
-                y = int(landmark.y * h)
-                cv2.circle(mirrored, (x, y), 1, (0, 255, 0), -1)
-
     label = f"{status['attitude']} | attention {status['attention']}% | blinks {status['blink_rate']}/min"
-    cv2.putText(mirrored, label, (20, 35), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 255), 2)
 
-    cv2.imshow("Focus Mirror - Python (ESC to close)", mirrored)
-    if cv2.waitKey(5) & 0xFF == 27:
-        break
+    if show_window:
+        # Mirror video like a physical mirror; draw overlays AFTER flip so text stays readable.
+        mirrored = cv2.flip(frame, 1)
+        h, w = mirrored.shape[:2]
+
+        if face_detected:
+            for face_landmarks in result.face_landmarks:
+                for landmark in face_landmarks:
+                    x = int((1.0 - landmark.x) * w)
+                    y = int(landmark.y * h)
+                    cv2.circle(mirrored, (x, y), 1, (0, 255, 0), -1)
+
+        cv2.putText(mirrored, label, (20, 35), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 255), 2)
+        cv2.imshow("Focus Mirror - Python (ESC to close)", mirrored)
+        if cv2.waitKey(5) & 0xFF == 27:
+            break
+    else:
+        if now - last_console > 2:
+            print(label)
+            last_console = now
+        time.sleep(0.03)
 
 post_status({
     "attention": 0,
@@ -181,5 +216,8 @@ post_status({
 })
 
 cap.release()
-cv2.destroyAllWindows()
+if show_window:
+    cv2.destroyAllWindows()
+else:
+    print("Face tracker stopped.")
 

@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { cn } from "../app/components/ui/utils";
 import { useAuth } from "../context/AuthContext";
+import { useTheme } from "../context/ThemeContext";
 
 import { usePlugins } from "../plugins/registry";
 
@@ -20,6 +21,9 @@ export function AppSidebar() {
   const [collapsed, setCollapsed] = useState(true);
   const { isAdmin } = useAuth();
   const { getNavItems } = usePlugins();
+  const { typographyPack } = useTheme();
+  const titleClass =
+    typographyPack !== "study" ? "hero-label text-primary" : "text-sm font-semibold";
   
   const baseNavItems = [
     { to: "/", label: "Home", icon: Home, end: true },
@@ -56,7 +60,7 @@ export function AppSidebar() {
     >
       <div className="flex items-center justify-between p-2 border-b border-border/50">
         {!collapsed && (
-          <span className="text-sm font-semibold px-2 truncate">Study Hub</span>
+          <span className={cn("px-2 truncate", titleClass)}>Study Hub</span>
         )}
         <button
           type="button"

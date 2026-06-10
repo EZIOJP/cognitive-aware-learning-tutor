@@ -23,7 +23,7 @@ import { CustomFeatureWidget } from "./custom/CustomFeatureWidget";
 const LS_KEY = "active_plugins";
 
 function defaultEnabledPluginIds(): string[] {
-  const defaultOn = new Set(["math-tutor", "gre-vocab", "life-tracker"]);
+  const defaultOn = new Set(["math-tutor", "gre-vocab", "life-tracker", "study-room"]);
   return getAllPlugins().filter((p) => p.isCore || defaultOn.has(p.id)).map((p) => p.id);
 }
 

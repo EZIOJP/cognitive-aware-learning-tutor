@@ -1,4 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
+import { resolveApiUrl, resolveNutritionWsUrl } from "../../utils/resolveBackendUrl";
 import {
   isNutritionLiveWsEnabled,
   NUTRINODE_LIVE_WS_EVENT,
@@ -43,8 +44,6 @@ interface NutritionState {
 
 const NutritionContext = createContext<NutritionState | undefined>(undefined);
 
-const WS_URL = "ws://localhost:8000/ws/nutrition/live";
-const API_URL = "http://localhost:8000";
 const MAX_WS_RETRIES = 3;
 const WS_RETRY_MS = 5000;
 
@@ -64,7 +63,7 @@ export function NutritionProvider({ children }: { children: React.ReactNode }) {
 
   const refreshToday = useCallback(async () => {
     try {
-      const res = await fetch(`${API_URL}/api/nutrition/today`);
+      const res = await fetch(`${resolveApiUrl()}/api/nutrition/today`);
       if (res.ok) {
         const data = await res.json();
         applyTodayPayload(data);
@@ -132,7 +131,7 @@ export function NutritionProvider({ children }: { children: React.ReactNode }) {
     const connect = () => {
       if (cancelled || gaveUpRef.current) return;
       setStatus("connecting");
-      const ws = new WebSocket(WS_URL);
+      const ws = new WebSocket(resolveNutritionWsUrl());
       wsRef.current = ws;
 
       ws.onopen = () => {
@@ -191,7 +190,7 @@ export function NutritionProvider({ children }: { children: React.ReactNode }) {
   }, [liveWsEnabled, applyTodayPayload]);
 
   const logManualMeal = async (foodItem: string, weightGrams: number, locationTag = "manual") => {
-    await fetch(`${API_URL}/api/nutrition/manual`, {
+    await fetch(`${resolveApiUrl()}/api/nutrition/manual`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -204,7 +203,7 @@ export function NutritionProvider({ children }: { children: React.ReactNode }) {
   };
 
   const runPipeline = async () => {
-    const res = await fetch(`${API_URL}/api/nutrition/pipeline/run`, { method: "POST" });
+    const res = await fetch(`${resolveApiUrl()}/api/nutrition/pipeline/run`, { method: "POST" });
     return res.json();
   };
 

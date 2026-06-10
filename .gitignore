@@ -30,6 +30,12 @@ docs/stitch-export/
 .DS_Store
 Thumbs.db
 
+# TexTeller ONNX cache (download via scripts/download_texteller.*)
+models/texteller/
+
+# Debug session logs (Cursor agent)
+debug-*.log
+
 # Runtime data (regenerated locally)
 data/logs/
 data_logs/
@@ -38,8 +44,9 @@ data/plate_images/
 *.crx
 *.db-journal
 
-# Optional: uncomment to omit local SQLite (run alembic + seed after clone)
-# data/vocab_app.db
+# Local SQLite (each machine: alembic upgrade head + seed)
+vocab_app.db
+data/vocab_app.db
 
 # Browser extension dev profiles (large, machine-specific)
 .browser-profiles/

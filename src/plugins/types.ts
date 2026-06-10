@@ -27,6 +27,10 @@ export interface PluginWidget {
   defaultColSpan?: 1 | 2;
   /** How many grid rows this widget spans by default (1 or 2). Default: 1 */
   defaultRowSpan?: 1 | 2;
+  /** When true, widget is only added via Widget Picker (not auto-shown on dashboard). */
+  catalogOnly?: boolean;
+  /** Picker grouping — Study, Math, Health */
+  category?: "study" | "math" | "health";
 }
 
 export interface PluginDef {

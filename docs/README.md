@@ -23,15 +23,16 @@ All project docs live here. Use with the file kernel at repo root.
 | [HARDWARE_AND_AI_LATER.md](HARDWARE_AND_AI_LATER.md) | No GPU / no ESP32 path |
 | [WORKING_PRODUCT.md](WORKING_PRODUCT.md) | Daily-use checklist |
 | [GRE_VOCAB_PHASE1.md](GRE_VOCAB_PHASE1.md) | GRE Phase 1 complete |
-| [SETUP_AND_COMMANDS.md](SETUP_AND_COMMANDS.md) | Install and batch files |
+| [DEPENDENCIES.md](DEPENDENCIES.md) | **Fresh-machine install** (Windows/Linux/macOS) |
+| [SETUP_AND_COMMANDS.md](SETUP_AND_COMMANDS.md) | Quick commands and scripts |
 | [DATABASE.md](DATABASE.md) | Schema and env vars |
 | [MIGRATIONS.md](MIGRATIONS.md) | Alembic revisions |
 | [API_CONTRACT.md](API_CONTRACT.md) | HTTP API reference |
 | [DOCKER.md](DOCKER.md) | Container deployment |
 | [STITCH_MCP_SETUP.md](STITCH_MCP_SETUP.md) | Stitch MCP + generate scripts |
 | [CENTRAL_HUB.md](CENTRAL_HUB.md) | Hub metrics and ingest |
-| [STITCH_DESIGN_SPEC.md](STITCH_DESIGN_SPEC.md) — UI tokens, components, screens for Stitch/v0 |
-| [STITCH_PROMPT.txt](STITCH_PROMPT.txt) — short paste prompt for Stitch | Install and batch files |
+| [STITCH_DESIGN_SPEC.md](STITCH_DESIGN_SPEC.md) | UI tokens, components, screens for Stitch/v0 |
+| [STITCH_PROMPT.txt](STITCH_PROMPT.txt) | Short paste prompt for Stitch |
 | [VOCAB_EXECUTION_PLAN.md](VOCAB_EXECUTION_PLAN.md) | Vocab MVP steps |
 | [FUTURE_VISION.md](FUTURE_VISION.md) | Long-term vision + Phase 3 map |
 
@@ -39,4 +40,4 @@ All project docs live here. Use with the file kernel at repo root.
 
 - [../README.md](../README.md) — overview and quick start
 - [../INTEGRATION_GUIDE.md](../INTEGRATION_GUIDE.md)
-- [../TROUBLESHOOTING.md](../TROUBLESHOOTING.md)
+| [TROUBLESHOOTING.md](TROUBLESHOOTING.md) | Common errors and fixes |

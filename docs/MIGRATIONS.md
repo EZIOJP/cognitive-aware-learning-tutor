@@ -11,17 +11,19 @@
 | `0003_math_bank` | `math_questions`; extends `math_attempts` (idempotent checks) |
 | `0004_reconcile` | **Idempotent repair** — missing tables/columns, `password_plain`, partial upgrades |
 | `0005_words_hub` | `words` table; `hub_session_id` on `quiz_sessions` and `math_attempts` |
+| `0006_user_features` | User-defined features; per-user `reading_definitions` |
 
 ## Everyday commands
 
-```bat
+```bash
 python -m alembic upgrade head
 python -m alembic current
 python -m alembic history
 ```
 
-`scripts\migrate.bat` — upgrade only.  
-`scripts\_common.bat` runs `alembic upgrade head` after pip install.
+Windows: `scripts\migrate.bat`  
+Linux/macOS: `./scripts/migrate.sh`  
+`scripts\_common.bat` and `setup.sh` run `alembic upgrade head` after pip install.
 
 ## Scenarios (every manipulation path)
 
@@ -128,7 +130,7 @@ Downgrades are best-effort. `0004` downgrade is a no-op by design. Prefer restor
 | Reading definition seed rows | App startup + `seed_definitions` script |
 | Behavior CSV logs | `data/logs/` |
 
-Future `words` table will need its own `0005_words_table` revision.
+Future `words` table migration is **`0005_words_hub`** (done).
 
 ## Helpers
 
@@ -137,7 +139,7 @@ Future `words` table will need its own `0005_words_table` revision.
 
 ## Checklist before merging schema work
 
-- [ ] New revision id increments (`0005_...`)
+- [ ] New revision id increments (`0007_...`)
 - [ ] Idempotent where upgrading old DBs
 - [ ] Model + migration agree
 - [ ] `alembic upgrade head` on empty DB

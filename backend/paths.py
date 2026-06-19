@@ -16,3 +16,6 @@ else:
 DATA_LOGS_DIR = ROOT / "data_logs"
 ASSETS_DIR = ROOT / "assets"
 PLATE_IMAGES_DIR = ROOT / "data" / "plate_images"
+TRANSCRIPTS_DIR = ROOT / "data" / "transcripts"
+NOTES_DIR = ROOT / "data" / "notes"
+SNAPSHOTS_DIR = ROOT / "data" / "transcripts" / "snapshots"

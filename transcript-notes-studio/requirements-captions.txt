@@ -1,0 +1,7 @@
+# Windows Live Captions scraper (Windows 11 only)
+# Install: pip install -r requirements-captions.txt
+
+pywinauto>=0.6.8
+
+# Optional — only for OCR fallback method:
+# pytesseract>=0.3.10

@@ -11,7 +11,9 @@ from backend.models.hub import (
     UserPlugin,
 )
 from backend.models.life import LifeDailyLog
+from backend.models.study import FocusEvent, LectureNote
 from backend.models.word import Word
+from backend.models.knowledge_graph import KgNode, KgEdge, KgEmbedding, KgObservation
 
 __all__ = [
     "User",
@@ -28,4 +30,10 @@ __all__ = [
     "UserFeature",
     "LifeDailyLog",
     "Word",
+    "FocusEvent",
+    "LectureNote",
+    "KgNode",
+    "KgEdge",
+    "KgEmbedding",
+    "KgObservation",
 ]

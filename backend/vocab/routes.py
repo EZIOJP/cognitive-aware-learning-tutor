@@ -6,6 +6,7 @@ import csv
 import io
 import json
 import random
+import time
 import uuid
 from datetime import UTC, datetime, timedelta
 from typing import Any
@@ -178,12 +179,34 @@ class MathAttemptBody(BaseModel):
     user_answer: str
 
 
+class FaceFocusBody(BaseModel):
+    not_focused: bool = False
+    head_turned_away: bool = False
+    long_eye_closure: bool = False
+    no_face: bool = False
+
+
 class FaceStatusBody(BaseModel):
     attention: float = 0
     attitude: str = "unknown"
     blink_rate: float = 0
     face_detected: bool = False
     details: dict[str, Any] = {}
+    focus: FaceFocusBody | None = None
+
+
+class FaceEnrollBody(BaseModel):
+    embedding: list[float]
+
+
+class FaceLoginBody(BaseModel):
+    username: str
+    embedding: list[float]
+
+
+class FocusEventStartBody(BaseModel):
+    event_type: str
+    pomodoro_mode: str = "focus"
 
 
 router = APIRouter(prefix="/api/vocab", tags=["vocab"])
@@ -995,6 +1018,22 @@ def submit_math_attempt(body: MathAttemptBody, db: Session = Depends(get_db), us
     db.commit()
     db.refresh(attempt)
     on_math_attempt(db, user.id, is_correct, body.topic, hub_session_id=hub_sess.id)
+
+    # --- Knowledge graph observation ---
+    try:
+        from backend.hub.services.knowledge_graph import log_observation, upsert_node  # noqa: PLC0415
+
+        kg_node = upsert_node(db, user_id=user.id, label=body.topic, node_type="concept")
+        log_observation(
+            db,
+            node_id=kg_node.id,
+            user_id=user.id,
+            interaction_type="math_fail" if not is_correct else "math_pass",
+            value=float(mastery_delta),
+        )
+    except Exception:  # noqa: BLE001
+        pass
+
     return {
         "is_correct": is_correct,
         "expected_answer": body.expected_answer,
@@ -1077,6 +1116,120 @@ def update_face_status(
 @router.get("/face/status")
 def face_status():
     return {"face": _face_status}
+
+
+@router.post("/auth/face/enroll")
+def face_enroll(body: FaceEnrollBody, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    from backend.core.face_auth import embedding_to_json
+
+    if len(body.embedding) < 8:
+        raise HTTPException(status_code=400, detail="Invalid embedding vector.")
+    user.face_embedding_json = embedding_to_json(body.embedding)
+    db.commit()
+    return {"status": "ok", "enrolled": True}
+
+
+@router.get("/auth/face/status")
+def face_enroll_status(user: User = Depends(get_current_user)):
+    from backend.core.face_auth import parse_embedding
+
+    return {"enrolled": parse_embedding(user.face_embedding_json) is not None}
+
+
+@router.post("/auth/face/login")
+def face_login(body: FaceLoginBody, db: Session = Depends(get_db)):
+    from backend.core.auth import token_for
+    from backend.core.face_auth import cosine_similarity, parse_embedding
+
+    username = body.username.strip().lower()
+    user = db.query(User).filter(User.username == username).first()
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    stored = parse_embedding(user.face_embedding_json)
+    if not stored:
+        raise HTTPException(status_code=400, detail="Face not enrolled for this user.")
+    if len(body.embedding) != len(stored):
+        raise HTTPException(status_code=400, detail="Embedding dimension mismatch.")
+    score = cosine_similarity(body.embedding, stored)
+    if score < 0.85:
+        raise HTTPException(status_code=401, detail="Face match failed.")
+    return {"token": token_for(user), "user": {"id": user.id, "username": user.username}}
+
+
+@router.post("/focus/events/start")
+def focus_event_start(
+    body: FocusEventStartBody,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    from backend.models.study import FocusEvent
+
+    if body.pomodoro_mode != "focus":
+        return {"id": None, "skipped": True}
+    row = FocusEvent(
+        user_id=user.id,
+        event_type=body.event_type,
+        pomodoro_mode=body.pomodoro_mode,
+        started_at=int(time.time()),
+    )
+    db.add(row)
+    db.commit()
+    db.refresh(row)
+    return {"id": row.id}
+
+
+class FocusEventEndBody(BaseModel):
+    focus_score: float | None = None  # 0.0–1.0; None = not tracked
+    active_note_path: str | None = None  # relative path to currently open note
+
+
+@router.patch("/focus/events/{event_id}/end")
+def focus_event_end(
+    event_id: int,
+    body: FocusEventEndBody | None = None,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    from backend.models.study import FocusEvent
+
+    row = db.query(FocusEvent).filter(FocusEvent.id == event_id, FocusEvent.user_id == user.id).first()
+    if not row:
+        raise HTTPException(status_code=404, detail="Event not found.")
+    now = int(time.time())
+    row.ended_at = now
+    row.duration_seconds = float(now - row.started_at)
+    db.commit()
+
+    # Log focus observation to knowledge graph
+    focus_score = (body.focus_score if body else None) or 1.0
+    active_note = body.active_note_path if body else None
+    is_drop = focus_score < 0.4
+    try:
+        from backend.hub.services.knowledge_graph import log_observation, upsert_node  # noqa: PLC0415
+        from backend.paths import NOTES_DIR  # noqa: PLC0415
+
+        if active_note:
+            from pathlib import Path as _Path  # noqa: PLC0415
+
+            note_path = _Path(active_note)
+            if not note_path.is_absolute():
+                note_path = NOTES_DIR / note_path
+            label = note_path.stem.replace("_", " ")
+        else:
+            label = "general_focus_session"
+
+        kg_node = upsert_node(db, user_id=user.id, label=label, node_type="concept")
+        log_observation(
+            db,
+            node_id=kg_node.id,
+            user_id=user.id,
+            interaction_type="focus_drop" if is_drop else "focus_ok",
+            value=focus_score,
+        )
+    except Exception:  # noqa: BLE001
+        pass
+
+    return {"id": row.id, "duration_seconds": row.duration_seconds}
 
 
 @router.get("/admin/users")

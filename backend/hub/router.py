@@ -369,3 +369,21 @@ def set_plugin(
         return set_user_plugin(db, user.id, body.plugin_id, body.enabled, body.config)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
+
+
+@router.get("/coach/graph-context")
+def get_graph_context(
+    query: str = Query(..., description="User query to embed and search."),
+    top_k: int = Query(3, ge=1, le=10),
+    hops: int = Query(2, ge=1, le=3),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Return GraphRAG context for the AI Coach given a natural language query."""
+    from backend.hub.services.coach_knowledge import _graph_rag_context  # noqa: PLC0415
+
+    ctx = _graph_rag_context(db, user.id, query, top_k=top_k, hops=hops)
+    return {
+        "query": query,
+        "graph_context": ctx,
+    }

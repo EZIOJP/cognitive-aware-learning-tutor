@@ -6,6 +6,8 @@ import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 import { cn } from "../app/components/ui/utils";
 import { PomodoroDock } from "./topbar/PomodoroDock";
+import { FaceTrackerDock } from "./topbar/FaceTrackerDock";
+import { usePlugins } from "../plugins/registry";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,6 +24,9 @@ const PAGE_TITLES: Record<string, string> = {
   "/gre-vocab": "GRE Vocabulary",
   "/settings": "Settings",
   "/gre-vocab/add-words": "Add Words",
+  "/lecture-notes": "Lecture Notes",
+  "/review": "Review Hub",
+  "/ai-coach": "AI Coach",
 };
 
 /** Plan: top bar = profile, theme, pomodoro only. EEG / mirror live on dashboard & plugin pages. */
@@ -29,6 +34,8 @@ export function AppTopBar() {
   const nav = useNavigate();
   const { pathname } = useLocation();
   const { user, isAuthenticated, isAdmin, logout } = useAuth();
+  const { enabledIds, isLoaded } = usePlugins();
+  const focusMirrorOn = isLoaded && enabledIds.includes("focus-mirror");
   const { typographyPack, motionLevel } = useTheme();
   const title = PAGE_TITLES[pathname] ?? "Study Companion";
   const titleClass =
@@ -74,6 +81,7 @@ export function AppTopBar() {
         </div>
 
         <div className="flex items-center gap-3">
+          {focusMirrorOn && <FaceTrackerDock />}
           <PomodoroDock />
           <div className="w-px h-6 bg-border/50" />
           <DropdownMenu>

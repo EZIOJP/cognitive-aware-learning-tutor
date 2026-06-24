@@ -1,50 +1,23 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
 import { ArrowLeft, Loader2, ScanLine } from "lucide-react";
-import { TldrawMathCanvas, type MathCanvasHandle } from "../../components/math-canvas";
+import { MathGridCanvas, type MathCanvasHandle, type StrokeMetricsSnapshot } from "../../components/math-canvas";
 import { Badge } from "../../app/components/ui/badge";
 import { Button } from "../../app/components/ui/button";
 import { Card } from "../../app/components/ui/card";
-import { useAuth } from "../../context/AuthContext";
-import { config } from "../../config";
-import { fetchOcrStatus, type MathOcrStatus } from "../../api/mathClient";
-
-interface MathOcrResponse {
-  latex: string;
-  incomplete_step: boolean;
-  confidence: number;
-  preprocess_applied: boolean;
-}
-
-async function postMathOcr(token: string | null, canvas_image: string): Promise<MathOcrResponse> {
-  const headers: HeadersInit = { "Content-Type": "application/json" };
-  if (token) headers.Authorization = `Bearer ${token}`;
-  const res = await fetch(`${config.backend.apiUrl}/api/math/ocr`, {
-    method: "POST",
-    headers,
-    body: JSON.stringify({ canvas_image }),
-  });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    const detail = data.detail;
-    const msg =
-      typeof detail === "string"
-        ? detail
-        : Array.isArray(detail)
-          ? detail.map((d: { msg?: string }) => d.msg).join("; ")
-          : `HTTP ${res.status}`;
-    throw new Error(msg);
-  }
-  return data as MathOcrResponse;
-}
+import {
+  fetchOcrStatus,
+  postMathOcr,
+  type MathOcrResult,
+  type MathOcrStatus,
+} from "../../api/mathClient";
 
 export function MathRecognizeTestPage() {
-  const { token } = useAuth();
   const canvasRef = useRef<MathCanvasHandle>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<MathOcrResponse | null>(null);
-  const [shapeCount, setShapeCount] = useState<number | null>(null);
+  const [result, setResult] = useState<MathOcrResult | null>(null);
+  const [metrics, setMetrics] = useState<StrokeMetricsSnapshot | null>(null);
   const [ocrStatus, setOcrStatus] = useState<MathOcrStatus | null>(null);
 
   useEffect(() => {
@@ -59,10 +32,7 @@ export function MathRecognizeTestPage() {
     setLoading(true);
     setError(null);
     setResult(null);
-    setShapeCount(null);
     try {
-      const count = canvasRef.current?.getEditor()?.getCurrentPageShapeIds().size ?? 0;
-      setShapeCount(count);
       if (!canvasRef.current?.hasContent()) {
         setError("Nothing to recognize — draw on the canvas first.");
         return;
@@ -72,7 +42,12 @@ export function MathRecognizeTestPage() {
         setError("Canvas export failed — try drawing again.");
         return;
       }
-      const data = await postMathOcr(token, png);
+      const paths = await canvasRef.current?.exportPaths();
+      const snapshot = canvasRef.current?.exportStrokeMetrics?.() ?? null;
+      const data = await postMathOcr(png, {
+        paths_json: paths?.length ? JSON.stringify(paths) : undefined,
+        stroke_metrics_json: snapshot ? JSON.stringify(snapshot) : undefined,
+      });
       setResult(data);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Recognition failed");
@@ -109,18 +84,17 @@ export function MathRecognizeTestPage() {
       </div>
 
       <p className="text-sm text-muted-foreground shrink-0">
-        Draw on the tldraw canvas (grid snap on), then Recognize. First request after a backend
-        restart takes ~15–20s while the model loads. Install OCR once with{" "}
+        Draw on the grid canvas (pen/eraser, fixed view — no zoom), then Recognize. First request
+        after a backend restart takes ~15–20s while the model loads. Install OCR once with{" "}
         <code className="text-xs bg-muted px-1 rounded">scripts\install_ocr.bat</code>.
       </p>
 
       <div className="flex-1 flex flex-col lg:flex-row min-h-0 gap-3">
         <Card className="flex-1 min-h-[360px] flex flex-col overflow-hidden gloss-panel p-0">
-          <TldrawMathCanvas
+          <MathGridCanvas
             ref={canvasRef}
-            persistenceKey="calt-recognize-test"
-            showGrid
             onCanvasChange={handleCanvasChange}
+            onMetricsChange={setMetrics}
           />
         </Card>
 
@@ -149,9 +123,8 @@ export function MathRecognizeTestPage() {
                 <Badge variant="outline">
                   confidence {(result.confidence * 100).toFixed(0)}%
                 </Badge>
-                {result.preprocess_applied && (
-                  <Badge variant="secondary">cropped</Badge>
-                )}
+                <Badge variant="secondary">tier: {result.tier}</Badge>
+                {result.preprocess_applied && <Badge variant="secondary">cropped</Badge>}
               </div>
               <div>
                 <p className="text-xs text-muted-foreground mb-1">LaTeX</p>
@@ -159,6 +132,11 @@ export function MathRecognizeTestPage() {
                   {result.latex || "(empty)"}
                 </pre>
               </div>
+              {result.teacher_latex && (
+                <p className="text-xs text-muted-foreground">
+                  Teacher: <code className="bg-muted px-1 rounded">{result.teacher_latex}</code>
+                </p>
+              )}
             </div>
           )}
 
@@ -168,8 +146,18 @@ export function MathRecognizeTestPage() {
             </p>
           )}
 
-          {shapeCount !== null && (
-            <p className="text-xs text-muted-foreground">Canvas shapes: {shapeCount}</p>
+          {metrics && metrics.totalStrokes > 0 && (
+            <div className="text-xs text-muted-foreground space-y-1 border-t pt-2">
+              <p className="font-medium text-foreground">Stroke analytics</p>
+              <p>
+                {metrics.totalStrokes} strokes · {Math.round(metrics.totalInkLengthPx)}px ink ·{" "}
+                {(metrics.totalDrawingTimeMs / 1000).toFixed(1)}s drawing
+              </p>
+              <p>
+                cells used: {Object.keys(metrics.strokesPerCell).length} · eraser:{" "}
+                {metrics.eraserEvents}
+              </p>
+            </div>
           )}
         </Card>
       </div>

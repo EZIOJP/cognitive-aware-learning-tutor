@@ -212,6 +212,7 @@ def math_tutor_hint(
 class MathOcrIn(BaseModel):
     canvas_image: str
     paths_json: str | None = None
+    stroke_metrics_json: str | None = None
     ollama_vision_fallback: bool = True
 
 
@@ -299,6 +300,7 @@ def math_ocr(
         result = recognize_canvas(
             body.canvas_image,
             paths_json=body.paths_json,
+            stroke_metrics_json=body.stroke_metrics_json,
             ollama_vision_fallback=body.ollama_vision_fallback,
         )
     except ImportError as e:
@@ -322,6 +324,7 @@ def math_ocr(
 class MathInterventionIn(BaseModel):
     canvas_image: str = ""
     paths_json: str | None = None
+    stroke_metrics_json: str | None = None
     prompt: str = ""
     topic: str = ""
     gamma: float = 55.0
@@ -394,6 +397,16 @@ def math_intervention(
         raise HTTPException(status_code=400, detail=str(e)) from e
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Intervention failed: {e}") from e
+
+    if body.stroke_metrics_json:
+        from backend.math.training_log import log_kinematics
+
+        log_kinematics(
+            sample_id=result.session_snapshot_id,
+            user_id=user.id,
+            context="intervention",
+            stroke_metrics_json=body.stroke_metrics_json,
+        )
 
     log_intervention(
         user_id=user.id,
@@ -481,6 +494,9 @@ class TrainSampleIn(BaseModel):
     predicted_latex: str = ""
     confirmed_latex: str | None = None
     action: str  # confirm | correct
+    paths_json: str | None = None
+    stroke_metrics_json: str | None = None
+    target_latex: str = ""
 
 
 class TrainSampleOut(BaseModel):
@@ -539,6 +555,9 @@ async def train_sample(body: TrainSampleIn, user: User = Depends(get_current_use
         confirmed_latex=confirmed,
         teacher_latex=teacher_latex,
         action=body.action,
+        paths_json=body.paths_json,
+        stroke_metrics_json=body.stroke_metrics_json,
+        target_latex=body.target_latex,
     )
 
     agree = "true" if predicted == confirmed else ("teacher_match" if teacher_latex == confirmed else "corrected")

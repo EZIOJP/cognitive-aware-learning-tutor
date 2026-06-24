@@ -83,6 +83,101 @@ export async function fetchInsightsReview(): Promise<InsightsReviewPayload | nul
   }
 }
 
+export type InsightsChatPayload = {
+  reply: string;
+  source?: "gemma" | "template";
+  llm_available?: boolean;
+};
+
+export type ChatMessage = {
+  role: "user" | "assistant";
+  content: string;
+};
+
+export async function postInsightsChat(messages: ChatMessage[]): Promise<InsightsChatPayload | null> {
+  try {
+    const res = await fetch(`${resolveApiUrl()}/api/insights/chat`, {
+      method: "POST",
+      headers: hubHeaders(),
+      body: JSON.stringify({ messages }),
+    });
+    if (!res.ok) return null;
+    return (await res.json()) as InsightsChatPayload;
+  } catch {
+    return null;
+  }
+}
+
+export type AgentSnapshot = {
+  scanned_files: number;
+  frontend_routes: string[];
+  api_route_count: number;
+  css_top_classes: { class: string; count: number }[];
+  open_todos: { file: string; line: string; tag: string; text: string }[];
+  study_pipeline: Record<string, boolean | string>;
+};
+
+export async function fetchAgentSnapshot(refresh = false): Promise<AgentSnapshot | null> {
+  try {
+    const q = refresh ? "?refresh=true" : "";
+    const res = await fetch(`${resolveApiUrl()}/api/insights/agent/snapshot${q}`, {
+      headers: hubHeaders(),
+    });
+    if (!res.ok) return null;
+    return (await res.json()) as AgentSnapshot;
+  } catch {
+    return null;
+  }
+}
+
+export async function postProjectAgentChat(messages: ChatMessage[]): Promise<InsightsChatPayload | null> {
+  try {
+    const res = await fetch(`${resolveApiUrl()}/api/insights/agent/chat`, {
+      method: "POST",
+      headers: hubHeaders(),
+      body: JSON.stringify({ messages }),
+    });
+    if (!res.ok) return null;
+    return (await res.json()) as InsightsChatPayload;
+  } catch {
+    return null;
+  }
+}
+
+export type CoachContextPayload = {
+  student: { username: string; is_admin: boolean };
+  today: Record<string, unknown>;
+  vocab: Record<string, unknown>;
+  math?: Record<string, unknown>;
+  life_last_7_days?: Array<Record<string, unknown>>;
+  quiz_backlog?: { due_count: number; total_cards: number; by_domain?: Record<string, number> };
+  suggested_priorities: string[];
+  plugins_enabled: string[];
+  lecture_notes: { count: number; topics: string[]; recent_titles: string[] };
+  focus: Record<string, unknown>;
+  has_face_tracker?: boolean;
+  face_tracker?: Record<string, unknown> | null;
+  knowledge_index?: {
+    lecture_notes: number;
+    vocab_progress_rows: number;
+    math_attempts: number;
+    transcripts_on_disk: number;
+    browser_events_today?: number;
+    browser_source?: string;
+    retrieval: string;
+  };
+};
+
+export async function fetchCoachContext(): Promise<CoachContextPayload | null> {
+  try {
+    const res = await fetch(`${resolveApiUrl()}/api/insights/context`, { headers: hubHeaders() });
+    if (!res.ok) return null;
+    return (await res.json()) as CoachContextPayload;
+  } catch {
+    return null;
+  }
+}
+
 export type DashboardLayoutPayload = {
   widget_state: Record<string, { colSpan: 1 | 2; rowSpan: 1 | 2; hidden: boolean }>;
   widget_order: string[];
@@ -344,6 +439,36 @@ export async function downloadHubExport(format: "json" | "csv" = "json"): Promis
   a.download = format === "csv" ? "hub_export.csv" : "hub_export.json";
   a.click();
   URL.revokeObjectURL(url);
+}
+
+export async function rebuildHubDaily(day?: string): Promise<boolean> {
+  try {
+    const q = day ? `?day=${encodeURIComponent(day)}` : "";
+    const res = await fetch(`${resolveApiUrl()}/api/hub/daily/rebuild${q}`, {
+      method: "POST",
+      headers: hubHeaders(),
+    });
+    if (res.ok) {
+      window.dispatchEvent(new CustomEvent("hub:refresh"));
+    }
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+export async function fetchAgentFiles(q = ""): Promise<string[]> {
+  try {
+    const query = q ? `?q=${encodeURIComponent(q)}` : "";
+    const res = await fetch(`${resolveApiUrl()}/api/insights/agent/files${query}`, {
+      headers: hubHeaders(),
+    });
+    if (!res.ok) return [];
+    const data = (await res.json()) as { files?: string[] };
+    return data.files ?? [];
+  } catch {
+    return [];
+  }
 }
 
 export async function postHubReading(

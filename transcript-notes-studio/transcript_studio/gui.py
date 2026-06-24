@@ -13,12 +13,21 @@ from tkinter import filedialog, messagebox, scrolledtext, ttk
 try:
     import customtkinter as ctk
 
-    ctk.set_appearance_mode("System")
+    ctk.set_appearance_mode("Light")
     ctk.set_default_color_theme("blue")
     USE_CTK = True
 except ImportError:
     USE_CTK = False
     ctk = None  # type: ignore[misc, assignment]
+
+# Shared light palette (ttk + CTk + classic tk widgets)
+_UI_BG = "#f3f4f6"
+_UI_PANEL = "#ffffff"
+_UI_BORDER = "#d1d5db"
+_UI_TEXT = "#1f2937"
+_UI_MUTED = "#6b7280"
+_UI_ACCENT = "#2563eb"
+_UI_ACCENT_HOVER = "#1d4ed8"
 
 from transcript_studio.config import load_config, save_config
 from transcript_studio.llm_client import llm_reachable, options_from_config
@@ -55,6 +64,92 @@ _Entry = ctk.CTkEntry if USE_CTK else ttk.Entry
 _Checkbox = ctk.CTkCheckBox if USE_CTK else ttk.Checkbutton
 
 
+def _configure_app_style(root: tk.Misc) -> None:
+    """Unify ttk/tk colors so LabelFrames and tabs don't render as harsh black bars."""
+    if USE_CTK and isinstance(root, ctk.CTk):
+        root.configure(fg_color=(_UI_BG, _UI_BG))
+
+    for pattern, value in (
+        ("*Background", _UI_BG),
+        ("*Listbox*Background", _UI_PANEL),
+        ("*Listbox*Foreground", _UI_TEXT),
+        ("*Listbox*selectBackground", _UI_ACCENT),
+        ("*Listbox*selectForeground", "#ffffff"),
+        ("*Text*Background", _UI_PANEL),
+        ("*Text*Foreground", _UI_TEXT),
+        ("*Text*insertBackground", _UI_TEXT),
+    ):
+        root.option_add(pattern, value)
+
+    style = ttk.Style(root)
+    try:
+        style.theme_use("clam")
+    except tk.TclError:
+        pass
+
+    style.configure(".", background=_UI_BG, foreground=_UI_TEXT, fieldbackground=_UI_PANEL)
+    style.configure("TFrame", background=_UI_BG)
+    style.configure("TLabel", background=_UI_BG, foreground=_UI_TEXT)
+    style.configure(
+        "TLabelframe",
+        background=_UI_BG,
+        bordercolor=_UI_BORDER,
+        relief="groove",
+        borderwidth=1,
+    )
+    style.configure(
+        "TLabelframe.Label",
+        background=_UI_BG,
+        foreground=_UI_MUTED,
+        font=("Segoe UI", 9, "bold"),
+    )
+    style.configure("TNotebook", background=_UI_BG, borderwidth=0)
+    style.configure(
+        "TNotebook.Tab",
+        background="#e5e7eb",
+        foreground=_UI_TEXT,
+        padding=(12, 6),
+    )
+    style.map(
+        "TNotebook.Tab",
+        background=[("selected", _UI_PANEL)],
+        foreground=[("selected", _UI_TEXT)],
+    )
+    style.configure(
+        "TButton",
+        background="#e5e7eb",
+        foreground=_UI_TEXT,
+        bordercolor=_UI_BORDER,
+        focusthickness=1,
+        focuscolor=_UI_ACCENT,
+        padding=(10, 4),
+    )
+    style.map("TButton", background=[("active", "#dbeafe"), ("pressed", "#bfdbfe")])
+    style.configure("TEntry", fieldbackground=_UI_PANEL, foreground=_UI_TEXT, bordercolor=_UI_BORDER)
+    style.configure("TCombobox", fieldbackground=_UI_PANEL, foreground=_UI_TEXT, bordercolor=_UI_BORDER)
+    style.configure("TCheckbutton", background=_UI_BG, foreground=_UI_TEXT)
+    style.configure("Horizontal.TProgressbar", background=_UI_ACCENT, troughcolor="#e5e7eb", borderwidth=0)
+
+
+def _apply_windows_title_bar(window: tk.Misc) -> None:
+    """Use a neutral light title bar instead of the Windows accent color."""
+    if sys.platform != "win32":
+        return
+    try:
+        import ctypes
+
+        hwnd = ctypes.windll.user32.GetParent(window.winfo_id())
+        if hwnd == 0:
+            hwnd = window.winfo_id()
+        caption_color = 0x00F3F4F6  # #f3f4f6 in BGR
+        text_color = 0x0037291F  # #1f2937 in BGR
+        dwm = ctypes.windll.dwmapi
+        dwm.DwmSetWindowAttribute(hwnd, 35, ctypes.byref(ctypes.c_int(caption_color)), 4)
+        dwm.DwmSetWindowAttribute(hwnd, 36, ctypes.byref(ctypes.c_int(text_color)), 4)
+    except Exception:
+        pass
+
+
 class TranscriptStudioApp(_AppBase):
     def __init__(self) -> None:
         super().__init__()
@@ -79,9 +174,11 @@ class TranscriptStudioApp(_AppBase):
         self._source_files: list[Path] = []
         self._last_transcript_path: Path | None = None
 
+        _configure_app_style(self)
         self._build_ui()
         self._refresh_library_list()
         self._load_fields_from_config()
+        self.after(50, lambda: _apply_windows_title_bar(self))
 
     # ------------------------------------------------------------------ UI shell
 
@@ -92,7 +189,7 @@ class TranscriptStudioApp(_AppBase):
         self.mode_notebook = ttk.Notebook(outer)
         self.mode_notebook.pack(fill=tk.BOTH, expand=True)
 
-        self.summarize_tab = _Frame(self.mode_notebook, padding=4) if not USE_CTK else _Frame(self.mode_notebook)
+        self.summarize_tab = ttk.Frame(self.mode_notebook, padding=4)
         self.captions_tab = ttk.Frame(self.mode_notebook, padding=4)
         self.transcribe_tab = ttk.Frame(self.mode_notebook, padding=4)
         self.mode_notebook.add(self.summarize_tab, text="  Summarize & combine  ")
@@ -163,37 +260,25 @@ class TranscriptStudioApp(_AppBase):
         ttk.Entry(r2, textvariable=self.context_var).pack(side=tk.LEFT, fill=tk.X, expand=True, padx=6)
         ttk.Button(r2, text="…", width=3, command=self._browse_context).pack(side=tk.LEFT)
 
-        r3 = _Frame(opts) if USE_CTK else ttk.Frame(opts)
+        r3 = ttk.Frame(opts)
         r3.pack(fill=tk.X, pady=(6, 0))
         self.aggressive_var = tk.BooleanVar(value=self.cfg.aggressive_dedup_default)
         self._add_checkbox(
             r3, "Aggressive dedup (Live Captions snapshots)", self.aggressive_var
         ).pack(side=tk.LEFT)
-        self.refine_var = tk.BooleanVar(value=self.cfg.refine_second_pass)
-        self._add_checkbox(r3, "2nd pass — stitch topics & refine flow", self.refine_var).pack(
-            side=tk.LEFT, padx=(12, 0)
-        )
-        self.enrich_var = tk.BooleanVar(value=self.cfg.enrich_with_references)
-        self._add_checkbox(r3, "3rd pass — enrich with Colab/PDF examples", self.enrich_var).pack(
-            side=tk.LEFT, padx=(12, 0)
-        )
         self.fast_var = tk.BooleanVar(value=self.cfg.fast_mode)
-        self._add_checkbox(r3, "Fast mode (1 pass only)", self.fast_var).pack(side=tk.LEFT, padx=(12, 0))
+        self._add_checkbox(
+            r3, "Fast mode (transcript only — skip PDF/Colab refs)", self.fast_var
+        ).pack(side=tk.LEFT, padx=(12, 0))
 
-        r4 = _Frame(opts) if USE_CTK else ttk.Frame(opts)
+        r4 = ttk.Frame(opts)
         r4.pack(fill=tk.X, pady=(6, 0))
-        self.semantic_chunk_var = tk.BooleanVar(value=self.cfg.use_semantic_chunking)
-        self._add_checkbox(r4, "Semantic chunking (embed-aware boundaries)", self.semantic_chunk_var).pack(
-            side=tk.LEFT
-        )
-        self.tag_extract_var = tk.BooleanVar(value=self.cfg.use_tag_extraction)
-        self._add_checkbox(r4, "LLM tag extraction & topic ordering", self.tag_extract_var).pack(
-            side=tk.LEFT, padx=(12, 0)
-        )
+        ttk.Label(
+            r4,
+            text="Pipeline: clean → chunk → summarize (mermaid + slide captures)",
+        ).pack(side=tk.LEFT)
+        self.semantic_chunk_var = tk.BooleanVar(value=False)
         self.wikilinks_var = tk.BooleanVar(value=self.cfg.inject_wikilinks)
-        self._add_checkbox(r4, "Auto wikilinks", self.wikilinks_var).pack(
-            side=tk.LEFT, padx=(12, 0)
-        )
 
         # --- LLM ---
         llm = ttk.LabelFrame(tab, text="Summarization LLM", padding=8)
@@ -219,7 +304,7 @@ class TranscriptStudioApp(_AppBase):
         ttk.Button(lr1, text="Test", command=self._test_llm).pack(side=tk.LEFT, padx=(8, 0))
 
         # --- Actions ---
-        actions = _Frame(tab) if USE_CTK else ttk.Frame(tab)
+        actions = ttk.Frame(tab)
         actions.pack(fill=tk.X, pady=(0, 6))
         self.parse_btn = self._add_button(actions, "Parse & preview", self._run_parse)
         self.parse_btn.pack(side=tk.LEFT)
@@ -231,11 +316,16 @@ class TranscriptStudioApp(_AppBase):
         self._add_button(actions, "Open output folder", self._open_output).pack(side=tk.LEFT, padx=(8, 0))
         self._add_button(actions, "Save settings", self._save_settings).pack(side=tk.RIGHT)
 
-        prog_row = _Frame(tab) if USE_CTK else ttk.Frame(tab)
+        prog_row = ttk.Frame(tab)
         prog_row.pack(fill=tk.X, pady=(0, 6))
         self.progress_var = tk.DoubleVar(value=0.0)
         if USE_CTK:
-            self.progress_bar = ctk.CTkProgressBar(prog_row)
+            self.progress_bar = ctk.CTkProgressBar(
+                prog_row,
+                progress_color=_UI_ACCENT,
+                fg_color="#e5e7eb",
+                corner_radius=4,
+            )
             self.progress_bar.set(0)
         else:
             self.progress_bar = ttk.Progressbar(prog_row, variable=self.progress_var, maximum=100)
@@ -254,12 +344,28 @@ class TranscriptStudioApp(_AppBase):
 
     def _add_checkbox(self, parent, text: str, variable: tk.BooleanVar):
         if USE_CTK:
-            return ctk.CTkCheckBox(parent, text=text, variable=variable)
+            return ctk.CTkCheckBox(
+                parent,
+                text=text,
+                variable=variable,
+                fg_color=_UI_ACCENT,
+                hover_color=_UI_ACCENT_HOVER,
+                text_color=_UI_TEXT,
+                border_color=_UI_BORDER,
+            )
         return ttk.Checkbutton(parent, text=text, variable=variable)
 
     def _add_button(self, parent, text: str, command):
         if USE_CTK:
-            return ctk.CTkButton(parent, text=text, command=command)
+            return ctk.CTkButton(
+                parent,
+                text=text,
+                command=command,
+                fg_color=_UI_ACCENT,
+                hover_color=_UI_ACCENT_HOVER,
+                text_color="#ffffff",
+                corner_radius=6,
+            )
         return ttk.Button(parent, text=text, command=command)
 
     def _build_captions_tab(self) -> None:
@@ -445,9 +551,8 @@ class TranscriptStudioApp(_AppBase):
         self.url_var.set(self.cfg.llm_base_url)
         self.model_var.set(self.cfg.llm_model)
         self.output_var.set(str(self.cfg.notes_path()))
-        self.refine_var.set(self.cfg.refine_second_pass)
-        self.enrich_var.set(self.cfg.enrich_with_references)
         self.fast_var.set(self.cfg.fast_mode)
+        self.semantic_chunk_var.set(self.cfg.use_semantic_chunking)
         self.temp_var.set(str(self.cfg.llm_temperature))
         self.aggressive_var.set(self.cfg.aggressive_dedup_default)
         if self.cfg.context_folder:
@@ -476,11 +581,8 @@ class TranscriptStudioApp(_AppBase):
         self.cfg.llm_base_url = self.url_var.get().strip()
         self.cfg.llm_model = self.model_var.get().strip()
         self.cfg.aggressive_dedup_default = self.aggressive_var.get()
-        self.cfg.refine_second_pass = self.refine_var.get()
-        self.cfg.enrich_with_references = self.enrich_var.get()
         self.cfg.fast_mode = self.fast_var.get()
         self.cfg.use_semantic_chunking = self.semantic_chunk_var.get()
-        self.cfg.use_tag_extraction = self.tag_extract_var.get()
         self.cfg.inject_wikilinks = self.wikilinks_var.get()
         try:
             temp = float(self.temp_var.get().strip() or "0.3")
@@ -628,7 +730,7 @@ class TranscriptStudioApp(_AppBase):
         if not self._source_files:
             return
         try:
-            transcript_text, reference_text, auto_aggressive = prepare_sources(self._source_files)
+            transcript_text, reference_text, auto_aggressive, _manifest = prepare_sources(self._source_files)
             self._raw_text = transcript_text
             if reference_text:
                 self._raw_text += (
@@ -817,7 +919,8 @@ class TranscriptStudioApp(_AppBase):
                     stop_event=self._captions_stop,
                 )
             except Exception as exc:
-                self.after(0, lambda: self._cllog(f"Error: {exc}"))
+                err = f"{type(exc).__name__}: {exc}"
+                self.after(0, lambda msg=err: self._cllog(f"Error: {msg}"))
             finally:
                 self.after(0, self._finish_captions)
 
@@ -948,7 +1051,8 @@ class TranscriptStudioApp(_AppBase):
                     on_progress=on_progress,
                 )
             except Exception as exc:
-                self.after(0, lambda: self._tlog(f"Error: {exc}"))
+                err = f"{type(exc).__name__}: {exc}"
+                self.after(0, lambda msg=err: self._tlog(f"Error: {msg}"))
             finally:
                 self.after(0, lambda: self._finish_live_whisper(session))
 
@@ -1101,7 +1205,8 @@ class TranscriptStudioApp(_AppBase):
 
                 self.after(0, done)
             except Exception as exc:
-                self.after(0, lambda: messagebox.showerror("Transcribe failed", str(exc)))
+                err = f"{type(exc).__name__}: {exc}"
+                self.after(0, lambda msg=err: messagebox.showerror("Transcribe failed", msg))
             finally:
                 if session:
                     session.stop_auto_capture()
@@ -1130,7 +1235,7 @@ class TranscriptStudioApp(_AppBase):
             paths = self._resolve_sources()
             if not self._raw_text:
                 self._load_combined_preview()
-            transcript_text, _, _ = prepare_sources(paths)
+            transcript_text, _, _, _ = prepare_sources(paths)
             aggressive = self.aggressive_var.get()
             self._cleaned_text = parse_transcript(transcript_text, aggressive=aggressive)
             self.clean_text.delete("1.0", tk.END)
@@ -1142,6 +1247,10 @@ class TranscriptStudioApp(_AppBase):
             self.status_var.set(f"Cleaned — {words:,} words")
         except Exception as exc:
             messagebox.showerror("Parse failed", str(exc))
+
+    def _summarize_failed(self, message: str) -> None:
+        self._log(f"Summarize failed: {message}")
+        messagebox.showerror("Summarize failed", message)
 
     def _run_summarize(self) -> None:
         if self._busy:
@@ -1187,9 +1296,8 @@ class TranscriptStudioApp(_AppBase):
                     output_dir=out,
                     opts=opts,
                     context_folder=context,
-                    refine_second_pass=self.refine_var.get() and not self.fast_var.get(),
-                    enrich_with_references=self.enrich_var.get() and not self.fast_var.get(),
                     fast_mode=self.fast_var.get(),
+                    use_semantic_grouping=self.semantic_chunk_var.get(),
                     session_dir=session_dir,
                     on_progress=on_progress,
                     on_step=on_step,
@@ -1207,7 +1315,8 @@ class TranscriptStudioApp(_AppBase):
 
                 self.after(0, done)
             except Exception as exc:
-                self.after(0, lambda: messagebox.showerror("Summarize failed", str(exc)))
+                err = f"{type(exc).__name__}: {exc}"
+                self.after(0, lambda msg=err: self._summarize_failed(msg))
             finally:
                 def reset_ui() -> None:
                     self._set_busy(False)

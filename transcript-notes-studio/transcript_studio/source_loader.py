@@ -140,7 +140,35 @@ def combine_source_files(paths: list[Path]) -> str:
     raise ValueError("No content in selected files.")
 
 
-def prepare_sources(paths: list[Path]) -> tuple[str, str, bool]:
+def build_source_manifest(paths: list[Path]) -> str:
+    """Human-readable map of source files for LLM prompts."""
+    transcripts, references = split_source_paths(paths)
+    lines = [
+        "Source manifest — use these names for ## headings and narrative flow:",
+        "Order sources follow the class session (transcript first, then references).",
+    ]
+    for index, path in enumerate(transcripts, start=1):
+        label = path.stem.replace("_", " ")
+        lines.append(
+            f"{index}. TRANSCRIPT `{path.name}` ({label}) — live lecture voice; "
+            "preserve how the instructor explained concepts in class."
+        )
+    for index, path in enumerate(references, start=len(transcripts) + 1):
+        label = path.stem.replace("_", " ")
+        if path.suffix.lower() == ".ipynb":
+            role = "Colab notebook"
+        elif path.suffix.lower() == ".pdf":
+            role = "PDF slides/handout"
+        else:
+            role = "reference notes"
+        lines.append(
+            f"{index}. REFERENCE `{path.name}` ({label}) — {role}; "
+            "weave runnable examples under the matching lecture topic."
+        )
+    return "\n".join(lines)
+
+
+def prepare_sources(paths: list[Path]) -> tuple[str, str, bool, str]:
     """
     Prepare lecture transcript text, reference bundle, and whether aggressive dedup is recommended.
     """
@@ -156,7 +184,8 @@ def prepare_sources(paths: list[Path]) -> tuple[str, str, bool]:
         raise ValueError("No supported source files selected.")
 
     reference_text = load_reference_bundle(references)
-    return transcript_text, reference_text, auto_aggressive
+    manifest = build_source_manifest(paths)
+    return transcript_text, reference_text, auto_aggressive, manifest
 
 
 def reference_slice(reference: str, chunk_index: int, total_chunks: int, *, window: int = 6000) -> str:

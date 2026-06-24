@@ -158,14 +158,20 @@ def _ollama_generate(prompt: str, *, opts: LlmOptions, timeout: float) -> str | 
         return None
 
 
-def generate(prompt: str, *, opts: LlmOptions | None = None, timeout: float = 180.0) -> str | None:
+def generate(
+    prompt: str,
+    *,
+    opts: LlmOptions | None = None,
+    timeout: float = 180.0,
+    use_cache: bool = True,
+) -> str | None:
     if not llm_available():
         return None
     opts = opts or options_from_config()
 
     # --- Semantic cache lookup ---
     cfg = load_config()
-    if cfg.semantic_cache_enabled:
+    if use_cache and cfg.semantic_cache_enabled:
         try:
             from transcript_studio.semantic_cache import cache_lookup, cache_store  # noqa: PLC0415
 
@@ -189,7 +195,7 @@ def generate(prompt: str, *, opts: LlmOptions | None = None, timeout: float = 18
         result = _ollama_generate(prompt, opts=opts, timeout=timeout)
 
     # --- Store in cache ---
-    if result and cfg.semantic_cache_enabled:
+    if use_cache and result and cfg.semantic_cache_enabled:
         try:
             cache_store(
                 prompt,

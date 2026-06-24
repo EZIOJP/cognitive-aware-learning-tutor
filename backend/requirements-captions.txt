@@ -1,0 +1,9 @@
+# Windows Live Captions transcript scraper (Windows 11 only)
+# Install: pip install -r backend/requirements-captions.txt
+# Run: python -m backend.scripts.live_captions_scraper
+
+pywinauto>=0.6.8
+
+# Optional — only for --method ocr fallback:
+# pytesseract>=0.3.10
+# Also install Tesseract OCR: https://github.com/tesseract-ocr/tesseract

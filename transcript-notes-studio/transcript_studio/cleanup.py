@@ -12,6 +12,10 @@ LLM_PREAMBLE_RE = re.compile(r"^(?:Here'?s|Sure|Certainly|Of course)[^\n]*\n+", 
 OUTER_FENCE_LINE_RE = re.compile(r"^```(?:markdown)?\s*$")
 MERMAID_RE = re.compile(r"```mermaid\s*\n(.*?)```", re.DOTALL | re.I)
 CODE_BLOCK_RE = re.compile(r"```[\w]*\n(.*?)```", re.DOTALL)
+ORPHAN_SOURCE_LINE_RE = re.compile(
+    r"^[\w\s.\-]+(?:\.ipynb|\.pdf|\.txt|\.md|Colab)(?:\s+[\w\s.\-]+)*$",
+    re.I,
+)
 
 
 def normalize_segment(text: str) -> str:
@@ -161,11 +165,50 @@ def repair_all_fences(text: str) -> str:
     return "\n".join(out)
 
 
+def trim_incomplete_tail(text: str) -> str:
+    lines = text.splitlines()
+    while lines:
+        last = lines[-1].strip()
+        if not last:
+            lines.pop()
+            continue
+        if len(last) < 5 and not last.endswith((".", "!", "?", "`", ")", "]")):
+            lines.pop()
+            continue
+        break
+    return "\n".join(lines).strip()
+
+
+def dedupe_notes_tail(text: str) -> str:
+    """Remove trailing duplicate sections and orphan source filename lines."""
+    lines = text.splitlines()
+    while lines and ORPHAN_SOURCE_LINE_RE.match(lines[-1].strip()):
+        lines.pop()
+    text = "\n".join(lines).strip()
+
+    h2_positions: list[tuple[str, int]] = []
+    for match in re.finditer(r"^## (.+)$", text, re.MULTILINE):
+        h2_positions.append((match.group(1).strip().lower(), match.start()))
+
+    seen: dict[str, int] = {}
+    cut: int | None = None
+    for title, pos in h2_positions:
+        if title in seen and pos > len(text) * 0.5:
+            cut = pos
+            break
+        seen[title] = pos
+
+    if cut is not None:
+        text = text[:cut].rstrip()
+    return trim_incomplete_tail(text)
+
+
 def postprocess_markdown(raw: str) -> str:
     text = raw.strip()
     text = LLM_PREAMBLE_RE.sub("", text).strip()
     text = strip_whole_response_wrapper(text)
     text = repair_all_fences(text)
+    text = dedupe_notes_tail(text)
     return text.strip()
 
 

@@ -24,7 +24,7 @@ from contextlib import asynccontextmanager
 from fastapi import APIRouter, File, UploadFile, Form, WebSocket, WebSocketDisconnect, HTTPException
 from fastapi.responses import JSONResponse, FileResponse
 from pydantic import BaseModel
-from .pipeline_nutrition import main as run_pipeline
+from .pipeline_nutrition import run as run_pipeline
 
 # ── Logging ──────────────────────────────────────────────────────────────────
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")

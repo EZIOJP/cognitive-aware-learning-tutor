@@ -24,6 +24,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--no-refine", action="store_true", help="Skip 2nd-pass topic stitching")
     parser.add_argument("--no-enrich", action="store_true", help="Skip 3rd-pass enrich with references")
     parser.add_argument("--fast", action="store_true", help="Fast mode — chunk pass only (skip refine and enrich)")
+    parser.add_argument("--no-semantic", action="store_true", help="Skip sentence-transformer topic grouping")
     parser.add_argument("--context", "-c", default="", help="Folder with prereq .md/.ipynb/.txt files")
     args = parser.parse_args(argv)
 
@@ -67,6 +68,7 @@ def main(argv: list[str] | None = None) -> int:
             refine_second_pass=not args.no_refine and not args.fast,
             enrich_with_references=not args.no_enrich and not args.fast,
             fast_mode=args.fast,
+            use_semantic_grouping=not args.no_semantic and not args.fast,
             on_progress=lambda m: print(m, file=sys.stderr),
         )
     except (FileNotFoundError, ValueError, RuntimeError) as exc:

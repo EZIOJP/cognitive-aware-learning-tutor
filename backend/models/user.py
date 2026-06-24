@@ -1,6 +1,6 @@
 from datetime import UTC, datetime
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, UniqueConstraint
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from backend.db.base import Base
@@ -15,6 +15,7 @@ class User(Base):
     password_plain: Mapped[str | None] = mapped_column(String(255), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC))
     is_admin: Mapped[bool] = mapped_column(Boolean, default=False)
+    face_embedding_json: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     progress: Mapped[list["WordProgress"]] = relationship(
         back_populates="user", cascade="all, delete-orphan"

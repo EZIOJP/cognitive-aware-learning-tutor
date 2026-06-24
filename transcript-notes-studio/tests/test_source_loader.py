@@ -37,10 +37,11 @@ def test_prepare_sources_auto_aggressive(tmp_path: Path) -> None:
     md = tmp_path / "numpy_ref.md"
     txt.write_text("hello class", encoding="utf-8")
     md.write_text("# NumPy arrays", encoding="utf-8")
-    transcript, reference, auto = prepare_sources([txt, md])
+    transcript, reference, auto, manifest = prepare_sources([txt, md])
     assert "hello class" in transcript
     assert "NumPy arrays" in reference
     assert auto is True
+    assert "live_captions" in manifest
 
 
 def test_combine_txt_and_md_as_transcript_only(tmp_path: Path) -> None:

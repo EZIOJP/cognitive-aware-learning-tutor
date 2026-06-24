@@ -27,6 +27,26 @@ def save_note_record(
     folder = normalize_folder_path(folder_path)
     rel = (relative_path or filename).replace("\\", "/")
     section_count = content.count("\n## ") + (1 if content.startswith("## ") else 0)
+
+    existing = (
+        db.query(LectureNote)
+        .filter(LectureNote.user_id == user_id, LectureNote.filename == rel)
+        .first()
+    )
+    if existing:
+        existing.title = title
+        existing.topic = topic
+        existing.source = source
+        existing.transcript_file = transcript_file
+        existing.relative_path = rel
+        existing.folder_path = folder
+        existing.kind = kind
+        existing.section_count = max(1, section_count)
+        existing.updated_at = int(time.time())
+        db.commit()
+        db.refresh(existing)
+        return existing
+
     row = LectureNote(
         user_id=user_id,
         filename=rel,

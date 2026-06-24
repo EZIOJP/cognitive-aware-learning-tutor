@@ -1,10 +1,44 @@
+import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
-import { LogOut } from "lucide-react";
+import { LogOut, ScanFace, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router";
+import { Button } from "../app/components/ui/button";
+import { Card } from "../app/components/ui/card";
+import { fetchFaceEnrolled, postFaceEnroll } from "../api/faceClient";
+import { useFaceAuthCapture } from "../face-tracker/useFaceAuthCapture";
 
 export function ProfilePage() {
   const { user, isAuthenticated, logout } = useAuth();
   const nav = useNavigate();
+  const [enrolled, setEnrolled] = useState<boolean | null>(null);
+  const [enrolling, setEnrolling] = useState(false);
+  const [faceMsg, setFaceMsg] = useState<string | null>(null);
+  const { videoRef, ready, error: camError, startCamera, stopCamera, captureEmbedding } =
+    useFaceAuthCapture();
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    void fetchFaceEnrolled().then(setEnrolled);
+    void startCamera();
+    return () => stopCamera();
+  }, [isAuthenticated, startCamera, stopCamera]);
+
+  const onEnrollFace = async () => {
+    setEnrolling(true);
+    setFaceMsg(null);
+    try {
+      const embedding = await captureEmbedding();
+      if (!embedding) throw new Error("Could not capture face.");
+      const ok = await postFaceEnroll(embedding);
+      if (!ok) throw new Error("Enroll request failed.");
+      setEnrolled(true);
+      setFaceMsg("Face enrolled — you can use face login next time.");
+    } catch (e) {
+      setFaceMsg(e instanceof Error ? e.message : "Enroll failed");
+    } finally {
+      setEnrolling(false);
+    }
+  };
 
   if (!isAuthenticated) {
     return (
@@ -41,6 +75,28 @@ export function ProfilePage() {
           <p className="text-lg font-semibold capitalize">{user?.role}</p>
         </div>
       </div>
+
+      <Card className="p-6 gloss-panel space-y-3">
+        <div className="flex items-center gap-2">
+          <ScanFace className="w-5 h-5 text-primary" />
+          <h2 className="font-semibold">Face ID</h2>
+          <span className="ml-auto text-xs text-muted-foreground">
+            {enrolled === null ? "…" : enrolled ? "Enrolled" : "Not enrolled"}
+          </span>
+        </div>
+        <video
+          ref={videoRef}
+          muted
+          playsInline
+          className="w-full max-w-sm rounded-md bg-black/80 aspect-video object-cover"
+        />
+        {camError && <p className="text-xs text-destructive">{camError}</p>}
+        <Button size="sm" disabled={!ready || enrolling} onClick={() => void onEnrollFace()}>
+          {enrolling ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
+          {enrolled ? "Re-enroll face" : "Enroll face for login"}
+        </Button>
+        {faceMsg && <p className="text-xs text-muted-foreground">{faceMsg}</p>}
+      </Card>
 
       <div className="pt-4">
         <button

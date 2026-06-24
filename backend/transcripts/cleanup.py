@@ -123,47 +123,180 @@ def chunk_by_words(text: str, target_words: int = 2500, overlap_words: int = 200
     return chunks
 
 
-def repair_mermaid_fences(text: str) -> str:
-    """Close ```mermaid blocks left open before the next heading or code fence."""
+ORPHAN_SOURCE_LINE_RE = re.compile(
+    r"^[\w\s.\-]+(?:\.ipynb|\.pdf|\.txt|\.md|Colab)(?:\s+[\w\s.\-]+)*$",
+    re.I,
+)
+
+
+def repair_all_fences(text: str) -> str:
+    """Close orphaned ``` fences (any language), not just mermaid."""
     lines = text.splitlines()
     out: list[str] = []
-    in_mermaid = False
+    in_fence = False
+
     for line in lines:
         stripped = line.strip()
-        if not in_mermaid and stripped.lower().startswith("```mermaid"):
-            in_mermaid = True
+
+        if not in_fence and stripped.startswith("```"):
+            in_fence = True
             out.append(line)
             continue
-        if in_mermaid:
-            if stripped == "```":
-                in_mermaid = False
-                out.append(line)
-                continue
-            if re.match(r"^#{1,6}\s", line):
-                out.append("```")
-                in_mermaid = False
-                out.append(line)
-                continue
-            if re.match(r"^```\w", stripped) and not stripped.lower().startswith("```mermaid"):
-                out.append("```")
-                in_mermaid = False
-                out.append(line)
-                continue
+
+        if in_fence and stripped == "```":
+            in_fence = False
+            out.append(line)
+            continue
+
+        if in_fence and (stripped.startswith("```") or re.match(r"^#{1,6}\s", line)):
+            out.append("```")
+            in_fence = False
+
         out.append(line)
-    if in_mermaid:
+
+    if in_fence:
         out.append("```")
+
     return "\n".join(out)
+
+
+def strip_whole_response_wrapper(text: str) -> str:
+    lines = text.splitlines()
+    outer = re.compile(r"^```(?:markdown)?\s*$")
+    if len(lines) >= 2 and outer.match(lines[0]) and lines[-1].strip() == "```":
+        return "\n".join(lines[1:-1]).strip()
+    return text
+
+
+def trim_incomplete_tail(text: str) -> str:
+    lines = text.splitlines()
+    while lines:
+        last = lines[-1].strip()
+        if not last:
+            lines.pop()
+            continue
+        if len(last) < 5 and not last.endswith((".", "!", "?", "`", ")", "]")):
+            lines.pop()
+            continue
+        break
+    return "\n".join(lines).strip()
+
+
+def repair_split_code_fences(text: str) -> str:
+    """Fix ```python\\n```\\n code patterns from LLM output."""
+    text = re.sub(r"```(\w+)\s*\n```\s*\n", r"```\1\n", text)
+    # Orphan closing fence immediately after opening with no content
+    text = re.sub(r"```(\w+)\s*\n```\n", r"```\1\n", text)
+    return text
+
+
+def sanitize_mermaid_blocks(text: str) -> str:
+    """Fix common mermaid syntax that breaks renderers (parens inside node shapes)."""
+
+    def fix_block(match: re.Match[str]) -> str:
+        body = match.group(1)
+        fixed_lines: list[str] = []
+        for line in body.splitlines():
+            stripped = line.rstrip().rstrip(";")
+
+            def fix_node(match: re.Match[str]) -> str:
+                node_id, inner = match.group(1), match.group(2)
+                if "(" not in inner and ")" not in inner:
+                    return match.group(0)
+                label = re.sub(r"\s*\(([^)]*)\)", r" - \1", inner)
+                label = label.replace("{", "").replace("}", "").strip()
+                return f'{node_id}["{label}"]'
+
+            # id{Label (parens)} anywhere on the line (after arrows, etc.)
+            line = re.sub(
+                r"(\b[A-Za-z0-9_]+\s*)\{([^{}]+)\}",
+                fix_node,
+                stripped,
+            )
+            line = re.sub(
+                r"(\b[A-Za-z0-9_]+\s*)\(([^()]+)\)",
+                fix_node,
+                line,
+            )
+            fixed_lines.append(line)
+        return "```mermaid\n" + "\n".join(fixed_lines) + "\n```"
+
+    return MERMAID_RE.sub(fix_block, text)
+
+
+def dedupe_h2_sections(text: str) -> str:
+    """Keep the first ## section per title; drop later duplicates (cache/LLM repeats)."""
+    text = text.strip()
+    if not text:
+        return text
+
+    parts = re.split(r"(?=^## )", text, flags=re.MULTILINE)
+    if len(parts) <= 1:
+        return text
+
+    kept: list[str] = []
+    seen_h2: set[str] = set()
+    head = parts[0].strip()
+    if head:
+        kept.append(head)
+
+    for part in parts[1:]:
+        block = part.strip()
+        if not block.startswith("## "):
+            continue
+        title_match = re.match(r"^## (.+)$", block, re.MULTILINE)
+        if not title_match:
+            kept.append(block)
+            continue
+        key = title_match.group(1).strip().lower()
+        if key in seen_h2:
+            continue
+        seen_h2.add(key)
+        kept.append(block)
+
+    return "\n\n".join(kept).strip()
+
+
+def dedupe_notes_tail(text: str) -> str:
+    """Remove trailing duplicate sections and orphan source filename lines."""
+    lines = text.splitlines()
+    while lines and ORPHAN_SOURCE_LINE_RE.match(lines[-1].strip()):
+        lines.pop()
+    text = "\n".join(lines).strip()
+
+    h2_positions: list[tuple[str, int]] = []
+    for match in re.finditer(r"^## (.+)$", text, re.MULTILINE):
+        h2_positions.append((match.group(1).strip().lower(), match.start()))
+
+    seen: dict[str, int] = {}
+    cut: int | None = None
+    for title, pos in h2_positions:
+        if title in seen and pos > len(text) * 0.5:
+            cut = pos
+            break
+        seen[title] = pos
+
+    if cut is not None:
+        text = text[:cut].rstrip()
+    return trim_incomplete_tail(text)
 
 
 def postprocess_markdown(raw: str) -> str:
     """Strip LLM preamble and accidental outer fences."""
     text = raw.strip()
-    text = LLM_PREAMBLE_RE.sub("", text)
-    text = OUTER_FENCE_RE.sub("", text)
-    if text.endswith("```"):
-        text = text[:-3].rstrip()
-    text = repair_mermaid_fences(text)
+    text = LLM_PREAMBLE_RE.sub("", text).strip()
+    text = strip_whole_response_wrapper(text)
+    text = repair_split_code_fences(text)
+    text = repair_all_fences(text)
+    text = sanitize_mermaid_blocks(text)
+    text = dedupe_h2_sections(text)
+    text = dedupe_notes_tail(text)
     return text.strip()
+
+
+def repair_mermaid_fences(text: str) -> str:
+    """Backward-compatible alias — closes all fence types."""
+    return repair_all_fences(text)
 
 
 def count_mermaid_blocks(text: str) -> int:

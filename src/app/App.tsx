@@ -2,6 +2,7 @@ import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router";
 import { ThemeProvider } from "../context/ThemeContext";
 import { StudySessionProvider } from "../context/StudySessionContext";
+import { PomodoroProvider } from "../context/PomodoroContext";
 import { AuthProvider } from "../context/AuthContext";
 import { AppShell } from "../layout/AppShell";
 import { HomePage } from "../pages/HomePage";
@@ -12,6 +13,8 @@ import ThemeSettingsPage from "../pages/settings/ThemeSettingsPage";
 import SettingsHubPage from "../pages/settings/SettingsHubPage";
 import { PluginSettingsPage } from "../pages/settings/PluginSettingsPage";
 import { AddWordsPage } from "../pages/vocab/AddWordsPage";
+import { AiCoachPage } from "../pages/AiCoachPage";
+import { ProjectAgentPage } from "../pages/ProjectAgentPage";
 
 // Import registry and trigger registration of all plugins
 import "../plugins"; 
@@ -26,28 +29,28 @@ function AppRoutes() {
   const pluginRoutes = getRoutes();
 
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route element={<AppShell />}>
-          <Route index element={<HomePage />} />
-          <Route path="login" element={<LoginPage />} />
-          <Route path="admin" element={<AdminPanelPage />} />
-          <Route path="profile" element={<ProfilePage />} />
-          <Route path="settings" element={<SettingsHubPage />} />
-          <Route path="settings/theme" element={<ThemeSettingsPage />} />
-          <Route path="settings/plugins" element={<PluginSettingsPage />} />
-          <Route path="settings/features" element={<FeatureStudioPage />} />
-          <Route path="gre-vocab/add-words" element={<AddWordsPage />} />
-          
-          {/* Dynamically mount plugin routes */}
-          {pluginRoutes.map((route, i) => (
-            <Route key={i} path={route.path} element={route.element} />
-          ))}
+    <Routes>
+      <Route element={<AppShell />}>
+        <Route index element={<HomePage />} />
+        <Route path="login" element={<LoginPage />} />
+        <Route path="admin" element={<AdminPanelPage />} />
+        <Route path="profile" element={<ProfilePage />} />
+        <Route path="settings" element={<SettingsHubPage />} />
+        <Route path="settings/theme" element={<ThemeSettingsPage />} />
+        <Route path="settings/plugins" element={<PluginSettingsPage />} />
+        <Route path="settings/features" element={<FeatureStudioPage />} />
+        <Route path="gre-vocab/add-words" element={<AddWordsPage />} />
+        <Route path="ai-coach" element={<AiCoachPage />} />
+        <Route path="project-agent" element={<ProjectAgentPage />} />
 
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Route>
-      </Routes>
-    </BrowserRouter>
+        {/* Dynamically mount plugin routes */}
+        {pluginRoutes.map((route, i) => (
+          <Route key={i} path={route.path} element={route.element} />
+        ))}
+
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Route>
+    </Routes>
   );
 }
 
@@ -70,11 +73,15 @@ export default function App() {
     <ThemeProvider>
       <AuthProvider>
         <PluginRegistryProvider>
-          <StudySessionProvider>
-            <DynamicProviders>
-              <AppRoutes />
-            </DynamicProviders>
-          </StudySessionProvider>
+          <PomodoroProvider>
+            <StudySessionProvider>
+              <BrowserRouter>
+                <DynamicProviders>
+                  <AppRoutes />
+                </DynamicProviders>
+              </BrowserRouter>
+            </StudySessionProvider>
+          </PomodoroProvider>
         </PluginRegistryProvider>
       </AuthProvider>
     </ThemeProvider>

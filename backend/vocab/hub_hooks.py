@@ -71,3 +71,34 @@ def on_face_status(db: Session, user_id: int, attention: float) -> None:
         )
     except ValueError:
         pass
+
+
+def on_global_quiz_complete(
+    db: Session,
+    user_id: int,
+    correct: int,
+    total: int,
+    *,
+    domain: str | None = None,
+    hub_session_id: int | None = None,
+) -> None:
+    try:
+        insert_reading(
+            db,
+            user_id=user_id,
+            slug="global_quiz_complete",
+            value_numeric=float(correct),
+            value_json={"correct": correct, "total": total, "domain": domain},
+            source_device="quiz",
+            session_id=hub_session_id,
+        )
+        if hub_session_id:
+            end_activity_session(
+                db,
+                hub_session_id,
+                user_id=user_id,
+                metadata={"correct": correct, "total": total, "domain": domain},
+            )
+        rebuild_daily_rollup(db, user_id, date.today())
+    except ValueError:
+        pass

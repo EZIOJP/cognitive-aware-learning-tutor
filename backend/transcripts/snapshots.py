@@ -54,3 +54,23 @@ def inject_snapshot_images(raw: str, transcript_stem: str) -> str:
         return f"\n![Slide {n}]({api})\n"
 
     return SNAPSHOT_MARKER_RE.sub(repl, raw)
+
+
+def append_snapshot_gallery(body: str, transcript_stem: str) -> str:
+    """Append slide images at end if PNGs exist but are missing from the note body."""
+    snap_dir = snapshot_dir_for_transcript(f"{transcript_stem}.txt")
+    if not snap_dir.is_dir():
+        return body
+    pngs = sorted(snap_dir.glob("*.png"), key=lambda p: int(p.stem) if p.stem.isdigit() else 0)
+    if not pngs:
+        return body
+    missing: list[str] = []
+    for png in pngs:
+        n = png.stem
+        api = f"/api/transcripts/snapshots/{transcript_stem}/{n}.png"
+        if api not in body and f"Slide {n}" not in body:
+            missing.append(f"![Slide {n}]({api})")
+    if not missing:
+        return body
+    gallery = "## Slide captures\n\n" + "\n\n".join(missing)
+    return body.rstrip() + "\n\n---\n\n" + gallery + "\n"

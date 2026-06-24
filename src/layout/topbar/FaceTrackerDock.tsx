@@ -1,32 +1,27 @@
-import { useEffect, useState } from "react";
-import { ScanFace } from "lucide-react";
-import { fetchFaceStatus, type FaceStatus } from "../../api/faceClient";
+import { Link } from "react-router";
+import { Loader2, Play, ScanFace, Square } from "lucide-react";
+import { useFaceTrackerOptional } from "../../face-tracker/FaceTrackerContext";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "../../app/components/ui/popover";
+import { Button } from "../../app/components/ui/button";
 
-/** Live face/attention from Python `backend/face_tracker.py` (mirrored OpenCV window). */
+/** Top-bar face tracker — Start/Stop + live status from global context. */
 export function FaceTrackerDock() {
-  const [status, setStatus] = useState<FaceStatus | null>(null);
+  const ft = useFaceTrackerOptional();
+  if (!ft) return null;
 
-  useEffect(() => {
-    let cancelled = false;
-    const poll = async () => {
-      const s = await fetchFaceStatus();
-      if (!cancelled) setStatus(s);
-    };
-    void poll();
-    const id = setInterval(poll, 2000);
-    return () => {
-      cancelled = true;
-      clearInterval(id);
-    };
-  }, []);
-
-  const live = status?.face_detected;
-  const label = live ? status?.attitude ?? "tracking" : "offline";
+  const { tracking, toggleTracking, payload, focus, status, profileName, lastSnapshotMarker } = ft;
+  const live = payload?.face_detected;
+  const label = tracking
+    ? live
+      ? (payload?.attitude ?? "tracking")
+      : status === "loading"
+        ? "loading"
+        : "no face"
+    : "offline";
 
   return (
     <Popover>
@@ -39,7 +34,11 @@ export function FaceTrackerDock() {
           <ScanFace className="w-4 h-4 shrink-0" />
           <span
             className={`w-2 h-2 shrink-0 rounded-full ${
-              live ? "bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.7)]" : "bg-muted"
+              tracking && live
+                ? "bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.7)]"
+                : tracking
+                  ? "bg-amber-500"
+                  : "bg-muted"
             }`}
           />
           <span className="hidden sm:inline text-xs text-muted-foreground capitalize">{label}</span>
@@ -47,26 +46,43 @@ export function FaceTrackerDock() {
       </PopoverTrigger>
       <PopoverContent className="gloss-popover w-72 p-4" align="end" sideOffset={8}>
         <div className="space-y-3 text-sm">
-          <p className="font-medium">Python focus mirror</p>
-          <p className="text-xs text-muted-foreground">
-            The mirrored preview runs in a desktop window (OpenCV), not in the browser. Video and on-screen
-            labels are horizontally flipped like a real mirror.
-          </p>
-          {status?.face_detected ? (
-            <ul className="text-xs space-y-1">
-              <li>Attention: {status.attention}%</li>
-              <li>Attitude: {status.attitude}</li>
-              <li>Blinks: {status.blink_rate}/min</li>
-            </ul>
-          ) : (
-            <p className="text-xs text-amber-400/90">Tracker not reporting — start the script below.</p>
+          <p className="font-medium">Focus tracker</p>
+          <Button size="sm" variant={tracking ? "destructive" : "default"} onClick={toggleTracking}>
+            {tracking ? (
+              <>
+                <Square className="w-3.5 h-3.5 mr-1" /> Stop
+              </>
+            ) : (
+              <>
+                <Play className="w-3.5 h-3.5 mr-1" /> Start tracking
+              </>
+            )}
+          </Button>
+          {status === "loading" && (
+            <p className="text-xs text-muted-foreground flex items-center gap-1">
+              <Loader2 className="w-3 h-3 animate-spin" /> Loading models…
+            </p>
           )}
-          <code className="block text-[10px] bg-muted/50 p-2 rounded-md break-all">
-            scripts\run_face_tracker.bat
-          </code>
+          {payload?.face_detected ? (
+            <ul className="text-xs space-y-1">
+              <li>Attention: {payload.attention}%</li>
+              <li>Attitude: {payload.attitude}</li>
+              <li>Blinks: {payload.blink_rate}/min</li>
+              {focus.not_focused && <li className="text-red-400">Unfocused (5s+)</li>}
+            </ul>
+          ) : tracking ? (
+            <p className="text-xs text-amber-400/90">Waiting for face…</p>
+          ) : (
+            <p className="text-xs text-muted-foreground">Start tracking to monitor attention globally.</p>
+          )}
+          {lastSnapshotMarker && (
+            <p className="text-[10px] text-emerald-500">Wave saved {lastSnapshotMarker}</p>
+          )}
           <p className="text-[10px] text-muted-foreground">
-            Requires camera + backend on :8000. Optional: set FACE_TRACKER_TOKEN in .env (login JWT) for hub
-            readings.
+            Profile: {profileName ?? "default"} ·{" "}
+            <Link to="/focus/calibrate" className="text-primary hover:underline">
+              Calibrate
+            </Link>
           </p>
         </div>
       </PopoverContent>

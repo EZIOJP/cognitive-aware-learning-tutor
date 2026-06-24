@@ -138,7 +138,7 @@ Test UI: `/math-tutor/recognize-test` · API: `POST /api/math/ocr`
 
 ### Tier C — Local LLM (optional)
 
-Install [Ollama](https://ollama.com) separately (not pip).
+**Ollama** — install [Ollama](https://ollama.com) separately (not pip).
 
 ```env
 OLLAMA_ENABLED=1
@@ -147,12 +147,37 @@ OLLAMA_MODEL=llama3.2
 # OLLAMA_VISION_MODEL=llava   # only if you want vision hints
 ```
 
+**LM Studio** (native v1 API — recommended for Gemma 4 E4B):
+
+```env
+OLLAMA_ENABLED=1
+LLM_PROVIDER=lmstudio
+OLLAMA_URL=http://127.0.0.1:1234
+OLLAMA_MODEL=google/gemma-4-e4b
+LLM_MAX_TOKENS=8192
+```
+
+Uses `POST /api/v1/chat` with `model` + `input`. Load the model in LM Studio and turn on **Local Server** (default port 1234).
+
+OpenAI-compatible mode (`LLM_PROVIDER=openai`) still works via `/v1/chat/completions` if needed.
+
 Pull models after Ollama install:
 
 ```bash
 ollama pull llama3.2
 # ollama pull llava
+# ollama pull qwen2.5:7b   # lecture notes (transcript → markdown)
 ```
+
+**Lecture notes:** set `OLLAMA_ENABLED=1`, capture with `scripts/run_live_captions_scraper.bat`, then `scripts/run_transcript_to_notes.bat --input your_transcript.txt` or use **Lecture Notes** in the app (`/lecture-notes`).
+
+Semantic chunking and LLM prompt cache need **sentence-transformers** (pulls PyTorch — large one-time download):
+
+```bat
+scripts\install_notes.bat
+```
+
+`scripts\run_transcript_to_notes.bat` and `transcript-notes-studio\run.bat` also auto-install `backend/requirements-notes.txt` / `requirements.txt` before each run.
 
 ### Tier D — Hardware (optional)
 

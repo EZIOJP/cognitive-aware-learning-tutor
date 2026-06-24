@@ -1,6 +1,7 @@
 """Unit tests for math OCR helpers (no TexTeller model download required)."""
 
 import base64
+import json
 from io import BytesIO
 
 import numpy as np
@@ -14,7 +15,9 @@ from backend.math.ocr_service import (
     flatten_on_white,
     image_has_ink,
     latex_is_complete,
+    paths_have_ink,
     prepare_for_texteller,
+    synthesize_from_paths,
     texteller_available,
     recognize_canvas,
 )
@@ -99,6 +102,42 @@ def test_recognize_canvas_empty_raises():
         recognize_canvas(url)
 
 
+def test_synthesize_from_paths_draws_ink():
+    paths = json.dumps(
+        [
+            {
+                "paths": [{"x": 20, "y": 60}, {"x": 180, "y": 60}],
+                "strokeWidth": 4,
+                "strokeColor": "#000000",
+                "drawMode": True,
+            }
+        ]
+    )
+    assert paths_have_ink(paths)
+    img = synthesize_from_paths(paths, (200, 120))
+    assert img is not None
+    assert image_has_ink(img)
+
+
+def test_recognize_canvas_blank_png_with_paths():
+    """MathGridCanvas transparent exports can be blank; paths_json must rescue OCR."""
+    url = _png_data_url(lambda d: None)
+    paths = json.dumps(
+        [
+            {
+                "paths": [{"x": 20, "y": 60}, {"x": 180, "y": 60}],
+                "strokeWidth": 4,
+                "strokeColor": "#000000",
+                "drawMode": True,
+            }
+        ]
+    )
+    if not texteller_available():
+        pytest.skip("TexTeller ONNX not installed")
+    result = recognize_canvas(url, paths_json=paths, ollama_vision_fallback=False)
+    assert result.tier in ("texteller", "contour", "per_cell", "texteller_rejected", "tier3_empty")
+
+
 def test_recognize_canvas_without_texteller():
     url = _png_data_url(lambda d: d.line([(20, 60), (160, 60)], fill="black", width=4))
     try:
@@ -119,3 +158,50 @@ def test_mask_from_paths():
     img = decode_canvas_image(url)
     masked = mask_from_paths(img, "[]")
     assert masked.size == img.size
+
+
+def test_recognize_canvas_never_returns_table_noise():
+    """Golden guard: simple strokes must not produce \\begin{array} hallucinations."""
+    from backend.math.ocr_service import _ocr_looks_hallucinated
+
+    url = _png_data_url(
+        lambda d: d.line([(60, 30), (140, 30), (140, 60), (60, 60), (60, 90), (140, 90)], fill="black", width=5)
+    )
+    if not texteller_available():
+        pytest.skip("TexTeller ONNX not installed")
+    result = recognize_canvas(url, ollama_vision_fallback=False)
+    assert not _ocr_looks_hallucinated(result.latex or "x") or result.latex == ""
+    assert r"\begin{array}" not in (result.latex or "")
+    assert result.tier in ("texteller", "contour", "per_cell", "texteller_rejected", "tier3_empty")
+
+
+def test_training_sample_logs_paths_and_target(tmp_path, monkeypatch):
+    import backend.math.training_log as tl
+
+    monkeypatch.setattr(tl, "DATASET_CSV", tmp_path / "dataset.csv")
+    monkeypatch.setattr(tl, "KINEMATICS_CSV", tmp_path / "kinematics.csv")
+    monkeypatch.setattr(tl, "TRAINING_DIR", tmp_path)
+    monkeypatch.setattr(tl, "LOG_DIR", tmp_path)
+
+    url = _png_data_url(lambda d: d.line([(20, 60), (160, 60)], fill="black", width=4))
+    sample_id = tl.log_training_sample(
+        user_id=1,
+        tier="digits",
+        prompt_id="d3",
+        prompt_text="3",
+        canvas_image=url,
+        predicted_latex="3",
+        confirmed_latex="3",
+        action="confirm",
+        paths_json='[{"paths":[{"x":1,"y":2}],"strokeWidth":3}]',
+        target_latex="3",
+    )
+    assert (tmp_path / f"{sample_id}.paths.json").exists()
+
+    import csv as _csv
+
+    with open(tmp_path / "dataset.csv", newline="", encoding="utf-8") as f:
+        rows = list(_csv.DictReader(f))
+    assert rows[0]["target_latex"] == "3"
+    assert rows[0]["match_predicted"] == "true"
+    assert rows[0]["paths_json_path"].endswith(".paths.json")

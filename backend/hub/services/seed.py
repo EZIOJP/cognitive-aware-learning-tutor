@@ -9,6 +9,7 @@ DEFAULT_DEFINITIONS = [
     ("study_minutes", "Study time", "minutes", "manual", "life"),
     ("productive_score", "Productive score", "score", "batch", "hub"),
     ("vocab_quiz_complete", "Vocab quiz", "count", "batch", "vocab"),
+    ("global_quiz_complete", "Global quiz", "count", "batch", "hub"),
     ("math_attempt", "Math attempt", "count", "batch", "math"),
     ("face_attention", "Face attention", "score", "realtime", "math"),
     ("eeg_attention", "EEG attention", "score", "realtime", "math"),

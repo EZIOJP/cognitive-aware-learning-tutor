@@ -23,6 +23,11 @@ class Settings(BaseSettings):
     eeg_enabled: bool = False
     eeg_udp_port: int = 5005
     ollama_enabled: bool = False
+    llm_provider: str = "lmstudio"
+    ollama_url: str = "http://127.0.0.1:1234"
+    ollama_model: str = "google/gemma-4-e4b"
+    llm_max_tokens: int = 8192
+    llm_api_key: str = "lm-studio"
     nim_api_key: str = ""
     nim_model: str = "google/gemma-4-31b-it"
     nim_vision_model: str = "nvidia/nemotron-nano-vl-8b-v1"

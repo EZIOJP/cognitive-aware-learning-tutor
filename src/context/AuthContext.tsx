@@ -14,6 +14,7 @@ interface AuthContextValue {
   login: (username: string, password: string) => Promise<void>;
   register: (username: string, password: string) => Promise<void>;
   logout: () => void;
+  setTokenFromFace: (token: string, user: AuthUser) => void;
 }
 
 const TOKEN_KEY = "vocab:auth-token";
@@ -83,6 +84,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   };
 
+  const setTokenFromFace = (newToken: string, authUser: AuthUser) => {
+    localStorage.setItem(TOKEN_KEY, newToken);
+    setToken(newToken);
+    setUser(authUser);
+  };
+
   const value = useMemo<AuthContextValue>(
     () => ({
       token,
@@ -92,6 +99,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       login,
       register,
       logout,
+      setTokenFromFace,
     }),
     [token, user]
   );

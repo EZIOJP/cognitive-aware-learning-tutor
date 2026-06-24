@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router";
 import { ArrowLeft, CheckCircle2, RefreshCw, XCircle } from "lucide-react";
-import { TldrawMathCanvas, type MathCanvasHandle } from "../../components/math-canvas";
+import { MathGridCanvas, type MathCanvasHandle } from "../../components/math-canvas";
 import { AITutorIntervention } from "../../app/components/AITutorIntervention";
 import { PostSessionDiagnostics } from "../../app/components/PostSessionDiagnostics";
 import { Button } from "../../app/components/ui/button";
@@ -10,7 +10,7 @@ import { Input } from "../../app/components/ui/input";
 import { Badge } from "../../app/components/ui/badge";
 import { useAuth } from "../../context/AuthContext";
 import { useStudySession } from "../../context/StudySessionContext";
-import { authFetch } from "../../features/vocab/api/authClient";
+import { postMathTutorHint } from "../../api/mathClient";
 import { getMathTopic, LOCAL_QUESTION_SETS } from "../../features/math/data/topics";
 
 interface MathProblem {
@@ -103,17 +103,13 @@ export function MathPracticePage() {
     try {
       const canvas = await canvasRef.current?.exportPng();
       const latest = biometricData[biometricData.length - 1];
-      const res = await authFetch("/math/tutor/hint", token, {
-        method: "POST",
-        body: JSON.stringify({
-          canvas_image: canvas ?? "",
-          prompt: apiProblem?.prompt ?? currentLocal?.question ?? "",
-          topic: topic?.label ?? topicId,
-          gamma: latest?.gamma ?? 0,
-          attention: 0,
-        }),
+      const data = await postMathTutorHint({
+        canvas_image: canvas ?? "",
+        prompt: apiProblem?.prompt ?? currentLocal?.question ?? "",
+        topic: topic?.label ?? topicId,
+        gamma: latest?.gamma ?? 0,
+        attention: 0,
       });
-      const data = await res.json();
       setTutorUsesLlm(Boolean(data.use_llm));
       setTutorHint(`${data.hint}\n\n${data.question}`);
     } catch {
@@ -442,12 +438,10 @@ export function MathPracticePage() {
           )}
         </div>
 
-        {/* Right: tldraw canvas */}
+        {/* Right: fixed-grid math canvas */}
         <div className="flex-1 min-h-[280px] min-w-0">
-          <TldrawMathCanvas
+          <MathGridCanvas
             ref={canvasRef}
-            persistenceKey={`calt-practice-${topicId}`}
-            showGrid
             onCanvasChange={handleCanvasChange}
             onEraserStroke={notifyEraserStroke}
           />

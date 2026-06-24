@@ -145,60 +145,6 @@ export class EEGWebSocketClient {
 }
 
 /**
- * Request AI intervention from backend
- */
-export async function requestAIIntervention(
-  canvasImage: string,
-  biometricData: BiometricData,
-  backendUrl: string = resolveApiUrl()
-): Promise<{
-  intervention: string;
-  question: string;
-  detected_concept: string;
-  confidence: number;
-}> {
-  try {
-    const response = await fetch(`${backendUrl}/api/intervention`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        canvas_image: canvasImage,
-        biometric_data: {
-          alpha: biometricData.alpha,
-          beta: biometricData.beta,
-          gamma: biometricData.gamma,
-          timestamp: biometricData.timestamp,
-        },
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const data = await response.json();
-    return {
-      intervention: data.intervention,
-      question: data.question,
-      detected_concept: data.detected_concept,
-      confidence: data.confidence || 0.85,
-    };
-  } catch (error) {
-    console.error('Failed to request AI intervention:', error);
-
-    // Return fallback intervention
-    return {
-      intervention: 'I noticed your cognitive load increased significantly.',
-      question: 'Would you like me to break down the problem into smaller steps?',
-      detected_concept: 'General Problem Solving',
-      confidence: 0.3,
-    };
-  }
-}
-
-/**
  * Log session data to backend
  */
 export async function logSessionData(

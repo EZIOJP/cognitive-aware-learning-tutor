@@ -7,6 +7,7 @@ if errorlevel 1 exit /b 1
 echo.
 echo [setup] Upgrading Python packages...
 "%PIP%" install -r "%ROOT%\backend\requirements.txt"
+"%PIP%" install -r "%ROOT%\backend\requirements-notes.txt"
 
 echo.
 echo [setup] Refreshing npm packages...

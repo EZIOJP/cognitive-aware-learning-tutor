@@ -3,5 +3,9 @@ Pillow>=10.0.0
 pypdf>=4.0.0
 customtkinter>=5.2.0
 pytest>=8.0.0
-sentence-transformers>=2.7.0
+# Backend pipeline (PYTHONPATH) needs pydantic settings for backend.config
+pydantic>=2.7.0
+pydantic-settings>=2.2.0
+# Text-only embeddings; stay on 3.x to avoid optional torchcodec (Whisper extras can install a broken torchcodec on Windows).
+sentence-transformers>=2.7.0,<5.0.0
 numpy>=1.24.0

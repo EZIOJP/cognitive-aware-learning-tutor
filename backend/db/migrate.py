@@ -53,6 +53,23 @@ def ensure_at_head(*, strict: bool | None = None) -> None:
     if current == head:
         return
 
+    if settings.dev_mode:
+        try:
+            from alembic import command
+
+            log.warning(
+                "Database schema is at %r, head is %r — auto-upgrading (dev_mode).",
+                current,
+                head,
+            )
+            command.upgrade(_alembic_config(), "head")
+            current, head = get_revision_state()
+            if current == head:
+                log.info("Database schema upgraded to %r.", head)
+                return
+        except Exception as exc:
+            log.warning("Auto-upgrade failed: %s", exc)
+
     msg = (
         f"Database schema is at revision {current!r}, but Alembic head is {head!r}. "
         "Run: python -m alembic upgrade head"

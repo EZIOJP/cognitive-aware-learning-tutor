@@ -58,7 +58,7 @@ function classifyUrl(url, title) {
   if (u.includes('figma') || u.includes('canva') || u.includes('excalidraw')) return 'Design';
   if (u.includes('mail') || u.includes('gmail') || u.includes('outlook') || u.includes('calendar')) return 'Admin / Email';
   if (u.includes('meet.google') || u.includes('zoom') || u.includes('teams.microsoft') || u.includes('discord')) return 'Communication';
-  if (u.includes('coursera') || u.includes('udemy') || u.includes('edx') || u.includes('khanacademy') || u.includes('leetcode') || u.includes('brilliant')) return 'Coursework';
+  if (u.includes('coursera') || u.includes('udemy') || u.includes('edx') || u.includes('khanacademy') || u.includes('leetcode') || u.includes('brilliant') || u.includes('scaler.com')) return 'Coursework';
   if (u.includes('wikipedia') || u.includes('arxiv') || u.includes('scholar.google') || u.includes('pubmed') || u.includes('jstor')) return 'Research';
   if (u.includes('youtube') || u.includes('twitch') || u.includes('netflix') || u.includes('primevideo') || u.includes('disneyplus')) return 'Video / Streaming';
   if (u.includes('reddit') || u.includes('twitter') || u.includes('x.com') || u.includes('instagram') || u.includes('tiktok') || u.includes('facebook') || u.includes('linkedin')) return 'Social Media';

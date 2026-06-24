@@ -1,0 +1,10 @@
+# Lecture notes: semantic chunking + LLM prompt cache (CPU-only; pulls PyTorch)
+# Install: pip install -r backend/requirements-notes.txt
+# Or: scripts\install_notes.bat  |  scripts\run_transcript_to_notes.bat (auto-installs)
+# Used by: transcript-notes-studio, backend/hub/services/knowledge_graph.py
+
+pydantic>=2.7.0
+pydantic-settings>=2.2.0
+httpx>=0.27.0
+sentence-transformers>=2.7.0,<5.0.0
+pypdf>=4.0.0

@@ -9,7 +9,11 @@ import {
   SkipForward,
   Target,
 } from "lucide-react";
-import { TldrawMathCanvas, type MathCanvasHandle } from "../../components/math-canvas";
+import {
+  MathGridCanvas,
+  type MathCanvasHandle,
+  type StrokeMetricsSnapshot,
+} from "../../components/math-canvas";
 import { Badge } from "../../app/components/ui/badge";
 import { Button } from "../../app/components/ui/button";
 import { Card } from "../../app/components/ui/card";
@@ -20,11 +24,21 @@ import {
   fetchTrainCurriculum,
   postMathOcr,
   submitTrainSample,
+  type MathOcrResult,
   type MathOcrStatus,
   type TrainCurriculum,
   type TrainPrompt,
   type TrainTier,
 } from "../../api/mathClient";
+
+/** Loose LaTeX normalization for prompt-target comparison (not full CAS equality). */
+function normalizeLatex(s: string): string {
+  return (s || "")
+    .replace(/\s+/g, "")
+    .replace(/\\left|\\right/g, "")
+    .replace(/\{\}/g, "")
+    .toLowerCase();
+}
 
 export function TrainPlaygroundPage() {
   const { isAuthenticated } = useAuth();
@@ -40,6 +54,8 @@ export function TrainPlaygroundPage() {
   const [correctLatex, setCorrectLatex] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [lastAgree, setLastAgree] = useState<string | null>(null);
+  const [lastOcr, setLastOcr] = useState<MathOcrResult | null>(null);
+  const [metrics, setMetrics] = useState<StrokeMetricsSnapshot | null>(null);
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -59,6 +75,19 @@ export function TrainPlaygroundPage() {
   );
 
   const activePrompt: TrainPrompt | undefined = activeTier?.prompts[promptIdx];
+
+  // Auto-clear canvas + prediction whenever the active prompt changes.
+  useEffect(() => {
+    canvasRef.current?.clearAll();
+    setPredicted("");
+    setCorrectLatex("");
+    setLastOcr(null);
+  }, [activePrompt?.id]);
+
+  const targetMatch = useMemo(() => {
+    if (!predicted || !activePrompt?.target_latex) return null;
+    return normalizeLatex(predicted) === normalizeLatex(activePrompt.target_latex);
+  }, [predicted, activePrompt?.target_latex]);
 
   const advancePrompt = useCallback(() => {
     if (!activeTier) return;
@@ -82,7 +111,13 @@ export function TrainPlaygroundPage() {
         setError("Canvas export failed — try drawing again.");
         return;
       }
-      const result = await postMathOcr(png);
+      const paths = await canvasRef.current?.exportPaths();
+      const snapshot = canvasRef.current?.exportStrokeMetrics?.() ?? null;
+      const result = await postMathOcr(png, {
+        paths_json: paths?.length ? JSON.stringify(paths) : undefined,
+        stroke_metrics_json: snapshot ? JSON.stringify(snapshot) : undefined,
+      });
+      setLastOcr(result);
       setPredicted(result.latex);
       setCorrectLatex(result.latex);
     } catch (e) {
@@ -111,6 +146,8 @@ export function TrainPlaygroundPage() {
         setError("Enter the correct LaTeX before saving.");
         return;
       }
+      const paths = await canvasRef.current?.exportPaths();
+      const snapshot = canvasRef.current?.exportStrokeMetrics?.() ?? null;
       const out = await submitTrainSample({
         tier: activeTier.id,
         prompt_id: activePrompt.id,
@@ -119,6 +156,9 @@ export function TrainPlaygroundPage() {
         predicted_latex: predicted,
         confirmed_latex: action === "correct" ? confirmed : undefined,
         action,
+        paths_json: paths?.length ? JSON.stringify(paths) : undefined,
+        stroke_metrics_json: snapshot ? JSON.stringify(snapshot) : undefined,
+        target_latex: activePrompt.target_latex,
       });
       if (!out) {
         setError("Could not save sample — sign in and check backend.");
@@ -127,6 +167,7 @@ export function TrainPlaygroundPage() {
       setLastAgree(out.agree);
       setPredicted("");
       setCorrectLatex("");
+      setLastOcr(null);
       canvasRef.current?.clearAll();
       await refresh();
       // Auto-advance only once this prompt has met its quota
@@ -237,11 +278,12 @@ export function TrainPlaygroundPage() {
         </Card>
 
         <Card className="flex-1 min-h-[400px] flex flex-col overflow-hidden gloss-panel p-0 bg-white">
-          <TldrawMathCanvas
+          <MathGridCanvas
             ref={canvasRef}
-            persistenceKey="calt-train-v2"
-            showGrid
-            onCanvasChange={() => {}}
+            gridCells={activePrompt?.grid_cells ?? 1}
+            ghostText={activePrompt?.text ?? ""}
+            roughPane
+            onMetricsChange={setMetrics}
           />
         </Card>
 
@@ -272,6 +314,16 @@ export function TrainPlaygroundPage() {
           <div className="space-y-2">
             <p className="text-sm font-medium">Prediction</p>
             <p className="font-mono text-sm min-h-[1.5rem]">{predicted || "—"}</p>
+            {targetMatch !== null && (
+              <Badge variant={targetMatch ? "default" : "destructive"}>
+                {targetMatch ? "matches target ✓" : "differs from target"}
+              </Badge>
+            )}
+            {lastOcr && (
+              <p className="text-[11px] text-muted-foreground">
+                tier {lastOcr.tier} · confidence {(lastOcr.confidence * 100).toFixed(0)}%
+              </p>
+            )}
             <label className="text-xs text-muted-foreground block">Correct LaTeX (Correct path)</label>
             <input
               value={correctLatex}
@@ -287,6 +339,25 @@ export function TrainPlaygroundPage() {
             </Badge>
           )}
           {error && <p className="text-xs text-destructive">{error}</p>}
+
+          {metrics && metrics.totalStrokes > 0 && (
+            <div className="text-[11px] text-muted-foreground space-y-0.5 border-t pt-2">
+              <p className="font-medium text-foreground text-xs">Stroke analytics</p>
+              <p>
+                {metrics.totalStrokes} strokes · {Math.round(metrics.totalInkLengthPx)}px ink ·{" "}
+                {(metrics.totalDrawingTimeMs / 1000).toFixed(1)}s
+              </p>
+              <p>
+                cells used {Object.keys(metrics.strokesPerCell).length} · eraser{" "}
+                {metrics.eraserEvents}
+              </p>
+              {Object.entries(metrics.strokesPerCell).map(([cell, n]) => (
+                <p key={cell}>
+                  cell ({cell}): {n} strokes
+                </p>
+              ))}
+            </div>
+          )}
 
           <p className="text-[10px] text-muted-foreground mt-auto">
             First Recognize after a backend restart takes ~15–20s while the OCR model loads.

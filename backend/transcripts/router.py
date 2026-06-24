@@ -25,16 +25,17 @@ from backend.transcripts.library import (
     delete_note,
     move_note,
     sync_disk_notes_for_user,
+    save_note_content,
     update_note_meta,
     update_reading_state,
 )
 from backend.transcripts.notes_generator import (
     generate_notes_from_file,
-    list_notes as list_notes_files,
     list_transcripts,
     resolve_notes_path,
     resolve_transcript_path,
 )
+from backend.transcripts.sources import resolve_source_path
 from backend.transcripts.snapshots import (
     append_snapshot_marker,
     next_snapshot_index,
@@ -59,10 +60,17 @@ router = APIRouter(prefix="/api/transcripts", tags=["transcripts"])
 
 class GenerateNotesRequest(BaseModel):
     transcript_file: str = Field(..., min_length=1, max_length=200)
+    reference_paths: list[str] = Field(default_factory=list, max_length=8)
+    context_folder: str = Field(default="", max_length=512)
     title: str = Field(default="", max_length=120)
     topic: str = Field(default="", max_length=160)
     folder_path: str = Field(default="", max_length=512)
     aggressive_dedup: bool = False
+    use_semantic_grouping: bool = True
+    refine_second_pass: bool = False
+    enrich_with_references: bool = True
+    use_tag_extraction: bool = False
+    fast_mode: bool = False
     llm_provider: str | None = Field(default=None, max_length=32)
     llm_base_url: str | None = Field(default=None, max_length=200)
     llm_model: str | None = Field(default=None, max_length=120)
@@ -73,6 +81,11 @@ class GenerateTodayRequest(BaseModel):
     topic: str = Field(default="", max_length=160)
     folder_path: str = Field(default="", max_length=512)
     aggressive_dedup: bool = False
+    use_semantic_grouping: bool = True
+    refine_second_pass: bool = False
+    enrich_with_references: bool = True
+    use_tag_extraction: bool = False
+    fast_mode: bool = False
     llm_provider: str | None = Field(default=None, max_length=32)
     llm_base_url: str | None = Field(default=None, max_length=200)
     llm_model: str | None = Field(default=None, max_length=120)
@@ -95,6 +108,10 @@ class UpdateFileRequest(BaseModel):
     kind: str | None = Field(default=None, max_length=32)
     title: str | None = Field(default=None, max_length=120)
     topic: str | None = Field(default=None, max_length=160)
+
+
+class SaveNoteContentRequest(BaseModel):
+    content: str = Field(default="", max_length=500_000)
 
 
 class ReadingStateRequest(BaseModel):
@@ -237,9 +254,7 @@ def get_notes_list(
     user: User = Depends(get_current_user),
 ):
     rows = list_note_records(db, user.id, topic=topic, search=search, folder_path=folder_path)
-    if rows:
-        return {"items": [row_to_item(r) for r in rows]}
-    return {"items": list_notes_files()}
+    return {"items": [row_to_item(r) for r in rows]}
 
 
 @router.get("/notes/topics")
@@ -336,6 +351,31 @@ def patch_library_file(
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     return row_to_item(row)
+
+
+@router.put("/library/files/{relative_path:path}/content")
+def put_library_file_content(
+    relative_path: str,
+    body: SaveNoteContentRequest,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    try:
+        row = save_note_content(
+            db,
+            user_id=user.id,
+            relative_path=relative_path,
+            content=body.content,
+        )
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return {
+        "relative_path": (row.relative_path or row.filename or "").replace("\\", "/"),
+        "content": body.content,
+        "section_count": row.section_count,
+    }
 
 
 @router.delete("/library/files/{relative_path:path}")
@@ -535,6 +575,13 @@ def generate_notes(
     title = body.title.strip() or transcript_path.stem
     topic = body.topic.strip() or None
     folder = body.folder_path.strip()
+    reference_paths: list[Path] = []
+    for rel in body.reference_paths:
+        try:
+            reference_paths.append(resolve_source_path(rel.strip()))
+        except (ValueError, FileNotFoundError) as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+    context_folder = body.context_folder.strip() or None
     try:
         path, content = generate_notes_from_file(
             transcript_path,
@@ -542,6 +589,13 @@ def generate_notes(
             aggressive=body.aggressive_dedup,
             llm=_llm_from_request(body),
             folder_path=folder,
+            reference_paths=reference_paths or None,
+            context_folder=context_folder,
+            use_semantic_grouping=body.use_semantic_grouping,
+            refine_second_pass=body.refine_second_pass,
+            enrich_with_references=body.enrich_with_references,
+            use_tag_extraction=body.use_tag_extraction,
+            fast_mode=body.fast_mode,
         )
     except RuntimeError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
@@ -590,6 +644,11 @@ def generate_notes_from_today(
             aggressive=body.aggressive_dedup,
             llm=_llm_from_request(body),
             folder_path=folder,
+            use_semantic_grouping=body.use_semantic_grouping,
+            refine_second_pass=body.refine_second_pass,
+            enrich_with_references=body.enrich_with_references,
+            use_tag_extraction=body.use_tag_extraction,
+            fast_mode=body.fast_mode,
         )
     except RuntimeError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc

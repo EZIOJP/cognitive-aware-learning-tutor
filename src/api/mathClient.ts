@@ -11,6 +11,19 @@ function headers(): HeadersInit {
   return h;
 }
 
+function apiErrorMessage(data: unknown, status: number): string {
+  if (data && typeof data === "object") {
+    const envelope = data as { error?: { message?: string }; detail?: unknown };
+    if (envelope.error?.message) return envelope.error.message;
+    const detail = envelope.detail;
+    if (typeof detail === "string") return detail;
+    if (Array.isArray(detail)) {
+      return detail.map((d: { msg?: string }) => d.msg).filter(Boolean).join("; ") || `HTTP ${status}`;
+    }
+  }
+  return `HTTP ${status}`;
+}
+
 export type MathEvalResult = {
   result: string;
   latex: string;
@@ -24,6 +37,14 @@ export type MathOcrResult = {
   incomplete_step: boolean;
   confidence: number;
   preprocess_applied: boolean;
+  teacher_latex: string;
+  needs_review: boolean;
+  tier: string;
+};
+
+export type MathOcrExtras = {
+  paths_json?: string;
+  stroke_metrics_json?: string;
 };
 
 export type TrainPrompt = {
@@ -94,22 +115,18 @@ export async function evalMathExpression(expression: string): Promise<MathEvalRe
   }
 }
 
-export async function postMathOcr(canvas_image: string): Promise<MathOcrResult> {
+export async function postMathOcr(
+  canvas_image: string,
+  extras: MathOcrExtras = {}
+): Promise<MathOcrResult> {
   const res = await fetch(`${BASE}/api/math/ocr`, {
     method: "POST",
     headers: headers(),
-    body: JSON.stringify({ canvas_image }),
+    body: JSON.stringify({ canvas_image, ...extras }),
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
-    const detail = data.detail;
-    const msg =
-      typeof detail === "string"
-        ? detail
-        : Array.isArray(detail)
-          ? detail.map((d: { msg?: string }) => d.msg).join("; ")
-          : `HTTP ${res.status}`;
-    throw new Error(msg);
+    throw new Error(apiErrorMessage(data, res.status));
   }
   return data as MathOcrResult;
 }
@@ -136,6 +153,31 @@ export type MathInterventionResult = {
   detected_concept: string;
   use_llm: boolean;
 };
+
+export type MathTutorHintResult = {
+  hint: string;
+  question: string;
+  use_llm: boolean;
+};
+
+export async function postMathTutorHint(body: {
+  canvas_image?: string;
+  prompt?: string;
+  topic?: string;
+  gamma?: number;
+  attention?: number;
+}): Promise<MathTutorHintResult> {
+  const res = await fetch(`${BASE}/api/math/tutor/hint`, {
+    method: "POST",
+    headers: headers(),
+    body: JSON.stringify(body),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(apiErrorMessage(data, res.status));
+  }
+  return data as MathTutorHintResult;
+}
 
 export async function postMathIntervention(body: {
   canvas_image: string;
@@ -179,23 +221,6 @@ export async function patchInterventionRecover(
   }
 }
 
-export async function patchInterventionCorrect(
-  snapshotId: string,
-  correctLatex: string,
-  notes = ""
-): Promise<boolean> {
-  try {
-    const res = await fetch(`${BASE}/api/math/intervention/${snapshotId}/correct`, {
-      method: "PATCH",
-      headers: headers(),
-      body: JSON.stringify({ correct_latex: correctLatex, notes }),
-    });
-    return res.ok;
-  } catch {
-    return false;
-  }
-}
-
 export async function submitTrainSample(body: {
   tier: string;
   prompt_id: string;
@@ -204,6 +229,9 @@ export async function submitTrainSample(body: {
   predicted_latex: string;
   confirmed_latex?: string;
   action: "confirm" | "correct";
+  paths_json?: string;
+  stroke_metrics_json?: string;
+  target_latex?: string;
 }): Promise<TrainSampleResult | null> {
   try {
     const res = await fetch(`${BASE}/api/math/train/sample`, {

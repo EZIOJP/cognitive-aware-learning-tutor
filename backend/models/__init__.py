@@ -14,6 +14,7 @@ from backend.models.life import LifeDailyLog
 from backend.models.study import FocusEvent, LectureNote
 from backend.models.word import Word
 from backend.models.knowledge_graph import KgNode, KgEdge, KgEmbedding, KgObservation
+from backend.models.review_card import QuizDeck, ReviewCard
 
 __all__ = [
     "User",
@@ -36,4 +37,6 @@ __all__ = [
     "KgEdge",
     "KgEmbedding",
     "KgObservation",
+    "ReviewCard",
+    "QuizDeck",
 ]

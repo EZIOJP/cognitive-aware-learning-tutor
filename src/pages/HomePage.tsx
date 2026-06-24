@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Link } from "react-router";
 import {
-  Clock, MessageSquare, Users, GripVertical,
+  Clock, MessageSquare, Users, GripVertical, Brain,
   Settings2, X, Eye, EyeOff, Maximize2, Minimize2,
   ChevronLeft, ChevronRight, LayoutGrid, Sparkles, Timer, Target, Bot, Plus
 } from "lucide-react";
@@ -16,8 +16,10 @@ import {
   fetchDashboardLayout,
   saveDashboardLayout,
   type InsightsDailyPayload,
+  type HubDailyPayload,
 } from "../api/hubClient";
 import { AiReviewWidget } from "../components/dashboard/AiReviewWidget";
+import { StudyLoopWidget } from "../components/dashboard/StudyLoopWidget";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 import { HeroProgress, LemillionAssistant } from "../components/hero";
@@ -82,6 +84,16 @@ function buildCoreWidgets(
       content: "0m today",
       icon: Clock,
       accent: "from-amber-500/20 to-orange-500/10",
+    },
+    {
+      id: "study-loop",
+      type: "info",
+      title: "Study Loop & Review",
+      description: "Your spaced-repetition backlog and where to start.",
+      icon: Brain,
+      accent: "from-violet-500/20 to-purple-500/10",
+      defaultColSpan: 2,
+      component: <StudyLoopWidget />,
     },
     {
       id: "ai-comments",
@@ -305,6 +317,7 @@ export function HomePage() {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [stateMap, setStateMap] = useState<WidgetStateMap>({});
   const [insights, setInsights] = useState<InsightsDailyPayload | null>(null);
+  const [hubDaily, setHubDaily] = useState<HubDailyPayload | null>(null);
   const [focusMode, setFocusMode] = useState(() => {
     try {
       return localStorage.getItem(LS_FOCUS_MODE) === "1";
@@ -320,7 +333,7 @@ export function HomePage() {
 
   useEffect(() => {
     fetchInsightsDaily().then(setInsights);
-    fetchHubDaily("today");
+    fetchHubDaily("today").then(setHubDaily);
   }, []);
 
   // Build widget list once plugins are loaded (hero widgets gated by theme)
@@ -399,7 +412,11 @@ export function HomePage() {
   // Dynamic core widget data
   const displayWidgets = allWidgets.map((w) => {
     if (w.id === "study-time") {
-      const mins = insights?.study_minutes ?? Math.floor(diagnosticsSummary.duration / 60);
+      const hubStudy = hubDaily?.stats?.study_minutes;
+      const mins =
+        insights?.study_minutes ??
+        (typeof hubStudy === "number" ? hubStudy : undefined) ??
+        Math.floor(diagnosticsSummary.duration / 60);
       const vocab = insights?.vocab_events ?? 0;
       return {
         ...w,

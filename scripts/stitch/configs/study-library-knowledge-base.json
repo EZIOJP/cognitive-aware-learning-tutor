@@ -1,0 +1,28 @@
+{
+  "projectId": "14884349656808879038",
+  "projectSlug": "study-library-knowledge-base",
+  "projectTitle": "Study Library Knowledge Base",
+  "note": "Learning gap, quiz generator, and study workflow screens",
+  "screens": [
+    {
+      "slug": "01-learning-gap-quiz-generator-a",
+      "id": "dde4808aef494075867ebe215bdb2c7d",
+      "title": "Learning Gap & Quiz Generator"
+    },
+    {
+      "slug": "02-learning-gap-quiz-generator-b",
+      "id": "f994c6e9cca64a5fa537d3fc44779ded",
+      "title": "Learning Gap & Quiz Generator (variant)"
+    },
+    {
+      "slug": "03-study-workflow-quiz-review-a",
+      "id": "ce2398913ada468fa302905bc4c5dbb4",
+      "title": "Study Workflow & Quiz Review"
+    },
+    {
+      "slug": "04-study-workflow-quiz-review-b",
+      "id": "e928f9243c65415cbf7f9b2f5e5547d0",
+      "title": "Study Workflow & Quiz Review (variant)"
+    }
+  ]
+}

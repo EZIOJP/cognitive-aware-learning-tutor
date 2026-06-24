@@ -133,17 +133,41 @@ class LiveCaptionsScraper:
         return True
 
     def run(self, *, max_seconds: float | None = None) -> list[str]:
-        """Block until KeyboardInterrupt, max_seconds, or connection loss."""
+        """Block until KeyboardInterrupt, max_seconds, or repeated connection loss."""
         text_block = self._connect_uia()
         deadline = time.monotonic() + max_seconds if max_seconds else None
+        last_heartbeat = time.monotonic()
+        failures = 0
 
         while True:
             if deadline is not None and time.monotonic() >= deadline:
                 break
             try:
-                self.poll_once(text_block)
-            except Exception:
-                break
+                if self.poll_once(text_block):
+                    failures = 0
+            except Exception as exc:
+                failures += 1
+                if failures >= 3:
+                    print(f"\nReconnecting to Live Captions ({exc})…", file=sys.stderr, flush=True)
+                    try:
+                        text_block = self._connect_uia()
+                        failures = 0
+                        print("Reconnected.", flush=True)
+                        continue
+                    except Exception as reconnect_exc:
+                        print(f"Reconnect failed: {reconnect_exc}", file=sys.stderr)
+                        break
+                time.sleep(min(2.0, self.poll_interval * 4))
+                continue
+
+            now = time.monotonic()
+            if now - last_heartbeat >= 60.0:
+                print(
+                    f"… still listening ({len(self.segments)} segments) — Ctrl+C to stop",
+                    flush=True,
+                )
+                last_heartbeat = now
+
             time.sleep(self.poll_interval)
 
         return self.segments

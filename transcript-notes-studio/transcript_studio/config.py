@@ -34,7 +34,7 @@ class AppConfig:
     capture_enabled: bool = False
     capture_auto_interval_sec: float = 120.0
     context_folder: str = ""
-    refine_second_pass: bool = True
+    refine_second_pass: bool = False
     enrich_with_references: bool = True
     fast_mode: bool = False
     llm_temperature: float = 0.3
@@ -47,7 +47,7 @@ class AppConfig:
     whisper_live_source: str = "system"
     use_semantic_chunking: bool = True
     semantic_chunk_threshold: float = 0.45
-    use_tag_extraction: bool = True
+    use_tag_extraction: bool = False
     inject_wikilinks: bool = True
     semantic_cache_enabled: bool = True
     semantic_cache_threshold: float = 0.95

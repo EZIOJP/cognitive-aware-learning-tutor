@@ -39,10 +39,77 @@ def decode_canvas_image(canvas_image: str) -> Image.Image:
         data = base64.b64decode(raw, validate=True)
     except Exception as e:
         raise ValueError(f"Invalid base64 image: {e}") from e
-    img = Image.open(BytesIO(data))
-    if img.mode != "RGB":
-        img = img.convert("RGB")
-    return img
+    # Keep RGBA so flatten_on_white can composite transparent sketch exports.
+    return Image.open(BytesIO(data))
+
+
+def _hex_to_rgb(hex_color: str) -> tuple[int, int, int]:
+    h = (hex_color or "#000000").lstrip("#")
+    if len(h) == 6:
+        return (int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16))
+    return (0, 0, 0)
+
+
+def paths_have_ink(paths_json: str | None) -> bool:
+    """True when react-sketch-canvas paths include at least one pen stroke."""
+    if not (paths_json or "").strip():
+        return False
+    try:
+        paths = json.loads(paths_json)
+    except (json.JSONDecodeError, TypeError):
+        return False
+    if not isinstance(paths, list):
+        return False
+    for path in paths:
+        if not isinstance(path, dict):
+            continue
+        if not path.get("drawMode", True):
+            continue
+        pts = path.get("paths") or []
+        if isinstance(pts, list) and len(pts) >= 1:
+            return True
+    return False
+
+
+def synthesize_from_paths(paths_json: str, size: tuple[int, int]) -> Image.Image | None:
+    """
+    Rasterize react-sketch-canvas paths onto a white image.
+    Used when transparent PNG exports carry no visible ink for OpenCV.
+    """
+    if not (paths_json or "").strip():
+        return None
+    try:
+        paths = json.loads(paths_json)
+    except (json.JSONDecodeError, TypeError):
+        return None
+    if not isinstance(paths, list):
+        return None
+
+    w, h = size
+    if w <= 0 or h <= 0:
+        return None
+    arr = np.full((h, w, 3), 255, dtype=np.uint8)
+    drew = False
+    for path in paths:
+        if not isinstance(path, dict) or not path.get("drawMode", True):
+            continue
+        pts = path.get("paths") or []
+        stroke = max(1, int(path.get("strokeWidth") or 3))
+        color = _hex_to_rgb(str(path.get("strokeColor") or "#000000"))
+        coords: list[tuple[int, int]] = []
+        for p in pts:
+            if isinstance(p, dict) and "x" in p and "y" in p:
+                coords.append((int(p["x"]), int(p["y"])))
+        if len(coords) >= 2:
+            for i in range(len(coords) - 1):
+                cv2.line(arr, coords[i], coords[i + 1], color, stroke)
+            drew = True
+        elif len(coords) == 1:
+            cv2.circle(arr, coords[0], stroke, color, -1)
+            drew = True
+    if not drew:
+        return None
+    return Image.fromarray(arr)
 
 
 def mask_from_paths(img: Image.Image, paths_json: str | None) -> Image.Image:
@@ -313,6 +380,59 @@ def _run_texteller(prepared: Image.Image) -> str:
     return recognize_image(prepared).strip()
 
 
+def _cell_boxes_from_metrics(stroke_metrics_json: str | None) -> list[tuple[int, int, int, int]]:
+    """Union pen-stroke bboxes per grid column → left-to-right crop boxes."""
+    if not (stroke_metrics_json or "").strip():
+        return []
+    try:
+        snapshot = json.loads(stroke_metrics_json)
+        strokes = snapshot.get("strokes") or []
+    except (json.JSONDecodeError, AttributeError, TypeError):
+        return []
+    by_col: dict[int, list[float]] = {}
+    for s in strokes:
+        if not isinstance(s, dict) or s.get("tool") != "pen":
+            continue
+        bbox = s.get("bbox") or {}
+        cell = s.get("gridCell") or {}
+        try:
+            col = int(cell.get("col", 0))
+            x, y = float(bbox["x"]), float(bbox["y"])
+            w, h = float(bbox["w"]), float(bbox["h"])
+        except (KeyError, TypeError, ValueError):
+            continue
+        box = by_col.setdefault(col, [x, y, x + w, y + h])
+        box[0] = min(box[0], x)
+        box[1] = min(box[1], y)
+        box[2] = max(box[2], x + w)
+        box[3] = max(box[3], y + h)
+    return [
+        (int(b[0]), int(b[1]), int(b[2]), int(b[3]))
+        for _, b in sorted(by_col.items())
+        if b[2] > b[0] and b[3] > b[1]
+    ]
+
+
+def _per_cell_ocr(img: Image.Image, stroke_metrics_json: str | None, pad: int = 12) -> str:
+    """Fallback: OCR each grid cell's ink crop separately and concatenate LaTeX."""
+    boxes = _cell_boxes_from_metrics(stroke_metrics_json)
+    if len(boxes) < 2:
+        return ""
+    W, H = img.size
+    parts: list[str] = []
+    for x0, y0, x1, y1 in boxes:
+        crop = img.crop((max(0, x0 - pad), max(0, y0 - pad), min(W, x1 + pad), min(H, y1 + pad)))
+        if not image_has_ink(crop, min_ink_pixels=20):
+            continue
+        try:
+            piece = _run_texteller(prepare_for_texteller(crop))
+        except Exception:
+            continue
+        if piece and not _ocr_looks_hallucinated(piece):
+            parts.append(piece)
+    return " ".join(parts).strip()
+
+
 def _finalize_result(
     latex: str,
     *,
@@ -361,17 +481,22 @@ def recognize_canvas(
     canvas_image: str,
     *,
     paths_json: str | None = None,
+    stroke_metrics_json: str | None = None,
     ollama_vision_fallback: bool = True,
     use_nim_teacher: bool = True,
 ) -> OcrResult:
     """
     Multi-tier pipeline:
     Tier 0 (opt-in NIM): teacher label stored alongside prediction
-    Tier 1: TexTeller ONNX
+    Tier 1: TexTeller ONNX (whole canvas; per-cell crops as rescue)
     Tier 2: Ollama vision (if enabled + incomplete)
     Tier 3: empty latex + incomplete_step (never hard-fails)
     """
     img = flatten_on_white(decode_canvas_image(canvas_image))
+    if not image_has_ink(img) and paths_have_ink(paths_json):
+        synthesized = synthesize_from_paths(paths_json, img.size)
+        if synthesized is not None:
+            img = synthesized
     if not image_has_ink(img):
         raise ValueError("Canvas appears empty — draw an equation first.")
 
@@ -380,7 +505,12 @@ def recognize_canvas(
     if use_nim_teacher:
         teacher_latex, needs_review = _nim_teacher_latex(canvas_image)
 
-    img = mask_from_paths(img, paths_json)
+    if paths_have_ink(paths_json):
+        masked = synthesize_from_paths(paths_json, img.size)
+        if masked is not None and image_has_ink(masked):
+            img = masked
+    else:
+        img = mask_from_paths(img, paths_json)
     cropped, crop_applied = crop_to_content(img)
     prepared = prepare_for_texteller(cropped)
     preprocess_applied = crop_applied or True
@@ -408,7 +538,12 @@ def recognize_canvas(
         )
 
     if _ocr_looks_hallucinated(latex):
-        if simple_latex:
+        # Rescue 1: OCR each training grid cell separately (multi-symbol prompts).
+        cell_latex = _per_cell_ocr(img, stroke_metrics_json)
+        if cell_latex:
+            latex = cell_latex
+            tier = "per_cell"
+        elif simple_latex:
             latex = simple_latex
             tier = "contour"
         else:

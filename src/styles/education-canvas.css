@@ -1,4 +1,46 @@
-/* Unified tldraw math canvas — Train / Practice / Study Room */
+/* Math canvases — MathGridCanvas (Train / Practice / Recognize) + tldraw (Study Room) */
+
+/* Fixed-grid sketch canvas: viewport-locked ruled grid behind transparent ink layer */
+.math-grid-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  user-select: none;
+}
+
+.math-grid-overlay-lines {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(to right, rgba(100, 116, 139, 0.14) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(100, 116, 139, 0.14) 1px, transparent 1px);
+}
+
+.math-grid-cell-row {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.math-grid-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px dashed rgba(59, 130, 246, 0.35);
+  border-radius: 8px;
+  background: rgba(59, 130, 246, 0.04);
+  color: rgba(100, 116, 139, 0.28);
+  font-size: 2.5rem;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.math-grid-canvas {
+  background: var(--background, #fff);
+}
 
 .math-canvas-container {
   position: relative;
@@ -43,5 +85,29 @@
   .education-question-panel {
     flex: 0 0 auto;
     max-height: 40%;
+  }
+}
+
+.focus-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  border: 0 solid transparent;
+  transition: border-width 0.3s, border-color 0.3s;
+}
+
+.focus-overlay.flash-red {
+  border: 8px solid rgba(220, 38, 38, 0.6);
+  animation: pulse-border 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-border {
+  0%,
+  100% {
+    border-color: rgba(220, 38, 38, 0.3);
+  }
+  50% {
+    border-color: rgba(220, 38, 38, 0.7);
   }
 }

@@ -42,6 +42,9 @@ chmod +x scripts/setup.sh scripts/run_all.sh scripts/migrate.sh scripts/install_
 | Script | Purpose |
 |--------|---------|
 | `install_ocr.bat` / `install_ocr.sh` | pix2tex math OCR (large PyTorch download) |
+| `install_notes.bat` / `install_notes.sh` | Lecture-notes semantic embeddings (`sentence-transformers`) |
+| `run_live_captions_scraper.bat` | Windows 11 Live Captions → `data/transcripts/` (pywinauto) |
+| `run_transcript_to_notes.bat` | Transcript → markdown notes via local LLM → `data/notes/` + study library index (see flags below) |
 | `run_face_tracker.bat` | Python webcam focus mirror → hub |
 | `run_eeg.bat` | Legacy EEG prototype (`backend_example.py`) — use main API for integrated stack |
 | `launch_selftracker_chrome.bat` | Chrome + SelfTracker extension |

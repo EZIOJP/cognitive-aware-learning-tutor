@@ -1,0 +1,422 @@
+/* Study Library — Stitch export: animated_study_generator_dashboard + review_sync_workflow */
+
+.study-library-page {
+  position: relative;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.study-library-glass {
+  background: color-mix(in srgb, rgb(6 78 59 / 0.45) 70%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgb(52 211 153 / 0.2);
+  border-radius: 1rem;
+  box-shadow: 0 4px 24px rgb(0 0 0 / 0.25);
+}
+
+.study-library-glass-card {
+  background: color-mix(in srgb, rgb(6 78 59 / 0.35) 80%, transparent);
+  border: 1px solid rgb(52 211 153 / 0.12);
+  border-radius: 0.75rem;
+  transition: border-color 0.2s, transform 0.2s;
+}
+
+.study-library-glass-card:hover {
+  border-color: rgb(52 211 153 / 0.35);
+}
+
+.study-library-nav-tab {
+  color: rgb(156 163 175);
+  transition: color 0.15s;
+}
+
+.study-library-nav-tab:hover {
+  color: rgb(243 244 246);
+}
+
+.study-library-nav-tab[data-active="true"] {
+  color: rgb(96 165 250);
+  border-bottom: 2px solid rgb(59 130 246);
+}
+
+.study-library-step {
+  color: rgb(156 163 175);
+}
+
+.study-library-step[data-active="true"] {
+  color: rgb(52 211 153);
+  background: rgb(16 185 129 / 0.1);
+  border: 1px solid rgb(16 185 129 / 0.3);
+  box-shadow: 0 0 15px rgb(16 185 129 / 0.25);
+}
+
+.study-library-compare-pane .lecture-notes-markdown h1,
+.study-library-compare-pane .lecture-notes-markdown h2 {
+  color: rgb(96 165 250);
+}
+
+.study-library-sync-badge {
+  background: rgb(6 78 59 / 0.5);
+  border: 1px solid rgb(16 185 129 / 0.4);
+  color: rgb(52 211 153);
+}
+
+.study-library-file-selected {
+  background: rgb(16 185 129 / 0.25);
+  border: 1px solid rgb(16 185 129 / 0.35);
+  color: rgb(209 250 229);
+}
+
+.study-library-file-compare {
+  background: rgb(59 130 246 / 0.15);
+  border: 1px solid rgb(59 130 246 / 0.35);
+}
+
+.study-note-editor-textarea {
+  tab-size: 2;
+  scrollbar-color: rgb(16 185 129 / 0.35) transparent;
+}
+
+.study-note-editor-textarea::placeholder {
+  color: rgb(110 231 183 / 0.35);
+}
+
+.study-image-placeholder figcaption {
+  color: rgb(156 163 175);
+}
+
+.study-library-intel-tab[data-active="true"] {
+  background: rgb(4 120 87 / 0.5);
+  border-color: rgb(16 185 129 / 0.5);
+  color: white;
+}
+
+.study-library-markdown-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(52 211 153 / 0.35) transparent;
+}
+
+.study-library-markdown-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.study-library-markdown-scroll::-webkit-scrollbar-thumb {
+  background: rgb(52 211 153 / 0.35);
+  border-radius: 3px;
+}
+
+.study-library-organize-panel {
+  padding: 0.25rem;
+}
+
+.study-library-organize-folder {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgb(52 211 153 / 0.18);
+  background: rgb(0 0 0 / 0.25);
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+}
+
+.study-library-organize-file {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 0.65rem;
+  border-radius: 0.65rem;
+  border: 1px solid rgb(52 211 153 / 0.12);
+  background: rgb(0 0 0 / 0.18);
+  margin-bottom: 0.35rem;
+}
+
+.study-library-organize-file:hover {
+  border-color: rgb(52 211 153 / 0.28);
+}
+
+.study-library-drop-active {
+  border-color: rgb(52 211 153 / 0.65) !important;
+  background: rgb(16 185 129 / 0.12) !important;
+  box-shadow: 0 0 0 1px rgb(52 211 153 / 0.35);
+}
+
+.study-library-kind-pill {
+  font-size: 0.625rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.15rem 0.4rem;
+  border-radius: 9999px;
+  border: 1px solid rgb(52 211 153 / 0.25);
+  color: rgb(167 243 208 / 0.85);
+}
+
+/* File Explorer–style library panel */
+.study-library-explorer {
+  background: rgb(15 23 42 / 0.55);
+}
+
+.study-library-explorer-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.15rem;
+  padding: 0.35rem 0.5rem;
+  border-bottom: 1px solid rgb(52 211 153 / 0.15);
+  background: rgb(0 0 0 / 0.2);
+}
+
+.study-library-explorer-tool {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.55rem;
+  border-radius: 0.35rem;
+  font-size: 0.6875rem;
+  color: rgb(203 213 225);
+  transition: background 0.12s, color 0.12s;
+}
+
+.study-library-explorer-tool:hover:not(:disabled) {
+  background: rgb(16 185 129 / 0.15);
+  color: rgb(209 250 229);
+}
+
+.study-library-explorer-tool:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.study-library-explorer-tool-icon {
+  padding: 0.35rem;
+  border-radius: 0.35rem;
+  color: rgb(148 163 184);
+}
+
+.study-library-explorer-tool-icon.active,
+.study-library-explorer-tool-icon:hover {
+  background: rgb(16 185 129 / 0.2);
+  color: rgb(167 243 208);
+}
+
+.study-library-explorer-address {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.1rem;
+  padding: 0.4rem 0.65rem;
+  border-bottom: 1px solid rgb(52 211 153 / 0.12);
+  background: rgb(0 0 0 / 0.12);
+}
+
+.study-library-explorer-body {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.study-library-explorer-quickaccess {
+  shrink: 0;
+  border-top: 1px solid rgb(52 211 153 / 0.15);
+  background: rgb(0 0 0 / 0.22);
+  padding: 0.35rem 0.5rem 0.45rem;
+}
+
+.study-library-explorer-quickaccess-title {
+  font-size: 0.5625rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgb(100 116 139);
+  margin-bottom: 0.3rem;
+}
+
+.study-library-explorer-quickaccess-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  max-height: 3.25rem;
+  overflow-y: auto;
+}
+
+.study-library-explorer-quickaccess-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.55rem;
+  border-radius: 9999px;
+  border: 1px solid rgb(52 211 153 / 0.12);
+  font-size: 0.625rem;
+  color: rgb(203 213 225);
+  background: rgb(255 255 255 / 0.03);
+  max-width: 8.5rem;
+}
+
+.study-library-explorer-quickaccess-item:hover {
+  background: rgb(255 255 255 / 0.08);
+  border-color: rgb(52 211 153 / 0.25);
+}
+
+.study-library-explorer-quickaccess-item.active {
+  background: rgb(16 185 129 / 0.22);
+  border-color: rgb(16 185 129 / 0.4);
+  color: rgb(209 250 229);
+}
+
+.study-library-explorer-main {
+  padding: 0.65rem;
+}
+
+.study-library-explorer-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(5.5rem, 1fr));
+  gap: 0.85rem 0.5rem;
+  align-content: start;
+}
+
+.study-library-explorer-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.study-library-explorer-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.55rem 0.35rem;
+  border-radius: 0.5rem;
+  border: 1px solid transparent;
+  cursor: pointer;
+  user-select: none;
+  text-align: center;
+  min-height: 6.5rem;
+}
+
+.study-library-explorer-tile:hover {
+  background: rgb(255 255 255 / 0.04);
+  border-color: rgb(52 211 153 / 0.15);
+}
+
+.study-library-explorer-list-row {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.4rem 0.55rem;
+  border-radius: 0.4rem;
+  border: 1px solid transparent;
+  cursor: pointer;
+  user-select: none;
+}
+
+.study-library-explorer-list-row:hover {
+  background: rgb(255 255 255 / 0.04);
+}
+
+.study-library-explorer-selected {
+  background: rgb(59 130 246 / 0.22) !important;
+  border-color: rgb(96 165 250 / 0.45) !important;
+  outline: 1px solid rgb(96 165 250 / 0.35);
+}
+
+.study-library-explorer-label {
+  font-size: 0.6875rem;
+  line-height: 1.25;
+  color: rgb(226 232 240);
+  word-break: break-word;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.study-library-explorer-list-row .study-library-explorer-label {
+  text-align: left;
+  flex: 1;
+  -webkit-line-clamp: 1;
+}
+
+.study-library-explorer-folder-icon {
+  width: 3.25rem;
+  height: 2.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.35rem;
+  background: linear-gradient(180deg, rgb(251 191 36 / 0.25), rgb(245 158 11 / 0.08));
+}
+
+.study-library-explorer-file-icon {
+  position: relative;
+  width: 3rem;
+  height: 3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.35rem;
+  background: linear-gradient(180deg, rgb(248 250 252 / 0.12), rgb(148 163 184 / 0.08));
+  border: 1px solid rgb(255 255 255 / 0.08);
+}
+
+.study-library-explorer-file-kind {
+  position: absolute;
+  bottom: 0.2rem;
+  right: 0.25rem;
+  font-size: 0.5rem;
+  text-transform: uppercase;
+  color: rgb(52 211 153 / 0.8);
+}
+
+.study-library-explorer-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 12rem;
+  text-align: center;
+  padding: 1rem;
+}
+
+.lecture-notes-markdown .study-code-block pre {
+  margin: 0;
+}
+
+.lecture-notes-markdown .study-code-block .linenumber {
+  color: rgb(52 211 153 / 0.35);
+  min-width: 2em;
+  padding-right: 0.75em;
+  user-select: none;
+}
+
+.lecture-notes-markdown .study-python-editor {
+  tab-size: 4;
+  min-height: 5rem;
+}
+
+.lecture-notes-markdown .study-python-editor:focus {
+  box-shadow: inset 0 0 0 1px rgb(52 211 153 / 0.25);
+}
+
+.lecture-notes-markdown .study-python-output {
+  margin: 0;
+  font-family: ui-monospace, monospace;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: rgb(209 250 229 / 0.9);
+}
+
+.lecture-notes-markdown .study-python-output--error {
+  color: rgb(248 113 113);
+}
+
+.lecture-notes-markdown .study-python-output--stderr {
+  color: rgb(251 191 36 / 0.9);
+}
+
+.lecture-notes-markdown .study-mermaid-block svg {
+  max-width: 100%;
+  height: auto;
+}

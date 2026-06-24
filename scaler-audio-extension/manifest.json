@@ -1,0 +1,36 @@
+{
+  "manifest_version": 3,
+  "name": "Scaler Lecture Audio",
+  "version": "1.0.0",
+  "description": "Download lecture audio from Scaler (and similar players) for local Whisper transcription.",
+  "permissions": ["activeTab", "scripting", "downloads", "storage", "tabs", "webNavigation"],
+  "host_permissions": [
+    "*://*.scaler.com/*",
+    "*://*.scaleracademy.com/*",
+    "*://*.cloudfront.net/*",
+    "*://*.amazonaws.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Scaler Lecture Audio"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "*://*.scaler.com/*",
+        "*://*.scaleracademy.com/*"
+      ],
+      "js": ["content.js"],
+      "run_at": "document_idle",
+      "all_frames": true
+    }
+  ],
+  "icons": {
+    "16": "icon.svg",
+    "48": "icon.svg",
+    "128": "icon.svg"
+  }
+}

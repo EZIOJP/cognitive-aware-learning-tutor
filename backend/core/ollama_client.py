@@ -91,7 +91,17 @@ def llm_reachable(override: LlmOptions | None = None) -> bool:
         return False
 
 
+def _has_llm_override(override: LlmOptions | None) -> bool:
+    return bool(
+        override
+        and (override.base_url or "").strip()
+        and (override.model or "").strip()
+    )
+
+
 def ollama_available(override: LlmOptions | None = None) -> str | None:
+    if _has_llm_override(override):
+        return (override.base_url or "").strip().rstrip("/")
     if not _settings().ollama_enabled:
         return None
     opts = resolve_llm_options(override)
@@ -220,7 +230,7 @@ def ollama_generate(
     llm: LlmOptions | None = None,
     system_prompt: str | None = None,
 ) -> str | None:
-    if not _settings().ollama_enabled:
+    if not _settings().ollama_enabled and not _has_llm_override(llm):
         return None
 
     opts = resolve_llm_options(llm)

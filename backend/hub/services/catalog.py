@@ -11,7 +11,9 @@ SYSTEM_FEATURE_CATALOG: list[dict] = [
         "is_core": True,
         "default_enabled": True,
         "frontend_ids": ["core"],
-        "metrics": [],
+        "metrics": [
+            {"slug": "global_quiz_complete", "label": "Global quiz", "unit": "count", "source_type": "batch"},
+        ],
     },
     {
         "plugin_id": "math-tutor",

@@ -13,6 +13,11 @@ from sqlalchemy.orm import Session
 from backend.models.study import LectureNote
 from backend.paths import NOTES_DIR
 from backend.transcripts.notes_generator import resolve_notes_path
+from backend.transcripts.path_utils import (
+    build_relative_path,
+    normalize_filename,
+    normalize_folder_path,
+)
 
 NoteKind = Literal["lecture", "textbook", "quiz", "exercise", "note"]
 VALID_KINDS = frozenset({"lecture", "textbook", "quiz", "exercise", "note"})
@@ -20,40 +25,6 @@ VALID_KINDS = frozenset({"lecture", "textbook", "quiz", "exercise", "note"})
 
 def note_storage_path(row: LectureNote) -> str:
     return (row.relative_path or row.filename or "").replace("\\", "/")
-
-
-def normalize_folder_path(folder: str | None) -> str:
-    if not folder or not str(folder).strip():
-        return ""
-    parts: list[str] = []
-    for part in str(folder).replace("\\", "/").split("/"):
-        part = part.strip()
-        if not part or part in (".", ".."):
-            continue
-        if not re.match(r"^[a-zA-Z0-9._\- ]+$", part):
-            raise ValueError(f"Invalid folder segment: {part}")
-        parts.append(part)
-    return "/".join(parts)
-
-
-def normalize_filename(name: str) -> str:
-    raw = name.replace("\\", "/").strip()
-    if not raw or ".." in raw:
-        raise ValueError("Invalid filename.")
-    base = Path(raw).name
-    if not base:
-        raise ValueError("Invalid filename.")
-    stem = Path(base).stem if base.lower().endswith(".md") else base
-    safe = "".join(c if c.isalnum() or c in "-_ ." else "_" for c in stem)[:80].strip()
-    if not safe:
-        raise ValueError("Invalid filename.")
-    return f"{safe}.md"
-
-
-def build_relative_path(folder_path: str, filename: str) -> str:
-    folder = normalize_folder_path(folder_path)
-    fname = normalize_filename(filename)
-    return f"{folder}/{fname}" if folder else fname
 
 
 def list_disk_folders() -> list[str]:
@@ -226,7 +197,9 @@ def create_note_file(
     safe_title = "".join(c if c.isalnum() or c in "-_ " else "_" for c in title)[:50].strip() or "Untitled"
     filename = normalize_filename(f"{safe_title}_{stamp}.md")
     relative = build_relative_path(folder, filename)
-    disk_path = resolve_notes_path(relative)
+    disk_path = (NOTES_DIR / relative).resolve()
+    if not disk_path.is_relative_to(NOTES_DIR.resolve()):
+        raise ValueError("Invalid note path")
 
     body = content if content is not None else f"# {title.strip() or 'Untitled'}\n\n"
     disk_path.parent.mkdir(parents=True, exist_ok=True)
@@ -310,10 +283,10 @@ def delete_note(db: Session, *, user_id: int, relative_path: str) -> None:
     rel = relative_path.replace("\\", "/")
     row = _find_note_row(db, user_id, rel)
     try:
-        path = resolve_notes_path(rel)
-        if path.is_file():
+        path = (NOTES_DIR / rel).resolve()
+        if path.is_file() and path.is_relative_to(NOTES_DIR.resolve()):
             path.unlink()
-    except ValueError:
+    except (ValueError, OSError):
         pass
     if row:
         db.delete(row)
@@ -413,7 +386,9 @@ def move_note(
         basename = normalize_filename(new_title)
 
     new_rel = build_relative_path(dest, basename)
-    new_path = resolve_notes_path(new_rel)
+    new_path = (NOTES_DIR / new_rel).resolve()
+    if not new_path.is_relative_to(NOTES_DIR.resolve()):
+        raise ValueError("Invalid destination path")
 
     if new_path != old_path:
         if new_path.exists():
@@ -456,6 +431,33 @@ def update_note_meta(
         row.title = title.strip()
     if topic is not None:
         row.topic = topic.strip() or None
+    db.commit()
+    db.refresh(row)
+    return row
+
+
+def save_note_content(
+    db: Session,
+    *,
+    user_id: int,
+    relative_path: str,
+    content: str,
+) -> LectureNote:
+    rel = relative_path.replace("\\", "/")
+    row = _find_note_row(db, user_id, rel)
+    if not row:
+        row = index_note_from_disk(db, user_id, rel)
+
+    disk_path = (NOTES_DIR / note_storage_path(row)).resolve()
+    if not disk_path.is_relative_to(NOTES_DIR.resolve()):
+        raise ValueError("Invalid note path.")
+
+    disk_path.parent.mkdir(parents=True, exist_ok=True)
+    disk_path.write_text(content, encoding="utf-8")
+
+    section_count = content.count("\n## ") + (1 if content.startswith("## ") else 0)
+    row.section_count = max(1, section_count)
+    row.updated_at = int(time.time())
     db.commit()
     db.refresh(row)
     return row

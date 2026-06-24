@@ -449,12 +449,16 @@ export function LifeClockWidget({
         <p className="text-sm text-muted-foreground max-w-xs mx-auto">
           Log your day in Life Tracker to fill the ring.
         </p>
-        <Link
-          to="/life-tracker"
-          className="inline-flex text-sm font-medium text-primary hover:underline"
-        >
-          Open Life Tracker →
-        </Link>
+        {embedded ? (
+          <p className="text-sm font-medium text-primary">Open Life Tracker →</p>
+        ) : (
+          <Link
+            to="/life-tracker"
+            className="inline-flex text-sm font-medium text-primary hover:underline"
+          >
+            Open Life Tracker →
+          </Link>
+        )}
       </div>
     );
   }

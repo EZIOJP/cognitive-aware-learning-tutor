@@ -37,6 +37,8 @@ copy .env.example .env
 python run_gui.py
 ```
 
+`run.bat` ensures `requirements.txt` (including `sentence-transformers`) is installed on every launch.
+
 ## CLI
 
 ```bat

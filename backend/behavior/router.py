@@ -163,6 +163,8 @@ def _shape_stats_for_ui(raw: dict) -> dict:
         productive = min(100, productive + 15)
     return {
         "connected": events > 0,
+        "events_today": events,
+        "domains": domains,
         "total_events": events,
         "top_category": top_category,
         "avg_productivity_score": productive,

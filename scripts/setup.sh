@@ -22,6 +22,7 @@ fi
 source "$ROOT/.venv/bin/activate"
 pip install -U pip
 pip install -r "$ROOT/backend/requirements.txt"
+pip install -r "$ROOT/backend/requirements-notes.txt"
 
 echo "[setup] alembic upgrade head"
 python -m alembic upgrade head

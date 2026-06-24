@@ -78,6 +78,7 @@ def test_delete_note_and_folder(db):
 
 
 def test_save_note_content(db):
+    import backend.transcripts.library as lib
     from backend.transcripts.library import save_note_content
 
     row = create_note_file(db, user_id=1, title="Editable", folder_path="", kind="note", content="# Old\n")
@@ -89,5 +90,6 @@ def test_save_note_content(db):
         content="# Updated title\n\n```python\nprint(1)\n```\n",
     )
     assert updated.section_count >= 1
-    path = NOTES_DIR / rel
+    path = lib.NOTES_DIR / rel
+    assert path.is_file()
     assert "Updated title" in path.read_text(encoding="utf-8")

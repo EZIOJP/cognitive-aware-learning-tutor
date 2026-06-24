@@ -6,8 +6,8 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
-from fastapi.responses import FileResponse
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile
+from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
@@ -23,6 +23,7 @@ from backend.transcripts.library import (
     create_note_file,
     delete_folder,
     delete_note,
+    list_notes_in_folder,
     move_note,
     sync_disk_notes_for_user,
     save_note_content,
@@ -442,6 +443,108 @@ def get_note_content(relative_path: str, _user: User = Depends(get_current_user)
         raise HTTPException(status_code=404, detail="Note not found.")
     rel_path = path.relative_to(NOTES_DIR).as_posix()
     return {"filename": rel_path, "relative_path": rel_path, "content": path.read_text(encoding="utf-8")}
+
+
+def _note_title_for_export(db: Session, user_id: int, rel: str, path: Path) -> str:
+    from backend.transcripts.library import _find_note_row
+
+    row = _find_note_row(db, user_id, rel)
+    if row and row.title:
+        return row.title
+    return path.stem.replace("_", " ").strip() or "Lecture Notes"
+
+
+@router.get("/library/files/{relative_path:path}/export")
+def export_library_file(
+    relative_path: str,
+    format: str = Query(..., pattern="^(pdf|docx)$"),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Download a single note as PDF or Word (.docx) with embedded images."""
+    import io
+
+    from backend.paths import NOTES_DIR
+    from backend.transcripts.note_export import export_note
+
+    try:
+        path = resolve_notes_path(relative_path)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    if not path.is_file():
+        raise HTTPException(status_code=404, detail="Note not found.")
+    rel = path.relative_to(NOTES_DIR).as_posix()
+    content = path.read_text(encoding="utf-8")
+    title = _note_title_for_export(db, user.id, rel, path)
+    try:
+        data, media_type, filename = export_note(
+            content, title=title, note_relative=rel, fmt=format  # type: ignore[arg-type]
+        )
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    return StreamingResponse(
+        io.BytesIO(data),
+        media_type=media_type,
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@router.get("/library/folders/export")
+def export_library_folder_root(
+    format: str = Query(..., pattern="^(pdf|docx)$"),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Export all notes at library root."""
+    return export_library_folder("", format=format, db=db, user=user)
+
+
+@router.get("/library/folders/{folder_path:path}/export")
+def export_library_folder(
+    folder_path: str,
+    format: str = Query(..., pattern="^(pdf|docx)$"),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Download all notes in a folder (recursive) as one PDF or Word file."""
+    import io
+
+    from backend.paths import NOTES_DIR
+    from backend.transcripts.note_export import combine_folder_notes, export_note
+
+    rels = list_notes_in_folder(folder_path, recursive=True)
+    if not rels:
+        raise HTTPException(status_code=404, detail="No notes in this folder.")
+
+    bundle: list[tuple[str, str, str]] = []
+    for rel in rels:
+        path = (NOTES_DIR / rel).resolve()
+        if not path.is_file() or not path.is_relative_to(NOTES_DIR.resolve()):
+            continue
+        title = _note_title_for_export(db, user.id, rel, path)
+        bundle.append((rel, title, path.read_text(encoding="utf-8")))
+
+    if not bundle:
+        raise HTTPException(status_code=404, detail="No readable notes in this folder.")
+
+    combined, folder_title = combine_folder_notes(bundle)
+    anchor = bundle[0][0]
+    try:
+        data, media_type, filename = export_note(
+            combined,
+            title=folder_title,
+            note_relative=anchor,
+            fmt=format,  # type: ignore[arg-type]
+        )
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    safe_folder = folder_title.replace(" ", "_")[:40] or "folder"
+    ext = "pdf" if format == "pdf" else "docx"
+    return StreamingResponse(
+        io.BytesIO(data),
+        media_type=media_type,
+        headers={"Content-Disposition": f'attachment; filename="{safe_folder}_notes.{ext}"'},
+    )
 
 
 def _load_sources(db: Session, user_id: int, paths: list[str]) -> list[str]:

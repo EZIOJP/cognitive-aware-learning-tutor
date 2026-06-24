@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Bookmark, Loader2, MapPin, Pencil } from "lucide-react";
+import { Bookmark, Download, FileText, Loader2, MapPin, Pencil } from "lucide-react";
 import { MarkdownNote } from "./MarkdownNote";
 import { MarkdownNoteEditor } from "./MarkdownNoteEditor";
 import { cn } from "../../app/components/ui/utils";
@@ -21,6 +21,9 @@ type Props = {
   editable?: boolean;
   onSaveContent?: (relativePath: string, content: string) => Promise<void>;
   snapshotTranscript?: string;
+  onExport?: (relativePath: string, format: "pdf" | "docx") => Promise<void>;
+  onExportFolder?: (folderPath: string, format: "pdf" | "docx") => Promise<void>;
+  exportFolderPath?: string;
 };
 
 export function StudyLibraryViewer({
@@ -39,12 +42,16 @@ export function StudyLibraryViewer({
   editable = false,
   onSaveContent,
   snapshotTranscript,
+  onExport,
+  onExportFolder,
+  exportFolderPath,
 }: Props) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const lastRestoreKeyRef = useRef("");
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(primaryContent);
   const [saving, setSaving] = useState(false);
+  const [exporting, setExporting] = useState<"pdf" | "docx" | null>(null);
 
   useEffect(() => {
     if (!editing) setDraft(primaryContent);
@@ -102,6 +109,26 @@ export function StudyLibraryViewer({
     }
   };
 
+  const handleExport = async (format: "pdf" | "docx") => {
+    if (!relativePath || !onExport || editing) return;
+    setExporting(format);
+    try {
+      await onExport(relativePath, format);
+    } finally {
+      setExporting(null);
+    }
+  };
+
+  const handleExportFolder = async (format: "pdf" | "docx") => {
+    if (exportFolderPath === undefined || !onExportFolder || editing) return;
+    setExporting(format);
+    try {
+      await onExportFolder(exportFolderPath, format);
+    } finally {
+      setExporting(null);
+    }
+  };
+
   if (loading) {
     return (
       <section className="study-library-glass flex flex-1 items-center justify-center min-w-0">
@@ -131,6 +158,66 @@ export function StudyLibraryViewer({
               <Pencil className="w-3.5 h-3.5 mr-1" />
               Edit
             </Button>
+          )}
+          {relativePath && onExport && !editing && primaryContent && (
+            <>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-7 text-[10px] text-emerald-300/90"
+                disabled={!!exporting}
+                onClick={() => void handleExport("pdf")}
+              >
+                {exporting === "pdf" ? (
+                  <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
+                ) : (
+                  <Download className="w-3.5 h-3.5 mr-1" />
+                )}
+                PDF
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-7 text-[10px] text-emerald-300/90"
+                disabled={!!exporting}
+                onClick={() => void handleExport("docx")}
+              >
+                {exporting === "docx" ? (
+                  <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
+                ) : (
+                  <FileText className="w-3.5 h-3.5 mr-1" />
+                )}
+                Word
+              </Button>
+            </>
+          )}
+          {onExportFolder && exportFolderPath !== undefined && !editing && (
+            <>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-7 text-[10px] border-emerald-800/50 text-emerald-200/90"
+                disabled={!!exporting}
+                title="Export all notes in the current folder as PDF"
+                onClick={() => void handleExportFolder("pdf")}
+              >
+                Folder PDF
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-7 text-[10px] border-emerald-800/50 text-emerald-200/90"
+                disabled={!!exporting}
+                title="Export all notes in the current folder as Word"
+                onClick={() => void handleExportFolder("docx")}
+              >
+                Folder Word
+              </Button>
+            </>
           )}
           {!editing && relativePath && onSetBookmark && (
             <button

@@ -19,6 +19,8 @@ import {
   createLibraryFolder,
   deleteLibraryFile,
   deleteLibraryFolder,
+  exportNoteFile,
+  exportLibraryFolder,
   fetchLibraryTree,
   generateLibraryDrills,
   generateLibraryQuiz,
@@ -348,6 +350,26 @@ export function LectureNotesPage() {
     },
     [],
   );
+
+  const handleExportNote = useCallback(async (path: string, format: "pdf" | "docx") => {
+    try {
+      await exportNoteFile(path, format);
+      setToast(`Exported ${format.toUpperCase()}`);
+      setTimeout(() => setToast(null), 2500);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Export failed");
+    }
+  }, []);
+
+  const handleExportFolder = useCallback(async (folderPath: string, format: "pdf" | "docx") => {
+    try {
+      await exportLibraryFolder(folderPath, format);
+      setToast(`Folder exported as ${format.toUpperCase()}`);
+      setTimeout(() => setToast(null), 2500);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Folder export failed");
+    }
+  }, []);
 
   const handleSummarizeFolder = async (folderPath: string) => {
     setSummarizingFolder(folderPath);
@@ -855,6 +877,9 @@ export function LectureNotesPage() {
               editable={!showCompare && Boolean(selectedNote)}
               onSaveContent={handleSaveNoteContent}
               snapshotTranscript={selectedTranscript || undefined}
+              onExport={handleExportNote}
+              onExportFolder={handleExportFolder}
+              exportFolderPath={folderForSave}
               onScrollContainer={(el) => {
                 scrollContainerRef.current = el;
               }}

@@ -160,6 +160,42 @@ export async function saveNoteContent(relativePath: string, content: string): Pr
   if (!res.ok) throw new Error(apiErrorMessage(data, res.status));
 }
 
+export type NoteExportFormat = "pdf" | "docx";
+
+async function downloadExportResponse(res: Response, fallbackName: string): Promise<void> {
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(apiErrorMessage(data, res.status));
+  }
+  const blob = await res.blob();
+  const disposition = res.headers.get("Content-Disposition") ?? "";
+  const match = /filename="([^"]+)"/.exec(disposition);
+  const filename = match?.[1] ?? fallbackName;
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+export async function exportNoteFile(relativePath: string, format: NoteExportFormat): Promise<void> {
+  const encoded = encodeLibraryPath(relativePath);
+  const res = await fetch(`${BASE}/api/transcripts/library/files/${encoded}/export?format=${format}`, {
+    headers: headers(),
+  });
+  await downloadExportResponse(res, `note.${format}`);
+}
+
+export async function exportLibraryFolder(folderPath: string, format: NoteExportFormat): Promise<void> {
+  const url =
+    folderPath.trim() === ""
+      ? `${BASE}/api/transcripts/library/folders/export?format=${format}`
+      : `${BASE}/api/transcripts/library/folders/${encodeLibraryPath(folderPath)}/export?format=${format}`;
+  const res = await fetch(url, { headers: headers() });
+  await downloadExportResponse(res, `folder_notes.${format}`);
+}
+
 export async function fetchLibraryTree(): Promise<LibraryTree> {
   const res = await fetch(`${BASE}/api/transcripts/library/tree`, { headers: headers() });
   const data = await res.json().catch(() => ({}));

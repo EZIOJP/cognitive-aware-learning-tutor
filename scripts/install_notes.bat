@@ -3,7 +3,7 @@ setlocal
 call "%~dp0_common.bat"
 if errorlevel 1 exit /b 1
 
-echo Installing lecture-notes dependencies (sentence-transformers + PyTorch CPU)...
+echo Installing lecture-notes dependencies (semantic grouping, PDF/Word export, PyTorch CPU)...
 "%PIP%" install -r "%ROOT%\backend\requirements-notes.txt"
 if errorlevel 1 exit /b 1
 

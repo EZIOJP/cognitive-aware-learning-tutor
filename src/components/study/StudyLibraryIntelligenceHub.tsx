@@ -60,11 +60,11 @@ export function StudyLibraryIntelligenceHub({
   const hubItems = sessionItems.filter((i) => (tab === "quiz" ? i.kind === "quiz" : i.kind === "exercise"));
 
   return (
-    <section className="study-library-glass w-80 shrink-0 flex flex-col p-4 min-h-0">
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="font-bold text-base text-white">Intelligence Hub</h2>
+    <section className="study-library-glass w-72 shrink-0 flex flex-col p-3 min-h-0">
+      <div className="flex items-center justify-between mb-2">
+        <h2 className="font-semibold text-sm text-white">Study tools</h2>
         <Link to="/ai-coach" className="text-emerald-400 hover:text-white text-xs">
-          AI Coach →
+          AI Coach
         </Link>
       </div>
 

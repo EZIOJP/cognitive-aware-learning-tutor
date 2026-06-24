@@ -4,14 +4,12 @@ import { buildStudyQuizConfig } from "../../api/globalQuizClient";
 import { GlobalQuizRunner } from "../../features/quiz/GlobalQuizRunner";
 import {
   BookOpen,
-  Brain,
-  Camera,
-  ChevronDown,
   ClipboardList,
   Loader2,
-  Play,
+  PanelRight,
+  Plus,
   Search,
-  Sparkles,
+  X,
 } from "lucide-react";
 import {
   captureMainAreaPng,
@@ -29,11 +27,13 @@ import {
   indexNote,
   getLlmConfig,
   getNoteContent,
-  listNoteTopics,
   listTranscripts,
   loadLlmPrefs,
   runGapAnalysis,
   saveLlmPrefs,
+  regenerateNoteBlock,
+  regenerateNoteSelection,
+  repairAllNoteBlocks,
   saveNoteContent,
   summarizeLibraryFolder,
   syncStudySession,
@@ -56,17 +56,12 @@ import { StudyLibraryReviewPanel } from "../../components/study/StudyLibraryRevi
 import { StudyLibraryStepper, type StudyWorkflowStep } from "../../components/study/StudyLibraryStepper";
 import { StudyLibraryExplorer } from "../../components/study/StudyLibraryExplorer";
 import { findLibraryFile } from "../../components/study/studyLibraryUtils";
+import { extractBlockSurroundingContext, extractSelectionSurroundingContext, replaceFencedBlock } from "../../components/study/noteBlockUtils";
+import { repairNoteMarkdown } from "../../components/study/markdownRepair";
+import { sanitizeMermaidSource } from "../../components/study/mermaidSanitize";
 import { StudyLibraryViewer } from "../../components/study/StudyLibraryViewer";
+import { StudyLibraryCreateSheet } from "../../components/study/StudyLibraryCreateSheet";
 import { Button } from "../../app/components/ui/button";
-import { Input } from "../../app/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "../../app/components/ui/select";
-import { cn } from "../../app/components/ui/utils";
 
 type LibraryTab = "library" | "gap" | "review";
 
@@ -78,11 +73,6 @@ const NOTE_KINDS = [
   { value: "note", label: "Note" },
 ];
 
-function formatSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  return `${(bytes / 1024).toFixed(1)} KB`;
-}
-
 function folderOf(relativePath: string): string {
   const parts = relativePath.split("/");
   return parts.length <= 1 ? "" : parts.slice(0, -1).join("/");
@@ -91,10 +81,10 @@ function folderOf(relativePath: string): string {
 export function LectureNotesPage() {
   const [tab, setTab] = useState<LibraryTab>("library");
   const [workflowStep, setWorkflowStep] = useState<StudyWorkflowStep>(0);
-  const [toolsOpen, setToolsOpen] = useState(false);
+  const [createSheetOpen, setCreateSheetOpen] = useState(false);
+  const [studyToolsOpen, setStudyToolsOpen] = useState(false);
 
   const [transcripts, setTranscripts] = useState<TranscriptFile[]>([]);
-  const [topics, setTopics] = useState<string[]>([]);
   const [libraryTree, setLibraryTree] = useState<LibraryTree | null>(null);
   const [selectedFolder, setSelectedFolder] = useState("");
   const [selectedNote, setSelectedNote] = useState("");
@@ -102,7 +92,7 @@ export function LectureNotesPage() {
   const [selectedTranscript, setSelectedTranscript] = useState("");
   const [noteTitle, setNoteTitle] = useState("");
   const [summarizingFolder, setSummarizingFolder] = useState("");
-  const [libraryViewMode, setLibraryViewMode] = useState<"grid" | "list">("grid");
+  const [libraryViewMode, setLibraryViewMode] = useState<"grid" | "list">("list");
   const [readingOverrides, setReadingOverrides] = useState<
     Record<string, { read_scroll_top?: number; bookmark_scroll_top?: number | null }>
   >({});
@@ -135,6 +125,7 @@ export function LectureNotesPage() {
   const [llmProvider, setLlmProvider] = useState(() => loadLlmPrefs().llm_provider ?? "lmstudio");
   const [llmBaseUrl, setLlmBaseUrl] = useState(() => loadLlmPrefs().llm_base_url ?? "http://127.0.0.1:1234");
   const [llmModel, setLlmModel] = useState(() => loadLlmPrefs().llm_model ?? "google/gemma-4-e4b");
+  const [regeneratingBlock, setRegeneratingBlock] = useState<number | null>(null);
 
   const llmOverrides = {
     llm_provider: llmProvider,
@@ -143,7 +134,7 @@ export function LectureNotesPage() {
   };
 
   const compareMode = comparePaths.length >= 2;
-  const showCompare = compareMode;
+  const showCompare = compareMode && (tab === "gap" || tab === "review");
 
   useEffect(() => {
     saveLlmPrefs(llmOverrides);
@@ -153,14 +144,12 @@ export function LectureNotesPage() {
     setLoading(true);
     setError(null);
     try {
-      const [t, top, tree, llm] = await Promise.all([
+      const [t, tree, llm] = await Promise.all([
         listTranscripts(),
-        listNoteTopics(),
         fetchLibraryTree(),
         getLlmConfig().catch(() => null),
       ]);
       setTranscripts(t);
-      setTopics(top);
       setLibraryTree(tree);
       setLlmConfig(llm);
       setSelectedTranscript((prev) => prev || t[0]?.filename || "");
@@ -275,6 +264,10 @@ export function LectureNotesPage() {
     if (tab === "library" && comparePaths.length < 2) setWorkflowStep(0);
   }, [comparePaths.length, tab]);
 
+  useEffect(() => {
+    if (comparePaths.length < 2 && tab !== "library") setTab("library");
+  }, [comparePaths.length, tab]);
+
   const handleToggleCompare = (path: string) => {
     setComparePaths((prev) => {
       if (prev.includes(path)) return prev.filter((p) => p !== path);
@@ -370,6 +363,144 @@ export function LectureNotesPage() {
       setError(e instanceof Error ? e.message : "Folder export failed");
     }
   }, []);
+
+  const handleBlockSave = useCallback(
+    async (blockIndex: number, _language: string, newBlockContent: string) => {
+      if (!selectedNote) return;
+      const base = repairNoteMarkdown(content);
+      const blockBody =
+        _language === "mermaid" ? sanitizeMermaidSource(newBlockContent) : newBlockContent;
+      const updated = replaceFencedBlock(base, blockIndex, blockBody);
+      await saveNoteContent(selectedNote, updated);
+      setContent(updated);
+      void indexNote(selectedNote).catch(() => undefined);
+      setToast("Block saved");
+      setTimeout(() => setToast(null), 2500);
+    },
+    [content, selectedNote],
+  );
+
+  const handleBlockRegenerate = useCallback(
+    async (
+      blockIndex: number,
+      language: string,
+      blockContent: string,
+      error?: string,
+      opts?: { mode?: "fix" | "polish" },
+    ) => {
+      setRegeneratingBlock(blockIndex);
+      try {
+        const block_type = language === "mermaid" ? "mermaid" : "code";
+        const result = await regenerateNoteBlock({
+          block_type,
+          language,
+          content: blockContent,
+          error,
+          mode: opts?.mode ?? "fix",
+          note_context: extractBlockSurroundingContext(repairNoteMarkdown(content), blockIndex, {
+            blockContent,
+          }),
+          llm: llmOverrides,
+        });
+        return result.content;
+      } finally {
+        setRegeneratingBlock(null);
+      }
+    },
+    [content, llmProvider, llmBaseUrl, llmModel],
+  );
+
+  const handleSelectionRegenerate = useCallback(
+    async ({
+      selection,
+      start,
+      end,
+      noteMarkdown,
+      lang,
+    }: {
+      selection: string;
+      start: number;
+      end: number;
+      noteMarkdown: string;
+      lang: string | null;
+    }) => {
+      const base = repairNoteMarkdown(noteMarkdown);
+
+      const applyMermaidSanitize = (text: string): string => {
+        const mermaidFence = /```mermaid\s*\n([\s\S]*?)```/i.exec(text);
+        if (mermaidFence) {
+          const inner = sanitizeMermaidSource(mermaidFence[1]);
+          return text.replace(mermaidFence[0], `\`\`\`mermaid\n${inner}\n\`\`\``);
+        }
+        if (/^(graph|flowchart)\s/im.test(text.trim())) {
+          const inner = sanitizeMermaidSource(
+            text.replace(/^```mermaid\s*\n/i, "").replace(/\n```\s*$/i, "").trim(),
+          );
+          return text.includes("```mermaid") ? `\`\`\`mermaid\n${inner}\n\`\`\`` : inner;
+        }
+        return text;
+      };
+
+      const isMermaid = lang === "mermaid" || /```mermaid/i.test(selection) || /^(graph|flowchart)\s/im.test(selection.trim());
+
+      try {
+        const result = await regenerateNoteSelection({
+          selection,
+          note_context: extractSelectionSurroundingContext(base, start, end),
+          llm: llmOverrides,
+        });
+        return applyMermaidSanitize(result.content);
+      } catch (err) {
+        if (isMermaid) {
+          const local = applyMermaidSanitize(selection);
+          if (local.trim() !== selection.trim()) return local;
+        }
+        throw err;
+      }
+    },
+    [llmProvider, llmBaseUrl, llmModel],
+  );
+
+  const handleRepairAllBlocks = useCallback(async () => {
+    if (!selectedNote || !content.trim()) return;
+    try {
+      const result = await repairAllNoteBlocks({
+        content: repairNoteMarkdown(content),
+        use_llm: true,
+        llm: llmOverrides,
+      });
+      await saveNoteContent(selectedNote, result.content);
+      setContent(result.content);
+      void indexNote(selectedNote).catch(() => undefined);
+      const n = result.fixed_count;
+      setToast(n > 0 ? `Fixed ${n} block${n === 1 ? "" : "s"} with AI` : "No broken blocks found");
+      setTimeout(() => setToast(null), 4000);
+      return result;
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not repair blocks");
+      throw e;
+    }
+  }, [content, selectedNote, llmProvider, llmBaseUrl, llmModel]);
+
+  const handleRepairSyntaxOnly = useCallback(async () => {
+    if (!selectedNote || !content.trim()) return;
+    try {
+      const result = await repairAllNoteBlocks({
+        content: repairNoteMarkdown(content),
+        use_llm: false,
+      });
+      await saveNoteContent(selectedNote, result.content);
+      setContent(result.content);
+      void indexNote(selectedNote).catch(() => undefined);
+      const n = result.fixed_count;
+      setToast(n > 0 ? `Syntax-fixed ${n} block${n === 1 ? "" : "s"} (no AI)` : "No syntax fixes needed");
+      setTimeout(() => setToast(null), 4000);
+      return result;
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Syntax repair failed");
+      throw e;
+    }
+  }, [content, selectedNote]);
 
   const handleSummarizeFolder = async (folderPath: string) => {
     setSummarizingFolder(folderPath);
@@ -469,6 +600,7 @@ export function LectureNotesPage() {
       await refresh();
       setSelectedNote(result.filename);
       void indexNote(result.filename).catch(() => undefined);
+      setCreateSheetOpen(false);
       setToast("Notes generated");
       setTimeout(() => setToast(null), 3000);
     } catch (e) {
@@ -493,6 +625,9 @@ export function LectureNotesPage() {
       await refresh();
       setSelectedNote(result.filename);
       void indexNote(result.filename).catch(() => undefined);
+      setCreateSheetOpen(false);
+      setToast("Notes generated from today");
+      setTimeout(() => setToast(null), 3000);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Generation failed");
     } finally {
@@ -642,37 +777,76 @@ export function LectureNotesPage() {
 
   const navItems: { id: LibraryTab; label: string; icon: typeof BookOpen }[] = [
     { id: "library", label: "Library", icon: BookOpen },
-    { id: "gap", label: "Gap Analysis", icon: Search },
-    { id: "review", label: "Review & Sync", icon: ClipboardList },
+    ...(comparePaths.length >= 2
+      ? [
+          { id: "gap" as const, label: "Gap Analysis", icon: Search },
+          { id: "review" as const, label: "Review & Sync", icon: ClipboardList },
+        ]
+      : []),
   ];
+
+  const referenceHint = comparePaths
+    .filter((p) => /\.(pdf|md|ipynb)$/i.test(p))
+    .map((p) => p.split("/").pop())
+    .join(", ");
 
   return (
     <div className="study-library-page flex flex-col min-h-0">
       <StudyLibraryBackground />
 
       <div className="relative z-10 flex flex-col h-full min-h-0 p-4 gap-3">
-        <header className="study-library-glass flex items-center justify-between px-5 py-3 shrink-0">
-          <div>
+        <header className="study-library-glass flex flex-wrap items-center gap-3 px-4 py-3 shrink-0">
+          <div className="min-w-0 flex-1">
             <h1 className="text-lg font-bold text-white tracking-wide">Study Library</h1>
-            <p className="text-[11px] text-emerald-200/60">
-              Lectures · textbooks · quizzes · AI cross-check
-            </p>
+            <p className="text-xs text-emerald-200/60">Read, edit, and export your lecture notes</p>
           </div>
-          <nav className="flex items-center gap-5 text-sm font-medium">
-            {navItems.map(({ id, label, icon: Icon }) => (
-              <button
-                key={id}
+
+          <div className="flex items-center gap-2 shrink-0">
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="h-8 text-xs border-emerald-800/50"
+              onClick={() => setCreateSheetOpen(true)}
+            >
+              <Plus className="w-3.5 h-3.5 mr-1.5" />
+              New from captions
+            </Button>
+            {tab === "library" && (
+              <Button
                 type="button"
-                onClick={() => setTab(id)}
-                className="study-library-nav-tab flex items-center gap-1.5 pb-0.5"
-                data-active={tab === id}
+                size="sm"
+                variant={studyToolsOpen ? "default" : "outline"}
+                className="h-8 text-xs border-emerald-800/50"
+                onClick={() => setStudyToolsOpen((o) => !o)}
               >
-                <Icon className="w-4 h-4" />
-                {label}
-              </button>
-            ))}
-          </nav>
-          {toast && <span className="text-xs text-emerald-400 ml-4">{toast}</span>}
+                <PanelRight className="w-3.5 h-3.5 mr-1.5" />
+                Study tools
+              </Button>
+            )}
+            <Button size="sm" variant="ghost" className="h-8 text-xs" asChild>
+              <Link to="/review?tab=due&source=lecture_notes">Review Hub</Link>
+            </Button>
+          </div>
+
+          {navItems.length > 1 && (
+            <nav className="flex items-center gap-4 text-sm font-medium w-full sm:w-auto border-t sm:border-t-0 border-emerald-900/30 pt-2 sm:pt-0">
+              {navItems.map(({ id, label, icon: Icon }) => (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => setTab(id)}
+                  className="study-library-nav-tab flex items-center gap-1.5 pb-0.5"
+                  data-active={tab === id}
+                >
+                  <Icon className="w-4 h-4" />
+                  {label}
+                </button>
+              ))}
+            </nav>
+          )}
+
+          {toast && <span className="text-xs text-emerald-400">{toast}</span>}
         </header>
 
         {(tab === "gap" || tab === "review") && (
@@ -688,21 +862,23 @@ export function LectureNotesPage() {
         )}
 
         <main className="flex flex-1 gap-3 min-h-0 overflow-hidden">
-          <aside className="study-library-glass w-[min(440px,44vw)] min-w-[300px] shrink-0 flex flex-col p-2 min-h-0">
-            <div className="flex-1 min-h-0 overflow-hidden rounded-lg border border-emerald-900/30 bg-black/15">
+          <aside className="study-library-glass w-[min(340px,38vw)] min-w-[260px] shrink-0 flex flex-col min-h-0 overflow-hidden">
+            <div className="flex-1 min-h-0 overflow-hidden">
               {loading ? (
                 <div className="flex items-center justify-center h-full">
                   <Loader2 className="w-5 h-5 animate-spin text-emerald-400" />
                 </div>
               ) : error && !libraryTree ? (
-                <p className="text-[10px] text-red-400 p-3">{error}</p>
+                <p className="text-xs text-red-400 p-3">{error}</p>
               ) : libraryTree ? (
                 <StudyLibraryExplorer
                   tree={libraryTree}
                   browsePath={selectedFolder}
                   selectedFile={selectedNote}
+                  comparePaths={comparePaths}
                   onBrowsePath={setSelectedFolder}
                   onSelectFile={setSelectedNote}
+                  onToggleCompare={handleToggleCompare}
                   onMoveFile={(path, dest) => void handleMoveFile(path, dest)}
                   onDeleteFile={(path) => void handleDeleteFile(path)}
                   onDeleteFolder={(path) => void handleDeleteFolder(path)}
@@ -715,154 +891,46 @@ export function LectureNotesPage() {
                 />
               ) : null}
             </div>
-
-            <button
-              type="button"
-              onClick={() => setToolsOpen((o) => !o)}
-              className="mt-2 pt-2 border-t border-emerald-900/40 flex items-center justify-between text-[11px] text-emerald-300/80 hover:text-emerald-200 shrink-0"
-            >
-              Live captions → notes
-              <ChevronDown className={cn("w-3.5 h-3.5 transition-transform", toolsOpen && "rotate-180")} />
-            </button>
-            {toolsOpen && (
-              <div className="mt-2 space-y-2 shrink-0">
-                <Select value={selectedTranscript} onValueChange={setSelectedTranscript}>
-                  <SelectTrigger className="h-7 text-[10px] bg-black/20 border-emerald-900/40">
-                    <SelectValue placeholder="Transcript" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {transcripts.map((t) => (
-                      <SelectItem key={t.filename} value={t.filename} className="text-xs">
-                        {t.filename} ({formatSize(t.size_bytes)})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Input
-                  className="h-7 text-[10px] bg-black/20 border-emerald-900/40"
-                  value={noteTitle}
-                  onChange={(e) => setNoteTitle(e.target.value)}
-                  placeholder="Note title (optional)"
-                />
-                <p className="text-[9px] text-emerald-200/50 leading-snug">
-                  Default: fast mode (few LLM calls). Enable topic grouping for richer notes.
-                  Compare PDF/Colab files in the library to attach references by filename.
-                </p>
-                <div className="grid grid-cols-2 gap-1 text-[9px] text-emerald-100/80">
-                  <label className="flex items-center gap-1 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={notesSemantic}
-                      onChange={(e) => setNotesSemantic(e.target.checked)}
-                      className="rounded"
-                    />
-                    Topic grouping
-                  </label>
-                  <label className="flex items-center gap-1 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={notesFast}
-                      onChange={(e) => setNotesFast(e.target.checked)}
-                      className="rounded"
-                    />
-                    Fast (transcript only)
-                  </label>
-                </div>
-                {comparePaths.some((p) => /\.(pdf|md|ipynb)$/i.test(p)) && (
-                  <p className="text-[9px] text-emerald-300/70">
-                    References:{" "}
-                    {comparePaths
-                      .filter((p) => /\.(pdf|md|ipynb)$/i.test(p))
-                      .map((p) => p.split("/").pop())
-                      .join(", ")}
-                  </p>
-                )}
-                <div className="flex gap-1">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="flex-1 h-7 text-[10px] border-emerald-800/50"
-                    disabled={snapshotting || !selectedTranscript}
-                    onClick={() => void handleSnapshot()}
-                  >
-                    <Camera className="w-3 h-3 mr-1" />
-                    Slide
-                  </Button>
-                  <Button
-                    size="sm"
-                    className="flex-1 h-7 text-[10px]"
-                    disabled={generating || !selectedTranscript}
-                    onClick={() => void handleGenerate()}
-                  >
-                    {generating ? (
-                      <Loader2 className="w-3 h-3 animate-spin" />
-                    ) : (
-                      <>
-                        <Sparkles className="w-3 h-3 mr-1" />
-                        Generate
-                      </>
-                    )}
-                  </Button>
-                </div>
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  className="w-full h-7 text-[10px]"
-                  disabled={generating}
-                  onClick={() => void handleGenerateToday()}
-                >
-                  From today
-                </Button>
-                {topics.length > 0 && (
-                  <p className="text-[9px] text-emerald-200/50 truncate">Topics: {topics.slice(0, 2).join(", ")}</p>
-                )}
-                <p className="text-[9px] text-emerald-200/50">
-                  {llmConfig?.reachable ? `LLM OK · ${llmConfig.model}` : "Set OLLAMA_ENABLED=1"}
-                </p>
-              </div>
-            )}
           </aside>
 
           <div className="flex-1 flex flex-col min-w-0 min-h-0 gap-2">
             {error && !loading && (
-              <p className="text-xs text-red-400 shrink-0">{error}</p>
+              <p className="text-xs text-red-400 shrink-0 px-1">{error}</p>
             )}
-            {tab === "library" && selectedNote && content && !showCompare && (
-              <div className="gloss-panel shrink-0 rounded-xl border-2 border-primary/50 bg-primary/10 px-4 py-3 flex flex-wrap items-center justify-between gap-3 shadow-sm">
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold text-primary flex items-center gap-2">
-                    <Brain className="h-4 w-4 shrink-0" />
-                    Test your knowledge
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {quizQuestions.length > 0
-                      ? `${quizQuestions.length} questions ready — take the quiz to seed your review queue.`
-                      : "One click: generate MCQs from this note, then practice (FSRS cards created on each answer)."}
-                  </p>
-                </div>
-                <div className="flex flex-wrap gap-2 shrink-0">
+
+            {comparePaths.length > 0 && tab === "library" && (
+              <div className="study-library-compare-bar shrink-0">
+                <span className="text-xs text-emerald-200/80 truncate">
+                  Compare: {comparePaths.map((p) => p.split("/").pop()).join(" · ")}
+                </span>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  className="h-7 text-xs shrink-0"
+                  onClick={() => setComparePaths([])}
+                >
+                  <X className="w-3.5 h-3.5 mr-1" />
+                  Clear
+                </Button>
+                {comparePaths.length >= 2 && (
                   <Button
+                    type="button"
                     size="sm"
-                    className="gap-1.5 text-primary-foreground"
-                    disabled={intelGenerating || !llmConfig?.reachable}
-                    onClick={() => void handleTestKnowledge()}
+                    variant="outline"
+                    className="h-7 text-xs shrink-0 border-emerald-800/50"
+                    onClick={() => setTab("gap")}
                   >
-                    {intelGenerating ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Play className="h-4 w-4" />
-                    )}
-                    {quizQuestions.length > 0 ? "Take quiz" : "Generate & take quiz"}
+                    Open gap analysis
                   </Button>
-                  <Button size="sm" variant="outline" asChild>
-                    <Link to="/review?tab=due&source=lecture_notes">Review Hub</Link>
-                  </Button>
-                </div>
+                )}
               </div>
             )}
+
             {(tab === "gap" || tab === "review") && comparePaths.length >= 2 && (
               <StudyLibraryGapPanel gap={gapAnalysis} loading={gapLoading} />
             )}
+
             <StudyLibraryViewer
               mode={showCompare ? "compare" : "single"}
               showSyncHeader={showCompare}
@@ -880,10 +948,29 @@ export function LectureNotesPage() {
               onExport={handleExportNote}
               onExportFolder={handleExportFolder}
               exportFolderPath={folderForSave}
+              onTakeQuiz={!showCompare && selectedNote ? () => void handleTestKnowledge() : undefined}
+              quizReady={quizQuestions.length > 0}
+              quizLoading={intelGenerating}
+              quizDisabled={!llmConfig?.reachable}
               onScrollContainer={(el) => {
                 scrollContainerRef.current = el;
               }}
               onSetBookmark={(path, top) => void handleSetBookmark(path, top)}
+              sectionEdit={
+                !showCompare && selectedNote
+                  ? {
+                      allowSectionEdit: true,
+                      llmReachable: Boolean(llmConfig?.reachable),
+                      regeneratingBlock,
+                      onBlockSave: handleBlockSave,
+                      onBlockRegenerate: handleBlockRegenerate,
+                    }
+                  : undefined
+              }
+              llmReachable={Boolean(llmConfig?.reachable)}
+              onRepairSyntaxOnly={handleRepairSyntaxOnly}
+              onRepairAllBlocks={handleRepairAllBlocks}
+              onRegenerateSelection={handleSelectionRegenerate}
             />
           </div>
 
@@ -902,7 +989,7 @@ export function LectureNotesPage() {
               }
               onFinalize={() => void handleFinalizeSync()}
             />
-          ) : (
+          ) : studyToolsOpen ? (
             <StudyLibraryIntelligenceHub
               comparePaths={comparePaths}
               selectedNotePath={selectedNote}
@@ -924,9 +1011,30 @@ export function LectureNotesPage() {
                 setWorkflowStep(2);
               }}
             />
-          )}
+          ) : null}
         </main>
       </div>
+
+      <StudyLibraryCreateSheet
+        open={createSheetOpen}
+        onOpenChange={setCreateSheetOpen}
+        transcripts={transcripts}
+        selectedTranscript={selectedTranscript}
+        onTranscriptChange={setSelectedTranscript}
+        noteTitle={noteTitle}
+        onNoteTitleChange={setNoteTitle}
+        notesSemantic={notesSemantic}
+        onNotesSemanticChange={setNotesSemantic}
+        notesFast={notesFast}
+        onNotesFastChange={setNotesFast}
+        llmConfig={llmConfig}
+        generating={generating}
+        snapshotting={snapshotting}
+        onGenerate={() => void handleGenerate()}
+        onGenerateToday={() => void handleGenerateToday()}
+        onSnapshot={() => void handleSnapshot()}
+        referenceHint={referenceHint || undefined}
+      />
       {activeQuiz && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
           <div className="max-h-[90vh] w-full max-w-2xl overflow-auto rounded-xl bg-background shadow-xl">

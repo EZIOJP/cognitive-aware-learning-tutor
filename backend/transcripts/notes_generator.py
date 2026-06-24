@@ -56,7 +56,9 @@ Rules:
 - Output markdown ONLY (no preamble like "Here's your summary").
 - Start with a ## heading for the main topic in this chunk.
 - Write 3-5 bullet key points (concise lecture notes, not verbatim transcript).
-- If a process, flow, or relationship is described, include a ```mermaid diagram (flowchart LR or TD).
+- If a process, flow, or relationship is described, include a ```mermaid diagram (flowchart TD or LR).
+- Mermaid rules: one node per line; use id["label"] when labels contain parentheses, brackets [i], ampersands, or array indexing (e.g. arr[i]); never use stadium id(text & more) syntax.
+- Mermaid edge labels MUST use pipe form: A -->|Yes| B — never `A -- text --> B`; never merge edges as `F & G --> H` (use two lines).
 - If code or algorithms are discussed, include fenced ``` code blocks.
 - Preserve ![Slide N](...) image lines if they appear in the transcript chunk.
 - Focus on concepts; filler words are already removed.

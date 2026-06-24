@@ -69,15 +69,18 @@ export function StudySnapshotImage({ src, alt }: StudySnapshotImageProps) {
 
   if (failed) {
     return (
-      <div className="my-3 rounded-lg border border-dashed border-border/60 bg-muted/20 px-3 py-4 text-center text-xs text-muted-foreground">
+      <span className="my-3 block rounded-lg border border-dashed border-border/60 bg-muted/20 px-3 py-4 text-center text-xs text-muted-foreground">
         {alt ?? "Slide"} unavailable — sign in and ensure the snapshot file exists.
-      </div>
+      </span>
     );
   }
 
   if (!blobUrl) {
     return (
-      <div className="my-3 h-32 animate-pulse rounded-lg border border-border/40 bg-muted/30" aria-label="Loading slide" />
+      <span
+        className="my-3 block h-32 animate-pulse rounded-lg border border-border/40 bg-muted/30"
+        aria-label="Loading slide"
+      />
     );
   }
 

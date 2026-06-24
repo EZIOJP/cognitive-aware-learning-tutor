@@ -190,35 +190,150 @@ def repair_split_code_fences(text: str) -> str:
     return text
 
 
+def _quote_mermaid_label(node_id: str, label: str) -> str:
+    safe = label.strip().replace('"', "'")
+    return f'{node_id.strip()}["{safe}"]'
+
+
+def _find_balanced_paren(s: str, open_pos: int) -> int:
+    if open_pos < 0 or open_pos >= len(s) or s[open_pos] != "(":
+        return -1
+    depth = 0
+    for i in range(open_pos, len(s)):
+        if s[i] == "(":
+            depth += 1
+        elif s[i] == ")":
+            depth -= 1
+            if depth == 0:
+                return i
+    return -1
+
+
+def _inside_bracket_region(line: str, index: int) -> bool:
+    in_square = False
+    in_diamond = False
+    in_quote = False
+    for i, c in enumerate(line[:index]):
+        if c == '"' and (i == 0 or line[i - 1] != "\\"):
+            in_quote = not in_quote
+        if in_quote:
+            continue
+        if c == "[":
+            in_square = True
+        elif c == "]" and in_square:
+            in_square = False
+        elif c == "{":
+            in_diamond = True
+        elif c == "}" and in_diamond:
+            in_diamond = False
+    return in_square or in_diamond
+
+
+def _inside_pipe_region(line: str, index: int) -> bool:
+    in_pipe = False
+    for i, c in enumerate(line[:index]):
+        if c == "|":
+            in_pipe = not in_pipe
+    return in_pipe
+
+
+def _fix_stadium_nodes(line: str) -> str:
+    """Stadium id(label) → id[\"label\"] with balanced-paren parsing."""
+    out: list[str] = []
+    pos = 0
+    for m in re.finditer(r"\b([A-Za-z0-9_]+)\s*\(", line):
+        if m.start() < pos:
+            continue
+        if _inside_bracket_region(line, m.start()) or _inside_pipe_region(line, m.start()):
+            out.append(line[pos : m.end()])
+            pos = m.end()
+            continue
+        out.append(line[pos : m.start()])
+        node_id = m.group(1)
+        open_paren = m.end() - 1
+        close_idx = _find_balanced_paren(line, open_paren)
+        if close_idx < 0:
+            out.append(line[m.start() : m.end()])
+            pos = m.end()
+            continue
+        inner = line[open_paren + 1 : close_idx]
+        out.append(_quote_mermaid_label(node_id, inner))
+        pos = close_idx + 1
+    out.append(line[pos:])
+    return "".join(out)
+
+
+def _fix_mermaid_line(line: str) -> str:
+    """Fix one line of raw Mermaid source."""
+    stripped = line.rstrip().rstrip(";")
+
+    # Edge labels: A -- text --> B  →  A -->|text| B (before stadium fix)
+    stripped = re.sub(
+        r"\s--\s+(.+?)\s+-->",
+        lambda m: f" -->|{m.group(1).strip().replace('|', '/')}|",
+        stripped,
+    )
+
+    # F & G --> H → split into two edges
+    stripped = re.sub(
+        r"\b([A-Za-z0-9_]+)\s*&\s*([A-Za-z0-9_]+)\s*(-->|---)\s*(\S+)",
+        r"\1 \3 \4\n    \2 \3 \4",
+        stripped,
+    )
+
+    # Nested brackets: C[Process: arr[i]] → C["Process: arr[i]"]
+    stripped = re.sub(
+        r"(\b[A-Za-z0-9_]+\s*)\[([^\]]*\[[^\]]+\][^\]]*)\]",
+        lambda m: _quote_mermaid_label(m.group(1), m.group(2)),
+        stripped,
+    )
+
+    # Square labels with parens, ampersands, or brackets
+    stripped = re.sub(
+        r"(\b[A-Za-z0-9_]+\s*)\[([^\]\"]+)\]",
+        lambda m: _quote_mermaid_label(m.group(1), m.group(2))
+        if re.search(r"[\[\]&()]", m.group(2))
+        else m.group(0),
+        stripped,
+    )
+
+    # Split accidental same-line node defs after ]
+    stripped = re.sub(
+        r"\](\s+)(?=[A-Za-z0-9_]+\s*[\[({])",
+        "]\n    ",
+        stripped,
+    )
+
+    stripped = _fix_stadium_nodes(stripped)
+
+    def fix_diamond(match: re.Match[str]) -> str:
+        node_id, inner = match.group(1), match.group(2)
+        if "(" not in inner and ")" not in inner:
+            return match.group(0)
+        label = re.sub(r"\s*\(([^)]*)\)", r" - \1", inner)
+        label = label.replace("{", "").replace("}", "").strip()
+        return _quote_mermaid_label(node_id, label)
+
+    # id{Label (parens)} diamond shapes
+    stripped = re.sub(
+        r"(\b[A-Za-z0-9_]+\s*)\{([^{}]+)\}",
+        fix_diamond,
+        stripped,
+    )
+    return stripped
+
+
+def sanitize_mermaid_source(source: str) -> str:
+    """Apply line fixes to raw mermaid (not fenced)."""
+    return "\n".join(_fix_mermaid_line(line) for line in source.splitlines())
+
+
 def sanitize_mermaid_blocks(text: str) -> str:
     """Fix common mermaid syntax that breaks renderers (parens inside node shapes)."""
 
     def fix_block(match: re.Match[str]) -> str:
         body = match.group(1)
-        fixed_lines: list[str] = []
-        for line in body.splitlines():
-            stripped = line.rstrip().rstrip(";")
-
-            def fix_node(match: re.Match[str]) -> str:
-                node_id, inner = match.group(1), match.group(2)
-                if "(" not in inner and ")" not in inner:
-                    return match.group(0)
-                label = re.sub(r"\s*\(([^)]*)\)", r" - \1", inner)
-                label = label.replace("{", "").replace("}", "").strip()
-                return f'{node_id}["{label}"]'
-
-            # id{Label (parens)} anywhere on the line (after arrows, etc.)
-            line = re.sub(
-                r"(\b[A-Za-z0-9_]+\s*)\{([^{}]+)\}",
-                fix_node,
-                stripped,
-            )
-            line = re.sub(
-                r"(\b[A-Za-z0-9_]+\s*)\(([^()]+)\)",
-                fix_node,
-                line,
-            )
-            fixed_lines.append(line)
+        fixed_lines = [_fix_mermaid_line(line) for line in body.splitlines()]
         return "```mermaid\n" + "\n".join(fixed_lines) + "\n```"
 
     return MERMAID_RE.sub(fix_block, text)

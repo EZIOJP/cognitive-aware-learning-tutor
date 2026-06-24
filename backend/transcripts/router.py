@@ -44,6 +44,8 @@ from backend.transcripts.snapshots import (
     save_snapshot_png,
 )
 from backend.hub.services.knowledge_graph import index_note_file
+from backend.transcripts.block_regenerate import regenerate_block, regenerate_selection
+from backend.transcripts.note_block_repair import repair_all_blocks
 from backend.transcripts.study_intel import (
     drills_to_markdown,
     gap_summary_markdown,
@@ -161,6 +163,59 @@ class SyncSessionRequest(BaseModel):
     items: list[SyncSessionItem] = Field(default_factory=list)
 
 
+class RegenerateBlockRequest(BaseModel):
+    block_type: str = Field(..., pattern="^(mermaid|code)$")
+    language: str = Field(default="python", max_length=32)
+    content: str = Field(default="", max_length=50_000)
+    error: str | None = Field(default=None, max_length=2000)
+    instruction: str | None = Field(default=None, max_length=500)
+    mode: str = Field(default="fix", pattern="^(fix|polish)$")
+    note_context: str | None = Field(default=None, max_length=8000)
+    llm_provider: str | None = Field(default=None, max_length=32)
+    llm_base_url: str | None = Field(default=None, max_length=200)
+    llm_model: str | None = Field(default=None, max_length=120)
+
+
+class RegenerateBlockResponse(BaseModel):
+    content: str
+    block_type: str
+    language: str
+
+
+class RegenerateSelectionRequest(BaseModel):
+    selection: str = Field(..., min_length=1, max_length=50_000)
+    note_context: str | None = Field(default=None, max_length=8000)
+    instruction: str | None = Field(default=None, max_length=500)
+    llm_provider: str | None = Field(default=None, max_length=32)
+    llm_base_url: str | None = Field(default=None, max_length=200)
+    llm_model: str | None = Field(default=None, max_length=120)
+
+
+class RegenerateSelectionResponse(BaseModel):
+    content: str
+
+
+class RepairAllBlocksRequest(BaseModel):
+    content: str = Field(..., min_length=1, max_length=500_000)
+    use_llm: bool = True
+    llm_provider: str | None = Field(default=None, max_length=32)
+    llm_base_url: str | None = Field(default=None, max_length=200)
+    llm_model: str | None = Field(default=None, max_length=120)
+
+
+class RepairBlockDetail(BaseModel):
+    index: int
+    lang: str
+    method: str
+    status: str
+
+
+class RepairAllBlocksResponse(BaseModel):
+    content: str
+    fixed_count: int
+    details: list[RepairBlockDetail]
+
+
 def _llm_from_intel(body: GapAnalysisRequest | GenerateIntelRequest) -> LlmOptions | None:
     if not any([body.llm_provider, body.llm_base_url, body.llm_model]):
         return None
@@ -198,6 +253,71 @@ def get_llm_settings(_user: User = Depends(get_current_user)):
         model=cfg["model"],
     )
     return {**cfg, "reachable": llm_reachable(override)}
+
+
+def _llm_from_regenerate(body: RegenerateBlockRequest) -> LlmOptions | None:
+    if not any([body.llm_provider, body.llm_base_url, body.llm_model]):
+        return None
+    return LlmOptions(
+        provider=body.llm_provider,
+        base_url=body.llm_base_url,
+        model=body.llm_model,
+    )
+
+
+@router.post("/library/regenerate-block", response_model=RegenerateBlockResponse)
+def regenerate_note_block(body: RegenerateBlockRequest, _user: User = Depends(get_current_user)):
+    try:
+        fixed = regenerate_block(
+            block_type=body.block_type,
+            language=body.language,
+            content=body.content,
+            error=body.error,
+            instruction=body.instruction,
+            note_context=body.note_context,
+            mode=body.mode,
+            llm=_llm_from_regenerate(body),
+        )
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    return RegenerateBlockResponse(
+        content=fixed,
+        block_type=body.block_type,
+        language=body.language,
+    )
+
+
+@router.post("/library/regenerate-selection", response_model=RegenerateSelectionResponse)
+def regenerate_note_selection(body: RegenerateSelectionRequest, _user: User = Depends(get_current_user)):
+    try:
+        fixed = regenerate_selection(
+            selection=body.selection,
+            note_context=body.note_context,
+            instruction=body.instruction,
+            llm=_llm_from_regenerate(body),
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    return RegenerateSelectionResponse(content=fixed)
+
+
+@router.post("/library/repair-all-blocks", response_model=RepairAllBlocksResponse)
+def repair_note_all_blocks(body: RepairAllBlocksRequest, _user: User = Depends(get_current_user)):
+    try:
+        fixed, details = repair_all_blocks(
+            body.content,
+            llm=_llm_from_regenerate(body),
+            use_llm=body.use_llm,
+        )
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    return RepairAllBlocksResponse(
+        content=fixed,
+        fixed_count=len(details),
+        details=[RepairBlockDetail(**d) for d in details],
+    )
 
 
 def _today_live_caption_files() -> list[Path]:

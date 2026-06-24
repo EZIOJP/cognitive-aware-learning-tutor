@@ -3,6 +3,7 @@ from backend.transcripts.cleanup import (
     postprocess_markdown,
     repair_split_code_fences,
     sanitize_mermaid_blocks,
+    sanitize_mermaid_source,
 )
 
 
@@ -45,6 +46,19 @@ graph TD
     fixed = sanitize_mermaid_blocks(raw)
     assert "(EDA)" not in fixed or '["Exploratory Data Analysis - EDA"]' in fixed
     assert "{Exploratory" not in fixed
+
+
+def test_sanitize_mermaid_array_index_in_label():
+    raw = "B --> C[Process: arr[i]]"
+    fixed = sanitize_mermaid_source(raw)
+    assert 'C["Process: arr[i]"]' in fixed
+
+
+def test_sanitize_mermaid_stadium_with_range_call():
+    raw = "A --> B(Use Python range() / np.arange())"
+    fixed = sanitize_mermaid_source(raw)
+    assert 'B["Use Python range() / np.arange()"]' in fixed
+    assert "B(Use Python" not in fixed
 
 
 def test_postprocess_dedupes_repeated_sections():

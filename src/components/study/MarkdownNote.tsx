@@ -1,9 +1,11 @@
 import { Suspense, lazy, useMemo } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { repairMermaidFences } from "./markdownRepair";
+import { repairNoteMarkdown } from "./markdownRepair";
+import { extractMarkdownCode } from "./noteBlockUtils";
 import { CodeBlock } from "./CodeBlock";
 import { StudyMarkdownImage } from "./StudySnapshotImage";
+import type { SectionBlockHandlers } from "./useSectionBlockEdit";
 
 const MermaidBlock = lazy(() =>
   import("./MermaidBlock").then((m) => ({ default: m.MermaidBlock })),
@@ -12,8 +14,22 @@ const PythonCodeBlock = lazy(() =>
   import("./PythonCodeBlock").then((m) => ({ default: m.PythonCodeBlock })),
 );
 
+export type MarkdownNoteSectionProps = {
+  allowSectionEdit?: boolean;
+  llmReachable?: boolean;
+  regeneratingBlock?: number | null;
+  onBlockSave?: (blockIndex: number, language: string, content: string) => Promise<void>;
+  onBlockRegenerate?: (
+    blockIndex: number,
+    language: string,
+    content: string,
+    error?: string,
+  ) => Promise<string>;
+};
+
 type MarkdownNoteProps = {
   content: string;
+  sectionEdit?: MarkdownNoteSectionProps;
 };
 
 function isPythonLang(lang: string | undefined): boolean {
@@ -25,8 +41,26 @@ function BlockFallback() {
   return <div className="my-4 h-14 animate-pulse rounded-lg bg-muted/40" aria-hidden />;
 }
 
-export function MarkdownNote({ content }: MarkdownNoteProps) {
-  const repaired = useMemo(() => repairMermaidFences(content), [content]);
+function sectionHandlersFor(
+  blockIndex: number,
+  language: string,
+  sectionEdit?: MarkdownNoteSectionProps,
+): SectionBlockHandlers | undefined {
+  if (!sectionEdit?.allowSectionEdit || !sectionEdit.onBlockSave) return undefined;
+  return {
+    blockIndex,
+    language,
+    allowSectionEdit: true,
+    llmReachable: sectionEdit.llmReachable,
+    onBlockSave: sectionEdit.onBlockSave,
+    onBlockRegenerate: sectionEdit.onBlockRegenerate,
+    regeneratingBlock: sectionEdit.regeneratingBlock,
+  };
+}
+
+export function MarkdownNote({ content, sectionEdit }: MarkdownNoteProps) {
+  const repaired = useMemo(() => repairNoteMarkdown(content), [content]);
+  let blockCounter = 0;
 
   return (
     <div className="lecture-notes-markdown space-y-3 text-sm leading-relaxed">
@@ -44,7 +78,18 @@ export function MarkdownNote({ content }: MarkdownNoteProps) {
           ),
           ul: ({ children }) => <ul className="list-disc ml-5 space-y-1.5 my-2">{children}</ul>,
           ol: ({ children }) => <ol className="list-decimal ml-5 space-y-1.5 my-2">{children}</ol>,
-          p: ({ children }) => <p className="text-foreground/90 my-2 leading-7">{children}</p>,
+          p: ({ node, children }) => {
+            const childNodes = node?.children ?? [];
+            const onlyImage =
+              childNodes.length === 1 &&
+              childNodes[0].type === "element" &&
+              "tagName" in childNodes[0] &&
+              childNodes[0].tagName === "img";
+            if (onlyImage) {
+              return <div className="my-2">{children}</div>;
+            }
+            return <p className="text-foreground/90 my-2 leading-7">{children}</p>;
+          },
           blockquote: ({ children }) => (
             <blockquote className="border-l-4 border-emerald-500/60 pl-4 my-3 italic text-foreground/85 bg-muted/20 py-2 rounded-r">
               {children}
@@ -62,14 +107,19 @@ export function MarkdownNote({ content }: MarkdownNoteProps) {
           hr: () => <hr className="my-6 border-border/60" />,
           strong: ({ children }) => <strong className="font-semibold text-foreground">{children}</strong>,
           img: ({ src, alt }) => <StudyMarkdownImage src={src} alt={alt} />,
-          code({ className, children, ...props }) {
+          code({ className, children }) {
             const match = /language-(\w+)/.exec(className ?? "");
             const lang = match?.[1];
-            const code = String(children).replace(/\n$/, "");
+            const code = extractMarkdownCode(children);
+            const blockIndex = blockCounter++;
+
             if (lang === "mermaid") {
               return (
                 <Suspense fallback={<BlockFallback />}>
-                  <MermaidBlock code={code} />
+                  <MermaidBlock
+                    code={code}
+                    sectionHandlers={sectionHandlersFor(blockIndex, "mermaid", sectionEdit)}
+                  />
                 </Suspense>
               );
             }
@@ -77,16 +127,23 @@ export function MarkdownNote({ content }: MarkdownNoteProps) {
               if (isPythonLang(lang)) {
                 return (
                   <Suspense fallback={<BlockFallback />}>
-                    <PythonCodeBlock code={code} />
+                    <PythonCodeBlock
+                      code={code}
+                      sectionHandlers={sectionHandlersFor(blockIndex, "python", sectionEdit)}
+                    />
                   </Suspense>
                 );
               }
-              return <CodeBlock language={lang} code={code} />;
+              return (
+                <CodeBlock
+                  code={code}
+                  language={lang}
+                  sectionHandlers={sectionHandlersFor(blockIndex, lang, sectionEdit)}
+                />
+              );
             }
             return (
-              <code className="rounded bg-muted px-1 py-0.5 font-mono text-sm" {...props}>
-                {children}
-              </code>
+              <code className="rounded bg-muted px-1 py-0.5 font-mono text-sm">{children}</code>
             );
           },
           pre({ children }) {

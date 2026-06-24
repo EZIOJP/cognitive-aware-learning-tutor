@@ -160,6 +160,88 @@ export async function saveNoteContent(relativePath: string, content: string): Pr
   if (!res.ok) throw new Error(apiErrorMessage(data, res.status));
 }
 
+export async function regenerateNoteBlock(opts: {
+  block_type: "mermaid" | "code";
+  language: string;
+  content: string;
+  error?: string;
+  instruction?: string;
+  mode?: "fix" | "polish";
+  note_context?: string;
+  llm?: LlmOverrides;
+}): Promise<{ content: string }> {
+  const res = await fetch(`${BASE}/api/transcripts/library/regenerate-block`, {
+    method: "POST",
+    headers: headers(),
+    body: JSON.stringify({
+      block_type: opts.block_type,
+      language: opts.language,
+      content: opts.content,
+      error: opts.error,
+      instruction: opts.instruction,
+      mode: opts.mode ?? "fix",
+      note_context: opts.note_context,
+      llm_provider: opts.llm?.llm_provider,
+      llm_base_url: opts.llm?.llm_base_url,
+      llm_model: opts.llm?.llm_model,
+    }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(apiErrorMessage(data, res.status));
+  return data as { content: string };
+}
+
+export async function regenerateNoteSelection(opts: {
+  selection: string;
+  note_context?: string;
+  instruction?: string;
+  llm?: LlmOverrides;
+}): Promise<{ content: string }> {
+  const res = await fetch(`${BASE}/api/transcripts/library/regenerate-selection`, {
+    method: "POST",
+    headers: headers(),
+    body: JSON.stringify({
+      selection: opts.selection,
+      note_context: opts.note_context,
+      instruction: opts.instruction,
+      llm_provider: opts.llm?.llm_provider,
+      llm_base_url: opts.llm?.llm_base_url,
+      llm_model: opts.llm?.llm_model,
+    }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(apiErrorMessage(data, res.status));
+  return data as { content: string };
+}
+
+export type RepairBlockDetail = {
+  index: number;
+  lang: string;
+  method: string;
+  status: string;
+};
+
+export async function repairAllNoteBlocks(opts: {
+  content: string;
+  use_llm?: boolean;
+  llm?: LlmOverrides;
+}): Promise<{ content: string; fixed_count: number; details: RepairBlockDetail[] }> {
+  const res = await fetch(`${BASE}/api/transcripts/library/repair-all-blocks`, {
+    method: "POST",
+    headers: headers(),
+    body: JSON.stringify({
+      content: opts.content,
+      use_llm: opts.use_llm ?? true,
+      llm_provider: opts.llm?.llm_provider,
+      llm_base_url: opts.llm?.llm_base_url,
+      llm_model: opts.llm?.llm_model,
+    }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(apiErrorMessage(data, res.status));
+  return data as { content: string; fixed_count: number; details: RepairBlockDetail[] };
+}
+
 export type NoteExportFormat = "pdf" | "docx";
 
 async function downloadExportResponse(res: Response, fallbackName: string): Promise<void> {

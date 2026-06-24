@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import {
   Code2,
   Columns2,
@@ -8,13 +8,26 @@ import {
   ImageIcon,
   List,
   Pencil,
+  Plus,
   Quote,
   Save,
   Table2,
   X,
 } from "lucide-react";
 import { Button } from "../../app/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "../../app/components/ui/dropdown-menu";
 import { MarkdownNote } from "./MarkdownNote";
+import { repairNoteMarkdown } from "./markdownRepair";
+import {
+  SelectionRegenerateBar,
+  SelectionReviewPanel,
+  useSelectionRegenerate,
+} from "./useSelectionRegenerate";
 import { cn } from "../../app/components/ui/utils";
 
 export type NoteEditorLayout = "preview" | "edit" | "split";
@@ -27,6 +40,14 @@ type MarkdownNoteEditorProps = {
   saving?: boolean;
   dirty?: boolean;
   snapshotTranscript?: string;
+  llmReachable?: boolean;
+  onRegenerateSelection?: (opts: {
+    selection: string;
+    start: number;
+    end: number;
+    noteMarkdown: string;
+    lang: string | null;
+  }) => Promise<string>;
 };
 
 const SNIPPETS = {
@@ -64,13 +85,33 @@ export function MarkdownNoteEditor({
   saving = false,
   dirty = false,
   snapshotTranscript,
+  llmReachable = false,
+  onRegenerateSelection,
 }: MarkdownNoteEditorProps) {
   const [layout, setLayout] = useState<NoteEditorLayout>("split");
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const {
+    textareaRef,
+    syncSelection,
+    showSelectionBar,
+    selectionText,
+    selectionLang,
+    selectionExpanded,
+    regenerating,
+    pending,
+    error: selectionError,
+    handleRegenerate,
+    acceptPending,
+    rollbackPending,
+  } = useSelectionRegenerate({
+    content,
+    onChange,
+    llmReachable,
+    onRegenerate: onRegenerateSelection,
+  });
 
   useEffect(() => {
     textareaRef.current?.focus();
-  }, []);
+  }, [textareaRef]);
 
   const insert = useCallback(
     (snippet: string) => {
@@ -84,65 +125,49 @@ export function MarkdownNoteEditor({
     [content, onChange],
   );
 
+  const previewContent = useMemo(() => repairNoteMarkdown(content), [content]);
+
   const toolbar = (
-    <div className="flex flex-wrap items-center gap-1 border-b border-emerald-900/40 bg-black/25 px-2 py-1.5">
-      <span className="text-[10px] uppercase tracking-wide text-emerald-400/70 mr-1">Insert</span>
-      <ToolbarBtn
-        title="Image placeholder"
-        onClick={() => insert(SNIPPETS.image())}
-        icon={<ImageIcon className="h-3.5 w-3.5" />}
-        label="Image"
-      />
-      {snapshotTranscript && (
-        <ToolbarBtn
-          title="Lecture snapshot slide"
-          onClick={() => insert(SNIPPETS.snapshot(snapshotTranscript))}
-          icon={<ImageIcon className="h-3.5 w-3.5 text-amber-400" />}
-          label="Slide"
-        />
-      )}
-      <ToolbarBtn
-        title="Mermaid diagram"
-        onClick={() => insert(SNIPPETS.mermaid)}
-        icon={<GitBranch className="h-3.5 w-3.5" />}
-        label="Mermaid"
-      />
-      <ToolbarBtn
-        title="Python code block"
-        onClick={() => insert(SNIPPETS.python)}
-        icon={<Code2 className="h-3.5 w-3.5" />}
-        label="Python"
-      />
-      <ToolbarBtn
-        title="JavaScript code block"
-        onClick={() => insert(SNIPPETS.javascript)}
-        icon={<Code2 className="h-3.5 w-3.5" />}
-        label="JS"
-      />
-      <ToolbarBtn
-        title="Heading"
-        onClick={() => insert(SNIPPETS.heading2)}
-        icon={<Heading2 className="h-3.5 w-3.5" />}
-        label="H2"
-      />
-      <ToolbarBtn
-        title="Bullet list"
-        onClick={() => insert(SNIPPETS.bullet)}
-        icon={<List className="h-3.5 w-3.5" />}
-        label="List"
-      />
-      <ToolbarBtn
-        title="Callout quote"
-        onClick={() => insert(SNIPPETS.callout)}
-        icon={<Quote className="h-3.5 w-3.5" />}
-        label="Quote"
-      />
-      <ToolbarBtn
-        title="Table"
-        onClick={() => insert(SNIPPETS.table)}
-        icon={<Table2 className="h-3.5 w-3.5" />}
-        label="Table"
-      />
+    <div className="flex flex-wrap items-center gap-1.5 border-b border-emerald-900/40 bg-black/25 px-3 py-2">
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button type="button" variant="outline" size="sm" className="h-7 text-xs gap-1">
+            <Plus className="h-3.5 w-3.5" />
+            Insert
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" className="min-w-[11rem]">
+          <DropdownMenuItem onClick={() => insert(SNIPPETS.image())}>
+            <ImageIcon className="h-4 w-4 mr-2" /> Image placeholder
+          </DropdownMenuItem>
+          {snapshotTranscript && (
+            <DropdownMenuItem onClick={() => insert(SNIPPETS.snapshot(snapshotTranscript))}>
+              <ImageIcon className="h-4 w-4 mr-2 text-amber-400" /> Lecture slide
+            </DropdownMenuItem>
+          )}
+          <DropdownMenuItem onClick={() => insert(SNIPPETS.mermaid)}>
+            <GitBranch className="h-4 w-4 mr-2" /> Mermaid diagram
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => insert(SNIPPETS.python)}>
+            <Code2 className="h-4 w-4 mr-2" /> Python block
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => insert(SNIPPETS.javascript)}>
+            <Code2 className="h-4 w-4 mr-2" /> JavaScript block
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => insert(SNIPPETS.heading2)}>
+            <Heading2 className="h-4 w-4 mr-2" /> Heading
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => insert(SNIPPETS.bullet)}>
+            <List className="h-4 w-4 mr-2" /> Bullet list
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => insert(SNIPPETS.callout)}>
+            <Quote className="h-4 w-4 mr-2" /> Callout quote
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => insert(SNIPPETS.table)}>
+            <Table2 className="h-4 w-4 mr-2" /> Table
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
 
       <div className="ml-auto flex items-center gap-1">
         <LayoutBtn active={layout === "edit"} onClick={() => setLayout("edit")} icon={<Pencil className="h-3.5 w-3.5" />} />
@@ -189,10 +214,32 @@ export function MarkdownNoteEditor({
                 Markdown source
               </div>
             )}
+            {pending && (
+              <SelectionReviewPanel
+                pending={pending}
+                error={selectionError}
+                onAccept={acceptPending}
+                onRollback={rollbackPending}
+              />
+            )}
+            {showSelectionBar && (
+              <SelectionRegenerateBar
+                selectionText={selectionText}
+                selectionLang={selectionLang}
+                selectionExpanded={selectionExpanded}
+                regenerating={regenerating}
+                llmReachable={llmReachable}
+                error={selectionError}
+                onRegenerate={() => void handleRegenerate()}
+              />
+            )}
             <textarea
               ref={textareaRef}
               value={content}
               onChange={(e) => onChange(e.target.value)}
+              onSelect={syncSelection}
+              onMouseUp={syncSelection}
+              onKeyUp={syncSelection}
               spellCheck={false}
               className="study-note-editor-textarea flex-1 w-full resize-none bg-transparent p-4 font-mono text-[13px] leading-relaxed text-emerald-50/95 outline-none min-h-[280px]"
               aria-label="Edit note markdown"
@@ -207,36 +254,12 @@ export function MarkdownNoteEditor({
               </div>
             )}
             <div className="flex-1 overflow-y-auto study-library-markdown-scroll p-4 lg:p-6">
-              <MarkdownNote content={content || "_Nothing to preview yet._"} />
+              <MarkdownNote content={previewContent || "_Nothing to preview yet._"} />
             </div>
           </div>
         )}
       </div>
     </div>
-  );
-}
-
-function ToolbarBtn({
-  title,
-  onClick,
-  icon,
-  label,
-}: {
-  title: string;
-  onClick: () => void;
-  icon: ReactNode;
-  label: string;
-}) {
-  return (
-    <button
-      type="button"
-      title={title}
-      onClick={onClick}
-      className="inline-flex items-center gap-1 rounded px-2 py-1 text-[10px] text-emerald-200/90 hover:bg-emerald-500/15 border border-transparent hover:border-emerald-800/40"
-    >
-      {icon}
-      {label}
-    </button>
   );
 }
 

@@ -1,9 +1,26 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Bookmark, Download, FileText, Loader2, MapPin, Pencil } from "lucide-react";
-import { MarkdownNote } from "./MarkdownNote";
+import {
+  Bookmark,
+  ChevronDown,
+  FileText,
+  Loader2,
+  MapPin,
+  MoreHorizontal,
+  Pencil,
+  Play,
+  Sparkles,
+  Wrench,
+} from "lucide-react";
+import { MarkdownNote, type MarkdownNoteSectionProps } from "./MarkdownNote";
 import { MarkdownNoteEditor } from "./MarkdownNoteEditor";
-import { cn } from "../../app/components/ui/utils";
 import { Button } from "../../app/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "../../app/components/ui/dropdown-menu";
 
 type Props = {
   mode: "single" | "compare";
@@ -24,6 +41,21 @@ type Props = {
   onExport?: (relativePath: string, format: "pdf" | "docx") => Promise<void>;
   onExportFolder?: (folderPath: string, format: "pdf" | "docx") => Promise<void>;
   exportFolderPath?: string;
+  onTakeQuiz?: () => void;
+  quizReady?: boolean;
+  quizLoading?: boolean;
+  quizDisabled?: boolean;
+  sectionEdit?: MarkdownNoteSectionProps;
+  llmReachable?: boolean;
+  onRegenerateSelection?: (opts: {
+    selection: string;
+    start: number;
+    end: number;
+    noteMarkdown: string;
+    lang: string | null;
+  }) => Promise<string>;
+  onRepairSyntaxOnly?: () => Promise<unknown>;
+  onRepairAllBlocks?: () => Promise<unknown>;
 };
 
 export function StudyLibraryViewer({
@@ -45,13 +77,26 @@ export function StudyLibraryViewer({
   onExport,
   onExportFolder,
   exportFolderPath,
+  onTakeQuiz,
+  quizReady = false,
+  quizLoading = false,
+  quizDisabled = false,
+  sectionEdit,
+  llmReachable = false,
+  onRegenerateSelection,
+  onRepairSyntaxOnly,
+  onRepairAllBlocks,
 }: Props) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const lastRestoreKeyRef = useRef("");
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(primaryContent);
   const [saving, setSaving] = useState(false);
-  const [exporting, setExporting] = useState<"pdf" | "docx" | null>(null);
+  const [exporting, setExporting] = useState<"pdf" | "docx" | "folder-pdf" | "folder-docx" | null>(
+    null,
+  );
+  const [repairingAll, setRepairingAll] = useState(false);
+  const [repairingSyntax, setRepairingSyntax] = useState(false);
 
   useEffect(() => {
     if (!editing) setDraft(primaryContent);
@@ -109,21 +154,19 @@ export function StudyLibraryViewer({
     }
   };
 
-  const handleExport = async (format: "pdf" | "docx") => {
-    if (!relativePath || !onExport || editing) return;
-    setExporting(format);
+  const runExport = async (
+    kind: "pdf" | "docx" | "folder-pdf" | "folder-docx",
+  ) => {
+    if (editing) return;
+    setExporting(kind);
     try {
-      await onExport(relativePath, format);
-    } finally {
-      setExporting(null);
-    }
-  };
-
-  const handleExportFolder = async (format: "pdf" | "docx") => {
-    if (exportFolderPath === undefined || !onExportFolder || editing) return;
-    setExporting(format);
-    try {
-      await onExportFolder(exportFolderPath, format);
+      if (kind === "pdf" || kind === "docx") {
+        if (!relativePath || !onExport) return;
+        await onExport(relativePath, kind);
+      } else {
+        if (exportFolderPath === undefined || !onExportFolder) return;
+        await onExportFolder(exportFolderPath, kind === "folder-pdf" ? "pdf" : "docx");
+      }
     } finally {
       setExporting(null);
     }
@@ -138,111 +181,191 @@ export function StudyLibraryViewer({
   }
 
   if (mode === "single") {
+    const canExport = relativePath && onExport && !editing && primaryContent;
+    const canExportFolder = onExportFolder && exportFolderPath !== undefined && !editing;
+
     return (
       <section className="study-library-glass flex flex-col flex-1 min-w-0 overflow-hidden">
-        <div className="px-4 py-2 border-b border-emerald-900/40 flex items-center gap-2 min-w-0">
-          <span className="text-xs font-semibold text-emerald-300/80 truncate flex-1">
-            {primaryTitle}
-          </span>
-          {editable && relativePath && onSaveContent && !editing && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="h-7 text-[10px] text-emerald-300/90"
-              onClick={() => {
-                setDraft(primaryContent);
-                setEditing(true);
-              }}
-            >
-              <Pencil className="w-3.5 h-3.5 mr-1" />
-              Edit
-            </Button>
-          )}
-          {relativePath && onExport && !editing && primaryContent && (
-            <>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="h-7 text-[10px] text-emerald-300/90"
-                disabled={!!exporting}
-                onClick={() => void handleExport("pdf")}
+        <div className="study-library-viewer-header">
+          <div className="min-w-0 flex-1">
+            <h2 className="study-library-viewer-title truncate">{primaryTitle}</h2>
+            {relativePath && (
+              <p className="study-library-viewer-path truncate">{relativePath}</p>
+            )}
+            <p className="text-[10px] mt-0.5">
+              <span
+                className={
+                  llmReachable ? "text-emerald-400/80" : "text-amber-400/90"
+                }
               >
-                {exporting === "pdf" ? (
-                  <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
-                ) : (
-                  <Download className="w-3.5 h-3.5 mr-1" />
-                )}
-                PDF
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="h-7 text-[10px] text-emerald-300/90"
-                disabled={!!exporting}
-                onClick={() => void handleExport("docx")}
-              >
-                {exporting === "docx" ? (
-                  <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
-                ) : (
-                  <FileText className="w-3.5 h-3.5 mr-1" />
-                )}
-                Word
-              </Button>
-            </>
-          )}
-          {onExportFolder && exportFolderPath !== undefined && !editing && (
-            <>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="h-7 text-[10px] border-emerald-800/50 text-emerald-200/90"
-                disabled={!!exporting}
-                title="Export all notes in the current folder as PDF"
-                onClick={() => void handleExportFolder("pdf")}
-              >
-                Folder PDF
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="h-7 text-[10px] border-emerald-800/50 text-emerald-200/90"
-                disabled={!!exporting}
-                title="Export all notes in the current folder as Word"
-                onClick={() => void handleExportFolder("docx")}
-              >
-                Folder Word
-              </Button>
-            </>
-          )}
-          {!editing && relativePath && onSetBookmark && (
-            <button
-              type="button"
-              title="Bookmark current position"
-              onClick={() => {
-                const top = scrollRef.current?.scrollTop ?? 0;
-                onSetBookmark(relativePath, top);
-              }}
-              className="p-1 rounded hover:bg-emerald-500/20 text-emerald-400/80"
-            >
-              <Bookmark className="w-3.5 h-3.5" />
-            </button>
-          )}
-          {!editing && bookmarkScrollTop != null && (
-            <button
-              type="button"
-              title="Jump to bookmark"
-              onClick={jumpToBookmark}
-              className="p-1 rounded hover:bg-emerald-500/20 text-amber-300/90"
-            >
-              <MapPin className="w-3.5 h-3.5" />
-            </button>
+                {llmReachable ? "● LLM online" : "● LLM offline — Fix syntax works without AI"}
+              </span>
+            </p>
+          </div>
+
+          {!editing && (
+            <div className="flex items-center gap-1 shrink-0">
+              {onTakeQuiz && relativePath && primaryContent && (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={quizReady ? "default" : "outline"}
+                  className="h-8 text-xs gap-1.5"
+                  disabled={quizDisabled || quizLoading}
+                  onClick={onTakeQuiz}
+                >
+                  {quizLoading ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Play className="w-3.5 h-3.5" />
+                  )}
+                  {quizReady ? "Take quiz" : "Quiz"}
+                </Button>
+              )}
+
+              {onRepairSyntaxOnly && relativePath && primaryContent && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-8 text-xs gap-1 border-amber-800/40"
+                  disabled={repairingSyntax || repairingAll}
+                  title="Fix Mermaid syntax locally (no AI)"
+                  onClick={() => {
+                    setRepairingSyntax(true);
+                    void onRepairSyntaxOnly()
+                      .catch(() => undefined)
+                      .finally(() => setRepairingSyntax(false));
+                  }}
+                >
+                  {repairingSyntax ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Wrench className="w-3.5 h-3.5" />
+                  )}
+                  Fix syntax
+                </Button>
+              )}
+
+              {onRepairAllBlocks && relativePath && primaryContent && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-8 text-xs gap-1 border-emerald-800/40"
+                  disabled={repairingAll || repairingSyntax || !llmReachable}
+                  title={
+                    llmReachable
+                      ? "Fix all broken mermaid/code blocks with Gemma/Ollama"
+                      : "Start LM Studio/Ollama (OLLAMA_ENABLED=1)"
+                  }
+                  onClick={() => {
+                    setRepairingAll(true);
+                    void onRepairAllBlocks()
+                      .catch(() => undefined)
+                      .finally(() => setRepairingAll(false));
+                  }}
+                >
+                  {repairingAll ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Sparkles className="w-3.5 h-3.5" />
+                  )}
+                  Fix all (AI)
+                </Button>
+              )}
+
+              {editable && relativePath && onSaveContent && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-8 text-xs"
+                  onClick={() => {
+                    setDraft(primaryContent);
+                    setEditing(true);
+                  }}
+                >
+                  <Pencil className="w-3.5 h-3.5 mr-1" />
+                  Edit
+                </Button>
+              )}
+
+              {(canExport || canExportFolder) && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-8 text-xs gap-1"
+                      disabled={!!exporting}
+                    >
+                      {exporting ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <FileText className="w-3.5 h-3.5" />
+                      )}
+                      Export
+                      <ChevronDown className="w-3 h-3 opacity-60" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="min-w-[10rem]">
+                    {canExport && (
+                      <>
+                        <DropdownMenuItem onClick={() => void runExport("pdf")}>
+                          This note as PDF
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => void runExport("docx")}>
+                          This note as Word
+                        </DropdownMenuItem>
+                      </>
+                    )}
+                    {canExport && canExportFolder && <DropdownMenuSeparator />}
+                    {canExportFolder && (
+                      <>
+                        <DropdownMenuItem onClick={() => void runExport("folder-pdf")}>
+                          Folder as PDF
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => void runExport("folder-docx")}>
+                          Folder as Word
+                        </DropdownMenuItem>
+                      </>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+
+              {relativePath && onSetBookmark && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button type="button" variant="ghost" size="icon" className="h-8 w-8">
+                      <MoreHorizontal className="w-4 h-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem
+                      onClick={() => {
+                        const top = scrollRef.current?.scrollTop ?? 0;
+                        onSetBookmark(relativePath, top);
+                      }}
+                    >
+                      <Bookmark className="w-4 h-4 mr-2" />
+                      Save bookmark here
+                    </DropdownMenuItem>
+                    {bookmarkScrollTop != null && (
+                      <DropdownMenuItem onClick={jumpToBookmark}>
+                        <MapPin className="w-4 h-4 mr-2" />
+                        Jump to bookmark
+                      </DropdownMenuItem>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+            </div>
           )}
         </div>
+
         {editing ? (
           <div className="flex-1 min-h-0 flex flex-col">
             <MarkdownNoteEditor
@@ -256,19 +379,25 @@ export function StudyLibraryViewer({
               saving={saving}
               dirty={dirty}
               snapshotTranscript={snapshotTranscript}
+              llmReachable={llmReachable}
+              onRegenerateSelection={onRegenerateSelection ? onRegenerateSelection : undefined}
             />
           </div>
         ) : (
           <div
             ref={setScrollContainer}
-            className="flex-1 overflow-y-auto study-library-markdown-scroll p-6"
+            className="flex-1 overflow-y-auto study-library-markdown-scroll study-library-viewer-body"
           >
             {primaryContent ? (
-              <MarkdownNote content={primaryContent} />
+              <MarkdownNote content={primaryContent} sectionEdit={sectionEdit} />
             ) : (
-              <p className="text-sm text-muted-foreground">
-                Select a note from the library, or generate from live captions.
-              </p>
+              <div className="study-library-viewer-empty">
+                <FileText className="w-10 h-10 text-emerald-500/40 mb-3" />
+                <p className="text-sm font-medium text-emerald-100/90">No note selected</p>
+                <p className="text-xs text-muted-foreground mt-1 max-w-xs text-center">
+                  Choose a note from the library, or create one from live captions.
+                </p>
+              </div>
             )}
           </div>
         )}
@@ -280,29 +409,24 @@ export function StudyLibraryViewer({
     <section className="study-library-glass flex flex-col flex-1 min-w-0 overflow-hidden relative">
       {showSyncHeader && (
         <div className="flex items-center justify-center py-2 border-b border-emerald-900/40 text-emerald-400 text-xs gap-2">
-          Synced Context
+          Side-by-side compare
         </div>
       )}
       <div className="flex flex-1 min-h-0 relative">
         <div className="study-library-compare-pane flex-1 flex flex-col min-w-0 border-r border-emerald-900/30">
-          <div className="px-3 py-2 border-b border-emerald-900/30 bg-black/20 text-[10px] font-semibold text-slate-400 truncate">
+          <div className="px-4 py-2 border-b border-emerald-900/30 bg-black/20 text-xs font-medium text-slate-300 truncate">
             {primaryTitle}
           </div>
-          <div className="flex-1 overflow-y-auto study-library-markdown-scroll p-5">
-            <MarkdownNote content={primaryContent || "_No content._"} />
+          <div className="flex-1 overflow-y-auto study-library-markdown-scroll study-library-viewer-body">
+            <MarkdownNote content={primaryContent || "_No content._"} sectionEdit={sectionEdit} />
           </div>
         </div>
-        <div
-          className={cn(
-            "absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10",
-            "study-library-sync-badge rounded-full w-8 h-8 flex items-center justify-center shadow-lg",
-          )}
-        />
+        <div className="study-library-sync-badge absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 rounded-full w-8 h-8 flex items-center justify-center shadow-lg" />
         <div className="flex-1 flex flex-col min-w-0">
-          <div className="px-3 py-2 border-b border-emerald-900/30 bg-black/20 text-[10px] font-semibold text-slate-400 truncate">
+          <div className="px-4 py-2 border-b border-emerald-900/30 bg-black/20 text-xs font-medium text-slate-300 truncate">
             {secondaryTitle ?? "Reference"}
           </div>
-          <div className="flex-1 overflow-y-auto study-library-markdown-scroll p-5">
+          <div className="flex-1 overflow-y-auto study-library-markdown-scroll study-library-viewer-body">
             <MarkdownNote content={secondaryContent || "_No content._"} />
           </div>
         </div>

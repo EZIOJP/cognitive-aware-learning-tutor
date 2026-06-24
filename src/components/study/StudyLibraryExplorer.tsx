@@ -15,7 +15,6 @@ import { cn } from "../../app/components/ui/utils";
 import type { LibraryTree } from "./StudyLibraryTree";
 import {
   breadcrumbParts,
-  collectTopFolders,
   findNodeAt,
   folderOf,
   getDragPath,
@@ -32,8 +31,10 @@ type Props = {
   tree: LibraryTree;
   browsePath: string;
   selectedFile: string;
+  comparePaths?: string[];
   onBrowsePath: (path: string) => void;
   onSelectFile: (path: string) => void;
+  onToggleCompare?: (path: string) => void;
   onMoveFile?: (path: string, destFolder: string) => void;
   onDeleteFile?: (path: string) => void;
   onDeleteFolder?: (path: string) => void;
@@ -70,8 +71,10 @@ export function StudyLibraryExplorer({
   tree,
   browsePath,
   selectedFile,
+  comparePaths = [],
   onBrowsePath,
   onSelectFile,
+  onToggleCompare,
   onMoveFile,
   onDeleteFile,
   onDeleteFolder,
@@ -87,7 +90,6 @@ export function StudyLibraryExplorer({
 
   const current = useMemo(() => findNodeAt(tree, browsePath), [tree, browsePath]);
   const crumbs = useMemo(() => breadcrumbParts(browsePath), [browsePath]);
-  const topFolders = useMemo(() => collectTopFolders(tree), [tree]);
 
   const childFolders = current.folders;
   const files = current.files;
@@ -159,6 +161,7 @@ export function StudyLibraryExplorer({
     const isSelected =
       selection?.kind === "file" && selection.path === file.relative_path;
     const isOpen = selectedFile === file.relative_path;
+    const inCompare = comparePaths.includes(file.relative_path);
 
     return (
       <div
@@ -167,14 +170,20 @@ export function StudyLibraryExplorer({
         tabIndex={0}
         draggable
         onDragStart={(e) => setDragPath(e, file.relative_path)}
-        onClick={() => {
+        onClick={(e) => {
+          if ((e.ctrlKey || e.metaKey) && onToggleCompare) {
+            onToggleCompare(file.relative_path);
+            return;
+          }
           setSelection({ kind: "file", path: file.relative_path });
           onSelectFile(file.relative_path);
         }}
         onDoubleClick={() => onSelectFile(file.relative_path)}
+        title={onToggleCompare ? "Ctrl+click to add to compare" : undefined}
         className={cn(
           inGrid ? "study-library-explorer-tile" : "study-library-explorer-list-row",
           (isSelected || isOpen) && "study-library-explorer-selected",
+          inCompare && "study-library-file-compare",
         )}
       >
         <ExplorerFileIcon kind={file.kind} />
@@ -291,48 +300,11 @@ export function StudyLibraryExplorer({
           )}
         </div>
 
-        <nav className="study-library-explorer-quickaccess">
-          <p className="study-library-explorer-quickaccess-title">Quick access</p>
-          <div className="study-library-explorer-quickaccess-items">
-            <button
-              type="button"
-              onClick={() => onBrowsePath("")}
-              className={cn(
-                "study-library-explorer-quickaccess-item",
-                browsePath === "" && "active",
-              )}
-              onDragOver={(e) => {
-                if (!isLibraryDrag(e)) return;
-                e.preventDefault();
-                setDropTarget("");
-              }}
-              onDrop={(e) => handleDropOnFolder("", e)}
-            >
-              <Folder className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-              <span>Study notes</span>
-            </button>
-            {topFolders.map((f) => (
-              <button
-                key={f.path}
-                type="button"
-                onClick={() => onBrowsePath(f.path)}
-                className={cn(
-                  "study-library-explorer-quickaccess-item",
-                  browsePath === f.path || browsePath.startsWith(`${f.path}/`) ? "active" : "",
-                )}
-                onDragOver={(e) => {
-                  if (!isLibraryDrag(e)) return;
-                  e.preventDefault();
-                  setDropTarget(f.path);
-                }}
-                onDrop={(e) => handleDropOnFolder(f.path, e)}
-              >
-                <Folder className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                <span className="truncate">{f.name}</span>
-              </button>
-            ))}
+        {comparePaths.length > 0 && (
+          <div className="study-library-explorer-compare-hint shrink-0">
+            Comparing {comparePaths.length} file{comparePaths.length !== 1 ? "s" : ""} · Ctrl+click to toggle
           </div>
-        </nav>
+        )}
       </div>
     </div>
   );

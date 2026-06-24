@@ -448,7 +448,7 @@ def save_note_content(
     if not row:
         row = index_note_from_disk(db, user_id, rel)
 
-    disk_path = (NOTES_DIR / note_storage_path(row)).resolve()
+    disk_path = (NOTES_DIR / rel).resolve()
     if not disk_path.is_relative_to(NOTES_DIR.resolve()):
         raise ValueError("Invalid note path.")
 

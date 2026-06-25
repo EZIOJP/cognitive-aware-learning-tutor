@@ -33,6 +33,9 @@ All project docs live here. Use with the file kernel at repo root.
 | [CENTRAL_HUB.md](CENTRAL_HUB.md) | Hub metrics and ingest |
 | [STITCH_DESIGN_SPEC.md](STITCH_DESIGN_SPEC.md) | UI tokens, components, screens for Stitch/v0 |
 | [STITCH_PROMPT.txt](STITCH_PROMPT.txt) | Short paste prompt for Stitch |
+| [MERMAID_RENDER_AND_REGEN_HANDOFF.md](MERMAID_RENDER_AND_REGEN_HANDOFF.md) | **Study Library:** Mermaid render, Fix syntax, LM Studio regen |
+| [MERMAID_CODE_REFERENCE.md](MERMAID_CODE_REFERENCE.md) | Mermaid pipeline code excerpts |
+| [STUDY_LIBRARY_MERMAID_FILE_MAP.md](STUDY_LIBRARY_MERMAID_FILE_MAP.md) | One-line file index for Mermaid fix stack |
 | [VOCAB_EXECUTION_PLAN.md](VOCAB_EXECUTION_PLAN.md) | Vocab MVP steps |
 | [FUTURE_VISION.md](FUTURE_VISION.md) | Long-term vision + Phase 3 map |
 

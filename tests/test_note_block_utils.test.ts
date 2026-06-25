@@ -19,6 +19,27 @@ describe("noteBlockUtils", () => {
     expect(updated).toContain("import numpy as np");
     expect(updated).not.toContain("undefined");
   });
+
+  it("throws when block index is out of range", () => {
+    const md = "```mermaid\ngraph TD\nA --> B\n```";
+    expect(() => replaceFencedBlock(md, 3, "graph TD\nA --> B")).toThrow(/Could not save block 3/);
+  });
+
+  it("saves first mermaid at index 0 even when many inline backticks precede it", () => {
+    const inlineSpans = Array.from({ length: 10 }, (_, i) => `- use \`code_${i}\` here`).join("\n");
+    const md = `${inlineSpans}
+
+\`\`\`mermaid
+flowchart TD
+A[Broken] --> B[Old]
+\`\`\`
+`;
+    expect(listFencedBlocks(md)).toHaveLength(1);
+    expect(() => replaceFencedBlock(md, 10, "graph TD\nA --> B")).toThrow(/Could not save block 10/);
+    const updated = replaceFencedBlock(md, 0, "flowchart TD\nA[Start] --> B{Direction}");
+    expect(updated).toContain("A[Start] --> B{Direction}");
+    expect(updated).not.toContain("A[Broken]");
+  });
 });
 
 describe("extractBlockSurroundingContext", () => {

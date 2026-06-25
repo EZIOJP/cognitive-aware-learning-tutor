@@ -27,7 +27,11 @@ export function listFencedBlocks(markdown: string): FencedBlock[] {
 export function replaceFencedBlock(markdown: string, blockIndex: number, newContent: string): string {
   const blocks = listFencedBlocks(markdown);
   const block = blocks[blockIndex];
-  if (!block) return markdown;
+  if (!block) {
+    throw new Error(
+      `Could not save block ${blockIndex}: note has ${blocks.length} fenced block${blocks.length === 1 ? "" : "s"}. Refresh and try again.`,
+    );
+  }
   const lang = block.lang && block.lang !== "text" ? block.lang : "";
   const fence = lang
     ? `\`\`\`${lang}\n${newContent.trim()}\n\`\`\``

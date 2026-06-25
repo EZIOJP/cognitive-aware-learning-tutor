@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { SectionBlockToolbar } from "./SectionBlockToolbar";
-import { sanitizeMermaidSource } from "./mermaidSanitize";
+import { aggressiveSanitizeMermaidSource, sanitizeMermaidSource } from "./mermaidSanitize";
 import { isBrokenBlockContent } from "./noteBlockUtils";
 
 export type SectionBlockHandlers = {
@@ -76,7 +76,7 @@ export function useSectionBlockEdit(
     setSaving(true);
     setLocalError(null);
     const source = editing ? draft : initialContent;
-    const fixed = sanitizeMermaidSource(source);
+    const fixed = aggressiveSanitizeMermaidSource(sanitizeMermaidSource(source));
     try {
       await handlers.onBlockSave(handlers.blockIndex, handlers.language, fixed);
       setDraft(fixed);
@@ -91,36 +91,24 @@ export function useSectionBlockEdit(
   const onRegenerate = useCallback(async () => {
     if (!handlers?.onBlockRegenerate) return;
     if (handlers.llmReachable === false) {
-      setLocalError("LLM offline — use Fix syntax or start LM Studio/Ollama (OLLAMA_ENABLED=1).");
+      setLocalError(
+        "LLM offline — start LM Studio (Gemma) or set Gemini API key. Use Fix syntax without AI.",
+      );
       return;
     }
     setLocalError(null);
     const mode = editing ? (options?.regenerateModeWhenEditing ?? "polish") : "fix";
     const isMermaid = handlers.language === "mermaid";
-    let source = draft;
+    const baseSource = editing ? draft : initialContent;
+    let source = baseSource;
     if (isMermaid) {
-      source = sanitizeMermaidSource(draft);
+      source = sanitizeMermaidSource(baseSource);
     }
     const errorHint =
       renderError ||
       (isBrokenBlockContent(source) ? "Block content is empty or invalid" : undefined);
 
-    // Local syntax fix often resolves parse errors (stadium labels, arr[i], etc.)
-    if (isMermaid && renderError && source.trim() !== draft.trim()) {
-      setDraft(source);
-      if (regenerateAutoSave && handlers.onBlockSave) {
-        try {
-          await handlers.onBlockSave(handlers.blockIndex, handlers.language, source);
-          setEditing(false);
-          return;
-        } catch (err) {
-          setLocalError(err instanceof Error ? err.message : "Could not save block");
-          return;
-        }
-      }
-      return;
-    }
-
+    // "Fix with AI" always calls the LLM — local syntax fixes use the Fix syntax button.
     try {
       const fixed = await handlers.onBlockRegenerate(
         handlers.blockIndex,
@@ -129,7 +117,9 @@ export function useSectionBlockEdit(
         errorHint,
         { mode },
       );
-      const polished = isMermaid ? sanitizeMermaidSource(fixed) : fixed;
+      const polished = isMermaid
+        ? aggressiveSanitizeMermaidSource(sanitizeMermaidSource(fixed))
+        : fixed;
       setDraft(polished);
       if (regenerateAutoSave && handlers.onBlockSave) {
         await handlers.onBlockSave(handlers.blockIndex, handlers.language, polished);

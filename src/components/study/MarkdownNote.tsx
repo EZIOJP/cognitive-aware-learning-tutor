@@ -107,9 +107,16 @@ export function MarkdownNote({ content, sectionEdit }: MarkdownNoteProps) {
           hr: () => <hr className="my-6 border-border/60" />,
           strong: ({ children }) => <strong className="font-semibold text-foreground">{children}</strong>,
           img: ({ src, alt }) => <StudyMarkdownImage src={src} alt={alt} />,
-          code({ className, children }) {
+          code({ className, children, inline }) {
             const match = /language-(\w+)/.exec(className ?? "");
             const lang = match?.[1];
+
+            if (inline) {
+              return (
+                <code className="rounded bg-muted px-1 py-0.5 font-mono text-sm">{children}</code>
+              );
+            }
+
             const code = extractMarkdownCode(children);
             const blockIndex = blockCounter++;
 

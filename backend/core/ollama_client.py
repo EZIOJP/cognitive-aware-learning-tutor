@@ -19,12 +19,17 @@ class LlmOptions:
     api_key: str | None = None
 
 
+GEMINI_API_BASE = "https://generativelanguage.googleapis.com/v1beta"
+
+
 def _normalize_provider(raw: str) -> str:
     value = raw.strip().lower()
     if value in ("lmstudio", "lm-studio", "lm_studio"):
         return "lmstudio"
     if value in ("openai", "vllm"):
         return "openai"
+    if value in ("gemini", "google", "google-ai", "google_ai"):
+        return "gemini"
     return "ollama"
 
 
@@ -36,18 +41,24 @@ def _settings():
 
 def resolve_llm_options(override: LlmOptions | None = None) -> LlmOptions:
     s = _settings()
+    provider = _normalize_provider(s.llm_provider)
+    default_base = GEMINI_API_BASE if provider == "gemini" else s.ollama_url.strip().rstrip("/")
     base = LlmOptions(
-        provider=_normalize_provider(s.llm_provider),
-        base_url=s.ollama_url.strip().rstrip("/"),
+        provider=provider,
+        base_url=default_base,
         model=s.ollama_model.strip(),
         max_tokens=max(256, s.llm_max_tokens),
         api_key=s.llm_api_key.strip(),
     )
     if not override:
         return base
+    resolved_provider = _normalize_provider(override.provider) if override.provider else base.provider
+    resolved_base = (override.base_url or base.base_url).strip().rstrip("/")
+    if resolved_provider == "gemini" and not override.base_url:
+        resolved_base = GEMINI_API_BASE
     return LlmOptions(
-        provider=_normalize_provider(override.provider) if override.provider else base.provider,
-        base_url=(override.base_url or base.base_url).strip().rstrip("/"),
+        provider=resolved_provider,
+        base_url=resolved_base,
         model=(override.model or base.model).strip(),
         max_tokens=override.max_tokens or base.max_tokens,
         api_key=(override.api_key if override.api_key is not None else base.api_key).strip(),
@@ -73,11 +84,18 @@ def _auth_headers(api_key: str) -> dict[str, str]:
 
 
 def llm_reachable(override: LlmOptions | None = None) -> bool:
-    if not _settings().ollama_enabled:
+    if not _settings().ollama_enabled and not _has_llm_override(override):
         return False
     opts = resolve_llm_options(override)
     try:
-        with httpx.Client(timeout=4.0) as client:
+        with httpx.Client(timeout=8.0) as client:
+            if opts.provider == "gemini":
+                if not opts.api_key:
+                    return False
+                url = f"{GEMINI_API_BASE}/models"
+                res = client.get(url, params={"key": opts.api_key})
+                res.raise_for_status()
+                return True
             if opts.provider == "lmstudio":
                 url = f"{opts.base_url}/api/v1/models"
             elif opts.provider == "openai":
@@ -92,19 +110,26 @@ def llm_reachable(override: LlmOptions | None = None) -> bool:
 
 
 def _has_llm_override(override: LlmOptions | None) -> bool:
+    if not override:
+        return False
+    provider = _normalize_provider(override.provider) if override.provider else None
+    if provider == "gemini":
+        opts = resolve_llm_options(override)
+        return bool(opts.api_key and opts.model)
     return bool(
-        override
-        and (override.base_url or "").strip()
+        (override.base_url or "").strip()
         and (override.model or "").strip()
     )
 
 
 def ollama_available(override: LlmOptions | None = None) -> str | None:
+    opts = resolve_llm_options(override)
+    if opts.provider == "gemini":
+        return GEMINI_API_BASE if opts.api_key else None
     if _has_llm_override(override):
         return (override.base_url or "").strip().rstrip("/")
     if not _settings().ollama_enabled:
         return None
-    opts = resolve_llm_options(override)
     return opts.base_url or None
 
 
@@ -142,6 +167,7 @@ def _lmstudio_generate(
     payload: dict = {
         "model": opts.model,
         "input": prompt,
+        "reasoning": "off",
     }
     if system_prompt:
         payload["system_prompt"] = system_prompt
@@ -153,12 +179,75 @@ def _lmstudio_generate(
     try:
         with httpx.Client(timeout=timeout) as client:
             res = client.post(url, headers=_auth_headers(opts.api_key or ""), json=payload)
+            if res.status_code == 400 and payload.get("reasoning") is not None:
+                payload.pop("reasoning", None)
+                res = client.post(url, headers=_auth_headers(opts.api_key or ""), json=payload)
             res.raise_for_status()
             data = res.json()
         raw = _parse_lmstudio_output(data)
         return raw or None
     except Exception as exc:
         log.warning("LM Studio native API request failed: %s", exc)
+        return None
+
+
+def _parse_gemini_output(data: dict) -> str | None:
+    candidates = data.get("candidates") or []
+    if not candidates:
+        return None
+    content = candidates[0].get("content") or {}
+    parts = content.get("parts") or []
+    texts: list[str] = []
+    for part in parts:
+        if isinstance(part, dict):
+            text = part.get("text")
+            if isinstance(text, str) and text.strip():
+                texts.append(text.strip())
+    return "\n".join(texts) if texts else None
+
+
+def _gemini_generate(
+    prompt: str,
+    *,
+    opts: LlmOptions,
+    timeout: float,
+    system_prompt: str | None = None,
+) -> str | None:
+    if not opts.api_key:
+        log.warning("Gemini API key missing — set LLM_API_KEY in .env")
+        return None
+
+    model = opts.model.strip()
+    if model.startswith("models/"):
+        model = model[7:]
+
+    payload: dict = {
+        "contents": [{"role": "user", "parts": [{"text": prompt}]}],
+        "generationConfig": {
+            "temperature": 0.35,
+            "maxOutputTokens": opts.max_tokens or 8192,
+        },
+    }
+    if system_prompt:
+        payload["systemInstruction"] = {"parts": [{"text": system_prompt}]}
+
+    url = f"{GEMINI_API_BASE}/models/{model}:generateContent"
+
+    try:
+        with httpx.Client(timeout=timeout) as client:
+            res = client.post(url, params={"key": opts.api_key}, json=payload)
+            res.raise_for_status()
+            data = res.json()
+        raw = _parse_gemini_output(data)
+        return raw or None
+    except httpx.HTTPStatusError as exc:
+        if exc.response.status_code == 429:
+            log.warning("Gemini rate limit (429) — use LM Studio locally or retry later")
+        else:
+            log.warning("Gemini API request failed: %s", exc)
+        return None
+    except Exception as exc:
+        log.warning("Gemini API request failed: %s", exc)
         return None
 
 
@@ -243,9 +332,14 @@ def ollama_generate(
             api_key=opts.api_key,
         )
 
+    if opts.provider == "gemini":
+        if json_schema:
+            log.warning("JSON schema is ignored for Gemini API.")
+        return _gemini_generate(prompt, opts=opts, timeout=timeout, system_prompt=system_prompt)
     if opts.provider == "lmstudio":
         if json_schema:
             log.warning("JSON schema is ignored for LM Studio native API.")
+        log.info("LM Studio generate model=%s url=%s", opts.model, opts.base_url)
         return _lmstudio_generate(prompt, opts=opts, timeout=timeout, system_prompt=system_prompt)
     if opts.provider == "openai":
         if json_schema:

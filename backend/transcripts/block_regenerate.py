@@ -5,7 +5,8 @@ from __future__ import annotations
 import re
 
 from backend.core.ollama_client import LlmOptions, ollama_available, ollama_generate
-from backend.transcripts.cleanup import sanitize_mermaid_source
+from backend.transcripts.mermaid_strict import MERMAID_GENERATION_RULES
+from backend.transcripts.cleanup import aggressive_sanitize_mermaid_source, sanitize_mermaid_source
 
 _FENCE_RE = re.compile(r"^```(?:\w+)?\s*\n?", re.MULTILINE)
 _TRAILING_FENCE_RE = re.compile(r"\n?```\s*$", re.MULTILINE)
@@ -30,20 +31,18 @@ def _build_prompt(
 ) -> str:
     lang = language or block_type
     error_line = f"\nMermaid parse/render error (fix this): {error}" if error else ""
+    if block_type == "mermaid" and error and "layout" in error.lower():
+        error_line += (
+            "\nLayout fix required: shorten every label under 40 chars, replace ... with etc, "
+            "use |L to R| not |Left to Right|, write index -1 not W[-1]."
+        )
     user_instruction = f"\nUser instruction: {instruction}" if instruction else ""
     context = ""
     if note_context:
         context = f"\n\nSurrounding note context (headings/bullets above and below this block — use for topic only, not syntax):\n---\n{note_context[:3500]}\n---"
 
-    mermaid_rules = """
-Mermaid syntax rules (critical):
-- One node definition per line; connect with -->
-- Edge labels MUST use pipe form: A -->|Yes| B or A -->|No (Blank)| B — never `A -- text --> B`
-- Node labels with parentheses, brackets [i], ampersands, or array indexing (arr[i]) MUST use quoted form: id["Process: arr[i]"]
-- Never use stadium syntax id(text) — use id["text"] instead
-- Never use `F & G --> H`; use two lines: F --> H and G --> H
-- Do not use parentheses inside {{}} diamond labels — use id["text"] instead
-- Prefer flowchart TD or graph TD"""
+    mermaid_rules = f"""
+{MERMAID_GENERATION_RULES}"""
 
     if block_type == "mermaid":
         if mode == "polish":
@@ -92,7 +91,10 @@ def regenerate_block(
     llm: LlmOptions | None = None,
 ) -> str:
     if not ollama_available(llm):
-        raise RuntimeError("LLM is not reachable. Start Ollama/LM Studio or set OLLAMA_ENABLED=1.")
+        raise RuntimeError(
+            "LLM is not reachable. Set OLLAMA_ENABLED=1 and configure "
+            "Gemini (LLM_PROVIDER=gemini, LLM_API_KEY) or start local LM Studio/Ollama."
+        )
 
     effective_instruction = instruction
     if block_type == "mermaid" and mode == "polish" and not instruction:
@@ -111,10 +113,15 @@ def regenerate_block(
         prompt,
         timeout=90.0,
         llm=llm,
-        system_prompt="You output raw source code or diagram text only. Never wrap in markdown fences.",
+        system_prompt="You output raw source code or diagram text only. Never wrap in markdown fences. No reasoning or explanation.",
     )
     if not raw:
-        raise RuntimeError("LLM returned no content.")
+        hint = (
+            "LLM returned no content. "
+            "If using Gemini, you may be rate-limited (HTTP 429) — switch Provider to "
+            "LM Studio in the Study Library header and load Gemma locally."
+        )
+        raise RuntimeError(hint)
 
     cleaned = _strip_fences(raw)
     if block_type == "mermaid":
@@ -122,6 +129,7 @@ def regenerate_block(
         if cleaned.lower().startswith("mermaid"):
             cleaned = cleaned.split("\n", 1)[-1].strip()
         cleaned = sanitize_mermaid_source(cleaned)
+        cleaned = aggressive_sanitize_mermaid_source(cleaned)
     return cleaned.strip()
 
 
@@ -201,7 +209,10 @@ def regenerate_selection(
     if not selection.strip():
         raise ValueError("Selection is empty.")
     if not ollama_available(llm):
-        raise RuntimeError("LLM is not reachable. Start Ollama/LM Studio or set OLLAMA_ENABLED=1.")
+        raise RuntimeError(
+            "LLM is not reachable. Set OLLAMA_ENABLED=1 and configure "
+            "Gemini (LLM_PROVIDER=gemini, LLM_API_KEY) or start local LM Studio/Ollama."
+        )
 
     block_type, language, inner, had_fence = _classify_selection(selection)
 
@@ -234,7 +245,12 @@ def regenerate_selection(
         system_prompt="You output raw markdown only. Never add preamble or wrap the whole answer in fences.",
     )
     if not raw:
-        raise RuntimeError("LLM returned no content.")
+        hint = (
+            "LLM returned no content. "
+            "If using Gemini, you may be rate-limited (HTTP 429) — switch Provider to "
+            "LM Studio in the Study Library header and load Gemma locally."
+        )
+        raise RuntimeError(hint)
 
     cleaned = _strip_fences(raw).strip()
 

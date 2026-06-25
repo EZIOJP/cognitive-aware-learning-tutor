@@ -1,5 +1,7 @@
 # Study Library — Mermaid / Code Block AI Fix — Handoff Report
 
+> **Updated 2026-06-24:** Superseded in part by **[MERMAID_RENDER_AND_REGEN_HANDOFF.md](./MERMAID_RENDER_AND_REGEN_HANDOFF.md)** (current render/regen/save flow, block-index fix, LM Studio) and **[MERMAID_CODE_REFERENCE.md](./MERMAID_CODE_REFERENCE.md)** (code excerpts). Use those for new agents; this file retains earlier problem history.
+
 **Project:** Cognitive-Aware Learning Tutor  
 **Area:** Lecture Notes / Study Library (`/lecture-notes`)  
 **Date:** 2026-06-24  

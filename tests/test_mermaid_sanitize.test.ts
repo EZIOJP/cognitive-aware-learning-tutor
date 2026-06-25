@@ -70,4 +70,40 @@ describe("sanitizeMermaidSource", () => {
     expect(fixed).toContain('D["Identify Key Features & Relationships"]');
     expect(fixed).toContain('G["Visualize Results using Libraries (Seaborn, Matplotlib)"]');
   });
+
+  it("fixes ampersand links with diamond targets", () => {
+    const raw = "B & D --> E{Slice Range Determined}";
+    const fixed = sanitizeMermaidSource(raw);
+    expect(fixed).toContain("B --> E{Slice Range Determined}");
+    expect(fixed).toContain("D --> E{Slice Range Determined}");
+  });
+
+  it("fixes colon after square bracket label", () => {
+    const fixed = sanitizeMermaidSource("P[Positive Indexing]: Start Left -> Right");
+    expect(fixed).toContain('P["Positive Indexing: Start Left -> Right"]');
+  });
+
+  it("fixes malformed pipe edges", () => {
+    const fixed = sanitizeMermaidSource("A -->|: Start:| B(test)");
+    expect(fixed).toContain("-->|Start|");
+    expect(fixed).toContain('B["test"]');
+  });
+
+  it("fixes layout-hostile positive/negative indexing diagram", () => {
+    const raw = `flowchart TD
+    A[Start Indexing Process] --> B{Direction}
+    B -->|Left to Right| C["Positive Index: 0, 1, 2, ..."]
+    B -->|Right to Left| D["Negative Index: -1, -2, -3, ..."]
+    D --> E["Access Last Element using W[-1]"]
+    C --> F["Requires Length Calculation for last element W[len-1]"]`;
+    const fixed = sanitizeMermaidSource(raw);
+    expect(fixed).not.toContain("...");
+    expect(fixed).toContain("|L to R|");
+    expect(fixed).toContain("index -1");
+  });
+
+  it("prepends flowchart TD when header missing", () => {
+    const fixed = sanitizeMermaidSource("A --> B");
+    expect(fixed.startsWith("flowchart TD")).toBe(true);
+  });
 });

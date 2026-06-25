@@ -5,7 +5,10 @@ import { GlobalQuizRunner } from "../../features/quiz/GlobalQuizRunner";
 import {
   BookOpen,
   ClipboardList,
+  FolderOpen,
   Loader2,
+  PanelLeftClose,
+  PanelLeftOpen,
   PanelRight,
   Plus,
   Search,
@@ -55,10 +58,11 @@ import { StudyLibraryIntelligenceHub } from "../../components/study/StudyLibrary
 import { StudyLibraryReviewPanel } from "../../components/study/StudyLibraryReviewPanel";
 import { StudyLibraryStepper, type StudyWorkflowStep } from "../../components/study/StudyLibraryStepper";
 import { StudyLibraryExplorer } from "../../components/study/StudyLibraryExplorer";
-import { findLibraryFile } from "../../components/study/studyLibraryUtils";
+import { findLibraryFile, withPreservedScroll } from "../../components/study/studyLibraryUtils";
 import { extractBlockSurroundingContext, extractSelectionSurroundingContext, replaceFencedBlock } from "../../components/study/noteBlockUtils";
 import { repairNoteMarkdown } from "../../components/study/markdownRepair";
-import { sanitizeMermaidSource } from "../../components/study/mermaidSanitize";
+import { aggressiveSanitizeMermaidSource, sanitizeMermaidSource } from "../../components/study/mermaidSanitize";
+import { cn } from "../../app/components/ui/utils";
 import { StudyLibraryViewer } from "../../components/study/StudyLibraryViewer";
 import { StudyLibraryCreateSheet } from "../../components/study/StudyLibraryCreateSheet";
 import { Button } from "../../app/components/ui/button";
@@ -93,6 +97,13 @@ export function LectureNotesPage() {
   const [noteTitle, setNoteTitle] = useState("");
   const [summarizingFolder, setSummarizingFolder] = useState("");
   const [libraryViewMode, setLibraryViewMode] = useState<"grid" | "list">("list");
+  const [fileManagerCollapsed, setFileManagerCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem("lecture-notes:file-manager-collapsed") === "1";
+    } catch {
+      return false;
+    }
+  });
   const [readingOverrides, setReadingOverrides] = useState<
     Record<string, { read_scroll_top?: number; bookmark_scroll_top?: number | null }>
   >({});
@@ -122,14 +133,20 @@ export function LectureNotesPage() {
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [llmConfig, setLlmConfig] = useState<LlmConfig | null>(null);
-  const [llmProvider, setLlmProvider] = useState(() => loadLlmPrefs().llm_provider ?? "lmstudio");
-  const [llmBaseUrl, setLlmBaseUrl] = useState(() => loadLlmPrefs().llm_base_url ?? "http://127.0.0.1:1234");
-  const [llmModel, setLlmModel] = useState(() => loadLlmPrefs().llm_model ?? "google/gemma-4-e4b");
+  const [llmProvider, setLlmProvider] = useState(
+    () => loadLlmPrefs().llm_provider ?? "lmstudio",
+  );
+  const [llmBaseUrl, setLlmBaseUrl] = useState(
+    () => loadLlmPrefs().llm_base_url ?? "http://127.0.0.1:1234",
+  );
+  const [llmModel, setLlmModel] = useState(
+    () => loadLlmPrefs().llm_model ?? "google/gemma-4-e4b",
+  );
   const [regeneratingBlock, setRegeneratingBlock] = useState<number | null>(null);
 
   const llmOverrides = {
     llm_provider: llmProvider,
-    llm_base_url: llmBaseUrl.trim(),
+    llm_base_url: llmProvider === "gemini" ? undefined : llmBaseUrl.trim(),
     llm_model: llmModel.trim(),
   };
 
@@ -139,6 +156,14 @@ export function LectureNotesPage() {
   useEffect(() => {
     saveLlmPrefs(llmOverrides);
   }, [llmProvider, llmBaseUrl, llmModel]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("lecture-notes:file-manager-collapsed", fileManagerCollapsed ? "1" : "0");
+    } catch {
+      /* ignore */
+    }
+  }, [fileManagerCollapsed]);
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -175,6 +200,33 @@ export function LectureNotesPage() {
   useEffect(() => {
     void refresh();
   }, [refresh]);
+
+  useEffect(() => {
+    if (!llmConfig) return;
+    const saved = loadLlmPrefs();
+    if (!saved.llm_provider) {
+      setLlmProvider(llmConfig.provider);
+      setLlmModel(llmConfig.model);
+      if (llmConfig.provider !== "gemini" && llmConfig.base_url) {
+        setLlmBaseUrl(llmConfig.base_url);
+      }
+    }
+  }, [llmConfig?.provider, llmConfig?.model, llmConfig?.base_url]);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const llm = await getLlmConfig(llmOverrides);
+        if (!cancelled) setLlmConfig(llm);
+      } catch {
+        /* keep prior config */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [llmProvider, llmBaseUrl, llmModel]);
 
   useEffect(() => {
     if (!selectedNote || showCompare) return;
@@ -366,14 +418,20 @@ export function LectureNotesPage() {
 
   const handleBlockSave = useCallback(
     async (blockIndex: number, _language: string, newBlockContent: string) => {
-      if (!selectedNote) return;
-      const base = repairNoteMarkdown(content);
-      const blockBody =
-        _language === "mermaid" ? sanitizeMermaidSource(newBlockContent) : newBlockContent;
-      const updated = replaceFencedBlock(base, blockIndex, blockBody);
-      await saveNoteContent(selectedNote, updated);
-      setContent(updated);
-      void indexNote(selectedNote).catch(() => undefined);
+      if (!selectedNote) {
+        throw new Error("No note selected — pick a file in the library first.");
+      }
+      await withPreservedScroll(scrollContainerRef.current, async () => {
+        const base = repairNoteMarkdown(content);
+        const blockBody =
+          _language === "mermaid"
+            ? aggressiveSanitizeMermaidSource(sanitizeMermaidSource(newBlockContent))
+            : newBlockContent;
+        const updated = replaceFencedBlock(base, blockIndex, blockBody);
+        await saveNoteContent(selectedNote, updated);
+        setContent(updated);
+        void indexNote(selectedNote).catch(() => undefined);
+      });
       setToast("Block saved");
       setTimeout(() => setToast(null), 2500);
     },
@@ -469,9 +527,11 @@ export function LectureNotesPage() {
         use_llm: true,
         llm: llmOverrides,
       });
-      await saveNoteContent(selectedNote, result.content);
-      setContent(result.content);
-      void indexNote(selectedNote).catch(() => undefined);
+      await withPreservedScroll(scrollContainerRef.current, async () => {
+        await saveNoteContent(selectedNote, result.content);
+        setContent(result.content);
+        void indexNote(selectedNote).catch(() => undefined);
+      });
       const n = result.fixed_count;
       setToast(n > 0 ? `Fixed ${n} block${n === 1 ? "" : "s"} with AI` : "No broken blocks found");
       setTimeout(() => setToast(null), 4000);
@@ -489,9 +549,11 @@ export function LectureNotesPage() {
         content: repairNoteMarkdown(content),
         use_llm: false,
       });
-      await saveNoteContent(selectedNote, result.content);
-      setContent(result.content);
-      void indexNote(selectedNote).catch(() => undefined);
+      await withPreservedScroll(scrollContainerRef.current, async () => {
+        await saveNoteContent(selectedNote, result.content);
+        setContent(result.content);
+        void indexNote(selectedNote).catch(() => undefined);
+      });
       const n = result.fixed_count;
       setToast(n > 0 ? `Syntax-fixed ${n} block${n === 1 ? "" : "s"} (no AI)` : "No syntax fixes needed");
       setTimeout(() => setToast(null), 4000);
@@ -801,7 +863,37 @@ export function LectureNotesPage() {
             <p className="text-xs text-emerald-200/60">Read, edit, and export your lecture notes</p>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
+            <label className="flex items-center gap-1.5 text-[10px] text-emerald-200/70">
+              <span className="sr-only">LLM provider</span>
+              <select
+                value={llmProvider}
+                onChange={(e) => setLlmProvider(e.target.value)}
+                className="h-8 rounded-md border border-emerald-900/50 bg-black/30 px-2 text-xs text-emerald-100"
+              >
+                <option value="lmstudio">LM Studio</option>
+                <option value="gemini">Gemini</option>
+                <option value="ollama">Ollama</option>
+              </select>
+              {llmProvider !== "gemini" ? (
+                <input
+                  type="text"
+                  value={llmBaseUrl}
+                  onChange={(e) => setLlmBaseUrl(e.target.value)}
+                  placeholder="http://127.0.0.1:1234"
+                  className="h-8 w-36 rounded-md border border-emerald-900/50 bg-black/30 px-2 text-xs text-emerald-100"
+                  aria-label="LLM base URL"
+                />
+              ) : null}
+              <input
+                type="text"
+                value={llmModel}
+                onChange={(e) => setLlmModel(e.target.value)}
+                placeholder="google/gemma-4-e4b"
+                className="h-8 w-44 rounded-md border border-emerald-900/50 bg-black/30 px-2 text-xs text-emerald-100"
+                aria-label="LLM model"
+              />
+            </label>
             <Button
               type="button"
               size="sm"
@@ -862,35 +954,65 @@ export function LectureNotesPage() {
         )}
 
         <main className="flex flex-1 gap-3 min-h-0 overflow-hidden">
-          <aside className="study-library-glass w-[min(340px,38vw)] min-w-[260px] shrink-0 flex flex-col min-h-0 overflow-hidden">
-            <div className="flex-1 min-h-0 overflow-hidden">
-              {loading ? (
-                <div className="flex items-center justify-center h-full">
-                  <Loader2 className="w-5 h-5 animate-spin text-emerald-400" />
+          <aside
+            className={cn(
+              "study-library-glass study-library-sidebar shrink-0 flex flex-col min-h-0 overflow-hidden",
+              fileManagerCollapsed
+                ? "study-library-sidebar--collapsed"
+                : "study-library-sidebar--expanded",
+            )}
+          >
+            {fileManagerCollapsed ? (
+              <div className="study-library-sidebar-rail">
+                <button
+                  type="button"
+                  className="study-library-sidebar-rail-btn"
+                  onClick={() => setFileManagerCollapsed(false)}
+                  title="Expand file manager"
+                  aria-label="Expand file manager"
+                >
+                  <PanelLeftOpen className="w-4 h-4" />
+                </button>
+                <div className="study-library-sidebar-rail-icon" title="Library">
+                  <FolderOpen className="w-4 h-4" />
                 </div>
-              ) : error && !libraryTree ? (
-                <p className="text-xs text-red-400 p-3">{error}</p>
-              ) : libraryTree ? (
-                <StudyLibraryExplorer
-                  tree={libraryTree}
-                  browsePath={selectedFolder}
-                  selectedFile={selectedNote}
-                  comparePaths={comparePaths}
-                  onBrowsePath={setSelectedFolder}
-                  onSelectFile={setSelectedNote}
-                  onToggleCompare={handleToggleCompare}
-                  onMoveFile={(path, dest) => void handleMoveFile(path, dest)}
-                  onDeleteFile={(path) => void handleDeleteFile(path)}
-                  onDeleteFolder={(path) => void handleDeleteFolder(path)}
-                  onSummarizeFolder={(path) => void handleSummarizeFolder(path)}
-                  onNewFolder={() => void handleCreateFolder()}
-                  onNewFile={() => void handleCreateFile()}
-                  viewMode={libraryViewMode}
-                  onViewModeChange={setLibraryViewMode}
-                  summarizingFolder={summarizingFolder}
-                />
-              ) : null}
-            </div>
+                {selectedNote ? (
+                  <span className="study-library-sidebar-rail-note" title={selectedNote}>
+                    {selectedNote.split("/").pop()}
+                  </span>
+                ) : null}
+              </div>
+            ) : (
+              <div className="flex-1 min-h-0 overflow-hidden">
+                {loading ? (
+                  <div className="flex items-center justify-center h-full">
+                    <Loader2 className="w-5 h-5 animate-spin text-emerald-400" />
+                  </div>
+                ) : error && !libraryTree ? (
+                  <p className="text-xs text-red-400 p-3">{error}</p>
+                ) : libraryTree ? (
+                  <StudyLibraryExplorer
+                    tree={libraryTree}
+                    browsePath={selectedFolder}
+                    selectedFile={selectedNote}
+                    comparePaths={comparePaths}
+                    onBrowsePath={setSelectedFolder}
+                    onSelectFile={setSelectedNote}
+                    onToggleCompare={handleToggleCompare}
+                    onMoveFile={(path, dest) => void handleMoveFile(path, dest)}
+                    onDeleteFile={(path) => void handleDeleteFile(path)}
+                    onDeleteFolder={(path) => void handleDeleteFolder(path)}
+                    onSummarizeFolder={(path) => void handleSummarizeFolder(path)}
+                    onNewFolder={() => void handleCreateFolder()}
+                    onNewFile={() => void handleCreateFile()}
+                    viewMode={libraryViewMode}
+                    onViewModeChange={setLibraryViewMode}
+                    summarizingFolder={summarizingFolder}
+                    onCollapse={() => setFileManagerCollapsed(true)}
+                  />
+                ) : null}
+              </div>
+            )}
           </aside>
 
           <div className="flex-1 flex flex-col min-w-0 min-h-0 gap-2">
@@ -968,9 +1090,15 @@ export function LectureNotesPage() {
                   : undefined
               }
               llmReachable={Boolean(llmConfig?.reachable)}
+              llmProvider={llmProvider}
+              llmModel={llmModel}
               onRepairSyntaxOnly={handleRepairSyntaxOnly}
               onRepairAllBlocks={handleRepairAllBlocks}
               onRegenerateSelection={handleSelectionRegenerate}
+              onIssueReportCopied={(msg) => {
+                setToast(msg);
+                setTimeout(() => setToast(null), 4500);
+              }}
             />
           </div>
 

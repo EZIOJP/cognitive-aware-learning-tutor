@@ -1,4 +1,4 @@
-import { Camera, Loader2, Sparkles } from "lucide-react";
+import { Camera, Database, Loader2, Sparkles } from "lucide-react";
 import { Button } from "../../app/components/ui/button";
 import { Input } from "../../app/components/ui/input";
 import {
@@ -33,6 +33,7 @@ type Props = {
   generating: boolean;
   snapshotting: boolean;
   onGenerate: () => void;
+  onGenerateGrounded?: () => void;
   onGenerateToday: () => void;
   onSnapshot: () => void;
   referenceHint?: string;
@@ -59,6 +60,7 @@ export function StudyLibraryCreateSheet({
   generating,
   snapshotting,
   onGenerate,
+  onGenerateGrounded,
   onGenerateToday,
   onSnapshot,
   referenceHint,
@@ -172,10 +174,47 @@ export function StudyLibraryCreateSheet({
             Generate from today&apos;s captions
           </Button>
 
+          {onGenerateGrounded && (
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full border-emerald-700/60 text-emerald-100"
+              disabled={
+                generating ||
+                !selectedTranscript ||
+                !llmConfig?.corpus_available
+              }
+              onClick={onGenerateGrounded}
+              title={
+                llmConfig?.corpus_grounded_notes
+                  ? "Write notes using hybrid RAG chunks from your knowledge base"
+                  : "Set CORPUS_GROUNDED_NOTES=1 in .env to enable corpus-grounded generation"
+              }
+            >
+              {generating ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <>
+                  <Database className="w-4 h-4 mr-1.5" />
+                  Generate grounded (RAG)
+                </>
+              )}
+            </Button>
+          )}
+
           <p className="text-xs text-muted-foreground pt-2 border-t border-emerald-900/30">
             {llmConfig?.reachable
               ? `LLM ready · ${llmConfig.provider} · ${llmConfig.model}`
               : "Set OLLAMA_ENABLED=1 and LLM_API_KEY (Gemini) or start local LM Studio for generation."}
+            {llmConfig?.corpus_available ? (
+              <span className="block mt-1 text-emerald-300/70">
+                Knowledge base indexed — grounded notes cite textbook + lecture chunks.
+              </span>
+            ) : (
+              <span className="block mt-1 text-amber-200/70">
+                Build Knowledge Base first for corpus-grounded notes.
+              </span>
+            )}
           </p>
         </div>
       </SheetContent>

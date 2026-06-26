@@ -71,6 +71,7 @@ export type QuizBacklog = {
   deck_count: number;
   next_due?: string | null;
   recommended_action: "sign_in" | "review_due" | "start_vocab" | "lecture_notes";
+  weak_topics?: string[];
 };
 
 export type QuizDeckSummary = {

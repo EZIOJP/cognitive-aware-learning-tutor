@@ -452,6 +452,10 @@ def save_note_content(
     if not disk_path.is_relative_to(NOTES_DIR.resolve()):
         raise ValueError("Invalid note path.")
 
+    from backend.transcripts.note_lint import sanitize_note_content
+
+    content = sanitize_note_content(content)
+
     disk_path.parent.mkdir(parents=True, exist_ok=True)
     disk_path.write_text(content, encoding="utf-8")
 

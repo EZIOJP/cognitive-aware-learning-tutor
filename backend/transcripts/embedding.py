@@ -32,19 +32,24 @@ def encode_texts(texts: list[str], *, model_name: str = _DEFAULT_MODEL) -> "np.n
     model = load_model(model_name)
     if model is None or not texts:
         return None
-    if len(texts) > 256:
-        texts = texts[:256]
     try:
         import numpy as np  # noqa: PLC0415
 
-        vectors: np.ndarray = model.encode(  # type: ignore[union-attr]
-            texts,
-            convert_to_numpy=True,
-            show_progress_bar=False,
-            batch_size=64,
-            device="cpu",
-        )
-        return vectors.astype("float32")
+        parts: list[np.ndarray] = []
+        batch_size = 64
+        for start in range(0, len(texts), batch_size):
+            batch = texts[start : start + batch_size]
+            vectors: np.ndarray = model.encode(  # type: ignore[union-attr]
+                batch,
+                convert_to_numpy=True,
+                show_progress_bar=False,
+                batch_size=batch_size,
+                device="cpu",
+            )
+            parts.append(vectors.astype("float32"))
+        if not parts:
+            return None
+        return np.vstack(parts)
     except Exception:
         return None
 

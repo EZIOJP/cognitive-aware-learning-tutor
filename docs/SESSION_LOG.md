@@ -1,55 +1,46 @@
 # Session Log
 
-Running checklist for Cursor sessions. Check items off here and in [ROADMAP.md](ROADMAP.md) when done.
+Running checklist for Cursor sessions.
 
-**Phase 1 focus:** GRE Vocabulary MVP — Read → Quiz → Report → Low-Mastery loop.
+**Current focus:** Second-brain study loop — capture → grounded notes → corpus → quiz → spaced review.
 
 ---
 
-## 2026-06-02
+## 2026-06-25 — Second brain loop
 
-### Setup & kernel
-- [x] Cursor rules in `.cursor/rules/*.mdc`
-- [x] File kernel: `AGENTS.md`, `docs/FILE_MAP.md`, `docs/SESSION_LOG.md`
-- [x] Repo layout tracker: `docs/PROJECT_LAYOUT.md`, `docs/README.md`
-- [x] Root cleanup: `run.bat` only at root; `scripts/`, `backend/`, `data/`, `assets/`
+**Done:**
+- [x] Full PDF ingest (CLI, API, Knowledge Base UI, auto-setup)
+- [x] Grounded notes button on Lecture Notes (`CORPUS_GROUNDED_NOTES=1`)
+- [x] Studio Done → auto-ingest transcript + note into corpus
+- [x] Web generate → corpus handoff after save
+- [x] `build-golden` CLI + expected chunk counts in `CORPUS_STATUS.md`
+- [x] Markdown code-block extraction + repair pipeline fixes
 
-### Audits (do before large refactors)
-- [ ] Audit Read Mode route (`/gre-vocab/read`, filtered modes)
-- [ ] Audit low-mastery route (`/gre-vocab/read/low-mastery`)
-- [ ] Audit due review route (`/gre-vocab/read/due`)
-- [ ] Audit Cycle Manager dashboard (`/gre-vocab/cycle`)
-- [ ] Audit read → quiz → report flow in `CycleManager.tsx`
-- [ ] Audit low-mastery loop (prompt → re-read → re-quiz)
+**Verify:**
+- [ ] `CORPUS_GROUNDED_NOTES=1` in `.env`, restart backend
+- [ ] Knowledge Base → Build (or status shows ~3500+ chunks)
+- [ ] Studio Generate → Done dialog mentions corpus chunks
+- [ ] Lecture Notes → Generate grounded (RAG) on a transcript
+- [ ] `python -m pytest tests/test_corpus.py -m integration`
 
-### Fixes & polish
-- [ ] Fix progress persistence gaps (localStorage vs API)
-- [ ] Admin: reset / export / import workflows
-- [ ] Empty, loading, and error states across vocab pages
-- [ ] Run production build (`npm run build`)
+---
+
+## Phase 1 — GRE Vocabulary ✅
+
+See [GRE_VOCAB_PHASE1.md](GRE_VOCAB_PHASE1.md). ROADMAP marks Phase 1 complete.
 
 ---
 
 ## Session template
 
-Copy into a new dated section when you start work:
-
 ```markdown
 ## YYYY-MM-DD
 
-**Today’s task:** [one item from above]
+**Today's task:** [one item]
 
 **Done:**
-- 
+-
 
 **Blocked / notes:**
-- 
-```
-
-## Quick start prompt
-
-```
-@AGENTS.md @docs/PROJECT_LAYOUT.md @docs/FILE_MAP.md @docs/SESSION_LOG.md
-
-Today's task: [paste one unchecked item]
+-
 ```

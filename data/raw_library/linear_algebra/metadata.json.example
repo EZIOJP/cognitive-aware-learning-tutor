@@ -1,0 +1,12 @@
+{
+  "document_id": "mml_2021_deisenroth",
+  "title": "Mathematics for Machine Learning",
+  "authors": ["Deisenroth", "Faisal", "Ong"],
+  "category": "foundational_core",
+  "subject_tags": ["linear_algebra", "probability", "ml_foundations"],
+  "node_role": "concept_equation",
+  "format": "pdf",
+  "ingest_priority": 1,
+  "chapter_map": "auto",
+  "filename": "Mathematics_for_ML.pdf"
+}

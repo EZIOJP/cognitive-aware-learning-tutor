@@ -1,0 +1,12 @@
+{
+  "document_id": "ds_from_scratch_2019",
+  "title": "Data Science from Scratch",
+  "authors": ["Grus"],
+  "category": "foundational_core",
+  "subject_tags": ["python_ds", "ml_foundations"],
+  "node_role": "concept_code",
+  "format": "epub",
+  "ingest_priority": 3,
+  "chapter_map": "auto",
+  "filename": "Data_Science_from_Scratch.epub"
+}

@@ -27,6 +27,7 @@ class Settings(BaseSettings):
     ollama_url: str = "http://127.0.0.1:1234"
     ollama_model: str = "google/gemma-4-e4b"
     llm_max_tokens: int = 8192
+    corpus_grounded_notes: bool = False
     llm_api_key: str = "lm-studio"
     nim_api_key: str = ""
     nim_model: str = "google/gemma-4-31b-it"

@@ -155,6 +155,8 @@ def _item_to_question(
                 "hint": item.get("hint"),
                 "note_path": note_path,
                 "review_card_id": item.get("review_card_id"),
+                "source_chunk_id": item.get("source_chunk_id"),
+                "citation": item.get("citation"),
             },
         }
         return _attach_session_meta(q, payload)
@@ -175,6 +177,8 @@ def _item_to_question(
             "hint": item.get("hint") or item.get("explanation"),
             "review_card_id": item.get("review_card_id"),
             "topic": item.get("topic"),
+            "source_chunk_id": item.get("source_chunk_id"),
+            "citation": item.get("citation"),
         },
     }
     return _attach_session_meta(q, payload)
@@ -657,7 +661,19 @@ def _submit_study(
         fmt = "mcq"
         topic = str(item.get("question") or sess["payload"].get("topic") or "study")[:120]
 
-    node = upsert_node(db, user_id=user.id, label=topic or label, node_type="concept", note_path=note_path or None)
+    source_chunk_id = str(item.get("source_chunk_id") or payload.get("source_chunk_id") or "").strip()
+
+    if source_chunk_id:
+        node = upsert_node(
+            db,
+            user_id=user.id,
+            label=f"chunk:{source_chunk_id}",
+            node_type="chunk",
+            metadata={"chunk_id": source_chunk_id},
+            note_path=note_path or None,
+        )
+    else:
+        node = upsert_node(db, user_id=user.id, label=topic or label, node_type="concept", note_path=note_path or None)
     meta = json.loads(node.metadata_json or "{}") if node.metadata_json else {}
     state = srs_mod.schedule_after_answer(
         srs_mod.srs_from_metadata(meta.get("srs")), correct=correct, elapsed_ms=time_taken_ms

@@ -323,7 +323,12 @@ export function GlobalQuizRunner({ domain, config, onDone, onClose }: Props) {
       {showHint && hint && <p className="text-sm text-muted-foreground border-l-2 pl-3">{hint}</p>}
 
       {feedback && (
-        <p className={`text-sm ${lastCorrect ? "text-emerald-600" : "text-amber-600"}`}>{feedback}</p>
+        <div className="space-y-1">
+          <p className={`text-sm ${lastCorrect ? "text-emerald-600" : "text-amber-600"}`}>{feedback}</p>
+          {question.meta?.citation ? (
+            <p className="text-xs text-muted-foreground">Source: {String(question.meta.citation)}</p>
+          ) : null}
+        </div>
       )}
 
       <div className="flex gap-2">

@@ -49,6 +49,65 @@ def _clip(s: str, n: int = 400) -> str:
     return s if len(s) <= n else s[: n - 1] + "…"
 
 
+def _citation_for_chunk(chunk_id: str, hits: list[dict[str, Any]]) -> str:
+    if not chunk_id:
+        return ""
+    for h in hits:
+        if h.get("chunk_id") == chunk_id:
+            return str(h.get("citation") or "")
+    return ""
+
+
+def _corpus_hits_for_topic(
+    topic: str,
+    *,
+    max_chars: int = 12000,
+    boost_concepts: list[str] | None = None,
+) -> list[dict[str, Any]]:
+    """Retrieve grounded chunks when corpus is populated."""
+    try:
+        from backend.corpus.retrieve import corpus_available, hybrid_retrieve
+
+        if not corpus_available():
+            return []
+        query = (topic or "study material").strip()[:300]
+        if boost_concepts:
+            query = f"{query} {' '.join(boost_concepts[:6])}"
+        return hybrid_retrieve(query, top_k=5)
+    except Exception:  # noqa: BLE001
+        return []
+
+
+def _corpus_material_for_topic(
+    topic: str,
+    *,
+    max_chars: int = 12000,
+    boost_concepts: list[str] | None = None,
+) -> str | None:
+    from backend.corpus.retrieve import format_hits_for_prompt
+
+    hits = _corpus_hits_for_topic(topic, max_chars=max_chars, boost_concepts=boost_concepts)
+    if not hits:
+        return None
+    return format_hits_for_prompt(hits, max_chars=max_chars)
+
+
+def _combined_source_material(
+    source_texts: list[str],
+    *,
+    topic: str = "",
+    max_chars: int = 16000,
+    boost_concepts: list[str] | None = None,
+) -> tuple[str, list[dict[str, Any]]]:
+    hits = _corpus_hits_for_topic(topic, max_chars=max_chars, boost_concepts=boost_concepts)
+    if hits:
+        from backend.corpus.retrieve import format_hits_for_prompt
+
+        return format_hits_for_prompt(hits, max_chars=max_chars), hits
+    joined = "\n\n---\n\n".join(source_texts)[:max_chars]
+    return joined, []
+
+
 def _template_gap_analysis(lecture: str, reference: str) -> dict[str, Any]:
     lecture_lines = [ln.strip() for ln in lecture.splitlines() if ln.strip()][:8]
     ref_lines = [ln.strip() for ln in reference.splitlines() if ln.strip()][:8]
@@ -116,7 +175,17 @@ REFERENCE:
         "gaps": clean_gaps or _template_gap_analysis(lecture_text, reference_text)["gaps"],
         "aligned_topics": [str(t)[:80] for t in (parsed.get("aligned_topics") or [])[:12]],
         "source": "gemma",
+        "gap_ingest_triggered": _trigger_gap_ingest(clean_gaps),
     }
+
+
+def _trigger_gap_ingest(gaps: list[dict[str, Any]]) -> list[str]:
+    try:
+        from backend.corpus.gap_ingest import trigger_gap_ingest_for_gaps
+
+        return trigger_gap_ingest_for_gaps(gaps)
+    except Exception:  # noqa: BLE001
+        return []
 
 
 def _template_quiz(sources: list[str], count: int) -> dict[str, Any]:
@@ -141,8 +210,15 @@ def generate_quiz_items(
     count: int = 5,
     topic: str = "",
     llm: LlmOptions | None = None,
+    boost_concepts: list[str] | None = None,
 ) -> dict[str, Any]:
-    combined = "\n\n---\n\n".join(source_texts)[:16000]
+    combined, source_hits = _combined_source_material(
+        source_texts,
+        topic=topic,
+        max_chars=16000,
+        boost_concepts=boost_concepts,
+    )
+    allowed_ids = {h["chunk_id"] for h in source_hits}
     n = max(1, min(count, 10))
 
     if not ollama_available(llm):
@@ -151,8 +227,9 @@ def generate_quiz_items(
     prompt = f"""Create {n} multiple-choice study questions from the material below.
 Topic focus: {topic or "general"}
 
+Each question MUST cite a source chunk_id from the material headers (<!-- cite: uuid -->).
 Return JSON only:
-{{"questions": [{{"id": "q1", "question": "...", "options": ["A","B","C","D"], "answer_index": 0, "explanation": "..."}}]}}
+{{"questions": [{{"id": "q1", "question": "...", "options": ["A","B","C","D"], "answer_index": 0, "explanation": "...", "source_chunk_id": "uuid"}}]}}
 
 Material:
 {combined}"""
@@ -179,6 +256,8 @@ Material:
                 "options": [_clip(str(o), 120) for o in opts[:6]],
                 "answer_index": ans,
                 "explanation": _clip(str(q.get("explanation", "")), 300),
+                "source_chunk_id": str(q.get("source_chunk_id") or ""),
+                "citation": _citation_for_chunk(str(q.get("source_chunk_id") or ""), source_hits),
             }
         )
         if len(questions) >= n:
@@ -186,6 +265,12 @@ Material:
 
     if not questions:
         return _template_quiz(source_texts, n)
+    try:
+        from backend.corpus.citation_check import verify_quiz_citations
+
+        verify_quiz_citations(questions, allowed_ids)
+    except Exception:  # noqa: BLE001
+        pass
     return {"questions": questions, "source": "gemma"}
 
 
@@ -211,8 +296,15 @@ def generate_code_drills(
     count: int = 2,
     topic: str = "",
     llm: LlmOptions | None = None,
+    boost_concepts: list[str] | None = None,
 ) -> dict[str, Any]:
-    combined = "\n\n---\n\n".join(source_texts)[:16000]
+    combined, source_hits = _combined_source_material(
+        source_texts,
+        topic=topic,
+        max_chars=16000,
+        boost_concepts=boost_concepts,
+    )
+    allowed_ids = {h["chunk_id"] for h in source_hits}
     n = max(1, min(count, 5))
 
     if not ollama_available(llm):
@@ -221,8 +313,9 @@ def generate_code_drills(
     prompt = f"""Create {n} coding practice exercises from the study material.
 Topic: {topic or "programming concepts from notes"}
 
+Each drill MUST include source_chunk_id from material (<!-- cite: uuid -->).
 Return JSON only:
-{{"drills": [{{"id": "d1", "title": "...", "language": "python", "prompt": "...", "starter_code": "...", "hint": "..."}}]}}
+{{"drills": [{{"id": "d1", "title": "...", "language": "python", "prompt": "...", "starter_code": "...", "hint": "...", "source_chunk_id": "uuid"}}]}}
 
 Material:
 {combined}"""
@@ -244,6 +337,8 @@ Material:
                 "prompt": _clip(str(d.get("prompt", "")), 400),
                 "starter_code": str(d.get("starter_code", "# starter\n"))[:800],
                 "hint": _clip(str(d.get("hint", "")), 200),
+                "source_chunk_id": str(d.get("source_chunk_id") or ""),
+                "citation": _citation_for_chunk(str(d.get("source_chunk_id") or ""), source_hits),
             }
         )
         if len(drills) >= n:
@@ -251,6 +346,12 @@ Material:
 
     if not drills:
         return _template_drills(source_texts, n)
+    try:
+        from backend.corpus.citation_check import verify_quiz_citations
+
+        verify_quiz_citations(drills, allowed_ids)
+    except Exception:  # noqa: BLE001
+        pass
     return {"drills": drills, "source": "gemma"}
 
 

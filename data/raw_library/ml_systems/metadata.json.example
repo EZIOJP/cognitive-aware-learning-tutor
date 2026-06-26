@@ -1,0 +1,12 @@
+{
+  "document_id": "designing_ml_systems_2022",
+  "title": "Designing Machine Learning Systems",
+  "authors": ["Huyen"],
+  "category": "operational_engineering",
+  "subject_tags": ["ml_systems"],
+  "node_role": "workflow_contract",
+  "format": "pdf",
+  "ingest_priority": 4,
+  "chapter_map": "auto",
+  "filename": "Designing_ML_Systems.pdf"
+}

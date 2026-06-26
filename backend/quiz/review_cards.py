@@ -127,19 +127,56 @@ def list_due_cards(
     now = datetime.now(UTC)
     rows = db.query(ReviewCard).filter(ReviewCard.user_id == user_id).all()
     due: list[ReviewCard] = []
+    weak_topics = _weak_topic_labels(db, user_id)
+
     for row in rows:
         if domains and row.domain not in domains:
             continue
         state = srs_mod.srs_from_metadata(json.loads(row.srs_json or "{}"))
         if srs_mod.is_due(state, now=now):
             due.append(row)
-    due.sort(
-        key=lambda r: (
-            json.loads(r.srs_json or "{}").get("due_date") or "",
-            r.domain,
-        )
-    )
+
+    def _sort_key(card: ReviewCard) -> tuple[int, str, str]:
+        topic = (card.topic or card.label or "").lower()
+        boosted = 1 if any(w and w in topic for w in weak_topics) else 0
+        state = srs_mod.srs_from_metadata(json.loads(card.srs_json or "{}"))
+        due_s = state.due_date.isoformat() if state.due_date else ""
+        return (-boosted, due_s, card.domain)
+
+    due.sort(key=_sort_key)
     return due[:limit]
+
+
+def _weak_topic_labels(db: Session, user_id: int) -> set[str]:
+    try:
+        from backend.models.knowledge_graph import KgNode, KgObservation
+    except ImportError:
+        return set()
+
+    rows = (
+        db.query(KgObservation, KgNode)
+        .join(KgNode, KgObservation.node_id == KgNode.id)
+        .filter(KgObservation.user_id == user_id)
+        .order_by(KgObservation.timestamp.desc())
+        .limit(120)
+        .all()
+    )
+    weak: set[str] = set()
+    for obs, node in rows:
+        if "fail" not in (obs.interaction_type or ""):
+            continue
+        label = (node.tag_path or node.label or "").strip().lower()
+        if label:
+            weak.add(label)
+            for part in label.replace("_", " ").split():
+                if len(part) > 3:
+                    weak.add(part)
+    return weak
+
+
+def weak_concepts_for_retrieval(db: Session, user_id: int, *, limit: int = 6) -> list[str]:
+    """Topic labels from recent quiz failures — boosts corpus retrieval for quiz/drills."""
+    return sorted(_weak_topic_labels(db, user_id))[:limit]
 
 
 def backlog_summary(db: Session, *, user_id: int) -> dict[str, Any]:
@@ -167,6 +204,8 @@ def backlog_summary(db: Session, *, user_id: int) -> dict[str, Any]:
     elif decks == 0:
         recommended = "lecture_notes"
 
+    weak_topics = sorted(_weak_topic_labels(db, user_id))[:12]
+
     return {
         "total_cards": len(rows),
         "due_count": due_total,
@@ -174,6 +213,7 @@ def backlog_summary(db: Session, *, user_id: int) -> dict[str, Any]:
         "deck_count": decks,
         "next_due": next_due.isoformat() if next_due else None,
         "recommended_action": recommended,
+        "weak_topics": weak_topics,
     }
 
 

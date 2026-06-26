@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { buildStudyQuizConfig } from "../../api/globalQuizClient";
 import { GlobalQuizRunner } from "../../features/quiz/GlobalQuizRunner";
 import {
+  Database,
   BookOpen,
   ClipboardList,
   FolderOpen,
@@ -14,8 +15,8 @@ import {
   Search,
   X,
 } from "lucide-react";
+import { generateGroundedNotes } from "../../api/corpusClient";
 import {
-  captureMainAreaPng,
   createLibraryFile,
   createLibraryFolder,
   deleteLibraryFile,
@@ -662,10 +663,48 @@ export function LectureNotesPage() {
       setSelectedNote(result.filename);
       void indexNote(result.filename).catch(() => undefined);
       setCreateSheetOpen(false);
-      setToast("Notes generated");
-      setTimeout(() => setToast(null), 3000);
+      const handoff = (result as { corpus_handoff?: { transcript_chunks?: number; note_chunks?: number } })
+        .corpus_handoff;
+      const corpusMsg =
+        handoff != null
+          ? ` · corpus: ${handoff.transcript_chunks ?? 0} + ${handoff.note_chunks ?? 0} chunks`
+          : "";
+      setToast(`Notes generated${corpusMsg}`);
+      setTimeout(() => setToast(null), 4000);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Generation failed");
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const handleGenerateGrounded = async () => {
+    if (!selectedTranscript) return;
+    setGenerating(true);
+    setError(null);
+    try {
+      const result = await generateGroundedNotes({
+        transcriptFile: selectedTranscript,
+        title: noteTitle.trim() || undefined,
+        topic: noteTitle.trim() || undefined,
+        folderPath: folderForSave,
+      });
+      if (!result.filename) {
+        throw new Error("Grounded generation did not return a saved note path");
+      }
+      await refresh();
+      setSelectedNote(result.filename);
+      void indexNote(result.filename).catch(() => undefined);
+      setCreateSheetOpen(false);
+      const handoff = result.corpus_handoff;
+      const corpusMsg =
+        handoff != null
+          ? ` · corpus: ${handoff.transcript_chunks ?? 0} + ${handoff.note_chunks ?? 0} chunks`
+          : "";
+      setToast(`Grounded notes (${result.mode})${corpusMsg}`);
+      setTimeout(() => setToast(null), 5000);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Grounded generation failed");
     } finally {
       setGenerating(false);
     }
@@ -893,6 +932,18 @@ export function LectureNotesPage() {
                 aria-label="LLM model"
               />
             </label>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="h-8 text-xs border-emerald-800/50"
+              asChild
+            >
+              <Link to="/knowledge-base">
+                <Database className="w-3.5 h-3.5 mr-1.5" />
+                Knowledge Base
+              </Link>
+            </Button>
             <Button
               type="button"
               size="sm"
@@ -1154,6 +1205,7 @@ export function LectureNotesPage() {
         generating={generating}
         snapshotting={snapshotting}
         onGenerate={() => void handleGenerate()}
+        onGenerateGrounded={() => void handleGenerateGrounded()}
         onGenerateToday={() => void handleGenerateToday()}
         onSnapshot={() => void handleSnapshot()}
         referenceHint={referenceHint || undefined}

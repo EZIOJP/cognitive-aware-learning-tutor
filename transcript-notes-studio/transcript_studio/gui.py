@@ -1900,6 +1900,26 @@ class TranscriptStudioApp(_AppBase):
                     cancel_event=self._summarize_cancel.is_set,
                 )
 
+                handoff_summary = ""
+                try:
+                    from backend.corpus.handoff import ingest_lecture_handoff
+
+                    transcript = next((p for p in paths if p.suffix.lower() == ".txt"), None)
+                    if transcript is not None:
+                        handoff = ingest_lecture_handoff(
+                            transcript_path=transcript,
+                            note_path=note_path,
+                        )
+                        tx_c = handoff.get("transcript_chunks", 0)
+                        note_c = handoff.get("note_chunks", 0)
+                        handoff_summary = (
+                            f"Corpus indexed — transcript {tx_c} chunks, note {note_c} chunks."
+                        )
+                        self._log(handoff_summary)
+                except Exception as exc:
+                    handoff_summary = f"Corpus handoff skipped: {exc}"
+                    self._log(handoff_summary)
+
                 def done() -> None:
                     self._last_note_path = note_path
                     self._update_done_paths()
@@ -1936,7 +1956,8 @@ class TranscriptStudioApp(_AppBase):
                         if audit_source
                         else ""
                     )
-                    messagebox.showinfo("Done", f"Notes saved to:\n{note_path}{audit_hint}")
+                    corpus_hint = f"\n\n{handoff_summary}" if handoff_summary else ""
+                    messagebox.showinfo("Done", f"Notes saved to:\n{note_path}{audit_hint}{corpus_hint}")
                     self._show_workflow_step(3)
 
                 self._ui(done)

@@ -29,6 +29,7 @@ from backend.vocab.repository import seed_words_from_json_if_empty
 from backend.vocab.router import router as vocab_router
 from backend.quiz.router import router as quiz_router
 from backend.transcripts.router import router as transcripts_router
+from backend.corpus.router import router as corpus_router
 
 settings = get_settings()
 
@@ -134,6 +135,7 @@ app.add_middleware(
 app.include_router(vocab_router)
 app.include_router(quiz_router)
 app.include_router(transcripts_router)
+app.include_router(corpus_router)
 app.include_router(math_router)
 app.include_router(hub_router)
 app.include_router(life_router)

@@ -23,12 +23,17 @@ See **[HARDWARE_AND_AI_LATER.md](./HARDWARE_AND_AI_LATER.md)** for the buy-when-
 
 ## Phase 1 — GRE Vocabulary polish (no hardware) ✅
 
-- [x] Audit read / cycle / low-mastery routes — API wired; see [GRE_VOCAB_PHASE1.md](./GRE_VOCAB_PHASE1.md)
-- [x] Empty and error states (hub, read, cycle, admin)
-- [x] Admin reset/export workflows (group JSON/CSV, fixed import/export bugs)
-- [x] `POST /progress/{word_id}/read` for server-backed Read Mode
+See [GRE_VOCAB_PHASE1.md](./GRE_VOCAB_PHASE1.md).
 
-**You can use the app fully during this phase without boards or GPU.**
+---
+
+## Study second brain (corpus + lecture loop) ✅
+
+- [x] Hybrid RAG corpus (MML + full PDFs + transcripts)
+- [x] Knowledge Base UI + full-book ingest
+- [x] Grounded notes (`CORPUS_GROUNDED_NOTES=1`) + Lecture Notes button
+- [x] Studio / web generate → auto corpus handoff
+- [x] Golden benchmark refresh (`build-golden` CLI)
 
 ---
 

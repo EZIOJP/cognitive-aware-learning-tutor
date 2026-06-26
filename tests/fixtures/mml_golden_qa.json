@@ -1,0 +1,46 @@
+[
+  {
+    "query": "What is an eigenvalue?",
+    "subject_tags": [
+      "linear_algebra"
+    ],
+    "expected_chunk_ids": [
+      "f795b11b-b27b-4609-a310-1792a16f5468",
+      "126fd03c-16e9-4f3c-a7de-021a362e59ce",
+      "4091d7d7-2497-4a42-a619-cd20294fa157"
+    ]
+  },
+  {
+    "query": "matrix vector product linear transformation",
+    "subject_tags": [
+      "linear_algebra"
+    ],
+    "expected_chunk_ids": [
+      "30f36f1a-8082-4fbe-8ee0-cef057c49409",
+      "06a04d3e-bee7-494a-b5b4-2b3a8d7a1b4d",
+      "83de312c-3371-4496-b167-bf20f2e50eb6"
+    ]
+  },
+  {
+    "query": "numpy array indexing",
+    "subject_tags": [
+      "lecture"
+    ],
+    "expected_chunk_ids": [
+      "a8fe0c6b-7ca1-4680-a476-0a9390cfcdf8",
+      "b6bafc14-fe15-4bad-a850-da856798bdf8",
+      "9ab8842f-2e09-4a96-9913-c81e79c2a837"
+    ]
+  },
+  {
+    "query": "Gaussian elimination systems of equations",
+    "subject_tags": [
+      "linear_algebra"
+    ],
+    "expected_chunk_ids": [
+      "7d9a0648-adb6-4b25-a93e-779acbac760d",
+      "033d96b4-68f9-496d-8022-165961add79b",
+      "ef565dc0-af39-4a18-bebb-cf1948bfa49a"
+    ]
+  }
+]

@@ -35,6 +35,8 @@ export type LlmConfig = {
   model: string;
   max_tokens: number;
   reachable: boolean;
+  corpus_grounded_notes?: boolean;
+  corpus_available?: boolean;
 };
 
 export type LlmOverrides = {
@@ -457,7 +459,11 @@ export type GenerateNotesOptions = {
 export async function generateNotes(
   transcriptFile: string,
   options: GenerateNotesOptions = {},
-): Promise<{ filename: string; path: string }> {
+): Promise<{
+  filename: string;
+  path: string;
+  corpus_handoff?: { transcript_chunks?: number; note_chunks?: number };
+}> {
   const res = await fetch(`${BASE}/api/transcripts/notes/generate`, {
     method: "POST",
     headers: headers(),
@@ -481,7 +487,11 @@ export async function generateNotes(
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(apiErrorMessage(data, res.status));
-  return data as { filename: string; path: string };
+  return data as {
+    filename: string;
+    path: string;
+    corpus_handoff?: { transcript_chunks?: number; note_chunks?: number };
+  };
 }
 
 export async function generateNotesFromToday(

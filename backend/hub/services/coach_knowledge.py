@@ -444,6 +444,19 @@ def retrieve_coach_knowledge(
         except Exception:  # noqa: BLE001
             pass
 
+        try:
+            from backend.corpus.retrieve import corpus_available, format_hits_for_prompt, hybrid_retrieve
+
+            if corpus_available():
+                hits = hybrid_retrieve(query, top_k=5)
+                if hits:
+                    kb["corpus_chunks"] = {
+                        "hit_count": len(hits),
+                        "context": format_hits_for_prompt(hits, max_chars=4000),
+                    }
+        except Exception:  # noqa: BLE001
+            pass
+
     blob = str(kb)
     if len(blob) > max_chars:
         kb["lecture_notes"] = kb["lecture_notes"][:2]

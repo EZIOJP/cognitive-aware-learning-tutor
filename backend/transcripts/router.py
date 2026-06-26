@@ -241,6 +241,7 @@ class GenerateNotesResponse(BaseModel):
     preview: str
     topic: str | None = None
     source: str = "live_captions"
+    corpus_handoff: dict | None = None
 
 
 def _llm_from_request(body: GenerateNotesRequest | GenerateTodayRequest) -> LlmOptions | None:
@@ -251,6 +252,15 @@ def _llm_from_request(body: GenerateNotesRequest | GenerateTodayRequest) -> LlmO
         base_url=body.llm_base_url,
         model=body.llm_model,
     )
+
+
+def _corpus_handoff_after_generate(transcript_path: Path, note_path: Path) -> dict | None:
+    try:
+        from backend.corpus.handoff import ingest_lecture_handoff
+
+        return ingest_lecture_handoff(transcript_path=transcript_path, note_path=note_path)
+    except Exception:  # noqa: BLE001
+        return None
 
 
 @router.get("/llm-config")
@@ -273,12 +283,18 @@ def get_llm_settings(
             base_url=cfg["base_url"],
             model=cfg["model"],
         )
+    from backend.config import get_settings
+    from backend.corpus.retrieve import corpus_available
+
+    settings = get_settings()
     return {
         **cfg,
         "provider": override.provider,
         "base_url": override.base_url,
         "model": override.model,
         "reachable": llm_reachable(override),
+        "corpus_grounded_notes": settings.corpus_grounded_notes,
+        "corpus_available": corpus_available(),
     }
 
 
@@ -317,6 +333,16 @@ def regenerate_note_block(body: RegenerateBlockRequest, _user: User = Depends(ge
         )
     except RuntimeError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
+    if body.block_type == "mermaid":
+        from backend.transcripts.mermaid.pipeline import layout_safe_mermaid_source
+
+        fixed = layout_safe_mermaid_source(fixed)
+    if body.block_type == "code" and body.language in ("python", "py", ""):
+        from backend.corpus.code_lint import lint_python_block
+
+        report = lint_python_block(fixed)
+        if not report["ok"]:
+            raise HTTPException(status_code=400, detail="; ".join(report["errors"]))
     return RegenerateBlockResponse(
         content=fixed,
         block_type=body.block_type,
@@ -801,11 +827,15 @@ def post_generate_quiz(
     if not body.source_paths:
         raise HTTPException(status_code=400, detail="source_paths required")
     texts = _load_sources(db, user.id, body.source_paths)
+    from backend.quiz.review_cards import weak_concepts_for_retrieval
+
+    boost = weak_concepts_for_retrieval(db, user.id)
     result = generate_quiz_items(
         texts,
         count=body.count,
         topic=body.topic.strip(),
         llm=_llm_from_intel(body),
+        boost_concepts=boost or None,
     )
     title = body.topic.strip() or "Generated Quiz"
     md = quiz_to_markdown(result["questions"], title=title)
@@ -831,11 +861,15 @@ def post_generate_drills(
     if not body.source_paths:
         raise HTTPException(status_code=400, detail="source_paths required")
     texts = _load_sources(db, user.id, body.source_paths)
+    from backend.quiz.review_cards import weak_concepts_for_retrieval
+
+    boost = weak_concepts_for_retrieval(db, user.id)
     result = generate_code_drills(
         texts,
         count=min(body.count, 5),
         topic=body.topic.strip(),
         llm=_llm_from_intel(body),
+        boost_concepts=boost or None,
     )
     title = body.topic.strip() or "Code Drills"
     md = drills_to_markdown(result["drills"], title=title)
@@ -922,6 +956,7 @@ def generate_notes(
         transcript_file=body.transcript_file,
         folder_path=folder,
     )
+    corpus_handoff = _corpus_handoff_after_generate(transcript_path, path)
     from backend.paths import NOTES_DIR
 
     rel = path.relative_to(NOTES_DIR).as_posix()
@@ -931,6 +966,7 @@ def generate_notes(
         preview=content[:500],
         topic=topic,
         source="live_captions",
+        corpus_handoff=corpus_handoff,
     )
 
 
@@ -975,6 +1011,7 @@ def generate_notes_from_today(
         transcript_file=transcript_path.name,
         folder_path=folder,
     )
+    corpus_handoff = _corpus_handoff_after_generate(transcript_path, path)
     from backend.paths import NOTES_DIR
 
     rel = path.relative_to(NOTES_DIR).as_posix()
@@ -984,6 +1021,7 @@ def generate_notes_from_today(
         preview=content[:500],
         topic=topic,
         source="live_captions",
+        corpus_handoff=corpus_handoff,
     )
 
 

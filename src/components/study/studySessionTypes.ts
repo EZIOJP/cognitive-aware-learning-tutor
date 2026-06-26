@@ -22,6 +22,8 @@ export type QuizQuestion = {
   options: string[];
   answer_index: number;
   explanation?: string;
+  source_chunk_id?: string;
+  citation?: string;
 };
 
 export type CodeDrill = {
@@ -31,6 +33,8 @@ export type CodeDrill = {
   prompt: string;
   starter_code: string;
   hint?: string;
+  source_chunk_id?: string;
+  citation?: string;
 };
 
 export type StudySessionItem = {

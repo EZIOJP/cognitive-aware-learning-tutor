@@ -1,0 +1,12 @@
+{
+  "document_id": "ai_thinking_humans_2019",
+  "title": "Artificial Intelligence: A Guide for Thinking Humans",
+  "authors": ["Mitchell"],
+  "category": "conceptual_context",
+  "subject_tags": ["ai_concepts"],
+  "node_role": "observation",
+  "format": "epub",
+  "ingest_priority": 5,
+  "chapter_map": "auto",
+  "filename": "AI_Guide_Thinking_Humans.epub"
+}

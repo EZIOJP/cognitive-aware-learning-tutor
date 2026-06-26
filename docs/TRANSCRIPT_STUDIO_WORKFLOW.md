@@ -79,7 +79,9 @@ Legacy root scripts delegate to the same CLI:
 1. Studio **Capture** → `.txt` appears in `data/transcripts/`
 2. Studio **Generate** → `.md` in `data/notes/` with valid ` ```mermaid ` fences
 3. `run.bat` + `http://localhost:5173/lecture-notes` → note in library tree, diagrams render
-4. No need to run legacy two-step `.bat` scripts for normal use
+4. After Generate **Done**, dialog should report corpus chunk counts (transcript + note indexed)
+5. Set `CORPUS_GROUNDED_NOTES=1` → Lecture Notes → **Generate grounded (RAG)** on same transcript
+6. No need to run legacy two-step `.bat` scripts for normal use
 
 ## Handoff / export bundle
 

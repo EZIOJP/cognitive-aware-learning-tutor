@@ -40,6 +40,11 @@ debug-*.log
 data/logs/
 data_logs/
 data/plate_images/
+data/corpus/
+data/raw_library/**/*.pdf
+data/raw_library/**/*.epub
+data/raw_library/**/*.azw3
+data/raw_library/**/*.mobi
 *.pem
 *.crx
 *.db-journal

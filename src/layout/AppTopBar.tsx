@@ -25,6 +25,7 @@ const PAGE_TITLES: Record<string, string> = {
   "/settings": "Settings",
   "/gre-vocab/add-words": "Add Words",
   "/lecture-notes": "Lecture Notes",
+  "/knowledge-base": "Knowledge Base",
   "/review": "Review Hub",
   "/ai-coach": "AI Coach",
 };

@@ -1,0 +1,12 @@
+{
+  "document_id": "practical_stats_3e",
+  "title": "Practical Statistics for Data Scientists",
+  "authors": ["Bruce", "Bruce", "Gedeck"],
+  "category": "analytical_reference",
+  "subject_tags": ["statistics"],
+  "node_role": "reference",
+  "format": "epub",
+  "ingest_priority": 4,
+  "chapter_map": "auto",
+  "filename": "Practical_Statistics.epub"
+}

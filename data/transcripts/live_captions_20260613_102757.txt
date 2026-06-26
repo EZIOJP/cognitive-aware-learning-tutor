@@ -1,0 +1,114 @@
+Data analysis. The idea of this is we have taken the bank manager example in the last class that how he is supposed to approve loan Oregon not. That was a task that we wanted to have. Now in order to do that we understood hey some level of analysis needs to be done in order to understand the important features or patterns, OK feature patterns I would say in our data. Now since we don't know what we are looking for, it is obviously will be named as exploratory data analysis and since we are dealing with data analysis, the extension of data analysis symbol. In order to do data analysis, we have learned that we will leverage some Python libraries pandas. Numpy, matplotlib. Seaborn and many other libraries honestly and the list is, it's a big list. But the core libraries that we are going to cover are these. This will help you to perform your EDA, exploratory data analysis. Now sometimes what happens is in order to understand the hidden pattern of the data, you might need to transform your data, do data manipulation. All of those things will be done by this library. Funders transforming or manipulating data. Sometimes whenever you're working with numerical operations, just numbers, no text, nothing, just numbers, you will be using numpy for that numerical operation. Now lastly if I want to visualize it, because our visual cortex memory is much higher, we are able to understand or interpret visualization much better. So for that we will be using these libraries and together using this libraries we will be able to perform our EDI very easily. And this was the high level recap of what we have covered. Apart from that we started learning about what is numpy. Right, so numpy is a numerical operation library. OK the full form of this. Anybody remember the full form of numpy? It has a full form, but people generally call it numpy. It is numeric Python, Exactly, it is numeric Python. When we started off with the learning of numpy, there are two things we have encountered. 1 is. Ython.
+Ython list.
+Ython list versus.
+Ython list versus numpy.
+Ython list versus numpy, numpy.
+Add it now before.
+Add it now before I
+answer something I want
+to ask you one
+question
+Add it now before I answer something, I want to ask you one question. What is?
+Add it now before I answer something, I want to ask you one question. What is the advantage
+of using?
+Add it now before I answer something, I want to ask you one question. What is the advantage of using numpy
+array over
+Add it. Now before I answer something, I want to ask you one question. What is the advantage of using numpy array over Python list
+Add it. Now before I answer something, I want to ask you one question. What is the advantage of using numpy array over Python? list?
+Advantage. Simple.
+Advantage. Simple advantage.
+There's only.
+There's only one.
+There's only one word you can answer.
+There's only one word you can answer one word
+speed
+There's only 11 word. You can answer one word speed.
+Speed is the name of
+the game over here
+. Now if you want
+to
+do a deep dive
+onto it you
+Speed is the name of the game over here. Now if you want to do a deep dive onto it, you can talk about
+how it is.
+Speed is the name of the game over here. Now if you want to do a deep dive onto it, you can talk about how it is fast
+retrieval is happening.
+Speed is the name of the game over here. Now if you want to do a deep dive onto it, you can talk about how it is fast retrieval is happening because
+of
+homogeneous
+memory allocation
+, contiguous memory allocation.
+Speed is the name of the game over here. Now if you want to do a deep dive onto it, you can talk about how it is fast retrieval is happening because of homogeneous memory allocation. Contiguous memory allocation you can talk about all of that
+Speed is the name of the game over here. Now if you want to do a deep dive onto it, you can talk about how it is fast retrieval is happening because of homogeneous memory allocation, contiguous memory allocation. You can talk about all of that OK but
+the name of.
+Speed is the name of the game over here. Now if you want to do a deep dive onto it, you can talk about how it is fast retrieval is happening because of homogeneous memory allocation, contiguous memory allocation. You can talk about all of that OK but the name of the game over
+here in one
+Speed is the name of the game over here. Now if you want to do a deep dive onto it, you can talk about how it is fast retrieval is happening because of homogeneous memory allocation, contiguous memory allocation. You can talk about all of that OK, but the name of the game over here in one word will be
+speed
+and that is
+what we have seen
+and
+we
+Speed is the name of the game over here. Now if you want to do a deep dive onto it, you can talk about how it is fast retrieval is happening because of homogeneous memory allocation, contiguous memory allocation. You can talk about all of that OK, but the name of the game over here in one word will be speed. And that is what we have seen and we know that
+to define
+a list
+Speed is the name of the game over here. Now if you want to do a deep dive onto it you can talk about how it is fast retrieval is happening because of homogeneous memory allocation, contiguous memory allocation. You can talk about all of that OK but the name of the game over here in one word will be speed and that is what we have seen and we know that to define a list in Python. we.
+Speed is the name of the game over here. Now if you want to do a deep dive onto it you can talk about how it is fast retrieval is happening because of homogeneous memory allocation, contiguous memory allocation. You can talk about all of that OK but the name of the game over here in one word will be speed. And that is what we have seen. And we know that to define a list in Python we do something this.
+Speed is the name of the game over here. Now if you want to do a deep dive onto it you can talk about how it is fast retrieval is happening because of homogeneous memory allocation, contiguous memory allocation. You can talk about all of that OK but the name of the game over here in one word will be speed. And that is what we have seen. And we know that to define a list in Python we do something this one
+two three
+Speed is the name of the game over here. Now if you want to do a deep dive onto it you can talk about how it is fast retrieval is happening because of homogeneous memory allocation, contiguous memory allocation. You can talk about all of that OK, but the name of the game over here in one word will be speed. And that is what we have seen. And we know that to define a list in Python we do something this one, two, three and to do
+Speed is the name of the game over here. Now if you want to do a deep dive onto it you can talk about how it is fast retrieval is happening because of homogeneous memory allocation, contiguous memory allocation. You can talk about all of that OK but the name of the game over here in one word will be speed and that is what we have seen. And we know that to define a list in Python we do something this one, two, three and to do the same thing
+in
+numpy
+array I can
+Speed is the name of the game over here. Now if you want to do a deep dive onto it you can talk about how it is fast retrieval is happening because of homogeneous memory allocation, contiguous memory allocation. You can talk about all of that OK but the name of the game over here in one word will be speed and that is what we have seen. And we know that to define a list in Python we do something this one, two, three. And to do the same thing in numpy array I can simply write.
+Speed is the name of the game over here. Now if you want to do a deep dive onto it you can talk about how it is fast retrieval is happening because of homogeneous memory allocation, contiguous memory allocation. You can talk about all of that OK but the name of the game over here in one word will be speed and that is what we have seen. And we know that to define a list in Python we do something this one, two, three. And to do the same thing in numpy array I can simply write NP
+dot
+array of.
+Speed is the name of the game over here. Now if you want to do a deep dive onto it you can talk about how it is fast retrieval is happening because of homogeneous memory allocation, contiguous memory allocation. You can talk about all of that OK but the name of the game over here in one word will be speed and that is what we have seen. And we know that to define a list in Python we do something this one, two, three. And to do the same thing in numpy array I can simply write NP dot array of a
+simple that.
+Speed is the name of the game over here. Now if you want to do a deep dive onto it you can talk about how it is fast retrieval is happening because of homogeneous memory allocation, contiguous memory allocation. You can talk about all of that OK but the name of the game over here in one word will be speed and that is what we have seen. And we know that to define a list in Python we do something this one, two, three. And to do the same thing in numpy array I can simply write NP dot array of a simple that now
+this will
+Speed is the name of the game over here. Now if you want to do a deep dive onto it you can talk about how it is fast retrieval is happening because of homogeneous memory allocation, contiguous memory allocation. You can talk about all of that OK but the name of the game over here in one word will be speed and that is what we have seen. And we know that to define a list in Python we do something this one, two, three. And to do the same thing in numpy array I can simply write NP dot array of a simple that. Now this will return.
+Speed is the name of the game over here. Now if you want to do a deep dive onto it you can talk about how it is fast retrieval is happening because of homogeneous memory allocation, contiguous memory allocation. You can talk about all of that OK but the name of the game over here in one word will be speed and that is what we have seen. And we know that to define a list in Python we do something this one, two, three. And to do the same thing in numpy array I can simply write NP dot array of a simple that. Now this will return a numpy
+array
+Speed is the name of the game over here. Now if you want to do a deep dive onto it you can talk about how it is fast retrieval is happening because of homogeneous memory allocation, contiguous memory allocation. You can talk about all of that OK but the name of the game over here in one word will be speed and that is what we have seen. And we know that to define a list in Python we do something this 123 and to do the same thing in numpy array I can simply write NP dot array of a simple that. Now this will return a numpy array.
+Now once.
+Now once we have converted
+this into a.
+Now once we have converted this into a number
+array, we should be able to do.
+Now once we have converted this into a number array, we should be able to do multiple
+operations as such.
+Now once we have converted this into a number array, we should be able to do multiple operations as such number operations
+Now once we have converted this into a number array we should be able to do multiple operations as such number operations OK so.
+Now once we have converted this into a number array we should be able to do multiple operations as such number operations OK so everybody clear
+with
+Now once we have converted this into a number array, we should be able to do multiple operations as such number operations OK so everybody clear with the basics
+there were
+Now once we have converted this into a number array we should be able to do multiple operations as such number operations OK. So everybody clear with the basics there are few other things
+Now once we have converted this into a number array we should be able to do multiple operations as such number operations OK. So everybody clear with the basics. There are few other things as well small things
+which we
+Now once we have converted this into a number array we should be able to do multiple operations as such number operations OK. So everybody clear with the basics. There are few other things as well. Small things which we didn't talk about.
+Now once we have converted this into a number array we should be able to do multiple operations as such number operations OK. So everybody clear with the basics. There are few other things as well. Small things which we didn't talk about the
+Now once we have converted this into a number array we should be able to do multiple operations as such number operations OK. So everybody clear with the basics. There are few other things as well small things which we didn't talk about the data it is part
+of
+Now once we have converted this into a number array, we should be able to do multiple operations as such number operations OK. So everybody clear with the basics. There are few other things as well small things which we didn't talk about the data. It is part of today's lecture itself
+okay
+Now once we have converted this into a number array we should be able to do multiple operations as such number operations OK. So everybody clear with the basics. There are few other things as well small things which we didn't talk about the data. It is part of today's lecture itself. OK now.
+So to get started.
+So to get started we
+first will
+develop the
+idea of
+So to get started, we first will develop the idea of Numby.
+So to get started, we first will develop the idea of Numby array
+So to get started we first will develop the idea of numby array OK for that.
+So to get started we first will develop the idea of numby array OK for that I
+So to get started we first will develop the idea of numby array OK. For that I will directly jump.
+So to get started we first will develop the idea of numby array OK. For that I will directly jump into
+our
+collab notebook.
+So to get started we first will develop the idea of numby array OK. For that I will directly jump into our collab notebook this is
+So to get started we first will develop the idea of numby array OK. For that I will directly jump into our collab notebook. This is a very
+.

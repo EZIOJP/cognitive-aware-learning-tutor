@@ -66,7 +66,11 @@ export function ReviewHubPage() {
       completed_at?: string;
     }>
   >([]);
-  const [backlog, setBacklog] = useState<{ due_count: number; total_cards: number } | null>(null);
+  const [backlog, setBacklog] = useState<{
+    due_count: number;
+    total_cards: number;
+    weak_topics?: string[];
+  } | null>(null);
   const [loading, setLoading] = useState(false);
   const [active, setActive] = useState<ActiveQuiz | null>(null);
   const [groupNumber, setGroupNumber] = useState(1);
@@ -100,7 +104,11 @@ export function ReviewHubPage() {
       setDue(dueRes.items);
       setDecks(deckRes.decks);
       setResults(resultRes.results);
-      setBacklog({ due_count: bl.due_count, total_cards: bl.total_cards });
+      setBacklog({
+        due_count: bl.due_count,
+        total_cards: bl.total_cards,
+        weak_topics: bl.weak_topics,
+      });
     } catch {
       setDue([]);
     } finally {
@@ -213,6 +221,13 @@ export function ReviewHubPage() {
           )}
         </div>
       </header>
+
+      {(backlog?.weak_topics?.length ?? 0) > 0 && (
+        <div className="gloss-panel rounded-xl p-3 text-xs text-muted-foreground">
+          <span className="font-medium text-foreground">Weak topics (from recent misses):</span>{" "}
+          {backlog!.weak_topics!.slice(0, 8).join(" · ")}
+        </div>
+      )}
 
       {fromLectureNotes && !hasDue && (
         <div className="gloss-panel rounded-xl p-4 border border-primary/30 flex flex-wrap items-center justify-between gap-3">

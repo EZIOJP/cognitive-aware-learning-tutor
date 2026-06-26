@@ -1,0 +1,26 @@
+[
+  {
+    "id": "stadium_node",
+    "input": "C --> D(Identify Key Features & Relationships)",
+    "expect_contains": ["D[\"Identify Key Features & Relationships\"]"],
+    "expect_not_contains": ["D(Identify Key"]
+  },
+  {
+    "id": "edge_label_pipe",
+    "input": "B -- No (Blank) --> D(Default to Array Index 0)",
+    "expect_contains": ["-->|No (Blank)|", "D[\"Default to Array Index 0\"]"]
+  },
+  {
+    "id": "indexing_canonical",
+    "input": "flowchart TD\n    A[Start Indexing Process] --> B{Direction}\n    B -->|Left to Right| C[\"Positive Index: 0, 1, 2, ...\"]\n    B -->|Right to Left| D[\"Negative Index: -1, -2, -3, ...\"]\n    D --> E[\"Access Last Element using W[-1]\"]",
+    "layout_safe": true,
+    "expect_contains": ["|L to R|", "Last at index minus one"],
+    "expect_not_contains": ["...", "W[-1]"]
+  },
+  {
+    "id": "dedupe_gemma",
+    "input": "flowchart TD\nA --> B\nC --> Dflowchart TD\nA --> B\nC --> D",
+    "layout_safe": true,
+    "max_header_count": 1
+  }
+]

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -12,7 +13,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from backend.core.auth import get_current_user
-from backend.core.ollama_client import LlmOptions, get_llm_config, llm_reachable
+from backend.core.ollama_client import LlmOptions, get_llm_config, llm_reachable, resolve_llm_options
 from backend.db.session import get_db
 from backend.models import User
 from backend.paths import TRANSCRIPTS_DIR
@@ -59,6 +60,7 @@ from backend.transcripts.study_intel import (
 )
 
 router = APIRouter(prefix="/api/transcripts", tags=["transcripts"])
+log = logging.getLogger(__name__)
 
 
 class GenerateNotesRequest(BaseModel):
@@ -216,6 +218,13 @@ class RepairAllBlocksResponse(BaseModel):
     details: list[RepairBlockDetail]
 
 
+class RepairAndSaveRequest(BaseModel):
+    use_llm: bool = True
+    llm_provider: str | None = Field(default=None, max_length=32)
+    llm_base_url: str | None = Field(default=None, max_length=200)
+    llm_model: str | None = Field(default=None, max_length=120)
+
+
 def _llm_from_intel(body: GapAnalysisRequest | GenerateIntelRequest) -> LlmOptions | None:
     if not any([body.llm_provider, body.llm_base_url, body.llm_model]):
         return None
@@ -245,14 +254,32 @@ def _llm_from_request(body: GenerateNotesRequest | GenerateTodayRequest) -> LlmO
 
 
 @router.get("/llm-config")
-def get_llm_settings(_user: User = Depends(get_current_user)):
+def get_llm_settings(
+    llm_provider: str | None = None,
+    llm_base_url: str | None = None,
+    llm_model: str | None = None,
+    _user: User = Depends(get_current_user),
+):
     cfg = get_llm_config()
-    override = LlmOptions(
-        provider=cfg["provider"],
-        base_url=cfg["base_url"],
-        model=cfg["model"],
-    )
-    return {**cfg, "reachable": llm_reachable(override)}
+    if any([llm_provider, llm_base_url, llm_model]):
+        override = LlmOptions(
+            provider=llm_provider or cfg["provider"],
+            base_url=llm_base_url or cfg["base_url"],
+            model=llm_model or cfg["model"],
+        )
+    else:
+        override = LlmOptions(
+            provider=cfg["provider"],
+            base_url=cfg["base_url"],
+            model=cfg["model"],
+        )
+    return {
+        **cfg,
+        "provider": override.provider,
+        "base_url": override.base_url,
+        "model": override.model,
+        "reachable": llm_reachable(override),
+    }
 
 
 def _llm_from_regenerate(body: RegenerateBlockRequest) -> LlmOptions | None:
@@ -267,6 +294,16 @@ def _llm_from_regenerate(body: RegenerateBlockRequest) -> LlmOptions | None:
 
 @router.post("/library/regenerate-block", response_model=RegenerateBlockResponse)
 def regenerate_note_block(body: RegenerateBlockRequest, _user: User = Depends(get_current_user)):
+    llm = _llm_from_regenerate(body)
+    opts = resolve_llm_options(llm)
+    log.info(
+        "regenerate-block type=%s mode=%s provider=%s model=%s base=%s",
+        body.block_type,
+        body.mode,
+        opts.provider,
+        opts.model,
+        opts.base_url,
+    )
     try:
         fixed = regenerate_block(
             block_type=body.block_type,
@@ -313,6 +350,58 @@ def repair_note_all_blocks(body: RepairAllBlocksRequest, _user: User = Depends(g
         )
     except RuntimeError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
+    return RepairAllBlocksResponse(
+        content=fixed,
+        fixed_count=len(details),
+        details=[RepairBlockDetail(**d) for d in details],
+    )
+
+
+def _read_note_file(relative_path: str) -> tuple[str, str]:
+    """Return (relative_path posix, file content)."""
+    from backend.paths import NOTES_DIR
+
+    try:
+        path = resolve_notes_path(relative_path)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    if not path.is_file():
+        raise HTTPException(status_code=404, detail="Note not found.")
+    rel = path.relative_to(NOTES_DIR).as_posix()
+    return rel, path.read_text(encoding="utf-8")
+
+
+def _llm_from_repair_save(body: RepairAndSaveRequest) -> LlmOptions | None:
+    if not any([body.llm_provider, body.llm_base_url, body.llm_model]):
+        return None
+    return LlmOptions(
+        provider=body.llm_provider,
+        base_url=body.llm_base_url,
+        model=body.llm_model,
+    )
+
+
+@router.post("/library/files/{relative_path:path}/repair-all-blocks", response_model=RepairAllBlocksResponse)
+def repair_and_save_library_note(
+    relative_path: str,
+    body: RepairAndSaveRequest,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Read note from disk, repair all blocks, save atomically."""
+    rel, raw = _read_note_file(relative_path)
+    try:
+        fixed, details = repair_all_blocks(
+            raw,
+            llm=_llm_from_repair_save(body),
+            use_llm=body.use_llm,
+        )
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    try:
+        save_note_content(db, user_id=user.id, relative_path=rel, content=fixed)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
     return RepairAllBlocksResponse(
         content=fixed,
         fixed_count=len(details),
@@ -551,18 +640,16 @@ def post_folder_summarize(
     return result
 
 
+@router.get("/library/files/{relative_path:path}/content")
+def get_library_file_content(relative_path: str, _user: User = Depends(get_current_user)):
+    rel, content = _read_note_file(relative_path)
+    return {"filename": rel, "relative_path": rel, "content": content}
+
+
 @router.get("/notes/content/{relative_path:path}")
 def get_note_content(relative_path: str, _user: User = Depends(get_current_user)):
-    from backend.paths import NOTES_DIR
-
-    try:
-        path = resolve_notes_path(relative_path)
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
-    if not path.is_file():
-        raise HTTPException(status_code=404, detail="Note not found.")
-    rel_path = path.relative_to(NOTES_DIR).as_posix()
-    return {"filename": rel_path, "relative_path": rel_path, "content": path.read_text(encoding="utf-8")}
+    rel, content = _read_note_file(relative_path)
+    return {"filename": rel, "relative_path": rel, "content": content}
 
 
 def _note_title_for_export(db: Session, user_id: int, rel: str, path: Path) -> str:

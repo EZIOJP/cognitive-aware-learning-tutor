@@ -18,7 +18,7 @@ type SectionBlockToolbarProps = {
 };
 
 const LLM_OFFLINE_TITLE =
-  "LLM offline — start LM Studio/Ollama and set OLLAMA_ENABLED=1. Use Fix syntax for local repairs.";
+  "LLM offline — set OLLAMA_ENABLED=1 and LLM_API_KEY for Gemini, or start LM Studio/Ollama. Fix syntax works without AI.";
 
 export function SectionBlockToolbar({
   editing,
@@ -65,8 +65,9 @@ export function SectionBlockToolbar({
             variant="ghost"
             size="sm"
             className="h-7 px-2 text-[11px] text-emerald-300"
-            disabled={regenerating || !llmReachable}
+            disabled={regenerating || saving || !llmReachable}
             title={!llmReachable ? LLM_OFFLINE_TITLE : undefined}
+            onMouseDown={(e) => e.preventDefault()}
             onClick={onRegenerate}
           >
             {regenerating ? (
@@ -74,7 +75,7 @@ export function SectionBlockToolbar({
             ) : (
               <RegenIcon className="h-3 w-3 mr-1" />
             )}
-            {regenLabel}
+            {regenerating ? "Fixing with AI…" : regenLabel}
           </Button>
         </>
       ) : (
@@ -102,8 +103,9 @@ export function SectionBlockToolbar({
             variant="outline"
             size="sm"
             className="h-7 px-2 text-[11px] border-emerald-500/40 text-emerald-200"
-            disabled={regenerating || !llmReachable}
+            disabled={regenerating || saving || !llmReachable}
             title={!llmReachable ? LLM_OFFLINE_TITLE : undefined}
+            onMouseDown={(e) => e.preventDefault()}
             onClick={onRegenerate}
           >
             {regenerating ? (
@@ -111,7 +113,7 @@ export function SectionBlockToolbar({
             ) : (
               <RefreshCw className="h-3 w-3 mr-1" />
             )}
-            {regenLabel}
+            {regenerating ? "Regenerating…" : regenLabel}
           </Button>
           <Button
             type="button"

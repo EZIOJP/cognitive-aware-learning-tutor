@@ -15,10 +15,26 @@ export function repairStepCodeBlocks(text: string): string {
   const lines = text.split("\n");
   const out: string[] = [];
   let i = 0;
+  let inFence = false;
 
   while (i < lines.length) {
     const line = lines[i];
-    if (STEP_HEADING_RE.test(line.trim())) {
+    const trimmed = line.trim();
+
+    if (trimmed.startsWith("```")) {
+      inFence = !inFence;
+      out.push(line);
+      i += 1;
+      continue;
+    }
+
+    if (inFence) {
+      out.push(line);
+      i += 1;
+      continue;
+    }
+
+    if (STEP_HEADING_RE.test(trimmed)) {
       out.push(line);
       i += 1;
       while (i < lines.length && !lines[i].trim()) {

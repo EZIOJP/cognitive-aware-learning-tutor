@@ -105,3 +105,37 @@ def test_override_works_when_backend_llm_disabled(mock_settings):
         out = ollama_client.ollama_generate("prompt", llm=override)
 
     assert out == "notes"
+
+
+@patch("backend.core.ollama_client._settings")
+def test_gemini_generate_uses_generate_content(mock_settings):
+    settings = MagicMock()
+    settings.ollama_enabled = True
+    settings.llm_provider = "gemini"
+    settings.ollama_url = "http://ignored"
+    settings.ollama_model = "gemini-2.0-flash"
+    settings.llm_max_tokens = 8192
+    settings.llm_api_key = "test-gemini-key"
+    mock_settings.return_value = settings
+
+    mock_response = MagicMock()
+    mock_response.raise_for_status = MagicMock()
+    mock_response.json.return_value = {
+        "candidates": [{"content": {"parts": [{"text": "flowchart TD\n    A --> B"}]}}],
+    }
+
+    mock_client = MagicMock()
+    mock_client.__enter__ = MagicMock(return_value=mock_client)
+    mock_client.__exit__ = MagicMock(return_value=False)
+    mock_client.post.return_value = mock_response
+
+    with patch("backend.core.ollama_client.httpx.Client", return_value=mock_client):
+        out = ollama_client.ollama_generate(
+            "Fix this mermaid diagram.",
+            llm=LlmOptions(provider="gemini", model="gemini-2.0-flash", api_key="test-gemini-key"),
+        )
+
+    assert out == "flowchart TD\n    A --> B"
+    args, kwargs = mock_client.post.call_args
+    assert "gemini-2.0-flash:generateContent" in args[0]
+    assert kwargs["params"]["key"] == "test-gemini-key"

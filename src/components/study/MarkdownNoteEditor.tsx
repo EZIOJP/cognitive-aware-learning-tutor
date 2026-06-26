@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import {
   Code2,
   Columns2,
@@ -22,7 +22,6 @@ import {
   DropdownMenuTrigger,
 } from "../../app/components/ui/dropdown-menu";
 import { MarkdownNote } from "./MarkdownNote";
-import { repairNoteMarkdown } from "./markdownRepair";
 import {
   SelectionRegenerateBar,
   SelectionReviewPanel,
@@ -124,8 +123,6 @@ export function MarkdownNoteEditor({
     },
     [content, onChange],
   );
-
-  const previewContent = useMemo(() => repairNoteMarkdown(content), [content]);
 
   const toolbar = (
     <div className="flex flex-wrap items-center gap-1.5 border-b border-emerald-900/40 bg-black/25 px-3 py-2">
@@ -254,7 +251,7 @@ export function MarkdownNoteEditor({
               </div>
             )}
             <div className="flex-1 overflow-y-auto study-library-markdown-scroll p-4 lg:p-6">
-              <MarkdownNote content={previewContent || "_Nothing to preview yet._"} />
+              <MarkdownNote content={content || "_Nothing to preview yet._"} />
             </div>
           </div>
         )}

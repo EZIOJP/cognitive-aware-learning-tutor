@@ -36,6 +36,9 @@ All project docs live here. Use with the file kernel at repo root.
 | [MERMAID_RENDER_AND_REGEN_HANDOFF.md](MERMAID_RENDER_AND_REGEN_HANDOFF.md) | **Study Library:** Mermaid render, Fix syntax, LM Studio regen |
 | [MERMAID_CODE_REFERENCE.md](MERMAID_CODE_REFERENCE.md) | Mermaid pipeline code excerpts |
 | [STUDY_LIBRARY_MERMAID_FILE_MAP.md](STUDY_LIBRARY_MERMAID_FILE_MAP.md) | One-line file index for Mermaid fix stack |
+| [TRANSCRIPT_STUDIO_WORKFLOW.md](TRANSCRIPT_STUDIO_WORKFLOW.md) | Studio Capture → Tune → Generate workflow |
+| [TRANSCRIPT_STUDIO_HANDOFF.md](TRANSCRIPT_STUDIO_HANDOFF.md) | **Handoff:** file map, pipelines, export bundle, backlog |
+| [LOCAL_LLM_NOTES_GUIDE.md](LOCAL_LLM_NOTES_GUIDE.md) | Local models, CPU/GPU, quality presets |
 | [VOCAB_EXECUTION_PLAN.md](VOCAB_EXECUTION_PLAN.md) | Vocab MVP steps |
 | [FUTURE_VISION.md](FUTURE_VISION.md) | Long-term vision + Phase 3 map |
 

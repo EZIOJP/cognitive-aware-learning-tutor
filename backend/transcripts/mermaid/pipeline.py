@@ -1,28 +1,10 @@
-"""Strict Mermaid generation rules + sanitization for lecture-note diagrams."""
+"""Mermaid sanitize pipeline: extract, dedupe, syntax, layout for lecture-note diagrams."""
 
 from __future__ import annotations
 
 import re
 
-MERMAID_GENERATION_RULES = """
-Mermaid syntax (strict — diagrams must render without errors):
-- Start every diagram with `flowchart TD` or `flowchart LR` on the first line.
-- One node or edge per line; use simple node IDs (A, B, step1) — no braces in IDs (never `n_{-1}`).
-- Node labels with parentheses, brackets [i], ampersands, colons, arrows, or function calls MUST use quoted rectangles: id["label text"].
-- Never use stadium syntax id(label) — always id["label"] instead (e.g. B["np.all"], not B(np.all)).
-- Edge labels MUST use pipe form only: A -->|Yes| B or A -->|No (Blank)| B — never `A -- text --> B`.
-- Never merge sources with ampersand: not `F & G --> H` — use two lines: F --> H and G --> H.
-- Do not put colons after unquoted ] labels (wrong: P[Title]: text — use P["Title: text"]).
-- Do not use malformed pipe edges like `-->|: label :|` — use `-->|label|`.
-- Prefer short subgraph titles without special characters; avoid colons inside subgraph names.
-- Diamond decision nodes: use id{Question?} without parentheses inside — or id["Question?"] if punctuation is needed.
-- Layout: keep node labels under 40 characters; edge labels under 14 characters.
-- Never use ellipsis `...` in labels — write "etc" instead (ellipsis breaks Mermaid layout).
-- Inside labels write "index -1" or "len-1" — never W[-1] or W[len-1] (breaks layout).
-- Prefer short edge labels: |L to R| not |Left to Right|.
-- Diamond nodes use braces without inner quotes: B{Direction} — never B{"Direction"}.
-- Output ONLY the diagram source. No reasoning, no explanation, no markdown fences.
-""".strip()
+from backend.transcripts.mermaid.prompts import MERMAID_GENERATION_RULES  # noqa: F401
 
 _MAX_NODE_LABEL_LEN = 42
 _MAX_EDGE_LABEL_LEN = 14
@@ -294,19 +276,50 @@ def _ensure_diagram_header(lines: list[str]) -> list[str]:
     return ["flowchart TD", *lines]
 
 
-def sanitize_mermaid_source(source: str) -> str:
-    """Apply strict line fixes to raw Mermaid (not fenced)."""
-    lines = _ensure_diagram_header(source.splitlines())
-    fixed: list[str] = []
-    for line in lines:
-        for part in _fix_mermaid_line(line).splitlines():
-            fixed.append(part)
-    return "\n".join(fixed)
+_MERMAID_REPEAT_HEADER_RE = re.compile(
+    r"(?:flowchart|graph)\s+(?:TD|TB|BT|RL|LR)\b",
+    re.I,
+)
+
+
+def dedupe_repeated_mermaid_diagram(source: str) -> str:
+    """Keep first diagram when small LLMs glue or repeat flowchart/graph headers."""
+    s = source.strip()
+    if not s:
+        return s
+    starts = [m.start() for m in _MERMAID_REPEAT_HEADER_RE.finditer(s)]
+    if len(starts) <= 1:
+        return s
+    return s[starts[0] : starts[1]].strip()
+
+
+_EXTRACT_DIAGRAM_RE = re.compile(
+    r"((?:flowchart|graph)\s+(?:TD|TB|BT|RL|LR)\b[\s\S]*)",
+    re.I,
+)
+
+
+def extract_mermaid_from_llm_output(raw: str) -> str:
+    """Strip reasoning preamble from small LLMs; keep first diagram declaration onward."""
+    text = raw.strip()
+    if not text:
+        return text
+    text = re.sub(r"^```(?:mermaid)?\s*\n?", "", text, flags=re.I)
+    text = re.sub(r"\n?```\s*$", "", text).strip()
+    first_line = next((ln.strip() for ln in text.splitlines() if ln.strip()), "")
+    if first_line and _MERMAID_HEADER_RE.match(first_line):
+        return text
+    match = _EXTRACT_DIAGRAM_RE.search(text)
+    if match:
+        return match.group(1).strip()
+    return text
+
+
 
 
 def aggressive_sanitize_mermaid_source(source: str) -> str:
     """Second pass when layout still breaks: strip W[i], shorten labels, canonical indexing flow."""
-    out = sanitize_mermaid_source(source)
+    out = _fix_syntax_lines_only(source)
     out = re.sub(r"\bW\s*\[[^\]]*\]", "index -1", out)
     out = re.sub(
         r'\b([A-Za-z0-9_]+)\[([^"\]\{\}]+)\]',
@@ -324,7 +337,7 @@ def aggressive_sanitize_mermaid_source(source: str) -> str:
             "    A[Start] --> B{Direction}\n"
             "    B -->|L to R| C[Positive indices]\n"
             "    B -->|R to L| D[Negative indices]\n"
-            "    D --> E[Last at index -1]\n"
+            "    D --> E[\"Last at index minus one\"]\n"
             "    C --> F[Length minus one]"
         )
     return out
@@ -369,3 +382,57 @@ def mermaid_lint_issues(source: str) -> list[str]:
 
 def is_mermaid_likely_broken(source: str) -> bool:
     return bool(mermaid_lint_issues(source))
+
+
+def extract_from_llm(raw: str) -> str:
+    return extract_mermaid_from_llm_output(raw)
+
+
+def dedupe_headers(source: str) -> str:
+    return dedupe_repeated_mermaid_diagram(source)
+
+
+def _fix_syntax_lines_only(source: str) -> str:
+    lines = _ensure_diagram_header(source.splitlines())
+    fixed: list[str] = []
+    for line in lines:
+        for part in _fix_mermaid_line(line).splitlines():
+            fixed.append(part)
+    return "\n".join(fixed)
+
+
+def fix_syntax_lines(source: str) -> str:
+    return _fix_syntax_lines_only(source)
+
+
+def layout_canonical(source: str) -> str:
+    """Layout pass: W[-1] fix and canonical indexing diagram when matched."""
+    out = source
+    out = re.sub(r"\bW\s*\[[^\]]*\]", "index -1", out)
+    if re.search(r"\bDirection\b", out) and re.search(r"Index|index", out):
+        return (
+            "flowchart TD\n"
+            "    A[Start] --> B{Direction}\n"
+            "    B -->|L to R| C[Positive indices]\n"
+            "    B -->|R to L| D[Negative indices]\n"
+            '    D --> E["Last at index minus one"]\n'
+            "    C --> F[Length minus one]"
+        )
+    return out
+
+
+def sanitize_mermaid_source(raw: str) -> str:
+    """Master pipeline: extract -> dedupe -> syntax -> layout."""
+    if not raw or not raw.strip():
+        return ""
+    s = extract_from_llm(raw)
+    s = dedupe_headers(s)
+    s = fix_syntax_lines(s)
+    return layout_canonical(s).strip()
+
+
+def layout_safe_mermaid_source(source: str) -> str:
+    """Full sanitize + aggressive layout pass (mirrors frontend layoutSafeMermaidSource)."""
+    if not source or not source.strip():
+        return ""
+    return aggressive_sanitize_mermaid_source(sanitize_mermaid_source(source)).strip()

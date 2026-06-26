@@ -1,0 +1,3 @@
+# Transcript Notes Studio — full dependency set (includes backend notes pipeline)
+-r requirements.txt
+../backend/requirements-notes.txt

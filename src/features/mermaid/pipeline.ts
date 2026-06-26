@@ -1,9 +1,11 @@
 /**
- * Strict Mermaid sanitization — mirrors backend/transcripts/mermaid_strict.py
+ * Mermaid sanitization pipeline — mirrors backend/transcripts/mermaid/pipeline.py
  */
 
 const MERMAID_HEADER_RE =
   /^(flowchart|graph|sequenceDiagram|classDiagram|stateDiagram|erDiagram|gantt|pie)\b/i;
+
+const MERMAID_REPEAT_HEADER_RE = /(?:flowchart|graph)\s+(?:TD|TB|BT|RL|LR)\b/gi;
 
 function quoteLabel(id: string, label: string): string {
   return `${id.trim()}["${label.trim().replace(/"/g, "'")}"]`;
@@ -264,8 +266,34 @@ export function isMermaidLikelyBroken(source: string): boolean {
   return mermaidLintIssues(source).length > 0;
 }
 
+export function dedupeRepeatedMermaidDiagram(source: string): string {
+  const s = source.trim();
+  if (!s) return s;
+  const starts: number[] = [];
+  const re = new RegExp(MERMAID_REPEAT_HEADER_RE.source, "gi");
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(s)) !== null) starts.push(m.index);
+  if (starts.length <= 1) return s;
+  return s.slice(starts[0], starts[1]).trim();
+}
+
+const EXTRACT_DIAGRAM_RE = /((?:flowchart|graph)\s+(?:TD|TB|BT|RL|LR)\b[\s\S]*)/i;
+
+/** Strip LLM reasoning preamble — mirrors backend extract_from_llm. */
+export function extractMermaidFromLlmOutput(raw: string): string {
+  let text = raw.trim();
+  if (!text) return text;
+  text = text.replace(/^```(?:mermaid)?\s*\n?/i, "").replace(/\n?```\s*$/i, "").trim();
+  const firstLine = text.split("\n").find((ln) => ln.trim())?.trim() ?? "";
+  if (firstLine && MERMAID_HEADER_RE.test(firstLine)) return text;
+  const match = EXTRACT_DIAGRAM_RE.exec(text);
+  if (match) return match[1].trim();
+  return text;
+}
+
 export function sanitizeMermaidSource(source: string): string {
-  const lines = ensureDiagramHeader(source.split("\n"));
+  const deduped = dedupeRepeatedMermaidDiagram(extractMermaidFromLlmOutput(source));
+  const lines = ensureDiagramHeader(deduped.split("\n"));
   const fixed: string[] = [];
   for (const line of lines) {
     fixed.push(...fixMermaidLine(line));
@@ -288,9 +316,14 @@ export function aggressiveSanitizeMermaidSource(source: string): string {
       "    A[Start] --> B{Direction}",
       "    B -->|L to R| C[Positive indices]",
       "    B -->|R to L| D[Negative indices]",
-      "    D --> E[Last at index -1]",
+      "    D --> E[\"Last at index minus one\"]",
       "    C --> F[Length minus one]",
     ].join("\n");
   }
   return out;
+}
+
+/** Full pipeline: extract → dedupe → syntax fixes (alias for sanitizeMermaidSource). */
+export function layoutSafeMermaidSource(source: string): string {
+  return aggressiveSanitizeMermaidSource(sanitizeMermaidSource(source)).trim();
 }

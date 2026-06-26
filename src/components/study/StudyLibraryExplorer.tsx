@@ -8,6 +8,7 @@ import {
   FolderPlus,
   LayoutGrid,
   List,
+  PanelLeftClose,
   Sparkles,
   Trash2,
 } from "lucide-react";
@@ -44,6 +45,7 @@ type Props = {
   viewMode: "grid" | "list";
   onViewModeChange: (mode: "grid" | "list") => void;
   summarizingFolder?: string;
+  onCollapse?: () => void;
 };
 
 function ExplorerFolderIcon({ open }: { open?: boolean }) {
@@ -84,6 +86,7 @@ export function StudyLibraryExplorer({
   viewMode,
   onViewModeChange,
   summarizingFolder,
+  onCollapse,
 }: Props) {
   const [selection, setSelection] = useState<Selection>(null);
   const [dropTarget, setDropTarget] = useState<string | null>(null);
@@ -199,6 +202,17 @@ export function StudyLibraryExplorer({
   return (
     <div className="study-library-explorer flex flex-col min-h-0 h-full">
       <div className="study-library-explorer-toolbar">
+        {onCollapse ? (
+          <button
+            type="button"
+            className="study-library-explorer-tool-icon"
+            onClick={onCollapse}
+            title="Collapse file manager"
+            aria-label="Collapse file manager"
+          >
+            <PanelLeftClose className="w-4 h-4" />
+          </button>
+        ) : null}
         <button type="button" className="study-library-explorer-tool" onClick={onNewFolder} title="New folder">
           <FolderPlus className="w-4 h-4" />
           <span>New</span>

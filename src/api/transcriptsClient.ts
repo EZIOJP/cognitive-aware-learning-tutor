@@ -44,11 +44,23 @@ export type LlmOverrides = {
 };
 
 const LLM_PREFS_KEY = "lecture-notes:llm";
+const LLM_PREFS_MIGRATION_KEY = "lecture-notes:llm-migration-v2";
 
 export function loadLlmPrefs(): LlmOverrides {
   try {
     const raw = localStorage.getItem(LLM_PREFS_KEY);
-    return raw ? (JSON.parse(raw) as LlmOverrides) : {};
+    const prefs: LlmOverrides = raw ? (JSON.parse(raw) as LlmOverrides) : {};
+    if (!localStorage.getItem(LLM_PREFS_MIGRATION_KEY) && prefs.llm_provider === "gemini") {
+      const migrated: LlmOverrides = {
+        llm_provider: "lmstudio",
+        llm_base_url: prefs.llm_base_url ?? "http://127.0.0.1:1234",
+        llm_model: "google/gemma-4-e4b",
+      };
+      localStorage.setItem(LLM_PREFS_KEY, JSON.stringify(migrated));
+      localStorage.setItem(LLM_PREFS_MIGRATION_KEY, "1");
+      return migrated;
+    }
+    return prefs;
   } catch {
     return {};
   }
@@ -58,8 +70,15 @@ export function saveLlmPrefs(prefs: LlmOverrides): void {
   localStorage.setItem(LLM_PREFS_KEY, JSON.stringify(prefs));
 }
 
-export async function getLlmConfig(): Promise<LlmConfig> {
-  const res = await fetch(`${BASE}/api/transcripts/llm-config`, { headers: headers() });
+export async function getLlmConfig(overrides?: LlmOverrides): Promise<LlmConfig> {
+  const params = new URLSearchParams();
+  if (overrides?.llm_provider) params.set("llm_provider", overrides.llm_provider);
+  if (overrides?.llm_base_url) params.set("llm_base_url", overrides.llm_base_url);
+  if (overrides?.llm_model) params.set("llm_model", overrides.llm_model);
+  const qs = params.toString();
+  const res = await fetch(`${BASE}/api/transcripts/llm-config${qs ? `?${qs}` : ""}`, {
+    headers: headers(),
+  });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(apiErrorMessage(data, res.status));
   return data as LlmConfig;
@@ -138,7 +157,7 @@ export async function getNoteContent(relativePath: string): Promise<string> {
     .split("/")
     .map((s) => encodeURIComponent(s))
     .join("/");
-  const res = await fetch(`${BASE}/api/transcripts/notes/content/${encoded}`, {
+  const res = await fetch(`${BASE}/api/transcripts/library/files/${encoded}/content`, {
     headers: headers(),
   });
   const data = await res.json().catch(() => ({}));
@@ -231,6 +250,29 @@ export async function repairAllNoteBlocks(opts: {
     headers: headers(),
     body: JSON.stringify({
       content: opts.content,
+      use_llm: opts.use_llm ?? true,
+      llm_provider: opts.llm?.llm_provider,
+      llm_base_url: opts.llm?.llm_base_url,
+      llm_model: opts.llm?.llm_model,
+    }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(apiErrorMessage(data, res.status));
+  return data as { content: string; fixed_count: number; details: RepairBlockDetail[] };
+}
+
+export async function repairAndSaveNote(
+  relativePath: string,
+  opts: { use_llm?: boolean; llm?: LlmOverrides } = {},
+): Promise<{ content: string; fixed_count: number; details: RepairBlockDetail[] }> {
+  const encoded = relativePath
+    .split("/")
+    .map((s) => encodeURIComponent(s))
+    .join("/");
+  const res = await fetch(`${BASE}/api/transcripts/library/files/${encoded}/repair-all-blocks`, {
+    method: "POST",
+    headers: headers(),
+    body: JSON.stringify({
       use_llm: opts.use_llm ?? true,
       llm_provider: opts.llm?.llm_provider,
       llm_base_url: opts.llm?.llm_base_url,

@@ -169,7 +169,9 @@ ollama pull llama3.2
 # ollama pull qwen2.5:7b   # lecture notes (transcript → markdown)
 ```
 
-**Lecture notes:** set `OLLAMA_ENABLED=1`, capture with `scripts/run_live_captions_scraper.bat`, then `scripts/run_transcript_to_notes.bat --input your_transcript.txt` or use **Lecture Notes** in the app (`/lecture-notes`).
+**Primary lecture pipeline:** `transcript-notes-studio\run.bat` (Capture → Tune → Generate). See [docs/TRANSCRIPT_STUDIO_WORKFLOW.md](./TRANSCRIPT_STUDIO_WORKFLOW.md).
+
+**Lecture notes:** set `OLLAMA_ENABLED=1`, use Transcript Notes Studio for capture/generation, then open **Study Library** in the app (`/lecture-notes`) for reading, mermaid repair, and quiz. Legacy: `scripts/run_live_captions_scraper.bat` + `scripts/run_transcript_to_notes.bat --latest`.
 
 Semantic chunking and LLM prompt cache need **sentence-transformers** (pulls PyTorch — large one-time download):
 

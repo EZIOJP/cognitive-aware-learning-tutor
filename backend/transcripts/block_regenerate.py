@@ -5,8 +5,7 @@ from __future__ import annotations
 import re
 
 from backend.core.ollama_client import LlmOptions, ollama_available, ollama_generate
-from backend.transcripts.mermaid_strict import MERMAID_GENERATION_RULES
-from backend.transcripts.cleanup import aggressive_sanitize_mermaid_source, sanitize_mermaid_source
+from backend.transcripts.mermaid import layout_safe_mermaid_source, regenerate_mermaid
 
 _FENCE_RE = re.compile(r"^```(?:\w+)?\s*\n?", re.MULTILINE)
 _TRAILING_FENCE_RE = re.compile(r"\n?```\s*$", re.MULTILINE)
@@ -30,41 +29,11 @@ def _build_prompt(
     mode: str = "fix",
 ) -> str:
     lang = language or block_type
-    error_line = f"\nMermaid parse/render error (fix this): {error}" if error else ""
-    if block_type == "mermaid" and error and "layout" in error.lower():
-        error_line += (
-            "\nLayout fix required: shorten every label under 40 chars, replace ... with etc, "
-            "use |L to R| not |Left to Right|, write index -1 not W[-1]."
-        )
+    error_line = f"\nParse/render error (fix this): {error}" if error else ""
     user_instruction = f"\nUser instruction: {instruction}" if instruction else ""
     context = ""
     if note_context:
-        context = f"\n\nSurrounding note context (headings/bullets above and below this block — use for topic only, not syntax):\n---\n{note_context[:3500]}\n---"
-
-    mermaid_rules = f"""
-{MERMAID_GENERATION_RULES}"""
-
-    if block_type == "mermaid":
-        if mode == "polish":
-            return f"""Polish this user-edited Mermaid diagram into perfect, renderable syntax. Return ONLY valid Mermaid — no markdown fences, no explanation.
-
-Rules:
-- Preserve the user's structure, nodes, and meaning from their draft
-- Fix syntax errors, invalid node IDs, and special characters in labels{mermaid_rules}
-- Output must render in standard Mermaid without errors{error_line}{user_instruction}{context}
-
-User-edited Mermaid draft:
-{content.strip() or "(empty)"}
-"""
-
-        return f"""Fix this broken Mermaid diagram source. Return ONLY valid Mermaid syntax — no markdown fences, no explanation.
-
-Rules:{mermaid_rules}
-- Keep the same meaning as the broken source when possible{error_line}{user_instruction}{context}
-
-Broken Mermaid source:
-{content.strip() or "(empty)"}
-"""
+        context = f"\n\nSurrounding note context:\n---\n{note_context[:3500]}\n---"
 
     return f"""Fix this broken {lang} code block from study notes. Return ONLY executable {lang} source — no markdown fences, no explanation, no step labels.
 
@@ -96,16 +65,21 @@ def regenerate_block(
             "Gemini (LLM_PROVIDER=gemini, LLM_API_KEY) or start local LM Studio/Ollama."
         )
 
-    effective_instruction = instruction
-    if block_type == "mermaid" and mode == "polish" and not instruction:
-        effective_instruction = None
+    if block_type == "mermaid":
+        return regenerate_mermaid(
+            content,
+            error=error,
+            note_context=note_context,
+            mode=mode,
+            llm=llm,
+        )
 
     prompt = _build_prompt(
         block_type=block_type,
         language=language,
         content=content,
         error=error,
-        instruction=effective_instruction,
+        instruction=instruction,
         note_context=note_context,
         mode=mode,
     )
@@ -113,7 +87,7 @@ def regenerate_block(
         prompt,
         timeout=90.0,
         llm=llm,
-        system_prompt="You output raw source code or diagram text only. Never wrap in markdown fences. No reasoning or explanation.",
+        system_prompt="You output raw source code only. Never wrap in markdown fences. No reasoning or explanation.",
     )
     if not raw:
         hint = (
@@ -123,14 +97,7 @@ def regenerate_block(
         )
         raise RuntimeError(hint)
 
-    cleaned = _strip_fences(raw)
-    if block_type == "mermaid":
-        cleaned = cleaned.strip()
-        if cleaned.lower().startswith("mermaid"):
-            cleaned = cleaned.split("\n", 1)[-1].strip()
-        cleaned = sanitize_mermaid_source(cleaned)
-        cleaned = aggressive_sanitize_mermaid_source(cleaned)
-    return cleaned.strip()
+    return _strip_fences(raw).strip()
 
 
 def _build_selection_prompt(
@@ -189,7 +156,7 @@ def _classify_selection(selection: str) -> tuple[str | None, str, str, bool]:
 
 def _wrap_block_output(block_type: str, language: str, inner: str, *, had_fence: bool, original: str) -> str:
     if block_type == "mermaid":
-        body = sanitize_mermaid_source(inner)
+        body = layout_safe_mermaid_source(inner)
         if had_fence or "```mermaid" in original.lower():
             return f"```mermaid\n{body}\n```"
         return body
@@ -254,18 +221,17 @@ def regenerate_selection(
 
     cleaned = _strip_fences(raw).strip()
 
-    # If selection was a mermaid fence block, sanitize inner diagram
     mermaid_match = re.search(r"```mermaid\s*\n([\s\S]*?)```", cleaned, re.I)
     if mermaid_match:
-        inner = sanitize_mermaid_source(mermaid_match.group(1))
+        inner_m = layout_safe_mermaid_source(mermaid_match.group(1))
         cleaned = re.sub(
             r"```mermaid\s*\n[\s\S]*?```",
-            f"```mermaid\n{inner}\n```",
+            f"```mermaid\n{inner_m}\n```",
             cleaned,
             count=1,
             flags=re.I,
         )
     elif re.match(r"^(graph|flowchart)\s", cleaned, re.I):
-        cleaned = sanitize_mermaid_source(cleaned)
+        cleaned = layout_safe_mermaid_source(cleaned)
 
     return cleaned.strip()

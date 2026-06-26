@@ -174,8 +174,8 @@ export function StudyLibraryCreateSheet({
 
           <p className="text-xs text-muted-foreground pt-2 border-t border-emerald-900/30">
             {llmConfig?.reachable
-              ? `LLM ready · ${llmConfig.model}`
-              : "Start your local LLM (Ollama / LM Studio) for generation."}
+              ? `LLM ready · ${llmConfig.provider} · ${llmConfig.model}`
+              : "Set OLLAMA_ENABLED=1 and LLM_API_KEY (Gemini) or start local LM Studio for generation."}
           </p>
         </div>
       </SheetContent>

@@ -1,5 +1,5 @@
-import { authFetch } from "../features/vocab/api/authClient";
 import { getVocabToken } from "./vocabClient";
+import { resolveApiUrl } from "../utils/resolveBackendUrl";
 import type {
   CodeDrill,
   DueReviewItem,
@@ -13,7 +13,15 @@ import type {
 } from "../features/quiz/types";
 
 async function quizRequest<T>(path: string, init?: RequestInit): Promise<T> {
-  const { data } = await authFetch(`/api/quiz${path}`, getVocabToken(), init);
+  const headers = new Headers(init?.headers || {});
+  if (!(init?.body instanceof FormData)) {
+    headers.set("Content-Type", "application/json");
+  }
+  const token = getVocabToken();
+  if (token) headers.set("Authorization", `Bearer ${token}`);
+  const res = await fetch(`${resolveApiUrl()}/api/quiz${path}`, { ...init, headers });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error((data as { detail?: string })?.detail || `HTTP ${res.status}`);
   return data as T;
 }
 

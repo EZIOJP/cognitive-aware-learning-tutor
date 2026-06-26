@@ -1,5 +1,5 @@
 import mermaid from "mermaid";
-import { aggressiveSanitizeMermaidSource, sanitizeMermaidSource } from "./mermaidSanitize";
+import { aggressiveSanitizeMermaidSource, sanitizeMermaidSource } from "./pipeline";
 
 let initialized = false;
 let renderChain: Promise<unknown> = Promise.resolve();
@@ -94,8 +94,7 @@ export async function validateMermaidSource(source: string): Promise<string | nu
   ensureMermaidInitialized();
   try {
     await withQuietMermaidConsole(async () => {
-      const ok = await mermaid.parse(trimmed, { suppressErrors: false });
-      if (ok === false) throw new Error("Mermaid parse failed");
+      await mermaid.parse(trimmed, { suppressErrors: false });
     });
     return null;
   } catch (err) {

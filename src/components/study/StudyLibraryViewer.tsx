@@ -47,6 +47,8 @@ type Props = {
   quizDisabled?: boolean;
   sectionEdit?: MarkdownNoteSectionProps;
   llmReachable?: boolean;
+  llmProvider?: string;
+  llmModel?: string;
   onRegenerateSelection?: (opts: {
     selection: string;
     start: number;
@@ -83,6 +85,8 @@ export function StudyLibraryViewer({
   quizDisabled = false,
   sectionEdit,
   llmReachable = false,
+  llmProvider,
+  llmModel,
   onRegenerateSelection,
   onRepairSyntaxOnly,
   onRepairAllBlocks,
@@ -125,7 +129,7 @@ export function StudyLibraryViewer({
     return () => {
       cancelled = true;
     };
-  }, [relativePath, initialScrollTop, loading, mode, primaryContent, editing]);
+  }, [relativePath, initialScrollTop, loading, mode, editing]);
 
   const setScrollContainer = useCallback(
     (el: HTMLDivElement | null) => {
@@ -199,6 +203,9 @@ export function StudyLibraryViewer({
                 }
               >
                 {llmReachable ? "● LLM online" : "● LLM offline — Fix syntax works without AI"}
+                {llmProvider && llmModel
+                  ? ` · ${llmProvider} / ${llmModel}`
+                  : ""}
               </span>
             </p>
           </div>
@@ -256,8 +263,8 @@ export function StudyLibraryViewer({
                   disabled={repairingAll || repairingSyntax || !llmReachable}
                   title={
                     llmReachable
-                      ? "Fix all broken mermaid/code blocks with Gemma/Ollama"
-                      : "Start LM Studio/Ollama (OLLAMA_ENABLED=1)"
+                      ? "Fix all broken mermaid/code blocks with AI"
+                      : "Set LLM_API_KEY for Gemini or start LM Studio (OLLAMA_ENABLED=1)"
                   }
                   onClick={() => {
                     setRepairingAll(true);
@@ -401,6 +408,7 @@ export function StudyLibraryViewer({
             )}
           </div>
         )}
+
       </section>
     );
   }

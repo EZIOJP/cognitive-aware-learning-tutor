@@ -6,7 +6,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { repairNoteMarkdown } from "../src/components/study/markdownRepair";
-import { aggressiveSanitizeMermaidSource, sanitizeMermaidSource } from "../src/components/study/mermaidSanitize";
+import { layoutSafeMermaidSource } from "../src/features/study-notes";
 import { listFencedBlocks, replaceFencedBlock } from "../src/components/study/noteBlockUtils";
 
 const NOTE = resolve(
@@ -27,9 +27,7 @@ describe("block index save QA (live captions note)", () => {
     expect(firstMermaid).toBeDefined();
     expect(firstMermaid!.index).toBe(0);
 
-    const fixed = aggressiveSanitizeMermaidSource(
-      sanitizeMermaidSource(firstMermaid!.content),
-    );
+    const fixed = layoutSafeMermaidSource(firstMermaid!.content);
     expect(fixed).toContain("Positive indices");
     expect(fixed).not.toContain("W[-1]");
 

@@ -11,6 +11,18 @@ describe("noteBlockUtils", () => {
   it("extracts markdown code from react children", () => {
     expect(extractMarkdownCode(["import numpy as np\n"])).toBe("import numpy as np");
     expect(extractMarkdownCode(undefined)).toBe("");
+    expect(extractMarkdownCode("print(1)\n")).toBe("print(1)");
+  });
+
+  it("recursively extracts text from nested react-markdown children", () => {
+    const nested = {
+      props: {
+        children: ["import numpy as np\n", { props: { children: "\nprint(1)\n" } }],
+      },
+    };
+    expect(extractMarkdownCode(nested)).toBe("import numpy as np\n\nprint(1)");
+    expect(extractMarkdownCode([nested])).toBe("import numpy as np\n\nprint(1)");
+    expect(isBrokenBlockContent(extractMarkdownCode({ props: {} }))).toBe(true);
   });
 
   it("replaces fenced block by index", () => {
@@ -115,6 +127,19 @@ describe("repairNoteMarkdown", () => {
 });
 
 describe("repairStepCodeBlocks", () => {
+  it("does not wrap lines inside existing fences", () => {
+    const raw = `## Example
+
+\`\`\`python
+# Step 1: already fenced
+W = np.array([1, 2, 3])
+\`\`\`
+`;
+    const fixed = repairStepCodeBlocks(raw);
+    expect(fixed).toBe(raw);
+    expect(listFencedBlocks(fixed)).toHaveLength(1);
+  });
+
   it("wraps step code lines in python fences", () => {
     const raw = `Step 1: Import the library
 import numpy as np

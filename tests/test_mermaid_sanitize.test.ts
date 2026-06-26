@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { sanitizeMermaidSource } from "../src/components/study/mermaidSanitize";
+import { aggressiveSanitizeMermaidSource, dedupeRepeatedMermaidDiagram, extractMermaidFromLlmOutput, sanitizeMermaidSource } from "../src/features/mermaid/pipeline";
 
 const SAMPLE = `flowchart TD
     A[Start with Data] --> B{Goal: Understand Hidden Patterns?}
@@ -105,5 +105,19 @@ describe("sanitizeMermaidSource", () => {
   it("prepends flowchart TD when header missing", () => {
     const fixed = sanitizeMermaidSource("A --> B");
     expect(fixed.startsWith("flowchart TD")).toBe(true);
+  });
+
+  it("extracts diagram from LLM reasoning preamble", () => {
+    const raw =
+      "The user wants me to fix this diagram.\n\nflowchart TD\nA --> B\nB --> C";
+    expect(extractMermaidFromLlmOutput(raw)).toBe("flowchart TD\nA --> B\nB --> C");
+  });
+
+  it("dedupes glued repeated flowchart TD from small LLM output", () => {
+    const doubled =
+      'flowchart TD\nA --> B\nC --> Dflowchart TD\nA --> B\nC --> D';
+    expect(dedupeRepeatedMermaidDiagram(doubled).toLowerCase().split("flowchart td").length - 1).toBe(1);
+    const fixed = aggressiveSanitizeMermaidSource(doubled);
+    expect(fixed.toLowerCase().split("flowchart td").length - 1).toBe(1);
   });
 });

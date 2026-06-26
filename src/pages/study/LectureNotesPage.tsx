@@ -36,7 +36,7 @@ import {
   saveLlmPrefs,
   regenerateNoteBlock,
   regenerateNoteSelection,
-  repairAllNoteBlocks,
+  repairAndSaveNote,
   saveNoteContent,
   summarizeLibraryFolder,
   syncStudySession,
@@ -59,9 +59,13 @@ import { StudyLibraryReviewPanel } from "../../components/study/StudyLibraryRevi
 import { StudyLibraryStepper, type StudyWorkflowStep } from "../../components/study/StudyLibraryStepper";
 import { StudyLibraryExplorer } from "../../components/study/StudyLibraryExplorer";
 import { findLibraryFile, withPreservedScroll } from "../../components/study/studyLibraryUtils";
-import { extractBlockSurroundingContext, extractSelectionSurroundingContext, replaceFencedBlock } from "../../components/study/noteBlockUtils";
-import { repairNoteMarkdown } from "../../components/study/markdownRepair";
-import { aggressiveSanitizeMermaidSource, sanitizeMermaidSource } from "../../components/study/mermaidSanitize";
+import {
+  applyBlockUpdate,
+  finalizeNoteMarkdown,
+  layoutSafeMermaidSource,
+  prepareNoteMarkdown,
+} from "../../features/study-notes";
+import { extractBlockSurroundingContext, extractSelectionSurroundingContext } from "../../components/study/noteBlockUtils";
 import { cn } from "../../app/components/ui/utils";
 import { StudyLibraryViewer } from "../../components/study/StudyLibraryViewer";
 import { StudyLibraryCreateSheet } from "../../components/study/StudyLibraryCreateSheet";
@@ -385,15 +389,22 @@ export function LectureNotesPage() {
     }
   };
 
+  const persistNote = useCallback(async (path: string, markdown: string) => {
+    await saveNoteContent(path, markdown);
+    setContent(markdown);
+    void indexNote(path).catch(() => undefined);
+  }, []);
+
   const handleSaveNoteContent = useCallback(
     async (path: string, body: string) => {
-      await saveNoteContent(path, body);
-      setContent(body);
-      void indexNote(path).catch(() => undefined);
+      const finalized = finalizeNoteMarkdown(body);
+      await withPreservedScroll(scrollContainerRef.current, async () => {
+        await persistNote(path, finalized);
+      });
       setToast("Note saved");
       setTimeout(() => setToast(null), 2500);
     },
-    [],
+    [persistNote],
   );
 
   const handleExportNote = useCallback(async (path: string, format: "pdf" | "docx") => {
@@ -422,20 +433,14 @@ export function LectureNotesPage() {
         throw new Error("No note selected — pick a file in the library first.");
       }
       await withPreservedScroll(scrollContainerRef.current, async () => {
-        const base = repairNoteMarkdown(content);
-        const blockBody =
-          _language === "mermaid"
-            ? aggressiveSanitizeMermaidSource(sanitizeMermaidSource(newBlockContent))
-            : newBlockContent;
-        const updated = replaceFencedBlock(base, blockIndex, blockBody);
-        await saveNoteContent(selectedNote, updated);
-        setContent(updated);
-        void indexNote(selectedNote).catch(() => undefined);
+        const base = prepareNoteMarkdown(content);
+        const updated = applyBlockUpdate(base, blockIndex, newBlockContent, { lang: _language });
+        await persistNote(selectedNote, updated);
       });
       setToast("Block saved");
       setTimeout(() => setToast(null), 2500);
     },
-    [content, selectedNote],
+    [content, selectedNote, persistNote],
   );
 
   const handleBlockRegenerate = useCallback(
@@ -455,7 +460,7 @@ export function LectureNotesPage() {
           content: blockContent,
           error,
           mode: opts?.mode ?? "fix",
-          note_context: extractBlockSurroundingContext(repairNoteMarkdown(content), blockIndex, {
+          note_context: extractBlockSurroundingContext(prepareNoteMarkdown(content), blockIndex, {
             blockContent,
           }),
           llm: llmOverrides,
@@ -482,16 +487,16 @@ export function LectureNotesPage() {
       noteMarkdown: string;
       lang: string | null;
     }) => {
-      const base = repairNoteMarkdown(noteMarkdown);
+      const base = prepareNoteMarkdown(noteMarkdown);
 
       const applyMermaidSanitize = (text: string): string => {
         const mermaidFence = /```mermaid\s*\n([\s\S]*?)```/i.exec(text);
         if (mermaidFence) {
-          const inner = sanitizeMermaidSource(mermaidFence[1]);
+          const inner = layoutSafeMermaidSource(mermaidFence[1]);
           return text.replace(mermaidFence[0], `\`\`\`mermaid\n${inner}\n\`\`\``);
         }
         if (/^(graph|flowchart)\s/im.test(text.trim())) {
-          const inner = sanitizeMermaidSource(
+          const inner = layoutSafeMermaidSource(
             text.replace(/^```mermaid\s*\n/i, "").replace(/\n```\s*$/i, "").trim(),
           );
           return text.includes("```mermaid") ? `\`\`\`mermaid\n${inner}\n\`\`\`` : inner;
@@ -522,13 +527,11 @@ export function LectureNotesPage() {
   const handleRepairAllBlocks = useCallback(async () => {
     if (!selectedNote || !content.trim()) return;
     try {
-      const result = await repairAllNoteBlocks({
-        content: repairNoteMarkdown(content),
+      const result = await repairAndSaveNote(selectedNote, {
         use_llm: true,
         llm: llmOverrides,
       });
       await withPreservedScroll(scrollContainerRef.current, async () => {
-        await saveNoteContent(selectedNote, result.content);
         setContent(result.content);
         void indexNote(selectedNote).catch(() => undefined);
       });
@@ -545,12 +548,8 @@ export function LectureNotesPage() {
   const handleRepairSyntaxOnly = useCallback(async () => {
     if (!selectedNote || !content.trim()) return;
     try {
-      const result = await repairAllNoteBlocks({
-        content: repairNoteMarkdown(content),
-        use_llm: false,
-      });
+      const result = await repairAndSaveNote(selectedNote, { use_llm: false });
       await withPreservedScroll(scrollContainerRef.current, async () => {
-        await saveNoteContent(selectedNote, result.content);
         setContent(result.content);
         void indexNote(selectedNote).catch(() => undefined);
       });
@@ -1095,10 +1094,6 @@ export function LectureNotesPage() {
               onRepairSyntaxOnly={handleRepairSyntaxOnly}
               onRepairAllBlocks={handleRepairAllBlocks}
               onRegenerateSelection={handleSelectionRegenerate}
-              onIssueReportCopied={(msg) => {
-                setToast(msg);
-                setTimeout(() => setToast(null), 4500);
-              }}
             />
           </div>
 

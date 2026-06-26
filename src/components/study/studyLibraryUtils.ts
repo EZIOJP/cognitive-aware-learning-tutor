@@ -66,3 +66,17 @@ export function isLibraryDrag(e: DragEvent): boolean {
     e.dataTransfer.types.includes(DRAG_PATH_KEY) || e.dataTransfer.types.includes("text/plain")
   );
 }
+
+/** Keep the reader scroll position when note content updates in place (block save / AI fix). */
+export async function withPreservedScroll(
+  container: HTMLDivElement | null | undefined,
+  action: () => Promise<void>,
+): Promise<void> {
+  const top = container?.scrollTop ?? 0;
+  await action();
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      if (container) container.scrollTop = top;
+    });
+  });
+}

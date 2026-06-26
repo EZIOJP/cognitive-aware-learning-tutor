@@ -1,0 +1,137 @@
+{
+  "name": "transcript-notes-studio",
+  "version": "2026-06-25",
+  "description": "Capture → Tune → Generate lecture notes pipeline",
+  "workflow_steps": [
+    {
+      "id": "capture",
+      "label": "1 Capture",
+      "outputs": ["data/transcripts/*.txt"],
+      "modules": ["live_captions", "whisper_client", "whisper_live", "snapshots"]
+    },
+    {
+      "id": "tune",
+      "label": "2 Tune",
+      "inputs": ["data/transcripts/*.txt"],
+      "outputs": ["cleaned preview", "optional *_cleaned_*.txt"],
+      "modules": ["chunked_parse", "parse_throttle", "parse_audit", "cleanup"]
+    },
+    {
+      "id": "generate",
+      "label": "3 Generate",
+      "inputs": ["cleaned transcript", "context PDF/md/ipynb"],
+      "outputs": ["data/notes/*.md"],
+      "modules": ["notes_generator", "backend/transcripts/notes_generator", "mermaid/prompts"]
+    },
+    {
+      "id": "done",
+      "label": "4 Done / Study",
+      "read_only": true,
+      "web_route": "/lecture-notes",
+      "modules": ["src/pages/study/LectureNotesPage.tsx", "backend/transcripts/router.py"]
+    }
+  ],
+  "pipelines": {
+    "studio": {
+      "parse": "transcript_studio.chunked_parse.parse_transcript_auto",
+      "generate": "transcript_studio.notes_generator.generate_notes_from_text",
+      "defaults": {
+        "thorough_parse": true,
+        "parse_speed": 65,
+        "refine_second_pass": false,
+        "inject_wikilinks": false,
+        "max_llm_chunks": 12
+      }
+    },
+    "legacy": {
+      "entry": "scripts/run_transcript_to_notes.bat",
+      "parse": "backend.transcripts.cleanup.clean_transcript",
+      "generate": "backend.transcripts.notes_generator.generate_notes_from_file",
+      "defaults": {
+        "fast_mode": true,
+        "refine_second_pass": false,
+        "use_semantic_grouping": false,
+        "inject_wikilinks": false
+      }
+    }
+  },
+  "repo_paths": {
+    "studio_root": "transcript-notes-studio/",
+    "backend_engine": "backend/transcripts/",
+    "llm_client": "backend/core/ollama_client.py",
+    "data_transcripts": "data/transcripts/",
+    "data_notes": "data/notes/",
+    "logs": "data/logs/transcript_studio.log"
+  },
+  "copy_sets": {
+    "studio": {
+      "root": "transcript-notes-studio",
+      "exclude_globs": [
+        "**/__pycache__/**",
+        "**/.pytest_cache/**",
+        "**/.venv/**",
+        "**/venv/**",
+        "**/data/transcripts/*.txt",
+        "**/data/notes/*.md",
+        "**/data/llm_cache.db",
+        "**/handoff-export/**"
+      ],
+      "include_globs": [
+        "transcript_studio/**",
+        "tests/**",
+        "handoff/**",
+        "*.bat",
+        "*.txt",
+        "config.json",
+        "conftest.py",
+        "run_gui.py",
+        "export_handoff.py",
+        "verify_pipeline_imports.py",
+        ".env.example",
+        "data/**/.gitkeep"
+      ]
+    },
+    "backend_notes_engine": {
+      "files": [
+        "backend/paths.py",
+        "backend/config.py",
+        "backend/core/ollama_client.py",
+        "backend/transcripts/__init__.py",
+        "backend/transcripts/cleanup.py",
+        "backend/transcripts/notes_generator.py",
+        "backend/transcripts/note_document.py",
+        "backend/transcripts/sources.py",
+        "backend/transcripts/snapshots.py",
+        "backend/transcripts/semantic_grouper.py",
+        "backend/transcripts/embedding.py",
+        "backend/transcripts/path_utils.py",
+        "backend/transcripts/tag_engine.py",
+        "backend/transcripts/mermaid/__init__.py",
+        "backend/transcripts/mermaid/prompts.py",
+        "backend/transcripts/mermaid/pipeline.py",
+        "backend/scripts/transcript_to_notes.py"
+      ]
+    },
+    "backend_tests": {
+      "files": [
+        "tests/test_notes_generator.py",
+        "tests/test_transcript_to_notes_cli.py",
+        "tests/test_transcript_cleanup.py",
+        "tests/test_semantic_grouper.py"
+      ]
+    },
+    "docs": {
+      "files": [
+        "docs/TRANSCRIPT_STUDIO_HANDOFF.md",
+        "docs/TRANSCRIPT_STUDIO_WORKFLOW.md"
+      ]
+    },
+    "scripts": {
+      "files": [
+        "scripts/run_transcript_to_notes.bat",
+        "scripts/run_live_captions_scraper.bat",
+        "scripts/install_notes.bat"
+      ]
+    }
+  }
+}

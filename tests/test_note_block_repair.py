@@ -1,5 +1,11 @@
 from backend.transcripts.cleanup import sanitize_mermaid_source
-from backend.transcripts.note_block_repair import _is_broken_code, _mermaid_still_broken, repair_all_blocks
+from backend.transcripts.mermaid import is_mermaid_likely_broken
+from backend.transcripts.note_block_repair import repair_all_blocks
+from backend.transcripts.note_document import mermaid_still_broken
+
+
+def _is_broken_code(content: str) -> bool:
+    return content.strip().lower() in {"", "undefined", "null", "[object object]"}
 
 
 def test_mermaid_edge_label_sanitize():
@@ -11,8 +17,9 @@ def test_mermaid_edge_label_sanitize():
 
 
 def test_mermaid_still_broken_detects_legacy_edges():
-    assert _mermaid_still_broken("A -- Yes --> B") is True
-    assert _mermaid_still_broken("A -->|Yes| B") is False
+    assert is_mermaid_likely_broken("A -- Yes --> B") is True
+    assert mermaid_still_broken("A -- Yes --> B") is False
+    assert mermaid_still_broken("flowchart TD\nA -->|Yes| B") is False
 
 
 def test_is_broken_code():

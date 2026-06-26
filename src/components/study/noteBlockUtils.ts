@@ -1,3 +1,5 @@
+import { listFencedBlocks, replaceFencedBlock } from "../../features/study-notes";
+
 export type FencedBlock = {
   index: number;
   lang: string;
@@ -6,52 +8,25 @@ export type FencedBlock = {
   end: number;
 };
 
-const FENCE_BLOCK_RE = /```(\w*)[^\S\r\n]*\r?\n([\s\S]*?)```/g;
+export { listFencedBlocks, replaceFencedBlock };
 
-export function listFencedBlocks(markdown: string): FencedBlock[] {
-  const blocks: FencedBlock[] = [];
-  let match: RegExpExecArray | null;
-  const re = new RegExp(FENCE_BLOCK_RE.source, "g");
-  while ((match = re.exec(markdown)) !== null) {
-    blocks.push({
-      index: blocks.length,
-      lang: (match[1] || "text").toLowerCase(),
-      content: match[2].replace(/\n$/, ""),
-      start: match.index,
-      end: match.index + match[0].length,
-    });
+function extractTextFromMarkdownChildren(node: unknown): string {
+  if (node == null) return "";
+  if (typeof node === "string") return node;
+  if (typeof node === "number" || typeof node === "boolean") return String(node);
+  if (Array.isArray(node)) return node.map(extractTextFromMarkdownChildren).join("");
+  if (typeof node === "object" && "props" in node) {
+    const props = (node as { props?: { children?: unknown } }).props;
+    if (props?.children !== undefined) {
+      return extractTextFromMarkdownChildren(props.children);
+    }
   }
-  return blocks;
+  return "";
 }
 
-export function replaceFencedBlock(markdown: string, blockIndex: number, newContent: string): string {
-  const blocks = listFencedBlocks(markdown);
-  const block = blocks[blockIndex];
-  if (!block) {
-    throw new Error(
-      `Could not save block ${blockIndex}: note has ${blocks.length} fenced block${blocks.length === 1 ? "" : "s"}. Refresh and try again.`,
-    );
-  }
-  const lang = block.lang && block.lang !== "text" ? block.lang : "";
-  const fence = lang
-    ? `\`\`\`${lang}\n${newContent.trim()}\n\`\`\``
-    : `\`\`\`\n${newContent.trim()}\n\`\`\``;
-  return markdown.slice(0, block.start) + fence + markdown.slice(block.end);
-}
-
+/** Reconstruct fenced code source from react-markdown `code` children (strings or nested nodes). */
 export function extractMarkdownCode(children: unknown): string {
-  if (children == null) return "";
-  if (Array.isArray(children)) {
-    return children
-      .map((child) => {
-        if (typeof child === "string") return child;
-        if (child == null) return "";
-        return String(child);
-      })
-      .join("")
-      .replace(/\n$/, "");
-  }
-  return String(children).replace(/\n$/, "");
+  return extractTextFromMarkdownChildren(children).replace(/\n$/, "");
 }
 
 export function isBrokenBlockContent(content: string): boolean {

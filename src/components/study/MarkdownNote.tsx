@@ -1,14 +1,14 @@
-import { Suspense, lazy, useMemo } from "react";
+import { Suspense, lazy, useMemo, useRef } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { repairNoteMarkdown } from "./markdownRepair";
+import { prepareNoteMarkdown } from "../../features/study-notes";
 import { extractMarkdownCode } from "./noteBlockUtils";
 import { CodeBlock } from "./CodeBlock";
 import { StudyMarkdownImage } from "./StudySnapshotImage";
 import type { SectionBlockHandlers } from "./useSectionBlockEdit";
 
-const MermaidBlock = lazy(() =>
-  import("./MermaidBlock").then((m) => ({ default: m.MermaidBlock })),
+const MermaidBlockShell = lazy(() =>
+  import("./MermaidBlockShell").then((m) => ({ default: m.MermaidBlockShell })),
 );
 const PythonCodeBlock = lazy(() =>
   import("./PythonCodeBlock").then((m) => ({ default: m.PythonCodeBlock })),
@@ -59,8 +59,9 @@ function sectionHandlersFor(
 }
 
 export function MarkdownNote({ content, sectionEdit }: MarkdownNoteProps) {
-  const repaired = useMemo(() => repairNoteMarkdown(content), [content]);
-  let blockCounter = 0;
+  const prepared = useMemo(() => prepareNoteMarkdown(content), [content]);
+  const fenceOrdinal = useRef(0);
+  fenceOrdinal.current = 0;
 
   return (
     <div className="lecture-notes-markdown space-y-3 text-sm leading-relaxed">
@@ -118,12 +119,12 @@ export function MarkdownNote({ content, sectionEdit }: MarkdownNoteProps) {
             }
 
             const code = extractMarkdownCode(children);
-            const blockIndex = blockCounter++;
+            const blockIndex = fenceOrdinal.current++;
 
             if (lang === "mermaid") {
               return (
                 <Suspense fallback={<BlockFallback />}>
-                  <MermaidBlock
+                  <MermaidBlockShell
                     code={code}
                     sectionHandlers={sectionHandlersFor(blockIndex, "mermaid", sectionEdit)}
                   />
@@ -158,7 +159,7 @@ export function MarkdownNote({ content, sectionEdit }: MarkdownNoteProps) {
           },
         }}
       >
-        {repaired}
+        {prepared}
       </ReactMarkdown>
     </div>
   );

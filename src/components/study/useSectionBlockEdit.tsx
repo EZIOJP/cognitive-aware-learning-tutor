@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { SectionBlockToolbar } from "./SectionBlockToolbar";
-import { aggressiveSanitizeMermaidSource, sanitizeMermaidSource } from "./mermaidSanitize";
+import { layoutSafeMermaidSource } from "../../features/study-notes";
 import { isBrokenBlockContent } from "./noteBlockUtils";
 
 export type SectionBlockHandlers = {
@@ -76,7 +76,7 @@ export function useSectionBlockEdit(
     setSaving(true);
     setLocalError(null);
     const source = editing ? draft : initialContent;
-    const fixed = aggressiveSanitizeMermaidSource(sanitizeMermaidSource(source));
+    const fixed = layoutSafeMermaidSource(source);
     try {
       await handlers.onBlockSave(handlers.blockIndex, handlers.language, fixed);
       setDraft(fixed);
@@ -102,7 +102,7 @@ export function useSectionBlockEdit(
     const baseSource = editing ? draft : initialContent;
     let source = baseSource;
     if (isMermaid) {
-      source = sanitizeMermaidSource(baseSource);
+      source = layoutSafeMermaidSource(baseSource);
     }
     const errorHint =
       renderError ||
@@ -117,9 +117,7 @@ export function useSectionBlockEdit(
         errorHint,
         { mode },
       );
-      const polished = isMermaid
-        ? aggressiveSanitizeMermaidSource(sanitizeMermaidSource(fixed))
-        : fixed;
+      const polished = isMermaid ? layoutSafeMermaidSource(fixed) : fixed;
       setDraft(polished);
       if (regenerateAutoSave && handlers.onBlockSave) {
         await handlers.onBlockSave(handlers.blockIndex, handlers.language, polished);

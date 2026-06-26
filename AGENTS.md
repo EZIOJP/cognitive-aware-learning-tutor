@@ -38,3 +38,13 @@ Frontend: `http://localhost:5173` · Vocab API: `http://localhost:8000/api/vocab
 - [docs/CURRENT_ARCHITECTURE.md](docs/CURRENT_ARCHITECTURE.md)
 - [docs/SETUP_AND_COMMANDS.md](docs/SETUP_AND_COMMANDS.md)
 - `.cursor/rules/*.mdc` — auto-applied Cursor rules
+
+## Cursor Cloud specific instructions
+
+The cloud VM is **Linux** — the `.bat` scripts above are Windows-only. Use the `.sh` scripts or direct commands. The startup update script already creates `.venv` and installs backend + frontend deps; you only need to start services.
+
+- **Backend** (`:8000`): `source .venv/bin/activate && python -m uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload`. On startup it auto-runs Alembic migrations and seeds 192 words into SQLite at `data/vocab_app.db` — no manual migrate/seed step needed.
+- **Frontend** (`:5173`): `npm run dev`. Vite proxies `/api` → `http://127.0.0.1:8000`, so the backend must be running for persistent (signed-in) progress.
+- **Auth:** `DEV_MODE=true` (from `.env.example`) auto-authenticates, so the UI loads straight to the Study Hub without a login. Default account is `admin` / `admin123`. The GRE Vocab feature is at `/gre-vocab` (the sidebar nav may not route to it; use the URL).
+- **Tests:** `.venv/bin/python -m pytest -q`. ~153 pass. 5 failures are expected unless `backend/requirements-notes.txt` is installed (pulls `markdown` + sentence-transformers/PyTorch): they cover transcript-notes/corpus + one math-tutor bank test, all outside the Phase 1 vocab scope.
+- **Lint/typecheck:** none configured (no ESLint or `tsconfig.json`; Vite uses esbuild without type-checking). The closest check is `npm run build` (a production build).

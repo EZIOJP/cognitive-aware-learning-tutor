@@ -4,15 +4,12 @@ import { Card } from "../../app/components/ui/card";
 import { Button } from "../../app/components/ui/button";
 import { getLlmConfig, loadLlmPrefs, saveLlmPrefs, type LlmConfig } from "../../api/transcriptsClient";
 
-const TIER_KEY = "lecture-notes:llm-tier";
 const TIERS = ["light", "medium", "heavy"] as const;
 type Tier = (typeof TIERS)[number];
 
-function readTier(): Tier {
-  const stored = localStorage.getItem(TIER_KEY) as Tier | null;
-  if (stored && TIERS.includes(stored)) return stored;
-  const legacy = loadLlmPrefs().llm_provider;
-  if (legacy === "gemini") return "medium";
+function initialTier(): Tier {
+  const stored = loadLlmPrefs().llm_tier;
+  if (stored && TIERS.includes(stored as Tier)) return stored as Tier;
   return "medium";
 }
 
@@ -23,7 +20,7 @@ function tierLabel(tier: Tier): string {
 }
 
 export function LlmGatewayCard() {
-  const [tier, setTier] = useState<Tier>(readTier);
+  const [tier, setTier] = useState<Tier>(initialTier);
   const [cfg, setCfg] = useState<LlmConfig | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -42,7 +39,6 @@ export function LlmGatewayCard() {
   }, [tier]);
 
   useEffect(() => {
-    localStorage.setItem(TIER_KEY, tier);
     saveLlmPrefs({ ...loadLlmPrefs(), llm_tier: tier });
     void refresh();
   }, [tier, refresh]);

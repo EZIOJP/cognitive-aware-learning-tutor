@@ -60,7 +60,7 @@ export type LlmOverrides = {
   confirm_heavy_budget?: boolean;
 };
 
-function llmBodyFields(llm?: LlmOverrides, confirmHeavyBudget?: boolean) {
+export function llmBodyFields(llm?: LlmOverrides, confirmHeavyBudget?: boolean) {
   return {
     llm_provider: llm?.llm_provider,
     llm_base_url: llm?.llm_base_url,
@@ -72,22 +72,41 @@ function llmBodyFields(llm?: LlmOverrides, confirmHeavyBudget?: boolean) {
 
 const LLM_PREFS_KEY = "lecture-notes:llm";
 const LLM_PREFS_MIGRATION_KEY = "lecture-notes:llm-migration-v2";
+const LEGACY_TIER_KEY = "lecture-notes:llm-tier";
+const VALID_TIERS = new Set(["light", "medium", "heavy"]);
+
+function migrateLegacyTierKey(prefs: LlmOverrides): LlmOverrides {
+  if (prefs.llm_tier && VALID_TIERS.has(prefs.llm_tier)) {
+    if (localStorage.getItem(LEGACY_TIER_KEY)) {
+      localStorage.removeItem(LEGACY_TIER_KEY);
+    }
+    return prefs;
+  }
+  const legacyTier = localStorage.getItem(LEGACY_TIER_KEY);
+  localStorage.removeItem(LEGACY_TIER_KEY);
+  if (legacyTier && VALID_TIERS.has(legacyTier)) {
+    const merged = { ...prefs, llm_tier: legacyTier };
+    localStorage.setItem(LLM_PREFS_KEY, JSON.stringify(merged));
+    return merged;
+  }
+  return prefs;
+}
 
 export function loadLlmPrefs(): LlmOverrides {
   try {
     const raw = localStorage.getItem(LLM_PREFS_KEY);
-    const prefs: LlmOverrides = raw ? (JSON.parse(raw) as LlmOverrides) : {};
+    let prefs: LlmOverrides = raw ? (JSON.parse(raw) as LlmOverrides) : {};
     if (!localStorage.getItem(LLM_PREFS_MIGRATION_KEY) && prefs.llm_provider === "gemini") {
-      const migrated: LlmOverrides = {
+      prefs = {
+        ...prefs,
         llm_provider: "lmstudio",
         llm_base_url: prefs.llm_base_url ?? "http://127.0.0.1:1234",
         llm_model: "google/gemma-4-e4b",
       };
-      localStorage.setItem(LLM_PREFS_KEY, JSON.stringify(migrated));
+      localStorage.setItem(LLM_PREFS_KEY, JSON.stringify(prefs));
       localStorage.setItem(LLM_PREFS_MIGRATION_KEY, "1");
-      return migrated;
     }
-    return prefs;
+    return migrateLegacyTierKey(prefs);
   } catch {
     return {};
   }

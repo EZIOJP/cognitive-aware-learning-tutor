@@ -147,22 +147,10 @@ export function LectureNotesPage() {
   const [llmTier, setLlmTier] = useState(
     () => loadLlmPrefs().llm_tier ?? "medium",
   );
-  const [llmProvider, setLlmProvider] = useState(
-    () => loadLlmPrefs().llm_provider ?? "lmstudio",
-  );
-  const [llmBaseUrl, setLlmBaseUrl] = useState(
-    () => loadLlmPrefs().llm_base_url ?? "http://127.0.0.1:1234",
-  );
-  const [llmModel, setLlmModel] = useState(
-    () => loadLlmPrefs().llm_model ?? "google/gemma-4-e4b",
-  );
   const [regeneratingBlock, setRegeneratingBlock] = useState<number | null>(null);
 
   const llmOverrides: LlmOverrides = {
     llm_tier: llmTier,
-    llm_provider: llmProvider,
-    llm_base_url: llmProvider === "gemini" ? undefined : llmBaseUrl.trim(),
-    llm_model: llmModel.trim(),
   };
 
   const isHeavyBudgetError = (e: unknown) =>
@@ -199,7 +187,7 @@ export function LectureNotesPage() {
 
   useEffect(() => {
     saveLlmPrefs(llmOverrides);
-  }, [llmTier, llmProvider, llmBaseUrl, llmModel]);
+  }, [llmTier]);
 
   useEffect(() => {
     try {
@@ -251,18 +239,6 @@ export function LectureNotesPage() {
   }, [refresh]);
 
   useEffect(() => {
-    if (!llmConfig) return;
-    const saved = loadLlmPrefs();
-    if (!saved.llm_provider) {
-      setLlmProvider(llmConfig.provider);
-      setLlmModel(llmConfig.model);
-      if (llmConfig.provider !== "gemini" && llmConfig.base_url) {
-        setLlmBaseUrl(llmConfig.base_url);
-      }
-    }
-  }, [llmConfig?.provider, llmConfig?.model, llmConfig?.base_url]);
-
-  useEffect(() => {
     let cancelled = false;
     void (async () => {
       try {
@@ -275,7 +251,7 @@ export function LectureNotesPage() {
     return () => {
       cancelled = true;
     };
-  }, [llmProvider, llmBaseUrl, llmModel]);
+  }, [llmTier]);
 
   useEffect(() => {
     if (!selectedNote || showCompare) return;
@@ -359,7 +335,7 @@ export function LectureNotesPage() {
         setGapLoading(false);
       }
     })();
-  }, [comparePaths, tab, llmProvider, llmBaseUrl, llmModel]);
+  }, [comparePaths, tab, llmTier]);
 
   useEffect(() => {
     if (comparePaths.length >= 2) setWorkflowStep(1);
@@ -517,7 +493,7 @@ export function LectureNotesPage() {
         setRegeneratingBlock(null);
       }
     },
-    [content, llmProvider, llmBaseUrl, llmModel],
+    [content, llmTier],
   );
 
   const handleSelectionRegenerate = useCallback(
@@ -568,7 +544,7 @@ export function LectureNotesPage() {
         throw err;
       }
     },
-    [llmProvider, llmBaseUrl, llmModel],
+    [llmTier],
   );
 
   const handleRepairAllBlocks = useCallback(async () => {
@@ -590,7 +566,7 @@ export function LectureNotesPage() {
       setError(e instanceof Error ? e.message : "Could not repair blocks");
       throw e;
     }
-  }, [content, selectedNote, llmProvider, llmBaseUrl, llmModel]);
+  }, [content, selectedNote, llmTier]);
 
   const handleRepairSyntaxOnly = useCallback(async () => {
     if (!selectedNote || !content.trim()) return;
@@ -1001,34 +977,6 @@ export function LectureNotesPage() {
                 <option value="medium">Medium</option>
                 <option value="heavy">Heavy</option>
               </select>
-              <span className="sr-only">LLM provider</span>
-              <select
-                value={llmProvider}
-                onChange={(e) => setLlmProvider(e.target.value)}
-                className="h-8 rounded-md border border-emerald-900/50 bg-black/30 px-2 text-xs text-emerald-100"
-              >
-                <option value="lmstudio">LM Studio</option>
-                <option value="gemini">Gemini</option>
-                <option value="ollama">Ollama</option>
-              </select>
-              {llmProvider !== "gemini" ? (
-                <input
-                  type="text"
-                  value={llmBaseUrl}
-                  onChange={(e) => setLlmBaseUrl(e.target.value)}
-                  placeholder="http://127.0.0.1:1234"
-                  className="h-8 w-36 rounded-md border border-emerald-900/50 bg-black/30 px-2 text-xs text-emerald-100"
-                  aria-label="LLM base URL"
-                />
-              ) : null}
-              <input
-                type="text"
-                value={llmModel}
-                onChange={(e) => setLlmModel(e.target.value)}
-                placeholder="google/gemma-4-e4b"
-                className="h-8 w-44 rounded-md border border-emerald-900/50 bg-black/30 px-2 text-xs text-emerald-100"
-                aria-label="LLM model"
-              />
             </label>
             <Button
               type="button"
@@ -1244,8 +1192,7 @@ export function LectureNotesPage() {
                   : undefined
               }
               llmReachable={Boolean(llmConfig?.reachable)}
-              llmProvider={llmProvider}
-              llmModel={llmModel}
+              llmTier={llmTier}
               onRepairSyntaxOnly={handleRepairSyntaxOnly}
               onRepairAllBlocks={handleRepairAllBlocks}
               onRegenerateSelection={handleSelectionRegenerate}

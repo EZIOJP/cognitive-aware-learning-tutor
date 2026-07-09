@@ -46,8 +46,7 @@ type Props = {
   quizDisabled?: boolean;
   sectionEdit?: NoteSectionEditProps;
   llmReachable?: boolean;
-  llmProvider?: string;
-  llmModel?: string;
+  llmTier?: string;
   onRegenerateSelection?: (opts: {
     selection: string;
     start: number;
@@ -84,8 +83,7 @@ export function StudyLibraryViewer({
   quizDisabled = false,
   sectionEdit,
   llmReachable = false,
-  llmProvider,
-  llmModel,
+  llmTier,
   onRegenerateSelection,
   onRepairSyntaxOnly,
   onRepairAllBlocks,
@@ -202,9 +200,7 @@ export function StudyLibraryViewer({
                 }
               >
                 {llmReachable ? "● LLM online" : "● LLM offline — Fix syntax works without AI"}
-                {llmProvider && llmModel
-                  ? ` · ${llmProvider} / ${llmModel}`
-                  : ""}
+                {llmTier ? ` · tier ${llmTier}` : ""}
               </span>
             </p>
           </div>

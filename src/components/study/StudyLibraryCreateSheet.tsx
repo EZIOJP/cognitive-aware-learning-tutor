@@ -207,8 +207,16 @@ export function StudyLibraryCreateSheet({
 
           <p className="text-xs text-muted-foreground pt-2 border-t border-emerald-900/30">
             {llmConfig?.reachable
-              ? `LLM ready · ${llmConfig.provider} · ${llmConfig.model}`
+              ? `LLM ready · tier ${llmConfig.selected_tier ?? llmConfig.default_tier ?? "medium"} · ${llmConfig.provider} · ${llmConfig.model}`
               : "Set OLLAMA_ENABLED=1 and LLM_API_KEY (Gemini) or start local LM Studio for generation."}
+            {llmConfig?.tiers?.[llmConfig.selected_tier ?? llmConfig.default_tier ?? "medium"]?.chain?.length ? (
+              <span className="block mt-1 text-emerald-200/60">
+                Chain:{" "}
+                {llmConfig.tiers[llmConfig.selected_tier ?? llmConfig.default_tier ?? "medium"]!.chain
+                  .map((step) => `${step.provider}/${step.model}`)
+                  .join(" → ")}
+              </span>
+            ) : null}
             {llmConfig?.corpus_available ? (
               <span className="block mt-1 text-emerald-300/70">
                 Knowledge base indexed — grounded notes cite textbook + lecture chunks.

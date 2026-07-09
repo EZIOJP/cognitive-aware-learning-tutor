@@ -6,16 +6,41 @@ import re
 import tkinter as tk
 from typing import Callable
 
-# Above this size, word-wrap layout makes scrolling unusably slow in Tk.
-_WRAP_LIMIT = 12_000
 # Hard cap on characters inserted into preview panes.
 _PREVIEW_CHAR_LIMIT = 40_000
+# Soft-wrap width when source text is one long line (legacy parse output).
+_DISPLAY_WRAP_WIDTH = 100
 
 _CHUNK_PROGRESS_RE = re.compile(r"chunk\s+(\d+)\s*/\s*(\d+)", re.I)
 
 
+def _wrap_long_line(text: str, *, width: int = _DISPLAY_WRAP_WIDTH) -> str:
+    """Break a single-line blob into rows — Notepad-style when parse omitted newlines."""
+    if "\n" in text:
+        return text
+    words = text.split()
+    if len(words) < 40:
+        return text
+    lines: list[str] = []
+    current: list[str] = []
+    length = 0
+    for word in words:
+        extra = len(word) + (1 if current else 0)
+        if current and length + extra > width:
+            lines.append(" ".join(current))
+            current = [word]
+            length = len(word)
+        else:
+            current.append(word)
+            length += extra
+    if current:
+        lines.append(" ".join(current))
+    return "\n".join(lines)
+
+
 def format_preview_text(full: str, *, char_limit: int = _PREVIEW_CHAR_LIMIT) -> tuple[str, bool]:
     """Return display text and whether the source was truncated."""
+    full = _wrap_long_line(full)
     if len(full) <= char_limit:
         return full, False
     cut = full[:char_limit]
@@ -29,7 +54,8 @@ def format_preview_text(full: str, *, char_limit: int = _PREVIEW_CHAR_LIMIT) -> 
 
 
 def preview_wrap_mode(display_text: str) -> str:
-    return tk.NONE if len(display_text) > _WRAP_LIMIT else tk.WORD
+    """Always word-wrap preview panes like Notepad."""
+    return tk.WORD
 
 
 def parse_chunk_progress(message: str) -> tuple[int, int] | None:

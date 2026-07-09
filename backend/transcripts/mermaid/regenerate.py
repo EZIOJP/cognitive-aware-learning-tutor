@@ -55,6 +55,8 @@ def regenerate_mermaid(
     note_context: str | None = None,
     mode: str = "fix",
     llm: LlmOptions | None = None,
+    llm_tier: str | None = None,
+    confirm_heavy_budget: bool = False,
 ) -> str:
     if not ollama_available(llm):
         raise RuntimeError(
@@ -65,6 +67,9 @@ def regenerate_mermaid(
         timeout=90.0,
         llm=llm,
         system_prompt=MERMAID_SYSTEM_PROMPT,
+        task="block_regen",
+        tier=llm_tier,
+        confirm_heavy_budget=confirm_heavy_budget,
     )
     if not raw:
         raise RuntimeError("LLM returned no content.")

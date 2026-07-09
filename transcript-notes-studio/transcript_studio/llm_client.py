@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import logging
+import threading
+import time
 from dataclasses import dataclass
 
 import httpx
@@ -10,6 +12,34 @@ import httpx
 from transcript_studio.config import AppConfig, load_config
 
 log = logging.getLogger(__name__)
+
+GEMINI_API_BASE = "https://generativelanguage.googleapis.com/v1beta"
+
+
+def _gemini_auth_headers(api_key: str) -> dict[str, str]:
+    return {
+        "Content-Type": "application/json",
+        "x-goog-api-key": api_key.strip(),
+    }
+
+_LLM_REACHABLE_CACHE: dict[str, tuple[float, bool]] = {}
+_LLM_REACHABLE_LOCK = threading.Lock()
+# Studio polls RAG/LLM status every 30s — TTL must exceed that to avoid hammering /api/v1/models.
+_LLM_REACHABLE_TTL_SEC = 55.0
+
+
+def _agent_llm_log(cache_hit: bool, caller: str) -> None:
+    try:
+        from backend.transcripts._debug_agent_log import agent_log
+
+        agent_log(
+            location="llm_client.py:llm_reachable",
+            message="llm_ping",
+            data={"cache_hit": cache_hit, "caller_hint": caller},
+            hypothesis_id="H4",
+        )
+    except Exception:
+        pass
 
 
 @dataclass(frozen=True)
@@ -26,20 +56,42 @@ def _normalize_provider(raw: str) -> str:
     value = raw.strip().lower()
     if value in ("lmstudio", "lm-studio", "lm_studio"):
         return "lmstudio"
-    if value in ("openai", "vllm"):
+    if value in ("openai", "vllm", "openrouter", "or"):
         return "openai"
+    if value in ("gemini", "google", "google-ai", "google_ai"):
+        return "gemini"
     return "ollama"
 
 
 def options_from_config(cfg: AppConfig | None = None) -> LlmOptions:
     cfg = cfg or load_config()
+    provider = _normalize_provider(cfg.llm_provider)
+    base_url = cfg.llm_base_url.strip().rstrip("/")
+    model = cfg.llm_model.strip()
+    api_key = cfg.llm_api_key.strip()
+
+    if provider == "gemini":
+        base_url = GEMINI_API_BASE
+        if not model or "gemma" in model.lower():
+            model = "gemini-2.0-flash"
+        try:
+            from backend.core.llm_capabilities import effective_cloud_api_key
+
+            cloud_key = effective_cloud_api_key()
+            if cloud_key:
+                api_key = cloud_key
+        except Exception:
+            pass
+    elif provider == "openai" and (not base_url or base_url.startswith("http://127.0.0.1")):
+        base_url = "https://openrouter.ai/api/v1"
+
     return LlmOptions(
-        provider=_normalize_provider(cfg.llm_provider),
-        base_url=cfg.llm_base_url.strip().rstrip("/"),
-        model=cfg.llm_model.strip(),
+        provider=provider,
+        base_url=base_url,
+        model=model,
         max_tokens=max(256, cfg.llm_max_tokens),
         temperature=max(0.0, min(2.0, float(cfg.llm_temperature))),
-        api_key=cfg.llm_api_key.strip(),
+        api_key=api_key,
     )
 
 
@@ -61,24 +113,58 @@ def llm_reachable(opts: LlmOptions | None = None) -> bool:
     if not cfg.llm_enabled:
         return False
     opts = opts or options_from_config(cfg)
-    try:
-        with httpx.Client(timeout=4.0) as client:
-            if opts.provider == "lmstudio":
-                url = f"{opts.base_url}/api/v1/models"
-            elif opts.provider == "openai":
-                url = f"{_openai_api_base(opts.base_url)}/models"
-            else:
-                url = f"{opts.base_url}/api/tags"
-            res = client.get(url, headers=_auth_headers(opts.api_key))
-            res.raise_for_status()
-        return True
-    except Exception:
-        return False
+    cache_key = f"{opts.provider}|{opts.base_url}"
+    now = time.monotonic()
+    with _LLM_REACHABLE_LOCK:
+        cached = _LLM_REACHABLE_CACHE.get(cache_key)
+        if cached and now - cached[0] < _LLM_REACHABLE_TTL_SEC:
+            _agent_llm_log(True, "cache")
+            return cached[1]
+        _agent_llm_log(False, "network")
+        try:
+            with httpx.Client(timeout=4.0) as client:
+                if opts.provider == "lmstudio":
+                    url = f"{opts.base_url}/api/v1/models"
+                elif opts.provider == "openai":
+                    url = f"{_openai_api_base(opts.base_url)}/models"
+                elif opts.provider == "gemini":
+                    url = f"{GEMINI_API_BASE}/models"
+                    res = client.get(url, headers=_gemini_auth_headers(opts.api_key))
+                    res.raise_for_status()
+                    ok = True
+                    _LLM_REACHABLE_CACHE[cache_key] = (now, ok)
+                    return ok
+                else:
+                    url = f"{opts.base_url}/api/tags"
+                res = client.get(url, headers=_auth_headers(opts.api_key))
+                res.raise_for_status()
+            ok = True
+        except Exception:
+            ok = False
+        _LLM_REACHABLE_CACHE[cache_key] = (now, ok)
+        return ok
 
 
 def llm_available(cfg: AppConfig | None = None) -> bool:
     cfg = cfg or load_config()
-    return bool(cfg.llm_enabled and cfg.llm_base_url.strip())
+    if not cfg.llm_enabled:
+        return False
+    try:
+        from transcript_studio.gateway_llm import gateway_reachable, uses_gateway
+
+        if uses_gateway(cfg) and gateway_reachable():
+            return True
+    except Exception:
+        pass
+    opts = options_from_config(cfg)
+    if opts.provider == "gemini":
+        try:
+            from backend.core.llm_capabilities import effective_cloud_api_key
+
+            return bool(effective_cloud_api_key())
+        except Exception:
+            return bool(opts.api_key and opts.api_key.lower() not in ("lm-studio", "lm_studio"))
+    return bool(opts.base_url.strip())
 
 
 def _parse_lmstudio_output(data: dict) -> str | None:
@@ -140,6 +226,46 @@ def _openai_generate(prompt: str, *, opts: LlmOptions, timeout: float) -> str | 
         return None
 
 
+def _parse_gemini_output(data: dict) -> str | None:
+    candidates = data.get("candidates") or []
+    if not candidates:
+        return None
+    content = candidates[0].get("content") or {}
+    parts = content.get("parts") or []
+    texts: list[str] = []
+    for part in parts:
+        if isinstance(part, dict):
+            text = part.get("text")
+            if isinstance(text, str) and text.strip():
+                texts.append(text.strip())
+    return "\n".join(texts) if texts else None
+
+
+def _gemini_generate(prompt: str, *, opts: LlmOptions, timeout: float) -> str | None:
+    if not opts.api_key:
+        log.warning("Gemini API key missing — set LLM_CLOUD_API_KEY in repo .env or LLM_API_KEY override")
+        return None
+    model = opts.model.strip() or "gemini-2.0-flash"
+    if model.startswith("models/"):
+        model = model[7:]
+    payload = {
+        "contents": [{"role": "user", "parts": [{"text": prompt}]}],
+        "generationConfig": {
+            "temperature": opts.temperature,
+            "maxOutputTokens": opts.max_tokens or 8192,
+        },
+    }
+    url = f"{GEMINI_API_BASE}/models/{model}:generateContent"
+    try:
+        with httpx.Client(timeout=timeout) as client:
+            res = client.post(url, headers=_gemini_auth_headers(opts.api_key), json=payload)
+            res.raise_for_status()
+            return _parse_gemini_output(res.json())
+    except Exception as exc:
+        log.warning("Gemini API request failed: %s", exc)
+        return None
+
+
 def _ollama_generate(prompt: str, *, opts: LlmOptions, timeout: float) -> str | None:
     payload = {
         "model": opts.model,
@@ -191,6 +317,8 @@ def generate(
         result = _lmstudio_generate(prompt, opts=opts, timeout=timeout)
     elif opts.provider == "openai":
         result = _openai_generate(prompt, opts=opts, timeout=timeout)
+    elif opts.provider == "gemini":
+        result = _gemini_generate(prompt, opts=opts, timeout=timeout)
     else:
         result = _ollama_generate(prompt, opts=opts, timeout=timeout)
 

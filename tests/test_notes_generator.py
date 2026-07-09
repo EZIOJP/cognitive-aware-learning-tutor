@@ -61,12 +61,22 @@ def test_summarize_chunk_escapes_curly_braces_in_transcript():
     )
     assert result == "## Notes\n\n- ok"
     assert len(captured) == 1
-    assert "arr[{-1}]" in captured[0]
     assert "df.iloc[-1]" in captured[0]
+    assert "numpy indexing" in captured[0]
+    assert "{{-1}}" in captured[0]
     assert "{chunk}" not in captured[0]
 
 
-def test_select_chunks_fast_mode_uses_larger_windows():
+def test_select_chunks_uses_semantic_chunker_when_available():
+    from backend.transcripts import notes_generator as ng
+
+    text = "First sentence about arrays. " * 50 + "Completely different quantum topic. " * 50
+    with patch.object(ng, "semantic_chunk", return_value=["chunk-a", "chunk-b"]) as mock_sc:
+        chunks = ng._select_chunks(text, use_semantic_grouping=True)
+    mock_sc.assert_called_once()
+    assert chunks == ["chunk-a", "chunk-b"]
+
+
     from backend.transcripts.notes_generator import _select_chunks
 
     text = "word " * 6000
@@ -97,3 +107,46 @@ def test_effective_max_chunks_scales_with_lecture_length():
 
     assert _effective_max_chunks(120_000, 12, fast_mode=True) >= 20
     assert _effective_max_chunks(5_000, 12, fast_mode=True) >= 8
+
+
+def test_summarize_chunk_retries_on_empty_response(monkeypatch):
+    from backend.transcripts.notes_generator import summarize_chunk
+
+    monkeypatch.setattr("backend.transcripts.notes_generator.time.sleep", lambda _: None)
+
+    calls = {"n": 0}
+
+    def fake_generate(_prompt: str) -> str | None:
+        calls["n"] += 1
+        if calls["n"] == 1:
+            return None
+        return "## Notes\n\n- ok"
+
+    out = summarize_chunk("Use A and B.", generate_fn=fake_generate, reference_hint="ref")
+    assert out is not None
+    assert "## Notes" in out
+    assert calls["n"] == 2
+
+
+def test_placeholder_for_failed_chunk_includes_excerpt():
+    from backend.transcripts.notes_generator import placeholder_for_failed_chunk
+
+    chunk = "numpy arrays " * 200
+    out = placeholder_for_failed_chunk(chunk, index=3, total=10)
+    assert "summary unavailable" in out.lower()
+    assert "numpy arrays" in out
+    assert len(out) < len(chunk)
+
+
+@patch("backend.transcripts.notes_generator._select_chunks", return_value=["chunk one", "chunk two"])
+@patch("backend.transcripts.notes_generator.ollama_available", return_value="http://127.0.0.1:11434")
+@patch("backend.transcripts.notes_generator.summarize_chunk", side_effect=[MOCK_SECTION, None])
+def test_generate_continues_when_chunk_empty(mock_summarize, mock_available, mock_chunks, tmp_path, monkeypatch):
+    from backend.transcripts.notes_generator import generate_notes_from_text
+
+    monkeypatch.setattr("backend.transcripts.notes_generator.NOTES_DIR", tmp_path)
+    path, body = generate_notes_from_text("Today we learn arrays.", title="test_lecture")
+    assert path.is_file()
+    assert "## Array Reversal" in body
+    assert "summary unavailable" in body.lower()
+    assert mock_summarize.call_count == 2

@@ -8,6 +8,59 @@
   if (window.__selfTrackerLoaded) return;
   window.__selfTrackerLoaded = true;
 
+  const timers = [];
+  let trackingStopped = false;
+
+  /** Extension reload invalidates chrome.runtime on open tabs — stop quietly. */
+  function safeSendMessage(payload) {
+    if (trackingStopped) return;
+    try {
+      if (!chrome.runtime?.id) {
+        stopTracking();
+        return;
+      }
+      chrome.runtime.sendMessage(payload, () => {
+        const err = chrome.runtime.lastError;
+        if (!err) return;
+        const msg = err.message || "";
+        if (
+          msg.includes("invalidated") ||
+          msg.includes("Receiving end does not exist") ||
+          msg.includes("Could not establish connection")
+        ) {
+          stopTracking();
+        }
+      });
+    } catch (e) {
+      const msg = String(e && e.message ? e.message : e);
+      if (msg.includes("invalidated")) {
+        stopTracking();
+      }
+    }
+  }
+
+  function stopTracking() {
+    if (trackingStopped) return;
+    trackingStopped = true;
+    timers.forEach((id) => {
+      clearInterval(id);
+      clearTimeout(id);
+    });
+    timers.length = 0;
+  }
+
+  function trackInterval(fn, ms) {
+    const id = setInterval(fn, ms);
+    timers.push(id);
+    return id;
+  }
+
+  function trackTimeout(fn, ms) {
+    const id = setTimeout(fn, ms);
+    timers.push(id);
+    return id;
+  }
+
   const HOST = location.hostname;
   const IS_YOUTUBE = HOST.includes('youtube.com');
   const IS_SCALAR  = HOST.includes('scalar.com') || HOST.includes('scalar.dev');
@@ -265,6 +318,7 @@
 
   // ── Build and send snapshot ──────────────────────────────
   function sendSnapshot() {
+    if (trackingStopped) return;
     const basePayload = {
       interaction_mode: getInteractionMode(),
       scroll_depth_percent: state.scrollDepthMax,
@@ -286,7 +340,7 @@
     if (IS_SCALAR)  deepData = scrapeScalar();
     if (IS_YOUTUBE) deepData = scrapeYouTube();
 
-    chrome.runtime.sendMessage({
+    safeSendMessage({
       type: 'BEHAVIORAL_UPDATE',
       data: { ...basePayload, ...deepData }
     });
@@ -305,7 +359,7 @@
       if (video && !video.__selfTrackerBound) {
         video.__selfTrackerBound = true;
         video.addEventListener('ended', () => {
-          chrome.runtime.sendMessage({
+          safeSendMessage({
             type: 'BEHAVIORAL_UPDATE',
             data: { ...scrapeYouTube(), event: 'VIDEO_COMPLETED', page_title: document.title }
           });
@@ -317,7 +371,7 @@
           [25, 50, 75].forEach(milestone => {
             if (pct >= milestone && !milestonesSent.has(milestone)) {
               milestonesSent.add(milestone);
-              chrome.runtime.sendMessage({
+              safeSendMessage({
                 type: 'BEHAVIORAL_UPDATE',
                 data: { ...scrapeYouTube(), event: `VIDEO_${milestone}PCT`, page_title: document.title }
               });
@@ -327,9 +381,9 @@
       }
     };
     // YT is a SPA — retry attaching on DOM changes
-    setInterval(attachVideoListener, 2000);
+    trackInterval(attachVideoListener, 2000);
   }
 
-  setInterval(sendSnapshot, 30000);
-  setTimeout(sendSnapshot, 5000);
+  trackInterval(sendSnapshot, 30000);
+  trackTimeout(sendSnapshot, 5000);
 })();

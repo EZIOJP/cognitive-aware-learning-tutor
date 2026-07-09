@@ -16,7 +16,26 @@ run.bat
 1. **Capture** — Live Captions (Win+Ctrl+L) or Whisper
 2. **Tune** — select transcript, parse preview, aggressive dedup
 3. **Generate** — LLM notes (start LM Studio or Ollama first)
-4. **Done** — open notes folder or Study Library in browser
+4. **Done** — open notes folder or Study Library in browser (`?file=` deep link)
+
+## Overnight auto batch
+
+On the **Generate** step, **Auto run** queues transcripts without notes:
+
+1. **Tune** (parse/clean) — same as the Tune tab  
+2. **Generate** — RAG when corpus is ready; text-only when **Overnight** preset (diagrams OFF)  
+3. **Corpus handoff** — indexes transcript + note chunks for the web app  
+4. Run log — `data/logs/auto_run_*.json`
+
+Use **Start overnight** for the full sleep preset (fast mode, 3s pauses, max 5 by default).
+
+## Web Study Library
+
+| Studio | Web (`/lecture-notes`) |
+|--------|------------------------|
+| Capture, Tune, local generate | RAG notes, primer, quiz, folder revision pack |
+| Auto/overnight batch | Export PDF/Word (mermaid→PNG when `mmdc` available) |
+| `data/notes/` output | SRS + dashboard due count |
 
 ## Workflow
 
@@ -46,6 +65,8 @@ Legacy flags still work: `--latest`, `-i`, `--parse-only`.
 | Tag extraction | Topic tags on sections |
 | Inject wikilinks | `[[...]]` links between notes in output folder |
 | Fast mode | Chunk pass only (skip refine/enrich/tags) |
+| Include diagrams | Final mermaid/code enrich pass (OFF for overnight) |
+| Overnight preset | Tune + text-only + RAG + thermal pauses |
 
 ## Project layout
 

@@ -17,16 +17,21 @@ function lanHost(): string {
   return hostFromWindow() ?? "localhost";
 }
 
-export function resolveApiUrl(): string {
+export function resolveApiUrl(path?: string): string {
   const legacy = import.meta.env.VITE_API_BASE;
+  let base: string;
   if (typeof legacy === "string" && legacy.trim()) {
-    return legacy.trim().replace(/\/$/, "");
+    base = legacy.trim().replace(/\/$/, "");
+  } else {
+    const env = import.meta.env.VITE_API_URL;
+    if (typeof env === "string" && env.trim()) {
+      base = env.trim().replace(/\/$/, "");
+    } else {
+      base = `http://${lanHost()}:8000`;
+    }
   }
-  const env = import.meta.env.VITE_API_URL;
-  if (typeof env === "string" && env.trim()) {
-    return env.trim().replace(/\/$/, "");
-  }
-  return `http://${lanHost()}:8000`;
+  if (!path) return base;
+  return path.startsWith("/") ? `${base}${path}` : `${base}/${path}`;
 }
 
 export function resolveVocabApiUrl(): string {

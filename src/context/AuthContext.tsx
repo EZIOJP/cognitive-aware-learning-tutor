@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { autoApplyRoutinesToday } from "../api/plannerClient";
 import { resolveApiUrl, resolveVocabApiUrl } from "../utils/resolveBackendUrl";
 
 interface AuthUser {
@@ -57,6 +58,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(null);
       });
   }, [token]);
+
+  useEffect(() => {
+    if (!token || !user) return;
+    autoApplyRoutinesToday().catch(() => {
+      /* API may be offline at login — routines apply is best-effort */
+    });
+  }, [token, user?.id]);
 
   const login = async (username: string, password: string) => {
     const data = await apiFetch("/auth/login", {

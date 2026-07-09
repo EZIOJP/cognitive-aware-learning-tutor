@@ -8,11 +8,13 @@ import {
   Loader2,
   Play,
   RefreshCw,
+  ScrollText,
   Upload,
   AlertCircle,
 } from "lucide-react";
 import { Button } from "../../app/components/ui/button";
 import { cn } from "../../app/components/ui/utils";
+import { StudyLibraryLogPanel } from "../../components/study/StudyLibraryLogPanel";
 import {
   fetchCorpusJob,
   fetchCorpusOverview,
@@ -194,6 +196,11 @@ export function LibrarySetupPage() {
   );
 
   const handleRunSetup = async () => {
+    if (totalChunks > 0) {
+      if (!window.confirm("Your knowledge base is already built. Re-building will overwrite the existing index. Do you want to continue?")) {
+        return;
+      }
+    }
     setError(null);
     setStep(1);
     try {
@@ -207,6 +214,11 @@ export function LibrarySetupPage() {
   };
 
   const handleIngestBook = async (book: BookSlot) => {
+    if (book.ingested_chunks > 0) {
+      if (!window.confirm(`${book.short_label} is already indexed. Re-indexing will overwrite the current chunks. Do you want to continue?`)) {
+        return;
+      }
+    }
     setIngesting(book.subject_id);
     setError(null);
     setStep(1);
@@ -253,6 +265,12 @@ export function LibrarySetupPage() {
             MML chapters 1–2 plus whole PDF books on disk — so quizzes, gap analysis, and the AI coach
             can cite real sources.
           </p>
+          <Button asChild variant="ghost" size="sm" className="text-emerald-300/90 h-8 px-0 hover:bg-transparent hover:text-emerald-200">
+            <Link to="/system-logs">
+              <ScrollText className="size-4 mr-2" />
+              Open app logs (debug failures)
+            </Link>
+          </Button>
         </header>
 
         <div className="study-library-glass flex h-12 overflow-hidden p-1">
@@ -410,6 +428,14 @@ export function LibrarySetupPage() {
                 Back and retry
               </Button>
             )}
+
+            <StudyLibraryLogPanel
+              title="Backend log (live)"
+              defaultFile="backend.log"
+              live={job?.status === "running" || job?.status === "queued"}
+              compact
+              maxLines={100}
+            />
           </div>
         )}
 

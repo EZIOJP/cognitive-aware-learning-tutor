@@ -27,9 +27,13 @@ export type MarkdownNoteSectionProps = {
   ) => Promise<string>;
 };
 
+export type NotePreviewMode = "full" | "lite";
+
 type MarkdownNoteProps = {
   content: string;
   sectionEdit?: MarkdownNoteSectionProps;
+  /** lite = skip heavy mermaid/python while typing in editor preview */
+  previewMode?: NotePreviewMode;
 };
 
 function isPythonLang(lang: string | undefined): boolean {
@@ -58,7 +62,7 @@ function sectionHandlersFor(
   };
 }
 
-export function MarkdownNote({ content, sectionEdit }: MarkdownNoteProps) {
+export function MarkdownNote({ content, sectionEdit, previewMode = "full" }: MarkdownNoteProps) {
   const prepared = useMemo(() => prepareNoteMarkdown(content), [content]);
   const fenceOrdinal = useRef(0);
   fenceOrdinal.current = 0;
@@ -122,6 +126,13 @@ export function MarkdownNote({ content, sectionEdit }: MarkdownNoteProps) {
             const blockIndex = fenceOrdinal.current++;
 
             if (lang === "mermaid") {
+              if (previewMode === "lite") {
+                return (
+                  <pre className="my-3 rounded-lg border border-border/60 bg-muted/30 p-3 text-xs text-muted-foreground overflow-x-auto">
+                    [Mermaid diagram — pause typing or switch to full preview to render]
+                  </pre>
+                );
+              }
               return (
                 <Suspense fallback={<BlockFallback />}>
                   <MermaidBlockShell
@@ -133,6 +144,13 @@ export function MarkdownNote({ content, sectionEdit }: MarkdownNoteProps) {
             }
             if (lang && className) {
               if (isPythonLang(lang)) {
+                if (previewMode === "lite") {
+                  return (
+                    <pre className="my-3 rounded-lg border border-border/60 bg-muted/30 p-3 text-xs font-mono overflow-x-auto">
+                      {code}
+                    </pre>
+                  );
+                }
                 return (
                   <Suspense fallback={<BlockFallback />}>
                     <PythonCodeBlock

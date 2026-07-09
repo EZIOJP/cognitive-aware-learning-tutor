@@ -15,6 +15,13 @@ from backend.models.study import FocusEvent, LectureNote
 from backend.models.word import Word
 from backend.models.knowledge_graph import KgNode, KgEdge, KgEmbedding, KgObservation
 from backend.models.review_card import QuizDeck, ReviewCard
+from backend.models.timetable import Timetable, TimetableTask, TrackedSession
+from backend.models.planner import PlannerBlock
+from backend.models.planner_routine import PlannerRoutine
+from backend.models.journal import JournalEntry
+from backend.models.app_classification import AppClassificationCache, AppClassificationSuggestion
+from backend.models.category_score import CategoryScore
+from backend.models.coach_memory import CoachMemory
 
 __all__ = [
     "User",
@@ -39,4 +46,14 @@ __all__ = [
     "KgObservation",
     "ReviewCard",
     "QuizDeck",
+    "Timetable",
+    "TimetableTask",
+    "TrackedSession",
+    "PlannerBlock",
+    "PlannerRoutine",
+    "JournalEntry",
+    "AppClassificationCache",
+    "AppClassificationSuggestion",
+    "CategoryScore",
+    "CoachMemory",
 ]

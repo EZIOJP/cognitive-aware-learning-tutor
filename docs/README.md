@@ -18,7 +18,11 @@ All project docs live here. Use with the file kernel at repo root.
 | [ROADMAP.md](ROADMAP.md) | Phases 0–5 |
 | [PROJECT_STATUS.md](PROJECT_STATUS.md) | What works now |
 | [TASKS.md](TASKS.md) | Kanban-style tasks |
-| [CURRENT_ARCHITECTURE.md](CURRENT_ARCHITECTURE.md) | System design (today) |
+| [CURRENT_ARCHITECTURE.md](CURRENT_ARCHITECTURE.md) | Short architecture summary (today) |
+| [HLD.md](HLD.md) | **High-level design** — system context, study loops, gaps (code-grounded) |
+| [LLD.md](LLD.md) | **Low-level design** — algorithms, schemas, config, file map |
+| [COMPLETION_SPRINT.md](COMPLETION_SPRINT.md) | **Agent sprint plan** — finish the product in order (paste into Cursor) |
+| [TASK_COMPLETION.md](TASK_COMPLETION.md) | **Master checklist** — loop closure, connections, polish, final build |
 | [MATH_TUTOR_VISION_PIPELINE.md](MATH_TUTOR_VISION_PIPELINE.md) | Math canvas, OCR, Ollama Socratic pipeline |
 | [HARDWARE_AND_AI_LATER.md](HARDWARE_AND_AI_LATER.md) | No GPU / no ESP32 path |
 | [WORKING_PRODUCT.md](WORKING_PRODUCT.md) | Daily-use checklist |
@@ -39,6 +43,12 @@ All project docs live here. Use with the file kernel at repo root.
 | [TRANSCRIPT_STUDIO_WORKFLOW.md](TRANSCRIPT_STUDIO_WORKFLOW.md) | Studio Capture → Tune → Generate workflow |
 | [TRANSCRIPT_STUDIO_HANDOFF.md](TRANSCRIPT_STUDIO_HANDOFF.md) | **Handoff:** file map, pipelines, export bundle, backlog |
 | [LOCAL_LLM_NOTES_GUIDE.md](LOCAL_LLM_NOTES_GUIDE.md) | Local models, CPU/GPU, quality presets |
+| [AI_HANDLER.md](AI_HANDLER.md) | **AI handler overview** — how FE + BE LLM routing fits together |
+| [AI_HANDLER_BACKEND.md](AI_HANDLER_BACKEND.md) | Backend gateway modules, call flow, tasks, endpoints |
+| [AI_HANDLER_FRONTEND.md](AI_HANDLER_FRONTEND.md) | Frontend prefs, UI entry points, API calls, known gaps |
+| [LLM_GATEWAY.md](LLM_GATEWAY.md) | Tier chains + route profiles + `/api/llm/complete` for CALT and scripts |
+| [../export-bundle/ai-handler-research/INDEX.md](../export-bundle/ai-handler-research/INDEX.md) | **Research export** — 49-file snapshot + index for Drive upload |
+| [9ROUTER_SETUP.md](9ROUTER_SETUP.md) | **9Router** — Cursor + free-provider routing at localhost:20128 |
 | [VOCAB_EXECUTION_PLAN.md](VOCAB_EXECUTION_PLAN.md) | Vocab MVP steps |
 | [FUTURE_VISION.md](FUTURE_VISION.md) | Long-term vision + Phase 3 map |
 

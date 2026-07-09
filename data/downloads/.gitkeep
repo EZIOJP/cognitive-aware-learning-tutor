@@ -1,0 +1,3 @@
+# APK files for CALT Timetable Android app
+# Served at: GET /api/app/calt-android/latest and /api/app/calt-android/download
+# Publish: scripts\publish_calt_apk.bat

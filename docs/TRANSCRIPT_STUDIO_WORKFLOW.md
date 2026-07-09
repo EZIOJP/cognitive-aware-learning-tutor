@@ -57,9 +57,25 @@ From `transcript-notes-studio/`:
 
 ```bat
 python -m transcript_studio.cli capture
+python -m transcript_studio.cli capture --idle 600
 python -m transcript_studio.cli parse live_captions_20260623_204143.txt --aggressive
 python -m transcript_studio.cli generate --latest --title "Lecture 1"
+python -m transcript_studio.cli lecture-auto --idle 600 --max-duration 7500
 ```
+
+### Lecture Auto (one-button unattended)
+
+**GUI:** Capture tab → **Start Lecture Auto** (idle/max, RAG, fast mode). Pipeline:
+
+1. Capture Live Captions until **idle** (default 10 min silence) or **max** (~2h cap)
+2. Parse with aggressive live-caption cleanup
+3. Generate **textbook-only RAG** notes (`source_types=textbook` — prior lectures/notes are not retrieved)
+4. Save note, optional corpus handoff for quiz/coach, log to `data/logs/lecture_auto_YYYYMMDD.json`
+5. Quit Studio on success (LM Studio stays running)
+
+**Cancel** saves a partial transcript if capture was running. On failure Studio stays open with an error dialog.
+
+**Knowledge base quick init** indexes textbooks + MML ch 1–2 only (not past transcripts). Lectures are indexed **after** generation via handoff.
 
 Legacy root scripts delegate to the same CLI:
 

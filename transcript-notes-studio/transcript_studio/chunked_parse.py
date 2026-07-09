@@ -6,12 +6,13 @@ import time
 from typing import Callable
 
 from transcript_studio.cleanup import (
-    FILLER_RE,
-    STUTTER_RE,
-    WHITESPACE_RE,
     aggressive_prefix_dedup,
     clean_transcript,
+    collapse_live_caption_fragments,
     dedupe_lines,
+    dedupe_live_caption_lines,
+    finalize_cleaned_lines,
+    looks_like_live_captions,
     maximal_prefix_dedup,
     normalize_segment,
 )
@@ -49,6 +50,7 @@ def parse_transcript_chunked(
     Pass 4 — filler / stutter cleanup on joined text
     """
     chunk_lines = max(50, int(chunk_lines))
+    effective_aggressive = aggressive or looks_like_live_captions(raw)
     lines_in = raw.splitlines()
     total_in = max(1, len(lines_in))
     normalized: list[str] = []
@@ -73,16 +75,17 @@ def parse_transcript_chunked(
     _report(on_progress, "Pass 2/4: deduplicating lines…", 0.45)
     if cancel_event and cancel_event():
         raise RuntimeError("Parse cancelled")
-    if aggressive:
-        kept = maximal_prefix_dedup(normalized)
+    if effective_aggressive:
+        kept = dedupe_live_caption_lines(normalized)
     else:
         kept = dedupe_lines(normalized)
 
-    if multi_pass and aggressive and len(kept) > 1:
-        _report(on_progress, "Pass 3/4: second dedup pass…", 0.62)
+    if multi_pass and effective_aggressive and len(kept) > 1:
+        _report(on_progress, "Pass 3/4: collapsing caption fragments…", 0.62)
         _sleep_pause(pause_sec)
         if cancel_event and cancel_event():
             raise RuntimeError("Parse cancelled")
+        kept = collapse_live_caption_fragments(kept)
         kept = aggressive_prefix_dedup(kept)
         kept = dedupe_lines(kept)
     elif multi_pass:
@@ -91,10 +94,7 @@ def parse_transcript_chunked(
         kept = dedupe_lines(kept)
 
     _report(on_progress, "Pass 4/4: filler and stutter cleanup…", 0.82)
-    text = " ".join(kept)
-    text = FILLER_RE.sub(" ", text)
-    text = STUTTER_RE.sub(r"\1", text)
-    text = WHITESPACE_RE.sub(" ", text).strip()
+    text = finalize_cleaned_lines(kept)
 
     _report(on_progress, "Parse complete", 1.0)
     return text

@@ -15,11 +15,13 @@ import { PluginSettingsPage } from "../pages/settings/PluginSettingsPage";
 import { AddWordsPage } from "../pages/vocab/AddWordsPage";
 import { AiCoachPage } from "../pages/AiCoachPage";
 import { ProjectAgentPage } from "../pages/ProjectAgentPage";
+import { JournalPage } from "../pages/JournalPage";
 
 // Import registry and trigger registration of all plugins
 import "../plugins"; 
 import { PluginRegistryProvider, usePlugins } from "../plugins/registry";
 import { FeatureStudioPage } from "../pages/settings/FeatureStudioPage";
+import { AppErrorBoundary } from "../components/layout/AppErrorBoundary";
 
 function AppRoutes() {
   const { getRoutes, isLoaded } = usePlugins();
@@ -42,6 +44,7 @@ function AppRoutes() {
         <Route path="gre-vocab/add-words" element={<AddWordsPage />} />
         <Route path="ai-coach" element={<AiCoachPage />} />
         <Route path="project-agent" element={<ProjectAgentPage />} />
+        <Route path="journal" element={<JournalPage />} />
 
         {/* Dynamically mount plugin routes */}
         {pluginRoutes.map((route, i) => (
@@ -77,7 +80,9 @@ export default function App() {
             <StudySessionProvider>
               <BrowserRouter>
                 <DynamicProviders>
-                  <AppRoutes />
+                  <AppErrorBoundary>
+                    <AppRoutes />
+                  </AppErrorBoundary>
                 </DynamicProviders>
               </BrowserRouter>
             </StudySessionProvider>

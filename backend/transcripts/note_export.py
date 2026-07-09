@@ -6,6 +6,8 @@ import base64
 import io
 import re
 from html import escape
+
+from backend.transcripts.mermaid_render import mermaid_png_data_uri, render_mermaid_png
 from pathlib import Path
 from typing import Literal
 
@@ -189,9 +191,17 @@ def build_export_html(content: str, *, title: str, note_relative: str) -> str:
         elif kind == "fence":
             lang_line, code = text.split("\n", 1)
             lang = lang_line.strip()
-            label = "Mermaid diagram (source)" if lang == "mermaid" else f"{lang or 'code'}"
-            parts.append(f'<p class="mermaid-label">{escape(label)}</p>')
-            parts.append(f"<pre><code>{escape(code)}</code></pre>")
+            if lang == "mermaid":
+                uri = mermaid_png_data_uri(code)
+                if uri:
+                    parts.append(f'<img src="{uri}" alt="Mermaid diagram" class="mermaid-export"/>')
+                else:
+                    parts.append('<p class="mermaid-label">Mermaid diagram (source)</p>')
+                    parts.append(f"<pre><code>{escape(code)}</code></pre>")
+            else:
+                label = f"{lang or 'code'}"
+                parts.append(f'<p class="mermaid-label">{escape(label)}</p>')
+                parts.append(f"<pre><code>{escape(code)}</code></pre>")
         elif kind == "image":
             alt, src = text.split("|", 1)
             path = resolve_image_path(src, note_relative)
@@ -242,14 +252,29 @@ def export_note_docx(content: str, *, title: str, note_relative: str) -> bytes:
         elif kind == "fence":
             lang_line, code = text.split("\n", 1)
             lang = lang_line.strip()
-            label = "Mermaid diagram" if lang == "mermaid" else (lang or "Code")
-            p = doc.add_paragraph()
-            run = p.add_run(f"{label}:")
-            run.bold = True
-            code_p = doc.add_paragraph(code)
-            for run in code_p.runs:
-                run.font.name = "Consolas"
-                run.font.size = Pt(9)
+            if lang == "mermaid":
+                from io import BytesIO
+
+                png = render_mermaid_png(code)
+                if png:
+                    doc.add_picture(BytesIO(png), width=Inches(5.5))
+                else:
+                    p = doc.add_paragraph()
+                    run = p.add_run("Mermaid diagram:")
+                    run.bold = True
+                    code_p = doc.add_paragraph(code)
+                    for run in code_p.runs:
+                        run.font.name = "Consolas"
+                        run.font.size = Pt(9)
+            else:
+                label = lang or "Code"
+                p = doc.add_paragraph()
+                run = p.add_run(f"{label}:")
+                run.bold = True
+                code_p = doc.add_paragraph(code)
+                for run in code_p.runs:
+                    run.font.name = "Consolas"
+                    run.font.size = Pt(9)
         elif kind == "image":
             alt, src = text.split("|", 1)
             path = resolve_image_path(src, note_relative)

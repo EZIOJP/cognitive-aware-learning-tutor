@@ -40,7 +40,6 @@ import transcript_studio.semantic_cache as sc  # noqa: E402
 def tmp_db(tmp_path):
     db_path = tmp_path / "test_cache.db"
     sc.set_cache_db_path(db_path)
-    sc._EMBED_MODEL = None  # reset cached model
     yield db_path
     sc.set_cache_db_path(None)  # type: ignore[arg-type]
     sc._CACHE_DB_PATH = None

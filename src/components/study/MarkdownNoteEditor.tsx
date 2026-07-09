@@ -88,6 +88,17 @@ export function MarkdownNoteEditor({
   onRegenerateSelection,
 }: MarkdownNoteEditorProps) {
   const [layout, setLayout] = useState<NoteEditorLayout>("split");
+  const [previewContent, setPreviewContent] = useState(content);
+  const [previewFull, setPreviewFull] = useState(false);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setPreviewContent(content);
+      setPreviewFull(true);
+    }, 450);
+    setPreviewFull(false);
+    return () => window.clearTimeout(timer);
+  }, [content]);
   const {
     textareaRef,
     syncSelection,
@@ -251,7 +262,10 @@ export function MarkdownNoteEditor({
               </div>
             )}
             <div className="flex-1 overflow-y-auto study-library-markdown-scroll p-4 lg:p-6">
-              <MarkdownNote content={content || "_Nothing to preview yet._"} />
+              <MarkdownNote
+                content={previewContent || "_Nothing to preview yet._"}
+                previewMode={previewFull ? "full" : "lite"}
+              />
             </div>
           </div>
         )}

@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import platform
 import threading
-import time
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -41,32 +40,20 @@ def check_captions_deps() -> tuple[bool, str]:
 
 
 class LiveCaptionsScraper(_BackendLiveCaptionsScraper):
-    """Backend scraper with stop-event and configurable output directory."""
+    """Backend scraper with stop-event, idle stop, and configurable output directory."""
 
     def run(
         self,
         *,
         max_seconds: float | None = None,
+        idle_seconds: float | None = None,
         stop_event: threading.Event | None = None,
     ) -> list[str]:
-        if stop_event is None:
-            return super().run(max_seconds=max_seconds)
-
-        text_block = self._connect_uia()
-        deadline = time.monotonic() + max_seconds if max_seconds else None
-
-        while True:
-            if stop_event.is_set():
-                break
-            if deadline is not None and time.monotonic() >= deadline:
-                break
-            try:
-                self.poll_once(text_block)
-            except Exception:
-                break
-            time.sleep(self.poll_interval)
-
-        return self.segments
+        return super().run(
+            max_seconds=max_seconds,
+            idle_seconds=idle_seconds,
+            stop_event=stop_event,
+        )
 
     def save(self, path: Path | None = None, *, output_dir: Path | None = None) -> Path:
         root = output_dir or transcripts_dir()

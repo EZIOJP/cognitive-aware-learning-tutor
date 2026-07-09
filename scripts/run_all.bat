@@ -10,16 +10,10 @@ echo   Frontend:  http://localhost:5173
 echo   Login:     admin / admin123
 call "%~dp0print_lan_urls.bat"
 
-echo Applying database migrations...
-"%PY%" -m alembic upgrade head
-if errorlevel 1 (
-  echo Migration failed. Fix errors above before continuing.
-  pause
-  exit /b 1
-)
+start "API" cmd /k call "%~dp0run_backend.bat"
+start "Frontend" cmd /k call "%~dp0run_frontend.bat"
 
-start "API" cmd /k "cd /d "%ROOT%" & "%PY%" -m uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload"
-start "Frontend" cmd /k "cd /d "%ROOT%" & npm.cmd run dev"
-
-echo Both servers opened in separate windows. Keep them open while using the app.
+echo API and Frontend opened in separate windows.
+echo Desktop tracker is standalone — install once: scripts\desktop_tracker\install_tracker_startup.bat
+echo Or start everything including tracker: scripts\run_full.bat
 endlocal

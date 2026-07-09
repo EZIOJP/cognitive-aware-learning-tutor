@@ -25,7 +25,7 @@ def test_format_audit_report_includes_counts():
     report = audit_parse("line one\nline two\nline two extended", aggressive=True)
     text = format_audit_report(report)
     assert "Cleanup audit" in text
-    assert "Words:" in text
+    assert "Content preserved:" in text
     assert "Sentences:" in text
 
 

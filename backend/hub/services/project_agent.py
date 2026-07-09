@@ -70,7 +70,7 @@ Full context (JSON):
 
 Reply as the Project Agent. Use bullet lists for tasks. End with ONE recommended next action."""
 
-    raw = ollama_generate(prompt, system_prompt=PROJECT_AGENT_SYSTEM, timeout=120.0)
+    raw = ollama_generate(prompt, system_prompt=PROJECT_AGENT_SYSTEM, timeout=120.0, task="project_agent")
     if not raw:
         raise ValueError("Empty response from local LLM")
     return raw.strip()[:6000]

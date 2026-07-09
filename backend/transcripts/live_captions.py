@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import platform
+import re
 import sys
+import threading
 import time
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -14,6 +16,11 @@ from backend.paths import TRANSCRIPTS_DIR
 from backend.transcripts.cleanup import normalize_segment
 CAPTIONS_EXE = "LiveCaptions.exe"
 CAPTIONS_AUTO_ID = "CaptionsTextBlock"
+_SESSION_BREAK = "--- session break ---"
+_DOUBT_BREAK_RE = re.compile(
+    r"\b(?:any questions?|doubts?|thumbs up|clear with this slide)\b",
+    re.IGNORECASE,
+)
 
 
 def _split_lines(text: str) -> list[str]:
@@ -117,6 +124,9 @@ class LiveCaptionsScraper:
         segment = normalize_segment(segment)
         if not segment:
             return
+        if _DOUBT_BREAK_RE.search(segment):
+            if not self.segments or self.segments[-1] != _SESSION_BREAK:
+                self.segments.append(_SESSION_BREAK)
         self.segments.append(segment)
         if self.on_segment:
             self.on_segment(segment)
@@ -132,19 +142,37 @@ class LiveCaptionsScraper:
         self._record(delta)
         return True
 
-    def run(self, *, max_seconds: float | None = None) -> list[str]:
-        """Block until KeyboardInterrupt, max_seconds, or repeated connection loss."""
+    def run(
+        self,
+        *,
+        max_seconds: float | None = None,
+        idle_seconds: float | None = None,
+        stop_event: threading.Event | None = None,
+    ) -> list[str]:
+        """Block until stop_event, idle silence, max_seconds, or connection loss."""
         text_block = self._connect_uia()
-        deadline = time.monotonic() + max_seconds if max_seconds else None
-        last_heartbeat = time.monotonic()
+        started = time.monotonic()
+        deadline = started + max_seconds if max_seconds else None
+        last_heartbeat = started
+        last_new_segment_at: float | None = None
         failures = 0
 
         while True:
+            if stop_event is not None and stop_event.is_set():
+                break
             if deadline is not None and time.monotonic() >= deadline:
+                break
+            if (
+                idle_seconds is not None
+                and idle_seconds > 0
+                and last_new_segment_at is not None
+                and time.monotonic() - last_new_segment_at >= idle_seconds
+            ):
                 break
             try:
                 if self.poll_once(text_block):
                     failures = 0
+                    last_new_segment_at = time.monotonic()
             except Exception as exc:
                 failures += 1
                 if failures >= 3:

@@ -1,0 +1,47 @@
+Cursor + 9Router — copy/paste settings
+=====================================
+
+A) LOCAL model routing (IDE chat with custom OpenAI models)
+-----------------------------------------------------------
+Cursor Settings → Models → API Keys
+
+  OpenAI API Key            : ON
+  Key                       : <paste 9Router dashboard API key>
+  Override OpenAI Base URL  : ON
+  Base URL                  : http://127.0.0.1:20128/v1
+
+Add models (exact ids) and toggle ON:
+  cu/claude-4.6-sonnet-medium-thinking
+  cu/claude-4.5-haiku
+  cu/gpt-5.3-codex
+
+Then pick one of those models in the chat model picker.
+Restart Cursor.
+
+B) CURSOR AGENT / CLOUD path
+----------------------------
+Cursor Agent runs in Cursor's cloud and BLOCKS private networks.
+http://localhost / http://127.0.0.1 WILL fail with:
+  "Access to private networks is forbidden"
+
+Choose one:
+
+  1) Disable override:
+       Override OpenAI Base URL = OFF
+       use Cursor's built-in models
+
+  2) Keep 9Router for Agent:
+       run scripts\9router\start_9router_public_tunnel.bat
+       set Base URL to the PUBLIC https URL printed by the tunnel
+         example: https://abc123.trycloudflare.com/v1
+       API key still = 9Router dashboard key
+       model still = cu/... ids
+
+C) Never paste secrets in chat
+------------------------------
+Do not send API keys / JWTs into Cursor chat.
+Regenerate keys if they were pasted earlier.
+
+D) Quick health check
+---------------------
+  scripts\9router\verify_9router.bat

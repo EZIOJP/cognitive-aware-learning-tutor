@@ -102,6 +102,54 @@ def test_ingest_and_retrieve_keyword_fallback(isolated_corpus):
     assert any("eigen" in h["raw_payload"].lower() for h in hits)
 
 
+def test_hybrid_retrieve_source_types_filter(isolated_corpus):
+    db, bm = isolated_corpus
+    ingest_markdown(
+        markdown=SAMPLE_MD,
+        document_id="test_mml",
+        document_title="Test MML",
+        source_type="textbook",
+        subject_tags=["linear_algebra"],
+        db_path=db,
+    )
+    ingest_markdown(
+        markdown="# Lecture\n\nWe discussed eigenvalues in class today.",
+        document_id="test_lecture",
+        document_title="Lecture transcript",
+        source_type="transcript",
+        subject_tags=["lecture"],
+        db_path=db,
+    )
+    all_hits = hybrid_retrieve("eigenvalue", top_k=5, db_path=db, bm25_path=bm)
+    book_hits = hybrid_retrieve(
+        "eigenvalue",
+        top_k=5,
+        source_types=["textbook"],
+        db_path=db,
+        bm25_path=bm,
+    )
+    assert all_hits
+    assert book_hits
+    assert all(h.get("document_id") == "test_mml" for h in book_hits)
+
+
+def test_study_intel_prefer_notes(monkeypatch):
+    monkeypatch.setattr(
+        "backend.transcripts.study_intel._corpus_hits_for_topic",
+        lambda *a, **k: [{"chunk_id": "c1", "citation": "[Book]", "raw_payload": "textbook eigen"}],
+    )
+    from backend.transcripts.study_intel import _combined_source_material
+
+    text, hits = _combined_source_material(
+        ["## My lecture notes\n- eigenvalues"],
+        topic="eigenvalues",
+        prefer_notes=True,
+    )
+    assert "My lecture notes" in text
+    assert "textbook eigen" in text
+    assert hits
+
+
 def test_study_intel_corpus_helper(monkeypatch):
     monkeypatch.setattr(
         "backend.corpus.retrieve.corpus_available",

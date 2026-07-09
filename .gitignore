@@ -36,6 +36,9 @@ models/texteller/
 # Debug session logs (Cursor agent)
 debug-*.log
 
+# Google Drive upload temp chunks
+.tmp.driveupload/
+
 # Runtime data (regenerated locally)
 data/logs/
 data_logs/

@@ -162,7 +162,7 @@ Return JSON only: {{"items": [{{"label": "mml.ch{chapter}.eq_name", "title": "sh
 CHAPTER {chapter} EXCERPT:
 {sample}"""
 
-    raw = ollama_generate(prompt, timeout=90.0)
+    raw = ollama_generate(prompt, timeout=90.0, task="kg_anchor")
     if not raw:
         return []
 

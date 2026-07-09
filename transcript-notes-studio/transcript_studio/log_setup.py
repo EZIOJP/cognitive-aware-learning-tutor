@@ -53,11 +53,21 @@ def setup_logging(*, level: int = logging.INFO) -> logging.Logger:
     console = logging.StreamHandler(sys.stderr)
     console.setLevel(logging.WARNING)
     console.setFormatter(fmt)
+    # Windows console defaults to cp1252 — unicode progress arrows must not crash logging.
+    if hasattr(sys.stderr, "reconfigure"):
+        try:
+            sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+        except (OSError, ValueError):
+            pass
     root.addHandler(console)
 
     _LOG = logging.getLogger("transcript_studio")
     _LOG.info("=== Transcript Notes Studio session %s ===", datetime.now(timezone.utc).isoformat())
     _LOG.info("Log file: %s", log_path)
+    _LOG.info("Shared log dir: %s", log_path.parent)
+    for name in ("backend.log", "notes_generation.log", "corpus_setup_latest.log"):
+        sibling = log_path.parent / name
+        _LOG.info("  %s %s", name, "exists" if sibling.is_file() else "(not created yet)")
 
     _install_exception_hooks()
     return _LOG
@@ -69,7 +79,7 @@ def _install_exception_hooks() -> None:
             "Uncaught exception",
             exc_info=(exc_type, exc, tb),
         )
-        sys.__excepthook__(exc_type, exc, tb)
+        _try_show_crash_dialog(exc)
 
     sys.excepthook = main_hook
 
@@ -80,8 +90,34 @@ def _install_exception_hooks() -> None:
                 args.thread.name if args.thread else "?",
                 exc_info=(args.exc_type, args.exc_value, args.exc_traceback),
             )
+            _try_show_crash_dialog(args.exc_value)
 
         threading.excepthook = thread_hook  # type: ignore[attr-defined]
+
+
+def _try_show_crash_dialog(exc: BaseException) -> None:
+    """Best-effort modal if Tk is running — never raise."""
+    try:
+        import tkinter as tk
+
+        root = tk._default_root  # noqa: SLF001
+        if root is None:
+            return
+        from transcript_studio.error_dialog import format_exception, show_detailed_error
+
+        details = format_exception(exc)
+        root.after(
+            0,
+            lambda: show_detailed_error(
+                root,
+                title="Transcript Notes Studio crashed",
+                summary=f"{type(exc).__name__}: {exc}",
+                details=details,
+                log_path=str(log_file_path()),
+            ),
+        )
+    except Exception:
+        pass
 
 
 def log_error(context: str, exc: BaseException) -> None:

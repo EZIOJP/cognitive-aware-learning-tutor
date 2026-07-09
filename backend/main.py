@@ -4,9 +4,15 @@ Primary FastAPI application entry point.
 Run: python -m uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
 """
 
-from contextlib import asynccontextmanager
+from backend.core.log_setup import setup_logging
 
-from fastapi import FastAPI
+setup_logging()
+
+from contextlib import asynccontextmanager
+import logging
+import time
+
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
@@ -30,8 +36,16 @@ from backend.vocab.router import router as vocab_router
 from backend.quiz.router import router as quiz_router
 from backend.transcripts.router import router as transcripts_router
 from backend.corpus.router import router as corpus_router
+from backend.core.system_router import router as system_router
+from backend.core.llm_router import router as llm_router
+from backend.app.router import router as app_router
+from backend.timetable.router import router as timetable_router
+from backend.planner.router import router as planner_router
+from backend.journal.router import router as journal_router
+from backend.behavior.classification_router import router as classification_router
 
 settings = get_settings()
+_request_log = logging.getLogger("backend.request")
 
 
 def _seed_math_templates(db: Session) -> None:
@@ -80,7 +94,6 @@ def _seed_math_templates(db: Session) -> None:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     import asyncio
-    import logging
 
     ensure_at_head()
     seed_reading_definitions(SessionLocal())
@@ -123,6 +136,36 @@ app = FastAPI(
 
 register_exception_handlers(app)
 
+
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    start = time.perf_counter()
+    path = request.url.path
+    skip = path.startswith("/ws") or path == "/health"
+    try:
+        response = await call_next(request)
+    except Exception:
+        elapsed_ms = (time.perf_counter() - start) * 1000
+        if not skip:
+            _request_log.exception(
+                "%s %s failed after %.0fms",
+                request.method,
+                path,
+                elapsed_ms,
+            )
+        raise
+    elapsed_ms = (time.perf_counter() - start) * 1000
+    if not skip and (response.status_code >= 400 or elapsed_ms > 3000):
+        _request_log.warning(
+            "%s %s -> %s (%.0fms)",
+            request.method,
+            path,
+            response.status_code,
+            elapsed_ms,
+        )
+    return response
+
+
 origins = ["*"] if settings.cors_origins == "*" else settings.cors_origins.split(",")
 app.add_middleware(
     CORSMiddleware,
@@ -142,6 +185,13 @@ app.include_router(life_router)
 app.include_router(insights_router)
 app.include_router(behavior_router)
 app.include_router(account_router)
+app.include_router(system_router)
+app.include_router(llm_router)
+app.include_router(timetable_router)
+app.include_router(planner_router)
+app.include_router(journal_router)
+app.include_router(classification_router)
+app.include_router(app_router)
 
 try:
     from backend.eeg.router import router as eeg_router
@@ -156,6 +206,7 @@ def health():
     from backend.db.migrate import get_revision_state
 
     current, head = get_revision_state()
+    route_paths = {getattr(r, "path", "") for r in app.routes if hasattr(r, "path")}
     return {
         "status": "ok",
         "database": str(engine.url),
@@ -166,6 +217,12 @@ def health():
         "eeg_enabled": settings.eeg_enabled,
         "ollama_enabled": settings.ollama_enabled,
         "dev_mode": settings.dev_mode,
+        "features": {
+            "planner": "/api/planner/blocks" in route_paths,
+            "behavior_desktop_timeline": "/api/behavior/desktop-timeline" in route_paths,
+            "behavior_tracker_health": "/api/behavior/tracker-health" in route_paths,
+            "calt_android_download": "/api/app/calt-android/download" in route_paths,
+        },
     }
 
 

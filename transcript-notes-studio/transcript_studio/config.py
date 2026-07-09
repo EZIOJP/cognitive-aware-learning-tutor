@@ -7,17 +7,20 @@ import os
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
-from transcript_studio.paths import notes_dir, sessions_dir, transcripts_dir
+from transcript_studio.paths import notes_dir, repo_root, sessions_dir, transcripts_dir
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 CONFIG_PATH = PROJECT_ROOT / "config.json"
 ENV_PATH = PROJECT_ROOT / ".env"
+REPO_ENV_PATH = repo_root() / ".env"
 
 
 @dataclass
 class AppConfig:
     llm_enabled: bool = True
-    llm_provider: str = "lmstudio"
+    llm_use_gateway: bool = True
+    llm_provider: str = "auto"
+    llm_tier: str = ""
     llm_base_url: str = "http://127.0.0.1:1234"
     llm_model: str = "google/gemma-4-e4b"
     llm_max_tokens: int = 8192
@@ -39,6 +42,13 @@ class AppConfig:
     refine_second_pass: bool = False
     enrich_with_references: bool = True
     fast_mode: bool = False
+    # When tuned/cleaned transcript is very large, enabling fast_mode reduces
+    # total LLM chunk passes and avoids empty-response timeouts.
+    auto_fast_mode_word_threshold: int = 45_000
+    # After capture/transcribe, jump to Tune tab without a yes/no dialog.
+    auto_open_summarize: bool = True
+    # After Generate notes completes, update status bar only (no Done popup).
+    silent_generate_done: bool = True
     llm_temperature: float = 0.3
     last_session: str = ""
     sessions_dir: str = ""
@@ -62,6 +72,20 @@ class AppConfig:
     max_llm_chunks: int = 20
     notes_quality: str = "balanced"
     llm_pause_sec: float = 0.0
+    enrich_visuals: bool = True
+    restore_punctuation: bool = False
+    asr_backend: str = "recasepunc"
+    note_style: str = "bullets"
+    coherence_mode: str = "compact"
+    semantic_threshold_mode: str = "fixed"
+    semantic_chunk_percentile: float = 95.0
+    narrative_judge: bool = False
+    lecture_auto_idle_sec: float = 600.0
+    lecture_auto_max_sec: float = 7500.0
+    lecture_auto_use_rag: bool = True
+    lecture_auto_fast_mode: bool = True
+    lecture_auto_quit_studio: bool = True
+    lecture_auto_handoff_corpus: bool = True
 
     def transcripts_path(self) -> Path:
         return transcripts_dir(self.transcripts_dir)
@@ -73,15 +97,20 @@ class AppConfig:
         return sessions_dir(self.sessions_dir)
 
 
-def _load_dotenv() -> None:
-    if not ENV_PATH.is_file():
+def _load_dotenv_file(path: Path) -> None:
+    if not path.is_file():
         return
-    for line in ENV_PATH.read_text(encoding="utf-8").splitlines():
+    for line in path.read_text(encoding="utf-8").splitlines():
         line = line.strip()
         if not line or line.startswith("#") or "=" not in line:
             continue
         key, _, value = line.partition("=")
         os.environ.setdefault(key.strip(), value.strip().strip('"').strip("'"))
+
+
+def _load_dotenv() -> None:
+    _load_dotenv_file(REPO_ENV_PATH)
+    _load_dotenv_file(ENV_PATH)
 
 
 def load_config() -> AppConfig:
@@ -95,11 +124,13 @@ def load_config() -> AppConfig:
 
     cfg = AppConfig(
         llm_enabled=_env_bool("LLM_ENABLED", data.get("llm_enabled", True)),
-        llm_provider=os.environ.get("LLM_PROVIDER", data.get("llm_provider", "lmstudio")),
-        llm_base_url=os.environ.get("LLM_BASE_URL", data.get("llm_base_url", "http://127.0.0.1:1234")),
-        llm_model=os.environ.get("LLM_MODEL", data.get("llm_model", "google/gemma-4-e4b")),
-        llm_max_tokens=int(os.environ.get("LLM_MAX_TOKENS", data.get("llm_max_tokens", 8192))),
-        llm_api_key=os.environ.get("LLM_API_KEY", data.get("llm_api_key", "")),
+        llm_use_gateway=_env_bool("LLM_USE_GATEWAY", data.get("llm_use_gateway", True)),
+        llm_provider=str(data.get("llm_provider") or os.environ.get("LLM_PROVIDER") or "auto"),
+        llm_tier=str(data.get("llm_tier") or os.environ.get("LLM_TIER") or ""),
+        llm_base_url=str(data.get("llm_base_url") or os.environ.get("LLM_BASE_URL") or "http://127.0.0.1:1234"),
+        llm_model=str(data.get("llm_model") or os.environ.get("LLM_MODEL") or "google/gemma-4-e4b"),
+        llm_max_tokens=int(data.get("llm_max_tokens") or os.environ.get("LLM_MAX_TOKENS") or 8192),
+        llm_api_key=str(data.get("llm_api_key") or ""),
         transcripts_dir=data.get("transcripts_dir", ""),
         notes_dir=data.get("notes_dir", ""),
         aggressive_dedup_default=bool(data.get("aggressive_dedup_default", False)),
@@ -117,6 +148,11 @@ def load_config() -> AppConfig:
         refine_second_pass=bool(data.get("refine_second_pass", True)),
         enrich_with_references=bool(data.get("enrich_with_references", True)),
         fast_mode=bool(data.get("fast_mode", False)),
+        auto_fast_mode_word_threshold=int(
+            data.get("auto_fast_mode_word_threshold", 45_000)
+        ),
+        auto_open_summarize=bool(data.get("auto_open_summarize", True)),
+        silent_generate_done=bool(data.get("silent_generate_done", True)),
         llm_temperature=float(data.get("llm_temperature", 0.3)),
         last_session=data.get("last_session", ""),
         sessions_dir=data.get("sessions_dir", ""),
@@ -140,8 +176,37 @@ def load_config() -> AppConfig:
         max_llm_chunks=int(data.get("max_llm_chunks", 20)),
         notes_quality=str(data.get("notes_quality", "balanced")),
         llm_pause_sec=float(data.get("llm_pause_sec", 0.0)),
+        enrich_visuals=bool(data.get("enrich_visuals", True)),
+        restore_punctuation=bool(data.get("restore_punctuation", False)),
+        asr_backend=str(data.get("asr_backend", "recasepunc")),
+        note_style=str(data.get("note_style", "bullets")),
+        coherence_mode=str(data.get("coherence_mode", "compact")),
+        semantic_threshold_mode=str(data.get("semantic_threshold_mode", "fixed")),
+        semantic_chunk_percentile=float(data.get("semantic_chunk_percentile", 95.0)),
+        narrative_judge=bool(data.get("narrative_judge", False)),
+        lecture_auto_idle_sec=float(data.get("lecture_auto_idle_sec", 600.0)),
+        lecture_auto_max_sec=float(data.get("lecture_auto_max_sec", 7500.0)),
+        lecture_auto_use_rag=bool(data.get("lecture_auto_use_rag", True)),
+        lecture_auto_fast_mode=bool(data.get("lecture_auto_fast_mode", True)),
+        lecture_auto_quit_studio=bool(data.get("lecture_auto_quit_studio", True)),
+        lecture_auto_handoff_corpus=bool(data.get("lecture_auto_handoff_corpus", True)),
     )
+    _migrate_llm_config(cfg)
     return cfg
+
+
+def _migrate_llm_config(cfg: AppConfig) -> None:
+    """Fix stale Studio config that sends lm-studio key to Gemini."""
+    provider = cfg.llm_provider.strip().lower()
+    placeholder_key = cfg.llm_api_key.strip().lower() in ("lm-studio", "lm_studio", "")
+    if provider in ("gemini", "openai"):
+        cfg.llm_use_gateway = True
+        if placeholder_key:
+            cfg.llm_api_key = ""
+        if provider == "gemini" and (not cfg.llm_model.strip() or "gemma" in cfg.llm_model.lower()):
+            cfg.llm_model = "gemini-2.0-flash"
+        if provider == "gemini" and cfg.llm_base_url.strip().startswith("http://127.0.0.1"):
+            cfg.llm_base_url = ""
 
 
 def save_config(cfg: AppConfig) -> None:

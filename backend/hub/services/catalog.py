@@ -51,6 +51,16 @@ SYSTEM_FEATURE_CATALOG: list[dict] = [
         ],
     },
     {
+        "plugin_id": "productivity",
+        "name": "Productivity Tracker",
+        "description": "Desktop app usage, browser activity, and productivity scoring.",
+        "kind": "coded",
+        "is_core": False,
+        "default_enabled": True,
+        "frontend_ids": ["productivity"],
+        "metrics": [],
+    },
+    {
         "plugin_id": "eeg",
         "name": "EEG / Brain Activity",
         "description": "ESP32 UDP stream (or dev simulation) → eeg_attention in hub.",

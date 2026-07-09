@@ -33,6 +33,9 @@ def _now() -> str:
 
 
 def _append_log(job: CorpusJob, line: str) -> None:
+    import logging
+
+    logging.getLogger("backend.corpus.job").info("[%s] %s", job.kind, line)
     job.logs.append(line)
     if len(job.logs) > 400:
         job.logs = job.logs[-400:]

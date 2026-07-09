@@ -3,6 +3,8 @@
 
 See [data/raw_library/README.md](../data/raw_library/README.md) for book layout and [CORPUS_STATUS.md](CORPUS_STATUS.md) for implementation status.
 
+**Pipeline detail (ingest, hybrid retrieve, endpoints):** [LLD.md §5](LLD.md#5-corpus-pipeline).
+
 ## One-command setup (writes `data/logs/corpus_setup_latest.log`)
 
 ```bat

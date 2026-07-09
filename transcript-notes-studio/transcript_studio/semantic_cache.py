@@ -22,8 +22,6 @@ if TYPE_CHECKING:
 log = logging.getLogger(__name__)
 
 _CACHE_DB_PATH: Path | None = None
-_EMBED_MODEL = None
-_EMBED_MODEL_NAME = "all-MiniLM-L6-v2"
 
 # ---------------------------------------------------------------------------
 # DB path (resolve relative to this file's project root)
@@ -74,38 +72,18 @@ def _get_conn(db_path: Path | None = None) -> sqlite3.Connection:
 
 
 # ---------------------------------------------------------------------------
-# Embedding helper
+# Embedding helper (shared backend path — subprocess-safe under Tk GUI threads)
 # ---------------------------------------------------------------------------
 
 
-def _load_embed_model():
-    global _EMBED_MODEL
-    if _EMBED_MODEL is not None:
-        return _EMBED_MODEL
-    try:
-        from sentence_transformers import SentenceTransformer  # type: ignore
-
-        _EMBED_MODEL = SentenceTransformer(_EMBED_MODEL_NAME, device="cpu")
-        return _EMBED_MODEL
-    except Exception as exc:  # noqa: BLE001
-        log.warning("Semantic cache: embedding model unavailable: %s", exc)
-        return None
-
-
 def _embed(text: str) -> "np.ndarray | None":
-    model = _load_embed_model()
-    if model is None:
-        return None
     try:
-        import numpy as np  # noqa: PLC0415
+        from backend.transcripts.embedding import encode_texts
 
-        vec: np.ndarray = model.encode(
-            [text],
-            convert_to_numpy=True,
-            show_progress_bar=False,
-            device="cpu",
-        )[0].astype("float32")
-        return vec
+        vectors = encode_texts([text])
+        if vectors is None or len(vectors) == 0:
+            return None
+        return vectors[0].astype("float32")
     except Exception as exc:  # noqa: BLE001
         log.warning("Semantic cache: embed error: %s", exc)
         return None

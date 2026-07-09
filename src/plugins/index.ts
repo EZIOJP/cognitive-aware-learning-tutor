@@ -11,3 +11,5 @@ import "./eeg_plugin";
 import "./focus_mirror_plugin";
 import "./life_tracker_plugin";
 import "./nutrinode/index";
+import "./productivity_plugin";
+

@@ -5,7 +5,13 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from sqlalchemy.orm import Session
+# `graph_retrieve` is an optional KG/traversal layer.
+# Make `sqlalchemy` optional so the rest of the corpus/notes pipeline can run
+# even when KG dependencies aren't installed.
+try:
+    from sqlalchemy.orm import Session
+except ModuleNotFoundError:  # pragma: no cover
+    Session = Any  # type: ignore[misc,assignment]
 
 log = logging.getLogger(__name__)
 

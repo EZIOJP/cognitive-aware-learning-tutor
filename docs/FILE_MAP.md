@@ -105,3 +105,33 @@ All paths below are relative to that prefix. FastAPI routes use trailing slashes
 ## Known dual data path
 
 Many UI flows still use **localStorage** via `vocabStore.ts` / `cycleService.ts`. Backend endpoints exist for auth, groups, quiz, and progress — Phase 1 goal is to close gaps between UI and API.
+
+## Productivity / Plan vs Actual
+
+| Role | Path |
+|------|------|
+| Dashboard shell | `src/components/productivity/PlanVsActualDashboard.tsx` |
+| Day ribbon | `src/components/productivity/DayRibbon.tsx` |
+| Weekly heatmap | `src/components/productivity/WeeklyAdherenceHeatmap.tsx` |
+| Streak | `src/components/productivity/AdherenceStreak.tsx` |
+| Category chart | `src/components/productivity/CategoryVarianceChart.tsx` |
+| Hooks | `src/hooks/usePlanVsActual.ts` |
+| Utils | `src/components/productivity/planVsActualUtils.ts` |
+| Productivity page | `src/pages/ProductivityPage.tsx` |
+| API clients | `src/api/plannerClient.ts`, `src/api/behaviorClient.ts`, `src/api/timetableClient.ts` |
+
+**Endpoints consumed:** `GET /api/planner/blocks`, `/overlay/actual`, `/adherence`; `GET /api/behavior/desktop-timeline`, `/tracker-health`.
+
+## LLM Classification Review
+
+| Role | Path |
+|------|------|
+| Models | `backend/models/app_classification.py` |
+| Service | `backend/behavior/classification_service.py` |
+| Router | `backend/behavior/classification_router.py` |
+| Migration | `alembic/versions/0022_app_classification.py` |
+| Cache bridge | `backend/timetable/tracker_bridge.py` (cache lookup) |
+| Frontend panel | `src/components/productivity/ClassificationReview.tsx` |
+| API client | `src/api/behaviorClient.ts` (scan/pending/approve/reject/edit/revert) |
+
+**Endpoints:** `POST /api/classification/scan`, `GET /pending`, `GET /{id}/preview`, `POST /{id}/approve`, `POST /{id}/reject`, `POST /{id}/edit-and-approve`, `POST /{id}/revert`.

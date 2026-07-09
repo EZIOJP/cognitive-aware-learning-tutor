@@ -1,146 +1,105 @@
 # Current Architecture
 
-What exists in the project **today** (2026-06). For the target math vision pipeline, see [MATH_TUTOR_VISION_PIPELINE.md](./MATH_TUTOR_VISION_PIPELINE.md).
+**Last updated:** 2026-06-26
+
+**Full design:** [HLD.md](./HLD.md) (system context, study loops, gaps) · [LLD.md](./LLD.md) (algorithms, schemas, file map)
+
+What exists in the project **today**. For math vision targets, see [MATH_TUTOR_VISION_PIPELINE.md](./MATH_TUTOR_VISION_PIPELINE.md). Daily checklist: [WORKING_PRODUCT.md](./WORKING_PRODUCT.md).
+
+---
 
 ## App summary
 
-Local-first study platform: **hub + plugins**, GRE vocab, math tutor, life tracker, optional EEG/NutriNode/focus mirror.
+Local-first study platform: **hub + plugins**, GRE vocab, math tutor, lecture second-brain (corpus/RAG), global quiz/SRS, life tracker, optional EEG/NutriNode/focus mirror.
 
 ```text
 React (Vite)  →  FastAPI backend/main.py  →  SQLite (vocab_app.db)
-                     ↳ hub, vocab, math, behavior, insights, EEG WS, plugins
+                     ↳ hub, vocab, quiz, corpus, transcripts, math, insights, behavior
+                     ↳ corpus registry + BM25 + vectors (separate indexes)
 ```
 
-Daily checklist: [WORKING_PRODUCT.md](./WORKING_PRODUCT.md).
+---
 
-## Frontend stack
+## Stack
 
-- Vite 6, React 18, TypeScript, React Router
-- Tailwind 4, Radix/shadcn-style UI, Recharts
-- **Math whiteboard:** `react-sketch-canvas` (`MathSplitWhiteboard.tsx`)
-- Plugins: `src/plugins/*` + `PluginRegistryProvider` (server sync)
+| Layer | Technology |
+|-------|------------|
+| Frontend | Vite 6, React 18, TypeScript, React Router 7, Tailwind 4 |
+| UI | Radix/shadcn-style components, Recharts |
+| Backend | FastAPI modular monolith, SQLAlchemy, Alembic |
+| DB | SQLite (`data/vocab_app.db`) |
+| Corpus | `data/corpus/registry.db` + BM25 + local vectors |
+
+---
 
 ## Entry points
 
 ```text
 src/main.tsx → src/app/App.tsx → AppShell
+run.bat      → migrations + API :8000 + Vite :5173
 ```
 
-Key routes:
+**Production API:** `backend/main.py` (not `vocab_backend.py`).
+
+---
+
+## Key routes
 
 ```text
-/                         Hub dashboard (widgets, life clock, AI review)
-/math-tutor               Math hub
-/math-tutor/practice/:id  Practice + whiteboard + Ask tutor
-/gre-vocab                GRE hub (Phase 1 complete)
-/gre-vocab/read/:mode     Read modes (API when signed in)
-/gre-vocab/cycle          Read → quiz → report
+/                         Dashboard (StudyLoopWidget, Life Clock, AI review)
+/gre-vocab/cycle          GRE Read → quiz → report (Phase 1 complete)
+/lecture-notes            Transcript library + note generation
+/knowledge-base           Corpus ingest / auto-setup
+/review                   Global quiz + spaced repetition
+/math-tutor/practice/:id  Whiteboard + Ask tutor
 /settings/plugins         Plugin manager
-/settings/features        Feature Studio
-/focus/calibrate          Face calibration UI
-/admin                    Admin (words, users, export)
-/login
+/login · /admin
 ```
 
-## Global providers
+Plugin-registered routes: see [LLD.md §13](./LLD.md#13-frontend-route-map).
+
+---
+
+## Providers
 
 ```text
-AuthProvider → PluginRegistryProvider → StudySessionProvider → …
-ThemeContext, GoalTrackerContext, NutritionProvider (NutriNode)
+ThemeProvider → AuthProvider → PluginRegistryProvider → PomodoroProvider
+  → StudySessionProvider → plugin providers (GoalTracker, Nutrition, …)
 ```
 
-`StudySessionContext`:
+`StudySessionContext`: EEG (simulated by default), cognitive load from gamma thresholds, math canvas state.
 
-- EEG stream when **eeg** plugin enabled (`useSimulatedData` default true)
-- Cognitive load from gamma thresholds
-- Canvas image state for math
-- Intervention flags (auto off: `config.intervention.enabled = false`)
-- Posts `eeg_attention` to hub every 30s when authenticated
+---
 
-## Hub and plugins
-
-Backend:
-
-```text
-backend/hub/router.py          readings, rollups, plugins, custom features, layout, export
-backend/hub/services/catalog.py
-backend/hub/services/features.py
-alembic/0006_user_features.py
-```
-
-Frontend:
-
-```text
-src/api/hubClient.ts
-src/pages/settings/FeatureStudioPage.tsx
-src/plugins/PluginRegistryProvider.tsx
-```
-
-Plugins: core hub, math-tutor, gre-vocab, life-tracker, eeg, focus-mirror, nutrinode.
-
-## GRE vocabulary
-
-- **Signed in:** `/api/vocab` — groups, adaptive quiz, `POST /progress/{id}/read`, by-criteria lists
-- **Guest:** `public/data/words.json` + `localStorage` fallback
-- Docs: [GRE_VOCAB_PHASE1.md](./GRE_VOCAB_PHASE1.md)
-
-## Math tutor
-
-```text
-src/pages/math/MathPracticePage.tsx
-src/app/components/MathSplitWhiteboard.tsx   exportPng → tutor hint
-backend/math/router.py                       POST /api/math/tutor/hint
-backend/math/rule_tutor.py                   default (no GPU)
-backend/math/ollama_tutor.py                 OLLAMA_ENABLED=1 only
-```
-
-Not yet: auto stuckness, `/api/math/intervention`, OpenCV/OCR pipeline, structured Socratic JSON.
-
-## Focus mirror (Python, not browser)
-
-```text
-backend/face_tracker.py          OpenCV + MediaPipe, mirrored video, readable HUD text
-scripts/run_face_tracker.bat
-POST /api/vocab/face/status      → hub face_attention (JWT or dev_mode)
-```
-
-Browser `FaceMirror` / MediaPipe frontend was **removed**; use Python window only.
-
-## EEG
-
-```text
-backend/eeg/service.py           UDP :5005 when EEG_ENABLED=1
-backend/eeg/router.py            WebSocket /ws/eeg
-Frontend                         simulation default; WS when useSimulatedData false
-```
-
-## Behavior / life / NutriNode
-
-- Chrome extension → behavior WebSocket → hub
-- Life tracker daily log → hub rollups → Life Clock widget
-- NutriNode: manual meals + optional live WS (off by default)
-
-## Data storage
+## Data at a glance
 
 | Data | Where |
 |------|--------|
-| Users, progress, hub | SQLite via SQLAlchemy |
-| Browser extension logs | `data_logs/DSC_browser_behavior_*.csv` |
-| Local DB file | `vocab_app.db` (gitignored in practice) |
-| Intervention flywheel (target) | `DSC_*.csv` + `data_logs/interventions/` — partial / example only |
+| Users, progress, hub, quiz, KG | `data/vocab_app.db` |
+| Corpus chunks | `data/corpus/registry.db` |
+| Transcripts, notes, books | `data/transcripts/`, `data/notes/`, `data/raw_library/` |
+| GRE words bootstrap | `public/data/words.json` |
 
-## Legacy reference files (do not treat as production entry)
+Detail: [LLD.md §3](./LLD.md#3-data-stores).
 
-```text
-backend_example.py    UDP/FFT/intervention prototype
-vocab_backend.py        older vocab-only server
-```
+---
 
-Production API: **`backend/main.py`**.
+## Optional upgrades
+
+| Feature | Enable |
+|---------|--------|
+| Local LLM | `OLLAMA_ENABLED=1` — see [AI_HANDLER.md](./AI_HANDLER.md) |
+| Corpus-grounded notes | `CORPUS_GROUNDED_NOTES=1` |
+| Real EEG | `EEG_ENABLED=1` + ESP32 firmware |
+| Face mirror | `scripts/run_face_tracker.bat` |
+
+See [HARDWARE_AND_AI_LATER.md](./HARDWARE_AND_AI_LATER.md).
+
+---
 
 ## Build
 
 ```bat
-run.bat          migrations + API + frontend
-npm run build    succeeds (large chunk warning OK)
+run.bat
+npm run build
 ```

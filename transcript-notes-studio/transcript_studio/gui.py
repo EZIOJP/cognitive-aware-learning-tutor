@@ -6,6 +6,7 @@ import logging
 import subprocess
 import sys
 import threading
+import traceback
 import tkinter as tk
 from datetime import datetime
 from pathlib import Path
@@ -29,9 +30,21 @@ _UI_TEXT = "#1f2937"
 _UI_MUTED = "#6b7280"
 _UI_ACCENT = "#2563eb"
 _UI_ACCENT_HOVER = "#1d4ed8"
+_UI_OK = "#059669"
+_UI_WARN = "#d97706"
 
-from transcript_studio.config import load_config, save_config
-from transcript_studio.llm_client import llm_reachable, options_from_config
+
+def _import_corpus_setup():
+    """Lazy import — corpus_setup pulls backend.corpus (needs sqlalchemy in studio venv)."""
+    from transcript_studio import corpus_setup
+
+    return corpus_setup
+
+
+from transcript_studio.config import AppConfig, load_config, save_config
+from transcript_studio.rag_status import RagStatus, check_rag_with_opts, llm_status_line
+from transcript_studio.gateway_llm import llm_generate_reachable, llm_preflight_error, uses_gateway
+from transcript_studio.llm_client import options_from_config
 from transcript_studio.ui_text import (
     format_preview_text,
     insert_text_chunked,
@@ -40,6 +53,7 @@ from transcript_studio.ui_text import (
 )
 from transcript_studio.notes_generator import (
     combine_source_files,
+    generate_notes_from_file,
     generate_notes_from_files,
     generate_notes_from_text,
     list_transcripts,
@@ -58,6 +72,8 @@ from transcript_studio.parse_audit import (
     format_notes_audit_report,
 )
 from transcript_studio.log_setup import log_error, log_file_path, setup_logging, tail_log
+from transcript_studio.error_dialog import format_exception, show_detailed_error
+from transcript_studio.paths import repo_root
 from transcript_studio.export_insights import export_run_insights
 from transcript_studio.quality_presets import apply_quality_preset
 from transcript_studio.system_sensors import format_system_line, try_cpu_load_pct, try_cpu_temp_celsius
@@ -75,6 +91,41 @@ from transcript_studio.whisper_live import (
     check_live_whisper_deps,
     check_system_audio_available,
 )
+
+import urllib.parse
+
+
+def _study_library_url(relative_path: str = "") -> str:
+    base = "http://localhost:5173/lecture-notes"
+    if relative_path.strip():
+        return f"{base}?file={urllib.parse.quote(relative_path.strip())}"
+    return base
+
+
+def _note_relative_path(note_path: Path, cfg: AppConfig) -> str:
+    notes_dir = cfg.notes_path().resolve()
+    try:
+        return note_path.resolve().relative_to(notes_dir).as_posix()
+    except ValueError:
+        return note_path.name
+
+
+def _corpus_handoff_after_save(transcript_path: Path | None, note_path: Path, mode: str) -> str:
+    rag_modes = ("grounded", "hybrid_grounded")
+    if mode in rag_modes:
+        return f"RAG mode ({mode}) — corpus updated during generation."
+    try:
+        from backend.corpus.handoff import ingest_lecture_handoff
+
+        if transcript_path is None:
+            return "Corpus handoff skipped — no transcript path."
+        handoff = ingest_lecture_handoff(transcript_path=transcript_path, note_path=note_path)
+        tx_c = handoff.get("transcript_chunks", 0)
+        note_c = handoff.get("note_chunks", 0)
+        return f"Corpus indexed — transcript {tx_c} chunks, note {note_c} chunks."
+    except Exception as exc:
+        return f"Corpus handoff skipped: {exc}"
+
 
 log = logging.getLogger(__name__)
 
@@ -199,6 +250,10 @@ class TranscriptStudioApp(_AppBase):
         self._source_files: list[Path] = []
         self._last_transcript_path: Path | None = None
         self._last_note_path: Path | None = None
+        self._corpus_job_id: str | None = None
+        self._auto_cancel = threading.Event()
+        self._lecture_auto_running = False
+        self._lecture_auto_cancel = threading.Event()
         self._workflow_step = 0
         self._step_frames: dict[str, ttk.Frame] = {}
 
@@ -207,8 +262,12 @@ class TranscriptStudioApp(_AppBase):
         self._refresh_library_list()
         self._load_fields_from_config()
         self._refresh_llm_status()
+        self._refresh_rag_status()
         self._refresh_system_status()
+        self.after(100, self._refresh_auto_queue)
         self.after(45_000, self._schedule_system_status)
+        self.after(60_000, self._schedule_llm_status)
+        self.after(30_000, self._schedule_rag_status)
         self.after(50, lambda: _apply_windows_title_bar(self))
 
     # ------------------------------------------------------------------ UI shell
@@ -258,9 +317,12 @@ class TranscriptStudioApp(_AppBase):
         ttk.Label(bar, text="Transcript Notes Studio", font=("Segoe UI", 14, "bold")).pack(side=tk.LEFT)
         self.llm_status_var = tk.StringVar(value="LLM: checking…")
         ttk.Label(bar, textvariable=self.llm_status_var, foreground=_UI_MUTED).pack(side=tk.LEFT, padx=(16, 0))
+        self.rag_status_var = tk.StringVar(value="RAG: checking…")
+        ttk.Label(bar, textvariable=self.rag_status_var, foreground=_UI_MUTED).pack(side=tk.LEFT, padx=(12, 0))
         self.system_status_var = tk.StringVar(value="System: …")
         ttk.Label(bar, textvariable=self.system_status_var, foreground=_UI_MUTED).pack(side=tk.LEFT, padx=(12, 0))
-        ttk.Button(bar, text="Open log", command=self._open_log_file).pack(side=tk.RIGHT, padx=(4, 0))
+        ttk.Button(bar, text="Open backend log", command=self._open_backend_log).pack(side=tk.RIGHT, padx=(4, 0))
+        ttk.Button(bar, text="Open studio log", command=self._open_log_file).pack(side=tk.RIGHT, padx=(4, 0))
         ttk.Button(bar, text="Test LLM", command=self._test_llm).pack(side=tk.RIGHT, padx=(4, 0))
         ttk.Button(bar, text="Settings", command=self._save_settings).pack(side=tk.RIGHT)
 
@@ -321,11 +383,15 @@ class TranscriptStudioApp(_AppBase):
         help_text = (
             "Live Captions — Win+Ctrl+L → data/transcripts/\n"
             "Parse — collapse caption prefix growth\n"
-            "Generate — LLM chunks + mermaid rules\n"
+            "Generate — text chunks; diagrams/code added in final pass\n"
             "Context — PDF/ipynb/md references\n"
             "Whisper — when captions unavailable\n"
             "Quality preset — slow CPU OK\n"
             "Docs: docs/LOCAL_LLM_NOTES_GUIDE.md\n\n"
+            f"Logs: {repo_root() / 'data' / 'logs'}\n"
+            f"  backend.log — FastAPI (run.bat)\n"
+            f"  notes_generation.log — note pipeline\n"
+            f"  transcript_studio.log — this app\n\n"
             f"Transcripts: {self.cfg.transcripts_path()}\n"
             f"Notes: {self.cfg.notes_path()}\n"
             f"Error log: {log_file_path()}"
@@ -434,18 +500,236 @@ class TranscriptStudioApp(_AppBase):
         actions = ttk.Frame(parent)
         actions.pack(fill=tk.X, pady=(8, 0))
         ttk.Button(actions, text="Open notes folder", command=self._open_output).pack(side=tk.LEFT)
-        ttk.Button(actions, text="Open Study Library in browser", command=self._open_study_library).pack(side=tk.LEFT, padx=(8, 0))
+        ttk.Button(actions, text="Open Study Library in browser", command=lambda: self._open_study_library()).pack(side=tk.LEFT, padx=(8, 0))
+        self.done_library_btn = ttk.Button(
+            actions,
+            text="Open last note in Study Library",
+            command=self._open_last_note_in_library,
+        )
+        self.done_library_btn.pack(side=tk.LEFT, padx=(8, 0))
         ttk.Button(actions, text="Export insights…", command=self._export_run_insights).pack(side=tk.LEFT, padx=(8, 0))
         ttk.Button(actions, text="Start new lecture", command=lambda: self._show_workflow_step(0)).pack(side=tk.LEFT, padx=(8, 0))
 
+    def _schedule_llm_status(self) -> None:
+        self._refresh_llm_status()
+        self.after(60_000, self._schedule_llm_status)
+
     def _refresh_llm_status(self) -> None:
         def check() -> None:
-            ok = llm_reachable(options_from_config(self.cfg))
-            model = self.cfg.llm_model
-            status = f"LLM: {'● reachable' if ok else '○ offline'} — {model}"
+            status = llm_status_line(self.cfg)
             self.after(0, lambda: self.llm_status_var.set(status))
 
         threading.Thread(target=check, daemon=True).start()
+
+    def _schedule_rag_status(self) -> None:
+        self._refresh_rag_status()
+        self.after(30_000, self._schedule_rag_status)
+
+    def _refresh_rag_status(self) -> None:
+        def check() -> None:
+            legacy = bool(self.legacy_pipeline_var.get()) if hasattr(self, "legacy_pipeline_var") else False
+            status = check_rag_with_opts(self.cfg, legacy_forced=legacy)
+            try:
+                summary = _import_corpus_setup().get_corpus_summary()
+            except Exception as exc:
+                summary = {"total_chunks": 0, "document_count": 0, "issues": [str(exc)]}
+            chunks = summary.get("total_chunks", 0)
+            textbooks = summary.get("textbook_count", 0)
+            total_docs = summary.get("document_count", 0)
+            extra = total_docs - textbooks
+            if textbooks and extra > 0:
+                detail = f"{chunks:,} chunks · {textbooks} textbooks (+{extra} transcripts/notes for quiz)"
+            elif textbooks:
+                detail = f"{chunks:,} chunks · {textbooks} textbooks"
+            else:
+                detail = f"{chunks:,} chunks · {total_docs} documents"
+            if summary.get("issues"):
+                detail += f" · {summary['issues'][0][:80]}"
+            backend = summary.get("retrieval_backend") or status.retrieval_backend
+            if status.rag_ready and backend == "sqlite":
+                detail += " · ⚠ SQLite vectors (Qdrant locked)"
+            rag_line = f"RAG: {'● ready' if status.rag_ready else '○ ' + status.mode_label} — {detail}"
+
+            def apply() -> None:
+                self.rag_status_var.set(rag_line)
+                if hasattr(self, "rag_corpus_detail_var"):
+                    self.rag_corpus_detail_var.set(detail)
+                self._apply_rag_banner(status)
+
+            self.after(0, apply)
+
+        threading.Thread(target=check, daemon=True).start()
+
+    def _apply_rag_banner(self, status: RagStatus | None = None) -> None:
+        if not hasattr(self, "rag_banner_var"):
+            return
+        if status is None:
+            legacy = bool(self.legacy_pipeline_var.get())
+            status = check_rag_with_opts(self.cfg, legacy_forced=legacy)
+        self.rag_banner_var.set(status.banner_text)
+        color = _UI_OK if status.banner_style == "ok" else (_UI_WARN if status.banner_style == "warn" else _UI_MUTED)
+        self.rag_banner_label.configure(foreground=color)
+        if hasattr(self, "summarize_btn"):
+            label = "Generate notes (RAG)" if status.rag_ready else "Generate notes (legacy)"
+            self.summarize_btn.configure(text=label)
+
+    def _toggle_advanced_options(self) -> None:
+        if not hasattr(self, "advanced_frame"):
+            return
+        if self.advanced_visible.get():
+            self.advanced_frame.pack(fill=tk.X, pady=(0, 6), before=self._llm_frame)
+        else:
+            self.advanced_frame.pack_forget()
+        self._apply_rag_banner()
+
+    def _run_corpus_init_quick(self) -> None:
+        if self._busy:
+            return
+        if not messagebox.askyesno(
+            "Initialize RAG",
+            "Quick init scans your library and ingests MML chapters 1–2 if present.\n"
+            "Notes RAG uses textbooks only — lectures are indexed after you generate notes.\n\nContinue?",
+        ):
+            return
+
+        def work() -> None:
+            try:
+                cs = _import_corpus_setup()
+
+                def on_progress(msg: str) -> None:
+                    self._ui(lambda m=msg: self._on_operation_progress(m))
+
+                result = cs.initialize_corpus_quick(on_progress=on_progress)
+                total = result.get("total_chunks", 0)
+
+                def done() -> None:
+                    self._refresh_rag_status()
+                    messagebox.showinfo(
+                        "RAG initialized",
+                        f"Knowledge base ready — {total:,} chunks indexed.\n\n"
+                        "You can now generate RAG-grounded notes.",
+                    )
+
+                self._ui(done)
+            except ImportError as exc:
+                log_error("Corpus quick init failed", exc)
+                err = (
+                    "Missing dependency for RAG corpus (sqlalchemy). "
+                    "Close Studio and run transcript-notes-studio\\run.bat again to install deps."
+                )
+                self._ui(lambda: messagebox.showerror("Corpus init failed", err))
+            except Exception as exc:
+                log_error("Corpus quick init failed", exc)
+                err = f"{type(exc).__name__}: {exc}"
+                self._ui(lambda: messagebox.showerror("Corpus init failed", err))
+            finally:
+                self._ui(lambda: (self._set_busy(False), self._progress_end()))
+
+        self._set_busy(True)
+        self._progress_begin("Initializing knowledge base…", indeterminate=True)
+        threading.Thread(target=work, daemon=True).start()
+
+    def _run_corpus_init_full(self) -> None:
+        if self._busy:
+            return
+        if not messagebox.askyesno(
+            "Full corpus build",
+            "Full build runs the same pipeline as Study Library → Build Knowledge Base "
+            "(metadata, MML, transcripts, optional full books).\n\nThis may take several minutes. Continue?",
+        ):
+            return
+
+        try:
+            cs = _import_corpus_setup()
+            job = cs.start_full_corpus_setup()
+            self._corpus_job_id = job.job_id
+            self._set_busy(True)
+            self._progress_begin("Building knowledge base…", indeterminate=True)
+            self._log(f"Corpus job started: {job.job_id}")
+            self.after(1500, self._poll_corpus_job)
+        except ImportError:
+            messagebox.showerror(
+                "Corpus build failed",
+                "Missing dependency for RAG corpus (sqlalchemy). "
+                "Close Studio and run transcript-notes-studio\\run.bat again to install deps.",
+            )
+        except Exception as exc:
+            log_error("Corpus full build failed", exc)
+            messagebox.showerror("Corpus build failed", str(exc))
+
+    def _run_corpus_ingest_sources(self) -> None:
+        if self._busy:
+            return
+        try:
+            paths = [p for p in self._resolve_sources() if p.suffix.lower() == ".txt"]
+        except Exception as exc:
+            messagebox.showwarning("No sources", str(exc))
+            return
+        if not paths:
+            messagebox.showwarning("No transcripts", "Add at least one .txt transcript on the Capture step.")
+            return
+
+        def work() -> None:
+            try:
+                cs = _import_corpus_setup()
+
+                def on_progress(msg: str) -> None:
+                    self._ui(lambda m=msg: self._on_operation_progress(m))
+
+                result = cs.ingest_transcript_paths(paths, on_progress=on_progress)
+                total = result.get("total_chunks", 0)
+                ingested = result.get("ingested", 0)
+
+                def done() -> None:
+                    self._refresh_rag_status()
+                    messagebox.showinfo(
+                        "Transcripts ingested",
+                        f"Ingested {ingested} file(s) — {total:,} total chunks in corpus.",
+                    )
+
+                self._ui(done)
+            except ImportError:
+                err = (
+                    "Missing dependency for RAG corpus (sqlalchemy). "
+                    "Close Studio and run transcript-notes-studio\\run.bat again to install deps."
+                )
+                self._ui(lambda: messagebox.showerror("Ingest failed", err))
+            except Exception as exc:
+                log_error("Corpus ingest failed", exc)
+                err = f"{type(exc).__name__}: {exc}"
+                self._ui(lambda: messagebox.showerror("Ingest failed", err))
+            finally:
+                self._ui(lambda: (self._set_busy(False), self._progress_end()))
+
+        self._set_busy(True)
+        self._progress_begin("Ingesting transcripts into corpus…", indeterminate=True)
+        threading.Thread(target=work, daemon=True).start()
+
+    def _poll_corpus_job(self) -> None:
+        if not self._corpus_job_id:
+            return
+        info = _import_corpus_setup().poll_job(self._corpus_job_id)
+        if not info:
+            self._corpus_job_id = None
+            self._set_busy(False)
+            self._progress_end()
+            return
+        msg = info.get("message") or info.get("status") or "Building…"
+        progress = float(info.get("progress") or 0.0)
+        self._progress_update(progress, msg)
+        status = info.get("status")
+        if status in ("done", "error"):
+            self._corpus_job_id = None
+            self._set_busy(False)
+            self._progress_end()
+            self._refresh_rag_status()
+            if status == "done":
+                chunks = info.get("total_chunks", 0)
+                messagebox.showinfo("Corpus build complete", f"Knowledge base ready — {chunks:,} chunks.")
+            else:
+                messagebox.showerror("Corpus build failed", info.get("error") or "Unknown error")
+            return
+        self.after(2000, self._poll_corpus_job)
 
     def _refresh_system_status(self) -> None:
         def check() -> None:
@@ -472,6 +756,14 @@ class TranscriptStudioApp(_AppBase):
         self.cfg.notes_quality = name
         self.cfg.max_llm_chunks = int(preset["max_llm_chunks"])
         self.cfg.llm_pause_sec = float(preset["llm_pause_sec"])
+        if hasattr(self, "enrich_visuals_var"):
+            self.enrich_visuals_var.set(bool(preset.get("enrich_visuals", not preset["fast_mode"])))
+        if "semantic_cache_enabled" in preset:
+            self.cfg.semantic_cache_enabled = bool(preset["semantic_cache_enabled"])
+        self.cfg.note_style = str(preset.get("note_style", "bullets"))
+        self.cfg.coherence_mode = str(preset.get("coherence_mode", "compact"))
+        self.cfg.restore_punctuation = bool(preset.get("restore_punctuation", False))
+        self.cfg.narrative_judge = bool(preset.get("narrative_judge", False))
         self._refresh_parse_estimate()
 
     def _export_run_insights(self) -> None:
@@ -495,23 +787,38 @@ class TranscriptStudioApp(_AppBase):
             self._log(f"Exported insights -> {path}")
         except OSError as exc:
             messagebox.showerror("Export failed", str(exc))
-        self.after(30_000, self._refresh_llm_status)
 
     def _open_log_file(self) -> None:
         path = log_file_path()
         path.parent.mkdir(parents=True, exist_ok=True)
         if not path.is_file():
             path.write_text("", encoding="utf-8")
-        self._log(f"Log file: {path}")
+        self._log(f"Studio log: {path}")
+        self._open_path_in_explorer(path)
+
+    def _open_backend_log(self) -> None:
+        try:
+            from backend.paths import LOGS_DIR
+
+            path = LOGS_DIR / "backend.log"
+        except ImportError:
+            path = repo_root() / "data" / "logs" / "backend.log"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        if not path.is_file():
+            path.write_text("", encoding="utf-8")
+        self._log(f"Backend log: {path} (start run.bat if empty)")
+        self._open_path_in_explorer(path)
+
+    def _open_path_in_explorer(self, path: Path) -> None:
         if sys.platform == "win32":
             subprocess.Popen(["explorer", "/select,", str(path)])
         else:
             subprocess.Popen(["xdg-open", str(path.parent)])
 
-    def _open_study_library(self) -> None:
+    def _open_study_library(self, relative_path: str = "") -> None:
         import webbrowser
 
-        webbrowser.open("http://localhost:5173/lecture-notes")
+        webbrowser.open(_study_library_url(relative_path))
 
     def _update_done_paths(self) -> None:
         if self._last_transcript_path:
@@ -591,6 +898,55 @@ class TranscriptStudioApp(_AppBase):
         ).pack(anchor=tk.W, pady=(4, 0))
 
     def _build_summarize_options(self, tab: ttk.Frame) -> None:
+        self.rag_banner_var = tk.StringVar(value="Checking RAG…")
+        self.rag_banner_label = ttk.Label(tab, textvariable=self.rag_banner_var, wraplength=720)
+        self.rag_banner_label.pack(anchor=tk.W, pady=(0, 6))
+
+        rag_row = ttk.LabelFrame(tab, text="Knowledge base (RAG)", padding=8)
+        rag_row.pack(fill=tk.X, pady=(0, 6))
+        self.rag_corpus_detail_var = tk.StringVar(value="")
+        ttk.Label(rag_row, textvariable=self.rag_corpus_detail_var, wraplength=700).pack(anchor=tk.W, pady=(0, 6))
+        rag_btns = ttk.Frame(rag_row)
+        rag_btns.pack(fill=tk.X)
+        self._add_button(
+            rag_btns,
+            "Quick init (textbooks + MML)",
+            self._run_corpus_init_quick,
+        ).pack(side=tk.LEFT, padx=(0, 6))
+        self._add_button(
+            rag_btns,
+            "Full build (library + MML + ingest)",
+            self._run_corpus_init_full,
+        ).pack(side=tk.LEFT, padx=(0, 6))
+        self._add_button(
+            rag_btns,
+            "Ingest selected transcripts",
+            self._run_corpus_ingest_sources,
+        ).pack(side=tk.LEFT)
+
+        auto_row = ttk.LabelFrame(tab, text="Auto run (sleep / pre-class)", padding=8)
+        auto_row.pack(fill=tk.X, pady=(0, 6))
+        ttk.Label(
+            auto_row,
+            text="Queue transcripts without notes and generate unattended — useful overnight or before class.",
+            wraplength=700,
+            foreground=_UI_MUTED,
+        ).pack(anchor=tk.W, pady=(0, 6))
+        self.auto_queue_var = tk.StringVar(value="")
+        ttk.Label(auto_row, textvariable=self.auto_queue_var, wraplength=700).pack(anchor=tk.W, pady=(0, 6))
+        auto_btns = ttk.Frame(auto_row)
+        auto_btns.pack(fill=tk.X)
+        self.auto_limit_var = tk.IntVar(value=5)
+        ttk.Label(auto_btns, text="Max").pack(side=tk.LEFT)
+        ttk.Spinbox(auto_btns, from_=1, to=30, width=4, textvariable=self.auto_limit_var).pack(side=tk.LEFT, padx=(4, 8))
+        self.auto_rag_var = tk.BooleanVar(value=True)
+        self._add_checkbox(auto_btns, "Use RAG", self.auto_rag_var).pack(side=tk.LEFT, padx=(0, 8))
+        self.auto_skip_var = tk.BooleanVar(value=True)
+        self._add_checkbox(auto_btns, "Skip if note exists", self.auto_skip_var).pack(side=tk.LEFT, padx=(0, 8))
+        self._add_button(auto_btns, "Refresh queue", self._refresh_auto_queue).pack(side=tk.LEFT, padx=(0, 6))
+        self._add_button(auto_btns, "Start auto run", self._run_auto_batch).pack(side=tk.LEFT, padx=(0, 6))
+        self._add_button(auto_btns, "Start overnight", self._run_auto_batch_overnight).pack(side=tk.LEFT)
+
         opts = ttk.LabelFrame(tab, text="Notes output & options", padding=8)
         opts.pack(fill=tk.X, pady=(0, 6))
 
@@ -601,10 +957,16 @@ class TranscriptStudioApp(_AppBase):
         ttk.Combobox(
             r0,
             textvariable=self.quality_var,
-            values=["fast", "balanced", "quality"],
+            values=["fast", "balanced", "cloud", "quality", "overnight"],
             width=12,
             state="readonly",
         ).pack(side=tk.LEFT, padx=(6, 12))
+        self.enrich_visuals_var = tk.BooleanVar(value=getattr(self.cfg, "enrich_visuals", True))
+        self._add_checkbox(
+            r0,
+            "Include diagrams (mermaid/code enrich)",
+            self.enrich_visuals_var,
+        ).pack(side=tk.LEFT, padx=(0, 12))
         ttk.Label(
             r0,
             text="quality = more LLM passes + pauses (CPU-friendly, slower). LM Studio: GPU layers 0 for CPU-only.",
@@ -629,8 +991,18 @@ class TranscriptStudioApp(_AppBase):
         ttk.Entry(r2, textvariable=self.context_var).pack(side=tk.LEFT, fill=tk.X, expand=True, padx=6)
         ttk.Button(r2, text="…", width=3, command=self._browse_context).pack(side=tk.LEFT)
 
-        r3 = ttk.Frame(opts)
-        r3.pack(fill=tk.X, pady=(6, 0))
+        self.advanced_visible = tk.BooleanVar(value=False)
+        self._add_checkbox(
+            tab,
+            "Show advanced settings (legacy pipeline, chunking, tags)",
+            self.advanced_visible,
+            command=self._toggle_advanced_options,
+        ).pack(anchor=tk.W, pady=(4, 2))
+
+        self.advanced_frame = ttk.LabelFrame(tab, text="Advanced", padding=8)
+
+        r3 = ttk.Frame(self.advanced_frame)
+        r3.pack(fill=tk.X, pady=(0, 0))
         self.legacy_pipeline_var = tk.BooleanVar(value=self.cfg.legacy_notes_pipeline)
         self.fast_var = tk.BooleanVar(value=self.cfg.fast_mode)
         self.refine_var = tk.BooleanVar(value=self.cfg.refine_second_pass)
@@ -647,7 +1019,7 @@ class TranscriptStudioApp(_AppBase):
         self._add_checkbox(r3, "2nd-pass refine", self.refine_var).pack(side=tk.LEFT, padx=(12, 0))
         self._add_checkbox(r3, "Semantic chunking", self.semantic_chunk_var).pack(side=tk.LEFT, padx=(12, 0))
 
-        r4 = ttk.Frame(opts)
+        r4 = ttk.Frame(self.advanced_frame)
         r4.pack(fill=tk.X, pady=(6, 0))
         self._add_checkbox(r4, "Tag extraction", self.tags_var).pack(side=tk.LEFT)
         self._add_checkbox(r4, "Inject wikilinks", self.wikilinks_var).pack(side=tk.LEFT, padx=(12, 0))
@@ -657,16 +1029,22 @@ class TranscriptStudioApp(_AppBase):
             foreground=_UI_MUTED,
         ).pack(side=tk.RIGHT)
 
-        llm = ttk.LabelFrame(tab, text="Summarization LLM", padding=8)
-        llm.pack(fill=tk.X, pady=(0, 6))
+        self._llm_frame = ttk.LabelFrame(tab, text="Summarization LLM", padding=8)
+        self._llm_frame.pack(fill=tk.X, pady=(0, 6))
 
-        lr1 = ttk.Frame(llm)
+        lr1 = ttk.Frame(self._llm_frame)
         lr1.pack(fill=tk.X)
         ttk.Label(lr1, text="Provider").pack(side=tk.LEFT)
         self.provider_var = tk.StringVar()
         ttk.Combobox(
             lr1, textvariable=self.provider_var,
-            values=["lmstudio", "ollama", "openai"], width=10, state="readonly",
+            values=["auto", "gemini", "openai", "lmstudio", "ollama"], width=10, state="readonly",
+        ).pack(side=tk.LEFT, padx=(6, 12))
+        ttk.Label(lr1, text="Tier").pack(side=tk.LEFT)
+        self.tier_var = tk.StringVar()
+        ttk.Combobox(
+            lr1, textvariable=self.tier_var,
+            values=["light", "medium", "heavy"], width=8, state="readonly",
         ).pack(side=tk.LEFT, padx=(6, 12))
         ttk.Label(lr1, text="URL").pack(side=tk.LEFT)
         self.url_var = tk.StringVar()
@@ -677,6 +1055,101 @@ class TranscriptStudioApp(_AppBase):
         ttk.Label(lr1, text="Temp").pack(side=tk.LEFT, padx=(8, 0))
         self.temp_var = tk.StringVar(value=str(self.cfg.llm_temperature))
         ttk.Entry(lr1, textvariable=self.temp_var, width=5).pack(side=tk.LEFT, padx=(4, 0))
+
+        self._apply_rag_banner()
+
+    def _refresh_auto_queue(self) -> None:
+        if not hasattr(self, "auto_queue_var"):
+            return
+
+        def work() -> None:
+            try:
+                from transcript_studio.auto_pipeline import list_auto_queue
+
+                limit = max(1, int(self.auto_limit_var.get() or 5))
+                paths = list_auto_queue(
+                    self.cfg,
+                    limit=limit,
+                    skip_existing=bool(self.auto_skip_var.get()),
+                )
+                if paths:
+                    names = ", ".join(p.name for p in paths[:5])
+                    extra = f" (+{len(paths) - 5} more)" if len(paths) > 5 else ""
+                    msg = f"{len(paths)} queued: {names}{extra}"
+                else:
+                    msg = "Queue empty — all recent transcripts already have notes."
+            except Exception as exc:
+                msg = f"Queue check failed: {exc}"
+
+            self.after(0, lambda: self.auto_queue_var.set(msg))
+
+        threading.Thread(target=work, daemon=True).start()
+
+    def _open_last_note_in_library(self) -> None:
+        if not self._last_note_path:
+            messagebox.showinfo("Study Library", "No note saved yet — generate notes first.")
+            return
+        rel = _note_relative_path(self._last_note_path, self.cfg)
+        self._open_study_library(rel)
+
+    def _run_auto_batch_overnight(self) -> None:
+        self._run_auto_batch(overnight=True)
+
+    def _run_auto_batch(self, *, overnight: bool = False) -> None:
+        if self._busy:
+            return
+        if not messagebox.askyesno(
+            "Auto run",
+            (
+                "Generate notes for queued transcripts unattended?\n\n"
+                + ("Overnight preset: tune + text-only notes + RAG + thermal pauses.\n\n" if overnight else "")
+                + "You can leave this running (sleep mode). Click Cancel on the progress bar to stop."
+            ),
+        ):
+            return
+
+        self._auto_cancel.clear()
+
+        def work() -> None:
+            try:
+                from transcript_studio.auto_pipeline import run_auto_batch
+
+                limit = max(1, int(self.auto_limit_var.get() or 5))
+
+                def on_progress(msg: str) -> None:
+                    self._ui(lambda m=msg: self._on_operation_progress(m))
+
+                result = run_auto_batch(
+                    self.cfg,
+                    limit=limit,
+                    skip_existing=bool(self.auto_skip_var.get()),
+                    use_rag=bool(self.auto_rag_var.get()),
+                    overnight_preset=overnight,
+                    on_progress=on_progress,
+                    cancel_event=self._auto_cancel.is_set,
+                )
+
+                def done() -> None:
+                    self._refresh_auto_queue()
+                    log_hint = f"\n\nLog: {result.log_path}" if result.log_path else ""
+                    messagebox.showinfo(
+                        "Auto run complete",
+                        f"Saved: {result.completed}\n"
+                        f"Skipped: {result.skipped}\n"
+                        f"Failed: {result.failed}{log_hint}",
+                    )
+
+                self._ui(done)
+            except Exception as exc:
+                log_error("Auto run failed", exc)
+                err = f"{type(exc).__name__}: {exc}"
+                self._ui(lambda: messagebox.showerror("Auto run failed", err))
+            finally:
+                self._ui(lambda: (self._set_busy(False), self._progress_end()))
+
+        self._set_busy(True)
+        self._progress_begin("Auto run in progress…", indeterminate=True)
+        threading.Thread(target=work, daemon=True).start()
 
     def _add_checkbox(self, parent, text: str, variable: tk.BooleanVar, *, command=None):
         if USE_CTK:
@@ -752,6 +1225,47 @@ class TranscriptStudioApp(_AppBase):
             state=tk.DISABLED,
         )
         self.captions_send_btn.pack(side=tk.LEFT, padx=(16, 0))
+
+        auto_frame = ttk.LabelFrame(tab, text="Lecture Auto (unattended)", padding=8)
+        auto_frame.pack(fill=tk.X, pady=(8, 0))
+        ttk.Label(
+            auto_frame,
+            text="One button: capture live captions (~2h) → auto-stop when silent → parse → "
+                 "textbook-grounded RAG notes → save → quit Studio (LM Studio keeps running).",
+            wraplength=900,
+            foreground=_UI_MUTED,
+        ).pack(anchor=tk.W, pady=(0, 6))
+        auto_opts = ttk.Frame(auto_frame)
+        auto_opts.pack(fill=tk.X, pady=(0, 6))
+        ttk.Label(auto_opts, text="Idle stop (sec)").pack(side=tk.LEFT)
+        self.lecture_auto_idle_var = tk.StringVar(value=str(self.cfg.lecture_auto_idle_sec))
+        ttk.Entry(auto_opts, textvariable=self.lecture_auto_idle_var, width=8).pack(side=tk.LEFT, padx=(6, 16))
+        ttk.Label(auto_opts, text="Max capture (sec)").pack(side=tk.LEFT)
+        self.lecture_auto_max_var = tk.StringVar(value=str(self.cfg.lecture_auto_max_sec))
+        ttk.Entry(auto_opts, textvariable=self.lecture_auto_max_var, width=8).pack(side=tk.LEFT, padx=(6, 16))
+        self.lecture_auto_rag_var = tk.BooleanVar(value=self.cfg.lecture_auto_use_rag)
+        ttk.Checkbutton(auto_opts, text="RAG (textbooks)", variable=self.lecture_auto_rag_var).pack(side=tk.LEFT, padx=(0, 8))
+        self.lecture_auto_fast_var = tk.BooleanVar(value=self.cfg.lecture_auto_fast_mode)
+        ttk.Checkbutton(auto_opts, text="Fast preset", variable=self.lecture_auto_fast_var).pack(side=tk.LEFT)
+        auto_actions = ttk.Frame(auto_frame)
+        auto_actions.pack(fill=tk.X)
+        self.lecture_auto_start_btn = self._add_button(
+            auto_actions,
+            "Start Lecture Auto",
+            self._run_lecture_auto,
+        )
+        self.lecture_auto_start_btn.pack(side=tk.LEFT)
+        self.lecture_auto_cancel_btn = ttk.Button(
+            auto_actions,
+            text="Cancel",
+            command=self._cancel_lecture_auto,
+            state=tk.DISABLED,
+        )
+        self.lecture_auto_cancel_btn.pack(side=tk.LEFT, padx=(8, 0))
+        self.lecture_auto_status_var = tk.StringVar(value="")
+        ttk.Label(auto_frame, textvariable=self.lecture_auto_status_var, wraplength=900).pack(
+            anchor=tk.W, pady=(6, 0)
+        )
 
     def _build_transcribe_tab(self) -> None:
         tab = self.transcribe_tab
@@ -880,6 +1394,9 @@ class TranscriptStudioApp(_AppBase):
 
     def _load_fields_from_config(self) -> None:
         self.provider_var.set(self.cfg.llm_provider)
+        tier = getattr(self.cfg, "llm_tier", "") or "medium"
+        if hasattr(self, "tier_var"):
+            self.tier_var.set(tier if tier in ("light", "medium", "heavy") else "medium")
         self.url_var.set(self.cfg.llm_base_url)
         self.model_var.set(self.cfg.llm_model)
         self.output_var.set(str(self.cfg.notes_path()))
@@ -916,9 +1433,20 @@ class TranscriptStudioApp(_AppBase):
             self._add_paths([p], select_last=True)
 
     def _save_settings(self) -> None:
-        self.cfg.llm_provider = self.provider_var.get()
-        self.cfg.llm_base_url = self.url_var.get().strip()
-        self.cfg.llm_model = self.model_var.get().strip()
+        provider = self.provider_var.get().strip().lower()
+        self.cfg.llm_provider = provider
+        self.cfg.llm_use_gateway = provider in ("auto", "gateway", "gemini", "openai", "")
+        if hasattr(self, "tier_var"):
+            tier = self.tier_var.get().strip().lower()
+            self.cfg.llm_tier = tier if tier in ("light", "medium", "heavy") else ""
+        if provider == "gemini":
+            self.cfg.llm_model = self.model_var.get().strip() or "gemini-2.0-flash"
+            self.cfg.llm_base_url = ""
+            if self.cfg.llm_api_key.strip().lower() in ("lm-studio", "lm_studio", ""):
+                self.cfg.llm_api_key = ""
+        else:
+            self.cfg.llm_base_url = self.url_var.get().strip()
+            self.cfg.llm_model = self.model_var.get().strip()
         self.cfg.aggressive_dedup_default = self.aggressive_var.get()
         self.cfg.thorough_parse = self.thorough_parse_var.get()
         self.cfg.parse_speed = int(round(self.parse_speed_var.get()))
@@ -929,6 +1457,8 @@ class TranscriptStudioApp(_AppBase):
         self.cfg.use_semantic_chunking = self.semantic_chunk_var.get()
         self.cfg.use_tag_extraction = self.tags_var.get()
         self.cfg.inject_wikilinks = self.wikilinks_var.get()
+        if hasattr(self, "enrich_visuals_var"):
+            self.cfg.enrich_visuals = self.enrich_visuals_var.get()
         try:
             temp = float(self.temp_var.get().strip() or "0.3")
             self.cfg.llm_temperature = max(0.2, min(0.4, temp))
@@ -964,6 +1494,24 @@ class TranscriptStudioApp(_AppBase):
             )
         except ValueError:
             self.cfg.captions_duration_sec = 0.0
+        if hasattr(self, "lecture_auto_idle_var"):
+            try:
+                self.cfg.lecture_auto_idle_sec = max(
+                    60.0, float(self.lecture_auto_idle_var.get().strip() or "600")
+                )
+            except ValueError:
+                self.cfg.lecture_auto_idle_sec = 600.0
+        if hasattr(self, "lecture_auto_max_var"):
+            try:
+                self.cfg.lecture_auto_max_sec = max(
+                    0.0, float(self.lecture_auto_max_var.get().strip() or "7500")
+                )
+            except ValueError:
+                self.cfg.lecture_auto_max_sec = 7500.0
+        if hasattr(self, "lecture_auto_rag_var"):
+            self.cfg.lecture_auto_use_rag = self.lecture_auto_rag_var.get()
+        if hasattr(self, "lecture_auto_fast_var"):
+            self.cfg.lecture_auto_fast_mode = self.lecture_auto_fast_var.get()
         try:
             self.cfg.whisper_live_chunk_sec = max(
                 3.0, float(self.live_chunk_var.get().strip() or "10")
@@ -1188,6 +1736,7 @@ class TranscriptStudioApp(_AppBase):
             self.semantic_chunk_var.set(False)
             self.wikilinks_var.set(False)
             self.tags_var.set(False)
+        self._apply_rag_banner()
 
     def _pre_cleaned_for_generate(self) -> str | None:
         text = (self._cleaned_text or "").strip()
@@ -1230,6 +1779,21 @@ class TranscriptStudioApp(_AppBase):
         if self._ui_alive():
             self.after(0, callback)
 
+    def _maybe_open_summarize(self, *, from_captions: bool = False, label: str = "") -> None:
+        """Open Tune tab after capture/transcribe — skip yes/no when auto_open_summarize is on."""
+        if getattr(self.cfg, "auto_open_summarize", True):
+            if from_captions:
+                self._send_to_summarize_from_captions()
+            else:
+                self._send_to_summarize()
+            return
+        prompt = label or "Open Summarize tab now?"
+        if messagebox.askyesno("Ready to tune", prompt):
+            if from_captions:
+                self._send_to_summarize_from_captions()
+            else:
+                self._send_to_summarize()
+
     def _send_to_summarize_from_captions(self) -> None:
         self.aggressive_var.set(True)
         self._send_to_summarize()
@@ -1246,6 +1810,7 @@ class TranscriptStudioApp(_AppBase):
     # ------------------------------------------------------------------ Logging / busy
 
     def _log(self, msg: str) -> None:
+        log.info(msg)
         self.log_text.insert(tk.END, msg + "\n")
         try:
             line_count = int(self.log_text.index("end-1c").split(".")[0])
@@ -1257,15 +1822,18 @@ class TranscriptStudioApp(_AppBase):
 
     def _on_operation_progress(self, msg: str) -> None:
         """Route backend progress messages to log + global progress bar."""
-        self._log(msg)
-        chunk = parse_chunk_progress(msg)
-        if chunk:
-            current, total = chunk
-            self._progress_steps(current, total, msg)
-        elif "Refining" in msg or "Injecting" in msg or "Embedding" in msg:
-            self._progress_update(0.92, msg)
-        elif msg.startswith("Done"):
-            self._progress_update(1.0, msg)
+        try:
+            self._log(msg)
+            chunk = parse_chunk_progress(msg)
+            if chunk:
+                current, total = chunk
+                self._progress_steps(current, total, msg)
+            elif "Refining" in msg or "Injecting" in msg or "Embedding" in msg:
+                self._progress_update(0.92, msg)
+            elif msg.startswith("Done"):
+                self._progress_update(1.0, msg)
+        except Exception as exc:
+            log_error("Progress UI update failed", exc)
 
     def _tlog(self, msg: str) -> None:
         self._on_operation_progress(msg)
@@ -1298,6 +1866,9 @@ class TranscriptStudioApp(_AppBase):
             self._summarize_cancel.set()
             self._log("Cancellation requested…")
             self.status_var.set("Cancelling summarization…")
+        if self._busy:
+            self._auto_cancel.set()
+            self._summarize_cancel.set()
 
     def _update_progress(self, current: int, total: int) -> None:
         self._progress_steps(current, total)
@@ -1359,7 +1930,7 @@ class TranscriptStudioApp(_AppBase):
             messagebox.showwarning("Live Captions", msg)
 
     def _run_captions_start(self) -> None:
-        if self._busy or self._captions_running:
+        if self._busy or self._captions_running or self._lecture_auto_running:
             return
         try:
             ensure_windows()
@@ -1445,12 +2016,141 @@ class TranscriptStudioApp(_AppBase):
         self._cllog(f"Saved {len(scraper.segments)} segments → {out_path}")
         self.status_var.set(f"Live Captions saved — {out_path.name}")
 
-        if messagebox.askyesno(
-            "Capture saved",
-            f"Saved {len(scraper.segments)} lines to:\n{out_path}\n\n"
-            "Open Summarize tab now? (Aggressive dedup will be enabled)",
+        self._maybe_open_summarize(
+            from_captions=True,
+            label=(
+                f"Saved {len(scraper.segments)} lines to:\n{out_path}\n\n"
+                "Open Summarize tab now? (Aggressive dedup will be enabled)"
+            ),
+        )
+
+    def _apply_lecture_auto_settings(self) -> None:
+        if hasattr(self, "lecture_auto_idle_var"):
+            try:
+                self.cfg.lecture_auto_idle_sec = max(
+                    60.0, float(self.lecture_auto_idle_var.get().strip() or "600")
+                )
+            except ValueError:
+                self.cfg.lecture_auto_idle_sec = 600.0
+        if hasattr(self, "lecture_auto_max_var"):
+            try:
+                self.cfg.lecture_auto_max_sec = max(
+                    0.0, float(self.lecture_auto_max_var.get().strip() or "7500")
+                )
+            except ValueError:
+                self.cfg.lecture_auto_max_sec = 7500.0
+        if hasattr(self, "lecture_auto_rag_var"):
+            self.cfg.lecture_auto_use_rag = self.lecture_auto_rag_var.get()
+        if hasattr(self, "lecture_auto_fast_var"):
+            self.cfg.lecture_auto_fast_mode = self.lecture_auto_fast_var.get()
+
+    def _run_lecture_auto(self) -> None:
+        if self._busy or self._lecture_auto_running or self._captions_running:
+            return
+        if not messagebox.askyesno(
+            "Lecture Auto",
+            "Start unattended lecture pipeline?\n\n"
+            "1. Capture Live Captions (enable Win+Ctrl+L)\n"
+            "2. Auto-stop after silence or max duration\n"
+            "3. Parse + textbook-grounded RAG notes\n"
+            "4. Save and quit Studio (LM Studio stays running)\n\nContinue?",
         ):
-            self._send_to_summarize_from_captions()
+            return
+        self._save_settings()
+        self._apply_lecture_auto_settings()
+        save_config(self.cfg)
+        self._lecture_auto_cancel.clear()
+        self._lecture_auto_running = True
+        self.lecture_auto_start_btn.configure(state=tk.DISABLED)
+        self.lecture_auto_cancel_btn.configure(state=tk.NORMAL)
+        self.captions_start_btn.configure(state=tk.DISABLED)
+        self._set_busy(True)
+        self._progress_begin("Lecture Auto…", indeterminate=True)
+        self._show_workflow_step(0)
+        self._cllog("Lecture Auto started — enable Live Captions (Win+Ctrl+L)")
+
+        def on_phase(phase: str, message: str) -> None:
+            self._ui(lambda p=phase, m=message: self._on_lecture_auto_phase(p, m))
+
+        def on_progress(msg: str) -> None:
+            self._ui(lambda m=msg: self._on_operation_progress(m))
+
+        def work() -> None:
+            from transcript_studio.lecture_auto import run_lecture_auto
+
+            try:
+                result = run_lecture_auto(
+                    self.cfg,
+                    on_phase=on_phase,
+                    on_progress=on_progress,
+                    cancel_event=self._lecture_auto_cancel,
+                )
+
+                def done() -> None:
+                    self._finish_lecture_auto(result)
+
+                self._ui(done)
+            except Exception as exc:
+                log_error("Lecture Auto failed", exc)
+                err = f"{type(exc).__name__}: {exc}"
+                self._ui(lambda: self._lecture_auto_failed(err))
+
+        threading.Thread(target=work, daemon=True).start()
+
+    def _on_lecture_auto_phase(self, phase: str, message: str) -> None:
+        self.lecture_auto_status_var.set(f"{phase}: {message}")
+        self.status_var.set(f"Lecture Auto — {phase}")
+        if message:
+            self._log(message)
+
+    def _finish_lecture_auto(self, result) -> None:
+        self._lecture_auto_running = False
+        self._set_busy(False)
+        self._progress_end()
+        self.lecture_auto_start_btn.configure(state=tk.NORMAL)
+        self.lecture_auto_cancel_btn.configure(state=tk.DISABLED)
+        self.captions_start_btn.configure(state=tk.NORMAL)
+        if result.transcript_path:
+            self._last_transcript_path = result.transcript_path
+            self._refresh_library_list()
+        if result.note_path:
+            self._last_note_path = result.note_path
+            self._update_done_paths()
+        if result.success:
+            self._show_workflow_step(3)
+            self.lecture_auto_status_var.set("Done — quitting Studio")
+            msg = (
+                f"Transcript: {result.transcript_path}\n"
+                f"Notes: {result.note_path}\n"
+                f"Mode: {result.mode}\n"
+                f"Log: {result.log_path}"
+            )
+            messagebox.showinfo("Lecture Auto complete", msg)
+            if self.cfg.lecture_auto_quit_studio:
+                self.after(500, self.quit)
+        else:
+            self.lecture_auto_status_var.set(result.error or "Lecture Auto failed")
+            messagebox.showerror(
+                "Lecture Auto failed",
+                f"{result.error}\n\nLog: {result.log_path}",
+            )
+
+    def _lecture_auto_failed(self, message: str) -> None:
+        self._lecture_auto_running = False
+        self._set_busy(False)
+        self._progress_end()
+        self.lecture_auto_start_btn.configure(state=tk.NORMAL)
+        self.lecture_auto_cancel_btn.configure(state=tk.DISABLED)
+        self.captions_start_btn.configure(state=tk.NORMAL)
+        self.lecture_auto_status_var.set(message)
+        messagebox.showerror("Lecture Auto failed", message)
+
+    def _cancel_lecture_auto(self) -> None:
+        if not self._lecture_auto_running:
+            return
+        self._lecture_auto_cancel.set()
+        self.lecture_auto_cancel_btn.configure(state=tk.DISABLED)
+        self._log("Cancelling Lecture Auto…")
 
     def _live_source_label(self, value: str) -> str:
         return "Microphone" if value == "mic" else "System audio (speakers)"
@@ -1599,8 +2299,9 @@ class TranscriptStudioApp(_AppBase):
         self.status_var.set(f"Live Whisper saved — {out_path.name}")
         self._capture_session = None
 
-        if messagebox.askyesno("Live Whisper saved", f"Saved to:\n{out_path}\n\nOpen Summarize tab?"):
-            self._send_to_summarize()
+        self._maybe_open_summarize(
+            label=f"Saved to:\n{out_path}\n\nOpen Summarize tab now?",
+        )
 
     def _snap_now(self) -> None:
         if not self._capture_session:
@@ -1693,11 +2394,9 @@ class TranscriptStudioApp(_AppBase):
                     if session:
                         self._tlog(f"Session: {session.session_dir} ({len(session.captures)} snapshots)")
                     self.status_var.set(f"Transcribed — {out_path.name}")
-                    if messagebox.askyesno(
-                        "Transcribe done",
-                        f"Saved to:\n{out_path}\n\nOpen Summarize tab now?",
-                    ):
-                        self._send_to_summarize()
+                    self._maybe_open_summarize(
+                        label=f"Saved to:\n{out_path}\n\nOpen Summarize tab now?",
+                    )
 
                 self.after(0, done)
             except Exception as exc:
@@ -1764,8 +2463,11 @@ class TranscriptStudioApp(_AppBase):
         def work() -> None:
             try:
                 paths = self._resolve_sources()
-                transcript_text, _, _, _ = prepare_sources(paths)
-                aggressive = self.aggressive_var.get()
+                transcript_text, _, auto_aggressive, _ = prepare_sources(paths)
+                aggressive = self.aggressive_var.get() or auto_aggressive
+                if auto_aggressive and not self.aggressive_var.get():
+                    self._ui(lambda: self.aggressive_var.set(True))
+                    self._ui(lambda: self._log("Auto-enabled aggressive dedup (live captions detected)"))
                 thorough = self.thorough_parse_var.get()
                 self.cfg.thorough_parse = thorough
                 self.cfg.parse_speed = int(round(self.parse_speed_var.get()))
@@ -1826,10 +2528,22 @@ class TranscriptStudioApp(_AppBase):
         self._progress_begin("Parsing transcript…", indeterminate=True)
         threading.Thread(target=work, daemon=True).start()
 
-    def _summarize_failed(self, message: str) -> None:
+    def _show_detailed_error(self, title: str, summary: str, details: str) -> None:
+        """Show a scrollable error dialog; keep the main window open."""
+        show_detailed_error(
+            self if self._ui_alive() else None,
+            title=title,
+            summary=summary,
+            details=details,
+            log_path=str(log_file_path()),
+        )
+
+    def _summarize_failed(self, message: str, *, details: str = "") -> None:
         self._log(f"Summarize failed: {message}")
         self._log(f"See log: {log_file_path()}")
-        messagebox.showerror("Summarize failed", f"{message}\n\nLog: {log_file_path()}")
+        if not details:
+            details = message
+        self._show_detailed_error("Generate notes failed", message, details)
 
     def _run_summarize(self) -> None:
         if self._busy:
@@ -1840,23 +2554,31 @@ class TranscriptStudioApp(_AppBase):
                 "Stop Whisper transcription before summarizing to avoid GPU out-of-memory errors.",
             )
             return
-        self._apply_quality_from_preset()
-        self._save_settings()
-        self._refresh_system_status()
+        try:
+            self._apply_quality_from_preset()
+            self._save_settings()
+            self._refresh_system_status()
+        except Exception as exc:
+            log_error("Generate notes failed (before start)", exc)
+            self._show_detailed_error(
+                "Generate notes failed",
+                f"{type(exc).__name__}: {exc}",
+                format_exception(exc),
+            )
+            return
         self._summarize_cancel.clear()
 
         def work() -> None:
             try:
-                if not llm_reachable(options_from_config(self.cfg)):
-                    raise RuntimeError(
-                        "LLM not reachable. Start LM Studio/Ollama and load your model, then try again."
-                    )
+                err = llm_preflight_error(self.cfg)
+                if err:
+                    raise RuntimeError(err)
                 paths = self._resolve_sources()
                 title = self.title_var.get().strip() or (
                     paths[0].stem.replace("_", " ") if len(paths) == 1 else "Combined lecture"
                 )
                 out = Path(self.output_var.get().strip()) if self.output_var.get().strip() else None
-                opts = options_from_config(self.cfg)
+                opts = None if uses_gateway(self.cfg) else options_from_config(self.cfg)
                 context = self._sanitize_context_folder(self.context_var.get().strip() or None)
                 if not context and len(paths) > 1:
                     parent = paths[0].parent
@@ -1878,9 +2600,21 @@ class TranscriptStudioApp(_AppBase):
 
                 pre_cleaned = self._pre_cleaned_for_generate()
                 audit_source = pre_cleaned or (self._cleaned_text or "").strip() or None
-                note_path, body = generate_notes_from_files(
-                    paths,
-                    title=title,
+                if (
+                    hasattr(self, "fast_var")
+                    and not self.fast_var.get()
+                    and audit_source
+                    and len(audit_source.split()) >= getattr(
+                        self.cfg, "auto_fast_mode_word_threshold", 45_000
+                    )
+                ):
+                    self.fast_var.set(True)
+                    self._log(
+                        "Auto fast_mode enabled for large tuned transcript "
+                        f"({len(audit_source.split()):,} words)."
+                    )
+                enrich_visuals = self.enrich_visuals_var.get() if hasattr(self, "enrich_visuals_var") else self.cfg.enrich_visuals
+                gen_kwargs = dict(
                     aggressive=self.aggressive_var.get(),
                     output_dir=out,
                     opts=opts,
@@ -1894,35 +2628,44 @@ class TranscriptStudioApp(_AppBase):
                     legacy_pipeline=self.legacy_pipeline_var.get(),
                     pre_cleaned=pre_cleaned,
                     max_chunks=self.cfg.max_llm_chunks,
+                    enrich_visuals=enrich_visuals and not self.fast_var.get(),
+                    restore_punctuation=getattr(self.cfg, "restore_punctuation", False),
+                    asr_backend=getattr(self.cfg, "asr_backend", "recasepunc"),
+                    note_style=getattr(self.cfg, "note_style", "bullets"),
+                    coherence_mode=getattr(self.cfg, "coherence_mode", "compact"),
+                    semantic_threshold=getattr(self.cfg, "semantic_chunk_threshold", 0.45),
+                    semantic_threshold_mode=getattr(self.cfg, "semantic_threshold_mode", "fixed"),
+                    semantic_chunk_percentile=getattr(self.cfg, "semantic_chunk_percentile", 95.0),
+                    narrative_judge=getattr(self.cfg, "narrative_judge", False),
                     session_dir=session_dir,
                     on_progress=on_progress,
                     on_step=on_step,
                     cancel_event=self._summarize_cancel.is_set,
                 )
+                if len(paths) == 1:
+                    note_path, body, gen_mode = generate_notes_from_file(
+                        paths[0],
+                        title=title,
+                        **gen_kwargs,
+                    )
+                else:
+                    note_path, body, gen_mode = generate_notes_from_files(
+                        paths,
+                        title=title,
+                        **gen_kwargs,
+                    )
 
-                handoff_summary = ""
-                try:
-                    from backend.corpus.handoff import ingest_lecture_handoff
-
-                    transcript = next((p for p in paths if p.suffix.lower() == ".txt"), None)
-                    if transcript is not None:
-                        handoff = ingest_lecture_handoff(
-                            transcript_path=transcript,
-                            note_path=note_path,
-                        )
-                        tx_c = handoff.get("transcript_chunks", 0)
-                        note_c = handoff.get("note_chunks", 0)
-                        handoff_summary = (
-                            f"Corpus indexed — transcript {tx_c} chunks, note {note_c} chunks."
-                        )
-                        self._log(handoff_summary)
-                except Exception as exc:
-                    handoff_summary = f"Corpus handoff skipped: {exc}"
+                transcript = next((p for p in paths if p.suffix.lower() == ".txt"), paths[0] if paths else None)
+                handoff_summary = _corpus_handoff_after_save(transcript, note_path, gen_mode)
+                if handoff_summary:
                     self._log(handoff_summary)
 
                 def done() -> None:
                     self._last_note_path = note_path
+                    if paths:
+                        self._last_transcript_path = paths[0]
                     self._update_done_paths()
+                    note_rel = _note_relative_path(note_path, self.cfg)
                     if audit_source:
                         notes_audit = audit_notes(audit_source, body)
                         notes_audit_body = format_notes_audit_report(notes_audit)
@@ -1949,22 +2692,39 @@ class TranscriptStudioApp(_AppBase):
                     self.preview_notebook.select(tab)
                     self._show_workflow_step(1)
                     self._log(f"Saved: {note_path}")
-                    self.status_var.set(f"Notes saved — {note_path.name}")
                     self._progress_update(1.0, "Complete")
-                    audit_hint = (
-                        f"\n\nNotes audit: {notes_audit.word_retention_pct:.1f}% retention — see Tune → Notes audit tab."
-                        if audit_source
-                        else ""
-                    )
-                    corpus_hint = f"\n\n{handoff_summary}" if handoff_summary else ""
-                    messagebox.showinfo("Done", f"Notes saved to:\n{note_path}{audit_hint}{corpus_hint}")
+                    mode_hint = f" · mode={gen_mode}" if gen_mode else ""
+                    lint_warn = ""
+                    if "LINT_FAILED" in body:
+                        lint_warn = " · ⚠ broken code/mermaid blocks (see LINT_FAILED in note)"
+                        self._log("Warning: note contains LINT_FAILED markers — repair blocks in Study Library")
+                    if "NARRATIVE_LOW" in body:
+                        lint_warn = (lint_warn or "") + " · ⚠ low narrative quality (NARRATIVE_LOW in note)"
+                        self._log("Warning: note flagged NARRATIVE_LOW — try quality preset or sequential coherence")
+                    self.status_var.set(f"Notes saved — {note_path.name}{mode_hint}{lint_warn}")
+                    if handoff_summary:
+                        self._log(handoff_summary)
+                    if not getattr(self.cfg, "silent_generate_done", True):
+                        audit_hint = (
+                            f"\n\nNotes audit: {notes_audit.word_retention_pct:.1f}% retention — see Tune → Notes audit tab."
+                            if audit_source
+                            else ""
+                        )
+                        corpus_hint = f"\n\n{handoff_summary}" if handoff_summary else ""
+                        mode_dialog = f"\n\nMode: {gen_mode}" if gen_mode else ""
+                        library_hint = f"\n\nStudy Library: {_study_library_url(note_rel)}"
+                        messagebox.showinfo(
+                            "Done",
+                            f"Notes saved to:\n{note_path}{mode_dialog}{audit_hint}{corpus_hint}{library_hint}",
+                        )
                     self._show_workflow_step(3)
 
                 self._ui(done)
             except Exception as exc:
                 log_error("Generate notes failed", exc)
                 err = f"{type(exc).__name__}: {exc}"
-                self._ui(lambda msg=err: self._summarize_failed(msg))
+                err_details = format_exception(exc)
+                self._ui(lambda msg=err, det=err_details: self._summarize_failed(msg, details=det))
             finally:
                 def reset_ui() -> None:
                     self._set_busy(False)
@@ -1981,11 +2741,12 @@ class TranscriptStudioApp(_AppBase):
     def _test_llm(self) -> None:
         self._save_settings()
         self.cfg = load_config()
-        if llm_reachable(options_from_config(self.cfg)):
-            messagebox.showinfo("LLM", "Connection OK")
-            self.status_var.set("LLM reachable")
+        line = llm_status_line(self.cfg)
+        if llm_generate_reachable(self.cfg):
+            messagebox.showinfo("LLM", line)
+            self.status_var.set(line)
         else:
-            messagebox.showwarning("LLM", "Could not reach the LLM. Start Ollama or LM Studio.")
+            messagebox.showwarning("LLM", line)
 
     def _open_output(self) -> None:
         folder = Path(self.output_var.get().strip() or str(self.cfg.notes_path()))
@@ -2002,6 +2763,20 @@ def main() -> None:
     setup_logging()
     logging.basicConfig(level=logging.INFO, format="%(message)s")
     app = TranscriptStudioApp()
+
+    def report_callback_exception(exc, val, tb) -> None:  # type: ignore[no-untyped-def]
+        log_error("Tk callback exception", val)
+        details = "".join(traceback.format_exception(exc, val, tb))
+        try:
+            app._show_detailed_error(
+                "UI error",
+                f"{exc.__name__ if exc else 'Error'}: {val}",
+                details,
+            )
+        except Exception:
+            pass
+
+    app.report_callback_exception = report_callback_exception  # type: ignore[method-assign]
     app.mainloop()
 
 

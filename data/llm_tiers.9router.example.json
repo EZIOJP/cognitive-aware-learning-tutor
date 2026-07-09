@@ -1,0 +1,17 @@
+{
+  "_comment": "Copy to data/llm_tiers.json after 9Router is running. Set LLM_API_KEY in .env to your 9Router dashboard API key. Use combo names from the dashboard (e.g. free-forever) or kr/oc model ids. iFlow/Qwen free tiers discontinued 2026 — use Kiro + OpenCode Free.",
+  "light": [
+    "openai:http://127.0.0.1:20128/v1:kr/claude-sonnet-4.5"
+  ],
+  "medium": [
+    "openai:http://127.0.0.1:20128/v1:free-forever",
+    "openai:http://127.0.0.1:20128/v1:kr/glm-5",
+    "lmstudio:google/gemma-4-e4b"
+  ],
+  "heavy": [
+    "openai:http://127.0.0.1:20128/v1:kr/claude-sonnet-4.5",
+    "openai:http://127.0.0.1:20128/v1:cc/claude-opus-4-7",
+    "gemini:gemini-2.5-pro",
+    "lmstudio:google/gemma-4-e4b"
+  ]
+}

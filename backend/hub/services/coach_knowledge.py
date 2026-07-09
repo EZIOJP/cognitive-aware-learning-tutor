@@ -329,6 +329,46 @@ def knowledge_index(db: Session, user_id: int) -> dict[str, Any]:
     }
 
 
+def _report_card_context(
+    db: Session,
+    user_id: int,
+    *,
+    max_chars: int = 4000,
+) -> dict[str, Any]:
+    """Report-card context from quiz failures — no embedding search."""
+    try:
+        from backend.models.knowledge_graph import KgNode, KgObservation  # noqa: PLC0415
+        from backend.quiz.review_cards import weak_concepts_for_retrieval  # noqa: PLC0415
+    except Exception:  # noqa: BLE001
+        return {}
+
+    struggle_topics = weak_concepts_for_retrieval(db, user_id, limit=8)
+    if not struggle_topics:
+        return {}
+
+    rows = (
+        db.query(KgObservation, KgNode)
+        .join(KgNode, KgObservation.node_id == KgNode.id)
+        .filter(KgObservation.user_id == user_id)
+        .order_by(KgObservation.timestamp.desc())  # type: ignore[arg-type]
+        .limit(12)
+        .all()
+    )
+    hints: list[str] = []
+    for obs, node in rows:
+        itype = obs.interaction_type or ""
+        if "fail" in itype or itype == "focus_drop":
+            hints.append(f"- {node.label}: {itype}")
+
+    lines = ["## Weak topics (report card)", *[f"- {t}" for t in struggle_topics]]
+    if hints:
+        lines.extend(["", "## Recent struggles", *hints[:8]])
+    return {
+        "struggle_topics": struggle_topics,
+        "context": _trim("\n".join(lines), max_chars),
+    }
+
+
 def _graph_rag_context(
     db: Session,
     user_id: int,
@@ -338,75 +378,9 @@ def _graph_rag_context(
     hops: int = 2,
     max_chars: int = 4000,
 ) -> dict[str, Any]:
-    """GraphRAG retrieval: embed query → cosine node lookup → 2-hop traversal."""
-    try:
-        from backend.hub.services.knowledge_graph import (  # noqa: PLC0415
-            find_nodes_by_query,
-            find_related_nodes,
-        )
-        from backend.models.knowledge_graph import KgObservation  # noqa: PLC0415
-    except Exception:  # noqa: BLE001
-        return {}
-
-    top_nodes = find_nodes_by_query(db, query, user_id=user_id, top_k=top_k)
-    if not top_nodes:
-        return {}
-
-    context_parts: list[str] = []
-    struggle_hints: list[str] = []
-
-    for node, score in top_nodes:
-        # Collect observations for this node
-        obs_rows = (
-            db.query(KgObservation)
-            .filter(KgObservation.node_id == node.id)
-            .order_by(KgObservation.timestamp.desc())  # type: ignore[arg-type]
-            .limit(10)
-            .all()
-        )
-        fail_count = sum(1 for o in obs_rows if "fail" in (o.interaction_type or ""))
-        drop_count = sum(1 for o in obs_rows if o.interaction_type == "focus_drop")
-
-        obs_text = ""
-        if fail_count:
-            obs_text += f" — {fail_count} quiz/math failures"
-        if drop_count:
-            obs_text += f", {drop_count} focus drops"
-        if fail_count >= 2 or drop_count >= 2:
-            struggle_hints.append(node.label)
-
-        # Pull excerpt from note file
-        excerpt = ""
-        if node.note_path:
-            from pathlib import Path  # noqa: PLC0415
-
-            note_path = Path(node.note_path)
-            if note_path.is_file():
-                try:
-                    raw = note_path.read_text(encoding="utf-8")
-                    excerpt = _trim(_extract_sections(raw, _tokenize_query(query), max_chars=1200), 1200)
-                except OSError:
-                    excerpt = ""
-
-        context_parts.append(
-            f"[Node: {node.label}] (score={score:.2f}) tag={node.tag_path or '-'}"
-            + obs_text
-            + (f"\nSource: {node.note_path}" if node.note_path else "")
-            + (f"\n{excerpt}" if excerpt else "")
-        )
-
-        # 2-hop traversal
-        related = find_related_nodes(db, node.id, hops=hops)
-        for rel_node in related[:4]:
-            context_parts.append(
-                f"  [Related: {rel_node.label}] tag={rel_node.tag_path or '-'}"
-            )
-
-    return {
-        "graph_nodes_matched": len(top_nodes),
-        "context": _trim("\n\n".join(context_parts), max_chars),
-        "struggle_topics": struggle_hints,
-    }
+    """Deprecated embedding GraphRAG — report card only."""
+    _ = (query, top_k, hops)
+    return _report_card_context(db, user_id, max_chars=max_chars)
 
 
 def retrieve_coach_knowledge(
@@ -418,7 +392,7 @@ def retrieve_coach_knowledge(
 ) -> dict[str, Any]:
     """Build a query-aware knowledge payload for the local LLM.
 
-    Now includes GraphRAG context from the knowledge graph when available.
+    Corpus chunks are primary for content; KG observations supply report-card weak topics.
     """
     keywords = _tokenize_query(query)
     kb: dict[str, Any] = {
@@ -435,15 +409,15 @@ def retrieve_coach_knowledge(
 
     kb["browser_activity"] = browser_activity_for_coach(db, user_id, query, limit=18)
 
-    # GraphRAG augmentation — add silently if knowledge graph is populated
-    if query:
-        try:
-            graph_ctx = _graph_rag_context(db, user_id, query)
-            if graph_ctx:
-                kb["graph_context"] = graph_ctx
-        except Exception:  # noqa: BLE001
-            pass
+    # Report card — weak topics from quiz observations (no embedding GraphRAG)
+    try:
+        report = _report_card_context(db, user_id)
+        if report:
+            kb["report_card"] = report
+    except Exception:  # noqa: BLE001
+        pass
 
+    if query:
         try:
             from backend.corpus.retrieve import corpus_available, format_hits_for_prompt, hybrid_retrieve
 

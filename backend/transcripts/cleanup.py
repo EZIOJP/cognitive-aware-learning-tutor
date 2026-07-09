@@ -15,10 +15,29 @@ from backend.transcripts.mermaid import (  # noqa: F401
 )
 
 WHITESPACE_RE = re.compile(r"\s+")
+PUNCT_ONLY_RE = re.compile(r"^[\W_]+$")
 FILLER_RE = re.compile(r"\b(um+|uh+|er+|like|you know|okay so)\b", re.I)
 STUTTER_RE = re.compile(r"\b(\w+)(?:\s+\1\b)+", re.I)
 SENTENCE_SPLIT_RE = re.compile(r"(?<=[.!?])\s+")
-LLM_PREAMBLE_RE = re.compile(r"^(?:Here'?s|Sure|Certainly|Of course)[^\n]*\n+", re.I | re.M)
+LLM_PREAMBLE_RE = re.compile(
+    r"^(?:Here'?s|Sure|Certainly|Of course|Let me|Okay,?|Ok,?)\s[^\n]*\n+",
+    re.I | re.M,
+)
+_THINK_BLOCK_RE = re.compile(r"<think(?:ing)?>[\s\S]*?</think(?:ing)?>", re.I)
+_LLM_INLINE_HEADING_RE = re.compile(r"([.!?)\]:])(\s*)(#{1,6}\s+\S)")
+_LLM_SCORE_INLINE_HEADING_RE = re.compile(r"(\d/5)(\s*)(#{1,6}\s+\S)")
+_LLM_META_HEADING_RE = re.compile(
+    r"^#{1,6}\s+(?:heading for|rules|output markdown|start with|text only|"
+    r"3-5 key|preserve image|algorithm bullets|constraint checklist)",
+    re.I,
+)
+_LLM_META_LINE_RE = re.compile(
+    r"^(?:\*+\s*)?(?:Analyze the Request|Rules Check|The user wants|Confidence Score|"
+    r"Drafting the content|Comparing the transcript|Given the instruction|Since the provided|"
+    r"I must adhere|I will focus|I will create|Comparing the transcript content|"
+    r"Plan:|Execution:|Constraint Checklist|Let me |Okay,? I |Thinking step|\d+\.\s+\*?\*?)",
+    re.I,
+)
 OUTER_FENCE_RE = re.compile(r"^```(?:markdown)?\s*\n", re.M)
 MERMAID_RE = re.compile(r"```mermaid\s*\n(.*?)```", re.DOTALL | re.I)
 CODE_BLOCK_RE = re.compile(r"```[\w]*\n(.*?)```", re.DOTALL)
@@ -30,6 +49,106 @@ def normalize_segment(text: str) -> str:
     text = FILLER_RE.sub(" ", text)
     text = STUTTER_RE.sub(r"\1", text)
     return WHITESPACE_RE.sub(" ", text).strip()
+
+
+def looks_like_live_captions(raw: str) -> bool:
+    """Heuristic: Windows Live Captions grow prefixes across many non-consecutive lines."""
+    lines = [ln.strip() for ln in raw.splitlines() if ln.strip()]
+    if len(lines) < 20:
+        return False
+    sample = lines[: min(500, len(lines))]
+    prefix_hits = 0
+    window = 48
+    for i, line in enumerate(sample):
+        for j in range(i + 1, min(i + window, len(sample))):
+            nxt = sample[j]
+            if nxt.startswith(line) and len(nxt) > len(line):
+                prefix_hits += 1
+                break
+    return (prefix_hits / len(sample)) >= 0.12
+
+
+def _token_overlap_ratio(a: str, b: str) -> float:
+    ta = {w for w in a.lower().split() if w}
+    tb = {w for w in b.lower().split() if w}
+    if not ta or not tb:
+        return 0.0
+    return len(ta & tb) / min(len(ta), len(tb))
+
+
+def collapse_caption_bursts(lines: list[str], *, min_overlap: float = 0.45) -> list[str]:
+    """Merge Windows Live Caption growth bursts — keep the longest line per cluster."""
+    if not lines:
+        return []
+    out: list[str] = []
+    burst: list[str] = []
+
+    def flush_burst() -> None:
+        nonlocal burst
+        if burst:
+            out.append(max(burst, key=len))
+            burst = []
+
+    for raw_line in lines:
+        line = raw_line.strip()
+        if not line or PUNCT_ONLY_RE.match(line):
+            continue
+        if not burst:
+            burst = [line]
+            continue
+        anchor = max(burst, key=len)
+        if line.startswith(anchor) or anchor.startswith(line):
+            burst.append(line)
+            continue
+        if len(line) < 16 or len(anchor) < 16:
+            burst.append(line)
+            continue
+        if _token_overlap_ratio(line, anchor) >= min_overlap:
+            burst.append(line)
+            continue
+        flush_burst()
+        burst = [line]
+    flush_burst()
+    return out
+
+
+def collapse_live_caption_fragments(lines: list[str], *, lookahead: int = 80) -> list[str]:
+    """Drop orphan Live Caption shards that are prefixes/substrings of a later line."""
+    if not lines:
+        return []
+    out: list[str] = []
+    n = len(lines)
+    for i, raw_line in enumerate(lines):
+        line = raw_line.strip()
+        if not line or PUNCT_ONLY_RE.match(line):
+            continue
+        low = line.lower()
+        drop = False
+        for j in range(i + 1, min(i + lookahead, n)):
+            other = lines[j].strip()
+            if len(other) <= len(line):
+                continue
+            other_low = other.lower()
+            if other.startswith(line):
+                drop = True
+                break
+            if len(line) >= 8 and len(line) <= 72 and low in other_low:
+                drop = True
+                break
+        if not drop:
+            out.append(line)
+    return out
+
+
+def dedupe_live_caption_lines(lines: list[str]) -> list[str]:
+    """Full live-caption collapse: burst merge + prefix dedup + orphan fragment removal."""
+    if not lines:
+        return []
+    lines = collapse_caption_bursts(lines)
+    lines = maximal_prefix_dedup(lines)
+    lines = aggressive_prefix_dedup(lines)
+    lines = collapse_live_caption_fragments(lines)
+    return dedupe_lines(lines)
 
 
 def dedupe_lines(lines: list[str]) -> list[str]:
@@ -87,16 +206,26 @@ def aggressive_prefix_dedup(lines: list[str]) -> list[str]:
 
 def clean_transcript(raw: str, *, aggressive: bool = False) -> str:
     """Full transcript cleanup before Ollama summarization."""
+    effective_aggressive = aggressive or looks_like_live_captions(raw)
     lines = [normalize_segment(ln) for ln in raw.splitlines()]
     lines = [ln for ln in lines if ln]
-    if aggressive:
-        lines = maximal_prefix_dedup(lines)
+    if effective_aggressive:
+        lines = dedupe_live_caption_lines(lines)
     else:
         lines = dedupe_lines(lines)
-    text = " ".join(lines)
-    text = FILLER_RE.sub(" ", text)
-    text = STUTTER_RE.sub(r"\1", text)
-    return WHITESPACE_RE.sub(" ", text).strip()
+    return finalize_cleaned_lines(lines)
+
+
+def finalize_cleaned_lines(lines: list[str]) -> str:
+    """Per-line filler/stutter cleanup, joined with newlines for readable preview."""
+    cleaned: list[str] = []
+    for line in lines:
+        line = FILLER_RE.sub(" ", line)
+        line = STUTTER_RE.sub(r"\1", line)
+        line = WHITESPACE_RE.sub(" ", line).strip()
+        if line:
+            cleaned.append(line)
+    return "\n".join(cleaned)
 
 
 def split_sentences(text: str) -> list[str]:
@@ -268,14 +397,43 @@ def dedupe_notes_tail(text: str) -> str:
     return trim_incomplete_tail(text)
 
 
-def postprocess_markdown(raw: str) -> str:
+def strip_llm_meta_preamble(raw: str) -> str:
+    """Drop chain-of-thought / planning text before the first real markdown heading."""
+    text = (raw or "").strip()
+    if not text:
+        return text
+    text = _THINK_BLOCK_RE.sub("", text).strip()
+    text = _LLM_INLINE_HEADING_RE.sub(r"\1\n\n\3", text)
+    text = _LLM_SCORE_INLINE_HEADING_RE.sub(r"\1\n\n\3", text)
+    for match in re.finditer(r"(?m)^#{1,6}\s+\S", text):
+        line = text[match.start() :].split("\n", 1)[0].strip()
+        if _LLM_META_HEADING_RE.match(line):
+            continue
+        return text[match.start() :].strip()
+    lines = text.splitlines()
+    while lines and _LLM_META_LINE_RE.match(lines[0].strip()):
+        lines.pop(0)
+    cleaned = "\n".join(lines).strip()
+    if cleaned:
+        out_lines = []
+        for line in cleaned.splitlines():
+            if _LLM_META_LINE_RE.match(line.strip()) and not line.strip().startswith("#"):
+                continue
+            out_lines.append(line)
+        cleaned = "\n".join(out_lines).strip()
+    return cleaned
+
+
+def postprocess_markdown(raw: str, *, sanitize_mermaid: bool = True) -> str:
     """Strip LLM preamble and accidental outer fences."""
     text = raw.strip()
+    text = strip_llm_meta_preamble(text)
     text = LLM_PREAMBLE_RE.sub("", text).strip()
     text = strip_whole_response_wrapper(text)
     text = repair_split_code_fences(text)
     text = repair_all_fences(text)
-    text = sanitize_mermaid_blocks(text)
+    if sanitize_mermaid:
+        text = sanitize_mermaid_blocks(text)
     text = dedupe_h2_sections(text)
     text = dedupe_notes_tail(text)
     return text.strip()

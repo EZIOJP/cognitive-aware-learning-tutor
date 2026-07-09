@@ -13,6 +13,10 @@ engine = create_engine(
     _settings.database_url,
     connect_args={"check_same_thread": False} if _settings.database_url.startswith("sqlite") else {},
 )
+if _settings.database_url.startswith("sqlite"):
+    from backend.db.sqlite_utils import configure_sqlite_engine
+
+    configure_sqlite_engine(engine)
 SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
 
 

@@ -24,37 +24,15 @@ if TYPE_CHECKING:
 
 log = logging.getLogger(__name__)
 
-_EMBEDDING_MODEL = None
-_EMBED_MODEL_NAME = "all-MiniLM-L6-v2"
-
-
-def _get_embed_model():
-    global _EMBEDDING_MODEL
-    if _EMBEDDING_MODEL is not None:
-        return _EMBEDDING_MODEL
-    try:
-        from sentence_transformers import SentenceTransformer  # type: ignore
-
-        _EMBEDDING_MODEL = SentenceTransformer(_EMBED_MODEL_NAME, device="cpu")
-        log.info("KG embedding model loaded.")
-        return _EMBEDDING_MODEL
-    except Exception as exc:  # noqa: BLE001
-        log.warning("Could not load embedding model for KG: %s", exc)
-        return None
-
-
 def _embed_text(text: str) -> np.ndarray | None:
-    model = _get_embed_model()
-    if model is None:
-        return None
+    """Use shared embedding helper (subprocess-safe under Tk GUI worker threads)."""
     try:
-        vec: np.ndarray = model.encode(
-            [text],
-            convert_to_numpy=True,
-            show_progress_bar=False,
-            device="cpu",
-        )[0].astype("float32")
-        return vec
+        from backend.transcripts.embedding import encode_texts
+
+        vectors = encode_texts([text])
+        if vectors is None or len(vectors) == 0:
+            return None
+        return vectors[0].astype("float32")
     except Exception as exc:  # noqa: BLE001
         log.warning("Embedding failed: %s", exc)
         return None
@@ -255,7 +233,7 @@ def index_note_file(
 ) -> list[KgNode]:
     """Parse a markdown note and upsert kg_nodes for every ## heading.
 
-    Adds temporal_next edges between sequential headings and stores embeddings.
+    Adds temporal_next edges between sequential headings (topic graph only; no embeddings).
     Returns the list of upserted nodes.
     """
     if not note_path.is_file():
@@ -281,11 +259,6 @@ def index_note_file(
             note_path=rel_path,
         )
         nodes.append(node)
-
-        # Store embedding
-        vec = _embed_text(heading)
-        if vec is not None:
-            store_embedding(db, node_id=node.id, vector=vec)
 
     # Add temporal_next edges between sequential nodes
     for i in range(len(nodes) - 1):

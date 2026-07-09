@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
@@ -18,32 +18,56 @@ log = logging.getLogger(__name__)
 _COLLECTION = "study_chunks"
 _VECTOR_SIZE = 384  # all-MiniLM-L6-v2
 
+# One embedded Qdrant handle per process — avoids lock contention from repeated open().
+_SHARED_QDRANT_CLIENT: Any = None
+_SHARED_QDRANT_MODE: str = "sqlite"
+_SHARED_QDRANT_TRIED = False
+
+
+def retrieval_backend() -> str:
+    """Return ``qdrant`` or ``sqlite`` for the active dense-vector backend in this process."""
+    _ensure_shared_qdrant()
+    return _SHARED_QDRANT_MODE
+
+
+def _ensure_shared_qdrant() -> None:
+    global _SHARED_QDRANT_CLIENT, _SHARED_QDRANT_MODE, _SHARED_QDRANT_TRIED
+    if _SHARED_QDRANT_TRIED:
+        return
+    _SHARED_QDRANT_TRIED = True
+    try:
+        from qdrant_client import QdrantClient  # type: ignore
+        from qdrant_client.models import Distance, VectorParams  # type: ignore
+
+        ensure_corpus_dirs()
+        client = QdrantClient(path=str(QDRANT_PATH))
+        if not client.collection_exists(_COLLECTION):
+            client.create_collection(
+                collection_name=_COLLECTION,
+                vectors_config=VectorParams(size=_VECTOR_SIZE, distance=Distance.COSINE),
+            )
+        _SHARED_QDRANT_CLIENT = client
+        _SHARED_QDRANT_MODE = "qdrant"
+        log.info("Corpus vector store: Qdrant local at %s", QDRANT_PATH)
+    except Exception as exc:  # noqa: BLE001
+        log.info("Qdrant unavailable (%s); using SQLite embeddings", exc)
+        _SHARED_QDRANT_CLIENT = None
+        _SHARED_QDRANT_MODE = "sqlite"
+
 
 class VectorStore:
     def __init__(self) -> None:
-        self._mode = "sqlite"
-        self._client = None
-        self._try_qdrant()
-
-    def _try_qdrant(self) -> None:
-        try:
-            from qdrant_client import QdrantClient  # type: ignore
+        _ensure_shared_qdrant()
+        self._mode = _SHARED_QDRANT_MODE
+        self._client = _SHARED_QDRANT_CLIENT
+        if self._mode == "qdrant" and self._client is not None:
             from qdrant_client.models import Distance, PointStruct, VectorParams  # type: ignore
 
-            ensure_corpus_dirs()
-            self._client = QdrantClient(path=str(QDRANT_PATH))
             self._qdrant_models = (Distance, PointStruct, VectorParams)
-            if not self._client.collection_exists(_COLLECTION):
-                self._client.create_collection(
-                    collection_name=_COLLECTION,
-                    vectors_config=VectorParams(size=_VECTOR_SIZE, distance=Distance.COSINE),
-                )
-            self._mode = "qdrant"
-            log.info("Corpus vector store: Qdrant local at %s", QDRANT_PATH)
-        except Exception as exc:  # noqa: BLE001
-            log.info("Qdrant unavailable (%s); using SQLite embeddings", exc)
-            self._mode = "sqlite"
-            self._client = None
+
+    @property
+    def mode(self) -> str:
+        return self._mode
 
     def delete_chunk_ids(self, chunk_ids: list[str]) -> int:
         if not chunk_ids:

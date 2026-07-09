@@ -11,6 +11,9 @@ from transcript_studio.cleanup import (
     aggressive_prefix_dedup,
     clean_transcript,
     dedupe_lines,
+    dedupe_live_caption_lines,
+    finalize_cleaned_lines,
+    looks_like_live_captions,
     maximal_prefix_dedup,
     normalize_segment,
     split_sentences,
@@ -44,6 +47,10 @@ class ParseAuditReport:
     raw_sentences: int
     clean_sentences: int
     word_retention_pct: float
+    unique_baseline_words: int = 0
+    content_retention_pct: float = 0.0
+    vocabulary_retention_pct: float = 0.0
+    caption_inflation_ratio: float = 1.0
     removed_lines: list[RemovedLine] = field(default_factory=list)
     suspicious_phrases: list[str] = field(default_factory=list)
     topic_words_dropped: list[tuple[str, int, int]] = field(default_factory=list)
@@ -241,11 +248,34 @@ def _flag_removals_limited(
     for item in removed:
         if flagged >= max_check:
             break
-        if not item.text or item.reason in {"empty", "exact_duplicate"}:
+        if not item.text or item.reason in {
+            "empty",
+            "exact_duplicate",
+            "prefix_subsumed",
+            "prefix_merged",
+            "aggressive_skip",
+        }:
             item.possibly_lost = False
             continue
         item.possibly_lost = not _is_subsumed(item.text, kept_lines, cleaned_text)
         flagged += 1
+
+
+def _unique_baseline_words(lines: list[str], *, effective_aggressive: bool) -> int:
+    """Estimate unique lecture word count after caption dedup, before filler stripping."""
+    if effective_aggressive:
+        collapsed = dedupe_live_caption_lines(lines)
+    else:
+        collapsed = dedupe_lines(lines)
+    return _word_count(" ".join(finalize_cleaned_lines(collapsed).split()))
+
+
+def _vocabulary_retention_pct(raw: str, cleaned: str) -> float:
+    raw_vocab = set(_content_words(raw).keys())
+    clean_vocab = set(_content_words(cleaned).keys())
+    if not raw_vocab:
+        return 100.0
+    return len(raw_vocab & clean_vocab) / len(raw_vocab) * 100.0
 
 
 def audit_parse(raw: str, *, aggressive: bool = False) -> ParseAuditReport:
@@ -253,30 +283,38 @@ def audit_parse(raw: str, *, aggressive: bool = False) -> ParseAuditReport:
     raw_lines_in = [ln for ln in raw.splitlines() if ln.strip()]
     lines = [normalize_segment(ln) for ln in raw.splitlines()]
     lines = [ln for ln in lines if ln]
+    effective_aggressive = aggressive or looks_like_live_captions(raw)
 
-    if aggressive:
+    if effective_aggressive:
         kept_lines, removed = _maximal_prefix_dedup_audited(lines)
-        # clean_transcript also runs filler pass on joined text — line audit is pre-join
     else:
         kept_lines, removed = _dedupe_lines_audited(lines)
 
     cleaned = clean_transcript(raw, aggressive=aggressive)
-    _flag_removals_limited(removed, kept_lines, cleaned)
+    cleaned_lines = [ln for ln in cleaned.splitlines() if ln.strip()]
+    _flag_removals_limited(removed, cleaned_lines, cleaned)
 
     raw_joined = " ".join(normalize_segment(ln) for ln in raw_lines_in)
     raw_words = _word_count(raw_joined)
     clean_words = _word_count(cleaned)
+    unique_baseline_words = _unique_baseline_words(lines, effective_aggressive=effective_aggressive)
     retention = (clean_words / raw_words * 100.0) if raw_words else 100.0
+    content_retention = (clean_words / unique_baseline_words * 100.0) if unique_baseline_words else 100.0
+    inflation = (raw_words / unique_baseline_words) if unique_baseline_words else 1.0
 
     return ParseAuditReport(
-        aggressive=aggressive,
+        aggressive=effective_aggressive,
         raw_lines=len(raw_lines_in),
-        kept_lines=len(kept_lines),
+        kept_lines=len(cleaned_lines),
         raw_words=raw_words,
         clean_words=clean_words,
+        unique_baseline_words=unique_baseline_words,
+        word_retention_pct=round(retention, 1),
+        content_retention_pct=round(content_retention, 1),
+        vocabulary_retention_pct=round(_vocabulary_retention_pct(raw_joined, cleaned), 1),
+        caption_inflation_ratio=round(inflation, 1),
         raw_sentences=len(split_sentences(raw_joined)),
         clean_sentences=len(split_sentences(cleaned)),
-        word_retention_pct=round(retention, 1),
         removed_lines=removed,
         suspicious_phrases=_suspicious_phrases(removed),
         topic_words_dropped=_topic_words_dropped(raw_joined, cleaned),
@@ -294,9 +332,21 @@ def format_audit_report(report: ParseAuditReport) -> str:
         "Counts",
         f"  Lines:     {report.raw_lines:,} -> {report.kept_lines:,} "
         f"({report.lines_removed:,} removed)",
-        f"  Words:     {report.raw_words:,} -> {report.clean_words:,} "
-        f"({report.word_retention_pct:.1f}% retained)",
+        f"  Words (raw file): {report.raw_words:,} "
+        f"— inflated by ~{report.caption_inflation_ratio:.1f}x caption repetition",
+        f"  Unique lecture content (est.): {report.unique_baseline_words:,} words "
+        f"after dedup, before filler strip",
+        f"  Cleaned output: {report.clean_words:,} words",
+        f"  Content preserved: {report.content_retention_pct:.1f}% of unique lecture content",
+        f"  Raw-file word ratio: {report.word_retention_pct:.1f}% "
+        f"(misleading for live captions — see content preserved)",
+        f"  Topic vocabulary kept: {report.vocabulary_retention_pct:.1f}% of distinct topic words",
         f"  Sentences: {report.raw_sentences:,} -> {report.clean_sentences:,}",
+        "",
+        "How to read this",
+        "  Raw live-caption files repeat the same phrases hundreds of times as lines grow.",
+        "  A low 'raw retained' % (e.g. 13%) is normal — it is NOT 87% content loss.",
+        "  Use 'Content preserved' and 'Flagged for review' to judge real loss.",
         "",
         "Dedup summary",
         f"  Likely safe removals (prefix growth / duplicates): {report.likely_safe_removals:,}",
@@ -318,14 +368,18 @@ def format_audit_report(report: ParseAuditReport) -> str:
         lines.append("")
 
     if report.weak_sentence_matches:
-        lines.append("Weak sentence matches (raw sentence vs nearest cleaned)")
+        lines.append(
+            "Weak sentence matches (partial raw caption shards — expected after dedup)"
+        )
         for sent, score in report.weak_sentence_matches:
             snippet = sent if len(sent) <= 120 else sent[:117] + "…"
             lines.append(f"  - ({score:.0%}) {snippet}")
         lines.append("")
 
     if report.topic_words_dropped:
-        lines.append("Topic words reduced or missing (content words, ≥2 mentions in raw)")
+        lines.append(
+            "Topic word frequency change (raw counts are inflated by caption repetition)"
+        )
         for word, raw_n, clean_n in report.topic_words_dropped:
             if clean_n == 0:
                 lines.append(f"  - {word}: {raw_n} -> gone")
@@ -333,7 +387,7 @@ def format_audit_report(report: ParseAuditReport) -> str:
                 lines.append(f"  - {word}: {raw_n} -> {clean_n}")
         lines.append("")
 
-    if report.review_count == 0 and not report.topic_words_dropped:
+    if report.review_count == 0:
         lines.append("No obvious topic/sentence loss detected.")
         lines.append("Most removal is expected caption prefix dedup and filler stripping.")
     else:

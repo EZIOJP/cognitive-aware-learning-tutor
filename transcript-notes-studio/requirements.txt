@@ -9,3 +9,6 @@ pydantic-settings>=2.2.0
 # Text-only embeddings; stay on 3.x to avoid optional torchcodec (Whisper extras can install a broken torchcodec on Windows).
 sentence-transformers>=2.7.0,<5.0.0
 numpy>=1.24.0
+# Backend notes + corpus pipeline (same as run.bat)
+-r ../backend/requirements-notes.txt
+-r ../backend/requirements-corpus.txt

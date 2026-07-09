@@ -70,8 +70,15 @@ def register_exception_handlers(app) -> None:
 
     @app.exception_handler(Exception)
     async def unhandled_exception_handler(request: Request, exc: Exception):
+        import logging
+
         from backend.config import get_settings
 
+        logging.getLogger("backend.error").exception(
+            "Unhandled %s %s",
+            request.method,
+            request.url.path,
+        )
         settings = get_settings()
         message = str(exc) if settings.dev_mode else "Internal server error"
         return error_response(500, code="internal_error", message=message)

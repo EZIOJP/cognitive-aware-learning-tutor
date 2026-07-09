@@ -1,6 +1,6 @@
 from datetime import date
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, BackgroundTasks, Depends
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -124,9 +124,16 @@ async def insights_review(db: Session = Depends(get_db), user: User = Depends(ge
 
 def _hub_context(db: Session, user: User) -> dict:
     from backend.hub.services.coach_context import build_coach_context
+    from backend.hub.services.coach_memory import get_memory_context, upsert_today_summary
 
     daily = insights_daily(db=db, user=user)
-    return build_coach_context(db, user, daily=daily)
+    context = build_coach_context(db, user, daily=daily)
+    try:
+        upsert_today_summary(db, user.id, daily)
+        context["memory"] = get_memory_context(db, user.id)
+    except Exception:  # noqa: BLE001
+        context["memory"] = {"remembered_facts": [], "recent_days": []}
+    return context
 
 
 @router.get("/context")
@@ -163,7 +170,12 @@ def insights_knowledge(
 
 
 @router.post("/chat", response_model=ChatResponse)
-def insights_chat(body: ChatRequest, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+def insights_chat(
+    body: ChatRequest,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
     from backend.core.ollama_client import llm_reachable
     from backend.hub.services.local_coach import chat_with_coach, local_llm_available
 
@@ -178,6 +190,9 @@ def insights_chat(body: ChatRequest, db: Session = Depends(get_db), user: User =
     if local_llm_available():
         try:
             reply = chat_with_coach(msgs, hub_context=context)
+            from backend.hub.services.coach_memory import remember_exchange
+
+            background_tasks.add_task(remember_exchange, user.id, last_query, reply)
             return ChatResponse(reply=reply, source="gemma", llm_available=True)
         except Exception as exc:
             return ChatResponse(

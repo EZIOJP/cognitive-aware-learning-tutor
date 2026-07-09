@@ -11,10 +11,19 @@ import numpy as np
 from backend.corpus.bm25_index import load_bm25, rebuild_bm25_from_registry
 from backend.corpus.paths import HYBRID_POOL, RERANK_TOP
 from backend.corpus.registry import ChunkRecord, get_chunk, list_chunks
-from backend.corpus.vector_store import VectorStore
+from backend.corpus.vector_store import VectorStore, retrieval_backend
 from backend.transcripts.embedding import encode_texts, is_available
 
 log = logging.getLogger(__name__)
+
+# Notes generation retrieves textbook chunks only (not prior lectures/notes).
+NOTES_RAG_SOURCE_TYPES = ("textbook",)
+
+
+def _chunk_matches_source_types(chunk: ChunkRecord, source_types: list[str] | None) -> bool:
+    if not source_types:
+        return True
+    return chunk.source_type in source_types
 
 
 def _rrf_merge(
@@ -54,6 +63,7 @@ def hybrid_retrieve(
     query: str,
     *,
     subject_tags: list[str] | None = None,
+    source_types: list[str] | None = None,
     top_k: int = RERANK_TOP,
     pool_size: int = HYBRID_POOL,
     db_path: Path | None = None,
@@ -86,7 +96,8 @@ def hybrid_retrieve(
         sparse_hits = [
             (c.chunk_id, 1.0)
             for c in chunks
-            if q in c.raw_payload.lower() or q in c.breadcrumb.lower()
+            if _chunk_matches_source_types(c, source_types)
+            and (q in c.raw_payload.lower() or q in c.breadcrumb.lower())
         ][:pool_size]
 
     merged = _rrf_merge(dense_hits, sparse_hits)[:pool_size]
@@ -94,6 +105,8 @@ def hybrid_retrieve(
     for cid, _ in merged:
         c = get_chunk(cid, db_path=db_path)
         if c is None:
+            continue
+        if not _chunk_matches_source_types(c, source_types):
             continue
         if subject_tags and not any(t in c.subject_tags for t in subject_tags):
             continue
@@ -115,7 +128,7 @@ def hybrid_retrieve(
             graph_hits = []
             for cid in graph_ids:
                 rec = get_chunk(cid, db_path=db_path)
-                if rec:
+                if rec and _chunk_matches_source_types(rec, source_types):
                     graph_hits.append(chunk_to_hit(rec))
             hits = merge_graph_hits(hits, graph_hits, top_k=top_k)
         except Exception as exc:  # noqa: BLE001

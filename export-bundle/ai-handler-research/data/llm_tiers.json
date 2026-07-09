@@ -1,0 +1,15 @@
+{
+  "light": [
+    "lmstudio:google/gemma-4-e4b"
+  ],
+  "medium": [
+    "gemini:gemini-flash-latest",
+    "lmstudio:google/gemma-4-e4b",
+    "ollama:llama3.2:3b"
+  ],
+  "heavy": [
+    "gemini:gemini-2.5-pro",
+    "openai:https://api.anthropic.com/v1:claude-3-5-sonnet-20241022",
+    "lmstudio:google/gemma-4-e4b"
+  ]
+}

@@ -28,6 +28,7 @@ const PAGE_TITLES: Record<string, string> = {
   "/knowledge-base": "Knowledge Base",
   "/review": "Review Hub",
   "/ai-coach": "AI Coach",
+  "/journal": "Journal",
 };
 
 /** Plan: top bar = profile, theme, pomodoro only. EEG / mirror live on dashboard & plugin pages. */

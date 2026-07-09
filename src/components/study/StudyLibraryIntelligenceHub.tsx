@@ -15,6 +15,7 @@ type Props = {
   generating?: boolean;
   onGenerateQuiz: () => void;
   onGenerateDrills: () => void;
+  onGeneratePrimer?: () => void;
   onTakeQuiz?: () => void;
   onSync?: () => void;
   onEditItem: (id: string, content: string) => void;
@@ -30,6 +31,7 @@ export function StudyLibraryIntelligenceHub({
   generating,
   onGenerateQuiz,
   onGenerateDrills,
+  onGeneratePrimer,
   onTakeQuiz,
   onSync,
   onEditItem,
@@ -87,7 +89,24 @@ export function StudyLibraryIntelligenceHub({
         </button>
       </div>
 
-      <div className="shrink-0 mb-2">
+      <div className="shrink-0 mb-2 space-y-2">
+        {onGeneratePrimer && (
+          <Button
+            type="button"
+            size="sm"
+            variant="secondary"
+            className="w-full h-8 text-xs gap-1"
+            disabled={generating}
+            onClick={onGeneratePrimer}
+          >
+            {generating ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <Database className="w-3.5 h-3.5" />
+            )}
+            Corpus primer (before lecture)
+          </Button>
+        )}
         <Button
           type="button"
           size="sm"

@@ -17,9 +17,12 @@ MODULES = [
     "httpx",
     "pydantic",
     "numpy",
+    "sqlalchemy",
+    "fitz",
     "backend.transcripts.notes_generator",
     "backend.transcripts.path_utils",
     "transcript_studio.notes_generator",
+    "transcript_studio.gui",
 ]
 
 

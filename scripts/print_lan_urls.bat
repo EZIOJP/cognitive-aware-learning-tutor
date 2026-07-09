@@ -2,7 +2,7 @@
 rem Prints LAN URLs for phone/tablet on the same WiFi
 echo.
 echo   WiFi access (same network — allow ports 5173 and 8000 in Windows Firewall):
-for /f "usebackq tokens=*" %%i in (`powershell -NoProfile -Command "$ip = (Get-NetIPAddress -AddressFamily IPv4 ^| Where-Object { $_.IPAddress -notmatch '^127\.' -and $_.PrefixOrigin -ne 'WellKnown' } ^| Select-Object -First 1 -ExpandProperty IPAddress); if ($ip) { Write-Output $ip }"`) do (
+for /f "usebackq tokens=*" %%i in (`powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0_print_lan_ip.ps1"`) do (
   echo     Frontend:     http://%%i:5173
   echo     API health:   http://%%i:8000/health
   echo     Vocab API:    http://%%i:8000/api/vocab

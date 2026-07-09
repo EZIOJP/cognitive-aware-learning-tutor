@@ -14,6 +14,12 @@ from sqlalchemy.orm import Session
 
 from backend.core.auth import get_current_user
 from backend.config import get_settings
+from backend.core.llm_request import (
+    confirm_budget_from_body,
+    guard_heavy_budget,
+    llm_override_from_body,
+    tier_from_body,
+)
 from backend.core.ollama_client import LlmOptions, llm_reachable, resolve_llm_options
 from backend.corpus.retrieve import corpus_available
 from backend.db.session import get_db
@@ -284,50 +290,8 @@ class RepairAndSaveRequest(BaseModel):
     confirm_heavy_budget: bool = False
 
 
-def _tier_from_body(body: object) -> str | None:
-    tier = getattr(body, "llm_tier", None)
-    return tier.strip().lower() if isinstance(tier, str) and tier.strip() else None
-
-
-def _confirm_budget_from_body(body: object) -> bool:
-    return bool(getattr(body, "confirm_heavy_budget", False))
-
-
-def _guard_heavy_budget(body: object) -> None:
-    """Reject heavy-tier requests over the daily soft cap before doing any work.
-
-    The frontend catches the marker string and re-sends with confirm_heavy_budget=true.
-    """
-    if _tier_from_body(body) != "heavy" or _confirm_budget_from_body(body):
-        return
-    from backend.core.llm_budget import heavy_budget_status
-
-    status = heavy_budget_status()
-    if status["exceeded"]:
-        raise HTTPException(
-            status_code=402,
-            detail=(
-                f"heavy_budget_exceeded: Daily heavy-tier cloud cap reached "
-                f"({status['used']}/{status['cap']}). Confirm to continue anyway."
-            ),
-        )
-
-
-def _llm_override_from_body(body: object) -> LlmOptions | None:
-    provider = getattr(body, "llm_provider", None)
-    base_url = getattr(body, "llm_base_url", None)
-    model = getattr(body, "llm_model", None)
-    if not any([provider, base_url, model]):
-        return None
-    return LlmOptions(
-        provider=provider,
-        base_url=base_url,
-        model=model,
-    )
-
-
 def _llm_from_intel(body: GapAnalysisRequest | GenerateIntelRequest) -> LlmOptions | None:
-    return _llm_override_from_body(body)
+    return llm_override_from_body(body)
 
 
 class GenerateNotesResponse(BaseModel):
@@ -341,15 +305,15 @@ class GenerateNotesResponse(BaseModel):
 
 
 def _llm_from_request(body: GenerateNotesRequest | GenerateTodayRequest | StudyFlowRequest) -> LlmOptions | None:
-    return _llm_override_from_body(body)
+    return llm_override_from_body(body)
 
 
 def _tier_from_request(body: object) -> str | None:
-    return _tier_from_body(body)
+    return tier_from_body(body)
 
 
 def _confirm_budget_from_request(body: object) -> bool:
-    return _confirm_budget_from_body(body)
+    return confirm_budget_from_body(body)
 
 
 def _corpus_handoff_after_generate(transcript_path: Path, note_path: Path) -> dict | None:
@@ -399,7 +363,7 @@ def get_llm_settings(
 
 
 def _llm_from_regenerate(body: RegenerateBlockRequest | RegenerateSelectionRequest | RepairAllBlocksRequest | RepairAndSaveRequest) -> LlmOptions | None:
-    return _llm_override_from_body(body)
+    return llm_override_from_body(body)
 
 
 @router.post("/library/regenerate-block", response_model=RegenerateBlockResponse)
@@ -424,8 +388,8 @@ def regenerate_note_block(body: RegenerateBlockRequest, _user: User = Depends(ge
             note_context=body.note_context,
             mode=body.mode,
             llm=llm,
-            llm_tier=_tier_from_body(body),
-            confirm_heavy_budget=_confirm_budget_from_body(body),
+            llm_tier=tier_from_body(body),
+            confirm_heavy_budget=confirm_budget_from_body(body),
         )
     except RuntimeError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
@@ -454,8 +418,8 @@ def regenerate_note_selection(body: RegenerateSelectionRequest, _user: User = De
             note_context=body.note_context,
             instruction=body.instruction,
             llm=_llm_from_regenerate(body),
-            llm_tier=_tier_from_body(body),
-            confirm_heavy_budget=_confirm_budget_from_body(body),
+            llm_tier=tier_from_body(body),
+            confirm_heavy_budget=confirm_budget_from_body(body),
         )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
@@ -471,8 +435,8 @@ def repair_note_all_blocks(body: RepairAllBlocksRequest, _user: User = Depends(g
             body.content,
             llm=_llm_from_regenerate(body),
             use_llm=body.use_llm,
-            llm_tier=_tier_from_body(body),
-            confirm_heavy_budget=_confirm_budget_from_body(body),
+            llm_tier=tier_from_body(body),
+            confirm_heavy_budget=confirm_budget_from_body(body),
         )
     except RuntimeError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
@@ -498,7 +462,7 @@ def _read_note_file(relative_path: str) -> tuple[str, str]:
 
 
 def _llm_from_repair_save(body: RepairAndSaveRequest) -> LlmOptions | None:
-    return _llm_override_from_body(body)
+    return llm_override_from_body(body)
 
 
 @router.post("/library/files/{relative_path:path}/repair-all-blocks", response_model=RepairAllBlocksResponse)
@@ -515,8 +479,8 @@ def repair_and_save_library_note(
             raw,
             llm=_llm_from_repair_save(body),
             use_llm=body.use_llm,
-            llm_tier=_tier_from_body(body),
-            confirm_heavy_budget=_confirm_budget_from_body(body),
+            llm_tier=tier_from_body(body),
+            confirm_heavy_budget=confirm_budget_from_body(body),
         )
     except RuntimeError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
@@ -744,16 +708,16 @@ def post_folder_summarize(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    _guard_heavy_budget(body)
+    guard_heavy_budget(body)
     try:
         result = summarize_folder(
             db,
             user_id=user.id,
             folder_path=body.folder_path,
-            llm=_llm_override_from_body(body),
+            llm=llm_override_from_body(body),
             title=body.title,
-            llm_tier=_tier_from_body(body),
-            confirm_heavy_budget=_confirm_budget_from_body(body),
+            llm_tier=tier_from_body(body),
+            confirm_heavy_budget=confirm_budget_from_body(body),
         )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
@@ -767,16 +731,16 @@ def post_primer(
     user: User = Depends(get_current_user),
 ):
     """One-page corpus outline before a lecture (primer)."""
-    _guard_heavy_budget(body)
+    guard_heavy_budget(body)
     try:
         result = generate_primer(
             db,
             user_id=user.id,
             topic=body.topic,
             folder_path=body.folder_path,
-            llm=_llm_override_from_body(body),
-            llm_tier=_tier_from_body(body),
-            confirm_heavy_budget=_confirm_budget_from_body(body),
+            llm=llm_override_from_body(body),
+            llm_tier=tier_from_body(body),
+            confirm_heavy_budget=confirm_budget_from_body(body),
         )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
@@ -918,7 +882,7 @@ def post_gap_analysis(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    _guard_heavy_budget(body)
+    guard_heavy_budget(body)
     try:
         lecture = load_note_text(db, user.id, body.lecture_path)
         reference = load_note_text(db, user.id, body.reference_path)
@@ -931,8 +895,8 @@ def post_gap_analysis(
         lecture,
         reference,
         llm=_llm_from_intel(body),
-        llm_tier=_tier_from_body(body),
-        confirm_heavy_budget=_confirm_budget_from_body(body),
+        llm_tier=tier_from_body(body),
+        confirm_heavy_budget=confirm_budget_from_body(body),
     )
     summary_md = gap_summary_markdown(
         result,
@@ -948,7 +912,7 @@ def post_generate_quiz(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    _guard_heavy_budget(body)
+    guard_heavy_budget(body)
     if not body.source_paths:
         raise HTTPException(status_code=400, detail="source_paths required")
     texts = _load_sources(db, user.id, body.source_paths)
@@ -961,8 +925,8 @@ def post_generate_quiz(
         topic=body.topic.strip(),
         llm=_llm_from_intel(body),
         boost_concepts=boost or None,
-        llm_tier=_tier_from_body(body),
-        confirm_heavy_budget=_confirm_budget_from_body(body),
+        llm_tier=tier_from_body(body),
+        confirm_heavy_budget=confirm_budget_from_body(body),
     )
     title = body.topic.strip() or "Generated Quiz"
     md = quiz_to_markdown(result["questions"], title=title)
@@ -985,7 +949,7 @@ def post_generate_drills(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    _guard_heavy_budget(body)
+    guard_heavy_budget(body)
     if not body.source_paths:
         raise HTTPException(status_code=400, detail="source_paths required")
     texts = _load_sources(db, user.id, body.source_paths)
@@ -998,8 +962,8 @@ def post_generate_drills(
         topic=body.topic.strip(),
         llm=_llm_from_intel(body),
         boost_concepts=boost or None,
-        llm_tier=_tier_from_body(body),
-        confirm_heavy_budget=_confirm_budget_from_body(body),
+        llm_tier=tier_from_body(body),
+        confirm_heavy_budget=confirm_budget_from_body(body),
     )
     title = body.topic.strip() or "Code Drills"
     md = drills_to_markdown(result["drills"], title=title)
@@ -1040,7 +1004,7 @@ def generate_notes(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    _guard_heavy_budget(body)
+    guard_heavy_budget(body)
     try:
         transcript_path = resolve_transcript_path(body.transcript_file)
     except ValueError as exc:
@@ -1123,7 +1087,7 @@ def generate_notes_from_today(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    _guard_heavy_budget(body)
+    guard_heavy_budget(body)
     files = _today_live_caption_files()
     if not files:
         raise HTTPException(status_code=404, detail="No live_captions transcript captured today.")
@@ -1194,7 +1158,7 @@ def post_study_flow_start(
 ):
     from backend.transcripts.study_flow import run_topic_study_flow
 
-    _guard_heavy_budget(body)
+    guard_heavy_budget(body)
     try:
         return run_topic_study_flow(
             db,

@@ -738,12 +738,15 @@ export function LectureNotesPage() {
     setGenerating(true);
     setError(null);
     try {
-      const result = await generateGroundedNotes({
-        transcriptFile: selectedTranscript,
-        title: noteTitle.trim() || undefined,
-        topic: noteTitle.trim() || undefined,
-        folderPath: folderForSave,
-      });
+      const result = await runWithBudgetConfirm((llm) =>
+        generateGroundedNotes({
+          transcriptFile: selectedTranscript,
+          title: noteTitle.trim() || undefined,
+          topic: noteTitle.trim() || undefined,
+          folderPath: folderForSave,
+          llm,
+        }),
+      );
       if (!result.filename) {
         throw new Error("Grounded generation did not return a saved note path");
       }

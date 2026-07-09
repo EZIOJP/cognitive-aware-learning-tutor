@@ -50,6 +50,11 @@ class GroundedNotesRequest(BaseModel):
     topic: str = Field(default="", max_length=160)
     title: str = Field(default="", max_length=200)
     folder_path: str = Field(default="", max_length=300)
+    llm_provider: str | None = Field(default=None, max_length=32)
+    llm_base_url: str | None = Field(default=None, max_length=200)
+    llm_model: str | None = Field(default=None, max_length=120)
+    llm_tier: str | None = Field(default=None, max_length=16)
+    confirm_heavy_budget: bool = False
 
 
 class IngestLectureRequest(BaseModel):
@@ -200,18 +205,26 @@ def corpus_generate_notes_grounded(
             "corpus_handoff": handoff,
         }
     from backend.corpus.grounded_notes import generate_grounded_notes
-    from backend.core.ollama_client import get_llm_config, LlmOptions
+    from backend.core.llm_request import (
+        confirm_budget_from_body,
+        guard_heavy_budget,
+        llm_override_from_body,
+        tier_from_body,
+    )
+    from backend.core.ollama_client import resolve_llm_options
     from backend.paths import NOTES_DIR
     from backend.transcripts.router import _save_generated_note
 
-    cfg = get_llm_config()
-    llm = LlmOptions(provider=cfg["provider"], base_url=cfg["base_url"], model=cfg["model"])
+    guard_heavy_budget(body)
+    llm = resolve_llm_options(llm_override_from_body(body))
     result = generate_grounded_notes(
         transcript_file=body.transcript_file,
         topic=body.topic,
         title=body.title.strip() or None,
         folder_path=body.folder_path.strip(),
         llm=llm,
+        llm_tier=tier_from_body(body),
+        confirm_heavy_budget=confirm_budget_from_body(body),
         ingest_corpus=True,
     )
     notes_path = Path(result.get("notes_path") or "")

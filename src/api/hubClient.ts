@@ -1,4 +1,5 @@
 import { resolveApiUrl } from "../utils/resolveBackendUrl";
+import { llmBodyFields, type LlmOverrides } from "./transcriptsClient";
 
 const TOKEN_KEY = "vocab:auth-token";
 
@@ -94,12 +95,15 @@ export type ChatMessage = {
   content: string;
 };
 
-export async function postInsightsChat(messages: ChatMessage[]): Promise<InsightsChatPayload | null> {
+export async function postInsightsChat(
+  messages: ChatMessage[],
+  llm?: LlmOverrides,
+): Promise<InsightsChatPayload | null> {
   try {
     const res = await fetch(`${resolveApiUrl()}/api/insights/chat`, {
       method: "POST",
       headers: hubHeaders(),
-      body: JSON.stringify({ messages }),
+      body: JSON.stringify({ messages, ...llmBodyFields(llm) }),
     });
     if (!res.ok) return null;
     return (await res.json()) as InsightsChatPayload;
@@ -130,12 +134,15 @@ export async function fetchAgentSnapshot(refresh = false): Promise<AgentSnapshot
   }
 }
 
-export async function postProjectAgentChat(messages: ChatMessage[]): Promise<InsightsChatPayload | null> {
+export async function postProjectAgentChat(
+  messages: ChatMessage[],
+  llm?: LlmOverrides,
+): Promise<InsightsChatPayload | null> {
   try {
     const res = await fetch(`${resolveApiUrl()}/api/insights/agent/chat`, {
       method: "POST",
       headers: hubHeaders(),
-      body: JSON.stringify({ messages }),
+      body: JSON.stringify({ messages, ...llmBodyFields(llm) }),
     });
     if (!res.ok) return null;
     return (await res.json()) as InsightsChatPayload;

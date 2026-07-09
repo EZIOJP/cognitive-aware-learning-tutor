@@ -27,6 +27,11 @@ class ChatMessageIn(BaseModel):
 
 class ChatRequest(BaseModel):
     messages: list[ChatMessageIn]
+    llm_tier: str | None = None
+    llm_provider: str | None = None
+    llm_base_url: str | None = None
+    llm_model: str | None = None
+    confirm_heavy_budget: bool = False
 
 
 class ChatResponse(BaseModel):
@@ -176,9 +181,12 @@ def insights_chat(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
+    from backend.core.llm_request import guard_heavy_budget, tier_from_body
     from backend.core.ollama_client import llm_reachable
     from backend.hub.services.local_coach import chat_with_coach, local_llm_available
 
+    guard_heavy_budget(body)
+    tier = tier_from_body(body)
     context = _hub_context(db, user)
     msgs = [{"role": m.role, "content": m.content} for m in body.messages if m.content.strip()]
 
@@ -189,7 +197,7 @@ def insights_chat(
 
     if local_llm_available():
         try:
-            reply = chat_with_coach(msgs, hub_context=context)
+            reply = chat_with_coach(msgs, hub_context=context, llm_tier=tier)
             from backend.hub.services.coach_memory import remember_exchange
 
             background_tasks.add_task(remember_exchange, user.id, last_query, reply)
@@ -265,16 +273,19 @@ def agent_read_file(
 @router.post("/agent/chat", response_model=ChatResponse)
 def agent_chat(body: ChatRequest, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     """Project Agent: Gemma + codebase file access (pairs with Cursor)."""
+    from backend.core.llm_request import guard_heavy_budget, tier_from_body
     from backend.core.ollama_client import llm_reachable
     from backend.hub.services.project_agent import chat_with_project_agent, project_agent_available
 
+    guard_heavy_budget(body)
+    tier = tier_from_body(body)
     context = _hub_context(db, user)
     msgs = [{"role": m.role, "content": m.content} for m in body.messages if m.content.strip()]
     last_query = msgs[-1]["content"] if msgs else ""
 
     if project_agent_available():
         try:
-            reply = chat_with_project_agent(msgs, hub_context=context, last_query=last_query)
+            reply = chat_with_project_agent(msgs, hub_context=context, last_query=last_query, llm_tier=tier)
             return ChatResponse(reply=reply, source="gemma", llm_available=True)
         except Exception as exc:
             return ChatResponse(

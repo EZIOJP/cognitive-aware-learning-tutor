@@ -97,6 +97,7 @@ def chat_with_coach(
     messages: list[dict[str, str]],
     *,
     hub_context: dict,
+    llm_tier: str | None = None,
 ) -> str:
     if not local_llm_available():
         raise RuntimeError("Local LLM is not enabled. Set OLLAMA_ENABLED=1 and start LM Studio.")
@@ -130,7 +131,7 @@ def chat_with_coach(
 
     system = f"{COACH_SYSTEM}{extra}\n\nFull student + app context (use on demand):\n{_context_block(hub_context)}"
 
-    raw = ollama_generate(prompt, system_prompt=system, timeout=120.0, task="coach")
+    raw = ollama_generate(prompt, system_prompt=system, timeout=120.0, task="coach", tier=llm_tier)
     if not raw:
         raise ValueError("Empty chat response from local LLM")
     return raw.strip()[:4000]

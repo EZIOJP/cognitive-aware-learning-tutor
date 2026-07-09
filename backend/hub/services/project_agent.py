@@ -37,6 +37,7 @@ def chat_with_project_agent(
     *,
     hub_context: dict,
     last_query: str = "",
+    llm_tier: str | None = None,
 ) -> str:
     if not project_agent_available():
         raise RuntimeError("Local LLM is not enabled. Set OLLAMA_ENABLED=1 and start LM Studio.")
@@ -70,7 +71,7 @@ Full context (JSON):
 
 Reply as the Project Agent. Use bullet lists for tasks. End with ONE recommended next action."""
 
-    raw = ollama_generate(prompt, system_prompt=PROJECT_AGENT_SYSTEM, timeout=120.0, task="project_agent")
+    raw = ollama_generate(prompt, system_prompt=PROJECT_AGENT_SYSTEM, timeout=120.0, task="project_agent", tier=llm_tier)
     if not raw:
         raise ValueError("Empty response from local LLM")
     return raw.strip()[:6000]

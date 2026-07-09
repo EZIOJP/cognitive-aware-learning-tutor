@@ -6,6 +6,7 @@ import {
   type AgentSnapshot,
   type ChatMessage,
 } from "../../api/hubClient";
+import { loadLlmPrefs } from "../../api/transcriptsClient";
 import { Button } from "../../app/components/ui/button";
 import { Input } from "../../app/components/ui/input";
 
@@ -53,7 +54,7 @@ export function ProjectAgentChat({ snapshot, className = "" }: ProjectAgentChatP
       setMessages(next);
       setSending(true);
       try {
-        const res = await postProjectAgentChat(next);
+        const res = await postProjectAgentChat(next, loadLlmPrefs());
         if (!res?.reply) throw new Error("No response from Project Agent");
         setMessages([...next, { role: "assistant", content: res.reply }]);
       } catch (e) {

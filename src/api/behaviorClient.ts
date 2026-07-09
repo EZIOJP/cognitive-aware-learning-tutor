@@ -1,4 +1,5 @@
 import { resolveApiUrl } from "../utils/resolveBackendUrl";
+import { llmBodyFields, type LlmOverrides } from "./transcriptsClient";
 
 const TOKEN_KEY = "vocab:auth-token";
 
@@ -178,7 +179,10 @@ export interface ClassificationSuggestion {
   created_at: string | null;
 }
 
-export async function scanClassifications(limit = 20): Promise<{
+export async function scanClassifications(
+  limit = 20,
+  llm?: LlmOverrides,
+): Promise<{
   suggestions: ClassificationSuggestion[];
   scanned: number;
   created: number;
@@ -187,7 +191,7 @@ export async function scanClassifications(limit = 20): Promise<{
   const res = await fetch(resolveApiUrl("/api/classification/scan"), {
     method: "POST",
     headers: authHeaders(),
-    body: JSON.stringify({ limit }),
+    body: JSON.stringify({ limit, ...llmBodyFields(llm) }),
   });
   if (!res.ok) throw new Error(`classification/scan: ${res.status}`);
   return res.json();

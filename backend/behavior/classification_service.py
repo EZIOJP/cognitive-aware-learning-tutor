@@ -126,6 +126,8 @@ def classify_key_via_llm(
     key: str,
     key_type: str,
     sample_titles: list[str],
+    *,
+    llm_tier: str | None = None,
 ) -> tuple[str, int] | None:
     context_label = "application executable" if key_type == "exe" else "website domain"
     titles_text = "\n".join(f"  - {t}" for t in sample_titles[:3]) if sample_titles else "(no titles)"
@@ -134,7 +136,7 @@ def classify_key_via_llm(
         f"Sample window/page titles:\n{titles_text}\n\n"
         "Classify it now."
     )
-    raw = ollama_generate(prompt, system_prompt=_SYSTEM_PROMPT, timeout=30.0, task="classify")
+    raw = ollama_generate(prompt, system_prompt=_SYSTEM_PROMPT, timeout=30.0, task="classify", tier=llm_tier)
     if not raw:
         return None
     category, confidence = parse_llm_category(raw)

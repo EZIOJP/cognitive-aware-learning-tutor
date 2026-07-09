@@ -7,6 +7,7 @@ import {
   rejectClassification,
   scanClassifications,
 } from "../../api/behaviorClient";
+import { loadLlmPrefs } from "../../api/transcriptsClient";
 
 const CATEGORY_COLORS: Record<string, string> = {
   "IDE / Code Editor": "bg-sky-600",
@@ -68,7 +69,7 @@ export default function ClassificationReview({ trackerNoData = false }: Props) {
     try {
       setScanning(true);
       setError(null);
-      const result = await scanClassifications(20);
+      const result = await scanClassifications(20, loadLlmPrefs());
       if (result.llm_error === "unreachable") {
         showToast(
           "LM Studio offline — start Local Server on port 1234 with google/gemma-4-e4b loaded, then retry.",

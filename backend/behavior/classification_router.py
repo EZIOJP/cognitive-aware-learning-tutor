@@ -108,6 +108,8 @@ def _do_approve(
 
 class ScanBody(BaseModel):
     limit: int = 20
+    llm_tier: str | None = None
+    confirm_heavy_budget: bool = False
 
 
 @router.post("/scan", response_model=dict)
@@ -117,9 +119,12 @@ def scan_uncategorized(
     user: User = Depends(get_current_user),
 ):
     from backend.config import get_settings
+    from backend.core.llm_request import guard_heavy_budget, tier_from_body
     from backend.core.ollama_client import llm_reachable
 
     _ensure_backup()
+    guard_heavy_budget(body)
+    tier = tier_from_body(body)
     keys = find_uncategorized_keys(db, limit=body.limit)
     created: list[dict] = []
     llm_error: str | None = None
@@ -152,6 +157,7 @@ def scan_uncategorized(
                 item["key"],
                 item["key_type"],
                 item["sample_titles"],
+                llm_tier=tier,
             )
             if result is None:
                 continue

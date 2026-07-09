@@ -1,0 +1,52 @@
+{
+  "_comment": "Copy to data/llm_routes.json and set LLM_ROUTE_PROFILE in .env. Profiles map each tier to a fallback chain.",
+  "profiles": {
+    "hybrid": {
+      "light": [
+        "openai:http://127.0.0.1:20128/v1:kr/claude-sonnet-4.5",
+        "lmstudio:google/gemma-4-e4b"
+      ],
+      "medium": [
+        "openai:https://openrouter.ai/api/v1:openai/gpt-4o-mini",
+        "openai:http://127.0.0.1:20128/v1:free-forever",
+        "lmstudio:google/gemma-4-e4b"
+      ],
+      "heavy": [
+        "openai:https://openrouter.ai/api/v1:anthropic/claude-sonnet-4",
+        "openai:http://127.0.0.1:20128/v1:cc/claude-opus-4-7",
+        "gemini:gemini-2.5-pro",
+        "lmstudio:google/gemma-4-e4b"
+      ]
+    },
+    "9router": {
+      "light": [
+        "openai:http://127.0.0.1:20128/v1:kr/claude-sonnet-4.5",
+        "lmstudio:google/gemma-4-e4b"
+      ],
+      "medium": [
+        "openai:http://127.0.0.1:20128/v1:free-forever",
+        "openai:http://127.0.0.1:20128/v1:kr/glm-5",
+        "lmstudio:google/gemma-4-e4b"
+      ],
+      "heavy": [
+        "openai:http://127.0.0.1:20128/v1:cc/claude-opus-4-7",
+        "openai:http://127.0.0.1:20128/v1:kr/claude-sonnet-4.5",
+        "lmstudio:google/gemma-4-e4b"
+      ]
+    },
+    "local": {
+      "light": [
+        "lmstudio:google/gemma-4-e4b",
+        "ollama:llama3.2:3b"
+      ],
+      "medium": [
+        "lmstudio:google/gemma-4-e4b",
+        "ollama:llama3.2:3b"
+      ],
+      "heavy": [
+        "lmstudio:google/gemma-4-e4b",
+        "ollama:llama3.2:3b"
+      ]
+    }
+  }
+}

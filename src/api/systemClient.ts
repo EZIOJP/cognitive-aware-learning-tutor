@@ -67,6 +67,33 @@ export async function fetchLogTail(file: string, lines = 200): Promise<LogTailRe
   return data as LogTailResponse;
 }
 
+const CLIENT_LOG_MAX_PER_MIN = 8;
+const CLIENT_LOG_DEDUP_MS = 15_000;
+let clientLogWindowStart = 0;
+let clientLogWindowCount = 0;
+const clientLogRecent = new Map<string, number>();
+
+function shouldSendClientLog(message: string): boolean {
+  const now = Date.now();
+  if (now - clientLogWindowStart > 60_000) {
+    clientLogWindowStart = now;
+    clientLogWindowCount = 0;
+  }
+  if (clientLogWindowCount >= CLIENT_LOG_MAX_PER_MIN) return false;
+  const key = message.slice(0, 160);
+  const last = clientLogRecent.get(key) ?? 0;
+  if (now - last < CLIENT_LOG_DEDUP_MS) return false;
+  clientLogRecent.set(key, now);
+  if (clientLogRecent.size > 40) {
+    const cutoff = now - CLIENT_LOG_DEDUP_MS;
+    for (const [k, t] of clientLogRecent) {
+      if (t < cutoff) clientLogRecent.delete(k);
+    }
+  }
+  clientLogWindowCount += 1;
+  return true;
+}
+
 export function reportClientLog(payload: {
   level?: "info" | "warning" | "error";
   message: string;
@@ -74,6 +101,7 @@ export function reportClientLog(payload: {
   url?: string;
   stack?: string;
 }): void {
+  if (!shouldSendClientLog(payload.message)) return;
   void fetch(`${BASE}/api/system/logs/client`, {
     method: "POST",
     headers: headers(),

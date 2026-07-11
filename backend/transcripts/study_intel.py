@@ -260,30 +260,56 @@ def generate_quiz_items(
     if not ollama_available(llm):
         return _template_quiz(source_texts, n)
 
-    prompt = f"""Create {n} multiple-choice study questions from the material below.
+    from backend.transcripts.concept_extract import extract_concepts
+
+    concepts = extract_concepts(
+        combined,
+        topic=topic,
+        max_concepts=n,
+        llm=llm,
+        confirm_heavy_budget=confirm_heavy_budget,
+        seed=list(boost_concepts or []),
+    )
+    if not concepts:
+        concepts = [topic.strip() or "general study topic"]
+
+    questions: list[dict[str, Any]] = []
+    for i, concept in enumerate(concepts[:n]):
+        prompt = f"""Create ONE multiple-choice REVISION question for this single concept.
+
+Concept: {concept}
 Topic focus: {topic or "general"}
 
-Each question MUST cite a source chunk_id from the material headers (<!-- cite: uuid -->).
+Rules:
+- Target ONLY this concept (definition, property, step, comparison, or pitfall).
+- Do NOT ask about classroom logistics or the speaker.
+- Prefer textbook/corpus-backed facts when citations exist.
+- MUST cite a source chunk_id from material headers (<!-- cite: uuid -->) when available.
+
 Return JSON only:
-{{"questions": [{{"id": "q1", "question": "...", "options": ["A","B","C","D"], "answer_index": 0, "explanation": "...", "source_chunk_id": "uuid"}}]}}
+{{"question": "...", "options": ["A","B","C","D"], "answer_index": 0, "explanation": "...", "source_chunk_id": "uuid", "concept": "{concept}"}}
 
 Material:
-{combined}"""
+{combined[:10000]}"""
 
-    raw = ollama_generate(
-        prompt,
-        timeout=120.0,
-        llm=llm,
-        task="quiz_gen",
-        tier=llm_tier,
-        confirm_heavy_budget=confirm_heavy_budget,
-    )
-    if not raw:
-        return _template_quiz(source_texts, n)
-
-    parsed = _parse_json_blob(raw)
-    questions = []
-    for i, q in enumerate(parsed.get("questions") or []):
+        raw = ollama_generate(
+            prompt,
+            timeout=90.0,
+            llm=llm,
+            task="quiz_gen",
+            tier=llm_tier,
+            confirm_heavy_budget=confirm_heavy_budget,
+        )
+        if not raw:
+            continue
+        try:
+            parsed = _parse_json_blob(raw)
+        except (ValueError, json.JSONDecodeError):
+            continue
+        # Support either flat object or {"questions":[...]}
+        q = parsed
+        if isinstance(parsed.get("questions"), list) and parsed["questions"]:
+            q = parsed["questions"][0]
         if not isinstance(q, dict):
             continue
         opts = q.get("options") or []
@@ -301,10 +327,9 @@ Material:
                 "explanation": _clip(str(q.get("explanation", "")), 300),
                 "source_chunk_id": str(q.get("source_chunk_id") or ""),
                 "citation": _citation_for_chunk(str(q.get("source_chunk_id") or ""), source_hits),
+                "concept": _clip(str(q.get("concept") or concept), 80),
             }
         )
-        if len(questions) >= n:
-            break
 
     if not questions:
         return _template_quiz(source_texts, n)
@@ -314,7 +339,7 @@ Material:
         verify_quiz_citations(questions, allowed_ids)
     except Exception:  # noqa: BLE001
         pass
-    return {"questions": questions, "source": "gemma"}
+    return {"questions": questions, "source": "gemma", "concepts": concepts[:n]}
 
 
 def _template_drills(source_texts: list[str], count: int) -> dict[str, Any]:

@@ -5,15 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Callable
 
-from backend.corpus.ingest import ingest_path
 from backend.corpus.jobs import CorpusJob, get_job, start_job
-from backend.corpus.library import (
-    ensure_metadata,
-    ingest_latest_transcripts,
-    ingest_subject,
-    run_auto_setup,
-    scan_raw_library,
-)
 from backend.corpus.registry import chunk_count
 from backend.corpus.retrieve import corpus_available
 
@@ -22,50 +14,47 @@ ProgressFn = Callable[[str], None] | None
 
 
 def get_corpus_summary() -> dict:
-    """Lightweight status for the Studio UI."""
+    """Lightweight status for the Studio UI (notes RAG = textbooks only)."""
     try:
-        from backend.corpus.registry import chunk_count, list_documents
-        from backend.corpus.retrieve import NOTES_RAG_SOURCE_TYPES, corpus_available
+        from backend.corpus.notes_rag_status import assess_notes_rag
 
-        available = corpus_available()
-        total = chunk_count() if available else 0
-        docs = list_documents() if available else []
-        by_type: dict[str, int] = {}
-        for doc in docs:
-            st = getattr(doc, "source_type", None) or "unknown"
-            by_type[st] = by_type.get(st, 0) + 1
-        textbook_count = by_type.get("textbook", 0)
-        notes_rag_count = textbook_count
-        try:
-            from backend.corpus.vector_store import retrieval_backend
-
-            vector_backend = retrieval_backend()
-        except Exception:
-            vector_backend = "unknown"
+        assessment = assess_notes_rag()
         return {
-            "available": available,
-            "total_chunks": total,
-            "document_count": len(docs),
-            "textbook_count": textbook_count,
-            "notes_rag_count": notes_rag_count,
-            "transcript_count": by_type.get("transcript", 0),
-            "note_count": by_type.get("note", 0),
-            "by_source_type": by_type,
-            "notes_rag_source_types": list(NOTES_RAG_SOURCE_TYPES),
-            "retrieval_backend": vector_backend,
-            "healthy": available and total > 0,
-            "issues": [],
+            "available": bool(assessment.get("total_chunks", 0) > 0),
+            "total_chunks": assessment.get("total_chunks", 0),
+            "document_count": (
+                int(assessment.get("textbook_count", 0))
+                + int(assessment.get("transcript_count", 0))
+                + int(assessment.get("note_count", 0))
+            ),
+            "textbook_count": assessment.get("textbook_count", 0),
+            "notes_rag_count": assessment.get("textbook_count", 0),
+            "transcript_count": assessment.get("transcript_count", 0),
+            "note_count": assessment.get("note_count", 0),
+            "by_source_type": {
+                "textbook": assessment.get("textbook_count", 0),
+                "transcript": assessment.get("transcript_count", 0),
+                "note": assessment.get("note_count", 0),
+            },
+            "notes_rag_source_types": assessment.get("notes_rag_source_types", ["textbook"]),
+            "retrieval_backend": assessment.get("retrieval_backend", "unknown"),
+            "healthy": bool(assessment.get("usable")),
+            "notes_rag_status": assessment.get("status"),
+            "notes_rag_summary": assessment.get("summary"),
+            "needs_rebuild": assessment.get("needs_rebuild"),
+            "skip_rebuild": assessment.get("skip_rebuild"),
+            "smoke_hits": assessment.get("smoke_hits"),
+            "issues": list(assessment.get("reasons") or []),
         }
     except Exception as exc:
         try:
-            from backend.corpus.retrieve import corpus_available
-            from backend.corpus.registry import chunk_count
-
             return {
                 "available": corpus_available(),
                 "total_chunks": chunk_count() if corpus_available() else 0,
                 "document_count": 0,
                 "healthy": False,
+                "notes_rag_status": "broken",
+                "needs_rebuild": True,
                 "issues": [str(exc)],
             }
         except Exception as inner:
@@ -74,21 +63,19 @@ def get_corpus_summary() -> dict:
                 "total_chunks": 0,
                 "document_count": 0,
                 "healthy": False,
+                "notes_rag_status": "broken",
+                "needs_rebuild": True,
                 "issues": [str(inner)],
             }
 
 
 def ingest_transcript_paths(paths: list[Path], *, on_progress: ProgressFn = None) -> dict:
-    """Ingest selected .txt sources into the corpus."""
-    results: list[dict] = []
-    for path in paths:
-        if path.suffix.lower() != ".txt":
-            continue
-        if on_progress:
-            on_progress(f"Corpus: ingesting transcript {path.name}…")
-        results.append(ingest_path(source="transcript", path=path))
-    total = chunk_count()
-    return {"ingested": len(results), "results": results, "total_chunks": total}
+    """Blocked for notes RAG — transcripts must not enter the notes corpus."""
+    raise RuntimeError(
+        "Transcript ingest is disabled for notes RAG. "
+        "Only textbooks are indexed. Generate notes still retrieves textbooks; "
+        "use Study Library quiz handoff later if you need lecture chunks indexed."
+    )
 
 
 def initialize_corpus_quick(
@@ -97,82 +84,67 @@ def initialize_corpus_quick(
     mml_chapters: list[int] | None = None,
     ingest_full_books: bool = False,
     on_progress: ProgressFn = None,
+    force: bool = False,
 ) -> dict:
     """
-    Synchronous quick init — metadata and MML chapters if present (textbooks only).
-    Does not require the FastAPI backend.
+    Ensure textbooks are indexed for notes RAG. Skips when already usable unless force=True.
+    Never ingests transcripts (transcript_limit ignored / forced to 0).
     """
-    log: list[str] = []
+    from backend.corpus.notes_rag_status import ensure_notes_rag_textbooks
 
-    def step(msg: str) -> None:
-        log.append(msg)
-        if on_progress:
-            on_progress(msg)
-
-    step("Corpus init — scanning library…")
-    books = scan_raw_library()
-    for entry in books:
-        ensure_metadata(entry.subject_id)
-
-    mml_result = None
-    mml = next((b for b in books if b.subject_id == "linear_algebra"), None)
-    if mml and mml.file_present:
-        chs = mml_chapters or mml.auto_chapters or [1, 2]
-        step(f"Corpus init — ingesting Linear Algebra chapters {chs}…")
-        try:
-            mml_result = ingest_subject("linear_algebra", chapters=chs)
-            step(f"  MML chunks: {mml_result.get('total_chunks', 0)}")
-        except Exception as exc:
-            step(f"  MML ingest skipped: {exc}")
-    else:
-        step("Corpus init — MML textbook not on disk (optional)")
-
-    if transcript_limit > 0:
-        step(f"Corpus init — ingesting up to {transcript_limit} latest transcripts…")
-        tx_result = ingest_latest_transcripts(limit=transcript_limit)
-        step(f"  Transcripts ingested: {tx_result.get('ingested', 0)}")
-    else:
-        step("Corpus init — skipping transcript ingest (textbooks only for notes RAG)")
-        tx_result = {"ingested": 0}
-
-    full_result = None
-    if ingest_full_books:
-        from backend.corpus.library import ingest_all_full_books
-
-        step("Corpus init — ingesting full books on disk…")
-        full_result = ingest_all_full_books(skip_indexed=True, log=step)
-
-    total = chunk_count()
-    step(f"Corpus init done — {total} total chunks · RAG {'ready' if total > 0 else 'empty'}")
-    return {
-        "total_chunks": total,
-        "available": corpus_available(),
-        "mml": mml_result,
-        "transcripts": tx_result,
-        "full_books": full_result,
-        "log": log,
-    }
+    if transcript_limit and transcript_limit > 0 and on_progress:
+        on_progress("Ignoring transcript ingest — notes RAG is textbooks only")
+    return ensure_notes_rag_textbooks(
+        force=force,
+        ingest_full_books=ingest_full_books,
+        mml_chapters=mml_chapters,
+        on_progress=on_progress,
+    )
 
 
 def start_full_corpus_setup(
     *,
-    transcript_limit: int = 5,
+    transcript_limit: int = 0,
     mml_chapters: list[int] | None = None,
     ingest_full_books: bool = True,
+    force: bool = False,
 ) -> CorpusJob:
-    """Background full setup (same as web Library → Build Knowledge Base)."""
+    """Background ensure textbooks — skips when healthy unless force=True."""
 
     def worker(job: CorpusJob) -> dict:
-        return run_auto_setup(
-            job,
-            mml_chapters=mml_chapters or [1, 2],
-            transcript_limit=transcript_limit,
+        from backend.corpus.notes_rag_status import ensure_notes_rag_textbooks
+
+        def log(msg: str) -> None:
+            job.message = msg
+            if hasattr(job, "logs"):
+                job.logs.append(msg)
+
+        return ensure_notes_rag_textbooks(
+            force=force,
             ingest_full_books=ingest_full_books,
-            skip_indexed_books=True,
-            test_query=True,
+            mml_chapters=mml_chapters or [1, 2],
+            on_progress=log,
         )
 
     return start_job("studio_corpus_setup", worker)
+
+
+def reset_and_rebuild_textbooks(
+    *,
+    mml_chapters: list[int] | None = None,
+    ingest_full_books: bool = True,
+    on_progress: ProgressFn = None,
+    force: bool = True,
+) -> dict:
+    """Force wipe + textbook rebuild (explicit force rebuild)."""
+    from backend.corpus.notes_rag_status import ensure_notes_rag_textbooks
+
+    return ensure_notes_rag_textbooks(
+        force=True,
+        ingest_full_books=ingest_full_books,
+        mml_chapters=mml_chapters,
+        on_progress=on_progress,
+    )
 
 
 def poll_job(job_id: str | None = None) -> dict | None:

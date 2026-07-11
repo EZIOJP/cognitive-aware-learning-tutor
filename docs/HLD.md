@@ -257,7 +257,7 @@ External analyses sometimes describe enterprise ITS features this repo **does no
 | Deep Knowledge Tracing (DKT) | No | — |
 | IRT diagnostic onboarding | No | — |
 | Neo4j knowledge graph | No | SQLite `kg_*` tables |
-| Kafka / RabbitMQ / Celery | No | In-process FastAPI |
+| Kafka / RabbitMQ / Celery | No | In-process FastAPI; Huey SqliteHuey only for LLM profile probes |
 | Redis cache | No | SQLite + in-memory session state |
 | Next.js | No | Vite + React |
 | EduNER / custom NER curriculum | No | Markdown chunking + hybrid RAG |
@@ -275,6 +275,11 @@ External analyses sometimes describe enterprise ITS features this repo **does no
 - Real-time collaborative editing
 - Automated curriculum extraction from arbitrary syllabi via NER
 - Full multimodal affective computing pipeline
+- **AST-stable block IDs** for note sections (defer — markdown remains source of truth; repair is sanitize-then-LLM)
+- **Server-side MathML** rendering (client KaTeX/MathJax only; informational defer)
+- Async note generation (user waits for the file; Huey is only for long LLM chain probes)
+
+**Validated (keep):** quiz citation check via chunk-ID whitelist (`verify_quiz_citations`); mermaid sanitize-then-LLM repair path.
 
 Future phases: [ROADMAP.md](./ROADMAP.md) (hardware EEG, math vision OCR, platform).
 

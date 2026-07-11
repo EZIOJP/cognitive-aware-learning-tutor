@@ -27,6 +27,7 @@ All project docs live here. Use with the file kernel at repo root.
 | [HARDWARE_AND_AI_LATER.md](HARDWARE_AND_AI_LATER.md) | No GPU / no ESP32 path |
 | [WORKING_PRODUCT.md](WORKING_PRODUCT.md) | Daily-use checklist |
 | [GRE_VOCAB_PHASE1.md](GRE_VOCAB_PHASE1.md) | GRE Phase 1 complete |
+| [../gre/INDEX.md](../gre/INDEX.md) | **GRE lane design pack** — GIST / HLD / LLD for vocab + math practice + OCR |
 | [DEPENDENCIES.md](DEPENDENCIES.md) | **Fresh-machine install** (Windows/Linux/macOS) |
 | [SETUP_AND_COMMANDS.md](SETUP_AND_COMMANDS.md) | Quick commands and scripts |
 | [DATABASE.md](DATABASE.md) | Schema and env vars |
@@ -47,6 +48,8 @@ All project docs live here. Use with the file kernel at repo root.
 | [AI_HANDLER_BACKEND.md](AI_HANDLER_BACKEND.md) | Backend gateway modules, call flow, tasks, endpoints |
 | [AI_HANDLER_FRONTEND.md](AI_HANDLER_FRONTEND.md) | Frontend prefs, UI entry points, API calls, known gaps |
 | [LLM_GATEWAY.md](LLM_GATEWAY.md) | Tier chains + route profiles + `/api/llm/complete` for CALT and scripts |
+| [../export-bundle/notes-gen-render/README.md](../export-bundle/notes-gen-render/README.md) | **Notes gen + render export** — GIST / HLD / LLD / CONFIG + sources |
+| [../export-bundle/notes-gen-render-docs/README.md](../export-bundle/notes-gen-render-docs/README.md) | **Notes docs pack for planning** — all related docs + PLANNING_BRIEF |
 | [../export-bundle/ai-handler-research/INDEX.md](../export-bundle/ai-handler-research/INDEX.md) | **Research export** — 49-file snapshot + index for Drive upload |
 | [9ROUTER_SETUP.md](9ROUTER_SETUP.md) | **9Router** — Cursor + free-provider routing at localhost:20128 |
 | [VOCAB_EXECUTION_PLAN.md](VOCAB_EXECUTION_PLAN.md) | Vocab MVP steps |

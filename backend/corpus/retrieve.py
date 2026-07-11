@@ -102,6 +102,7 @@ def hybrid_retrieve(
 
     merged = _rrf_merge(dense_hits, sparse_hits)[:pool_size]
     candidates: list[ChunkRecord] = []
+    seen_ids: set[str] = set()
     for cid, _ in merged:
         c = get_chunk(cid, db_path=db_path)
         if c is None:
@@ -111,30 +112,38 @@ def hybrid_retrieve(
         if subject_tags and not any(t in c.subject_tags for t in subject_tags):
             continue
         candidates.append(c)
+        seen_ids.add(c.chunk_id)
 
-    ranked = _rerank(query, candidates, top_k=top_k)
-    hits = [chunk_to_hit(c) for c in ranked]
-
+    # Graph expansion BEFORE rerank so expanded neighbors compete under FlashRank.
     if use_graph:
         try:
-            from backend.corpus.graph_retrieve import graph_chunk_ids_for_query, merge_graph_hits
+            from backend.corpus.graph_retrieve import graph_chunk_ids_for_query
             from backend.db.base import SessionLocal
 
             db = SessionLocal()
             try:
-                graph_ids = graph_chunk_ids_for_query(db, query, user_id=user_id, top_k=top_k)
+                graph_ids = graph_chunk_ids_for_query(
+                    db, query, user_id=user_id, top_k=max(top_k * 3, 15)
+                )
             finally:
                 db.close()
-            graph_hits = []
             for cid in graph_ids:
+                if cid in seen_ids:
+                    continue
                 rec = get_chunk(cid, db_path=db_path)
-                if rec and _chunk_matches_source_types(rec, source_types):
-                    graph_hits.append(chunk_to_hit(rec))
-            hits = merge_graph_hits(hits, graph_hits, top_k=top_k)
+                if rec is None:
+                    continue
+                if not _chunk_matches_source_types(rec, source_types):
+                    continue
+                if subject_tags and not any(t in rec.subject_tags for t in subject_tags):
+                    continue
+                candidates.append(rec)
+                seen_ids.add(rec.chunk_id)
         except Exception as exc:  # noqa: BLE001
             log.debug("Graph retrieve skipped: %s", exc)
 
-    return hits
+    ranked = _rerank(query, candidates, top_k=top_k)
+    return [chunk_to_hit(c) for c in ranked]
 
 
 def chunk_to_hit(c: ChunkRecord) -> dict[str, Any]:

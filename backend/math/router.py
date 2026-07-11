@@ -175,8 +175,9 @@ def math_tutor_hint(
     body: TutorHintIn,
     user: User = Depends(get_current_user),
 ):
-    """Rule-based coach by default; Ollama only when OLLAMA_ENABLED=1 and reachable."""
-    from backend.math.ollama_tutor import generate_tutor_hint, ollama_available
+    """Rule-based coach by default; LLM gateway when OLLAMA_ENABLED=1 and reachable."""
+    from backend.core.ollama_client import llm_reachable
+    from backend.math.ollama_tutor import generate_tutor_hint
     from backend.math.rule_tutor import rule_based_hint
 
     ruled = rule_based_hint(
@@ -186,7 +187,7 @@ def math_tutor_hint(
         attention=body.attention,
     )
 
-    if ollama_available():
+    if llm_reachable():
         llm = generate_tutor_hint(
             prompt=body.prompt,
             topic=ruled["detected_concept"],

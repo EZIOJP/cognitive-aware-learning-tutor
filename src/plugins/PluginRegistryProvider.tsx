@@ -1,5 +1,4 @@
 import {
-  createContext,
   useCallback,
   useContext,
   useEffect,
@@ -15,28 +14,22 @@ import {
   setHubPlugin,
   type HubCustomFeature,
 } from "../api/hubClient";
-import { getAllPlugins, type PluginDef } from "./registry";
+import { getAllPlugins } from "./registryCore";
 import type { PluginNavItem, PluginRoute, PluginWidget } from "./types";
 import { CustomFeaturePage } from "./custom/CustomFeaturePage";
 import { CustomFeatureWidget } from "./custom/CustomFeatureWidget";
-import { SLIM_LIFE_CORE, SLIM_PLUGIN_IDS } from "./slimLifeCore";
+import { RegistryContext, type RegistryContextValue } from "./registryContext";
+
+export type { RegistryContextValue };
 
 const LS_KEY = "active_plugins";
 
 function defaultEnabledPluginIds(): string[] {
-  if (SLIM_LIFE_CORE) {
-    return getAllPlugins()
-      .filter((p) => p.isCore || SLIM_PLUGIN_IDS.has(p.id))
-      .map((p) => p.id);
-  }
   const defaultOn = new Set(["math-tutor", "gre-vocab", "life-tracker", "study-room", "productivity"]);
   return getAllPlugins().filter((p) => p.isCore || defaultOn.has(p.id)).map((p) => p.id);
 }
 
 function backendStateToFrontendIds(plugins: { plugin_id: string; enabled: boolean }[]): string[] {
-  if (SLIM_LIFE_CORE) {
-    return defaultEnabledPluginIds();
-  }
   const ids = new Set<string>();
   for (const row of plugins) {
     if (!row.enabled) continue;
@@ -51,23 +44,6 @@ function backendStateToFrontendIds(plugins: { plugin_id: string; enabled: boolea
   return [...ids];
 }
 
-type RegistryContextValue = {
-  enabledIds: string[];
-  customFeatures: HubCustomFeature[];
-  isLoaded: boolean;
-  syncError: string | null;
-  togglePlugin: (id: string, enabled: boolean) => Promise<void>;
-  refreshFromServer: () => Promise<void>;
-  allPlugins: PluginDef[];
-  activePlugins: PluginDef[];
-  getRoutes: () => PluginRoute[];
-  getNavItems: () => PluginNavItem[];
-  getWidgets: () => PluginWidget[];
-  getProviders: () => Array<({ children }: { children: ReactNode }) => ReactNode>;
-};
-
-const RegistryContext = createContext<RegistryContextValue | null>(null);
-
 export function PluginRegistryProvider({ children }: { children: ReactNode }) {
   const { isAuthenticated } = useAuth();
   const [enabledIds, setEnabledIds] = useState<string[]>([]);
@@ -78,29 +54,13 @@ export function PluginRegistryProvider({ children }: { children: ReactNode }) {
   const loadLocal = useCallback(() => {
     try {
       const saved = localStorage.getItem(LS_KEY);
-      const ids: string[] = saved ? JSON.parse(saved) : defaultEnabledPluginIds();
-      const next = SLIM_LIFE_CORE
-        ? ids.filter((id) => SLIM_PLUGIN_IDS.has(id) || getAllPlugins().some((p) => p.id === id && p.isCore))
-        : ids;
-      if (SLIM_LIFE_CORE) {
-        const forced = defaultEnabledPluginIds();
-        setEnabledIds(forced);
-        localStorage.setItem(LS_KEY, JSON.stringify(forced));
-        return;
-      }
-      setEnabledIds(next);
+      setEnabledIds(saved ? JSON.parse(saved) : defaultEnabledPluginIds());
     } catch {
       setEnabledIds(defaultEnabledPluginIds());
     }
   }, []);
 
   const refreshFromServer = useCallback(async () => {
-    if (SLIM_LIFE_CORE) {
-      loadLocal();
-      setCustomFeatures([]);
-      setIsLoaded(true);
-      return;
-    }
     if (!isAuthenticated) {
       loadLocal();
       setCustomFeatures([]);
@@ -131,7 +91,6 @@ export function PluginRegistryProvider({ children }: { children: ReactNode }) {
     async (id: string, enabled: boolean) => {
       const plugin = getAllPlugins().find((p) => p.id === id);
       if (plugin?.isCore) return;
-      if (SLIM_LIFE_CORE && !SLIM_PLUGIN_IDS.has(id)) return;
 
       setEnabledIds((prev) => {
         const next = enabled ? [...new Set([...prev, id])] : prev.filter((pId) => pId !== id);
@@ -230,6 +189,11 @@ export function usePluginRegistry(): RegistryContextValue {
   const ctx = useContext(RegistryContext);
   if (!ctx) throw new Error("usePluginRegistry must be used within PluginRegistryProvider");
   return ctx;
+}
+
+/** Safe for early providers / HMR — returns null outside PluginRegistryProvider. */
+export function usePluginsOptional(): RegistryContextValue | null {
+  return useContext(RegistryContext);
 }
 
 /** @deprecated Use usePluginRegistry — kept for gradual migration */

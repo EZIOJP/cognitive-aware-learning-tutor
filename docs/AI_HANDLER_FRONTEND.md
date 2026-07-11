@@ -23,9 +23,9 @@ API keys and provider chains stay on the server (`data/llm_tiers.json`, `.env`).
 ```text
 src/api/
 ├── transcriptsClient.ts   ← Canonical: LlmConfig, loadLlmPrefs, getLlmConfig, llmBodyFields, study POSTs
-├── corpusClient.ts        ← generateGroundedNotes (RAG) — tier not passed yet
-├── hubClient.ts           ← Coach/agent chat — no tier from FE
-└── behaviorClient.ts      ← Classification scan — no tier from FE
+├── corpusClient.ts        ← generateGroundedNotes (RAG) — passes llm_tier via llmBodyFields
+├── hubClient.ts           ← Coach/agent chat — passes loadLlmPrefs()
+└── behaviorClient.ts      ← Classification scan — passes loadLlmPrefs()
 
 src/pages/settings/
 ├── SettingsHubPage.tsx    ← /settings hub
@@ -112,7 +112,7 @@ No global React context or Zustand store — each page holds `useState` and re-f
 
 ### Study Library (`/lecture-notes` → `LectureNotesPage`)
 
-- Header: tier dropdown + legacy provider/base-url/model controls
+- Header: tier dropdown only (provider/model controls removed)
 - Status: `llmConfig.reachable` → "LLM online/offline" in viewer
 - Actions that call the gateway:
   - Generate notes (create sheet)
@@ -142,7 +142,7 @@ All study functions in `transcriptsClient.ts` accept optional `llm?: LlmOverride
 | Fix mermaid block | `regenerateNoteBlock()` | `POST /api/transcripts/library/regenerate-block` |
 | Grounded RAG button | `generateGroundedNotes()` | `POST /api/corpus/generate-notes-grounded` |
 
-Coach, project agent, math tutor, and classification use **separate clients** without tier prefs today.
+Coach and project agent pass `loadLlmPrefs()` via `hubClient`. Math tutor uses gateway on the backend with no tier UI (defaults to `math_hint` / light). Classification scan passes `loadLlmPrefs()` via `behaviorClient`.
 
 ---
 
@@ -168,16 +168,14 @@ Coach, project agent, math tutor, and classification use **separate clients** wi
 
 ---
 
-## Target architecture (what FE should converge to)
+## Target architecture (Phase 1 complete)
 
-Per [LLM_GATEWAY.md](LLM_GATEWAY.md):
-
-| Today | Target |
-|-------|--------|
-| Tier + provider + URL + model in Study Library header | **Tier only** in UI |
-| Two localStorage tier keys | Single `lecture-notes:llm` |
-| `generateGroundedNotes` ignores prefs | Pass `llmBodyFields(loadLlmPrefs())` |
-| Coach/agent ignore tier | Document server defaults or accept shared `llm_tier` |
+| Item | Status |
+|------|--------|
+| Tier-only Study Library header | Done |
+| Single `lecture-notes:llm` localStorage | Done |
+| `generateGroundedNotes` passes tier | Done |
+| Coach/agent/classification pass tier | Done |
 
 Chains and API keys remain in `data/llm_tiers.json` and `.env` — never in the browser.
 

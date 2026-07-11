@@ -9,7 +9,7 @@ import {
 } from "react";
 import type { BiometricData, CognitiveLoad } from "../types";
 import { config } from "../config";
-import { usePlugins } from "../plugins/registry";
+import { usePluginsOptional } from "../plugins/registry";
 import { useAuth } from "./AuthContext";
 import { postHubReading } from "../api/hubClient";
 import { patchInterventionRecover, postMathIntervention } from "../api/mathClient";
@@ -82,9 +82,9 @@ export function useStudySession() {
 }
 
 export function StudySessionProvider({ children }: { children: ReactNode }) {
-  const { enabledIds, isLoaded } = usePlugins();
+  const plugins = usePluginsOptional();
   const { isAuthenticated } = useAuth();
-  const eegActive = isLoaded && enabledIds.includes("eeg");
+  const eegActive = Boolean(plugins?.isLoaded && plugins.enabledIds.includes("eeg"));
 
   const [biometricData, setBiometricData] = useState<BiometricData[]>([]);
   const [cognitiveLoad, setCognitiveLoad] = useState<CognitiveLoad>("low");

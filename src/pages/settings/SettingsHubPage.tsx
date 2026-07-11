@@ -9,7 +9,7 @@ import {
   CaltAndroidDownloadCard,
   CaltAndroidDownloadCardHeader,
 } from "./CaltAndroidDownloadCard";
-import { LlmGatewayCard } from "./LlmGatewayCard";
+import { AiSettingsSummaryCard } from "./AiSettingsSummaryCard";
 import { NineRouterCard } from "./NineRouterCard";
 
 const VARIANT_KEY = "themeToggleVariant";
@@ -83,7 +83,7 @@ export default function SettingsHubPage() {
         </Link>
       </Card>
 
-      <LlmGatewayCard />
+      <AiSettingsSummaryCard />
 
       <NineRouterCard />
 

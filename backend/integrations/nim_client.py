@@ -2,15 +2,12 @@
 
 from __future__ import annotations
 
-import json
 import os
-import re
 from typing import Any
 
 import httpx
 
 _DEFAULT_BASE = "https://integrate.api.nvidia.com/v1"
-_JSON_BLOCK = re.compile(r"\{[\s\S]*\}")
 
 
 def _api_key() -> str:
@@ -40,6 +37,7 @@ async def nim_chat(
     image_b64: str | None = None,
     max_tokens: int = 1024,
 ) -> str:
+    """Internal: OCR vision teacher labels only. Daily review uses llm_gateway."""
     key = _api_key()
     if not key:
         raise RuntimeError("NIM_API_KEY not set")
@@ -75,26 +73,6 @@ async def nim_chat(
         return ""
     msg = choices[0].get("message") or {}
     return (msg.get("content") or "").strip()
-
-
-def _parse_json_blob(text: str) -> dict:
-    text = text.strip()
-    if text.startswith("{"):
-        return json.loads(text)
-    match = _JSON_BLOCK.search(text)
-    if match:
-        return json.loads(match.group())
-    raise ValueError("No JSON object in NIM response")
-
-
-async def nim_chat_json(
-    messages: list[dict[str, Any]],
-    *,
-    model: str | None = None,
-    image_b64: str | None = None,
-) -> dict:
-    raw = await nim_chat(messages, model=model, image_b64=image_b64)
-    return _parse_json_blob(raw)
 
 
 async def nim_vision_latex(image_b64: str) -> str:

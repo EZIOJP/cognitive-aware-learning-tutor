@@ -241,12 +241,31 @@ def overlay_actual(
     }
 
 
-@router.get("/adherence", response_model=dict)
-def adherence_summary(
-    day: datetime = Query(...),
+@router.get("/export/last-7-days")
+def export_productivity_last_days(
+    days: int = Query(7, ge=1, le=31, description="How many calendar days ending today"),
+    format: str = Query("json", pattern="^(json|csv)$"),
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
+    """Export recent planner + tracked usage for designing weekly timetables."""
+    from fastapi.responses import Response
+
+    from backend.planner.week_export import build_productivity_week_export, export_as_csv
+
+    payload = build_productivity_week_export(db, user, days=days)
+    stamp = payload["range"]["end"].replace("-", "")
+    if format == "csv":
+        body = export_as_csv(payload)
+        return Response(
+            content=body,
+            media_type="text/csv; charset=utf-8",
+            headers={
+                "Content-Disposition": f'attachment; filename="productivity-{days}d-{stamp}.csv"',
+            },
+        )
+    return payload
+
     start = _utc(day).replace(hour=0, minute=0, second=0, microsecond=0)
     end = start.replace(hour=23, minute=59, second=59, microsecond=999999)
 

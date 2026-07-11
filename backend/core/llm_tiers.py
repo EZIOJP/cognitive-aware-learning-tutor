@@ -30,7 +30,7 @@ def parse_chain_entry(raw: str) -> ChainEntry | None:
     if not text or ":" not in text:
         return None
     provider, rest = text.split(":", 1)
-    provider = _normalize_provider(provider.strip())
+    provider = provider.strip().lower()
     rest = rest.strip()
     if not rest:
         return None

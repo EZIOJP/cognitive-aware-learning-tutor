@@ -1,9 +1,11 @@
 """Tests for study library intelligence helpers."""
 
 from backend.transcripts.cleanup import repair_mermaid_fences
+from backend.transcripts.concept_extract import concepts_to_retrieval_query, extract_concepts
 from backend.transcripts.study_intel import (
     drills_to_markdown,
     gap_summary_markdown,
+    generate_quiz_items,
     quiz_to_markdown,
     run_gap_analysis,
 )
@@ -74,3 +76,53 @@ def test_repair_fences_imported():
     raw = "```mermaid\nA-->B\n## Next\n"
     fixed = repair_mermaid_fences(raw)
     assert fixed.count("```") >= 2
+
+
+def test_extract_concepts_heuristic_without_llm(monkeypatch):
+    monkeypatch.setattr("backend.transcripts.concept_extract.ollama_available", lambda *_: False)
+    concepts = extract_concepts(
+        "## Eigenvalues\n## Dot product\n## Topics covered\n",
+        topic="Linear Algebra",
+        max_concepts=5,
+    )
+    assert concepts
+    assert any("Eigen" in c or "Dot" in c or "Linear" in c for c in concepts)
+
+
+def test_concepts_to_retrieval_query():
+    q = concepts_to_retrieval_query(["eigenvalue", "eigenvector"], topic="LA")
+    assert "LA" in q
+    assert "eigenvalue" in q
+
+
+def test_generate_quiz_items_per_concept(monkeypatch):
+    monkeypatch.setattr("backend.transcripts.study_intel.ollama_available", lambda *_: True)
+    monkeypatch.setattr(
+        "backend.transcripts.concept_extract.extract_concepts",
+        lambda *a, **k: ["NumPy arrays", "dtype"],
+    )
+    calls: list[str] = []
+
+    def fake_generate(prompt, **kwargs):
+        calls.append(prompt)
+        if "NumPy arrays" in prompt:
+            return (
+                '{"question":"Q1?","options":["A","B","C","D"],'
+                '"answer_index":0,"explanation":"e","source_chunk_id":"","concept":"NumPy arrays"}'
+            )
+        return (
+            '{"question":"Q2?","options":["A","B","C","D"],'
+            '"answer_index":1,"explanation":"e","source_chunk_id":"","concept":"dtype"}'
+        )
+
+    monkeypatch.setattr("backend.transcripts.study_intel.ollama_generate", fake_generate)
+    monkeypatch.setattr(
+        "backend.transcripts.study_intel._combined_source_material",
+        lambda *a, **k: ("## Notes\nNumPy dtype", []),
+    )
+    result = generate_quiz_items(["## Notes"], count=2, topic="NumPy")
+    assert len(result["questions"]) == 2
+    concepts = {q.get("concept") for q in result["questions"]}
+    assert "NumPy arrays" in concepts
+    assert "dtype" in concepts
+    assert len(calls) == 2

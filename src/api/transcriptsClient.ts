@@ -49,7 +49,92 @@ export type LlmConfig = {
     }
   >;
   last_call?: Record<string, unknown> | null;
-  last_calls?: Record<string, unknown>[];
+  last_calls?: LlmCallRecord[];
+  task_defaults?: Record<string, string>;
+};
+
+export type LlmCallRecord = {
+  timestamp?: string;
+  task?: string;
+  tier?: string;
+  route_profile?: string;
+  provider?: string | null;
+  model?: string | null;
+  fallback?: boolean;
+  latency_ms?: number;
+  error?: string | null;
+  prompt_preview?: string | null;
+  response_preview?: string | null;
+  prompt_tokens?: number | null;
+  completion_tokens?: number | null;
+  total_tokens?: number | null;
+  generation_id?: string | null;
+  upstream_provider?: string | null;
+  estimated_cost?: number | null;
+  attempts?: Record<string, unknown>[];
+};
+
+export type LlmEnvStatus = {
+  ollama_enabled: boolean;
+  route_profile: string;
+  route_profiles?: string[];
+  default_tier: string;
+  local: { provider: string; base_url: string; model: string };
+  keys: Record<string, { configured: boolean; hint: string | null }>;
+  allowed_env_keys?: string[];
+  task_defaults: Record<string, string>;
+};
+
+export type LlmKeysPatch = {
+  LLM_CLOUD_API_KEY?: string;
+  GEMINI_API_KEY?: string;
+  GROQ_API_KEY?: string;
+  CEREBRAS_API_KEY?: string;
+  MISTRAL_API_KEY?: string;
+  GITHUB_TOKEN?: string;
+  LLM_OPENROUTER_API_KEY?: string;
+  LLM_ANTHROPIC_API_KEY?: string;
+  NIM_API_KEY?: string;
+  LLM_API_KEY?: string;
+  TAVILY_API_KEY?: string;
+  LLM_ROUTE_PROFILE?: string;
+  OLLAMA_URL?: string;
+  LMSTUDIO_URL?: string;
+  OLLAMA_NATIVE_URL?: string;
+  OLLAMA_MODEL?: string;
+  LLM_PROVIDER?: string;
+  OLLAMA_ENABLED?: string;
+};
+
+export type LlmProbeResult = {
+  entry?: string;
+  provider?: string;
+  model?: string;
+  base_url?: string | null;
+  configured?: boolean;
+  reachable?: boolean;
+  latency_ms?: number;
+  error?: string | null;
+};
+
+export type LlmChainTestResult = {
+  tier?: string;
+  route_profile?: string;
+  task?: string;
+  reachable?: boolean;
+  entries?: LlmProbeResult[];
+};
+
+export type LlmProfileChainTests = {
+  tiers: Record<string, LlmChainTestResult>;
+  reachable: boolean;
+};
+
+export type LlmTestAllProfilesResult = {
+  task: string;
+  active_profile: string;
+  profiles: Record<string, LlmProfileChainTests>;
+  summary: { total: number; reachable: number };
 };
 
 export type LlmOverrides = {
@@ -57,8 +142,13 @@ export type LlmOverrides = {
   llm_base_url?: string;
   llm_model?: string;
   llm_tier?: string;
+  task_tiers?: Record<string, string>;
   confirm_heavy_budget?: boolean;
 };
+
+export function tierForTask(task: string, prefs = loadLlmPrefs()): string | undefined {
+  return prefs.task_tiers?.[task] ?? prefs.llm_tier;
+}
 
 export function llmBodyFields(llm?: LlmOverrides, confirmHeavyBudget?: boolean) {
   return {
@@ -68,6 +158,16 @@ export function llmBodyFields(llm?: LlmOverrides, confirmHeavyBudget?: boolean) 
     llm_tier: llm?.llm_tier,
     confirm_heavy_budget: confirmHeavyBudget ?? llm?.confirm_heavy_budget ?? false,
   };
+}
+
+export function llmBodyFieldsForTask(
+  task: string,
+  llm?: LlmOverrides,
+  confirmHeavyBudget?: boolean,
+) {
+  const prefs = llm ?? loadLlmPrefs();
+  const tier = tierForTask(task, prefs);
+  return llmBodyFields({ ...prefs, llm_tier: tier }, confirmHeavyBudget);
 }
 
 const LLM_PREFS_KEY = "lecture-notes:llm";
@@ -129,6 +229,96 @@ export async function getLlmConfig(overrides?: LlmOverrides): Promise<LlmConfig>
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(apiErrorMessage(data, res.status));
   return data as LlmConfig;
+}
+
+export async function getLlmEnvStatus(): Promise<LlmEnvStatus> {
+  const res = await fetch(`${BASE}/api/system/llm/env`, {
+    headers: headers(false),
+    signal: AbortSignal.timeout(15_000),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(apiErrorMessage(data, res.status));
+  return data as LlmEnvStatus;
+}
+
+export async function patchLlmKeys(body: LlmKeysPatch): Promise<LlmEnvStatus> {
+  const res = await fetch(`${BASE}/api/system/llm/keys`, {
+    method: "PATCH",
+    headers: headers(),
+    body: JSON.stringify(body),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(apiErrorMessage(data, res.status));
+  return (data as { env: LlmEnvStatus }).env;
+}
+
+export async function testLlmEntry(body: {
+  entry?: string;
+  provider?: string;
+  model?: string;
+  base_url?: string;
+  api_key?: string;
+}): Promise<LlmProbeResult> {
+  const res = await fetch(`${BASE}/api/system/llm/test`, {
+    method: "POST",
+    headers: headers(),
+    body: JSON.stringify(body),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(apiErrorMessage(data, res.status));
+  return data as LlmProbeResult;
+}
+
+export async function testLlmChain(body: {
+  tier?: string;
+  route_profile?: string;
+  task?: string;
+}): Promise<LlmChainTestResult> {
+  const res = await fetch(`${BASE}/api/system/llm/test-chain`, {
+    method: "POST",
+    headers: headers(),
+    body: JSON.stringify(body),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(apiErrorMessage(data, res.status));
+  return data as LlmChainTestResult;
+}
+
+export async function testAllRouteProfiles(body?: {
+  task?: string;
+  profiles?: string[];
+}): Promise<LlmTestAllProfilesResult> {
+  const res = await fetch(`${BASE}/api/system/llm/test-all-profiles`, {
+    method: "POST",
+    headers: headers(),
+    body: JSON.stringify(body ?? {}),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(apiErrorMessage(data, res.status));
+  const jobId = (data as { job_id?: string }).job_id;
+  if (!jobId) {
+    // Legacy sync response (pre-Huey)
+    return data as LlmTestAllProfilesResult;
+  }
+  const deadline = Date.now() + 10 * 60 * 1000;
+  while (Date.now() < deadline) {
+    const jobRes = await fetch(`${BASE}/api/system/llm/jobs/${encodeURIComponent(jobId)}`, {
+      headers: headers(),
+    });
+    const job = await jobRes.json().catch(() => ({}));
+    if (!jobRes.ok) throw new Error(apiErrorMessage(job, jobRes.status));
+    const status = (job as { status?: string }).status;
+    if (status === "completed" && (job as { result?: LlmTestAllProfilesResult }).result) {
+      return (job as { result: LlmTestAllProfilesResult }).result;
+    }
+    if (status === "failed") {
+      throw new Error((job as { error?: string }).error || "Profile matrix test failed");
+    }
+    await new Promise((r) => setTimeout(r, 800));
+  }
+  throw new Error(
+    "Profile matrix test timed out. Start the Huey worker in another terminal: python -m backend.core.llm_jobs_worker",
+  );
 }
 
 export type TranscriptFile = {
@@ -199,7 +389,9 @@ export async function listNoteTopics(): Promise<string[]> {
   return (data as { topics: string[] }).topics ?? [];
 }
 
-export async function getNoteContent(relativePath: string): Promise<string> {
+export async function getNoteContent(
+  relativePath: string,
+): Promise<{ content: string; mtime?: number }> {
   const encoded = relativePath
     .split("/")
     .map((s) => encodeURIComponent(s))
@@ -209,21 +401,52 @@ export async function getNoteContent(relativePath: string): Promise<string> {
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(apiErrorMessage(data, res.status));
-  return (data as { content: string }).content;
+  const payload = data as { content: string; mtime?: number };
+  return { content: payload.content, mtime: payload.mtime };
 }
 
-export async function saveNoteContent(relativePath: string, content: string): Promise<void> {
+export class NoteConflictError extends Error {
+  mtime?: number;
+  constructor(message: string, mtime?: number) {
+    super(message);
+    this.name = "NoteConflictError";
+    this.mtime = mtime;
+  }
+}
+
+export async function saveNoteContent(
+  relativePath: string,
+  content: string,
+  opts?: { expectedMtime?: number | null },
+): Promise<{ mtime?: number }> {
   const encoded = relativePath
     .split("/")
     .map((s) => encodeURIComponent(s))
     .join("/");
+  const body: { content: string; expected_mtime?: number } = { content };
+  if (opts?.expectedMtime != null) body.expected_mtime = opts.expectedMtime;
   const res = await fetch(`${BASE}/api/transcripts/library/files/${encoded}/content`, {
     method: "PUT",
     headers: headers(),
-    body: JSON.stringify({ content }),
+    body: JSON.stringify(body),
   });
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(apiErrorMessage(data, res.status));
+  if (!res.ok) {
+    if (res.status === 409) {
+      const detail = (data as { detail?: { message?: string; mtime?: number } | string }).detail;
+      const msg =
+        typeof detail === "object" && detail?.message
+          ? detail.message
+          : typeof detail === "string"
+            ? detail
+            : "This note changed elsewhere. Reload before saving.";
+      const mtime =
+        typeof detail === "object" && typeof detail?.mtime === "number" ? detail.mtime : undefined;
+      throw new NoteConflictError(msg, mtime);
+    }
+    throw new Error(apiErrorMessage(data, res.status));
+  }
+  return data as { mtime?: number };
 }
 
 export async function regenerateNoteBlock(opts: {
@@ -247,7 +470,7 @@ export async function regenerateNoteBlock(opts: {
       instruction: opts.instruction,
       mode: opts.mode ?? "fix",
       note_context: opts.note_context,
-      ...llmBodyFields(opts.llm),
+      ...llmBodyFieldsForTask("block_regen", opts.llm),
     }),
   });
   const data = await res.json().catch(() => ({}));
@@ -268,7 +491,7 @@ export async function regenerateNoteSelection(opts: {
       selection: opts.selection,
       note_context: opts.note_context,
       instruction: opts.instruction,
-      ...llmBodyFields(opts.llm),
+      ...llmBodyFieldsForTask("block_regen", opts.llm),
     }),
   });
   const data = await res.json().catch(() => ({}));
@@ -294,7 +517,7 @@ export async function repairAllNoteBlocks(opts: {
     body: JSON.stringify({
       content: opts.content,
       use_llm: opts.use_llm ?? true,
-      ...llmBodyFields(opts.llm),
+      ...llmBodyFieldsForTask("block_regen", opts.llm),
     }),
   });
   const data = await res.json().catch(() => ({}));
@@ -315,7 +538,7 @@ export async function repairAndSaveNote(
     headers: headers(),
     body: JSON.stringify({
       use_llm: opts.use_llm ?? true,
-      ...llmBodyFields(opts.llm),
+      ...llmBodyFieldsForTask("block_regen", opts.llm),
     }),
   });
   const data = await res.json().catch(() => ({}));
@@ -468,7 +691,7 @@ export async function summarizeLibraryFolder(
     body: JSON.stringify({
       folder_path: folderPath,
       title: title ?? "",
-      ...llmBodyFields(llm),
+      ...llmBodyFieldsForTask("folder_summarize", llm),
     }),
   });
   const data = await res.json().catch(() => ({}));
@@ -500,6 +723,9 @@ export async function generateNotes(
 ): Promise<{
   filename: string;
   path: string;
+  mode?: string;
+  grounding_status?: string | null;
+  grounding_reason?: string | null;
   corpus_handoff?: { transcript_chunks?: number; note_chunks?: number };
 }> {
   const res = await fetch(`${BASE}/api/transcripts/notes/generate`, {
@@ -520,7 +746,7 @@ export async function generateNotes(
       fast_mode: options.fastMode ?? false,
       enrich_visuals: options.enrichVisuals,
       force_legacy: options.forceLegacy ?? false,
-      ...llmBodyFields(options.llm, options.confirmHeavyBudget),
+      ...llmBodyFieldsForTask("notes_job", options.llm, options.confirmHeavyBudget),
     }),
   });
   const data = await res.json().catch(() => ({}));
@@ -535,7 +761,13 @@ export async function generateNotes(
 
 export async function generateNotesFromToday(
   options: Omit<GenerateNotesOptions, "referencePaths" | "contextFolder"> = {},
-): Promise<{ filename: string; path: string }> {
+): Promise<{
+  filename: string;
+  path: string;
+  mode?: string;
+  grounding_status?: string | null;
+  grounding_reason?: string | null;
+}> {
   const res = await fetch(`${BASE}/api/transcripts/notes/generate-today`, {
     method: "POST",
     headers: headers(),
@@ -550,7 +782,7 @@ export async function generateNotesFromToday(
       use_tag_extraction: options.useTagExtraction ?? false,
       fast_mode: options.fastMode ?? false,
       enrich_visuals: options.enrichVisuals,
-      ...llmBodyFields(options.llm, options.confirmHeavyBudget),
+      ...llmBodyFieldsForTask("notes_job", options.llm, options.confirmHeavyBudget),
     }),
   });
   const data = await res.json().catch(() => ({}));
@@ -568,7 +800,7 @@ export async function generatePrimer(
     body: JSON.stringify({
       topic,
       folder_path: options.folderPath ?? "",
-      ...llmBodyFields(options.llm, options.confirmHeavyBudget),
+      ...llmBodyFieldsForTask("notes_job", options.llm, options.confirmHeavyBudget),
     }),
   });
   const data = await res.json().catch(() => ({}));
@@ -635,7 +867,7 @@ export async function runGapAnalysis(
     body: JSON.stringify({
       lecture_path: lecturePath,
       reference_path: referencePath,
-      ...llmBodyFields(llm),
+      ...llmBodyFieldsForTask("gap_analysis", llm),
     }),
   });
   const data = await res.json().catch(() => ({}));
@@ -659,7 +891,7 @@ export async function generateLibraryQuiz(
       source_paths: sourcePaths,
       count: opts?.count ?? 5,
       topic: opts?.topic ?? "",
-      ...llmBodyFields(opts?.llm),
+      ...llmBodyFieldsForTask("quiz_gen", opts?.llm),
     }),
   });
   const data = await res.json().catch(() => ({}));
@@ -688,7 +920,7 @@ export async function generateLibraryDrills(
       source_paths: sourcePaths,
       count: opts?.count ?? 2,
       topic: opts?.topic ?? "",
-      ...llmBodyFields(opts?.llm),
+      ...llmBodyFieldsForTask("drill_gen", opts?.llm),
     }),
   });
   const data = await res.json().catch(() => ({}));
@@ -762,7 +994,7 @@ export async function startTopicStudyFlow(opts: {
       ingest_corpus: opts.ingestCorpus ?? true,
       quiz_count: opts.quizCount ?? 8,
       start_quiz: opts.startQuiz ?? false,
-      ...llmBodyFields(opts.llm, opts.confirmHeavyBudget),
+      ...llmBodyFieldsForTask("notes_job", opts.llm, opts.confirmHeavyBudget),
     }),
   });
   const data = await res.json().catch(() => ({}));

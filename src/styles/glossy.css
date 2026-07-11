@@ -69,3 +69,24 @@
   border: 1px solid var(--gloss-border);
   box-shadow: var(--gloss-shadow);
 }
+
+/* GRE word card — secondary horizontal examples strip */
+@keyframes vocab-examples-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.vocab-examples-marquee {
+  animation: vocab-examples-marquee 28s linear infinite;
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vocab-examples-marquee {
+    animation: none;
+  }
+}

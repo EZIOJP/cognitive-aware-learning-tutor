@@ -96,6 +96,7 @@ Default login: **admin** / **admin123**
 | **Math OCR** (pix2tex) | `scripts\install_ocr.bat` or `./scripts/install_ocr.sh` | `/math-tutor/recognize-test` |
 | **Focus mirror** | in core `requirements.txt` (opencv + mediapipe) | `scripts\run_face_tracker.bat` |
 | **Ollama LLM** | [ollama.com](https://ollama.com) + set `OLLAMA_ENABLED=1` in `.env` | `ollama pull llama3.2` |
+| **Huey LLM jobs** | `pip install huey` (in `backend/requirements.txt`) | **Required for “Test all route profiles”.** In a separate terminal: `python -m backend.core.llm_jobs_worker`. Without it, jobs stay `queued`/`pending` forever in `data/llm_jobs/`. Single-tier “Test chain” does **not** need Huey. |
 | **EEG hardware** | `EEG_ENABLED=1` in `.env` | `scripts\run_eeg.bat` (prototype) or main API |
 | **SelfTracker** | Load `selftracker-extension/` in Chrome | API must be on :8000 |
 

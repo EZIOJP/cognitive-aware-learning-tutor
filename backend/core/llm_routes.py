@@ -45,7 +45,7 @@ def get_active_route_profile(override: str | None = None) -> str:
     if override and override.strip():
         return override.strip().lower()
     profile = get_settings().llm_route_profile.strip().lower()
-    return profile or "hybrid"
+    return profile or "hybrid-free"
 
 
 def get_chain_for_tier(tier: str, route_profile: str | None = None) -> list[ChainEntry]:

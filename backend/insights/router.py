@@ -1,11 +1,13 @@
 from datetime import date
+import json
 
-from fastapi import APIRouter, BackgroundTasks, Depends
+from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, UploadFile
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from backend.core.auth import get_current_user
 from backend.db.session import get_db
+from backend.hub.agents.schemas import HubChatRequest
 from backend.hub.services.rollup import rebuild_daily_rollup
 from backend.models import LifeDailyLog, User
 
@@ -104,20 +106,20 @@ async def insights_review(db: Session = Depends(get_db), user: User = Depends(ge
     daily = insights_daily(db=db, user=user)
     context = build_coach_context(db, user, daily=daily)
 
-    from backend.integrations.nim_client import nim_available
+    from backend.hub.services.local_coach import (
+        generate_local_review,
+        local_llm_available,
+    )
 
-    if nim_available():
+    if local_llm_available():
         try:
             from backend.hub.services.gemma_review import generate_daily_review
 
-            gemma = await generate_daily_review(context.get("today", daily), user_id=user.id)
+            gemma = generate_daily_review(context.get("today", daily), user_id=user.id)
             return ReviewOut(**gemma)
         except Exception:
             pass
 
-    from backend.hub.services.local_coach import generate_local_review, local_llm_available
-
-    if local_llm_available():
         try:
             local = generate_local_review(context)
             return ReviewOut(**local)
@@ -299,3 +301,100 @@ def agent_chat(body: ChatRequest, db: Session = Depends(get_db), user: User = De
         source="template",
         llm_available=False,
     )
+
+
+@router.get("/hub/agents")
+def hub_agents_list(user: User = Depends(get_current_user)):
+    from backend.hub.agents.schemas import HUB_AGENTS
+
+    _ = user
+    return {"agents": [a.model_dump() for a in HUB_AGENTS]}
+
+
+@router.post("/hub/chat")
+async def hub_chat(
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+    prompt: str = Form(""),
+    agent: str = Form("auto"),
+    conversation_id: str | None = Form(None),
+    llm_tier: str | None = Form(None),
+    messages_json: str | None = Form(None),
+    file: UploadFile | None = File(None),
+):
+    """Unified cortex hub — multipart for PDF upload or JSON messages in messages_json."""
+    from backend.hub.agents.cortex import run_hub_chat
+
+    tier = (llm_tier or "medium").strip().lower()
+    if messages_json:
+        try:
+            parsed = json.loads(messages_json)
+            msgs = [{"role": m.get("role", "user"), "content": m.get("content", "")} for m in parsed]
+        except json.JSONDecodeError:
+            msgs = []
+    else:
+        msgs = []
+
+    if prompt.strip():
+        msgs.append({"role": "user", "content": prompt.strip()})
+
+    file_bytes: bytes | None = None
+    file_name: str | None = None
+    content_type: str | None = None
+    if file and file.filename:
+        file_bytes = await file.read()
+        file_name = file.filename
+        content_type = file.content_type
+
+    context = _hub_context(db, user)
+    result = run_hub_chat(
+        db=db,
+        user_id=user.id,
+        hub_context=context,
+        messages=msgs,
+        agent=agent,
+        conversation_id=conversation_id,
+        llm_tier=tier,
+        file_bytes=file_bytes,
+        file_name=file_name,
+        content_type=content_type,
+    )
+
+    if result.agent_used in ("chat", "search") and msgs:
+        from backend.hub.services.coach_memory import remember_exchange
+
+        last_q = msgs[-1].get("content", "")
+        background_tasks.add_task(remember_exchange, user.id, last_q, result.reply)
+
+    return result.model_dump()
+
+
+@router.post("/hub/chat/json")
+def hub_chat_json(
+    body: HubChatRequest,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """JSON hub chat (no file upload — use multipart /hub/chat for PDFs)."""
+    from backend.hub.agents.cortex import run_hub_chat
+
+    tier = (body.llm_tier or "medium").strip().lower()
+    msgs = [{"role": m.role, "content": m.content} for m in body.messages if m.content.strip()]
+    context = _hub_context(db, user)
+    result = run_hub_chat(
+        db=db,
+        user_id=user.id,
+        hub_context=context,
+        messages=msgs,
+        agent=body.agent,
+        conversation_id=body.conversation_id,
+        llm_tier=tier,
+    )
+    if result.agent_used in ("chat", "search") and msgs:
+        from backend.hub.services.coach_memory import remember_exchange
+
+        last_q = msgs[-1].get("content", "")
+        background_tasks.add_task(remember_exchange, user.id, last_q, result.reply)
+    return result.model_dump()

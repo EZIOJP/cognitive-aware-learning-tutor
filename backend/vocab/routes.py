@@ -58,7 +58,17 @@ def _save_words(db: Session, words: list[dict[str, Any]]) -> None:
 def _to_iso_or_none(dt: datetime | None) -> str | None:
     if not dt:
         return None
-    return dt.astimezone(UTC).isoformat().replace("+00:00", "Z")
+    aware = dt if dt.tzinfo is not None else dt.replace(tzinfo=UTC)
+    return aware.astimezone(UTC).isoformat().replace("+00:00", "Z")
+
+
+def _aware_utc(dt: datetime | None) -> datetime | None:
+    """Normalize SQLite/naive datetimes for safe comparison with datetime.now(UTC)."""
+    if dt is None:
+        return None
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=UTC)
+    return dt.astimezone(UTC)
 
 
 def _parse_due(value: str | None) -> datetime | None:
@@ -84,7 +94,8 @@ def _merge_word(word: dict[str, Any], progress: WordProgress | None) -> dict[str
             "is_due": False,
             "is_suspended": False,
         }
-    is_due = bool(progress.due_date and datetime.now(UTC) >= progress.due_date and not progress.is_suspended)
+    due = _aware_utc(progress.due_date)
+    is_due = bool(due and datetime.now(UTC) >= due and not progress.is_suspended)
     accuracy = (progress.times_correct / progress.times_asked * 100) if progress.times_asked > 0 else 0.0
     return {
         **word,
@@ -124,6 +135,7 @@ class WordUpdateBody(BaseModel):
     word: str | None = None
     pronunciation: str | None = None
     meaning: str | None = None
+    connotation: str | None = None
     story_mnemonic: str | None = None
     etymology: str | None = None
     examples: list[dict[str, Any]] | None = None
@@ -135,7 +147,8 @@ class WordUpdateBody(BaseModel):
 
 class WordCreateBody(BaseModel):
     word: str
-    meaning: str
+    meaning: str = ""
+    connotation: str | None = ""
     pronunciation: str | None = ""
     story_mnemonic: str | None = ""
     etymology: str | None = ""
@@ -144,6 +157,17 @@ class WordCreateBody(BaseModel):
     antonyms: list[str] | None = None
     tags: list[str] | None = None
     model_config = ConfigDict(extra="ignore")
+
+
+class GrefImportBody(BaseModel):
+    replace: bool = False
+    reset_progress: bool = True
+    clear_review_cards: bool = True
+
+
+class EnrichBatchBody(BaseModel):
+    limit: int = 10
+    overwrite: bool = False
 
 
 class ProgressUpdateBody(BaseModel):
@@ -427,13 +451,17 @@ def quiz_start(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    words = _load_words(db)
+    from backend.vocab.gref_import import has_usable_meaning
+
+    words = [w for w in _load_words(db) if has_usable_meaning(w)]
     if body.word_ids:
         pool = [w for w in words if int(w["id"]) in body.word_ids]
     elif body.group_number:
         pool = [w for w in words if int(w.get("group_number", 1)) == body.group_number]
     else:
         pool = words
+    if not pool:
+        raise HTTPException(status_code=400, detail="No vocab words with meanings available for quiz")
     hub_sess = start_activity_session(
         db,
         user_id=user.id,
@@ -696,8 +724,8 @@ async def import_words_csv(
     skipped = 0
     for row in reader:
         word = str(row.get("word", "")).strip()
-        meaning = str(row.get("meaning", "")).strip()
-        if not word or not meaning:
+        meaning = str(row.get("meaning", "") or row.get("definition", "")).strip()
+        if not word:
             skipped += 1
             continue
         key = word.lower()
@@ -734,8 +762,8 @@ def import_words_json(
     skipped = 0
     for w_data in body.words:
         word_str = w_data.word.strip()
-        meaning = w_data.meaning.strip()
-        if not word_str or not meaning:
+        meaning = (w_data.meaning or "").strip()
+        if not word_str:
             skipped += 1
             continue
         key = word_str.lower()
@@ -746,6 +774,7 @@ def import_words_json(
             "id": next_id,
             **w_data.model_dump(exclude_none=True),
         }
+        new_word["meaning"] = meaning
         if new_word.get("examples") is None:
             new_word["examples"] = []
         if new_word.get("synonyms") is None:
@@ -764,6 +793,109 @@ def import_words_json(
         w["group_number"] = (i // GROUP_SIZE) + 1
     _save_words(db, words)
     return {"added": added, "skipped": skipped, "total_words": len(words)}
+
+
+@router.get("/words/import/gref/preview")
+def preview_gref_import(_admin: User = Depends(require_admin)):
+    from backend.vocab.gref_import import dry_run_stats
+
+    try:
+        return dry_run_stats()
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.post("/words/import/gref")
+def import_gref_material(
+    body: GrefImportBody,
+    db: Session = Depends(get_db),
+    admin: User = Depends(require_admin),
+):
+    from backend.quiz import review_cards as rc_mod
+    from backend.vocab.gref_import import collect_gref_entries, dry_run_stats, has_usable_meaning, merge_into_bank
+
+    try:
+        imported = collect_gref_entries()
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+    existing = [] if body.replace else _load_words(db)
+    merged, stats = merge_into_bank(existing, imported, replace=body.replace)
+    for i, w in enumerate(merged):
+        w["group_number"] = (i // GROUP_SIZE) + 1
+        if w.get("examples") is None:
+            w["examples"] = []
+        if w.get("synonyms") is None:
+            w["synonyms"] = []
+        if w.get("antonyms") is None:
+            w["antonyms"] = []
+        if w.get("tags") is None:
+            w["tags"] = []
+    _save_words(db, merged)
+
+    progress_reset = 0
+    if body.reset_progress:
+        progress_reset = db.query(WordProgress).delete()
+        db.commit()
+
+    review_deleted = 0
+    if body.clear_review_cards:
+        review_deleted = rc_mod.clear_review_cards(db, user_id=None)
+
+    preview = dry_run_stats()
+    return {
+        **stats,
+        "with_meaning": sum(1 for w in merged if has_usable_meaning(w)),
+        "progress_rows_deleted": progress_reset,
+        "review_cards_deleted": review_deleted,
+        "preview": preview,
+        "imported_by": admin.username,
+    }
+
+
+@router.get("/words/enrich-queue")
+def get_enrich_queue(
+    limit: int = 50,
+    db: Session = Depends(get_db),
+    _admin: User = Depends(require_admin),
+):
+    from backend.vocab.enrich import enrich_queue
+
+    items = enrich_queue(db, limit=limit)
+    return {"items": items, "count": len(items)}
+
+
+@router.post("/words/{word_id}/enrich")
+def enrich_one_word(
+    word_id: int,
+    overwrite: bool = False,
+    db: Session = Depends(get_db),
+    _admin: User = Depends(require_admin),
+):
+    """Fill empty card fields by default. Pass overwrite=true to remake content fields."""
+    from backend.vocab.enrich import enrich_word_by_id
+
+    try:
+        updated = enrich_word_by_id(db, word_id, overwrite=overwrite)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+    return {"word": updated}
+
+
+@router.post("/words/enrich/batch")
+def enrich_words_batch(
+    body: EnrichBatchBody,
+    db: Session = Depends(get_db),
+    _admin: User = Depends(require_admin),
+):
+    from backend.vocab.enrich import enrich_batch
+
+    try:
+        return enrich_batch(db, limit=max(1, min(body.limit, 50)), overwrite=body.overwrite)
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
 
 
 @router.get("/words/export/csv")
@@ -888,7 +1020,13 @@ def progress_summary(db: Session = Depends(get_db), user: User = Depends(get_cur
     return {
         "studied_words": len(studied),
         "mastered_words": sum(1 for p in pmap.values() if p.mastery >= MASTERY_MASTERED),
-        "due_reviews": sum(1 for p in pmap.values() if p.due_date and datetime.now(UTC) >= p.due_date and not p.is_suspended),
+        "due_reviews": sum(
+            1
+            for p in pmap.values()
+            if _aware_utc(p.due_date)
+            and datetime.now(UTC) >= _aware_utc(p.due_date)  # type: ignore[operator]
+            and not p.is_suspended
+        ),
         "suspended_words": sum(1 for p in pmap.values() if p.is_suspended),
         "avg_accuracy": round(sum((p.times_correct / p.times_asked * 100) for p in studied) / len(studied), 2) if studied else 0.0,
         "last_updated": _to_iso_or_none(max((p.updated_at for p in pmap.values()), default=None)),

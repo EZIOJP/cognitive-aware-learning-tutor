@@ -80,6 +80,17 @@ def delete_quiz_deck(
     return {"deleted": True}
 
 
+@router.delete("/review-cards")
+def delete_review_cards(
+    domain: str | None = None,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Clear Review Hub cards so new quizzes can seed fresh items."""
+    result = handler.clear_review_cards(db, user=user, domain=domain)
+    return result
+
+
 @router.get("/results/recent")
 def get_recent_quiz_results(
     limit: int = 10,

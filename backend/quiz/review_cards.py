@@ -269,3 +269,20 @@ def seed_deck_cards(db: Session, *, user_id: int, deck: QuizDeck) -> int:
         count += 1
     db.commit()
     return count
+
+
+def clear_review_cards(
+    db: Session,
+    *,
+    user_id: int | None = None,
+    domain: str | None = None,
+) -> int:
+    """Delete review cards for a user (or all users if user_id is None)."""
+    q = db.query(ReviewCard)
+    if user_id is not None:
+        q = q.filter(ReviewCard.user_id == user_id)
+    if domain:
+        q = q.filter(ReviewCard.domain == domain.strip().lower())
+    deleted = q.delete(synchronize_session=False)
+    db.commit()
+    return int(deleted)

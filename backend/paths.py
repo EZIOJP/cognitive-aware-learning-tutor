@@ -3,6 +3,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 WORDS_PATH = ROOT / "public" / "data" / "words.json"
+GREF_MATERIAL_DIR = ROOT / "gref_material" / "gre words"
 
 _db_primary = ROOT / "data" / "vocab_app.db"
 _db_legacy = ROOT / "vocab_app.db"

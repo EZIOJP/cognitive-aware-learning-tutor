@@ -9,7 +9,7 @@ from pathlib import Path
 
 from backend.corpus.ingest import ingest_path
 from backend.corpus.paths import resolve_repo_path
-from backend.corpus.purge import purge_document, purge_test_documents
+from backend.corpus.purge import purge_document, purge_test_documents, reset_corpus
 from backend.corpus.registry import chunk_count, list_documents, verify_document
 from backend.corpus.retrieve import format_hits_for_prompt, hybrid_retrieve
 
@@ -106,6 +106,31 @@ def cmd_purge_test(_args: argparse.Namespace) -> int:
     result = purge_test_documents()
     print(json.dumps(result, indent=2))
     return 0 if result["purged"] >= 0 else 1
+
+
+def cmd_reset(_args: argparse.Namespace) -> int:
+    result = reset_corpus(wipe_files=True)
+    print(json.dumps(result, indent=2))
+    return 0 if result.get("ok") else 1
+
+
+def cmd_rebuild_textbooks(args: argparse.Namespace) -> int:
+    """Ensure textbooks RAG — skip if healthy unless --force."""
+    from backend.corpus.notes_rag_status import assess_notes_rag, ensure_notes_rag_textbooks
+
+    if args.status_only:
+        print(json.dumps(assess_notes_rag(), indent=2))
+        return 0
+
+    result = ensure_notes_rag_textbooks(
+        force=bool(args.force),
+        ingest_full_books=not args.mml_only,
+        mml_chapters=args.chapters,
+        on_progress=lambda m: print(m, flush=True),
+    )
+    print(json.dumps(result, indent=2, default=str))
+    after = result.get("after") or assess_notes_rag()
+    return 0 if after.get("usable") else 1
 
 
 def cmd_health(_args: argparse.Namespace) -> int:
@@ -205,6 +230,22 @@ def build_parser() -> argparse.ArgumentParser:
     sub.add_parser("purge-test", help="Remove test_* documents from production registry").set_defaults(
         func=cmd_purge_test
     )
+
+    sub.add_parser(
+        "reset",
+        help="Hard wipe registry + BM25 + Qdrant (close Studio/other Python first)",
+    ).set_defaults(func=cmd_reset)
+
+    rb = sub.add_parser(
+        "rebuild-textbooks",
+        help="Ensure textbooks RAG (skip if OK; --force to wipe)",
+    )
+    rb.add_argument("--force", action="store_true", help="Force wipe + rebuild even if healthy")
+    rb.add_argument("--status-only", action="store_true", help="Print notes RAG assessment only")
+    rb.add_argument("--mml-only", action="store_true", help="Only MML chapters, skip other full books")
+    rb.add_argument("--chapters", type=int, nargs="+", default=None, help="MML chapters (default 1 2)")
+    rb.add_argument("--no-wipe", action="store_true", help="Deprecated (ignored); use without --force to skip")
+    rb.set_defaults(func=cmd_rebuild_textbooks)
 
     sub.add_parser("health", help="Corpus health and known issues").set_defaults(func=cmd_health)
 

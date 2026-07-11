@@ -128,7 +128,9 @@ def _run_topic_study_flow_impl(
             "notes": { 
                 "mode": notes_result.get("mode", "unknown"), 
                 "relative_path": relative_note_path, 
-                "filename": relative_note_path 
+                "filename": relative_note_path,
+                "grounding_status": notes_result.get("grounding_status"),
+                "grounding_reason": notes_result.get("grounding_reason"),
             },
             "corpus_handoff": notes_result.get("corpus_handoff") or {},
             "quiz": { 

@@ -2,6 +2,7 @@ import json
 from datetime import UTC, date, datetime, timedelta
 
 from sqlalchemy import func
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from backend.models import DailyRollup, LifeDailyLog, MathAttempt, Reading, ReadingDefinition, WordProgress
@@ -113,6 +114,18 @@ def rebuild_daily_rollup(db: Session, user_id: int, day: date) -> DailyRollup:
     if not rollup:
         rollup = DailyRollup(user_id=user_id, date=day)
         db.add(rollup)
+        try:
+            db.flush()
+        except IntegrityError:
+            # Concurrent dashboard requests can race on the unique (user_id, date).
+            db.rollback()
+            rollup = (
+                db.query(DailyRollup)
+                .filter(DailyRollup.user_id == user_id, DailyRollup.date == day)
+                .first()
+            )
+            if rollup is None:
+                raise
 
     rollup.segments_json = json.dumps(segments)
     rollup.productive_minutes = productive_minutes

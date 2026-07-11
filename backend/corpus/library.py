@@ -315,7 +315,7 @@ def run_auto_setup(
     job: CorpusJob,
     *,
     mml_chapters: list[int] | None = None,
-    transcript_limit: int = 3,
+    transcript_limit: int = 0,
     ingest_full_books: bool = True,
     skip_indexed_books: bool = True,
     test_query: bool = True,
@@ -358,9 +358,13 @@ def run_auto_setup(
     step += 1
     job.progress = step / steps
 
-    log(f"Step 4/{steps} — Ingesting up to {transcript_limit} latest lecture transcripts")
-    tx_result = ingest_latest_transcripts(limit=transcript_limit)
-    log(f"  Transcripts ingested: {tx_result['ingested']}")
+    if transcript_limit > 0:
+        log(f"Step 4/{steps} — Ingesting up to {transcript_limit} latest lecture transcripts")
+        tx_result = ingest_latest_transcripts(limit=transcript_limit)
+        log(f"  Transcripts ingested: {tx_result['ingested']}")
+    else:
+        log(f"Step 4/{steps} — Skipping transcript ingest (textbooks only for notes RAG)")
+        tx_result = {"ingested": 0, "results": []}
     step += 1
     job.progress = step / steps
 

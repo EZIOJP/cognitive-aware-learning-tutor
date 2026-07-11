@@ -223,10 +223,12 @@ CLI mirror: `python -m backend.corpus.cli` — see [CORPUS_RAG.md](./CORPUS_RAG.
 2. **Sparse:** `bm25.search(query, top_k=HYBRID_POOL)` (20)
 3. **Dense:** `VectorStore.search()` if `encode_texts` available
 4. **RRF merge** (`_rrf_merge`, k=60)
-5. Filter by `subject_tags` if provided
-6. **Rerank:** FlashRank if installed, else RRF order → `RERANK_TOP` (5)
-7. **Graph merge:** `graph_retrieve` adds KG-linked chunk IDs
+5. Filter by `source_types` / `subject_tags` into candidate pool
+6. **Graph expansion** (if `use_graph`): add 1-hop KG-linked chunk IDs into the candidate pool (still filtered)
+7. **Rerank:** FlashRank if installed, else RRF order → `RERANK_TOP` (5) — scores original + graph-expanded together
 8. Return hit dicts; `format_hits_for_prompt()` for LLM context
+
+**Ordering note (v2):** rerank must run *after* graph expansion so expanded neighbors are not dumped unscored into the LLM context.
 
 **Consumers (no public search API):**
 
@@ -236,6 +238,16 @@ CLI mirror: `python -m backend.corpus.cli` — see [CORPUS_RAG.md](./CORPUS_RAG.
 - `backend/corpus/library.py` (setup verify query)
 
 **Transparency:** `GET /api/insights/knowledge?q=…` previews coach retrieval.
+
+**Citation verification (quiz):** `backend/corpus/citation_check.verify_quiz_citations` uses deterministic chunk-ID whitelist intersection — preferred over embedding similarity (validated design).
+
+**SQLite (main app DB):** `backend/db/sqlite_utils.configure_sqlite_engine` sets `PRAGMA journal_mode=WAL`, `busy_timeout`, and `synchronous=NORMAL` on connect.
+
+**Note file optimistic lock:** `GET .../content` returns `mtime`; `PUT .../content` accepts optional `expected_mtime` and returns `409 Conflict` if the on-disk mtime differs (two-tab save safety).
+
+**Mermaid repair:** `backend/transcripts/note_block_repair.py` runs local sanitize first, then per-block LLM repair (confirmed v2 design).
+
+**Huey (LLM probe jobs only):** `POST /api/system/llm/test-all-profiles` enqueues to SqliteHuey (`data/huey.db`) and returns `202 { job_id }`. Poll `GET /api/system/llm/jobs/{id}`. Worker: `python -m backend.core.llm_jobs_worker`. Single-tier `test-chain` stays synchronous. Note generation stays synchronous.
 
 ### 5.4 Grounded notes modes (`backend/corpus/grounded_notes.py`)
 

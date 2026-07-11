@@ -30,6 +30,20 @@ def retrieval_backend() -> str:
     return _SHARED_QDRANT_MODE
 
 
+def close_vector_store() -> None:
+    """Release embedded Qdrant so corpus files can be deleted/reset."""
+    global _SHARED_QDRANT_CLIENT, _SHARED_QDRANT_MODE, _SHARED_QDRANT_TRIED
+    client = _SHARED_QDRANT_CLIENT
+    _SHARED_QDRANT_CLIENT = None
+    _SHARED_QDRANT_MODE = "sqlite"
+    _SHARED_QDRANT_TRIED = False
+    if client is not None:
+        try:
+            client.close()
+        except Exception as exc:  # noqa: BLE001
+            log.warning("Qdrant close during reset: %s", exc)
+
+
 def _ensure_shared_qdrant() -> None:
     global _SHARED_QDRANT_CLIENT, _SHARED_QDRANT_MODE, _SHARED_QDRANT_TRIED
     if _SHARED_QDRANT_TRIED:

@@ -1,5 +1,5 @@
 import { config } from "../config";
-import { llmBodyFields, type LlmOverrides } from "./transcriptsClient";
+import { llmBodyFieldsForTask, type LlmOverrides } from "./transcriptsClient";
 
 const BASE = config.backend.apiUrl;
 const TOKEN_KEY = "vocab:auth-token";
@@ -198,7 +198,7 @@ export async function generateGroundedNotes(opts: {
       topic: opts.topic ?? "",
       title: opts.title ?? "",
       folder_path: opts.folderPath ?? "",
-      ...llmBodyFields(opts.llm, opts.confirmHeavyBudget),
+      ...llmBodyFieldsForTask("corpus_grounded", opts.llm, opts.confirmHeavyBudget),
     }),
   });
   const data = await res.json().catch(() => ({}));

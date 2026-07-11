@@ -158,6 +158,7 @@ class UpdateFileRequest(BaseModel):
 
 class SaveNoteContentRequest(BaseModel):
     content: str = Field(default="", max_length=500_000)
+    expected_mtime: float | None = None
 
 
 class ReadingStateRequest(BaseModel):
@@ -302,6 +303,8 @@ class GenerateNotesResponse(BaseModel):
     source: str = "live_captions"
     corpus_handoff: dict | None = None
     mode: str | None = None
+    grounding_status: str | None = None
+    grounding_reason: str | None = None
 
 
 def _llm_from_request(body: GenerateNotesRequest | GenerateTodayRequest | StudyFlowRequest) -> LlmOptions | None:
@@ -447,8 +450,8 @@ def repair_note_all_blocks(body: RepairAllBlocksRequest, _user: User = Depends(g
     )
 
 
-def _read_note_file(relative_path: str) -> tuple[str, str]:
-    """Return (relative_path posix, file content)."""
+def _read_note_file(relative_path: str) -> tuple[str, str, float]:
+    """Return (relative_path posix, file content, mtime)."""
     from backend.paths import NOTES_DIR
 
     try:
@@ -458,7 +461,7 @@ def _read_note_file(relative_path: str) -> tuple[str, str]:
     if not path.is_file():
         raise HTTPException(status_code=404, detail="Note not found.")
     rel = path.relative_to(NOTES_DIR).as_posix()
-    return rel, path.read_text(encoding="utf-8")
+    return rel, path.read_text(encoding="utf-8"), path.stat().st_mtime
 
 
 def _llm_from_repair_save(body: RepairAndSaveRequest) -> LlmOptions | None:
@@ -473,7 +476,7 @@ def repair_and_save_library_note(
     user: User = Depends(get_current_user),
 ):
     """Read note from disk, repair all blocks, save atomically."""
-    rel, raw = _read_note_file(relative_path)
+    rel, raw, _mtime = _read_note_file(relative_path)
     try:
         fixed, details = repair_all_blocks(
             raw,
@@ -656,6 +659,25 @@ def put_library_file_content(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
+    from backend.paths import NOTES_DIR
+
+    try:
+        path = resolve_notes_path(relative_path)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    if not path.is_file():
+        raise HTTPException(status_code=404, detail="Note not found.")
+    current_mtime = path.stat().st_mtime
+    if body.expected_mtime is not None:
+        # Allow small float drift from JSON serialization
+        if abs(current_mtime - float(body.expected_mtime)) > 0.001:
+            raise HTTPException(
+                status_code=409,
+                detail={
+                    "message": "Note changed on disk (another tab or process). Reload before saving.",
+                    "mtime": current_mtime,
+                },
+            )
     try:
         row = save_note_content(
             db,
@@ -667,10 +689,12 @@ def put_library_file_content(
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+    new_mtime = path.stat().st_mtime if path.is_file() else current_mtime
     return {
         "relative_path": (row.relative_path or row.filename or "").replace("\\", "/"),
         "content": body.content,
         "section_count": row.section_count,
+        "mtime": new_mtime,
     }
 
 
@@ -749,14 +773,14 @@ def post_primer(
 
 @router.get("/library/files/{relative_path:path}/content")
 def get_library_file_content(relative_path: str, _user: User = Depends(get_current_user)):
-    rel, content = _read_note_file(relative_path)
-    return {"filename": rel, "relative_path": rel, "content": content}
+    rel, content, mtime = _read_note_file(relative_path)
+    return {"filename": rel, "relative_path": rel, "content": content, "mtime": mtime}
 
 
 @router.get("/notes/content/{relative_path:path}")
 def get_note_content(relative_path: str, _user: User = Depends(get_current_user)):
-    rel, content = _read_note_file(relative_path)
-    return {"filename": rel, "relative_path": rel, "content": content}
+    rel, content, mtime = _read_note_file(relative_path)
+    return {"filename": rel, "relative_path": rel, "content": content, "mtime": mtime}
 
 
 def _note_title_for_export(db: Session, user_id: int, rel: str, path: Path) -> str:
@@ -1070,6 +1094,11 @@ def generate_notes(
     from backend.paths import NOTES_DIR
 
     rel = path.relative_to(NOTES_DIR).as_posix()
+    grounding_status = None
+    grounding_reason = None
+    if rag_result:
+        grounding_status = rag_result.get("grounding_status")
+        grounding_reason = rag_result.get("grounding_reason")
     return GenerateNotesResponse(
         filename=rel,
         path=str(path),
@@ -1078,6 +1107,8 @@ def generate_notes(
         source="live_captions",
         corpus_handoff=corpus_handoff,
         mode=mode,
+        grounding_status=grounding_status,
+        grounding_reason=grounding_reason,
     )
 
 
@@ -1139,6 +1170,11 @@ def generate_notes_from_today(
     from backend.paths import NOTES_DIR
 
     rel = path.relative_to(NOTES_DIR).as_posix()
+    grounding_status = None
+    grounding_reason = None
+    if rag_result:
+        grounding_status = rag_result.get("grounding_status")
+        grounding_reason = rag_result.get("grounding_reason")
     return GenerateNotesResponse(
         filename=rel,
         path=str(path),
@@ -1147,6 +1183,8 @@ def generate_notes_from_today(
         source="live_captions",
         corpus_handoff=corpus_handoff,
         mode=mode,
+        grounding_status=grounding_status,
+        grounding_reason=grounding_reason,
     )
 
 

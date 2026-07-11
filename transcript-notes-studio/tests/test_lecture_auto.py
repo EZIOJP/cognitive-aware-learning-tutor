@@ -41,7 +41,7 @@ def test_lecture_auto_success_pipeline(cfg: AppConfig, tmp_path: Path, monkeypat
             transcript.write_text("hello numpy\narrays", encoding="utf-8")
             return transcript
 
-    monkeypatch.setattr("transcript_studio.lecture_auto.llm_reachable", lambda _o: True)
+    monkeypatch.setattr("transcript_studio.lecture_auto.llm_generate_reachable", lambda _c: True)
     monkeypatch.setattr("transcript_studio.lecture_auto.check_captions_deps", lambda: (True, "ok"))
     monkeypatch.setattr("transcript_studio.lecture_auto.ensure_windows", lambda: None)
     monkeypatch.setattr("transcript_studio.lecture_auto.LiveCaptionsScraper", lambda **kw: FakeScraper())
@@ -61,7 +61,7 @@ def test_lecture_auto_success_pipeline(cfg: AppConfig, tmp_path: Path, monkeypat
 
 
 def test_lecture_auto_fails_without_llm(cfg: AppConfig, monkeypatch):
-    monkeypatch.setattr("transcript_studio.lecture_auto.llm_reachable", lambda _o: False)
+    monkeypatch.setattr("transcript_studio.lecture_auto.llm_generate_reachable", lambda _c: False)
     result = run_lecture_auto(cfg)
     assert not result.success
     assert "LLM not reachable" in result.error

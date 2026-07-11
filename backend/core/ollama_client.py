@@ -7,6 +7,7 @@ import threading
 import time
 from dataclasses import dataclass
 from enum import Enum
+from typing import Any
 
 import httpx
 
@@ -14,7 +15,10 @@ log = logging.getLogger(__name__)
 
 _LLM_REACHABLE_CACHE: dict[str, tuple[float, bool]] = {}
 _LLM_REACHABLE_LOCK = threading.Lock()
-_LLM_REACHABLE_TTL_SEC = 55.0
+# Short TTL for successes; failures cached longer so dead LM Studio doesn't add ~8s per call.
+_LLM_REACHABLE_TTL_OK_SEC = 55.0
+_LLM_REACHABLE_TTL_FAIL_SEC = 120.0
+_LLM_REACHABLE_TIMEOUT_SEC = 2.0
 
 
 class LlmTransportError(str, Enum):
@@ -41,6 +45,10 @@ class TransportResult:
     generation_id: str | None = None
     upstream_provider: str | None = None
     estimated_cost: float | None = None
+    resolved_model: str | None = None
+    finish_reason: str | None = None
+    openrouter_metadata: dict[str, Any] | None = None
+    zero_completion_insurance: bool = False
 
 
 @dataclass(frozen=True)
@@ -69,7 +77,9 @@ def _normalize_provider(raw: str) -> str:
         return "lmstudio"
     if value in ("openai", "vllm"):
         return "openai"
-    if value in ("openrouter", "or"):
+    from backend.core.llm_providers import OPENAI_COMPAT_ALIASES
+
+    if value in OPENAI_COMPAT_ALIASES or value in ("openrouter", "or"):
         return "openai"
     if value in ("gemini", "google", "google-ai", "google_ai"):
         return "gemini"
@@ -184,10 +194,13 @@ def llm_reachable(override: LlmOptions | None = None) -> bool:
     now = time.monotonic()
     with _LLM_REACHABLE_LOCK:
         cached = _LLM_REACHABLE_CACHE.get(cache_key)
-        if cached and now - cached[0] < _LLM_REACHABLE_TTL_SEC:
-            return cached[1]
+        if cached:
+            age = now - cached[0]
+            ttl = _LLM_REACHABLE_TTL_OK_SEC if cached[1] else _LLM_REACHABLE_TTL_FAIL_SEC
+            if age < ttl:
+                return cached[1]
         try:
-            with httpx.Client(timeout=8.0) as client:
+            with httpx.Client(timeout=_LLM_REACHABLE_TIMEOUT_SEC) as client:
                 if opts.provider == "gemini":
                     if not opts.api_key:
                         return False
@@ -202,6 +215,8 @@ def llm_reachable(override: LlmOptions | None = None) -> bool:
                     ok = True
                 elif opts.provider == "openai":
                     url = f"{_openai_api_base(opts.base_url)}/models"
+                    if opts.base_url.rstrip("/").endswith("/inference"):
+                        url = f"{opts.base_url.rstrip('/')}/models"
                     res = client.get(url, headers=_auth_headers_for_options(opts))
                     res.raise_for_status()
                     ok = True
@@ -236,9 +251,19 @@ def ollama_available(override: LlmOptions | None = None) -> str | None:
 
 
 def _openai_api_base(base: str) -> str:
-    if base.endswith("/v1"):
-        return base
-    return f"{base}/v1"
+    b = base.rstrip("/")
+    if b.endswith("/v1") or b.endswith("/inference"):
+        return b
+    return f"{b}/v1"
+
+
+def _openai_chat_url(base_url: str) -> str:
+    from backend.core.llm_providers import chat_completions_url
+
+    base = base_url.rstrip("/")
+    if base.endswith("/inference"):
+        return chat_completions_url(base, uses_v1_prefix=False)
+    return f"{_openai_api_base(base)}/chat/completions"
 
 
 def _parse_lmstudio_output(data: dict) -> str | None:
@@ -383,21 +408,37 @@ def _openai_generate(
     opts: LlmOptions,
     timeout: float,
     system_prompt: str | None = None,
+    models: list[str] | None = None,
+    provider_prefs: dict | None = None,
+    json_schema: dict | None = None,
+    session_id: str | None = None,
 ) -> TransportResult:
     messages: list[dict[str, str]] = []
     if system_prompt:
         messages.append({"role": "system", "content": system_prompt})
     messages.append({"role": "user", "content": prompt})
-    payload = {
-        "model": opts.model,
+
+    model_list = models or ([opts.model] if opts.model else [])
+    payload: dict = {
         "messages": messages,
         "temperature": 0.4,
         "max_tokens": opts.max_tokens or 8192,
         "stream": False,
     }
-    if "127.0.0.1:1234" in opts.base_url or "localhost:1234" in opts.base_url:
+    if len(model_list) > 1:
+        payload["models"] = model_list
+    else:
+        payload["model"] = model_list[0] if model_list else opts.model
+    if provider_prefs:
+        payload["provider"] = provider_prefs
+    if json_schema is not None:
+        payload["response_format"] = {"type": "json_object"}
+    if session_id:
+        payload["session_id"] = session_id
+
+    if "127.0.0.1:1234" in (opts.base_url or "") or "localhost:1234" in (opts.base_url or ""):
         payload["reasoning"] = "off"
-    url = f"{_openai_api_base(opts.base_url)}/chat/completions"
+    url = _openai_chat_url(opts.base_url)
     started = time.perf_counter()
 
     try:
@@ -430,6 +471,7 @@ def _openai_generate(
             if isinstance(maybe_cost, (int, float)):
                 cost = float(maybe_cost)
         upstream_provider = data.get("provider") if isinstance(data, dict) else None
+        resolved_model = data.get("model") if isinstance(data, dict) else None
         return TransportResult(
             text=raw,
             latency_ms=latency,
@@ -439,9 +481,106 @@ def _openai_generate(
             generation_id=str(data.get("id")) if isinstance(data, dict) and data.get("id") else None,
             upstream_provider=str(upstream_provider) if isinstance(upstream_provider, str) else None,
             estimated_cost=cost,
+            resolved_model=str(resolved_model) if isinstance(resolved_model, str) else None,
         )
     except Exception as exc:
         log.warning("OpenAI-compatible LLM request failed: %s", exc)
+        return TransportResult(
+            error=_classify_http_error(exc),
+            latency_ms=int((time.perf_counter() - started) * 1000),
+        )
+
+
+def openrouter_batch_generate(
+    prompt: str,
+    *,
+    entries: list,
+    timeout: float = 120.0,
+    system_prompt: str | None = None,
+    json_schema: dict | None = None,
+    tier: str = "medium",
+    task: str = "generic",
+    requirements=None,
+) -> TransportResult:
+    """One OpenRouter call with models[] fallback chain (native OR routing)."""
+    from backend.core.llm_capabilities import LlmRequirements, entry_to_options
+    from backend.core.openrouter_routing import (
+        build_openrouter_payload,
+        log_openrouter_metadata,
+        openrouter_models_from_entries,
+        openrouter_request_headers,
+        openrouter_session_id,
+        parse_openrouter_response,
+        provider_prefs_for_request,
+        service_tier_for_task,
+    )
+
+    if not entries:
+        return TransportResult(error=LlmTransportError.UNKNOWN)
+    opts = entry_to_options(entries[0])
+    models = openrouter_models_from_entries(entries)
+    req = requirements if isinstance(requirements, LlmRequirements) else LlmRequirements()
+    provider_prefs = provider_prefs_for_request(tier=tier, task=task, requirements=req)
+    session_id = openrouter_session_id(task=task, tier=tier)
+    service_tier = service_tier_for_task(task)
+    messages: list[dict[str, str]] = []
+    if system_prompt:
+        messages.append({"role": "system", "content": system_prompt})
+    messages.append({"role": "user", "content": prompt})
+    payload = build_openrouter_payload(
+        models=models,
+        messages=messages,
+        max_tokens=opts.max_tokens or 8192,
+        provider=provider_prefs,
+        json_schema=json_schema,
+        session_id=session_id,
+        service_tier=service_tier,
+    )
+    url = _openai_chat_url(opts.base_url)
+    started = time.perf_counter()
+    try:
+        with httpx.Client(timeout=timeout) as client:
+            res = client.post(
+                url,
+                headers=openrouter_request_headers(opts, session_id=session_id, task=task),
+                json=payload,
+            )
+            res.raise_for_status()
+            data = res.json()
+        parsed = parse_openrouter_response(data)
+        latency = int((time.perf_counter() - started) * 1000)
+        log_openrouter_metadata(
+            task=task,
+            tier=tier,
+            models=models,
+            parsed=parsed,
+            session_id=session_id,
+        )
+        if not parsed.get("text"):
+            return TransportResult(
+                error=LlmTransportError.EMPTY,
+                latency_ms=latency,
+                finish_reason=parsed.get("finish_reason"),
+                openrouter_metadata=parsed.get("openrouter_metadata"),
+                zero_completion_insurance=bool(parsed.get("zero_completion_insurance")),
+                resolved_model=parsed.get("resolved_model"),
+            )
+        return TransportResult(
+            text=parsed["text"],
+            latency_ms=latency,
+            prompt_tokens=parsed.get("prompt_tokens"),
+            completion_tokens=parsed.get("completion_tokens"),
+            total_tokens=parsed.get("total_tokens"),
+            generation_id=parsed.get("generation_id"),
+            upstream_provider=parsed.get("upstream_provider") or "openrouter",
+            estimated_cost=parsed.get("estimated_cost"),
+            resolved_model=parsed.get("resolved_model"),
+            finish_reason=parsed.get("finish_reason"),
+            openrouter_metadata=parsed.get("openrouter_metadata"),
+            zero_completion_insurance=bool(parsed.get("zero_completion_insurance")),
+        )
+    except Exception as exc:
+        log.warning("OpenRouter batch request failed: %s", exc)
         return TransportResult(
             error=_classify_http_error(exc),
             latency_ms=int((time.perf_counter() - started) * 1000),

@@ -17,7 +17,7 @@ export function VocabReadPage() {
   const listMode = (modeParam && MODE_MAP[modeParam]) || "all";
 
   return (
-    <div className="h-full min-h-0 flex flex-col">
+    <div className="h-full min-h-0 flex flex-col overflow-hidden -m-1 sm:m-0">
       <ReadMode listMode={listMode} markOnNext={listMode !== "mastered"} />
     </div>
   );

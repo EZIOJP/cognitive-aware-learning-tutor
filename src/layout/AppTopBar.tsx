@@ -27,6 +27,7 @@ const PAGE_TITLES: Record<string, string> = {
   "/lecture-notes": "Lecture Notes",
   "/knowledge-base": "Knowledge Base",
   "/review": "Review Hub",
+  "/hub": "Cortex Hub",
   "/ai-coach": "AI Coach",
   "/journal": "Journal",
 };

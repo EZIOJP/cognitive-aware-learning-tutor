@@ -6,6 +6,34 @@ Uses the shared `backend/transcripts/` engine when run inside the Cognitive-Awar
 
 The web **Study Library** (`/lecture-notes`) is for reading, mermaid repair, quiz, and export — not capture or generation.
 
+## Generate (current stack)
+
+Studio uses the **same** repo AI handler as the web app:
+
+1. `llm_use_gateway=true` + provider `auto` / `openrouter` / cloud → `backend.core.llm_gateway`
+2. RAG path → `generate_notes_unified` → hybrid notes with **concept_extract** before retrieve
+3. Notes are **topic briefs** grounded in textbook REFERENCE (not Definition/Importance dumps or classroom UI)
+4. After save, Studio logs `grounding=grounded|degraded` and progress lines show **provider · model · latency**
+
+### Transcripts to generate (checkboxes)
+
+On the **Generate** step:
+
+- List of `data/transcripts/*.txt` with checkboxes + `has note` / `no note`
+- **Generate notes** runs **only checked** files — **one note per file**
+- After parse, the parsed file is auto-checked
+- **Ingest selected (RAG index only)** indexes for quiz/coach — it does **not** generate notes
+
+Legacy text-only path only when corpus/LLM unavailable or **Legacy pipeline** is checked.
+
+Prefer **Lecture-first (recommended)** on Generate — transcript primary + gated textbook cites (no LLM rewrite). Uncheck only for experimental LLM rewrite.
+
+**Classic LM Studio notes (separate GUI):** `run_legacy_notes.bat` — Gemma via LM Studio only, **no RAG / no mermaid / no code enrich**. Manual generate from a transcript, or **Classic Auto** (Live Captions → parse → classic notes → LLM names the `.md` file). Main `run.bat` Studio still handles Capture/Tune if you prefer manual steps.
+
+**RAG:** **Ensure RAG (skip if OK)** does nothing when textbooks already work. **Force rebuild** wipes only when you ask. Textbooks only — no transcript ingest.
+
+See [docs/LLM_GATEWAY.md](../docs/LLM_GATEWAY.md) and [docs/TRANSCRIPT_STUDIO_WORKFLOW.md](../docs/TRANSCRIPT_STUDIO_WORKFLOW.md).
+
 ## Quick start (Windows)
 
 ```bat

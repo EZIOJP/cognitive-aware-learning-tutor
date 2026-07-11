@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any
 
 from backend.core.llm_job_context import llm_job
+from backend.core.llm_gateway import require_gateway_chain
 from backend.core.ollama_client import LlmOptions, ollama_available, ollama_generate
 from backend.corpus.retrieve import (
     NOTES_RAG_SOURCE_TYPES,
@@ -204,11 +205,7 @@ def _generate_hybrid_grounded_notes_impl(
     """
     if not corpus_available():
         raise RuntimeError("Corpus not available for hybrid grounded notes.")
-    if not ollama_available(llm):
-        raise RuntimeError(
-            "LLM required for hybrid grounded notes. Configure the repo AI handler "
-            "(OLLAMA_ENABLED=1, LLM_CLOUD_API_KEY, data/llm_tiers.json) or pass an explicit provider override."
-        )
+    require_gateway_chain(llm_tier, task="notes_job", llm=llm)
 
     transcript_path = resolve_transcript_path(transcript_file)
     note_title = (title or topic or transcript_path.stem.replace("_", " ")).strip()
@@ -285,8 +282,22 @@ def _generate_hybrid_grounded_notes_impl(
     from backend.transcripts.coherence import SEQUENTIAL_CHAR_LIMIT
 
     for i, chunk in enumerate(chunks, start=1):
-        query = chunk_retrieval_query(chunk, base_topic)
-        log.info("[hybrid] chunk %d/%d query=%r", i, total, query[:120])
+        from backend.transcripts.concept_extract import (
+            concepts_to_retrieval_query,
+            extract_concepts,
+        )
+
+        concepts = extract_concepts(
+            chunk,
+            topic=base_topic,
+            max_concepts=6,
+            llm=llm,
+            confirm_heavy_budget=confirm_heavy_budget,
+        )
+        query = concepts_to_retrieval_query(concepts, topic=base_topic)
+        if not query.strip():
+            query = chunk_retrieval_query(chunk, base_topic)
+        log.info("[hybrid] chunk %d/%d query=%r concepts=%s", i, total, query[:120], concepts[:4])
         hits = hybrid_retrieve(
             query,
             subject_tags=subject_tags,
@@ -383,7 +394,7 @@ def _generate_hybrid_grounded_notes_impl(
         handoff = ingest_lecture_handoff(transcript_path=transcript_path, note_path=notes_path)
 
     rel = notes_path.relative_to(NOTES_DIR).as_posix()
-    return {
+    out = {
         "mode": "hybrid_grounded",
         "filename": rel,
         "notes_path": str(notes_path),
@@ -391,9 +402,16 @@ def _generate_hybrid_grounded_notes_impl(
         "chunk_count": len(chunks),
         "corpus_hits_total": sum(m["hit_count"] for m in chunk_meta),
         "citations": citation_ids[:24],
+        "chunk_meta": chunk_meta,
         "chunks": chunk_meta,
         "corpus_handoff": handoff,
     }
+    from backend.transcripts.note_generation import resolve_grounding
+
+    status, reason = resolve_grounding("hybrid_grounded", out)
+    out["grounding_status"] = status
+    out["grounding_reason"] = reason
+    return out
 
 
 def should_use_hybrid_chunked(

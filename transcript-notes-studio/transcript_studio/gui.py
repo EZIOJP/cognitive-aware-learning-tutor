@@ -43,8 +43,9 @@ def _import_corpus_setup():
 
 from transcript_studio.config import AppConfig, load_config, save_config
 from transcript_studio.rag_status import RagStatus, check_rag_with_opts, llm_status_line
+from transcript_studio.auto_pipeline import note_exists_for_transcript
 from transcript_studio.gateway_llm import llm_generate_reachable, llm_preflight_error, uses_gateway
-from transcript_studio.llm_client import options_from_config
+from transcript_studio.llm_env_panel import KEY_FIELDS
 from transcript_studio.ui_text import (
     format_preview_text,
     insert_text_chunked,
@@ -248,6 +249,8 @@ class TranscriptStudioApp(_AppBase):
         self._live_whisper_session: LiveWhisperSession | None = None
         self._capture_session: CaptureSession | None = None
         self._source_files: list[Path] = []
+        self._gen_queue_rows: list[tuple[Path, tk.BooleanVar]] = []
+        self._last_llm_call_sig: str | None = None
         self._last_transcript_path: Path | None = None
         self._last_note_path: Path | None = None
         self._corpus_job_id: str | None = None
@@ -323,7 +326,7 @@ class TranscriptStudioApp(_AppBase):
         ttk.Label(bar, textvariable=self.system_status_var, foreground=_UI_MUTED).pack(side=tk.LEFT, padx=(12, 0))
         ttk.Button(bar, text="Open backend log", command=self._open_backend_log).pack(side=tk.RIGHT, padx=(4, 0))
         ttk.Button(bar, text="Open studio log", command=self._open_log_file).pack(side=tk.RIGHT, padx=(4, 0))
-        ttk.Button(bar, text="Test LLM", command=self._test_llm).pack(side=tk.RIGHT, padx=(4, 0))
+        ttk.Button(bar, text="Test connections", command=self._test_connections).pack(side=tk.RIGHT, padx=(4, 0))
         ttk.Button(bar, text="Settings", command=self._save_settings).pack(side=tk.RIGHT)
 
     def _build_global_progress(self, parent: ttk.Frame) -> None:
@@ -412,6 +415,8 @@ class TranscriptStudioApp(_AppBase):
                 self._step_buttons[i].configure(style=style)
             except tk.TclError:
                 pass
+        if index == 2:
+            self._refresh_generate_queue()
 
     def _build_capture_step(self, parent: ttk.Frame) -> None:
         intro = ttk.Label(
@@ -469,6 +474,7 @@ class TranscriptStudioApp(_AppBase):
         self.preview_notebook.add(self.notes_audit_text, text="Notes audit")
 
     def _build_generate_step(self, parent: ttk.Frame) -> None:
+        self._build_generate_queue(parent)
         self._build_summarize_options(parent)
 
         actions = ttk.Frame(parent)
@@ -480,6 +486,87 @@ class TranscriptStudioApp(_AppBase):
         self.cancel_summarize_btn.pack(side=tk.LEFT, padx=(8, 0))
         self._add_button(actions, "Open output folder", self._open_output).pack(side=tk.LEFT, padx=(8, 0))
         ttk.Button(actions, text="← Tune", command=lambda: self._show_workflow_step(1)).pack(side=tk.RIGHT)
+
+    def _build_generate_queue(self, parent: ttk.Frame) -> None:
+        box = ttk.LabelFrame(
+            parent,
+            text="Transcripts to generate — check files (one note per checked file)",
+            padding=8,
+        )
+        box.pack(fill=tk.BOTH, expand=False, pady=(0, 6))
+        btns = ttk.Frame(box)
+        btns.pack(fill=tk.X, pady=(0, 4))
+        ttk.Button(btns, text="Refresh", command=lambda: self._refresh_generate_queue()).pack(side=tk.LEFT)
+        ttk.Button(btns, text="Check none", command=self._gen_queue_check_none).pack(side=tk.LEFT, padx=(6, 0))
+        ttk.Button(btns, text="Check without notes", command=self._gen_queue_check_without_notes).pack(
+            side=tk.LEFT, padx=(6, 0)
+        )
+        self.gen_queue_status_var = tk.StringVar(value="Refresh to load transcripts from data/transcripts")
+        ttk.Label(box, textvariable=self.gen_queue_status_var, foreground=_UI_MUTED).pack(anchor=tk.W)
+
+        list_wrap = ttk.Frame(box)
+        list_wrap.pack(fill=tk.BOTH, expand=True, pady=(4, 0))
+        self._gen_queue_canvas = tk.Canvas(list_wrap, height=150, highlightthickness=0, bg=_UI_PANEL)
+        scroll = ttk.Scrollbar(list_wrap, orient=tk.VERTICAL, command=self._gen_queue_canvas.yview)
+        self._gen_queue_inner = ttk.Frame(self._gen_queue_canvas)
+        self._gen_queue_inner.bind(
+            "<Configure>",
+            lambda e: self._gen_queue_canvas.configure(scrollregion=self._gen_queue_canvas.bbox("all")),
+        )
+        self._gen_queue_canvas.create_window((0, 0), window=self._gen_queue_inner, anchor=tk.NW)
+        self._gen_queue_canvas.configure(yscrollcommand=scroll.set)
+        self._gen_queue_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scroll.pack(side=tk.RIGHT, fill=tk.Y)
+
+    def _refresh_generate_queue(self, prefer_check: Path | None = None) -> None:
+        if not hasattr(self, "_gen_queue_inner"):
+            return
+        prev_checked = {p.resolve() for p, v in self._gen_queue_rows if v.get()}
+        for child in self._gen_queue_inner.winfo_children():
+            child.destroy()
+        self._gen_queue_rows = []
+        prefer = prefer_check.resolve() if prefer_check else None
+        paths = list_transcripts()
+        for path in paths:
+            has_note = note_exists_for_transcript(path, self.cfg)
+            badge = "has note" if has_note else "no note"
+            var = tk.BooleanVar(value=False)
+            if prefer and path.resolve() == prefer:
+                var.set(True)
+            elif path.resolve() in prev_checked:
+                var.set(True)
+            row = ttk.Frame(self._gen_queue_inner)
+            row.pack(fill=tk.X, anchor=tk.W)
+            ttk.Checkbutton(
+                row,
+                text=f"{path.name}  [{badge}]",
+                variable=var,
+            ).pack(side=tk.LEFT, anchor=tk.W)
+            self._gen_queue_rows.append((path, var))
+        n = len(self._gen_queue_rows)
+        checked = sum(1 for _, v in self._gen_queue_rows if v.get())
+        self.gen_queue_status_var.set(f"{n} transcript(s) · {checked} checked · one note each when you Generate")
+        self._gen_queue_canvas.configure(scrollregion=self._gen_queue_canvas.bbox("all"))
+
+    def _gen_queue_check_none(self) -> None:
+        for _, var in self._gen_queue_rows:
+            var.set(False)
+        self._refresh_generate_queue_status_only()
+
+    def _gen_queue_check_without_notes(self) -> None:
+        for path, var in self._gen_queue_rows:
+            var.set(not note_exists_for_transcript(path, self.cfg))
+        self._refresh_generate_queue_status_only()
+
+    def _refresh_generate_queue_status_only(self) -> None:
+        if not hasattr(self, "gen_queue_status_var"):
+            return
+        n = len(self._gen_queue_rows)
+        checked = sum(1 for _, v in self._gen_queue_rows if v.get())
+        self.gen_queue_status_var.set(f"{n} transcript(s) · {checked} checked · one note each when you Generate")
+
+    def _checked_generate_paths(self) -> list[Path]:
+        return [p for p, v in self._gen_queue_rows if v.get() and p.is_file() and p.suffix.lower() == ".txt"]
 
     def _build_done_step(self, parent: ttk.Frame) -> None:
         ttk.Label(
@@ -535,16 +622,21 @@ class TranscriptStudioApp(_AppBase):
                 summary = {"total_chunks": 0, "document_count": 0, "issues": [str(exc)]}
             chunks = summary.get("total_chunks", 0)
             textbooks = summary.get("textbook_count", 0)
-            total_docs = summary.get("document_count", 0)
-            extra = total_docs - textbooks
-            if textbooks and extra > 0:
-                detail = f"{chunks:,} chunks · {textbooks} textbooks (+{extra} transcripts/notes for quiz)"
-            elif textbooks:
-                detail = f"{chunks:,} chunks · {textbooks} textbooks"
+            tx = summary.get("transcript_count", 0)
+            notes_st = summary.get("notes_rag_status") or "?"
+            smoke = summary.get("smoke_hits")
+            if textbooks:
+                detail = f"{chunks:,} chunks · {textbooks} textbooks · notes_rag={notes_st}"
             else:
-                detail = f"{chunks:,} chunks · {total_docs} documents"
-            if summary.get("issues"):
-                detail += f" · {summary['issues'][0][:80]}"
+                detail = f"{chunks:,} chunks · notes_rag={notes_st} (no textbooks)"
+            if tx:
+                detail += f" · ⚠ {tx} transcripts (will auto-purge)"
+            if smoke is not None:
+                detail += f" · smoke={smoke}"
+            if summary.get("skip_rebuild") and notes_st in ("ok", "degraded"):
+                detail += " · rebuild skipped unless Force"
+            if summary.get("issues") and notes_st == "broken":
+                detail += f" · {str(summary['issues'][0])[:60]}"
             backend = summary.get("retrieval_backend") or status.retrieval_backend
             if status.rag_ready and backend == "sqlite":
                 detail += " · ⚠ SQLite vectors (Qdrant locked)"
@@ -586,9 +678,10 @@ class TranscriptStudioApp(_AppBase):
         if self._busy:
             return
         if not messagebox.askyesno(
-            "Initialize RAG",
-            "Quick init scans your library and ingests MML chapters 1–2 if present.\n"
-            "Notes RAG uses textbooks only — lectures are indexed after you generate notes.\n\nContinue?",
+            "Ensure notes RAG",
+            "Checks textbooks RAG.\n"
+            "• If working → skip rebuild\n"
+            "• If broken → ingest textbooks only (no transcripts)\n\nContinue?",
         ):
             return
 
@@ -599,16 +692,26 @@ class TranscriptStudioApp(_AppBase):
                 def on_progress(msg: str) -> None:
                     self._ui(lambda m=msg: self._on_operation_progress(m))
 
-                result = cs.initialize_corpus_quick(on_progress=on_progress)
+                result = cs.initialize_corpus_quick(on_progress=on_progress, force=False)
                 total = result.get("total_chunks", 0)
+                action = result.get("action") or result.get("message") or "done"
+                skipped = bool(result.get("skipped_rebuild"))
 
                 def done() -> None:
                     self._refresh_rag_status()
-                    messagebox.showinfo(
-                        "RAG initialized",
-                        f"Knowledge base ready — {total:,} chunks indexed.\n\n"
-                        "You can now generate RAG-grounded notes.",
-                    )
+                    if skipped:
+                        messagebox.showinfo(
+                            "RAG already OK",
+                            f"{result.get('message') or 'Rebuild skipped.'}\n"
+                            f"Chunks: {total:,}\n\n"
+                            "Use Force rebuild only if you want a wipe.",
+                        )
+                    else:
+                        messagebox.showinfo(
+                            "RAG updated",
+                            f"Action: {action}\nChunks: {total:,}\n"
+                            "Textbooks only — Generate notes uses this RAG.",
+                        )
 
                 self._ui(done)
             except ImportError as exc:
@@ -626,22 +729,67 @@ class TranscriptStudioApp(_AppBase):
                 self._ui(lambda: (self._set_busy(False), self._progress_end()))
 
         self._set_busy(True)
-        self._progress_begin("Initializing knowledge base…", indeterminate=True)
+        self._progress_begin("Checking / ensuring knowledge base…", indeterminate=True)
+        threading.Thread(target=work, daemon=True).start()
+
+    def _run_corpus_reset_rebuild(self) -> None:
+        if self._busy:
+            return
+        if not messagebox.askyesno(
+            "Force rebuild textbooks",
+            "FORCE wipe of corpus (registry, BM25, Qdrant) then re-ingest TEXTBOOKS only.\n"
+            "No transcripts. Use only when RAG is broken or you want a clean index.\n\n"
+            "Close other Python using data/corpus/qdrant first.\n\nContinue?",
+        ):
+            return
+
+        def work() -> None:
+            try:
+                cs = _import_corpus_setup()
+
+                def on_progress(msg: str) -> None:
+                    self._ui(lambda m=msg: self._on_operation_progress(m))
+
+                result = cs.reset_and_rebuild_textbooks(
+                    ingest_full_books=True,
+                    on_progress=on_progress,
+                    force=True,
+                )
+                total = result.get("total_chunks", 0)
+
+                def done() -> None:
+                    self._refresh_rag_status()
+                    messagebox.showinfo(
+                        "Force rebuild done",
+                        f"Textbooks rebuilt — {total:,} chunks.\n"
+                        "Generate notes will retrieve these textbooks.",
+                    )
+
+                self._ui(done)
+            except Exception as exc:
+                log_error("Corpus reset+rebuild failed", exc)
+                err = f"{type(exc).__name__}: {exc}"
+                self._ui(lambda: messagebox.showerror("Corpus reset failed", err))
+            finally:
+                self._ui(lambda: (self._set_busy(False), self._progress_end()))
+
+        self._set_busy(True)
+        self._progress_begin("Force rebuilding textbooks…", indeterminate=True)
         threading.Thread(target=work, daemon=True).start()
 
     def _run_corpus_init_full(self) -> None:
         if self._busy:
             return
         if not messagebox.askyesno(
-            "Full corpus build",
-            "Full build runs the same pipeline as Study Library → Build Knowledge Base "
-            "(metadata, MML, transcripts, optional full books).\n\nThis may take several minutes. Continue?",
+            "Ensure full textbooks",
+            "Same as Ensure: skip if RAG works; rebuild textbooks only if broken.\n"
+            "No lecture transcripts.\n\nContinue?",
         ):
             return
 
         try:
             cs = _import_corpus_setup()
-            job = cs.start_full_corpus_setup()
+            job = cs.start_full_corpus_setup(transcript_limit=0, force=False)
             self._corpus_job_id = job.job_id
             self._set_busy(True)
             self._progress_begin("Building knowledge base…", indeterminate=True)
@@ -657,53 +805,33 @@ class TranscriptStudioApp(_AppBase):
             log_error("Corpus full build failed", exc)
             messagebox.showerror("Corpus build failed", str(exc))
 
-    def _run_corpus_ingest_sources(self) -> None:
-        if self._busy:
-            return
+    def _open_classic_notes_gui(self) -> None:
+        """Launch separate Classic Notes window (LM Studio only)."""
         try:
-            paths = [p for p in self._resolve_sources() if p.suffix.lower() == ".txt"]
+            import subprocess
+            import sys
+            from pathlib import Path
+
+            studio_root = Path(__file__).resolve().parents[1]
+            script = studio_root / "run_legacy_notes.py"
+            py = sys.executable
+            subprocess.Popen(  # noqa: S603
+                [py, "-u", str(script)],
+                cwd=str(studio_root),
+                creationflags=getattr(subprocess, "CREATE_NEW_CONSOLE", 0),
+            )
+            self._log("Opened Classic Notes GUI (LM Studio · no RAG · no mermaid)")
         except Exception as exc:
-            messagebox.showwarning("No sources", str(exc))
-            return
-        if not paths:
-            messagebox.showwarning("No transcripts", "Add at least one .txt transcript on the Capture step.")
-            return
+            log_error("Open Classic Notes GUI failed", exc)
+            messagebox.showerror("Classic Notes", str(exc))
 
-        def work() -> None:
-            try:
-                cs = _import_corpus_setup()
-
-                def on_progress(msg: str) -> None:
-                    self._ui(lambda m=msg: self._on_operation_progress(m))
-
-                result = cs.ingest_transcript_paths(paths, on_progress=on_progress)
-                total = result.get("total_chunks", 0)
-                ingested = result.get("ingested", 0)
-
-                def done() -> None:
-                    self._refresh_rag_status()
-                    messagebox.showinfo(
-                        "Transcripts ingested",
-                        f"Ingested {ingested} file(s) — {total:,} total chunks in corpus.",
-                    )
-
-                self._ui(done)
-            except ImportError:
-                err = (
-                    "Missing dependency for RAG corpus (sqlalchemy). "
-                    "Close Studio and run transcript-notes-studio\\run.bat again to install deps."
-                )
-                self._ui(lambda: messagebox.showerror("Ingest failed", err))
-            except Exception as exc:
-                log_error("Corpus ingest failed", exc)
-                err = f"{type(exc).__name__}: {exc}"
-                self._ui(lambda: messagebox.showerror("Ingest failed", err))
-            finally:
-                self._ui(lambda: (self._set_busy(False), self._progress_end()))
-
-        self._set_busy(True)
-        self._progress_begin("Ingesting transcripts into corpus…", indeterminate=True)
-        threading.Thread(target=work, daemon=True).start()
+    def _run_corpus_ingest_sources(self) -> None:
+        messagebox.showinfo(
+            "Transcript ingest disabled",
+            "Notes RAG indexes textbooks only.\n"
+            "Generate notes still retrieves those textbooks — "
+            "transcripts are not added to the corpus.",
+        )
 
     def _poll_corpus_job(self) -> None:
         if not self._corpus_job_id:
@@ -910,19 +1038,31 @@ class TranscriptStudioApp(_AppBase):
         rag_btns.pack(fill=tk.X)
         self._add_button(
             rag_btns,
-            "Quick init (textbooks + MML)",
+            "Ensure RAG (skip if OK)",
             self._run_corpus_init_quick,
         ).pack(side=tk.LEFT, padx=(0, 6))
         self._add_button(
             rag_btns,
-            "Full build (library + MML + ingest)",
+            "Force rebuild textbooks",
+            self._run_corpus_reset_rebuild,
+        ).pack(side=tk.LEFT, padx=(0, 6))
+        self._add_button(
+            rag_btns,
+            "Ensure full textbooks",
             self._run_corpus_init_full,
         ).pack(side=tk.LEFT, padx=(0, 6))
         self._add_button(
             rag_btns,
-            "Ingest selected transcripts",
-            self._run_corpus_ingest_sources,
+            "Open Classic Notes GUI",
+            self._open_classic_notes_gui,
         ).pack(side=tk.LEFT)
+        ttk.Label(
+            rag_row,
+            text="Classic Notes GUI = separate window: LM Studio Gemma only (no RAG, no mermaid). "
+            "Use main Studio for Capture/Tune; that window for generation.",
+            wraplength=700,
+            foreground=_UI_MUTED,
+        ).pack(anchor=tk.W, pady=(6, 0))
 
         auto_row = ttk.LabelFrame(tab, text="Auto run (sleep / pre-class)", padding=8)
         auto_row.pack(fill=tk.X, pady=(0, 6))
@@ -967,11 +1107,17 @@ class TranscriptStudioApp(_AppBase):
             "Include diagrams (mermaid/code enrich)",
             self.enrich_visuals_var,
         ).pack(side=tk.LEFT, padx=(0, 12))
+        self.assemble_mode_var = tk.BooleanVar(value=True)
+        self._add_checkbox(
+            r0,
+            "Lecture-first (recommended)",
+            self.assemble_mode_var,
+        ).pack(side=tk.LEFT, padx=(0, 12))
         ttk.Label(
             r0,
-            text="quality = more LLM passes + pauses (CPU-friendly, slower). LM Studio: GPU layers 0 for CPU-only.",
+            text="Lecture-first = your class text + gated textbook cites. Uncheck for experimental LLM rewrite.",
             foreground=_UI_MUTED,
-            wraplength=520,
+            wraplength=420,
         ).pack(side=tk.LEFT)
 
         r1 = ttk.Frame(opts)
@@ -1038,7 +1184,7 @@ class TranscriptStudioApp(_AppBase):
         self.provider_var = tk.StringVar()
         ttk.Combobox(
             lr1, textvariable=self.provider_var,
-            values=["auto", "gemini", "openai", "lmstudio", "ollama"], width=10, state="readonly",
+            values=["auto", "openrouter", "gemini", "openai", "lmstudio", "ollama"], width=12, state="readonly",
         ).pack(side=tk.LEFT, padx=(6, 12))
         ttk.Label(lr1, text="Tier").pack(side=tk.LEFT)
         self.tier_var = tk.StringVar()
@@ -1055,6 +1201,27 @@ class TranscriptStudioApp(_AppBase):
         ttk.Label(lr1, text="Temp").pack(side=tk.LEFT, padx=(8, 0))
         self.temp_var = tk.StringVar(value=str(self.cfg.llm_temperature))
         ttk.Entry(lr1, textvariable=self.temp_var, width=5).pack(side=tk.LEFT, padx=(4, 0))
+
+        self._key_vars: dict[str, tk.StringVar] = {}
+        keys_toggle = ttk.Frame(self._llm_frame)
+        keys_toggle.pack(fill=tk.X, pady=(8, 0))
+        self._keys_visible = tk.BooleanVar(value=False)
+        ttk.Checkbutton(
+            keys_toggle,
+            text="Show API keys (saved to repo .env)",
+            variable=self._keys_visible,
+            command=self._toggle_key_fields,
+        ).pack(side=tk.LEFT)
+        ttk.Button(keys_toggle, text="Save keys", command=self._save_env_keys).pack(side=tk.RIGHT)
+
+        self._keys_frame = ttk.Frame(self._llm_frame)
+        for env_key, label in KEY_FIELDS:
+            row = ttk.Frame(self._keys_frame)
+            row.pack(fill=tk.X, pady=2)
+            ttk.Label(row, text=label, width=18).pack(side=tk.LEFT)
+            var = tk.StringVar()
+            self._key_vars[env_key] = var
+            ttk.Entry(row, textvariable=var, show="*").pack(side=tk.LEFT, fill=tk.X, expand=True)
 
         self._apply_rag_banner()
 
@@ -1435,7 +1602,15 @@ class TranscriptStudioApp(_AppBase):
     def _save_settings(self) -> None:
         provider = self.provider_var.get().strip().lower()
         self.cfg.llm_provider = provider
-        self.cfg.llm_use_gateway = provider in ("auto", "gateway", "gemini", "openai", "")
+        self.cfg.llm_use_gateway = provider in (
+            "auto",
+            "gateway",
+            "gemini",
+            "openai",
+            "openrouter",
+            "or",
+            "",
+        )
         if hasattr(self, "tier_var"):
             tier = self.tier_var.get().strip().lower()
             self.cfg.llm_tier = tier if tier in ("light", "medium", "heavy") else ""
@@ -1823,15 +1998,32 @@ class TranscriptStudioApp(_AppBase):
     def _on_operation_progress(self, msg: str) -> None:
         """Route backend progress messages to log + global progress bar."""
         try:
-            self._log(msg)
+            display = msg
+            try:
+                from backend.core.llm_gateway import get_last_calls
+
+                calls = get_last_calls()
+                if calls:
+                    last = calls[-1]
+                    provider = last.get("provider") or ""
+                    model = last.get("model") or ""
+                    lat = last.get("latency_ms")
+                    sig = f"{provider}|{model}|{lat}"
+                    if provider and sig != self._last_llm_call_sig:
+                        self._last_llm_call_sig = sig
+                        lat_s = f" · {lat}ms" if lat is not None else ""
+                        display = f"{msg}  · {provider} · {model}{lat_s}"
+            except Exception:
+                pass
+            self._log(display)
             chunk = parse_chunk_progress(msg)
             if chunk:
                 current, total = chunk
-                self._progress_steps(current, total, msg)
+                self._progress_steps(current, total, display)
             elif "Refining" in msg or "Injecting" in msg or "Embedding" in msg:
-                self._progress_update(0.92, msg)
+                self._progress_update(0.92, display)
             elif msg.startswith("Done"):
-                self._progress_update(1.0, msg)
+                self._progress_update(1.0, display)
         except Exception as exc:
             log_error("Progress UI update failed", exc)
 
@@ -2514,6 +2706,8 @@ class TranscriptStudioApp(_AppBase):
                         f"Cleaned — {words:,} words"
                         + (f" · {audit.review_count} flagged" if audit.review_count else "")
                     )
+                    prefer = paths[0] if paths else None
+                    self._refresh_generate_queue(prefer_check=prefer)
                     self._progress_end()
                     self._set_busy(False)
 
@@ -2573,24 +2767,18 @@ class TranscriptStudioApp(_AppBase):
                 err = llm_preflight_error(self.cfg)
                 if err:
                     raise RuntimeError(err)
-                paths = self._resolve_sources()
-                title = self.title_var.get().strip() or (
-                    paths[0].stem.replace("_", " ") if len(paths) == 1 else "Combined lecture"
-                )
+                paths = self._checked_generate_paths()
+                if not paths:
+                    raise RuntimeError(
+                        "Check at least one transcript in “Transcripts to generate” "
+                        "(Generate step), or parse a file first so it appears checked."
+                    )
                 out = Path(self.output_var.get().strip()) if self.output_var.get().strip() else None
                 opts = None if uses_gateway(self.cfg) else options_from_config(self.cfg)
                 context = self._sanitize_context_folder(self.context_var.get().strip() or None)
-                if not context and len(paths) > 1:
-                    parent = paths[0].parent
-                    if self._is_sensible_context_folder(parent):
-                        context = str(parent)
                 session_dir = None
                 if self.cfg.last_session and Path(self.cfg.last_session).is_dir():
                     session_dir = Path(self.cfg.last_session)
-                for p in paths:
-                    if (p.parent / "snapshots").is_dir():
-                        session_dir = p.parent
-                        break
 
                 def on_progress(msg: str) -> None:
                     self._ui(lambda m=msg: self._on_operation_progress(m))
@@ -2598,23 +2786,30 @@ class TranscriptStudioApp(_AppBase):
                 def on_step(current: int, total: int, msg: str) -> None:
                     self._ui(lambda c=current, t=total, m=msg: self._progress_steps(c, t, m))
 
-                pre_cleaned = self._pre_cleaned_for_generate()
-                audit_source = pre_cleaned or (self._cleaned_text or "").strip() or None
-                if (
-                    hasattr(self, "fast_var")
-                    and not self.fast_var.get()
-                    and audit_source
-                    and len(audit_source.split()) >= getattr(
-                        self.cfg, "auto_fast_mode_word_threshold", 45_000
-                    )
-                ):
-                    self.fast_var.set(True)
-                    self._log(
-                        "Auto fast_mode enabled for large tuned transcript "
-                        f"({len(audit_source.split()):,} words)."
-                    )
-                enrich_visuals = self.enrich_visuals_var.get() if hasattr(self, "enrich_visuals_var") else self.cfg.enrich_visuals
-                gen_kwargs = dict(
+                # Prefer narrative/sequential when corpus is up (unless user forced legacy/fast)
+                note_style = getattr(self.cfg, "note_style", "narrative") or "narrative"
+                coherence_mode = getattr(self.cfg, "coherence_mode", "sequential") or "sequential"
+                try:
+                    from backend.corpus.retrieve import corpus_available
+
+                    if corpus_available() and not self.legacy_pipeline_var.get():
+                        if note_style == "bullets":
+                            note_style = "narrative"
+                        if coherence_mode == "compact" and self.quality_var.get().strip().lower() in (
+                            "quality",
+                            "cloud",
+                            "overnight",
+                        ):
+                            coherence_mode = "sequential"
+                except Exception:
+                    pass
+
+                enrich_visuals = (
+                    self.enrich_visuals_var.get()
+                    if hasattr(self, "enrich_visuals_var")
+                    else self.cfg.enrich_visuals
+                )
+                base_kwargs = dict(
                     aggressive=self.aggressive_var.get(),
                     output_dir=out,
                     opts=opts,
@@ -2626,47 +2821,92 @@ class TranscriptStudioApp(_AppBase):
                     use_tag_extraction=self.tags_var.get() and not self.fast_var.get(),
                     inject_wikilinks=self.wikilinks_var.get(),
                     legacy_pipeline=self.legacy_pipeline_var.get(),
-                    pre_cleaned=pre_cleaned,
+                    ingest_corpus=False,
+                    assemble_mode=bool(
+                        not hasattr(self, "assemble_mode_var") or self.assemble_mode_var.get()
+                    ),
+                    enrich_visuals=(
+                        False
+                        if (not hasattr(self, "assemble_mode_var") or self.assemble_mode_var.get())
+                        else (enrich_visuals and not self.fast_var.get())
+                    ),
                     max_chunks=self.cfg.max_llm_chunks,
-                    enrich_visuals=enrich_visuals and not self.fast_var.get(),
                     restore_punctuation=getattr(self.cfg, "restore_punctuation", False),
                     asr_backend=getattr(self.cfg, "asr_backend", "recasepunc"),
-                    note_style=getattr(self.cfg, "note_style", "bullets"),
-                    coherence_mode=getattr(self.cfg, "coherence_mode", "compact"),
+                    note_style=note_style,
+                    coherence_mode=coherence_mode,
                     semantic_threshold=getattr(self.cfg, "semantic_chunk_threshold", 0.45),
                     semantic_threshold_mode=getattr(self.cfg, "semantic_threshold_mode", "fixed"),
                     semantic_chunk_percentile=getattr(self.cfg, "semantic_chunk_percentile", 95.0),
                     narrative_judge=getattr(self.cfg, "narrative_judge", False),
-                    session_dir=session_dir,
                     on_progress=on_progress,
                     on_step=on_step,
                     cancel_event=self._summarize_cancel.is_set,
                 )
-                if len(paths) == 1:
-                    note_path, body, gen_mode = generate_notes_from_file(
-                        paths[0],
-                        title=title,
-                        **gen_kwargs,
-                    )
-                else:
-                    note_path, body, gen_mode = generate_notes_from_files(
-                        paths,
-                        title=title,
-                        **gen_kwargs,
-                    )
 
-                transcript = next((p for p in paths if p.suffix.lower() == ".txt"), paths[0] if paths else None)
-                handoff_summary = _corpus_handoff_after_save(transcript, note_path, gen_mode)
-                if handoff_summary:
-                    self._log(handoff_summary)
+                from transcript_studio.notes_generator import last_generate_meta
+
+                saved: list[tuple[Path, Path, str, str]] = []
+                n = len(paths)
+                self._ui(lambda: self._on_operation_progress(f"Generating {n} selected transcript(s)…"))
+                for i, path in enumerate(paths, 1):
+                    if self._summarize_cancel.is_set():
+                        raise RuntimeError("Cancelled")
+                    title = self.title_var.get().strip() if n == 1 else ""
+                    title = title or path.stem.replace("_", " ")
+                    file_session = session_dir
+                    if (path.parent / "snapshots").is_dir():
+                        file_session = path.parent
+                    pre_cleaned = None
+                    if n == 1:
+                        pre_cleaned = self._pre_cleaned_for_generate()
+                    gen_kwargs = dict(base_kwargs)
+                    gen_kwargs["session_dir"] = file_session
+                    gen_kwargs["pre_cleaned"] = pre_cleaned
+                    self._ui(
+                        lambda i=i, n=n, name=path.name: self._on_operation_progress(
+                            f"[{i}/{n}] Generating: {name}"
+                        )
+                    )
+                    note_path, body, gen_mode = generate_notes_from_file(
+                        path,
+                        title=title,
+                        **gen_kwargs,
+                    )
+                    ground_meta = last_generate_meta()
+                    ground_status = str(ground_meta.get("grounding_status") or "")
+                    ground_reason = ground_meta.get("grounding_reason")
+                    if ground_status == "degraded":
+                        self._ui(
+                            lambda r=ground_reason: self._log(
+                                "Grounding degraded — textbook RAG unavailable"
+                                + (f" ({r})" if r else "")
+                                + ". Note is transcript-only."
+                            )
+                        )
+                    elif ground_status == "grounded":
+                        self._ui(lambda: self._log("Grounding: textbook corpus citations present."))
+                    handoff_summary = _corpus_handoff_after_save(path, note_path, gen_mode)
+                    if handoff_summary:
+                        self._ui(lambda h=handoff_summary: self._log(h))
+                    saved.append((path, note_path, gen_mode, ground_status))
+
+                note_path = saved[-1][1]
+                body = note_path.read_text(encoding="utf-8")
+                gen_mode = saved[-1][2]
+                ground_status = saved[-1][3]
+                paths_done = [p for p, *_ in saved]
+                audit_source = (self._cleaned_text or "").strip() or None
+                if len(paths_done) == 1:
+                    audit_source = self._pre_cleaned_for_generate() or audit_source
 
                 def done() -> None:
                     self._last_note_path = note_path
-                    if paths:
-                        self._last_transcript_path = paths[0]
+                    self._last_transcript_path = paths_done[-1]
                     self._update_done_paths()
+                    self._refresh_generate_queue()
                     note_rel = _note_relative_path(note_path, self.cfg)
-                    if audit_source:
+                    if audit_source and len(paths_done) == 1:
                         notes_audit = audit_notes(audit_source, body)
                         notes_audit_body = format_notes_audit_report(notes_audit)
                         self._last_notes_audit = notes_audit_body
@@ -2676,46 +2916,40 @@ class TranscriptStudioApp(_AppBase):
                             f"({notes_audit.notes_words:,} / {notes_audit.source_words:,} words)"
                         )
                     else:
+                        listing = "\n".join(f"- {np.name} ({gs or mode})" for _, np, mode, gs in saved)
                         self._set_preview_text(
                             self.notes_audit_text,
-                            "Parse & preview on Tune first to compare cleaned transcript vs generated notes.",
+                            f"Batch complete — {len(saved)} note(s):\n{listing}",
                         )
                     summary = (
-                        f"# Saved: {note_path.name}\n\n"
-                        f"{len(body):,} characters · see Notes audit tab for retention check.\n\n"
-                        f"{body[:2000].strip()}"
+                        f"# Saved {len(saved)} note(s)\n\n"
+                        + "\n".join(f"- {np.name}" for _, np, *_ in saved)
+                        + f"\n\nLast preview ({note_path.name}):\n\n{body[:2000].strip()}"
                     )
                     if len(body) > 2000:
                         summary += "\n\n… [note preview truncated]"
                     self._set_preview_text(self.clean_text, summary)
-                    tab = self.notes_audit_text if audit_source else self.clean_text
-                    self.preview_notebook.select(tab)
-                    self._show_workflow_step(1)
-                    self._log(f"Saved: {note_path}")
+                    self.preview_notebook.select(self.clean_text)
+                    self._log(f"Saved {len(saved)} note(s); last={note_path}")
                     self._progress_update(1.0, "Complete")
                     mode_hint = f" · mode={gen_mode}" if gen_mode else ""
+                    if ground_status == "degraded":
+                        mode_hint += " · ⚠ transcript-only (no textbook grounding)"
+                    elif ground_status == "grounded":
+                        mode_hint += " · grounded"
                     lint_warn = ""
                     if "LINT_FAILED" in body:
-                        lint_warn = " · ⚠ broken code/mermaid blocks (see LINT_FAILED in note)"
-                        self._log("Warning: note contains LINT_FAILED markers — repair blocks in Study Library")
+                        lint_warn = " · ⚠ broken code/mermaid blocks"
                     if "NARRATIVE_LOW" in body:
-                        lint_warn = (lint_warn or "") + " · ⚠ low narrative quality (NARRATIVE_LOW in note)"
-                        self._log("Warning: note flagged NARRATIVE_LOW — try quality preset or sequential coherence")
-                    self.status_var.set(f"Notes saved — {note_path.name}{mode_hint}{lint_warn}")
-                    if handoff_summary:
-                        self._log(handoff_summary)
+                        lint_warn += " · ⚠ NARRATIVE_LOW"
+                    self.status_var.set(
+                        f"Notes saved — {len(saved)} file(s); last {note_path.name}{mode_hint}{lint_warn}"
+                    )
                     if not getattr(self.cfg, "silent_generate_done", True):
-                        audit_hint = (
-                            f"\n\nNotes audit: {notes_audit.word_retention_pct:.1f}% retention — see Tune → Notes audit tab."
-                            if audit_source
-                            else ""
-                        )
-                        corpus_hint = f"\n\n{handoff_summary}" if handoff_summary else ""
-                        mode_dialog = f"\n\nMode: {gen_mode}" if gen_mode else ""
-                        library_hint = f"\n\nStudy Library: {_study_library_url(note_rel)}"
                         messagebox.showinfo(
                             "Done",
-                            f"Notes saved to:\n{note_path}{mode_dialog}{audit_hint}{corpus_hint}{library_hint}",
+                            f"Saved {len(saved)} note(s).\nLast: {note_path}\n\n"
+                            f"Study Library: {_study_library_url(note_rel)}",
                         )
                     self._show_workflow_step(3)
 
@@ -2738,15 +2972,73 @@ class TranscriptStudioApp(_AppBase):
         self.status_var.set("Summarizing…")
         threading.Thread(target=work, daemon=True).start()
 
-    def _test_llm(self) -> None:
+    def _toggle_key_fields(self) -> None:
+        if self._keys_visible.get():
+            self._keys_frame.pack(fill=tk.X, pady=(4, 0))
+        else:
+            self._keys_frame.pack_forget()
+
+    def _save_env_keys(self) -> None:
+        from transcript_studio.llm_env_panel import save_env_keys
+
+        updates: dict[str, str] = {}
+        for env_key, var in self._key_vars.items():
+            val = var.get().strip()
+            if val:
+                updates[env_key] = val
+        if not updates:
+            messagebox.showinfo("API keys", "Enter at least one key to save.")
+            return
+        try:
+            written = save_env_keys(updates)
+            for env_key in written:
+                if env_key in self._key_vars:
+                    self._key_vars[env_key].set("")
+            messagebox.showinfo("API keys", f"Saved to repo .env: {', '.join(written)}")
+            self._refresh_llm_status()
+        except Exception as exc:
+            messagebox.showerror("API keys", str(exc))
+
+    def _test_connections(self) -> None:
         self._save_settings()
         self.cfg = load_config()
-        line = llm_status_line(self.cfg)
-        if llm_generate_reachable(self.cfg):
-            messagebox.showinfo("LLM", line)
-            self.status_var.set(line)
-        else:
-            messagebox.showwarning("LLM", line)
+
+        def work() -> None:
+            try:
+                from backend.config import get_settings
+                from transcript_studio.llm_env_panel import test_all_tiers
+
+                profile = get_settings().llm_route_profile
+                results = test_all_tiers(route_profile=profile)
+                lines: list[str] = [f"Route profile: {profile}", ""]
+                for tier, data in results.items():
+                    lines.append(f"=== {tier.upper()} ===")
+                    for entry in data.get("entries") or []:
+                        mark = "OK" if entry.get("reachable") else "FAIL"
+                        lat = entry.get("latency_ms")
+                        err = entry.get("error") or ""
+                        label = entry.get("entry") or f"{entry.get('provider')}:{entry.get('model')}"
+                        lines.append(f"  [{mark}] {label} ({lat}ms) {err}".rstrip())
+                    lines.append("")
+                text = "\n".join(lines)
+                self.after(0, lambda: self._show_connection_results(text))
+            except Exception as exc:
+                self.after(0, lambda: messagebox.showerror("Test connections", str(exc)))
+
+        threading.Thread(target=work, daemon=True).start()
+
+    def _show_connection_results(self, text: str) -> None:
+        win = tk.Toplevel(self)
+        win.title("LLM connection test")
+        win.geometry("720x480")
+        box = scrolledtext.ScrolledText(win, wrap=tk.WORD, font=("Consolas", 9))
+        box.pack(fill=tk.BOTH, expand=True, padx=8, pady=8)
+        box.insert("1.0", text)
+        box.configure(state=tk.DISABLED)
+        ttk.Button(win, text="Close", command=win.destroy).pack(pady=(0, 8))
+
+    def _test_llm(self) -> None:
+        self._test_connections()
 
     def _open_output(self) -> None:
         folder = Path(self.output_var.get().strip() or str(self.cfg.notes_path()))

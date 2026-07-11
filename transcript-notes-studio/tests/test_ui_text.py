@@ -11,8 +11,8 @@ def test_format_preview_text_truncates():
     assert "truncated" in display.lower()
 
 
-def test_preview_wrap_mode_large_uses_none():
-    assert preview_wrap_mode("x" * 20_000) == tk.NONE
+def test_preview_wrap_mode_always_word():
+    assert preview_wrap_mode("x" * 20_000) == tk.WORD
     assert preview_wrap_mode("short") == tk.WORD
 
 

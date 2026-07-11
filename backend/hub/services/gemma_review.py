@@ -1,35 +1,48 @@
-"""Daily AI review via NVIDIA NIM (Gemma) when NIM_API_KEY is set."""
+"""Daily AI review via LLM gateway (heavy tier; NIM in chain when configured)."""
 
 from __future__ import annotations
 
 import json
 
-from backend.integrations.nim_client import nim_chat_json, nim_available
+from backend.core.ollama_client import ollama_generate
+from backend.hub.services.local_coach import _parse_json_blob
 from backend.math.training_log import training_stats_for_hub
 
+REVIEW_SYSTEM = """You are JP's study companion. Speak like a direct, warm friend.
+Never say 'optimize' or 'productivity'. Max 3 next steps.
+Return JSON only with keys: comments (string), next_steps (array of strings), goals (array of strings)."""
 
-async def generate_daily_review(hub_payload: dict, *, user_id: int) -> dict:
-    if not nim_available():
-        raise RuntimeError("NIM_API_KEY not configured")
 
+def generate_daily_review(
+    hub_payload: dict,
+    *,
+    user_id: int,
+    llm_tier: str | None = None,
+) -> dict:
     ocr_stats = training_stats_for_hub(user_id)
     payload = {**hub_payload, **ocr_stats}
 
-    prompt = f"""You are JP's study companion. Speak like a direct, warm friend.
-Never say 'optimize' or 'productivity'. Max 3 next steps.
-
-Today's data:
+    prompt = f"""Today's data:
 {json.dumps(payload, indent=2)}
 
-Return JSON only:
-{{"comments": "...", "next_steps": ["..."], "goals": ["..."]}}"""
+Write the daily review JSON now."""
 
-    parsed = await nim_chat_json([{"role": "user", "content": prompt}])
+    raw = ollama_generate(
+        prompt,
+        system_prompt=REVIEW_SYSTEM,
+        task="daily_review",
+        tier=llm_tier,
+        timeout=90.0,
+    )
+    if not raw:
+        raise ValueError("Empty daily review response")
+
+    parsed = _parse_json_blob(raw)
     comments = str(parsed.get("comments", "")).strip()
     steps = parsed.get("next_steps") or []
     goals = parsed.get("goals") or []
     if not comments:
-        raise ValueError("Empty NIM review")
+        raise ValueError("Empty review comments")
 
     return {
         "comments": comments[:800],

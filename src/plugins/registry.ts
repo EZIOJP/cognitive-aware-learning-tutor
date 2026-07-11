@@ -1,16 +1,10 @@
-import type { PluginDef } from "./types";
+/** Plugin definitions + registration (no React). */
+export { registerPlugin, getAllPlugins, type PluginDef } from "./registryCore";
 
-const ALL_PLUGINS: PluginDef[] = [];
-
-export function registerPlugin(plugin: PluginDef) {
-  if (!ALL_PLUGINS.find((p) => p.id === plugin.id)) {
-    ALL_PLUGINS.push(plugin);
-  }
-}
-
-export function getAllPlugins() {
-  return ALL_PLUGINS;
-}
-
-/** Plugin enable state & API sync: use `usePluginRegistry` from `./PluginRegistryProvider`. */
-export { usePluginRegistry, usePlugins, PluginRegistryProvider } from "./PluginRegistryProvider";
+/** Plugin enable state & API sync. */
+export {
+  usePluginRegistry,
+  usePlugins,
+  usePluginsOptional,
+  PluginRegistryProvider,
+} from "./PluginRegistryProvider";

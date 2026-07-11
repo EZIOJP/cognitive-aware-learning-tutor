@@ -46,7 +46,7 @@ export function AiCoachChat({
     setSending(true);
     try {
       const res = await postInsightsChat(next, loadLlmPrefs());
-      if (!res?.reply) throw new Error("No response from coach");
+      if (!res.reply?.trim()) throw new Error("No response from coach");
       setMessages([...next, { role: "assistant", content: res.reply }]);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Chat failed");

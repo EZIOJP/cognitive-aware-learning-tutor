@@ -14,7 +14,6 @@ import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 
 import { usePlugins } from "../plugins/registry";
-import { SLIM_LIFE_CORE } from "../plugins/slimLifeCore";
 
 const LS_KEY = "sidebar:collapsed";
 
@@ -61,9 +60,7 @@ export function AppSidebar() {
     >
       <div className="flex items-center justify-between p-2 border-b border-border/50">
         {!collapsed && (
-          <span className={cn("px-2 truncate", titleClass)}>
-            {SLIM_LIFE_CORE ? "Life Hub" : "Study Hub"}
-          </span>
+          <span className={cn("px-2 truncate", titleClass)}>Study Hub</span>
         )}
         <button
           type="button"

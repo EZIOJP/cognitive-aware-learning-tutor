@@ -13,45 +13,59 @@ SEQUENTIAL_CHAR_LIMIT = 20_000
 
 GenerateFn = Callable[[str], str | None]
 
-NARRATIVE_RULES = """ROLE: Expert academic scribe translating spoken lectures into flowing narrative notes.
+NARRATIVE_RULES = """ROLE: Expert tutor writing CONCEPTUAL revision notes grounded in textbook/corpus reference.
+
+PURPOSE:
+- Notes BRIEF the lecture's topics so a student can revise the whole arc — not a diary of the speaker or classroom.
+- REFERENCE (RAG / textbook chunks) is the conceptual authority: fill definitions, properties, steps, formulas from the book.
+- TRANSCRIPT only signals which topics were covered, in what order, and class-specific examples/emphasis.
 
 FACTUAL-LOCK:
-- Use ONLY facts from the transcript and reference material. Do not invent examples or theories.
+- Prefer reference for definitions, properties, and standard steps. Do not invent theories.
+- Do not assert any factual claim that is not supported by REFERENCE (or an explicit cite). Transcript is topic signal only.
 - Preserve technical terms exactly. Do not substitute synonyms.
-- If a step is incomplete in the source, note it as spoken — do not guess fixes.
+- If a step is incomplete, mark it briefly — do not invent fixes.
+
+DROP (never write these):
+- Classroom / platform logistics: thumbs up, pace, WhatsApp, subscribe, "any questions", doubt-session admin.
+- Platform UI: notice board, chat tab, question tab, Scalar/LMS onboarding, session structure, wrap-up, note-taking strategy tips.
+- Speaker narration: "he said", "look at this slide", "give me a minute".
+- LLM meta: confidence scores, constraints checklists, self-correction asides.
+- Fixed encyclopedia templates: do not structure every section as Definition / Importance / Key Components / Conclusion.
 
 STYLE:
-- Write cohesive paragraphs (not dry bullet dumps). Preserve analogies and step-by-step explanations.
-- Define new concepts before using them in later sentences.
-- Use ## or ### headings for topic shifts. Use $LaTeX$ for equations when needed.
+- ## / ### headings = concept names in lecture order.
+- Under each: a short conceptual BRIEF (1–3 short paragraphs or tight bullets) that explains the idea using REFERENCE meat.
+- Define new concepts before using them later. Use $LaTeX$ for equations when needed.
 - Text only: no mermaid or ``` code blocks in this pass.
-- Output markdown ONLY — no preamble, planning, confidence scores, or meta commentary."""
+- Output markdown ONLY — no preamble, planning, or meta commentary."""
 
 NARRATIVE_FIRST_CHUNK_SUFFIX = """
 After the notes, add a short section:
 ### Semantic Glossary
-List key terms and formulas introduced (one line each, max 12 items)."""
+List key terms and formulas introduced (one line each, max 12 items) — revision checklist.
+On the FIRST chunk only, you may also start with ## Topics covered (bullets) as a revision map."""
 
 COMPACT_CONTEXT = """
 ACTIVE SEMANTIC GLOSSARY (do not repeat these definitions):
 {glossary}
 
-PREVIOUS SECTION TOPIC: {prior_heading}
-Continue chronologically without repeating prior definitions."""
+PREVIOUS CONCEPT/TOPIC: {prior_heading}
+Continue with the next concept; do not re-explain prior definitions or classroom/platform chatter."""
 
 SEQUENTIAL_REFINE = """
-You are refining continuous lecture notes.
+You are refining continuous CONCEPTUAL revision notes (textbook/corpus grounded).
 
 ACTIVE SEMANTIC MEMORY:
 {glossary}
 
-EXISTING NARRATIVE NOTES:
+EXISTING NOTES:
 {running_notes}
 
 NEW LECTURE SEGMENT:
 {chunk}
 
-TASK: Integrate the new segment into the existing notes. Maintain chronological flow, avoid duplicate definitions, update the Semantic Glossary with new terms. Output the full merged document plus ### Semantic Glossary at the end."""
+TASK: Integrate new TOPICS/CONCEPTS into the existing notes as readable topic briefs (not Definition/Importance templates). Prefer reference-backed facts. Drop classroom/platform filler. Avoid duplicate definitions. Update ### Semantic Glossary. Output the full merged document plus glossary at the end."""
 
 
 def resolve_coherence_mode(mode: str | None, *, llm_tier: str | None = None) -> str:

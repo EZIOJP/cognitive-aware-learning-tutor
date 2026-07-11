@@ -42,3 +42,21 @@ def test_resolve_for_generate_manual_override() -> None:
 def test_default_llm_tier_from_config() -> None:
     cfg = AppConfig(llm_tier="light")
     assert default_llm_tier(cfg) == "light"
+
+
+def test_openrouter_provider_uses_gateway() -> None:
+    cfg = AppConfig(llm_provider="openrouter", llm_use_gateway=False)
+    assert uses_gateway(cfg) is True
+
+
+def test_last_generate_meta_legacy(monkeypatch) -> None:
+    from transcript_studio import notes_generator as ng
+
+    ng._set_generate_meta(
+        mode="legacy",
+        rag={"grounding_status": "degraded", "grounding_reason": "corpus_unavailable"},
+    )
+    meta = ng.last_generate_meta()
+    assert meta["grounding_status"] == "degraded"
+    assert meta["grounding_reason"] == "corpus_unavailable"
+

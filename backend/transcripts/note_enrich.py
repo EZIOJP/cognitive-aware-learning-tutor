@@ -25,10 +25,11 @@ def _embed_rules(rules: str) -> str:
 
 GenerateFn = Callable[[str], str | None]
 
-ENRICH_PROMPT = f"""You are enhancing finished lecture study notes with visual aids.
+ENRICH_PROMPT = f"""You are enhancing CONCEPTUAL revision notes with visual aids.
 
 Rules:
-- Keep ALL existing headings, bullets, and prose — do not shorten or rewrite the notes.
+- Keep ALL existing topic headings, concept bullets, and prose — do not shorten or rewrite the notes.
+- Do not reintroduce classroom/speaker chatter.
 - Add at most ONE ```mermaid diagram per major ## section, only when a flow, process, or relationship is described.
 - Add ```python (or relevant language) code blocks only where algorithms or code are clearly discussed in the text.
 - Do NOT add mermaid to every section — skip sections that are definitions or lists only.

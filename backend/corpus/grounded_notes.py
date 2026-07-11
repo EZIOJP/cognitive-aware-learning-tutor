@@ -143,15 +143,24 @@ def generate_grounded_notes_single_shot(
 
     raw = transcript_path.read_text(encoding="utf-8")[:12000]
 
-    prompt = f"""Write structured lecture notes in markdown from the transcript below.
-Use ONLY facts supported by the REFERENCE CHUNKS. Add <!-- cite: chunk_id --> after each major section heading.
-Do not add mermaid or code blocks yet — those are added in a final enrich pass.
-Output markdown notes ONLY — no reasoning, planning, analysis, or meta commentary.
+    prompt = f"""Write CONCEPTUAL revision notes in markdown that BRIEF the lecture topics.
 
-REFERENCE CHUNKS:
+This pipeline exists so textbook/corpus RAG produces proper concept coverage — not a speaker transcript or glossary dump.
+
+- REFERENCE CHUNKS are the conceptual authority (definitions, properties, standard steps, formulas) — use them to fill the brief.
+- TRANSCRIPT only indicates which topics were taught, in what order, and any class examples/emphasis.
+- Structure by ## topic/concept headings. Under each: a short conceptual brief (not Definition/Importance/Key Components templates).
+- Start with ## Topics covered (bullet list of concepts in this note).
+- DROP classroom/platform logistics and speaker narration (UI, notice board, chat, session structure, wrap-up, note-taking tips, thumbs up, "look at this slide").
+- Use ONLY facts supported by REFERENCE (+ transcript examples that match). Add <!-- cite: chunk_id --> after each major ## heading.
+- Do not assert any factual claim that is not traceable to a REFERENCE chunk / cite id.
+- Do not add mermaid or code blocks yet — enrich pass adds those.
+- Output markdown ONLY — no reasoning, planning, confidence scores, or meta commentary.
+
+REFERENCE CHUNKS (textbook / corpus):
 {context}
 
-TRANSCRIPT:
+LECTURE TRANSCRIPT (topic signal; strip filler):
 {raw}
 
 Output markdown only."""
@@ -195,7 +204,7 @@ Output markdown only."""
 
         handoff = ingest_lecture_handoff(transcript_path=transcript_path, note_path=notes_path)
     rel = notes_path.relative_to(NOTES_DIR).as_posix()
-    return {
+    out = {
         "mode": "grounded",
         "filename": rel,
         "notes_path": str(notes_path),
@@ -204,3 +213,9 @@ Output markdown only."""
         "citations": [h.get("chunk_id") for h in hits],
         "corpus_handoff": handoff,
     }
+    from backend.transcripts.note_generation import resolve_grounding
+
+    status, reason = resolve_grounding("grounded", out)
+    out["grounding_status"] = status
+    out["grounding_reason"] = reason
+    return out

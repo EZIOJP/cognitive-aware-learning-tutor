@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { NoteConflictError } from "../../api/transcriptsClient";
 import {
   Bookmark,
   ChevronDown,
@@ -150,6 +151,16 @@ export function StudyLibraryViewer({
     try {
       await onSaveContent(relativePath, draft);
       setEditing(false);
+    } catch (e) {
+      if (e instanceof NoteConflictError) {
+        // Parent showed confirm; on reload it refreshed primaryContent — exit edit to sync.
+        if (e.message === "reloaded") {
+          setEditing(false);
+        }
+        // On cancel, stay in edit mode so the draft is not lost.
+        return;
+      }
+      console.error(e);
     } finally {
       setSaving(false);
     }

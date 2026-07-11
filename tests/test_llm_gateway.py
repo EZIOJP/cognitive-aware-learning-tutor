@@ -2,8 +2,8 @@
 
 from unittest.mock import MagicMock, patch
 
-from backend.core.llm_capabilities import LlmRequirements, capability_filter
-from backend.core.llm_gateway import llm_complete
+from backend.core.llm_capabilities import LlmRequirements, capability_filter, filter_configured_entries
+from backend.core.llm_gateway import gateway_chain_status, llm_complete, require_gateway_chain
 from backend.core.llm_job_context import get_job_context, llm_job
 from backend.core.llm_tiers import ChainEntry, parse_chain_entry
 from backend.core.ollama_client import LlmOptions, LlmTransportError, TransportResult
@@ -27,9 +27,16 @@ def test_parse_chain_entry_openai_url():
 def test_parse_chain_entry_openrouter_alias():
     entry = parse_chain_entry("openrouter:https://openrouter.ai/api/v1:openai/gpt-4o-mini")
     assert entry is not None
-    assert entry.provider == "openai"
+    assert entry.provider == "openrouter"
     assert entry.base_url == "https://openrouter.ai/api/v1"
     assert entry.model == "openai/gpt-4o-mini"
+
+
+def test_parse_chain_entry_groq_shorthand():
+    entry = parse_chain_entry("groq:llama-3.1-8b-instant")
+    assert entry is not None
+    assert entry.provider == "groq"
+    assert entry.model == "llama-3.1-8b-instant"
 
 
 def test_capability_filter_json_schema():
@@ -174,3 +181,103 @@ def test_usage_metadata_passthrough(mock_transport, mock_chain_for_tier, mock_se
     assert result.generation_id == "gen_123"
     assert result.upstream_provider == "openrouter/auto"
     assert result.estimated_cost == 0.0015
+
+
+@patch("backend.config.get_settings")
+def test_filter_configured_entries_skips_openrouter_without_key(mock_settings):
+    settings = MagicMock()
+    settings.llm_openrouter_api_key = ""
+    settings.llm_anthropic_api_key = ""
+    settings.nim_api_key = ""
+    settings.llm_cloud_api_key = ""
+    settings.llm_api_key = "lm-studio"
+    settings.ollama_url = "http://127.0.0.1:1234"
+    settings.llm_max_tokens = 8192
+    mock_settings.return_value = settings
+
+    chain = [
+        ChainEntry(
+            provider="openai",
+            model="openai/gpt-4o-mini",
+            base_url="https://openrouter.ai/api/v1",
+        ),
+        ChainEntry(provider="lmstudio", model="google/gemma-4-e4b", base_url="http://127.0.0.1:1234"),
+    ]
+    filtered = filter_configured_entries(chain)
+    assert len(filtered) == 1
+    assert filtered[0].provider == "lmstudio"
+
+
+@patch("backend.core.llm_gateway.llm_reachable")
+@patch("backend.core.llm_gateway.get_chain_for_tier")
+@patch("backend.core.llm_gateway._settings")
+def test_require_gateway_chain_fails_with_actionable_message(
+    mock_settings,
+    mock_chain_for_tier,
+    mock_reachable,
+):
+    settings = MagicMock()
+    settings.ollama_enabled = True
+    settings.llm_default_tier = "medium"
+    mock_settings.return_value = settings
+    mock_chain_for_tier.return_value = [
+        ChainEntry(provider="lmstudio", model="google/gemma-4-e4b", base_url="http://127.0.0.1:1234"),
+    ]
+    mock_reachable.return_value = False
+
+    try:
+        require_gateway_chain("medium", task="notes_job")
+        assert False, "expected RuntimeError"
+    except RuntimeError as exc:
+        msg = str(exc)
+        assert "notes_job" in msg
+        assert "LM Studio" in msg
+        assert gateway_chain_status("medium", task="notes_job")["reachable"] is False
+
+
+@patch("backend.core.llm_gateway.get_settings")
+@patch("backend.core.llm_gateway._settings")
+@patch("backend.core.llm_gateway.get_chain_for_tier")
+@patch("backend.core.llm_gateway.ollama_generate_transport")
+def test_quota_cooldown_skips_dead_provider_on_next_call(
+    mock_transport, mock_chain_for_tier, mock_settings, mock_get_settings
+):
+    """402/quota must not re-hit the dead provider every request — long auto-skip."""
+    from backend.core.llm_gateway import clear_cloud_cooldowns
+
+    clear_cloud_cooldowns()
+    settings = MagicMock()
+    settings.ollama_enabled = True
+    settings.llm_default_tier = "medium"
+    settings.llm_context_char_limit = 120_000
+    settings.llm_max_tokens = 8192
+    settings.llm_api_key = ""
+    settings.llm_cloud_api_key = ""
+    settings.llm_anthropic_api_key = ""
+    settings.llm_route_profile = "hybrid-free"
+    settings.ollama_url = "http://127.0.0.1:1234"
+    mock_settings.return_value = settings
+    mock_get_settings.return_value = settings
+
+    mock_chain_for_tier.return_value = [
+        ChainEntry(provider="gemini", model="gemini-3.1-flash-lite"),
+        ChainEntry(provider="lmstudio", model="google/gemma-4-e4b", base_url="http://127.0.0.1:1234"),
+    ]
+
+    mock_transport.side_effect = [
+        TransportResult(error=LlmTransportError.QUOTA, latency_ms=10),
+        TransportResult(text="local ok", latency_ms=20),
+        TransportResult(text="local again", latency_ms=15),
+    ]
+
+    first = llm_complete("prompt", task="generic", tier="medium")
+    assert first.text == "local ok"
+    assert first.fallback_used is True
+    assert first.provider == "lmstudio"
+
+    second = llm_complete("prompt", task="generic", tier="medium")
+    assert second.text == "local again"
+    assert second.provider == "lmstudio"
+    # Gemini attempted once then cooled down; LM Studio twice
+    assert mock_transport.call_count == 3
+    clear_cloud_cooldowns()

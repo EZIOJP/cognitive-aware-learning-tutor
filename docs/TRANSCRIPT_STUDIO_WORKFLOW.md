@@ -69,9 +69,10 @@ python -m transcript_studio.cli lecture-auto --idle 600 --max-duration 7500
 
 1. Capture Live Captions until **idle** (default 10 min silence) or **max** (~2h cap)
 2. Parse with aggressive live-caption cleanup
-3. Generate **textbook-only RAG** notes (`source_types=textbook` — prior lectures/notes are not retrieved)
-4. Save note, optional corpus handoff for quiz/coach, log to `data/logs/lecture_auto_YYYYMMDD.json`
-5. Quit Studio on success (LM Studio stays running)
+3. Generate **textbook-only RAG** notes (`source_types=textbook`; **concept_extract** builds retrieve queries)
+4. Save note; Studio logs **grounding_status** (`grounded` / `degraded`)
+5. Optional corpus handoff for quiz/coach, log to `data/logs/lecture_auto_YYYYMMDD.json`
+6. Quit Studio on success (LM Studio stays running)
 
 **Cancel** saves a partial transcript if capture was running. On failure Studio stays open with an error dialog.
 

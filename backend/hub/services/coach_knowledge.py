@@ -75,6 +75,20 @@ def _trim(text: str, limit: int) -> str:
     return text[: limit - 3].rstrip() + "..."
 
 
+def _safe_note_path(row: LectureNote):
+    """Resolve on-disk note path; return None if the file was deleted or moved."""
+    from pathlib import Path
+
+    from backend.transcripts.library import note_storage_path
+    from backend.transcripts.notes_generator import resolve_notes_path
+
+    try:
+        path = resolve_notes_path(note_storage_path(row))
+    except (FileNotFoundError, ValueError, OSError):
+        return None
+    return path if isinstance(path, Path) and path.is_file() else None
+
+
 def _word_lookup(db: Session) -> dict[int, dict[str, Any]]:
     return {int(w["id"]): w for w in load_words(db) if w.get("id") is not None}
 
@@ -211,11 +225,8 @@ def _lecture_note_entries(
         if not keywords:
             score = 1
         elif score == 0:
-            from backend.transcripts.library import note_storage_path
-            from backend.transcripts.notes_generator import resolve_notes_path
-
-            path = resolve_notes_path(note_storage_path(row))
-            if path.is_file():
+            path = _safe_note_path(row)
+            if path is not None:
                 try:
                     preview = path.read_text(encoding="utf-8")[:4000].lower()
                     score = sum(1 for k in keywords if k in preview)
@@ -229,12 +240,9 @@ def _lecture_note_entries(
 
     entries: list[dict[str, Any]] = []
     for row in picked:
-        from backend.transcripts.library import note_storage_path
-        from backend.transcripts.notes_generator import resolve_notes_path
-
-        path = resolve_notes_path(note_storage_path(row))
+        path = _safe_note_path(row)
         excerpt = ""
-        if path.is_file():
+        if path is not None:
             try:
                 raw = path.read_text(encoding="utf-8")
                 excerpt = _extract_sections(raw, keywords, max_chars=section_chars)
@@ -395,12 +403,16 @@ def retrieve_coach_knowledge(
     Corpus chunks are primary for content; KG observations supply report-card weak topics.
     """
     keywords = _tokenize_query(query)
+    try:
+        lecture_notes = _lecture_note_entries(db, user_id, keywords=keywords)
+    except Exception:  # noqa: BLE001 — missing files must not break coach chat
+        lecture_notes = []
     kb: dict[str, Any] = {
         "query": query.strip()[:500] if query else "",
         "query_keywords": keywords,
         "index": knowledge_index(db, user_id),
         "vocab": _vocab_entries(db, user_id, keywords=keywords),
-        "lecture_notes": _lecture_note_entries(db, user_id, keywords=keywords),
+        "lecture_notes": lecture_notes,
         "math_recent": _math_entries(db, user_id, keywords=keywords),
         "transcript_snippets": _transcript_snippets(keywords=keywords),
     }

@@ -11,22 +11,23 @@ import AdminPanelPage from "../pages/admin/AdminPanelPage";
 import { ProfilePage } from "../pages/ProfilePage";
 import ThemeSettingsPage from "../pages/settings/ThemeSettingsPage";
 import SettingsHubPage from "../pages/settings/SettingsHubPage";
+import AiControlCenterPage from "../pages/settings/AiControlCenterPage";
 import { PluginSettingsPage } from "../pages/settings/PluginSettingsPage";
 import { AddWordsPage } from "../pages/vocab/AddWordsPage";
 import { AiCoachPage } from "../pages/AiCoachPage";
+import { HubCortexPage } from "../pages/HubCortexPage";
 import { ProjectAgentPage } from "../pages/ProjectAgentPage";
 import { JournalPage } from "../pages/JournalPage";
 
 // Import registry and trigger registration of all plugins
-import "../plugins";
+import "../plugins"; 
 import { PluginRegistryProvider, usePlugins } from "../plugins/registry";
 import { FeatureStudioPage } from "../pages/settings/FeatureStudioPage";
 import { AppErrorBoundary } from "../components/layout/AppErrorBoundary";
-import { SLIM_LIFE_CORE } from "../plugins/slimLifeCore";
 
 function AppRoutes() {
   const { getRoutes, isLoaded } = usePlugins();
-
+  
   if (!isLoaded) return <div className="h-screen w-screen flex items-center justify-center">Loading modules...</div>;
 
   const pluginRoutes = getRoutes();
@@ -39,16 +40,14 @@ function AppRoutes() {
         <Route path="admin" element={<AdminPanelPage />} />
         <Route path="profile" element={<ProfilePage />} />
         <Route path="settings" element={<SettingsHubPage />} />
+        <Route path="settings/ai" element={<AiControlCenterPage />} />
         <Route path="settings/theme" element={<ThemeSettingsPage />} />
         <Route path="settings/plugins" element={<PluginSettingsPage />} />
         <Route path="settings/features" element={<FeatureStudioPage />} />
-        {!SLIM_LIFE_CORE && (
-          <Route path="gre-vocab/add-words" element={<AddWordsPage />} />
-        )}
+        <Route path="gre-vocab/add-words" element={<AddWordsPage />} />
+        <Route path="hub" element={<HubCortexPage />} />
         <Route path="ai-coach" element={<AiCoachPage />} />
-        {!SLIM_LIFE_CORE && (
-          <Route path="project-agent" element={<ProjectAgentPage />} />
-        )}
+        <Route path="project-agent" element={<ProjectAgentPage />} />
         <Route path="journal" element={<JournalPage />} />
 
         {/* Dynamically mount plugin routes */}
@@ -64,11 +63,11 @@ function AppRoutes() {
 
 function DynamicProviders({ children }: { children: React.ReactNode }) {
   const { getProviders, isLoaded } = usePlugins();
-
+  
   if (!isLoaded) return <>{children}</>;
 
   const providers = getProviders() as Array<({ children }: { children: React.ReactNode }) => React.ReactNode>;
-
+  
   // Wrap children in each active provider (outermost = first in list)
   return providers.reduceRight(
     (acc: React.ReactNode, Provider) => <Provider>{acc}</Provider>,

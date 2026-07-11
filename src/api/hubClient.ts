@@ -1,5 +1,5 @@
 import { resolveApiUrl } from "../utils/resolveBackendUrl";
-import { llmBodyFields, type LlmOverrides } from "./transcriptsClient";
+import { llmBodyFieldsForTask, loadLlmPrefs, type LlmOverrides } from "./transcriptsClient";
 
 const TOKEN_KEY = "vocab:auth-token";
 
@@ -95,21 +95,91 @@ export type ChatMessage = {
   content: string;
 };
 
+export type HubAgentInfo = {
+  id: string;
+  label: string;
+  description: string;
+};
+
+export type HubChatResponse = {
+  reply: string;
+  agent_used: string;
+  source?: string;
+  llm_available?: boolean;
+  trace?: string[];
+  rag_sources?: string[];
+};
+
+export async function fetchHubAgents(): Promise<HubAgentInfo[]> {
+  try {
+    const res = await fetch(`${resolveApiUrl()}/api/insights/hub/agents`, { headers: hubHeaders() });
+    if (!res.ok) return [];
+    const data = (await res.json()) as { agents?: HubAgentInfo[] };
+    return data.agents ?? [];
+  } catch {
+    return [];
+  }
+}
+
+export async function postHubChat(opts: {
+  messages?: ChatMessage[];
+  prompt?: string;
+  agent?: string;
+  conversationId?: string;
+  file?: File;
+  llm?: LlmOverrides;
+}): Promise<HubChatResponse | null> {
+  const token = localStorage.getItem(TOKEN_KEY);
+  const form = new FormData();
+  form.append("agent", opts.agent ?? "auto");
+  if (opts.prompt) form.append("prompt", opts.prompt);
+  if (opts.conversationId) form.append("conversation_id", opts.conversationId);
+  const tier = opts.llm?.llm_tier ?? loadLlmPrefs().llm_tier;
+  if (tier) form.append("llm_tier", tier);
+  if (opts.messages?.length) {
+    form.append("messages_json", JSON.stringify(opts.messages));
+  }
+  if (opts.file) form.append("file", opts.file);
+
+  const headers: Record<string, string> = {};
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  try {
+    const res = await fetch(`${resolveApiUrl()}/api/insights/hub/chat`, {
+      method: "POST",
+      headers,
+      body: form,
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(
+        (err as { detail?: string }).detail || `HTTP ${res.status}`,
+      );
+    }
+    return (await res.json()) as HubChatResponse;
+  } catch (e) {
+    throw e;
+  }
+}
+
 export async function postInsightsChat(
   messages: ChatMessage[],
   llm?: LlmOverrides,
-): Promise<InsightsChatPayload | null> {
-  try {
-    const res = await fetch(`${resolveApiUrl()}/api/insights/chat`, {
-      method: "POST",
-      headers: hubHeaders(),
-      body: JSON.stringify({ messages, ...llmBodyFields(llm) }),
-    });
-    if (!res.ok) return null;
-    return (await res.json()) as InsightsChatPayload;
-  } catch {
-    return null;
+): Promise<InsightsChatPayload> {
+  const res = await fetch(`${resolveApiUrl()}/api/insights/chat`, {
+    method: "POST",
+    headers: hubHeaders(),
+    body: JSON.stringify({ messages, ...llmBodyFieldsForTask("coach", llm) }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    const detail =
+      typeof (err as { detail?: unknown }).detail === "string"
+        ? (err as { detail: string }).detail
+        : `Coach chat failed (HTTP ${res.status})`;
+    throw new Error(detail);
   }
+  return (await res.json()) as InsightsChatPayload;
 }
 
 export type AgentSnapshot = {
@@ -142,7 +212,7 @@ export async function postProjectAgentChat(
     const res = await fetch(`${resolveApiUrl()}/api/insights/agent/chat`, {
       method: "POST",
       headers: hubHeaders(),
-      body: JSON.stringify({ messages, ...llmBodyFields(llm) }),
+      body: JSON.stringify({ messages, ...llmBodyFieldsForTask("project_agent", llm) }),
     });
     if (!res.ok) return null;
     return (await res.json()) as InsightsChatPayload;

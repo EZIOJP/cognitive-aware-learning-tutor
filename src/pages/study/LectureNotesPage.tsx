@@ -40,6 +40,7 @@ import {
   regenerateNoteBlock,
   regenerateNoteSelection,
   repairAndSaveNote,
+  NoteConflictError,
   saveNoteContent,
   summarizeLibraryFolder,
   syncStudySession,
@@ -122,6 +123,7 @@ export function LectureNotesPage() {
   const activeNoteRef = useRef("");
   const [newFileKind, setNewFileKind] = useState("note");
   const [content, setContent] = useState("");
+  const [noteMtime, setNoteMtime] = useState<number | null>(null);
   const [compareContents, setCompareContents] = useState<[string, string]>(["", ""]);
   const [gapAnalysis, setGapAnalysis] = useState<GapAnalysisResult | null>(null);
   const [gapLoading, setGapLoading] = useState(false);
@@ -137,6 +139,10 @@ export function LectureNotesPage() {
   const [loading, setLoading] = useState(true);
   const [contentLoading, setContentLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [groundingBanner, setGroundingBanner] = useState<{
+    status: string;
+    reason?: string | null;
+  } | null>(null);
   const [snapshotting, setSnapshotting] = useState(false);
   const [notesSemantic, setNotesSemantic] = useState(false);
   const [notesFast, setNotesFast] = useState(true);
@@ -266,8 +272,9 @@ export function LectureNotesPage() {
     void (async () => {
       setContentLoading(true);
       try {
-        const text = await getNoteContent(selectedNote);
+        const { content: text, mtime } = await getNoteContent(selectedNote);
         setContent(text);
+        setNoteMtime(mtime ?? null);
         setError(null);
       } catch (e) {
         setError(e instanceof Error ? e.message : "Failed to load note");
@@ -289,7 +296,7 @@ export function LectureNotesPage() {
           getNoteContent(comparePaths[0]),
           getNoteContent(comparePaths[1]),
         ]);
-        setCompareContents([a, b]);
+        setCompareContents([a.content, b.content]);
         setError(null);
       } catch (e) {
         setError(e instanceof Error ? e.message : "Failed to load compare view");
@@ -413,19 +420,52 @@ export function LectureNotesPage() {
   };
 
   const persistNote = useCallback(async (path: string, markdown: string) => {
-    await saveNoteContent(path, markdown);
+    const saved = await saveNoteContent(path, markdown, {
+      expectedMtime: noteMtime,
+    });
     setContent(markdown);
+    if (saved.mtime != null) setNoteMtime(saved.mtime);
     void indexNote(path).catch(() => undefined);
-  }, []);
+  }, [noteMtime]);
 
   const handleSaveNoteContent = useCallback(
     async (path: string, body: string) => {
       const finalized = finalizeNoteMarkdown(body);
-      await withPreservedScroll(scrollContainerRef.current, async () => {
-        await persistNote(path, finalized);
-      });
-      setToast("Note saved");
-      setTimeout(() => setToast(null), 2500);
+      try {
+        await withPreservedScroll(scrollContainerRef.current, async () => {
+          await persistNote(path, finalized);
+        });
+        setToast("Note saved");
+        setTimeout(() => setToast(null), 2500);
+      } catch (e) {
+        if (e instanceof NoteConflictError) {
+          const reload = window.confirm(
+            "This note changed elsewhere (another tab or process).\n\nReload the latest version? Unsaved edits in this editor will be discarded.",
+          );
+          if (reload) {
+            try {
+              const { content: text, mtime } = await getNoteContent(path);
+              setContent(text);
+              setNoteMtime(mtime ?? null);
+              setToast("Reloaded latest note — re-apply your edits if needed");
+              setTimeout(() => setToast(null), 3500);
+              // Signal caller that save did not complete (keep editor open with new base).
+              throw new NoteConflictError("reloaded", mtime);
+            } catch (reloadErr) {
+              if (reloadErr instanceof NoteConflictError && reloadErr.message === "reloaded") {
+                throw reloadErr;
+              }
+              setError(
+                reloadErr instanceof Error ? reloadErr.message : "Could not reload note",
+              );
+              throw reloadErr;
+            }
+          }
+          setError("Save cancelled — this note changed elsewhere. Reload before saving.");
+          throw e;
+        }
+        throw e;
+      }
     },
     [persistNote],
   );
@@ -697,9 +737,17 @@ export function LectureNotesPage() {
         handoff != null
           ? ` · corpus: ${handoff.transcript_chunks ?? 0} + ${handoff.note_chunks ?? 0} chunks`
           : "";
-      const mode = (result as { mode?: string }).mode;
+      const mode = result.mode;
       const modeMsg = mode ? ` · ${mode}` : "";
       const fbMsg = await fallbackNotice();
+      if (result.grounding_status === "degraded") {
+        setGroundingBanner({
+          status: "degraded",
+          reason: result.grounding_reason,
+        });
+      } else if (result.grounding_status === "grounded") {
+        setGroundingBanner(null);
+      }
       setToast(`Notes generated${modeMsg}${corpusMsg}${fbMsg}`);
       setTimeout(() => setToast(null), 5000);
     } catch (e) {
@@ -736,6 +784,14 @@ export function LectureNotesPage() {
           ? ` · corpus: ${handoff.transcript_chunks ?? 0} + ${handoff.note_chunks ?? 0} chunks`
           : "";
       setToast(`Grounded notes (${result.mode})${corpusMsg}`);
+      if ((result as { grounding_status?: string }).grounding_status === "degraded") {
+        setGroundingBanner({
+          status: "degraded",
+          reason: (result as { grounding_reason?: string }).grounding_reason,
+        });
+      } else {
+        setGroundingBanner(null);
+      }
       setTimeout(() => setToast(null), 5000);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Grounded generation failed");
@@ -764,6 +820,14 @@ export function LectureNotesPage() {
       void indexNote(result.filename).catch(() => undefined);
       setCreateSheetOpen(false);
       const fbMsg = await fallbackNotice();
+      if (result.grounding_status === "degraded") {
+        setGroundingBanner({
+          status: "degraded",
+          reason: result.grounding_reason,
+        });
+      } else if (result.grounding_status === "grounded") {
+        setGroundingBanner(null);
+      }
       setToast(`Notes generated from today${fbMsg}`);
       setTimeout(() => setToast(null), 4000);
     } catch (e) {
@@ -1041,6 +1105,15 @@ export function LectureNotesPage() {
           )}
 
           {toast && <span className="text-xs text-emerald-400">{toast}</span>}
+          {groundingBanner?.status === "degraded" ? (
+            <div
+              className="w-full mt-2 rounded-md border border-amber-700/50 bg-amber-950/40 px-3 py-2 text-xs text-amber-100"
+              role="status"
+            >
+              Generated from transcript only — textbook grounding unavailable
+              {groundingBanner.reason ? ` (${groundingBanner.reason})` : ""}.
+            </div>
+          ) : null}
         </header>
 
         {(tab === "gap" || tab === "review") && (

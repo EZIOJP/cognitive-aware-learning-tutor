@@ -52,6 +52,11 @@ export async function deleteQuizDeck(deckId: number): Promise<void> {
   await quizRequest(`/decks/${deckId}`, { method: "DELETE" });
 }
 
+export async function clearReviewCards(domain?: string): Promise<{ deleted: number }> {
+  const q = domain ? `?domain=${encodeURIComponent(domain)}` : "";
+  return quizRequest(`/review-cards${q}`, { method: "DELETE" });
+}
+
 export async function fetchRecentQuizResults(limit = 8): Promise<{
   results: Array<{
     session_id: string;

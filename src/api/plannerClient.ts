@@ -273,6 +273,35 @@ export async function autoApplyRoutinesToday(): Promise<{
   return res.json();
 }
 
+/** Last N days of plan + tracked usage — for designing weekly timetables. */
+export async function downloadProductivityWeekExport(
+  days = 7,
+  format: "json" | "csv" = "json",
+): Promise<void> {
+  const params = new URLSearchParams({ days: String(days), format });
+  const res = await fetch(resolveApiUrl(`/api/planner/export/last-7-days?${params}`), {
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error(await res.text());
+  const stamp = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+  let blob: Blob;
+  if (format === "json") {
+    const data = await res.json();
+    blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+  } else {
+    blob = await res.blob();
+  }
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download =
+    format === "csv"
+      ? `productivity-${days}d-${stamp}.csv`
+      : `productivity-${days}d-${stamp}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 export const CATEGORY_COLORS: Record<string, string> = {
   reading: "#8b5cf6",
   study: "#10b981",

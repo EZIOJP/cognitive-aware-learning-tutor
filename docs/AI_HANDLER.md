@@ -14,7 +14,7 @@ Browser (tier prefs)  →  transcriptsClient.ts  →  FastAPI routers  →  doma
                                          LM Studio / Gemini / Ollama / OpenAI-compat
 ```
 
-**Users pick a tier** (`light` / `medium` / `heavy`). **Operators configure chains** in `data/llm_tiers.json` and `.env`. API keys never leave the server.
+**Users pick a tier** (`light` / `medium` / `heavy`). **Operators configure chains** in `data/llm_tiers.json` and `.env`. API keys are edited in **Settings → AI Control Center** or Notes Studio (writes `.env`, hot reload).
 
 ## Read next
 
@@ -43,7 +43,8 @@ Browser (tier prefs)  →  transcriptsClient.ts  →  FastAPI routers  →  doma
 | Path | Role |
 |------|------|
 | `src/api/transcriptsClient.ts` | **FE AI bridge** — prefs, config fetch, `llmBodyFields` |
-| `src/pages/settings/LlmGatewayCard.tsx` | Settings → tier + chain health |
+| `src/pages/settings/AiControlCenterPage.tsx` | Settings → keys, test connections, tiers |
+| `src/pages/HubCortexPage.tsx` | Cortex Hub multi-agent chat |
 | `src/pages/study/LectureNotesPage.tsx` | Study Library — tier UI + generate/regen actions |
 
 ### Config (server-side)
@@ -60,29 +61,42 @@ Browser (tier prefs)  →  transcriptsClient.ts  →  FastAPI routers  →  doma
 |---------|----------------|-------------------|
 | Generate notes | `note_generation` → `hybrid_notes` / `notes_generator` | medium |
 | Grounded RAG notes | `corpus/grounded_notes` | heavy (`corpus_grounded`) |
+| GRE vocab card enrich | `vocab/enrich` (funny mnemonic + examples) | medium (`vocab_enrich`) |
 | Quiz / drills / gap analysis | `study_intel` | medium |
 | Block regen / repair | `block_regenerate`, `note_block_repair` | medium |
 | Study flow orchestrator | `study_flow` | medium (sticky job) |
 | Coach chat | `hub/services/local_coach` | light |
+| Cortex Hub | `hub/agents/cortex` | hub_router / corpus_qa |
 | App classification | `behavior/classification_service` | light |
+| Math tutor hints (text) | `math/ollama_tutor` | light (`math_hint`) |
+| Daily AI review | `hub/services/gemma_review` | heavy (`daily_review`) |
 
 ## Explicitly outside the gateway (for now)
 
 | Path | Why |
 |------|-----|
-| `backend/math/ollama_tutor.py` | Direct Ollama for math hints |
-| `backend/hub/services/gemma_review.py` | NVIDIA NIM review path |
-| `transcript-notes-studio/` | Separate desktop app with its own client |
+| `backend/math/ollama_tutor.py` (vision branch) | Direct Ollama multimodal when `OLLAMA_VISION_MODEL` + canvas image |
+| `backend/integrations/nim_client.py` | OCR vision teacher labels only (`nim_vision_latex`) |
+| `transcript-notes-studio/` | Desktop app — shares repo gateway + `.env` key editor |
+
+## Key & test API
+
+- `PATCH /api/system/llm/keys` — update whitelisted `.env` vars (JWT)
+- `POST /api/system/llm/test-chain` — probe each provider in a tier chain
+- `POST /api/insights/hub/chat` — Cortex Hub (multipart, optional PDF)
 
 ## Quick health check
 
 1. Start LM Studio (or set cloud keys in `.env`).
 2. `OLLAMA_ENABLED=1` in `.env`, restart backend.
-3. Open **Settings → AI / LLM gateway** — chains should show green reachability.
+3. Open **Settings → AI Control Center** — save keys, **Test all tiers**.
 4. `GET /api/transcripts/llm-config` (with JWT) returns `reachable: true` for at least one tier.
 
 ## Related tests
 
 - `tests/test_llm_gateway.py`
+- `tests/test_env_store.py`
 - `tests/test_llm_budget.py`
 - `tests/test_ollama_client.py`
+- `tests/test_math_tutor_gateway.py`
+- `tests/test_daily_review_gateway.py`

@@ -17,6 +17,9 @@ export interface VocabWord {
   meaning: string;
   connotation?: string;
   group_number: number;
+  priority?: number;
+  priority_label?: string;
+  source_count?: number;
   story_mnemonic?: string;
   etymology?: string;
   word_breakdown?: WordBreakdown;

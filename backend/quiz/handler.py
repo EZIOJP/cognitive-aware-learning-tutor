@@ -71,12 +71,14 @@ def _attach_session_meta(question: dict[str, Any], payload: dict[str, Any]) -> d
 
 
 def _vocab_question(sess: dict[str, Any], db: Session) -> dict[str, Any] | None:
+    from backend.vocab.gref_import import has_usable_meaning
+
     words = sess["words"]
     idx = sess["index"]
     if idx >= len(words):
         return None
     word = words[idx]
-    all_words = load_words(db)
+    all_words = [w for w in load_words(db) if has_usable_meaning(w)]
     options = _mcq_options(word, all_words)
     q = {
         "domain": "vocab",
@@ -283,7 +285,9 @@ def start_session(
         return start_deck_session(db, user=user, deck_id=int(config.get("deck_id")))
 
     if domain == "vocab":
-        words = load_words(db)
+        from backend.vocab.gref_import import has_usable_meaning
+
+        words = [w for w in load_words(db) if has_usable_meaning(w)]
         group_number = config.get("group_number")
         word_ids = config.get("word_ids") or []
         if word_ids:
@@ -293,7 +297,7 @@ def start_session(
             gn = int(group_number)
             words = [w for w in words if int(w.get("group_number", 0)) == gn]
         if not words:
-            raise ValueError("No vocab words found for this quiz.")
+            raise ValueError("No vocab words with meanings found for this quiz.")
         session_id = create_quiz_session(db, user_id=user.id, quiz_type="adaptive_group", words=words)
         sess = get_quiz_session(db, session_id, user.id)
         assert sess is not None
@@ -866,6 +870,21 @@ def delete_deck(db: Session, *, user: User, deck_id: int) -> None:
         raise ValueError("Deck not found.")
     db.delete(row)
     db.commit()
+
+
+def clear_review_cards(
+    db: Session,
+    *,
+    user: User,
+    domain: str | None = None,
+    all_users: bool = False,
+) -> dict[str, int]:
+    deleted = rc_mod.clear_review_cards(
+        db,
+        user_id=None if all_users else user.id,
+        domain=domain,
+    )
+    return {"deleted": deleted}
 
 
 def list_recent_results(db: Session, *, user: User, limit: int = 10) -> list[dict[str, Any]]:

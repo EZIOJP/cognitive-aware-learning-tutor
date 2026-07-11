@@ -424,6 +424,56 @@ def strip_llm_meta_preamble(raw: str) -> str:
     return cleaned
 
 
+_LOGISTICS_HEADING_RE = re.compile(
+    r"(?i)(introduction\s+to\s+scalar|user\s+interface|ui\s+familiarization|"
+    r"notice\s+board|note[- ]taking\s+strategy|doubt\s+resolution|"
+    r"session\s+structure|conclusion\s+of\s+session|wrap[- ]?up|"
+    r"chat\s+functionality|question\s+tab|platform\s+onboarding)"
+)
+
+
+def strip_logistics_sections(markdown: str) -> str:
+    """
+    Drop ##/### sections that are pure classroom/platform logistics.
+
+    Keeps the section if it contains a cite marker or substantial technical density.
+    """
+    from backend.transcripts.pedagogy_filter import has_technical_substance
+
+    text = (markdown or "").strip()
+    if not text:
+        return text
+    lines = text.splitlines()
+    out: list[str] = []
+    i = 0
+    while i < len(lines):
+        line = lines[i]
+        m = re.match(r"^(#{2,3})\s+(.+?)\s*$", line)
+        if not m:
+            out.append(line)
+            i += 1
+            continue
+        level, title = m.group(1), m.group(2).strip()
+        j = i + 1
+        body_lines: list[str] = []
+        while j < len(lines):
+            hm = re.match(r"^(#{1,3})\s+", lines[j])
+            if hm and len(hm.group(1)) <= len(level):
+                break
+            body_lines.append(lines[j])
+            j += 1
+        body = "\n".join(body_lines)
+        is_logistics = bool(_LOGISTICS_HEADING_RE.search(title))
+        has_cite = "<!-- cite:" in body.lower() or "<!--cite:" in body.lower()
+        if is_logistics and not has_cite and not has_technical_substance(body):
+            i = j
+            continue
+        out.append(line)
+        out.extend(body_lines)
+        i = j
+    return "\n".join(out).strip()
+
+
 def postprocess_markdown(raw: str, *, sanitize_mermaid: bool = True) -> str:
     """Strip LLM preamble and accidental outer fences."""
     text = raw.strip()
@@ -436,6 +486,7 @@ def postprocess_markdown(raw: str, *, sanitize_mermaid: bool = True) -> str:
         text = sanitize_mermaid_blocks(text)
     text = dedupe_h2_sections(text)
     text = dedupe_notes_tail(text)
+    text = strip_logistics_sections(text)
     return text.strip()
 
 

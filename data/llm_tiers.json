@@ -1,15 +1,25 @@
 {
   "light": [
-    "lmstudio:google/gemma-4-e4b"
-  ],
-  "medium": [
-    "gemini:gemini-flash-latest",
+    "groq:llama-3.1-8b-instant",
+    "cerebras:llama-3.1-8b",
+    "gemini:gemini-3.1-flash-lite",
     "lmstudio:google/gemma-4-e4b",
     "ollama:llama3.2:3b"
   ],
+  "medium": [
+    "cerebras:qwen3-32b",
+    "gemini:gemini-3.1-flash-lite",
+    "gemini:gemini-3-flash-preview",
+    "mistral:mistral-small-latest",
+    "groq:llama-3.3-70b-versatile",
+    "lmstudio:google/gemma-4-e4b"
+  ],
   "heavy": [
+    "gemini:gemini-3-flash-preview",
+    "gemini:gemini-3.1-pro-preview",
     "gemini:gemini-2.5-pro",
-    "openai:https://api.anthropic.com/v1:claude-3-5-sonnet-20241022",
+    "openai:https://integrate.api.nvidia.com/v1:google/gemma-4-31b-it",
+    "github:meta-llama-3.3-70b",
     "lmstudio:google/gemma-4-e4b"
   ]
 }

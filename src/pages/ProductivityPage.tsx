@@ -3,7 +3,7 @@ import {
   Monitor, Globe, RefreshCw, AlertCircle, CheckCircle2,
   Clock, Zap, BarChart2, Terminal, Code2, BookOpen, PenLine,
   Gamepad2, Music, MessageSquare, FileText, Folder, Cpu, CalendarDays,
-  ChevronDown, ChevronRight,
+  ChevronDown, ChevronRight, Download, Loader2,
 } from "lucide-react";
 import { fetchDesktopStats, fetchBrowserStats, fetchTrackerHealth, fetchDesktopTimeline, forceTrackerSync } from "../api/behaviorClient";
 import type { DesktopStats, BrowserStats, AppSession, BrowserSite, TrackerHealth, DesktopTimeline } from "../api/behaviorClient";
@@ -14,7 +14,12 @@ import { TimetablePanel } from "../components/productivity/TimetablePanel";
 import { TodayPanel } from "../components/productivity/TodayPanel";
 import { RoutinesPanel } from "../components/productivity/RoutinesPanel";
 import { Link } from "react-router";
-import { fetchAdherence, createPlannerBlock, type AdherenceSummary } from "../api/plannerClient";
+import {
+  fetchAdherence,
+  createPlannerBlock,
+  downloadProductivityWeekExport,
+  type AdherenceSummary,
+} from "../api/plannerClient";
 import { fetchDueReview } from "../api/globalQuizClient";
 import ClassificationReview from "../components/productivity/ClassificationReview";
 
@@ -235,6 +240,8 @@ export function ProductivityPage() {
   const [plannerRefresh, setPlannerRefresh] = useState(0);
   const [syncing, setSyncing] = useState(false);
   const [syncHint, setSyncHint] = useState<string | null>(null);
+  const [exporting, setExporting] = useState(false);
+  const [exportHint, setExportHint] = useState<string | null>(null);
 
   const loadAdherence = useCallback(async (day: Date) => {
     try {
@@ -315,6 +322,21 @@ export function ProductivityPage() {
     }
   }, [load, loadAdherence, plannerDay]);
 
+  const exportWeek = useCallback(async (format: "json" | "csv") => {
+    setExporting(true);
+    setExportHint(null);
+    try {
+      await downloadProductivityWeekExport(7, format);
+      setExportHint(format === "csv" ? "CSV downloaded" : "JSON downloaded");
+      setTimeout(() => setExportHint(null), 3000);
+    } catch (e: unknown) {
+      setExportHint(e instanceof Error ? e.message : "Export failed");
+      setTimeout(() => setExportHint(null), 4000);
+    } finally {
+      setExporting(false);
+    }
+  }, []);
+
   useEffect(() => {
     load();
     void loadDue();
@@ -378,6 +400,32 @@ export function ProductivityPage() {
               {syncHint}
             </span>
           )}
+          {exportHint && (
+            <span className="text-xs text-sky-400 max-w-[200px] truncate" title={exportHint}>
+              {exportHint}
+            </span>
+          )}
+          <div className="flex rounded-lg border border-white/10 overflow-hidden text-xs">
+            <button
+              type="button"
+              disabled={exporting}
+              onClick={() => void exportWeek("json")}
+              className="flex items-center gap-1 px-2.5 py-1.5 hover:bg-white/10 disabled:opacity-50"
+              title="Export last 7 days (JSON) — patterns for building a timetable"
+            >
+              {exporting ? <Loader2 size={12} className="animate-spin" /> : <Download size={12} />}
+              7d JSON
+            </button>
+            <button
+              type="button"
+              disabled={exporting}
+              onClick={() => void exportWeek("csv")}
+              className="flex items-center gap-1 px-2.5 py-1.5 border-l border-white/10 hover:bg-white/10 disabled:opacity-50"
+              title="Export last 7 days (CSV) for spreadsheet timetable drafting"
+            >
+              7d CSV
+            </button>
+          </div>
           <button
             type="button"
             onClick={() => void syncTracker()}
@@ -530,14 +578,8 @@ export function ProductivityPage() {
             </div>
           </div>
         )}
-        <TodayPanel
-          compact
-          refreshKey={plannerRefresh}
-          dueReviews={dueReviews}
-          onPlannerChange={bumpPlanner}
-        />
 
-        <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6 space-y-4">
+        <div className="w-full mb-4 bg-white/[0.03] border border-white/10 rounded-2xl p-6 space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="font-semibold flex items-center gap-2">
               <CalendarDays size={16} className="text-violet-400" />
@@ -560,6 +602,13 @@ export function ProductivityPage() {
             onSelectedDayChange={setPlannerDay}
           />
         </div>
+
+        <TodayPanel
+          compact
+          refreshKey={plannerRefresh}
+          dueReviews={dueReviews}
+          onPlannerChange={bumpPlanner}
+        />
 
         <PlanVsActualDashboard
           selectedDay={plannerDay}

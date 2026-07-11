@@ -10,7 +10,8 @@ from typing import Callable
 import time
 
 from backend.core.llm_job_context import llm_job
-from backend.core.ollama_client import LlmOptions, ollama_available, ollama_generate
+from backend.core.llm_gateway import require_gateway_chain
+from backend.core.ollama_client import LlmOptions, ollama_generate
 from backend.paths import NOTES_DIR, TRANSCRIPTS_DIR
 from backend.transcripts.asr_restore import maybe_restore_asr
 from backend.transcripts.chunk_polish import finalize_full_note, polish_chunk_text_only
@@ -47,30 +48,49 @@ def _escape_format_braces(text: str) -> str:
     return text.replace("{", "{{").replace("}", "}}")
 
 
-REFINE_PROMPT = """Polish these lecture notes into one cohesive markdown document.
-- Fix duplicate headings and merge overlapping bullets
-- Keep existing code blocks intact; do not add new diagrams here
-- Output markdown only (no preamble, no meta commentary about polishing or merging)
-- Do not add a conclusion about what you changed
+REFINE_PROMPT = """Revamp these into ONE revision-ready conceptual study note that briefs the lecture's topics.
+
+Goals:
+- Organize by TOPICS and CONCEPTS in lecture order — a readable brief of what was taught, not a speaker diary.
+- Prefer textbook/reference definitions and structure when they appear in the body or citations.
+- Remove: platform UI / notice board / chat / doubt-tab / session structure / wrap-up / note-taking tips,
+  thumbs-up / pace / WhatsApp / subscribe, duplicated sections, LLM meta ("Constraints Checklist", confidence scores).
+- Do NOT rewrite every section as Definition / Importance / Key Components — explain each concept in a short brief.
+- Keep technical terms exact; merge overlapping ## sections.
+- At the TOP (after the title), add:
+## Topics covered
+- bullet list of distinct topics/concepts in this note (for revision scanning)
+- Keep existing code/mermaid fences intact; do not add new diagrams here.
+- Output markdown ONLY — no preamble about what you changed.
 
 {body}
 """
 
-CHUNK_PROMPT = f"""You are creating lecture study notes from a live-caption transcript chunk.
+CHUNK_PROMPT = f"""You write CONCEPTUAL study notes that BRIEF the lecture topics — not a transcript and not a glossary dump.
+
+Purpose of REFERENCE (textbook / corpus RAG):
+- Use it as the conceptual authority: fill in definitions, properties, steps, formulas, and standard terminology from the textbook.
+- The transcript only tells which topics were taught, in what order, and any class-specific examples.
+- If the transcript is noisy, still write a clear topic brief from the reference for the topics implied by the chunk.
 
 Rules:
-- Output markdown ONLY (no preamble like "Here's your summary").
-- Start with a ## heading for the main topic in this chunk.
-- Write 3-5 bullet key points (concise lecture notes, not verbatim transcript).
-- Text only: do NOT add mermaid diagrams or ``` code blocks — visuals and code are added in a final enrich pass on the full document.
-- If the chunk discusses an algorithm or code, describe it in bullets (name, inputs, steps, output) so the enrich pass can generate the block later.
-- Preserve ![Slide N](...) image lines if they appear in the transcript chunk.
-- Filler words are already removed.
+- Output markdown ONLY (no preamble, no planning, no confidence scores).
+- Start with a ## heading naming the CONCEPT/TOPIC (not "Chunk", UI, or "the lecturer said").
+- Under it: a short conceptual BRIEF (1–3 short paragraphs or tight bullets) that explains the idea so a student can revise the whole topic — weave in textbook facts from REFERENCE.
+- Do NOT use a fixed template of "Definition / Importance / Key Components / Conclusion" for every section.
+- Do NOT write sections about: platform UI, notice board, chat, question tab, session structure, wrap-up, note-taking strategy, doubt-session admin.
+- Do NOT include classroom logistics (thumbs up, pace, WhatsApp, subscribe, "any questions").
+- Do NOT narrate the speaker ("he said", "give me a minute", "look at this slide").
+- Text only: no mermaid or ``` code blocks — enrich pass adds visuals later.
+- If an algorithm/code is discussed, describe it briefly (name, inputs, steps, output) for later enrich.
+- Preserve ![Slide N](...) image lines if present.
+- When reference chunks include <!-- cite: ... --> or chunk ids, keep citations after the section.
+- Do not assert any factual claim that is not supported by the REFERENCE material (or an explicit cite id). If the transcript invents a detail not in reference, omit it or mark uncertainty briefly.
 
-Reference material (weave in examples when relevant):
+Reference material (textbook / corpus — prefer for concepts):
 {{reference}}
 
-Transcript chunk:
+Lecture transcript chunk (topic signal only; strip filler):
 {{chunk}}
 {{context_block}}
 """
@@ -233,8 +253,9 @@ def summarize_chunk(
 
     if aggressive:
         prompt = (
-            "This is a noisy live-caption dump with repeated partial snapshots. "
-            "Extract only clean lecture content as markdown notes.\n\n" + prompt
+            "Noisy live-caption dump: ignore classroom filler and speaker chatter. "
+            "Extract TOPICS/CONCEPTS only; ground definitions in the reference material.\n\n"
+            + prompt
         )
 
     task = coherence_task(mode) if style == "narrative" and mode == "cloud_heavy" else "notes_chunk"
@@ -426,11 +447,8 @@ def _generate_notes_from_text_unwrapped(
             extra_ref = load_context_folder(folder, exclude_paths=exclude or None)
             reference_materials = _merge_reference_materials(reference_materials, extra_ref)
 
-    if generate_fn is None and not ollama_available(llm):
-        raise RuntimeError(
-            "LLM is not available. Set OLLAMA_ENABLED=1 in repo .env and configure "
-            "data/llm_tiers.json (AI handler), or start a local provider."
-        )
+    if generate_fn is None:
+        require_gateway_chain(llm_tier, task="notes_job", llm=llm)
 
     def progress(msg: str) -> None:
         log.info(msg)

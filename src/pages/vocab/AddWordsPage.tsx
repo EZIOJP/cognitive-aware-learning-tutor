@@ -1,5 +1,6 @@
 import { Link } from "react-router";
 import { AddWordsJson } from "../../features/vocab/components/AddWordsJson";
+import { GreMaterialPanel } from "../../features/vocab/components/GreMaterialPanel";
 
 export function AddWordsPage() {
   return (
@@ -7,6 +8,7 @@ export function AddWordsPage() {
       <Link to="/gre-vocab" className="text-sm text-primary hover:underline mb-4 inline-block">
         ← GRE Vocabulary
       </Link>
+      <GreMaterialPanel />
       <AddWordsJson />
     </div>
   );

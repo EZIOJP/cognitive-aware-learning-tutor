@@ -6,6 +6,8 @@ import pytest
 
 os.environ.setdefault("SEED_WORDS_ON_STARTUP", "false")
 os.environ.setdefault("DEV_MODE", "true")
+# Run Huey tasks inline so test-all-profiles jobs complete without a worker.
+os.environ.setdefault("HUEY_IMMEDIATE", "1")
 
 
 @pytest.fixture(autouse=True)

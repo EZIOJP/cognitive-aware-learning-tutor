@@ -1,5 +1,5 @@
 import { resolveApiUrl } from "../utils/resolveBackendUrl";
-import { llmBodyFields, type LlmOverrides } from "./transcriptsClient";
+import { llmBodyFieldsForTask, type LlmOverrides } from "./transcriptsClient";
 
 const TOKEN_KEY = "vocab:auth-token";
 
@@ -191,7 +191,7 @@ export async function scanClassifications(
   const res = await fetch(resolveApiUrl("/api/classification/scan"), {
     method: "POST",
     headers: authHeaders(),
-    body: JSON.stringify({ limit, ...llmBodyFields(llm) }),
+    body: JSON.stringify({ limit, ...llmBodyFieldsForTask("classify", llm) }),
   });
   if (!res.ok) throw new Error(`classification/scan: ${res.status}`);
   return res.json();

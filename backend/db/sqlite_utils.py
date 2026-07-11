@@ -18,6 +18,7 @@ def configure_sqlite_engine(engine: Engine, *, busy_timeout_ms: int = 10000) -> 
         cursor = dbapi_conn.cursor()
         cursor.execute("PRAGMA journal_mode=WAL")
         cursor.execute(f"PRAGMA busy_timeout={busy_timeout_ms}")
+        cursor.execute("PRAGMA synchronous=NORMAL")
         cursor.close()
 
 

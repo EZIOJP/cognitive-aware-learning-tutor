@@ -18,14 +18,15 @@ import { ProjectAgentPage } from "../pages/ProjectAgentPage";
 import { JournalPage } from "../pages/JournalPage";
 
 // Import registry and trigger registration of all plugins
-import "../plugins"; 
+import "../plugins";
 import { PluginRegistryProvider, usePlugins } from "../plugins/registry";
 import { FeatureStudioPage } from "../pages/settings/FeatureStudioPage";
 import { AppErrorBoundary } from "../components/layout/AppErrorBoundary";
+import { SLIM_LIFE_CORE } from "../plugins/slimLifeCore";
 
 function AppRoutes() {
   const { getRoutes, isLoaded } = usePlugins();
-  
+
   if (!isLoaded) return <div className="h-screen w-screen flex items-center justify-center">Loading modules...</div>;
 
   const pluginRoutes = getRoutes();
@@ -41,9 +42,13 @@ function AppRoutes() {
         <Route path="settings/theme" element={<ThemeSettingsPage />} />
         <Route path="settings/plugins" element={<PluginSettingsPage />} />
         <Route path="settings/features" element={<FeatureStudioPage />} />
-        <Route path="gre-vocab/add-words" element={<AddWordsPage />} />
+        {!SLIM_LIFE_CORE && (
+          <Route path="gre-vocab/add-words" element={<AddWordsPage />} />
+        )}
         <Route path="ai-coach" element={<AiCoachPage />} />
-        <Route path="project-agent" element={<ProjectAgentPage />} />
+        {!SLIM_LIFE_CORE && (
+          <Route path="project-agent" element={<ProjectAgentPage />} />
+        )}
         <Route path="journal" element={<JournalPage />} />
 
         {/* Dynamically mount plugin routes */}
@@ -59,11 +64,11 @@ function AppRoutes() {
 
 function DynamicProviders({ children }: { children: React.ReactNode }) {
   const { getProviders, isLoaded } = usePlugins();
-  
+
   if (!isLoaded) return <>{children}</>;
 
   const providers = getProviders() as Array<({ children }: { children: React.ReactNode }) => React.ReactNode>;
-  
+
   // Wrap children in each active provider (outermost = first in list)
   return providers.reduceRight(
     (acc: React.ReactNode, Provider) => <Provider>{acc}</Provider>,

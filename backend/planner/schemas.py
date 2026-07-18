@@ -44,6 +44,23 @@ class GenerateWeekBody(BaseModel):
     week_start: Optional[datetime] = None
 
 
+class ProposeFromExportBody(BaseModel):
+    days: int = Field(7, ge=1, le=31)  # look-back for tracker export
+    goals: Optional[str] = None
+    week_start: Optional[str] = None  # YYYY-MM-DD (legacy alias for range_start)
+    range_start: Optional[str] = None  # YYYY-MM-DD first day to fill
+    horizon_days: int = Field(7, ge=1, le=62)  # how many days to propose
+    use_llm: bool = True
+    include_routines: bool = True
+    # smart = gap-fill only; review = AI polish of draft_blocks; full = AI from scratch
+    mode: Optional[str] = None  # "smart" | "review" | "full"
+    draft_blocks: Optional[list[dict]] = None
+
+
+class ApplyProposedBlocksBody(BaseModel):
+    blocks: list[dict]
+
+
 class GenerateDayBody(BaseModel):
     date: Optional[str] = None  # YYYY-MM-DD
     slots: Optional[list] = None
@@ -76,4 +93,8 @@ class RoutineUpdate(BaseModel):
 
 class ApplyRoutinesBody(BaseModel):
     date: Optional[str] = None
-    skip_overlaps: bool = True
+
+
+class GoogleOAuthCredentialsBody(BaseModel):
+    client_id: str = Field(..., min_length=10)
+    client_secret: str = Field(..., min_length=5)

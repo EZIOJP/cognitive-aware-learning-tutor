@@ -30,6 +30,18 @@ def _serialize_journal(row: JournalEntry) -> dict:
     }
 
 
+def _serialize_journal_log(row: JournalEntry) -> dict:
+    content = row.content or ""
+    return {
+        "id": row.id,
+        "entry_date": row.entry_date,
+        "title": row.title,
+        "updated_at": row.updated_at.isoformat() if row.updated_at else None,
+        "content_length": len(content),
+        "word_count": len(content.split()),
+    }
+
+
 @router.get("/summary")
 def journal_summary(
     day: str | None = Query(None, description="YYYY-MM-DD or today"),
@@ -65,6 +77,22 @@ def get_journal_entry(
         .all()
     )
     return {"day": day_str, "entries": [_serialize_journal(r) for r in rows]}
+
+
+@router.get("/entries/log")
+def get_journal_log(
+    limit: int = Query(30, ge=1, le=100),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    rows = (
+        db.query(JournalEntry)
+        .filter(JournalEntry.user_id == user.id)
+        .order_by(JournalEntry.entry_date.desc(), JournalEntry.updated_at.desc())
+        .limit(limit)
+        .all()
+    )
+    return {"entries": [_serialize_journal_log(r) for r in rows]}
 
 
 @router.post("/entries")

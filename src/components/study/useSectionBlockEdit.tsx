@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
 import { SectionBlockToolbar } from "./SectionBlockToolbar";
-import { layoutSafeMermaidSource } from "../../features/study-notes";
 import { isBrokenBlockContent } from "./noteBlockUtils";
 
 export type SectionBlockHandlers = {
@@ -71,44 +70,19 @@ export function useSectionBlockEdit(
     }
   }, [draft, handlers]);
 
-  const onSanitizeSyntax = useCallback(async () => {
-    if (handlers?.language !== "mermaid" || !handlers.onBlockSave) return;
-    setSaving(true);
-    setLocalError(null);
-    const source = editing ? draft : initialContent;
-    const fixed = layoutSafeMermaidSource(source);
-    try {
-      await handlers.onBlockSave(handlers.blockIndex, handlers.language, fixed);
-      setDraft(fixed);
-      setEditing(false);
-    } catch (err) {
-      setLocalError(err instanceof Error ? err.message : "Syntax fix failed");
-    } finally {
-      setSaving(false);
-    }
-  }, [draft, editing, handlers, initialContent]);
-
   const onRegenerate = useCallback(async () => {
     if (!handlers?.onBlockRegenerate) return;
     if (handlers.llmReachable === false) {
-      setLocalError(
-        "LLM offline — start LM Studio (Gemma) or set Gemini API key. Use Fix syntax without AI.",
-      );
+      setLocalError("LLM offline — start LM Studio or set a Gemini API key.");
       return;
     }
     setLocalError(null);
     const mode = editing ? (options?.regenerateModeWhenEditing ?? "polish") : "fix";
-    const isMermaid = handlers.language === "mermaid";
-    const baseSource = editing ? draft : initialContent;
-    let source = baseSource;
-    if (isMermaid) {
-      source = layoutSafeMermaidSource(baseSource);
-    }
+    const source = editing ? draft : initialContent;
     const errorHint =
       renderError ||
       (isBrokenBlockContent(source) ? "Block content is empty or invalid" : undefined);
 
-    // "Fix with AI" always calls the LLM — local syntax fixes use the Fix syntax button.
     try {
       const fixed = await handlers.onBlockRegenerate(
         handlers.blockIndex,
@@ -117,10 +91,9 @@ export function useSectionBlockEdit(
         errorHint,
         { mode },
       );
-      const polished = isMermaid ? layoutSafeMermaidSource(fixed) : fixed;
-      setDraft(polished);
+      setDraft(fixed);
       if (regenerateAutoSave && handlers.onBlockSave) {
-        await handlers.onBlockSave(handlers.blockIndex, handlers.language, polished);
+        await handlers.onBlockSave(handlers.blockIndex, handlers.language, fixed);
         setEditing(false);
       } else {
         setEditing(true);
@@ -128,7 +101,15 @@ export function useSectionBlockEdit(
     } catch (err) {
       setLocalError(err instanceof Error ? err.message : "Regeneration failed");
     }
-  }, [draft, editing, handlers, options?.regenerateModeWhenEditing, regenerateAutoSave, renderError]);
+  }, [
+    draft,
+    editing,
+    handlers,
+    options?.regenerateModeWhenEditing,
+    regenerateAutoSave,
+    renderError,
+    initialContent,
+  ]);
 
   const toolbar =
     handlers?.allowSectionEdit && handlers.onBlockSave ? (
@@ -137,12 +118,11 @@ export function useSectionBlockEdit(
         saving={saving}
         regenerating={regenerating}
         llmReachable={handlers.llmReachable !== false}
-        showSyntaxFix={handlers.language === "mermaid"}
+        showSyntaxFix={false}
         onEdit={onEdit}
         onCancel={onCancel}
         onSave={() => void onSave()}
         onRegenerate={() => void onRegenerate()}
-        onSanitizeSyntax={() => void onSanitizeSyntax()}
         saveDisabled={draft.trim() === initialContent.trim()}
         regenerateLabel={options?.regenerateLabel}
         regenerateEditLabel={options?.regenerateEditLabel}

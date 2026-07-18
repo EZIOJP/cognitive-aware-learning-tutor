@@ -82,6 +82,7 @@ export interface TimelineInterval {
   window_title: string | null;
   site?: string | null;
   productivity_score: number | null;
+  override_productive?: boolean | null;
 }
 
 export interface DesktopTimeline {
@@ -265,5 +266,87 @@ export async function revertClassification(id: number): Promise<{
     headers: authHeaders(),
   });
   if (!res.ok) throw new Error(`classification/revert: ${res.status}`);
+  return res.json();
+}
+
+export interface ProductivityPolicy {
+  productive_categories: string[];
+  blocked_categories: string[];
+  app_overrides: Record<string, string>;
+  threshold: number;
+  hard_block_enabled?: boolean;
+  daily_goal_minutes?: number;
+  hard_block_gaming?: boolean;
+  hard_block_exes?: string[];
+}
+
+export interface DistractionGate {
+  enabled: boolean;
+  locked: boolean;
+  unlocked: boolean;
+  productive_minutes: number;
+  daily_goal_minutes: number;
+  remaining_minutes: number;
+  hard_block_gaming: boolean;
+  hard_block_exes: string[];
+  day: string;
+}
+
+export async function fetchProductivityPolicy(): Promise<ProductivityPolicy> {
+  const res = await fetch(resolveApiUrl("/api/behavior/policy"), { headers: authHeaders() });
+  if (!res.ok) throw new Error(`behavior/policy: ${res.status}`);
+  return res.json();
+}
+
+export async function fetchDistractionGate(): Promise<DistractionGate> {
+  const res = await fetch(resolveApiUrl("/api/behavior/distraction-gate"), {
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error(`behavior/distraction-gate: ${res.status}`);
+  return res.json();
+}
+
+export async function saveProductivityPolicy(
+  body: Partial<ProductivityPolicy>,
+): Promise<ProductivityPolicy> {
+  const res = await fetch(resolveApiUrl("/api/behavior/policy"), {
+    method: "PUT",
+    headers: authHeaders(),
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+export async function fetchCategoryScores(): Promise<{ scores: Record<string, number> }> {
+  const res = await fetch(resolveApiUrl("/api/behavior/category-scores"), {
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error(`category-scores: ${res.status}`);
+  return res.json();
+}
+
+export async function saveCategoryScores(
+  scores: Record<string, number>,
+): Promise<{ updated: number; scores: Record<string, number> }> {
+  const res = await fetch(resolveApiUrl("/api/behavior/category-scores"), {
+    method: "PUT",
+    headers: authHeaders(),
+    body: JSON.stringify({ scores }),
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+export async function patchTrackedSession(
+  sessionId: string,
+  body: { category?: string; override_productive?: boolean | null },
+): Promise<{ session: Record<string, unknown> }> {
+  const res = await fetch(resolveApiUrl(`/api/behavior/tracked-sessions/${encodeURIComponent(sessionId)}`), {
+    method: "PATCH",
+    headers: authHeaders(),
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error(await res.text());
   return res.json();
 }

@@ -3,7 +3,25 @@
 from backend.transcripts.note_generation import resolve_grounding
 
 
+def _enable_rag(monkeypatch):
+    monkeypatch.setattr(
+        "backend.transcripts.note_generation.get_settings",
+        lambda: type("S", (), {"corpus_grounded_notes": True})(),
+    )
+
+
+def test_resolve_grounding_disabled(monkeypatch):
+    monkeypatch.setattr(
+        "backend.transcripts.note_generation.get_settings",
+        lambda: type("S", (), {"corpus_grounded_notes": False})(),
+    )
+    status, reason = resolve_grounding("hybrid", {"citations": ["x"]})
+    assert status == "degraded"
+    assert reason == "corpus_rag_disabled"
+
+
 def test_resolve_grounding_legacy_is_degraded(monkeypatch):
+    _enable_rag(monkeypatch)
     monkeypatch.setattr("backend.transcripts.note_generation.corpus_available", lambda: True)
     status, reason = resolve_grounding("legacy", {})
     assert status == "degraded"
@@ -11,6 +29,7 @@ def test_resolve_grounding_legacy_is_degraded(monkeypatch):
 
 
 def test_resolve_grounding_corpus_down(monkeypatch):
+    _enable_rag(monkeypatch)
     monkeypatch.setattr("backend.transcripts.note_generation.corpus_available", lambda: False)
     status, reason = resolve_grounding("hybrid", {"citations": ["x"]})
     assert status == "degraded"
@@ -18,6 +37,7 @@ def test_resolve_grounding_corpus_down(monkeypatch):
 
 
 def test_resolve_grounding_hybrid_with_citations(monkeypatch):
+    _enable_rag(monkeypatch)
     monkeypatch.setattr("backend.transcripts.note_generation.corpus_available", lambda: True)
     status, reason = resolve_grounding(
         "hybrid",
@@ -28,6 +48,7 @@ def test_resolve_grounding_hybrid_with_citations(monkeypatch):
 
 
 def test_resolve_grounding_hybrid_zero_hits(monkeypatch):
+    _enable_rag(monkeypatch)
     monkeypatch.setattr("backend.transcripts.note_generation.corpus_available", lambda: True)
     status, reason = resolve_grounding(
         "hybrid",

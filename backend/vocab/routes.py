@@ -32,6 +32,7 @@ from backend.core.serializers import user_admin_payload
 from backend.config import get_settings
 from backend.hub.services.sessions import get_or_open_activity_session, start_activity_session
 from backend.db.session import get_db
+from backend.math.answer_grade import answers_equivalent
 from backend.math.services.randomizer import pick_practice_problem
 from backend.models import MathAttempt, MathQuestion, MathQuestionTemplate, User, WordProgress
 from backend.vocab.hub_hooks import on_face_status, on_math_attempt, on_vocab_quiz_complete
@@ -1129,9 +1130,7 @@ def submit_math_attempt(body: MathAttemptBody, db: Session = Depends(get_db), us
         if bank_q:
             expected_raw = bank_q.expected_answer
 
-    expected = _normalize_math_answer(expected_raw)
-    actual = _normalize_math_answer(body.user_answer)
-    is_correct = actual == expected
+    is_correct = answers_equivalent(expected_raw, body.user_answer)
 
     tpl = db.get(MathQuestionTemplate, body.template_id) if body.template_id else None
     base_points = tpl.points if tpl else 10

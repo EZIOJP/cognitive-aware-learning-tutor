@@ -1,5 +1,4 @@
-import "./TopicStudyFlowPage.css";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import {
   BookOpen,
@@ -20,7 +19,8 @@ import {
   type StudyFlowResult,
   type TranscriptFile,
 } from "../../api/transcriptsClient";
-import { useEffect } from "react";
+import { useEaster, useStepDance } from "../../easter";
+import "./TopicStudyFlowPage.css";
 
 /* ──────────────────────────────────────────────── types */
 type FlowStep = 0 | 1 | 2 | 3; // config → retrieve+notes → quiz → review
@@ -31,16 +31,26 @@ function StepBadge({
   current,
   label,
   icon: Icon,
+  onSelect,
 }: {
   step: FlowStep;
   current: FlowStep;
   label: string;
   icon: React.ElementType;
+  onSelect?: (step: number) => void;
 }) {
   const done = current > step;
   const active = current === step;
   return (
-    <div className={`tsf-step ${active ? "active" : ""} ${done ? "done" : ""}`}>
+    <div
+      role="button"
+      tabIndex={0}
+      className={`tsf-step ${active ? "active" : ""} ${done ? "done" : ""}`}
+      onClick={() => onSelect?.(step + 1)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") onSelect?.(step + 1);
+      }}
+    >
       <div className="tsf-step-icon">
         {done ? <CheckCircle2 size={16} /> : <Icon size={16} />}
       </div>
@@ -53,13 +63,14 @@ function StepBadge({
 /* ──────────────────────────────────────────────── page */
 export function TopicStudyFlowPage() {
   const navigate = useNavigate();
+  const { burst } = useEaster();
+  const onStepTap = useStepDance([1, 2, 3, 2, 1], () => burst("bounce"));
 
   /* form state */
   const [topic, setTopic] = useState("");
   const [transcriptFile, setTranscriptFile] = useState("");
   const [folderPath, setFolderPath] = useState("study_flow");
   const [quizCount, setQuizCount] = useState(8);
-  const [ingestCorpus, setIngestCorpus] = useState(true);
 
   /* flow state */
   const [step, setStep] = useState<FlowStep>(0);
@@ -94,7 +105,7 @@ export function TopicStudyFlowPage() {
         transcriptFile,
         folderPath: folderPath.trim(),
         title: topic.trim(),
-        ingestCorpus,
+        ingestCorpus: false,
         quizCount,
         llm: llmPrefs,
       });
@@ -124,17 +135,17 @@ export function TopicStudyFlowPage() {
         <div>
           <h1 className="tsf-title">Topic Study Flow</h1>
           <p className="tsf-subtitle">
-            One click: corpus retrieval → grounded notes → quiz deck → SRS review
+            One click: transcript notes → quiz deck → SRS review
           </p>
         </div>
       </div>
 
       {/* ── stepper ── */}
       <div className="tsf-stepper">
-        <StepBadge step={0} current={step} label="Configure" icon={Search} />
-        <StepBadge step={1} current={step} label="Notes" icon={BookOpen} />
-        <StepBadge step={2} current={step} label="Quiz" icon={BrainCircuit} />
-        <StepBadge step={3} current={step} label="Review" icon={ClipboardCheck} />
+        <StepBadge step={0} current={step} label="Configure" icon={Search} onSelect={onStepTap} />
+        <StepBadge step={1} current={step} label="Notes" icon={BookOpen} onSelect={onStepTap} />
+        <StepBadge step={2} current={step} label="Quiz" icon={BrainCircuit} onSelect={onStepTap} />
+        <StepBadge step={3} current={step} label="Review" icon={ClipboardCheck} onSelect={onStepTap} />
       </div>
 
       {/* ── error ── */}
@@ -207,16 +218,6 @@ export function TopicStudyFlowPage() {
                   onChange={(e) => setQuizCount(Number(e.target.value))}
                 />
               </label>
-
-              <label className="tsf-label tsf-checkbox-label">
-                <input
-                  id="tsf-ingest-corpus"
-                  type="checkbox"
-                  checked={ingestCorpus}
-                  onChange={(e) => setIngestCorpus(e.target.checked)}
-                />
-                Ingest to corpus
-              </label>
             </div>
           </div>
 
@@ -237,7 +238,7 @@ export function TopicStudyFlowPage() {
           <Loader2 size={40} className="tsf-spinner" />
           <p className="tsf-loading-title">Building your study package…</p>
           <p className="tsf-loading-sub">
-            Retrieving corpus chunks → generating grounded notes → creating quiz deck
+            Retrieving transcript → generating lecture notes → creating quiz deck
           </p>
         </div>
       )}
@@ -250,7 +251,8 @@ export function TopicStudyFlowPage() {
             <div>
               <h2 className="tsf-result-title">Study package ready for "{result.topic}"</h2>
               <p className="tsf-result-sub">
-                Retrieved {hitCount} corpus chunk{hitCount !== 1 ? "s" : ""}
+                Notes from transcript
+                {hitCount > 0 ? ` · ${hitCount} corpus chunk${hitCount !== 1 ? "s" : ""}` : ""}
                 {corpusHandoff
                   ? ` · ingested ${corpusHandoff.transcript_chunks ?? 0}+${corpusHandoff.note_chunks ?? 0} chunks`
                   : ""}
@@ -264,7 +266,7 @@ export function TopicStudyFlowPage() {
             <div className="tsf-result-card">
               <div className="tsf-result-card-header">
                 <BookOpen size={18} />
-                <span>Grounded Notes</span>
+                <span>Lecture Notes</span>
               </div>
               <p className="tsf-result-card-body">
                 Mode: <strong>{result.steps.notes.mode}</strong>

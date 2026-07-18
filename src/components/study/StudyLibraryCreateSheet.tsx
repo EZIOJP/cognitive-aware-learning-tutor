@@ -35,7 +35,6 @@ type Props = {
   generating: boolean;
   snapshotting: boolean;
   onGenerate: () => void;
-  onGenerateLegacy?: () => void;
   onGenerateGrounded?: () => void;
   onGenerateToday: () => void;
   onSnapshot: () => void;
@@ -65,7 +64,6 @@ export function StudyLibraryCreateSheet({
   generating,
   snapshotting,
   onGenerate,
-  onGenerateLegacy,
   onGenerateGrounded,
   onGenerateToday,
   onSnapshot,
@@ -172,28 +170,25 @@ export function StudyLibraryCreateSheet({
                 <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
                 <>
-                  {llmConfig?.corpus_available ? (
-                    <Database className="w-4 h-4 mr-1.5" />
-                  ) : (
-                    <Sparkles className="w-4 h-4 mr-1.5" />
-                  )}
-                  {llmConfig?.corpus_available ? "Generate (RAG)" : "Generate (legacy)"}
+                  <Sparkles className="w-4 h-4 mr-1.5" />
+                  Generate notes
                 </>
               )}
             </Button>
           </div>
 
-          {llmConfig?.corpus_available && onGenerateLegacy && (
+          {llmConfig?.corpus_grounded_notes && onGenerateGrounded ? (
             <Button
               type="button"
               variant="ghost"
               className="w-full text-xs text-muted-foreground"
-              disabled={generating || !selectedTranscript}
-              onClick={onGenerateLegacy}
+              disabled={generating || !selectedTranscript || !llmConfig?.corpus_available}
+              onClick={onGenerateGrounded}
             >
-              Legacy summarization (no corpus RAG)
+              <Database className="w-3.5 h-3.5 mr-1.5" />
+              Grounded RAG (opt-in)
             </Button>
-          )}
+          ) : null}
 
           <Button
             type="button"
@@ -217,15 +212,12 @@ export function StudyLibraryCreateSheet({
                   .join(" → ")}
               </span>
             ) : null}
-            {llmConfig?.corpus_available ? (
-              <span className="block mt-1 text-emerald-300/70">
-                Knowledge base indexed — grounded notes cite textbook + lecture chunks.
-              </span>
-            ) : (
-              <span className="block mt-1 text-amber-200/70">
-                Build Knowledge Base first for corpus-grounded notes.
-              </span>
-            )}
+            <span className="block mt-1 text-muted-foreground/80">
+              Notes are generated from the transcript only
+              {llmConfig?.corpus_grounded_notes
+                ? " (corpus RAG available as opt-in)."
+                : " — corpus RAG is off."}
+            </span>
           </p>
         </div>
       </SheetContent>

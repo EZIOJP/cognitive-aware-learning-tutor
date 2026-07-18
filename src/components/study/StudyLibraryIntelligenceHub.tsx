@@ -1,9 +1,8 @@
-import { useState } from "react";
-import { Database, Loader2, PenLine, Sparkles } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ClipboardPaste, Database, Loader2, PenLine, Sparkles, Trash2 } from "lucide-react";
 import { Link } from "react-router";
-import type { QuizQuestion, CodeDrill, StudySessionItem } from "./studySessionTypes";
+import type { QuizFocus, QuizQuestion, CodeDrill, StudySessionItem } from "./studySessionTypes";
 import { Button } from "../../app/components/ui/button";
-import { cn } from "../../app/components/ui/utils";
 
 type Props = {
   comparePaths: string[];
@@ -13,13 +12,55 @@ type Props = {
   drills: CodeDrill[];
   sessionItems: StudySessionItem[];
   generating?: boolean;
+  /** Optional status line from parent (e.g. "Calling quiz_gen…") */
+  generatingDetail?: string | null;
+  quizCount?: number;
+  quizFocus?: QuizFocus;
+  onQuizCountChange?: (n: number) => void;
+  onQuizFocusChange?: (f: QuizFocus) => void;
   onGenerateQuiz: () => void;
   onGenerateDrills: () => void;
   onGeneratePrimer?: () => void;
+  onPasteQuiz?: (text: string) => void;
+  onRemoveQuestion?: (id: string) => void;
+  corpusGroundedNotes?: boolean;
   onTakeQuiz?: () => void;
   onSync?: () => void;
   onEditItem: (id: string, content: string) => void;
 };
+
+function formatElapsed(sec: number): string {
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  return `${m}:${String(s).padStart(2, "0")}`;
+}
+
+function estimateBulkCalls(count: number): number {
+  const sectionCalls = Math.min(8, Math.max(2, Math.ceil(count / 4)));
+  const roleCalls = Math.ceil(count / 6) * 2;
+  return sectionCalls + roleCalls;
+}
+
+function stageForElapsed(focus: QuizFocus, elapsedSec: number, tab: "quiz" | "code"): string {
+  if (tab === "code") {
+    if (elapsedSec < 15) return "Building drill prompts…";
+    if (elapsedSec < 45) return "Waiting on AI for code drills…";
+    return "Still working — large models can take a minute…";
+  }
+  if (focus === "cover_all") {
+    if (elapsedSec < 20) return "1/6 Reading note sections…";
+    if (elapsedSec < 45) return "2/6 Definition / vocabulary batches…";
+    if (elapsedSec < 75) return "3/6 Concept / why-when batches…";
+    if (elapsedSec < 110) return "4/6 Coding / API batches…";
+    if (elapsedSec < 145) return "5/6 Connection / synthesis questions…";
+    if (elapsedSec < 180) return "6/6 Deduping + saving quiz note…";
+    return "Still generating — bulk mode can take several minutes…";
+  }
+  if (elapsedSec < 12) return "Preparing note material…";
+  if (elapsedSec < 40) return "Calling AI (quiz_gen)…";
+  if (elapsedSec < 80) return "Parsing & filtering MCQs…";
+  return "Almost done — waiting on the model…";
+}
 
 export function StudyLibraryIntelligenceHub({
   comparePaths,
@@ -29,9 +70,17 @@ export function StudyLibraryIntelligenceHub({
   drills,
   sessionItems,
   generating,
+  generatingDetail = null,
+  quizCount = 12,
+  quizFocus = "mixed",
+  onQuizCountChange,
+  onQuizFocusChange,
   onGenerateQuiz,
   onGenerateDrills,
   onGeneratePrimer,
+  onPasteQuiz,
+  onRemoveQuestion,
+  corpusGroundedNotes = false,
   onTakeQuiz,
   onSync,
   onEditItem,
@@ -39,6 +88,22 @@ export function StudyLibraryIntelligenceHub({
   const [tab, setTab] = useState<"quiz" | "code">("quiz");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState("");
+  const [pasteOpen, setPasteOpen] = useState(false);
+  const [pasteText, setPasteText] = useState("");
+  const [elapsedSec, setElapsedSec] = useState(0);
+
+  useEffect(() => {
+    if (!generating) {
+      setElapsedSec(0);
+      return;
+    }
+    const started = Date.now();
+    setElapsedSec(0);
+    const id = window.setInterval(() => {
+      setElapsedSec(Math.floor((Date.now() - started) / 1000));
+    }, 500);
+    return () => window.clearInterval(id);
+  }, [generating]);
 
   const sourcePaths =
     comparePaths.length >= 2
@@ -61,11 +126,26 @@ export function StudyLibraryIntelligenceHub({
 
   const hubItems = sessionItems.filter((i) => (tab === "quiz" ? i.kind === "quiz" : i.kind === "exercise"));
 
+  const planHint =
+    quizFocus === "cover_all"
+      ? "Bulk multi-call: sections + definition/concept/coding/connect · auto-saves"
+      : quizFocus === "concept"
+        ? "Concept batches (auto)"
+        : quizFocus === "coding"
+          ? "Coding/API batches (auto)"
+          : "Mixed concept + coding (auto)";
+
+  const countOptions =
+    quizFocus === "cover_all" ? [20, 30, 40, 50] : [5, 8, 10, 12, 15, 20, 25];
+
+  const liveStage = generatingDetail?.trim() || stageForElapsed(quizFocus, elapsedSec, tab);
+  const estCalls = quizFocus === "cover_all" ? estimateBulkCalls(quizCount) : null;
+
   return (
     <section className="study-library-glass w-72 shrink-0 flex flex-col p-3 min-h-0">
       <div className="flex items-center justify-between mb-2">
-        <h2 className="font-semibold text-sm text-white">Study tools</h2>
-        <Link to="/ai-coach" className="text-emerald-400 hover:text-white text-xs">
+        <h2 className="font-semibold text-sm text-foreground">Study tools</h2>
+        <Link to="/ai-coach" className="text-primary hover:text-primary/80 text-xs">
           AI Coach
         </Link>
       </div>
@@ -73,7 +153,7 @@ export function StudyLibraryIntelligenceHub({
       <div className="flex gap-2 mb-3">
         <button
           type="button"
-          className="study-library-intel-tab flex-1 py-1.5 px-2 rounded-md text-xs font-medium border border-transparent text-emerald-100/80"
+          className="study-library-intel-tab flex-1 py-1.5 px-2 rounded-md text-xs font-medium border border-transparent text-muted-foreground"
           data-active={tab === "quiz"}
           onClick={() => setTab("quiz")}
         >
@@ -81,7 +161,7 @@ export function StudyLibraryIntelligenceHub({
         </button>
         <button
           type="button"
-          className="study-library-intel-tab flex-1 py-1.5 px-2 rounded-md text-xs font-medium border border-transparent text-emerald-100/80 hover:bg-emerald-900/20"
+          className="study-library-intel-tab flex-1 py-1.5 px-2 rounded-md text-xs font-medium border border-transparent text-muted-foreground hover:bg-muted"
           data-active={tab === "code"}
           onClick={() => setTab("code")}
         >
@@ -90,7 +170,93 @@ export function StudyLibraryIntelligenceHub({
       </div>
 
       <div className="shrink-0 mb-2 space-y-2">
-        {onGeneratePrimer && (
+        {tab === "quiz" && (
+          <div className="space-y-1.5 rounded-md border border-border/60 bg-muted/20 p-2">
+            <label className="flex items-center justify-between gap-2 text-[11px] text-muted-foreground">
+              <span>Questions</span>
+              <select
+                className="h-7 rounded border border-border bg-background px-1.5 text-xs text-foreground"
+                value={quizCount}
+                disabled={generating}
+                onChange={(e) => onQuizCountChange?.(Number(e.target.value))}
+              >
+                {countOptions.map((n) => (
+                  <option key={n} value={n}>
+                    {n}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="flex items-center justify-between gap-2 text-[11px] text-muted-foreground">
+              <span>Focus</span>
+              <select
+                className="h-7 rounded border border-border bg-background px-1.5 text-xs text-foreground"
+                value={quizFocus}
+                disabled={generating}
+                onChange={(e) => onQuizFocusChange?.(e.target.value as QuizFocus)}
+              >
+                <option value="mixed">Mixed</option>
+                <option value="concept">Concepts</option>
+                <option value="coding">Coding / API</option>
+                <option value="cover_all">Cover all ground (bulk)</option>
+              </select>
+            </label>
+            <p className="text-[10px] text-muted-foreground/80">{planHint}</p>
+            {quizFocus === "cover_all" && (
+              <p className="text-[10px] text-amber-700/90">
+                Multiple AI calls (sections + definition/concept/coding/connect) until ~{quizCount}{" "}
+                questions fill. Auto-saves a quiz note. If the model is down you get note-fact
+                fallback — toast will say so.
+              </p>
+            )}
+          </div>
+        )}
+
+        {generating && (
+          <div
+            className="rounded-md border border-primary/30 bg-primary/5 p-2.5 space-y-1.5"
+            role="status"
+            aria-live="polite"
+          >
+            <div className="flex items-center gap-2 text-xs font-medium text-foreground">
+              <Loader2 className="w-3.5 h-3.5 animate-spin text-primary shrink-0" />
+              <span>
+                {tab === "quiz"
+                  ? quizFocus === "cover_all"
+                    ? "Bulk quiz running…"
+                    : "Generating quiz…"
+                  : "Generating drills…"}
+              </span>
+              <span className="ml-auto font-mono text-[10px] text-muted-foreground tabular-nums">
+                {formatElapsed(elapsedSec)}
+              </span>
+            </div>
+            <p className="text-[11px] text-foreground/90 leading-snug">{liveStage}</p>
+            {tab === "quiz" && quizFocus === "cover_all" && (
+              <p className="text-[10px] text-muted-foreground">
+                Target ~{quizCount} questions · ~{estCalls} AI calls · keep this tab open
+              </p>
+            )}
+            {tab === "quiz" && quizFocus !== "cover_all" && (
+              <p className="text-[10px] text-muted-foreground">
+                Target {quizCount} questions · {planHint}
+              </p>
+            )}
+            <div className="h-1 rounded-full bg-muted overflow-hidden">
+              <div
+                className="h-full bg-primary/70 transition-[width] duration-500 ease-out"
+                style={{
+                  width: `${Math.min(
+                    92,
+                    quizFocus === "cover_all" ? 8 + elapsedSec * 0.35 : 12 + elapsedSec * 1.2,
+                  )}%`,
+                }}
+              />
+            </div>
+          </div>
+        )}
+
+        {corpusGroundedNotes && onGeneratePrimer && (
           <Button
             type="button"
             size="sm"
@@ -104,14 +270,14 @@ export function StudyLibraryIntelligenceHub({
             ) : (
               <Database className="w-3.5 h-3.5" />
             )}
-            Corpus primer (before lecture)
+            Corpus primer (opt-in RAG)
           </Button>
         )}
         <Button
           type="button"
           size="sm"
           variant="outline"
-          className="w-full h-8 text-xs border-emerald-800/50 gap-1"
+          className="w-full h-8 text-xs border-border gap-1"
           disabled={generating || sourcePaths.length === 0}
           onClick={tab === "quiz" ? onGenerateQuiz : onGenerateDrills}
         >
@@ -120,29 +286,92 @@ export function StudyLibraryIntelligenceHub({
           ) : (
             <Sparkles className="w-3.5 h-3.5" />
           )}
-          {tab === "quiz" ? "Generate quiz" : "Generate drills"}
+          {generating
+            ? tab === "quiz"
+              ? "Generating…"
+              : "Working…"
+            : tab === "quiz"
+              ? "Generate quiz"
+              : "Generate drills"}
         </Button>
-        {(tab === "quiz" ? quizQuestions.length > 0 : drills.length > 0) && onTakeQuiz && (
+        {tab === "quiz" && onPasteQuiz && (
           <Button
             type="button"
             size="sm"
-            className="w-full h-8 text-xs mt-2 gap-1"
-            onClick={onTakeQuiz}
+            variant="ghost"
+            className="w-full h-8 text-xs gap-1"
+            disabled={generating}
+            onClick={() => setPasteOpen((v) => !v)}
           >
+            <ClipboardPaste className="w-3.5 h-3.5" />
+            Paste import
+          </Button>
+        )}
+        {tab === "quiz" && pasteOpen && onPasteQuiz && (
+          <div className="space-y-1.5">
+            <textarea
+              className="w-full h-24 text-[10px] bg-muted/40 border border-border rounded p-2 font-mono text-foreground"
+              placeholder="Paste web/book MCQs (Question 1 … A) … B) …)"
+              value={pasteText}
+              onChange={(e) => setPasteText(e.target.value)}
+            />
+            <Button
+              type="button"
+              size="sm"
+              className="w-full h-7 text-[10px]"
+              disabled={pasteText.trim().length < 20 || generating}
+              onClick={() => {
+                onPasteQuiz(pasteText);
+                setPasteText("");
+                setPasteOpen(false);
+              }}
+            >
+              Import into draft
+            </Button>
+          </div>
+        )}
+        {(tab === "quiz" ? quizQuestions.length > 0 : drills.length > 0) && onTakeQuiz && !generating && (
+          <Button type="button" size="sm" className="w-full h-8 text-xs gap-1" onClick={onTakeQuiz}>
             Take quiz now
           </Button>
+        )}
+        {tab === "quiz" && quizQuestions.length > 0 && !generating && (
+          <p className="text-[10px] text-muted-foreground px-0.5">
+            Draft ready — review below, then take when you want.
+          </p>
         )}
       </div>
 
       <div className="flex-1 overflow-y-auto study-library-markdown-scroll space-y-3 pr-1 min-h-0">
+        {generating && tab === "quiz" && quizQuestions.length === 0 && (
+          <p className="text-[11px] text-muted-foreground px-1 leading-relaxed">
+            Draft will appear here when generation finishes. Bulk mode walks sections one by one —
+            progress is shown above.
+          </p>
+        )}
         {tab === "quiz" &&
           (quizQuestions.length > 0 ? (
             quizQuestions.map((q, i) => (
               <div key={q.id} className="study-library-glass-card p-3">
-                <p className="text-sm text-emerald-50/90 mb-2">
+                <div className="flex items-start justify-between gap-1 mb-1">
+                  <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                    {q.concept || `Q${i + 1}`}
+                  </p>
+                  {onRemoveQuestion && !generating && (
+                    <button
+                      type="button"
+                      className="text-muted-foreground hover:text-destructive p-0.5"
+                      title="Remove from draft"
+                      onClick={() => onRemoveQuestion(q.id)}
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </button>
+                  )}
+                </div>
+                <p className="text-sm text-foreground/90 mb-2">
                   Q{i + 1}: {q.question}
                 </p>
-                <div className="text-[11px] text-emerald-200/70 space-y-0.5">
+                <div className="text-[11px] text-muted-foreground space-y-0.5">
                   {q.options.map((o, j) => (
                     <p key={j}>
                       {String.fromCharCode(65 + j)}. {o}
@@ -152,9 +381,12 @@ export function StudyLibraryIntelligenceHub({
               </div>
             ))
           ) : (
-            <p className="text-[11px] text-slate-500 px-1">
-              Select notes and generate MCQs from lecture + reference content.
-            </p>
+            !generating && (
+              <p className="text-[11px] text-slate-500 px-1">
+                Select a note and generate MCQs from your lecture notes (no corpus RAG). Generate fills a
+                draft only — take the quiz when ready.
+              </p>
+            )
           ))}
 
         {tab === "code" &&
@@ -162,21 +394,25 @@ export function StudyLibraryIntelligenceHub({
             drills.map((d) => (
               <div key={d.id} className="study-library-glass-card p-3 bg-[#282c34]/80 font-mono text-[11px]">
                 <span className="text-[10px] text-blue-300 float-right">{d.language}</span>
-                <p className="text-emerald-100 font-sans text-sm mb-2">{d.title}</p>
-                <p className="text-emerald-200/80 font-sans text-[11px] mb-2">{d.prompt}</p>
-                <pre className="text-emerald-100/90 overflow-x-auto whitespace-pre-wrap">{d.starter_code}</pre>
+                <p className="text-foreground font-sans text-sm mb-2">{d.title}</p>
+                <p className="text-muted-foreground font-sans text-[11px] mb-2">{d.prompt}</p>
+                <pre className="text-foreground/90 overflow-x-auto whitespace-pre-wrap">{d.starter_code}</pre>
               </div>
             ))
           ) : (
-            <p className="text-[11px] text-slate-500 px-1">Generate coding exercises from your selected notes.</p>
+            !generating && (
+              <p className="text-[11px] text-slate-500 px-1">
+                Generate coding exercises from your selected notes.
+              </p>
+            )
           ))}
 
         {hubItems.map((item) => (
-          <div key={item.id} className="study-library-glass-card p-2 border border-emerald-800/30">
+          <div key={item.id} className="study-library-glass-card p-2 border border-border">
             {editingId === item.id ? (
               <div className="space-y-1">
                 <textarea
-                  className="w-full h-24 text-[10px] bg-black/30 border border-emerald-900/40 rounded p-2 font-mono text-emerald-100"
+                  className="w-full h-24 text-[10px] bg-muted/40 border border-border rounded p-2 font-mono text-foreground"
                   value={editDraft}
                   onChange={(e) => setEditDraft(e.target.value)}
                 />
@@ -186,11 +422,11 @@ export function StudyLibraryIntelligenceHub({
               </div>
             ) : (
               <>
-                <p className="text-xs text-emerald-100 truncate">{item.title}</p>
+                <p className="text-xs text-foreground truncate">{item.title}</p>
                 <p className="text-[10px] text-slate-500">{item.detail}</p>
                 <button
                   type="button"
-                  className="mt-1 text-[10px] text-emerald-400 hover:text-emerald-300 flex items-center gap-1"
+                  className="mt-1 text-[10px] text-primary hover:text-primary flex items-center gap-1"
                   onClick={() => startEdit(item)}
                 >
                   <PenLine className="w-3 h-3" /> Edit
@@ -201,19 +437,19 @@ export function StudyLibraryIntelligenceHub({
         ))}
       </div>
 
-      <div className="pt-3 mt-2 border-t border-emerald-900/40">
+      <div className="pt-3 mt-2 border-t border-border">
         <Button
           type="button"
           size="sm"
-          className="w-full bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 gap-2"
-          disabled={compareCount < 2}
+          className="w-full bg-primary hover:bg-primary/90 text-primary-foreground gap-2"
+          disabled={compareCount < 2 || generating}
           onClick={onSync}
         >
           <Database className="w-4 h-4" />
           Continue to Review
         </Button>
         {compareCount >= 2 && (
-          <p className="text-[10px] text-center text-emerald-300/70 mt-2 flex items-center justify-center gap-1">
+          <p className="text-[10px] text-center text-primary/70 mt-2 flex items-center justify-center gap-1">
             <Sparkles className="w-3 h-3" />
             Gap analysis ready
           </p>

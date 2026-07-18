@@ -60,6 +60,7 @@ TASK_DEFAULTS: dict[str, tuple[str, LlmRequirements]] = {
     "corpus_qa": ("medium", LlmRequirements(needs_system_prompt=True)),
     "web_search": ("light", LlmRequirements()),
     "math_hint": ("light", LlmRequirements()),
+    "planner_propose": ("medium", LlmRequirements(needs_json_schema=True)),
     "daily_review": ("heavy", LlmRequirements()),
     "generic": ("medium", LlmRequirements()),
 }

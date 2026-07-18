@@ -15,8 +15,8 @@
 
 .planner-calendar-wrap .rbc-toolbar button.rbc-active,
 .planner-calendar-wrap .rbc-toolbar button:hover {
-  background: rgba(139, 92, 246, 0.25);
-  border-color: rgba(139, 92, 246, 0.5);
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.22);
 }
 
 .planner-calendar-wrap .rbc-header,
@@ -36,8 +36,14 @@
   border-color: rgba(255, 255, 255, 0.04);
 }
 
+/* Today column: month + week only (day view is already a single day). */
 .planner-calendar-wrap .rbc-today {
-  background: rgba(139, 92, 246, 0.08);
+  background: transparent;
+}
+
+.planner-calendar-wrap[data-calendar-view="month"] .rbc-today,
+.planner-calendar-wrap[data-calendar-view="week"] .rbc-today {
+  background: rgba(255, 255, 255, 0.07);
 }
 
 .planner-calendar-wrap .rbc-off-range-bg {
@@ -49,6 +55,13 @@
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 0.5rem;
   overflow: hidden;
+}
+
+/* Focus popup must escape the grid clip */
+.planner-calendar-wrap.planner-calendar--focus-mode .rbc-time-view,
+.planner-calendar-wrap.planner-calendar--focus-mode .rbc-month-view,
+.planner-calendar-wrap.planner-calendar--focus-mode .rbc-time-content {
+  overflow: visible;
 }
 
 .planner-calendar-wrap .rbc-event {

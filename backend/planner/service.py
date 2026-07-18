@@ -30,6 +30,13 @@ def local_tz():
     return datetime.now().astimezone().tzinfo
 
 
+def local_day_bounds_utc(day: date) -> tuple[datetime, datetime]:
+    """UTC half-open [start, end) spanning one host-local calendar day."""
+    start_local = datetime(day.year, day.month, day.day, tzinfo=local_tz())
+    end_local = start_local + timedelta(days=1)
+    return _utc(start_local), _utc(end_local)
+
+
 def wall_clock_on_date(target: date, hhmm: str) -> datetime:
     """Parse HH:MM on a calendar date in local time; return UTC for storage."""
     hour, minute = (int(x) for x in hhmm.split(":", 1))

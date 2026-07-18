@@ -9,6 +9,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from backend.config import get_settings
 from backend.corpus.retrieve import (
     NOTES_RAG_SOURCE_TYPES,
     corpus_available,
@@ -144,9 +145,9 @@ def assemble_notes_from_transcript(
         progress(f"Merging {len(chunks)} segments → {cap}…")
         chunks = _limit_chunks(chunks, max_chunks=cap)
 
-    use_rag = corpus_available()
+    use_rag = corpus_available() and bool(get_settings().corpus_grounded_notes)
     if not use_rag:
-        progress("Corpus offline — lecture-only extractive notes")
+        progress("Corpus RAG off — lecture-only extractive notes")
 
     sections: list[str] = [
         f"# {note_title.replace('_', ' ')}\n",

@@ -207,6 +207,21 @@ Life log + behavior extension + quiz/vocab events → hub readings → daily rol
 
 - Hub detail: [CENTRAL_HUB.md](./CENTRAL_HUB.md)
 
+### Loop E — Productivity policy + auto-calendar
+
+```text
+Desktop tracker → category + productivity_policies (allowlist/blocklist)
+  → productive_minutes / effective_focus (not “on plan” alone)
+Custom export → POST /api/planner/propose-from-export (LLM gateway task planner_propose)
+  → preview blocks → apply to planner calendar
+```
+
+- Gaming/entertainment stay **blocked** by default (score 0) even during planned blocks.
+- **Hard-block gate (optional):** when enabled, tracker **kills** Gaming + custom exes until today’s productive minutes ≥ daily goal; then unlocked until local midnight. Sites (YouTube/Netflix) stay out of scope — use Cold Turkey. Spec: [2026-07-17-distraction-hard-block-design.md](./superpowers/specs/2026-07-17-distraction-hard-block-design.md).
+- Session override: `PATCH /api/behavior/tracked-sessions/{id}`.
+- UI: Productivity **Schedule** tab → Policy panel; header → Export / Propose week.
+- Gate API: `GET /api/behavior/distraction-gate`.
+
 ---
 
 ## 7. Deployment topology

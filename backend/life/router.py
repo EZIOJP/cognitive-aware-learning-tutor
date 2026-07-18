@@ -7,7 +7,7 @@ from backend.core.auth import get_current_user
 from backend.db.session import get_db
 from backend.hub.services.ingest import insert_reading
 from backend.hub.services.rollup import daily_payload, rebuild_daily_rollup
-from backend.life.schemas import LifeDailyIn
+from backend.life.schemas import CLIENT_ALLOWED_FIELDS, LifeDailyIn, WEARABLE_OWNED_FIELDS
 from backend.life.services.scoring import compute_life_score
 from backend.models import LifeDailyLog, User
 
@@ -23,16 +23,41 @@ def _resolve_day(day: str) -> date:
         raise HTTPException(status_code=400, detail="Invalid date") from e
 
 
-def _upsert_life_log(db: Session, user_id: int, d: date, body: LifeDailyIn) -> LifeDailyLog:
+def _score_payload(row: LifeDailyLog) -> dict:
+    defaults = {
+        "sleep_hours": 0.0,
+        "sleep_quality": 3,
+        "exercise_minutes": 0,
+        "water_glasses": 0,
+        "meals_healthy": 0,
+        "study_minutes": 0,
+        "tasks_completed": 0,
+        "deep_work_blocks": 0,
+        "screen_time_hours": 0.0,
+        "social_media_minutes": 0,
+        "outdoor_minutes": 0,
+        "mood_score": 3,
+        "stress_level": 3,
+        "meditation_minutes": 0,
+    }
+    payload = {}
+    for key, default in defaults.items():
+        val = getattr(row, key, default)
+        payload[key] = default if val is None else val
+    return payload
+
+
+def _upsert_life_log_merge(db: Session, user_id: int, d: date, patch: dict) -> LifeDailyLog:
     row = db.query(LifeDailyLog).filter(LifeDailyLog.user_id == user_id, LifeDailyLog.date == d).first()
     if not row:
         row = LifeDailyLog(user_id=user_id, date=d)
         db.add(row)
 
-    for key, value in body.model_dump().items():
-        setattr(row, key, value)
+    for key, value in patch.items():
+        if value is not None:
+            setattr(row, key, value)
 
-    row.life_score = compute_life_score(**body.model_dump())
+    row.life_score = compute_life_score(**_score_payload(row))
     db.commit()
     db.refresh(row)
     return row
@@ -47,12 +72,17 @@ def get_life_daily(
     d = _resolve_day(day)
     row = db.query(LifeDailyLog).filter(LifeDailyLog.user_id == user.id, LifeDailyLog.date == d).first()
     if not row:
-        return {"date": d.isoformat(), "life_score": 0, "empty": True}
+        return {"date": d.isoformat(), "life_score": 0, "empty": True, "manual_edit": False}
     return {
         "date": d.isoformat(),
         "empty": False,
+        "manual_edit": False,
         "life_score": row.life_score,
-        **{c.name: getattr(row, c.name) for c in LifeDailyLog.__table__.columns if c.name not in ("id", "user_id", "date")},
+        **{
+            c.name: getattr(row, c.name)
+            for c in LifeDailyLog.__table__.columns
+            if c.name not in ("id", "user_id", "date")
+        },
     }
 
 
@@ -63,25 +93,48 @@ def put_life_daily(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    d = _resolve_day(day)
+    """Merge-patch only. Manual Life Tracker edits are disabled.
 
-    row = _upsert_life_log(db, user.id, d, body)
+    Clients may only bump system fields (e.g. study_minutes from Pomodoro).
+    Sleep / exercise come from wearables ingest — not this endpoint.
+    """
+    d = _resolve_day(day)
+    provided = {k: v for k, v in body.model_dump().items() if v is not None}
+    if not provided:
+        raise HTTPException(status_code=400, detail="No fields to update")
+
+    blocked = set(provided) & WEARABLE_OWNED_FIELDS
+    if blocked:
+        raise HTTPException(
+            status_code=403,
+            detail=(
+                "Manual Life Tracker edits are disabled. "
+                f"Sleep/exercise come from Amazfit sync only (blocked: {sorted(blocked)})."
+            ),
+        )
+
+    disallowed = set(provided) - CLIENT_ALLOWED_FIELDS
+    if disallowed:
+        raise HTTPException(
+            status_code=403,
+            detail=(
+                "Manual Life Tracker form is read-only. "
+                f"Allowed client fields: {sorted(CLIENT_ALLOWED_FIELDS)}. "
+                f"Rejected: {sorted(disallowed)}."
+            ),
+        )
+
+    row = _upsert_life_log_merge(db, user.id, d, provided)
 
     try:
-        insert_reading(
-            db,
-            user_id=user.id,
-            slug="study_minutes",
-            value_numeric=float(row.study_minutes),
-            source_device="life_form",
-        )
-        insert_reading(
-            db,
-            user_id=user.id,
-            slug="sleep_hours",
-            value_numeric=float(row.sleep_hours),
-            source_device="life_form",
-        )
+        if "study_minutes" in provided:
+            insert_reading(
+                db,
+                user_id=user.id,
+                slug="study_minutes",
+                value_numeric=float(row.study_minutes),
+                source_device="pomodoro",
+            )
     except ValueError:
         pass
 
@@ -89,5 +142,6 @@ def put_life_daily(
     return {
         "life_score": row.life_score,
         "daily": daily_payload(rollup, row),
-        "log": body.model_dump(),
+        "log": provided,
+        "manual_edit": False,
     }

@@ -41,7 +41,16 @@ class AppBucket:
     sites: dict[str, SiteBucket] = field(default_factory=dict)
 
 
-def _row_fields(row: Any, scores: dict[str, int]) -> tuple[str, str | None, str | None, str, int]:
+def _row_fields(
+    row: Any,
+    scores: dict[str, int],
+    policy: dict[str, Any] | None = None,
+) -> tuple[str, str | None, str | None, str, int]:
+    from backend.behavior.productivity_policy import (
+        resolve_category_with_overrides,
+        resolve_session_score,
+    )
+
     if isinstance(row, dict):
         exe = row.get("app_name") or row.get("exe") or "unknown"
         title = row.get("window_title") or row.get("title")
@@ -52,12 +61,21 @@ def _row_fields(row: Any, scores: dict[str, int]) -> tuple[str, str | None, str 
         title = row.window_title
         domain = None
         category = row.category or "Other"
-    score = score_for_category(category, scores)
+    if policy is not None:
+        category = resolve_category_with_overrides(
+            category, app_name=exe, window_title=title, policy=policy
+        ) or category
+        score = resolve_session_score(row, scores, policy)
+    else:
+        score = score_for_category(category, scores)
     return exe, title, domain, category, score
 
 
 def aggregate_session_rows(
-    rows: list[Any], *, scores: dict[str, int]
+    rows: list[Any],
+    *,
+    scores: dict[str, int],
+    policy: dict[str, Any] | None = None,
 ) -> tuple[dict[str, AppBucket], int]:
     """Group tracked rows into app buckets; browsers get nested site buckets."""
     buckets: dict[str, AppBucket] = {}
@@ -74,7 +92,7 @@ def aggregate_session_rows(
         if dur <= 0:
             continue
 
-        exe, title, domain, category, score = _row_fields(row, scores)
+        exe, title, domain, category, score = _row_fields(row, scores, policy)
         if is_ignored_app(exe, title or ""):
             continue
         total += dur

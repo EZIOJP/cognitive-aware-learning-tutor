@@ -12,9 +12,10 @@ from backend.behavior.classification_service import normalize_title_key
 
 
 def _resolve_category_from_cache(db: Session, *, exe: str, title: str, category: str) -> tuple[str, str]:
+    """Always apply approved classification cache (not only Other/Browser)."""
     from backend.models.app_classification import AppClassificationCache
 
-    if category == "Other" and exe:
+    if exe:
         cached = (
             db.query(AppClassificationCache)
             .filter(AppClassificationCache.key == exe.strip())
@@ -23,7 +24,7 @@ def _resolve_category_from_cache(db: Session, *, exe: str, title: str, category:
         if cached:
             return cached.category, "llm_reviewed"
 
-    if category in ("Browser", "Other (Browser)", "Other") and title:
+    if title:
         title_key = normalize_title_key(str(title))
         if title_key:
             cached = (
@@ -33,6 +34,9 @@ def _resolve_category_from_cache(db: Session, *, exe: str, title: str, category:
             )
             if cached:
                 return cached.category, "llm_reviewed"
+
+    # Policy app_overrides (any user — applied at ingest for matching keys)
+    # Per-user overrides are applied at score-resolve time; cache is global.
 
     return category, "rule"
 
@@ -85,6 +89,19 @@ def ingest_desktop_session(db: Session, *, user_id: int, payload: dict) -> Track
     category, category_source = _resolve_category_from_cache(
         db, exe=str(exe), title=str(title), category=category
     )
+    # Per-user policy app overrides (score-time also applies; set category at ingest)
+    from backend.behavior.productivity_policy import (
+        load_policy_dict,
+        resolve_category_with_overrides,
+    )
+
+    policy = load_policy_dict(db, user_id)
+    overridden = resolve_category_with_overrides(
+        category, app_name=str(exe), window_title=str(title), policy=policy
+    )
+    if overridden and overridden != category:
+        category = overridden
+        category_source = "policy_override"
 
     row = TrackedSession(
         session_id=session_id,

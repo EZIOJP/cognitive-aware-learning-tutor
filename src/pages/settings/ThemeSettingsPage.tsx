@@ -174,226 +174,257 @@ export default function ThemeSettingsPage() {
   );
 
   return (
-    <SettingsPageScroll className="p-4 md:p-6 max-w-3xl mx-auto pb-16">
-      <Link to="/settings" className="text-sm text-primary hover:underline inline-block mb-4">
-        ← Settings
-      </Link>
+    <SettingsPageScroll className="p-4 md:p-6 pb-16">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-5">
+        <Link to="/settings" className="text-sm text-primary hover:underline w-fit">
+          ← Settings
+        </Link>
 
-      <div className="gloss-panel rounded-2xl p-5 md:p-6 space-y-6">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h2 className="text-2xl font-bold">Theme Settings</h2>
-            <p className="text-sm text-muted-foreground mt-1">
-              Color presets apply first. Hero toolkit layers are optional — defaults keep
-              the calm study app unchanged.
-            </p>
-          </div>
-          <Button type="button" variant="outline" size="sm" onClick={resetStudyDefaults}>
-            Reset study defaults
-          </Button>
-        </div>
-
-        {isHeroLayersActive ? (
-          <p className="text-xs rounded-lg border border-primary/30 bg-primary/5 px-3 py-2 text-muted-foreground">
-            Hero layers active. Vocab and math pages stay functional; use Reset if anything
-            feels too flashy.
-          </p>
-        ) : null}
-
-        {selectedPreset?.preferDark && !isDarkMode ? (
-          <p className="text-xs rounded-lg border border-border px-3 py-2 text-muted-foreground">
-            {selectedPreset.label} is designed for dark mode. Light mode uses a derived palette
-            that keeps accent colors readable.
-          </p>
-        ) : null}
-
-        <div className="flex items-center gap-3">
-          <ThemeToggle size="sm" />
-          <span className="text-sm text-muted-foreground">Light / dark mode</span>
-        </div>
-
-        <Accordion type="multiple" defaultValue={["colors", "toolkit-preview"]}>
-          <AccordionItem value="colors">
-            <AccordionTrigger>Color presets</AccordionTrigger>
-            <AccordionContent className="space-y-6 pt-2">
-              {groups.map((group) => (
-                <section key={group.id}>
-                  <h3 className="text-base font-medium mb-1">{group.label}</h3>
-                  {group.id === "lemillion" ? (
-                    <p className="text-xs text-muted-foreground mb-3">
-                      Heroic Spotlight keeps study typography. High-Velocity & Pro add motion.
-                    </p>
-                  ) : null}
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                    {group.presets.map((preset) => (
-                      <PresetCard
-                        key={preset.id}
-                        preset={preset}
-                        selected={accentColor === preset.id}
-                        onSelect={() => applyPreset(preset.id)}
-                      />
-                    ))}
-                  </div>
-                </section>
-              ))}
-
-              <section>
-                <h3 className="text-base font-medium mb-2">Custom accent</h3>
-                <div className="flex items-center gap-4">
-                  <label className="text-sm font-medium">Hex color</label>
-                  <input
-                    type="color"
-                    aria-label="Custom accent color"
-                    value={accentColor.startsWith("#") ? accentColor : "#705d00"}
-                    onChange={(e) => setAccentColor(e.target.value)}
-                    className="w-10 h-10 rounded cursor-pointer border border-border"
-                  />
-                  {accentColor.startsWith("#") ? (
-                    <span className="text-xs text-muted-foreground font-mono">
-                      {accentColor}
-                    </span>
-                  ) : null}
-                </div>
-              </section>
-            </AccordionContent>
-          </AccordionItem>
-
-          <AccordionItem value="surfaces">
-            <AccordionTrigger>Surfaces & buttons</AccordionTrigger>
-            <AccordionContent className="space-y-5 pt-2">
-              <section>
-                <h3 className="text-sm font-medium mb-1">App button style</h3>
-                <LayerOptionGrid
-                  options={BUTTON_STYLES}
-                  value={buttonStyle}
-                  onChange={setButtonStyle}
-                />
-              </section>
-              <section>
-                <h3 className="text-sm font-medium mb-1">Hero button variant</h3>
-                <p className="text-xs text-muted-foreground mb-2">
-                  Opt-in comic/chamfer/skew from Stitch toolkit. Default leaves shadcn buttons alone.
-                </p>
-                <LayerOptionGrid
-                  options={BUTTON_VARIANTS}
-                  value={buttonVariant}
-                  onChange={setButtonVariant}
-                />
-              </section>
-              <section>
-                <h3 className="text-sm font-medium mb-1">Surface style</h3>
-                <LayerOptionGrid
-                  options={SURFACE_STYLES}
-                  value={surfaceStyle}
-                  onChange={setSurfaceStyle}
-                />
-              </section>
-              <section>
-                <h3 className="text-sm font-medium mb-1">Background texture</h3>
-                <LayerOptionGrid
-                  options={BACKGROUND_STYLES}
-                  value={backgroundStyle}
-                  onChange={setBackgroundStyle}
-                />
-              </section>
-            </AccordionContent>
-          </AccordionItem>
-
-          <AccordionItem value="typography">
-            <AccordionTrigger>Typography & motion</AccordionTrigger>
-            <AccordionContent className="space-y-5 pt-2">
-              <section>
-                <h3 className="text-sm font-medium mb-1">Typography pack</h3>
-                <LayerOptionGrid
-                  options={TYPOGRAPHY_PACKS}
-                  value={typographyPack}
-                  onChange={setTypographyPack}
-                />
-              </section>
-              <section>
-                <h3 className="text-sm font-medium mb-1">Motion level</h3>
-                <LayerOptionGrid
-                  options={MOTION_LEVELS}
-                  value={motionLevel}
-                  onChange={setMotionLevel}
-                />
-              </section>
-              <section>
-                <h3 className="text-sm font-medium mb-2">Corner radius</h3>
-                <div className="grid grid-cols-4 gap-2">
-                  {RADIUS_OPTIONS.map((opt) => (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      className={`p-2 rounded-lg border text-sm ${
-                        radius === opt.value ? "border-2 border-primary" : "border-border"
-                      }`}
-                      onClick={() => setRadius(opt.value)}
-                    >
-                      {opt.label}
-                    </button>
-                  ))}
-                </div>
-              </section>
-              <section>
-                <h3 className="text-sm font-medium mb-2">Mode intensity</h3>
-                <input
-                  type="range"
-                  aria-label="Mode intensity"
-                  min={0}
-                  max={100}
-                  value={intensity}
-                  onChange={(e) => setIntensity(Number(e.target.value))}
-                  className="w-full accent-primary"
-                />
-                <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                  <span>Lighter</span>
-                  <span>Darker</span>
-                </div>
-              </section>
-            </AccordionContent>
-          </AccordionItem>
-
-          <AccordionItem value="widgets">
-            <AccordionTrigger>Dashboard widgets</AccordionTrigger>
-            <AccordionContent className="space-y-3 pt-2">
-              <p className="text-xs text-muted-foreground">
-                Optional hero widgets on the home dashboard only.
+        <section className="gloss-panel rounded-3xl border border-border/50 p-5 md:p-6">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <h1 className="text-2xl font-bold">Theme Settings</h1>
+              <p className="text-sm text-muted-foreground mt-1 max-w-3xl">
+                Color presets apply first. Hero toolkit layers are optional — defaults keep
+                the calm study app unchanged.
               </p>
-              <label className="flex items-center gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={widgets.lemillionAssistant}
-                  onChange={() => toggleWidget("lemillionAssistant")}
-                  className="accent-primary"
-                />
-                <span className="text-sm">Lemillion assistant bubble</span>
-              </label>
-              <label className="flex items-center gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={widgets.heroProgress}
-                  onChange={() => toggleWidget("heroProgress")}
-                  className="accent-primary"
-                />
-                <span className="text-sm">Hero progress bar</span>
-              </label>
-            </AccordionContent>
-          </AccordionItem>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button type="button" variant="outline" size="sm" onClick={resetStudyDefaults}>
+                Reset study defaults
+              </Button>
+              <Button type="button" size="sm" onClick={() => navigate(-1)}>
+                Back
+              </Button>
+            </div>
+          </div>
 
-          <AccordionItem value="toolkit-preview">
-            <AccordionTrigger>Toolkit live preview</AccordionTrigger>
-            <AccordionContent>
-              <div className="gloss-panel rounded-xl p-4 border border-border/40 mt-2">
-                <HeroToolkitPreview />
+          <div className="mt-4 grid gap-3 md:grid-cols-2">
+            {isHeroLayersActive ? (
+              <p className="text-xs rounded-xl border border-primary/30 bg-primary/5 px-3 py-2 text-muted-foreground">
+                Hero layers active. Vocab and math pages stay functional; use Reset if anything
+                feels too flashy.
+              </p>
+            ) : null}
+
+            {selectedPreset?.preferDark && !isDarkMode ? (
+              <p className="text-xs rounded-xl border border-border px-3 py-2 text-muted-foreground">
+                {selectedPreset.label} is designed for dark mode. Light mode uses a derived palette
+                that keeps accent colors readable.
+              </p>
+            ) : null}
+          </div>
+        </section>
+
+        <div className="grid gap-6 xl:grid-cols-[minmax(18rem,0.75fr)_minmax(0,1.65fr)]">
+          <aside className="space-y-6">
+            <section className="gloss-panel rounded-3xl border border-border/50 p-5 space-y-4">
+              <div>
+                <h2 className="font-semibold">Live mode</h2>
+                <p className="text-xs text-muted-foreground">Preview and switch light / dark mode.</p>
               </div>
-            </AccordionContent>
-          </AccordionItem>
-        </Accordion>
+              <div className="flex items-center gap-4 rounded-2xl border border-border/50 bg-background/35 p-4">
+                <ThemeToggle size="md" />
+                <div>
+                  <p className="text-sm font-medium">Light / dark mode</p>
+                  <p className="text-xs text-muted-foreground">Long press opens advanced theme controls.</p>
+                </div>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => window.dispatchEvent(new Event("theme-toggle:meteor-pass"))}
+              >
+                Preview meteor pass
+              </Button>
+            </section>
 
-        <Button type="button" onClick={() => navigate(-1)}>
-          Back
-        </Button>
+            <section className="gloss-panel rounded-3xl border border-border/50 p-5 space-y-4">
+              <div>
+                <h2 className="font-semibold">Custom accent</h2>
+                <p className="text-xs text-muted-foreground">Use this after picking a preset.</p>
+              </div>
+              <div className="flex items-center gap-4">
+                <input
+                  type="color"
+                  aria-label="Custom accent color"
+                  value={accentColor.startsWith("#") ? accentColor : "#705d00"}
+                  onChange={(e) => setAccentColor(e.target.value)}
+                  className="w-12 h-12 rounded-xl cursor-pointer border border-border bg-background"
+                />
+                <div>
+                  <p className="text-sm font-medium">Hex color</p>
+                  <p className="text-xs text-muted-foreground font-mono">
+                    {accentColor.startsWith("#") ? accentColor : "Preset accent"}
+                  </p>
+                </div>
+              </div>
+            </section>
+          </aside>
+
+          <main className="gloss-panel rounded-3xl border border-border/50 p-5 md:p-6">
+            <Accordion type="multiple" defaultValue={["colors", "toolkit-preview"]}>
+              <AccordionItem value="colors">
+                <AccordionTrigger>Color presets</AccordionTrigger>
+                <AccordionContent className="space-y-6 pt-2">
+                  {groups.map((group) => (
+                    <section key={group.id}>
+                      <h3 className="text-base font-medium mb-1">{group.label}</h3>
+                      {group.id === "lemillion" ? (
+                        <p className="text-xs text-muted-foreground mb-3">
+                          Heroic Spotlight keeps study typography. High-Velocity & Pro add motion.
+                        </p>
+                      ) : null}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-3 gap-3">
+                        {group.presets.map((preset) => (
+                          <PresetCard
+                            key={preset.id}
+                            preset={preset}
+                            selected={accentColor === preset.id}
+                            onSelect={() => applyPreset(preset.id)}
+                          />
+                        ))}
+                      </div>
+                    </section>
+                  ))}
+                </AccordionContent>
+              </AccordionItem>
+
+              <AccordionItem value="surfaces">
+                <AccordionTrigger>Surfaces & buttons</AccordionTrigger>
+                <AccordionContent className="space-y-5 pt-2">
+                  <section>
+                    <h3 className="text-sm font-medium mb-1">App button style</h3>
+                    <LayerOptionGrid
+                      options={BUTTON_STYLES}
+                      value={buttonStyle}
+                      onChange={setButtonStyle}
+                    />
+                  </section>
+                  <section>
+                    <h3 className="text-sm font-medium mb-1">Hero button variant</h3>
+                    <p className="text-xs text-muted-foreground mb-2">
+                      Opt-in comic/chamfer/skew from Stitch toolkit. Default leaves shadcn buttons alone.
+                    </p>
+                    <LayerOptionGrid
+                      options={BUTTON_VARIANTS}
+                      value={buttonVariant}
+                      onChange={setButtonVariant}
+                    />
+                  </section>
+                  <section>
+                    <h3 className="text-sm font-medium mb-1">Surface style</h3>
+                    <LayerOptionGrid
+                      options={SURFACE_STYLES}
+                      value={surfaceStyle}
+                      onChange={setSurfaceStyle}
+                    />
+                  </section>
+                  <section>
+                    <h3 className="text-sm font-medium mb-1">Background texture</h3>
+                    <LayerOptionGrid
+                      options={BACKGROUND_STYLES}
+                      value={backgroundStyle}
+                      onChange={setBackgroundStyle}
+                    />
+                  </section>
+                </AccordionContent>
+              </AccordionItem>
+
+              <AccordionItem value="typography">
+                <AccordionTrigger>Typography & motion</AccordionTrigger>
+                <AccordionContent className="space-y-5 pt-2">
+                  <section>
+                    <h3 className="text-sm font-medium mb-1">Typography pack</h3>
+                    <LayerOptionGrid
+                      options={TYPOGRAPHY_PACKS}
+                      value={typographyPack}
+                      onChange={setTypographyPack}
+                    />
+                  </section>
+                  <section>
+                    <h3 className="text-sm font-medium mb-1">Motion level</h3>
+                    <LayerOptionGrid
+                      options={MOTION_LEVELS}
+                      value={motionLevel}
+                      onChange={setMotionLevel}
+                    />
+                  </section>
+                  <section>
+                    <h3 className="text-sm font-medium mb-2">Corner radius</h3>
+                    <div className="grid grid-cols-4 gap-2">
+                      {RADIUS_OPTIONS.map((opt) => (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          className={`p-2 rounded-lg border text-sm ${
+                            radius === opt.value ? "border-2 border-primary" : "border-border"
+                          }`}
+                          onClick={() => setRadius(opt.value)}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  </section>
+                  <section>
+                    <h3 className="text-sm font-medium mb-2">Mode intensity</h3>
+                    <input
+                      type="range"
+                      aria-label="Mode intensity"
+                      min={0}
+                      max={100}
+                      value={intensity}
+                      onChange={(e) => setIntensity(Number(e.target.value))}
+                      className="w-full accent-primary"
+                    />
+                    <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                      <span>Lighter</span>
+                      <span>Darker</span>
+                    </div>
+                  </section>
+                </AccordionContent>
+              </AccordionItem>
+
+              <AccordionItem value="widgets">
+                <AccordionTrigger>Dashboard widgets</AccordionTrigger>
+                <AccordionContent className="space-y-3 pt-2">
+                  <p className="text-xs text-muted-foreground">
+                    Optional hero widgets on the home dashboard only.
+                  </p>
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={widgets.lemillionAssistant}
+                      onChange={() => toggleWidget("lemillionAssistant")}
+                      className="accent-primary"
+                    />
+                    <span className="text-sm">Lemillion assistant bubble</span>
+                  </label>
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={widgets.heroProgress}
+                      onChange={() => toggleWidget("heroProgress")}
+                      className="accent-primary"
+                    />
+                    <span className="text-sm">Hero progress bar</span>
+                  </label>
+                </AccordionContent>
+              </AccordionItem>
+
+              <AccordionItem value="toolkit-preview">
+                <AccordionTrigger>Toolkit live preview</AccordionTrigger>
+                <AccordionContent>
+                  <div className="gloss-panel rounded-xl p-4 border border-border/40 mt-2">
+                    <HeroToolkitPreview />
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
+          </main>
+        </div>
       </div>
     </SettingsPageScroll>
   );

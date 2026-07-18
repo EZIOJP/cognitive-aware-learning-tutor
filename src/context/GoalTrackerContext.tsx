@@ -6,7 +6,7 @@ import {
   useCallback,
   type ReactNode,
 } from "react";
-import { fetchLifeDaily, putLifeDaily } from "../api/hubClient";
+import { fetchLifeDaily } from "../api/hubClient";
 
 // ─────────────────────────────────────────────────────────
 // Types
@@ -37,9 +37,12 @@ export interface DailyEntry {
 interface GoalTrackerContextValue {
   today: DailyEntry;
   history: DailyEntry[];
+  /** @deprecated Manual edits disabled — no-op. Use refreshToday. */
   updateToday: (patch: Partial<DailyEntry>) => void;
+  refreshToday: () => Promise<void>;
   lifeScore: number; // 0-100
   breakdown: Record<string, number>; // each pillar score 0-100
+  manualEditEnabled: false;
 }
 
 // ─────────────────────────────────────────────────────────
@@ -152,68 +155,60 @@ export function GoalTrackerProvider({ children }: { children: ReactNode }) {
   }
 
   useEffect(() => {
-    const key = todayKey();
-    let cancelled = false;
-
-    (async () => {
-      const remote = await fetchLifeDaily("today");
-      if (cancelled) return;
-      const fromApi = apiToEntry(remote);
-      try {
-        const raw = localStorage.getItem(`life:${key}`);
-        const local = raw ? { ...emptyEntry(), ...JSON.parse(raw) } : emptyEntry();
-        const merged = fromApi ? { ...local, ...fromApi, date: key } : local;
-        setToday(merged);
-        localStorage.setItem(`life:${key}`, JSON.stringify(merged));
-
-        const hist = JSON.parse(localStorage.getItem("life:history") || "[]");
-        setHistory(hist);
-      } catch {
-        if (fromApi) setToday({ ...emptyEntry(), ...fromApi, date: key });
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
+    try {
+      const hist = JSON.parse(localStorage.getItem("life:history") || "[]");
+      setHistory(hist);
+    } catch {
+      /* ignore */
+    }
   }, []);
 
-  const updateToday = useCallback((patch: Partial<DailyEntry>) => {
-    setToday((prev) => {
-      const updated = { ...prev, ...patch };
-      localStorage.setItem(`life:${updated.date}`, JSON.stringify(updated));
-      // also update history
-      setHistory((h) => {
-        const filtered = h.filter((e) => e.date !== updated.date);
-        const newHist = [...filtered, updated].slice(-30);
-        localStorage.setItem("life:history", JSON.stringify(newHist));
-        return newHist;
-      });
-      const apiBody = {
-        sleep_hours: updated.sleepHours,
-        sleep_quality: updated.sleepQuality,
-        exercise_minutes: updated.exerciseMinutes,
-        water_glasses: updated.waterGlasses,
-        meals_healthy: updated.mealsHealthy,
-        study_minutes: updated.studyMinutes,
-        tasks_completed: updated.tasksCompleted,
-        deep_work_blocks: updated.deepWorkBlocks,
-        screen_time_hours: updated.screenTimeHours,
-        social_media_minutes: updated.socialMediaMinutes,
-        outdoor_minutes: updated.outdoorMinutes,
-        mood_score: updated.moodScore,
-        stress_level: updated.stressLevel,
-        meditation_minutes: updated.meditationMinutes,
-      };
-      void putLifeDaily(updated.date === todayKey() ? "today" : updated.date, apiBody);
-      return updated;
+  const refreshToday = useCallback(async () => {
+    const key = todayKey();
+    const remote = await fetchLifeDaily("today");
+    const fromApi = apiToEntry(remote);
+    if (!fromApi) return;
+    const merged = { ...emptyEntry(), ...fromApi, date: key };
+    setToday(merged);
+    localStorage.setItem(`life:${key}`, JSON.stringify(merged));
+    setHistory((h) => {
+      const filtered = h.filter((e) => e.date !== key);
+      const newHist = [...filtered, merged].slice(-30);
+      localStorage.setItem("life:history", JSON.stringify(newHist));
+      return newHist;
     });
   }, []);
+
+  /** Manual Life Tracker writes are disabled — sleep/exercise come from wearables. */
+  const updateToday = useCallback((_patch: Partial<DailyEntry>) => {
+    /* no-op */
+  }, []);
+
+  useEffect(() => {
+    void refreshToday();
+    const onRefresh = () => void refreshToday();
+    window.addEventListener("hub:refresh", onRefresh);
+    const id = window.setInterval(() => void refreshToday(), 15000);
+    return () => {
+      window.removeEventListener("hub:refresh", onRefresh);
+      window.clearInterval(id);
+    };
+  }, [refreshToday]);
 
   const { lifeScore, breakdown } = computeScores(today);
 
   return (
-    <GoalTrackerContext.Provider value={{ today, history, updateToday, lifeScore, breakdown }}>
+    <GoalTrackerContext.Provider
+      value={{
+        today,
+        history,
+        updateToday,
+        refreshToday,
+        lifeScore,
+        breakdown,
+        manualEditEnabled: false,
+      }}
+    >
       {children}
     </GoalTrackerContext.Provider>
   );

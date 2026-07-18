@@ -16,8 +16,10 @@ export function caltAndroidDownloadUrl(): string {
   return resolveApiUrl("/api/app/calt-android/download");
 }
 
-export async function fetchCaltAndroidLatest(): Promise<CaltAndroidLatest> {
-  const res = await fetch(resolveApiUrl("/api/app/calt-android/latest"));
+export async function fetchCaltAndroidLatest(
+  signal?: AbortSignal,
+): Promise<CaltAndroidLatest> {
+  const res = await fetch(resolveApiUrl("/api/app/calt-android/latest"), { signal });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
     throw new Error(

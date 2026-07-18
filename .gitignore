@@ -18,6 +18,8 @@ dist/
 # Environment & secrets
 .env
 .env.*
+data/google_oauth_client.json
+data/google_calendar_oauth.json
 !.env.example
 .env.stitch.local
 docs/stitch-output/

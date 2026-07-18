@@ -5,7 +5,7 @@ import "../../styles/study-library.css";
 
 export function SystemLogsPage() {
   return (
-    <div className="min-h-full study-library-page text-emerald-50">
+    <div className="min-h-full study-library-page text-foreground">
       <div className="max-w-5xl mx-auto px-4 py-6 space-y-6">
         <header className="space-y-2">
           <div className="flex items-center gap-2 text-emerald-300/80 text-sm">

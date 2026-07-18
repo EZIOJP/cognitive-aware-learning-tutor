@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import {
   BookOpen,
+  Calculator,
   Loader2,
   Play,
   Sparkles,
@@ -11,7 +12,7 @@ import { fetchQuizBacklog } from "../../api/globalQuizClient";
 import type { QuizBacklog } from "../../features/quiz/types";
 import { useAuth } from "../../context/AuthContext";
 
-const ACTION_LINKS: Record<
+const FALLBACK_LINKS: Record<
   QuizBacklog["recommended_action"],
   { label: string; to: string; hint: string }
 > = {
@@ -38,6 +39,12 @@ export function StudyLoopWidget() {
         by_domain: {},
         deck_count: 0,
         recommended_action: "sign_in",
+        next_step: {
+          action: "sign_in",
+          label: "Sign in",
+          to: "/login",
+          reason: "Sync quizzes and spaced repetition.",
+        },
       });
       return;
     }
@@ -58,7 +65,11 @@ export function StudyLoopWidget() {
 
   if (!backlog) return null;
 
-  const action = ACTION_LINKS[backlog.recommended_action];
+  const next = backlog.next_step;
+  const fallback = FALLBACK_LINKS[backlog.recommended_action];
+  const primaryLabel = next?.label ?? fallback.label;
+  const primaryTo = next?.to ?? fallback.to;
+  const hint = next?.reason ?? fallback.hint;
   const domains = Object.entries(backlog.by_domain);
 
   return (
@@ -97,28 +108,35 @@ export function StudyLoopWidget() {
             </div>
           )}
 
-          <p className="text-xs text-muted-foreground leading-relaxed">{action.hint}</p>
+          <p className="text-xs text-muted-foreground leading-relaxed">{hint}</p>
 
           <div className="flex flex-wrap gap-2">
-            {user && backlog.due_count > 0 && (
-              <Button size="sm" className="h-8 text-xs gap-1" asChild>
-                <Link to="/review?tab=due">
-                  <Play className="h-3.5 w-3.5" /> Review {backlog.due_count} due
-                </Link>
-              </Button>
-            )}
-            <Button size="sm" variant="outline" className="h-8 text-xs gap-1" asChild>
-              <Link to={action.to}>
-                <Sparkles className="h-3.5 w-3.5" /> {action.label}
+            <Button size="sm" className="h-8 text-xs gap-1" asChild>
+              <Link to={primaryTo}>
+                <Play className="h-3.5 w-3.5" /> Next: {primaryLabel}
               </Link>
             </Button>
           </div>
 
-          <div className="text-[10px] text-muted-foreground space-y-1 pt-1 border-t border-border/30">
-            <p className="flex items-center gap-1">
-              <BookOpen className="h-3 w-3" /> Vocab · Math · Lecture notes · Code
-            </p>
-            <p>One handler · FSRS scheduling · time-bound sessions</p>
+          <div className="flex flex-wrap gap-1.5 pt-1">
+            <Button size="sm" variant="outline" className="h-7 text-[10px] gap-1" asChild>
+              <Link to="/lecture-notes">
+                <BookOpen className="h-3 w-3" /> Notes
+              </Link>
+            </Button>
+            <Button size="sm" variant="outline" className="h-7 text-[10px] gap-1" asChild>
+              <Link to="/gre-vocab/read">
+                <Sparkles className="h-3 w-3" /> Vocab
+              </Link>
+            </Button>
+            <Button size="sm" variant="outline" className="h-7 text-[10px] gap-1" asChild>
+              <Link to="/review?tab=start">
+                <Calculator className="h-3 w-3" /> Math
+              </Link>
+            </Button>
+            <Button size="sm" variant="outline" className="h-7 text-[10px] gap-1" asChild>
+              <Link to="/review?tab=due">Review</Link>
+            </Button>
           </div>
         </>
       )}

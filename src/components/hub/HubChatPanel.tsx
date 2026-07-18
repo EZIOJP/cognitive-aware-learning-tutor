@@ -7,6 +7,7 @@ import { Button } from "../../app/components/ui/button";
 import { Input } from "../../app/components/ui/input";
 import { AgentPicker, type HubAgentId } from "./AgentPicker";
 import { SessionUploadDropzone } from "./SessionUploadDropzone";
+import { useEaster } from "../../easter";
 
 type HubChatPanelProps = {
   className?: string;
@@ -30,6 +31,7 @@ export function HubChatPanel({ className = "" }: HubChatPanelProps) {
   );
   const conversationId = useRef(`hub-${Date.now()}`);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const { burst } = useEaster();
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -42,6 +44,11 @@ export function HubChatPanel({ className = "" }: HubChatPanelProps) {
   const send = useCallback(async () => {
     const text = input.trim();
     if ((!text && !file) || sending) return;
+    if (text.toLowerCase() === "psst") {
+      setInput("");
+      burst("hat");
+      return;
+    }
     setInput("");
     setError(null);
     const userContent = text || (file ? `[Upload ${file.name}]` : "");
@@ -70,7 +77,7 @@ export function HubChatPanel({ className = "" }: HubChatPanelProps) {
     } finally {
       setSending(false);
     }
-  }, [agent, file, input, messages, sending]);
+  }, [agent, burst, file, input, messages, sending]);
 
   return (
     <div className={`flex flex-col min-h-0 gap-3 ${className}`}>

@@ -27,6 +27,7 @@ import {
   fetchLibraryTree,
   generateLibraryDrills,
   generateLibraryQuiz,
+  pasteLibraryQuiz,
   generateNotes,
   generateNotesFromToday,
   generatePrimer,
@@ -68,14 +69,15 @@ import { findLibraryFile, withPreservedScroll } from "../../components/study/stu
 import {
   applyBlockUpdate,
   finalizeNoteMarkdown,
-  layoutSafeMermaidSource,
   prepareNoteMarkdown,
+  sanitizeMermaidSource,
 } from "../../features/study-notes";
 import { extractBlockSurroundingContext, extractSelectionSurroundingContext } from "../../components/study/noteBlockUtils";
 import { cn } from "../../app/components/ui/utils";
 import { StudyLibraryViewer } from "../../components/study/StudyLibraryViewer";
 import { StudyLibraryCreateSheet } from "../../components/study/StudyLibraryCreateSheet";
 import { Button } from "../../app/components/ui/button";
+import { useEaster, useKonami } from "../../easter";
 
 type LibraryTab = "library" | "gap" | "review";
 
@@ -93,6 +95,8 @@ function folderOf(relativePath: string): string {
 }
 
 export function LectureNotesPage() {
+  const { burst } = useEaster();
+  useKonami(() => burst("doodle"));
   const [tab, setTab] = useState<LibraryTab>("library");
   const [workflowStep, setWorkflowStep] = useState<StudyWorkflowStep>(0);
   const [searchParams] = useSearchParams();
@@ -128,9 +132,12 @@ export function LectureNotesPage() {
   const [gapAnalysis, setGapAnalysis] = useState<GapAnalysisResult | null>(null);
   const [gapLoading, setGapLoading] = useState(false);
   const [intelGenerating, setIntelGenerating] = useState(false);
+  const [intelStatus, setIntelStatus] = useState<string | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [sessionItems, setSessionItems] = useState<StudySessionItem[]>([]);
   const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[]>([]);
+  const [quizCount, setQuizCount] = useState(12);
+  const [quizFocus, setQuizFocus] = useState<"mixed" | "concept" | "coding" | "cover_all">("mixed");
   const [drills, setDrills] = useState<CodeDrill[]>([]);
   const [activeQuiz, setActiveQuiz] = useState<{
     domain: "study" | "code";
@@ -542,7 +549,7 @@ export function LectureNotesPage() {
       start,
       end,
       noteMarkdown,
-      lang,
+      lang: _lang,
     }: {
       selection: string;
       start: number;
@@ -552,14 +559,14 @@ export function LectureNotesPage() {
     }) => {
       const base = prepareNoteMarkdown(noteMarkdown);
 
-      const applyMermaidSanitize = (text: string): string => {
+      const normalizeMermaid = (text: string): string => {
         const mermaidFence = /```mermaid\s*\n([\s\S]*?)```/i.exec(text);
         if (mermaidFence) {
-          const inner = layoutSafeMermaidSource(mermaidFence[1]);
+          const inner = sanitizeMermaidSource(mermaidFence[1]);
           return text.replace(mermaidFence[0], `\`\`\`mermaid\n${inner}\n\`\`\``);
         }
         if (/^(graph|flowchart)\s/im.test(text.trim())) {
-          const inner = layoutSafeMermaidSource(
+          const inner = sanitizeMermaidSource(
             text.replace(/^```mermaid\s*\n/i, "").replace(/\n```\s*$/i, "").trim(),
           );
           return text.includes("```mermaid") ? `\`\`\`mermaid\n${inner}\n\`\`\`` : inner;
@@ -567,20 +574,14 @@ export function LectureNotesPage() {
         return text;
       };
 
-      const isMermaid = lang === "mermaid" || /```mermaid/i.test(selection) || /^(graph|flowchart)\s/im.test(selection.trim());
-
       try {
         const result = await regenerateNoteSelection({
           selection,
           note_context: extractSelectionSurroundingContext(base, start, end),
           llm: llmOverrides,
         });
-        return applyMermaidSanitize(result.content);
+        return normalizeMermaid(result.content);
       } catch (err) {
-        if (isMermaid) {
-          const local = applyMermaidSanitize(selection);
-          if (local.trim() !== selection.trim()) return local;
-        }
         throw err;
       }
     },
@@ -911,23 +912,101 @@ export function LectureNotesPage() {
   const handleGenerateQuiz = async (): Promise<QuizQuestion[]> => {
     if (sourcePaths.length === 0) return [];
     setIntelGenerating(true);
+    setIntelStatus(
+      quizFocus === "cover_all"
+        ? "Starting bulk cover-all (multi-call)…"
+        : "Starting quiz generation…",
+    );
     setError(null);
     try {
+      const folderPath =
+        selectedNote && selectedNote.includes("/")
+          ? selectedNote.replace(/\\/g, "/").split("/").slice(0, -1).join("/")
+          : folderForSave;
+      if (quizFocus === "cover_all") {
+        setIntelStatus("Sending section + role batches to AI…");
+      } else {
+        setIntelStatus("Calling AI (quiz_gen)…");
+      }
       const result = await runWithBudgetConfirm((llm) =>
         generateLibraryQuiz(sourcePaths, {
-          count: 5,
+          count: quizFocus === "cover_all" ? Math.max(quizCount, 20) : quizCount,
+          focus: quizFocus,
           topic: noteTitle.trim() || primaryMeta?.title,
           llm,
+          expandSiblings: true,
+          save: quizFocus === "cover_all" ? true : undefined,
+          folderPath,
         }),
       );
+      setIntelStatus("Packaging draft…");
       setQuizQuestions(result.questions);
       addSessionItem(result.session_item);
-      setToast(`Quiz generated (${result.source ?? "ok"})`);
-      setTimeout(() => setToast(null), 3000);
+      const nFiles = result.source_paths_used?.length ?? sourcePaths.length;
+      const fileHint =
+        nFiles > 1
+          ? result.expanded
+            ? ` · ${nFiles} notes (added folder siblings — primary was short)`
+            : ` · ${nFiles} notes`
+          : "";
+      const saveHint = result.saved_path ? ` · saved ${result.saved_path}` : "";
+      const coverHint =
+        quizFocus === "cover_all" && result.sections_covered?.length
+          ? ` · ${result.sections_covered.length} sections`
+          : "";
+      const callHint =
+        typeof result.llm_calls === "number" && result.llm_calls > 0
+          ? ` · ${result.llm_calls} AI calls`
+          : "";
+      const fillHint =
+        typeof result.questions_from_llm === "number"
+          ? result.questions_from_extractive
+            ? ` · ${result.questions_from_llm} from AI + ${result.questions_from_extractive} note-facts`
+            : ` · ${result.questions_from_llm} from AI`
+          : "";
+      if (result.source === "extractive" || result.source === "template") {
+        setToast(
+          `Quiz draft from note facts (LLM offline / failed)${fileHint}${callHint} — check AI in Settings; bulk needs a working model`,
+        );
+      } else if (result.source === "mixed") {
+        setToast(
+          `Partial AI quiz: ${result.questions.length} Qs${fillHint}${coverHint}${saveHint} — review carefully`,
+        );
+        if (result.saved) void refresh();
+      } else if (quizFocus === "cover_all") {
+        setToast(
+          `Bulk quiz ready: ${result.questions.length} Qs${callHint}${fillHint}${coverHint}${saveHint} — review, then Take quiz`,
+        );
+        if (result.saved) void refresh();
+      } else {
+        setToast(
+          `Quiz draft ready (${result.source ?? "ok"})${callHint}${fileHint} — review, then Take quiz`,
+        );
+      }
+      setTimeout(() => setToast(null), 5500);
       return result.questions;
     } catch (e) {
       setError(e instanceof Error ? e.message : "Quiz generation failed");
       return [];
+    } finally {
+      setIntelGenerating(false);
+      setIntelStatus(null);
+    }
+  };
+
+  const handlePasteQuiz = async (text: string) => {
+    setIntelGenerating(true);
+    setError(null);
+    try {
+      const result = await pasteLibraryQuiz(text, {
+        topic: noteTitle.trim() || primaryMeta?.title,
+      });
+      setQuizQuestions(result.questions);
+      addSessionItem(result.session_item);
+      setToast(`Imported ${result.questions.length} questions into draft — review, then Take quiz`);
+      setTimeout(() => setToast(null), 4000);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Paste import failed");
     } finally {
       setIntelGenerating(false);
     }
@@ -938,16 +1017,16 @@ export function LectureNotesPage() {
       setError("Select a lecture note in the library first.");
       return;
     }
-    const notePath = selectedNote || primaryMeta?.relative_path || "";
-    let questions = quizQuestions;
-    if (questions.length === 0) {
-      questions = await handleGenerateQuiz();
+    // Generate fills draft only — do not auto-start the quiz runner.
+    if (quizQuestions.length === 0) {
+      await handleGenerateQuiz();
+      return;
     }
-    if (questions.length === 0) return;
+    const notePath = selectedNote || primaryMeta?.relative_path || "";
     setActiveQuiz({
       domain: "study",
       config: buildStudyQuizConfig(
-        questions,
+        quizQuestions,
         drills,
         notePath,
         noteTitle.trim() || primaryMeta?.title,
@@ -958,6 +1037,7 @@ export function LectureNotesPage() {
   const handleGenerateDrills = async () => {
     if (sourcePaths.length === 0) return;
     setIntelGenerating(true);
+    setIntelStatus("Calling AI for code drills…");
     setError(null);
     try {
       const result = await runWithBudgetConfirm((llm) =>
@@ -975,6 +1055,7 @@ export function LectureNotesPage() {
       setError(e instanceof Error ? e.message : "Drill generation failed");
     } finally {
       setIntelGenerating(false);
+      setIntelStatus(null);
     }
   };
 
@@ -1025,17 +1106,17 @@ export function LectureNotesPage() {
       <div className="relative z-10 flex flex-col h-full min-h-0 p-4 gap-3">
         <header className="study-library-glass flex flex-wrap items-center gap-3 px-4 py-3 shrink-0">
           <div className="min-w-0 flex-1">
-            <h1 className="text-lg font-bold text-white tracking-wide">Study Library</h1>
-            <p className="text-xs text-emerald-200/60">Read, edit, and export your lecture notes</p>
+            <h1 className="text-lg font-bold text-foreground tracking-wide">Study Library</h1>
+            <p className="text-xs text-muted-foreground">Read, edit, and export your lecture notes</p>
           </div>
 
           <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
-            <label className="flex items-center gap-1.5 text-[10px] text-emerald-200/70">
+            <label className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
               <span className="sr-only">LLM tier</span>
               <select
                 value={llmTier}
                 onChange={(e) => setLlmTier(e.target.value)}
-                className="h-8 rounded-md border border-emerald-900/50 bg-black/30 px-2 text-xs text-emerald-100"
+                className="h-8 rounded-md border border-border bg-background/60 px-2 text-xs text-foreground"
               >
                 <option value="light">Light</option>
                 <option value="medium">Medium</option>
@@ -1046,7 +1127,7 @@ export function LectureNotesPage() {
               type="button"
               size="sm"
               variant="outline"
-              className="h-8 text-xs border-emerald-800/50"
+              className="h-8 text-xs"
               asChild
             >
               <Link to="/knowledge-base">
@@ -1058,7 +1139,7 @@ export function LectureNotesPage() {
               type="button"
               size="sm"
               variant="outline"
-              className="h-8 text-xs border-emerald-800/50"
+              className="h-8 text-xs"
               onClick={() => setCreateSheetOpen(true)}
             >
               <Plus className="w-3.5 h-3.5 mr-1.5" />
@@ -1069,7 +1150,7 @@ export function LectureNotesPage() {
                 type="button"
                 size="sm"
                 variant={studyToolsOpen ? "default" : "outline"}
-                className="h-8 text-xs border-emerald-800/50"
+                className="h-8 text-xs"
                 onClick={() => setStudyToolsOpen((o) => !o)}
               >
                 <PanelRight className="w-3.5 h-3.5 mr-1.5" />
@@ -1088,7 +1169,7 @@ export function LectureNotesPage() {
           </div>
 
           {navItems.length > 1 && (
-            <nav className="flex items-center gap-4 text-sm font-medium w-full sm:w-auto border-t sm:border-t-0 border-emerald-900/30 pt-2 sm:pt-0">
+            <nav className="flex items-center gap-4 text-sm font-medium w-full sm:w-auto border-t sm:border-t-0 border-border pt-2 sm:pt-0">
               {navItems.map(({ id, label, icon: Icon }) => (
                 <button
                   key={id}
@@ -1104,7 +1185,7 @@ export function LectureNotesPage() {
             </nav>
           )}
 
-          {toast && <span className="text-xs text-emerald-400">{toast}</span>}
+          {toast && <span className="text-xs text-primary">{toast}</span>}
           {groundingBanner?.status === "degraded" ? (
             <div
               className="w-full mt-2 rounded-md border border-amber-700/50 bg-amber-950/40 px-3 py-2 text-xs text-amber-100"
@@ -1161,7 +1242,7 @@ export function LectureNotesPage() {
               <div className="flex-1 min-h-0 overflow-hidden">
                 {loading ? (
                   <div className="flex items-center justify-center h-full">
-                    <Loader2 className="w-5 h-5 animate-spin text-emerald-400" />
+                    <Loader2 className="w-5 h-5 animate-spin text-primary" />
                   </div>
                 ) : error && !libraryTree ? (
                   <p className="text-xs text-red-400 p-3">{error}</p>
@@ -1197,7 +1278,7 @@ export function LectureNotesPage() {
 
             {comparePaths.length > 0 && tab === "library" && (
               <div className="study-library-compare-bar shrink-0">
-                <span className="text-xs text-emerald-200/80 truncate">
+                <span className="text-xs text-muted-foreground truncate">
                   Compare: {comparePaths.map((p) => p.split("/").pop()).join(" · ")}
                 </span>
                 <Button
@@ -1215,7 +1296,7 @@ export function LectureNotesPage() {
                     type="button"
                     size="sm"
                     variant="outline"
-                    className="h-7 text-xs shrink-0 border-emerald-800/50"
+                    className="h-7 text-xs shrink-0"
                     onClick={() => setTab("gap")}
                   >
                     Open gap analysis
@@ -1248,7 +1329,7 @@ export function LectureNotesPage() {
               onTakeQuiz={!showCompare && selectedNote ? () => void handleTestKnowledge() : undefined}
               quizReady={quizQuestions.length > 0}
               quizLoading={intelGenerating}
-              quizDisabled={!llmConfig?.reachable}
+              quizDisabled={false}
               onScrollContainer={(el) => {
                 scrollContainerRef.current = el;
               }}
@@ -1296,9 +1377,24 @@ export function LectureNotesPage() {
               drills={drills}
               sessionItems={sessionItems}
               generating={intelGenerating}
+              generatingDetail={intelStatus}
+              quizCount={quizCount}
+              quizFocus={quizFocus}
+              onQuizCountChange={setQuizCount}
+              onQuizFocusChange={(f) => {
+                setQuizFocus(f);
+                if (f === "cover_all" && quizCount < 20) setQuizCount(30);
+              }}
               onGenerateQuiz={() => void handleGenerateQuiz()}
               onGenerateDrills={() => void handleGenerateDrills()}
-              onGeneratePrimer={() => void handleGeneratePrimer()}
+              onPasteQuiz={(text) => void handlePasteQuiz(text)}
+              onRemoveQuestion={(id) =>
+                setQuizQuestions((prev) => prev.filter((q) => q.id !== id))
+              }
+              onGeneratePrimer={
+                llmConfig?.corpus_grounded_notes ? () => void handleGeneratePrimer() : undefined
+              }
+              corpusGroundedNotes={Boolean(llmConfig?.corpus_grounded_notes)}
               onTakeQuiz={handleTakeQuiz}
               onEditItem={(id, content) =>
                 setSessionItems((prev) =>
@@ -1332,7 +1428,9 @@ export function LectureNotesPage() {
         generating={generating}
         snapshotting={snapshotting}
         onGenerate={() => void handleGenerate()}
-        onGenerateLegacy={() => void handleGenerate({ forceLegacy: true })}
+        onGenerateGrounded={
+          llmConfig?.corpus_grounded_notes ? () => void handleGenerateGrounded() : undefined
+        }
         onGenerateToday={() => void handleGenerateToday()}
         onSnapshot={() => void handleSnapshot()}
         referenceHint={referenceHint || undefined}
@@ -1357,6 +1455,7 @@ export function LectureNotesPage() {
             <GlobalQuizRunner
               domain={activeQuiz.domain}
               config={activeQuiz.config}
+              navigateOnComplete={false}
               onDone={() => {
                 setActiveQuiz(null);
                 setToast("Quiz done — cards queued. Open Review Hub for spaced repetition.");

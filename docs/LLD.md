@@ -544,6 +544,19 @@ Returns: `status`, `database`, `schema_revision`, `schema_head`, `schema_ok`, `a
 **Backend:** `backend/behavior/router.py` — `WS /ws/behavior`, `GET /api/behavior/stats`  
 **Flow:** Extension → WebSocket → hub readings (`browser_event`) + CSV in `data_logs/`
 
+### 16.1 Distraction hard-block (desktop tracker)
+
+| Item | Detail |
+|------|--------|
+| Spec | `docs/superpowers/specs/2026-07-17-distraction-hard-block-design.md` |
+| Policy fields | `hard_block_enabled`, `daily_goal_minutes`, `hard_block_gaming`, `hard_block_exes` on `productivity_policies` |
+| Gate | `backend/behavior/distraction_gate.py` — productive minutes vs goal |
+| API | `GET /api/behavior/distraction-gate` |
+| Enforce | `TrackerService._poll_once` kills matching pid while locked |
+| UI | `ProductivityPolicyPanel` hard-block section |
+
+Unlock = today’s `productive_minutes` ≥ `daily_goal_minutes` (same scoring as planner adherence). Sites stay with Cold Turkey.
+
 ---
 
 ## 17. Future extensions

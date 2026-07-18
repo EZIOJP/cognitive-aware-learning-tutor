@@ -9,12 +9,27 @@ from sqlalchemy.orm import Session
 
 from backend.core.auth import get_current_user, require_admin
 from backend.db.session import get_db
+from backend.math.skills import list_nodes_with_status, next_available_node
 from backend.math.schemas import MathImportBundle, MathImportResult
 from backend.math.services.import_questions import parse_import_payload, upsert_questions
 from backend.math.services.randomizer import pick_from_bank
 from backend.models import MathQuestion, User
 
 router = APIRouter(prefix="/api/math", tags=["math"])
+
+
+@router.get("/skills")
+def math_skills(
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Layer skill catalog with lock/progress status for the current user."""
+    nodes = list_nodes_with_status(db, user_id=user.id)
+    nxt = next_available_node(db, user_id=user.id)
+    return {
+        "nodes": nodes,
+        "next_node_id": nxt["id"] if nxt else None,
+    }
 
 
 @router.post("/questions/import/json", response_model=MathImportResult)

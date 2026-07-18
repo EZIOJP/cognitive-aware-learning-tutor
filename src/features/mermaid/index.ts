@@ -11,7 +11,9 @@ export {
 export {
   ensureMermaidInitialized,
   isMermaidErrorSvg,
+  renderMermaidInto,
   renderMermaidSvg,
+  resetMermaidInitialized,
   validateMermaidSource,
 } from "./render";
 

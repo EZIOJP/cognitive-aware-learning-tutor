@@ -34,6 +34,7 @@ from backend.transcripts.library import (
     delete_note,
     list_notes_in_folder,
     move_note,
+    note_storage_path,
     sync_disk_notes_for_user,
     save_note_content,
     update_note_meta,
@@ -61,6 +62,7 @@ from backend.transcripts.study_intel import (
     generate_code_drills,
     generate_quiz_items,
     load_note_text,
+    parse_pasted_mcq_quiz,
     quiz_to_markdown,
     run_gap_analysis,
     summarize_folder,
@@ -126,7 +128,7 @@ class StudyFlowRequest(BaseModel):
     transcript_file: str = Field(..., min_length=1, max_length=200)
     folder_path: str = Field(default="", max_length=512)
     title: str = Field(default="", max_length=120)
-    ingest_corpus: bool = True
+    ingest_corpus: bool = False
     quiz_count: int = Field(default=8, ge=1, le=20)
     start_quiz: bool = False
     llm_provider: str | None = Field(default=None, max_length=32)
@@ -198,15 +200,25 @@ class GapAnalysisRequest(BaseModel):
 
 
 class GenerateIntelRequest(BaseModel):
-    source_paths: list[str] = Field(default_factory=list, max_length=4)
+    source_paths: list[str] = Field(default_factory=list, max_length=8)
     topic: str = Field(default="", max_length=160)
-    count: int = Field(default=5, ge=1, le=10)
+    count: int = Field(default=12, ge=1, le=50)
+    focus: str = Field(default="mixed", max_length=16)  # mixed | concept | coding | cover_all
     folder_path: str = Field(default="", max_length=512)
+    # When True (default), short notes auto-include sibling .md files from the same folder.
+    expand_siblings: bool = True
+    # Persist quiz markdown into the library (default on for cover_all).
+    save: bool | None = None
     llm_provider: str | None = Field(default=None, max_length=32)
     llm_base_url: str | None = Field(default=None, max_length=200)
     llm_model: str | None = Field(default=None, max_length=120)
     llm_tier: str | None = Field(default=None, max_length=16)
     confirm_heavy_budget: bool = False
+
+
+class PasteQuizRequest(BaseModel):
+    text: str = Field(..., min_length=20)
+    topic: str = Field(default="", max_length=160)
 
 
 class SyncSessionItem(BaseModel):
@@ -320,6 +332,8 @@ def _confirm_budget_from_request(body: object) -> bool:
 
 
 def _corpus_handoff_after_generate(transcript_path: Path, note_path: Path) -> dict | None:
+    if not get_settings().corpus_grounded_notes:
+        return None
     try:
         from backend.corpus.handoff import ingest_lecture_handoff
 
@@ -360,6 +374,7 @@ def get_llm_settings(
         "model": override.model,
         "reachable": llm_reachable(override),
         "corpus_grounded_notes": settings.corpus_grounded_notes,
+        "corpus_study_intel": settings.corpus_study_intel,
         "corpus_available": corpus_available(),
         "selected_tier": (llm_tier or cfg.get("default_tier") or "medium").strip().lower(),
     }
@@ -939,30 +954,106 @@ def post_generate_quiz(
     guard_heavy_budget(body)
     if not body.source_paths:
         raise HTTPException(status_code=400, detail="source_paths required")
-    texts = _load_sources(db, user.id, body.source_paths)
+
+    from backend.transcripts.study_intel import expand_quiz_source_paths
+
+    requested = [p.strip() for p in body.source_paths if p.strip()]
+    paths = (
+        expand_quiz_source_paths(requested)
+        if body.expand_siblings
+        else requested[:8]
+    )
+    texts = _load_sources(db, user.id, paths)
     from backend.quiz.review_cards import weak_concepts_for_retrieval
 
     boost = weak_concepts_for_retrieval(db, user.id)
+    focus = (body.focus.strip() or "mixed").lower()
+    # Prefer open note file(s) — no corpus RAG. Short notes get sibling files auto-added.
     result = generate_quiz_items(
         texts,
         count=body.count,
         topic=body.topic.strip(),
+        focus=focus,
         llm=_llm_from_intel(body),
         boost_concepts=boost or None,
         llm_tier=tier_from_body(body),
         confirm_heavy_budget=confirm_budget_from_body(body),
+        prefer_notes=True,
+        source_labels=paths,
     )
-    title = body.topic.strip() or "Generated Quiz"
+    title = body.topic.strip() or ("Cover-all Quiz" if focus == "cover_all" else "Generated Quiz")
     md = quiz_to_markdown(result["questions"], title=title)
+
+    saved_path: str | None = None
+    should_save = body.save if body.save is not None else (focus == "cover_all")
+    if should_save and result.get("questions"):
+        folder = (body.folder_path or "").replace("\\", "/").strip()
+        if not folder and paths:
+            parts = paths[0].replace("\\", "/").rsplit("/", 1)
+            folder = parts[0] if len(parts) > 1 else ""
+        try:
+            row = create_note_file(
+                db,
+                user_id=user.id,
+                title=title,
+                folder_path=folder,
+                kind="quiz",
+                content=md,
+                topic=body.topic.strip() or None,
+            )
+            saved_path = note_storage_path(row)
+        except Exception as exc:  # noqa: BLE001
+            log.warning("quiz auto-save failed: %s", exc)
+
     return {
         **result,
         "markdown": md,
+        "saved_path": saved_path,
+        "saved": bool(saved_path),
+        "source_paths_used": paths,
+        "source_paths_requested": requested,
+        "expanded": paths != requested,
         "session_item": {
             "id": f"quiz-{int(time.time())}",
             "kind": "quiz",
             "title": title,
             "content": md,
-            "detail": f"{len(result['questions'])} questions",
+            "detail": (
+                f"{len(result['questions'])} questions · {len(paths)} file(s)"
+                + (f" · saved {saved_path}" if saved_path else "")
+            ),
+        },
+    }
+
+
+@router.post("/library/paste-quiz")
+def post_paste_quiz(
+    body: PasteQuizRequest,
+    _user: User = Depends(get_current_user),
+):
+    questions = parse_pasted_mcq_quiz(body.text)
+    if not questions:
+        raise HTTPException(
+            status_code=400,
+            detail="Could not parse any MCQs. Paste blocks like: Question 1 … A) … B) …",
+        )
+    if body.topic.strip():
+        for q in questions:
+            if not q.get("concept") or q.get("concept") == "Imported":
+                q["concept"] = body.topic.strip()[:80]
+                q["hint"] = f"Review topic: {q['concept']}"
+    title = body.topic.strip() or "Pasted Quiz"
+    md = quiz_to_markdown(questions, title=title)
+    return {
+        "questions": questions,
+        "markdown": md,
+        "source": "pasted",
+        "session_item": {
+            "id": f"quiz-paste-{int(time.time())}",
+            "kind": "quiz",
+            "title": title,
+            "content": md,
+            "detail": f"{len(questions)} pasted questions",
         },
     }
 
@@ -1057,7 +1148,7 @@ def generate_notes(
             llm=_llm_from_request(body),
             llm_tier=_tier_from_request(body),
             confirm_heavy_budget=_confirm_budget_from_request(body),
-            ingest_corpus=True,
+            ingest_corpus=False,
             force_legacy=body.force_legacy,
             aggressive=body.aggressive_dedup,
             reference_paths=reference_paths or None,
@@ -1138,7 +1229,8 @@ def generate_notes_from_today(
             llm=_llm_from_request(body),
             llm_tier=_tier_from_request(body),
             confirm_heavy_budget=_confirm_budget_from_request(body),
-            ingest_corpus=True,
+            ingest_corpus=False,
+            force_legacy=True,
             aggressive=body.aggressive_dedup,
             use_semantic_grouping=body.use_semantic_grouping,
             refine_second_pass=body.refine_second_pass,

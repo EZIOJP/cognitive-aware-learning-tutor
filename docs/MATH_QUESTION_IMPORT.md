@@ -48,9 +48,12 @@ Practice still uses `/api/vocab/math/practice/next` — it picks from the **bank
 - Otherwise: always insert a new row.
 - Extra keys are stored in `metadata_json` when passed as `metadata` on the item.
 
-## Randomizer
+## Randomizer / skill drills
 
-`backend/math/services/randomizer.py` — `pick_from_bank(db, topic)` is used by practice/next. Template generator runs only when the bank has no rows for that topic.
+`backend/math/services/randomizer.py` — `pick_from_bank` / `pick_n_from_bank`.
+Skill drills: `POST /api/quiz/start` with `domain=math` and `node_id` uses SymPy generators (`backend/math/skills.py`).
+Optional: set `metadata.skill_id` (or a tag matching the skill id) when importing bank items for a node.
+Do **not** auto-scrape textbooks into this bank — curated JSON only. See ADR-001.
 
 ## Seed local sets (dev)
 

@@ -22,9 +22,13 @@ export type QuizQuestion = {
   options: string[];
   answer_index: number;
   explanation?: string;
+  hint?: string;
+  concept?: string;
   source_chunk_id?: string;
   citation?: string;
 };
+
+export type QuizFocus = "mixed" | "concept" | "coding" | "cover_all";
 
 export type CodeDrill = {
   id: string;

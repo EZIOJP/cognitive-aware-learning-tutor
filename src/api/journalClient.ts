@@ -35,6 +35,15 @@ export interface JournalSummary {
   journal_entry: JournalEntry | null;
 }
 
+export interface JournalLogEntry {
+  id: number;
+  entry_date: string;
+  title?: string | null;
+  updated_at?: string | null;
+  content_length: number;
+  word_count: number;
+}
+
 export async function fetchJournalSummary(day?: string): Promise<JournalSummary> {
   const qs = day ? `?day=${day}` : "";
   const res = await fetch(resolveApiUrl(`/api/journal/summary${qs}`), { headers: authHeaders() });
@@ -55,4 +64,13 @@ export async function saveJournalEntry(body: {
   if (!res.ok) throw new Error(await apiError(res));
   const data = (await res.json()) as { entry: JournalEntry };
   return data.entry;
+}
+
+export async function fetchJournalLog(limit = 30): Promise<JournalLogEntry[]> {
+  const params = new URLSearchParams({ limit: String(limit) });
+  const res = await fetch(resolveApiUrl(`/api/journal/entries/log?${params}`), { headers: authHeaders() });
+  if (res.status === 404 || res.status === 405) return [];
+  if (!res.ok) throw new Error(await apiError(res));
+  const data = (await res.json()) as { entries: JournalLogEntry[] };
+  return data.entries;
 }

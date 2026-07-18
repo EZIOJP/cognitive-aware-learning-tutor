@@ -1,21 +1,20 @@
 [
   {
-    "id": "stadium_node",
-    "input": "C --> D(Identify Key Features & Relationships)",
-    "expect_contains": ["D[\"Identify Key Features & Relationships\"]"],
-    "expect_not_contains": ["D(Identify Key"]
+    "id": "preserves_stadium_node",
+    "input": "flowchart TD\nC --> D(Identify Key Features & Relationships)",
+    "expect_contains": ["D(Identify Key Features & Relationships)"]
   },
   {
-    "id": "edge_label_pipe",
-    "input": "B -- No (Blank) --> D(Default to Array Index 0)",
-    "expect_contains": ["-->|No (Blank)|", "D[\"Default to Array Index 0\"]"]
+    "id": "preserves_edge_label",
+    "input": "flowchart TD\nB -- No (Blank) --> D(Default to Array Index 0)",
+    "expect_contains": ["B -- No (Blank) --> D(Default to Array Index 0)"]
   },
   {
-    "id": "indexing_canonical",
+    "id": "preserves_indexing_diagram",
     "input": "flowchart TD\n    A[Start Indexing Process] --> B{Direction}\n    B -->|Left to Right| C[\"Positive Index: 0, 1, 2, ...\"]\n    B -->|Right to Left| D[\"Negative Index: -1, -2, -3, ...\"]\n    D --> E[\"Access Last Element using W[-1]\"]",
     "layout_safe": true,
-    "expect_contains": ["|L to R|", "Last at index minus one"],
-    "expect_not_contains": ["...", "W[-1]"]
+    "expect_contains": ["Direction", "W[-1]", "Positive Index"],
+    "expect_not_contains": ["Last at index minus one"]
   },
   {
     "id": "dedupe_gemma",

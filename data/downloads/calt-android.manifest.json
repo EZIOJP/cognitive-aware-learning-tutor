@@ -1,7 +1,1 @@
-{
-  "package": "com.calt.timetable",
-  "version_name": "1.0.0",
-  "version_code": 2,
-  "release_notes": "Day/Week/Schedule tabs, block editor, widget, background sync, dark mode, server presets.",
-  "updated_at": "2026-07-07T00:00:00+00:00"
-}
+{"app_id":"calt-android","package":"com.calt.timetable","version_name":"1.0.2","version_code":4,"release_notes":"Solo sync: one calendar, no login required. Fix login token field.","updated_at":"2026-07-12T00:00:00Z","size_bytes":44485346}

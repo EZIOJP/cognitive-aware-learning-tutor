@@ -45,6 +45,9 @@ export interface AdherenceSummary {
   actual_minutes: number;
   productive_minutes: number;
   effective_focus_minutes: number;
+  on_plan_focus_minutes?: number;
+  off_plan_productive_minutes?: number;
+  distraction_on_plan_minutes?: number;
   adherence_pct: number | null;
   block_count: number;
   session_count: number;
@@ -169,6 +172,18 @@ export async function fetchAdherence(day: Date): Promise<AdherenceSummary> {
   return res.json();
 }
 
+/** N days of adherence ending on `end` (default: today). */
+export async function fetchAdherenceRange(days = 7, end?: Date): Promise<AdherenceSummary[]> {
+  const params = new URLSearchParams({ days: String(days) });
+  if (end) params.set("end", end.toISOString());
+  const res = await fetch(resolveApiUrl(`/api/planner/adherence/range?${params}`), {
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error(await res.text());
+  const data = (await res.json()) as { days: AdherenceSummary[] };
+  return data.days ?? [];
+}
+
 export async function generateWeekFromTimetable(timetableId?: number): Promise<{ created: number }> {
   const res = await fetch(resolveApiUrl("/api/planner/generate-week"), {
     method: "POST",
@@ -229,7 +244,17 @@ export async function createRoutine(body: {
 
 export async function updateRoutine(
   id: number,
-  body: Partial<{ title: string; category: string; start_time: string; end_time: string; enabled: boolean }>,
+  body: Partial<{
+    title: string;
+    category: string;
+    start_time: string;
+    end_time: string | null;
+    duration_minutes: number | null;
+    days: string[];
+    color: string | null;
+    enabled: boolean;
+    sort_order: number;
+  }>,
 ): Promise<PlannerRoutine> {
   const res = await fetch(resolveApiUrl(`/api/planner/routines/${id}`), {
     method: "PATCH",
@@ -277,12 +302,35 @@ export async function autoApplyRoutinesToday(): Promise<{
 export async function downloadProductivityWeekExport(
   days = 7,
   format: "json" | "csv" = "json",
+  options?: {
+    include?: string;
+    productiveOnly?: boolean;
+  },
 ): Promise<void> {
   const params = new URLSearchParams({ days: String(days), format });
-  const res = await fetch(resolveApiUrl(`/api/planner/export/last-7-days?${params}`), {
-    headers: authHeaders(),
-  });
-  if (!res.ok) throw new Error(await res.text());
+  if (options?.include) params.set("include", options.include);
+  if (options?.productiveOnly) params.set("productive_only", "true");
+  let res: Response;
+  try {
+    res = await fetch(resolveApiUrl(`/api/planner/export/last-7-days?${params}`), {
+      headers: authHeaders(),
+    });
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : "Network error";
+    throw new Error(
+      `Export unreachable (${msg}). Is the API running on the backend URL?`,
+    );
+  }
+  if (!res.ok) {
+    let detail = await res.text();
+    try {
+      const parsed = JSON.parse(detail) as { error?: { message?: string }; detail?: string };
+      detail = parsed.error?.message || parsed.detail || detail;
+    } catch {
+      /* keep raw */
+    }
+    throw new Error(detail || `Export failed (${res.status})`);
+  }
   const stamp = new Date().toISOString().slice(0, 10).replace(/-/g, "");
   let blob: Blob;
   if (format === "json") {
@@ -298,8 +346,173 @@ export async function downloadProductivityWeekExport(
     format === "csv"
       ? `productivity-${days}d-${stamp}.csv`
       : `productivity-${days}d-${stamp}.json`;
+  document.body.appendChild(a);
   a.click();
+  a.remove();
   URL.revokeObjectURL(url);
+}
+
+export type ProposedPlannerBlock = {
+  title: string;
+  category: string;
+  start_at: string;
+  end_at: string;
+  /** study = proposed focus, routine = from templates, existing = already on calendar, break = rest */
+  source?: "study" | "routine" | "existing" | "break";
+  existing_id?: number;
+};
+
+export async function proposeWeekFromExport(body?: {
+  days?: number;
+  goals?: string;
+  week_start?: string;
+  range_start?: string;
+  horizon_days?: number;
+  use_llm?: boolean;
+  include_routines?: boolean;
+  mode?: "smart" | "review" | "full";
+  draft_blocks?: ProposedPlannerBlock[];
+}): Promise<{
+  week_start: string;
+  range_start?: string;
+  horizon_days?: number;
+  blocks: ProposedPlannerBlock[];
+  rationale: string;
+  used_llm: boolean;
+  goals: string;
+  mode?: string;
+  load_scale?: number;
+  scaled_daily_hours?: number;
+  stated_daily_hours?: number;
+}> {
+  let res: Response;
+  try {
+    res = await fetch(resolveApiUrl("/api/planner/propose-from-export"), {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({
+        days: body?.days ?? 7,
+        goals: body?.goals ?? null,
+        week_start: body?.week_start ?? null,
+        range_start: body?.range_start ?? null,
+        horizon_days: body?.horizon_days ?? 7,
+        use_llm: body?.use_llm ?? true,
+        include_routines: body?.include_routines ?? true,
+        mode: body?.mode ?? null,
+        draft_blocks: body?.draft_blocks ?? null,
+      }),
+    });
+  } catch {
+    throw new Error("API unreachable — is the backend running on :8000?");
+  }
+  if (!res.ok) {
+    const raw = await res.text();
+    try {
+      const parsed = JSON.parse(raw) as { error?: { message?: string }; detail?: string };
+      throw new Error(parsed.error?.message || parsed.detail || raw || `Propose failed (${res.status})`);
+    } catch (e) {
+      if (e instanceof Error && e.message !== raw) throw e;
+      throw new Error(raw || `Propose failed (${res.status})`);
+    }
+  }
+  return res.json();
+}
+
+export async function applyProposedBlocks(
+  blocks: ProposedPlannerBlock[],
+): Promise<{ created: number }> {
+  const res = await fetch(resolveApiUrl("/api/planner/apply-proposed-blocks"), {
+    method: "POST",
+    headers: authHeaders(),
+    body: JSON.stringify({ blocks }),
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+export type GoogleCalendarStatus = {
+  client_configured: boolean;
+  connected: boolean;
+  calendar_id: string;
+  has_access_token: boolean;
+  redirect_uri?: string;
+  setup_url?: string;
+};
+
+export async function fetchGoogleCalendarStatus(): Promise<GoogleCalendarStatus> {
+  const res = await fetch(resolveApiUrl("/api/planner/google-calendar/status"), {
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+export async function saveGoogleCalendarCredentials(
+  clientId: string,
+  clientSecret: string,
+): Promise<GoogleCalendarStatus & { ok: boolean }> {
+  const res = await fetch(resolveApiUrl("/api/planner/google-calendar/credentials"), {
+    method: "POST",
+    headers: { ...authHeaders(), "Content-Type": "application/json" },
+    body: JSON.stringify({ client_id: clientId, client_secret: clientSecret }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error((data as { detail?: string }).detail || "Failed to save credentials");
+  }
+  return data as GoogleCalendarStatus & { ok: boolean };
+}
+
+export async function fetchGoogleCalendarAuthUrl(): Promise<string> {
+  const res = await fetch(resolveApiUrl("/api/planner/google-calendar/auth-url"), {
+    headers: authHeaders(),
+  });
+  if (!res.ok) {
+    const t = await res.text();
+    throw new Error(t || "Auth URL failed — paste Client ID/Secret below");
+  }
+  const data = (await res.json()) as { url?: string };
+  if (!data.url) throw new Error("No auth URL");
+  return data.url;
+}
+
+export async function syncPlannerToGoogleCalendar(days = 14): Promise<{
+  ok: boolean;
+  created?: number;
+  updated?: number;
+  skipped?: number;
+  block_count?: number;
+  error?: string;
+  hint?: string;
+  errors?: string[];
+}> {
+  const res = await fetch(
+    resolveApiUrl(`/api/planner/google-calendar/sync?days=${days}`),
+    { method: "POST", headers: authHeaders() },
+  );
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error((data as { detail?: string }).detail || (await res.text()));
+  return data;
+}
+
+/** Download ICS (works without Google OAuth — import into Google Calendar). */
+export function downloadPlannerIcs(days = 14): void {
+  const url = resolveApiUrl(`/api/planner/calendar.ics?days=${days}`);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "calt-planner.ics";
+  // auth via cookie may not exist — open with fetch blob instead
+  void (async () => {
+    const res = await fetch(url, { headers: authHeaders() });
+    if (!res.ok) throw new Error(await res.text());
+    const blob = await res.blob();
+    const obj = URL.createObjectURL(blob);
+    a.href = obj;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(obj);
+  })();
 }
 
 export const CATEGORY_COLORS: Record<string, string> = {

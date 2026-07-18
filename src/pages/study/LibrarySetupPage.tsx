@@ -54,7 +54,7 @@ function BookCard({
     <div className="study-library-glass rounded-xl p-4 space-y-3">
       <div className="flex items-start justify-between gap-2">
         <div>
-          <p className="text-sm font-semibold text-emerald-50">{book.short_label}</p>
+          <p className="text-sm font-semibold text-foreground">{book.short_label}</p>
           <p className="text-xs text-emerald-200/60 mt-0.5">{book.label}</p>
         </div>
         {status === "indexed" && (
@@ -252,7 +252,7 @@ export function LibrarySetupPage() {
   const mmlReady = overview?.books.find((b) => b.subject_id === "linear_algebra")?.file_present;
 
   return (
-    <div className="min-h-full study-library-page text-emerald-50">
+    <div className="min-h-full study-library-page text-foreground">
       <div className="max-w-5xl mx-auto px-4 py-6 space-y-6">
         <header className="space-y-2">
           <div className="flex items-center gap-2 text-emerald-300/80 text-sm">

@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 from fastapi import APIRouter, HTTPException, Query, Depends
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from backend.core.log_setup import list_log_files, log_error, resolve_log_path, tail_log_file
 from backend.config import get_settings
@@ -33,8 +33,14 @@ class ClientLogEntry(BaseModel):
 class LlmKeysPatch(BaseModel):
     """Partial .env update — use env var names. Empty string removes a key."""
 
+    model_config = ConfigDict(extra="ignore")
+
     LLM_CLOUD_API_KEY: str | None = None
     GEMINI_API_KEY: str | None = None
+    GROQ_API_KEY: str | None = None
+    CEREBRAS_API_KEY: str | None = None
+    MISTRAL_API_KEY: str | None = None
+    GITHUB_TOKEN: str | None = None
     LLM_OPENROUTER_API_KEY: str | None = None
     LLM_ANTHROPIC_API_KEY: str | None = None
     NIM_API_KEY: str | None = None
@@ -42,6 +48,8 @@ class LlmKeysPatch(BaseModel):
     TAVILY_API_KEY: str | None = None
     LLM_ROUTE_PROFILE: str | None = None
     OLLAMA_URL: str | None = None
+    LMSTUDIO_URL: str | None = None
+    OLLAMA_NATIVE_URL: str | None = None
     OLLAMA_MODEL: str | None = None
     LLM_PROVIDER: str | None = None
     OLLAMA_ENABLED: str | None = None
@@ -122,13 +130,18 @@ def get_llm_env(_user: User = Depends(get_current_user)) -> dict[str, Any]:
 @router.patch("/llm/keys")
 def patch_llm_keys(body: LlmKeysPatch, _user: User = Depends(get_current_user)) -> dict[str, Any]:
     """Update LLM-related keys in repo .env (whitelisted vars only)."""
+    dumped = body.model_dump(exclude_unset=True)
     updates: dict[str, str] = {}
-    for key in ALLOWED_ENV_KEYS:
-        value = getattr(body, key, None)
-        if value is not None:
-            updates[key] = value
+    for key, value in dumped.items():
+        upper = str(key).strip().upper()
+        if upper not in ALLOWED_ENV_KEYS or value is None:
+            continue
+        updates[upper] = value
     if not updates:
-        raise HTTPException(status_code=400, detail="No allowed keys in request")
+        raise HTTPException(
+            status_code=400,
+            detail="No allowed keys in request — paste a key value then Save (empty drafts are skipped)",
+        )
     written = patch_env(updates)
     return {"status": "ok", "written": written, "env": get_llm_env_status()}
 

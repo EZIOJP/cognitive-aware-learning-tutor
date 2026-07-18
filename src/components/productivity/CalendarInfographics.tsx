@@ -12,9 +12,16 @@ type Props = {
   desktop: DesktopStats | null;
   dueReviews: number;
   onScheduleReview?: () => void;
+  /** e.g. "today", "this week", "this month" */
+  rangeLabel?: string;
 };
 
-export function CalendarInfographics({ desktop, dueReviews, onScheduleReview }: Props) {
+export function CalendarInfographics({
+  desktop,
+  dueReviews,
+  onScheduleReview,
+  rangeLabel = "today",
+}: Props) {
   const avgScore = desktop?.avg_productivity_score ?? 0;
   const scoreColor =
     avgScore >= 80 ? "text-emerald-400" :
@@ -25,7 +32,7 @@ export function CalendarInfographics({ desktop, dueReviews, onScheduleReview }: 
     <div className="space-y-4">
       <div className="flex items-center gap-2 text-xs text-muted-foreground uppercase tracking-wider">
         <TrendingUp size={14} className="text-violet-400" />
-        Quick stats
+        Quick stats · {rangeLabel}
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
@@ -35,13 +42,13 @@ export function CalendarInfographics({ desktop, dueReviews, onScheduleReview }: 
             Screen score
           </div>
           <div className={`text-4xl font-bold tabular-nums ${scoreColor}`}>{avgScore}</div>
-          <p className="text-[11px] text-muted-foreground">Weighted productivity today</p>
+          <p className="text-[11px] text-muted-foreground">Weighted productivity · {rangeLabel}</p>
         </div>
 
         <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4 flex flex-col justify-between">
           <div className="flex items-center gap-2 font-medium text-sm">
             <Clock size={15} className="text-blue-400" />
-            Tracked today
+            Tracked {rangeLabel}
           </div>
           <div className="text-4xl font-bold tabular-nums">
             {desktop ? fmtMinutes(Math.round(desktop.total_seconds / 60)) : "—"}

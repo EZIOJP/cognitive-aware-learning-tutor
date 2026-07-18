@@ -12,7 +12,12 @@ from pathlib import Path
 from tkinter import messagebox, scrolledtext, ttk
 
 from transcript_studio.config import load_config, save_config
-from transcript_studio.llm_client import LlmOptions, llm_reachable
+from transcript_studio.llm_client import (
+    DEFAULT_LMSTUDIO_MODEL,
+    LlmOptions,
+    llm_reachable,
+    lmstudio_loaded_model,
+)
 from transcript_studio.log_setup import log_error
 from transcript_studio.paths import notes_dir, transcripts_dir
 
@@ -47,12 +52,12 @@ class ClassicNotesApp(tk.Tk):
         self.url_var = tk.StringVar(value=self.cfg.llm_base_url or "http://127.0.0.1:1234")
         ttk.Entry(row, textvariable=self.url_var, width=36).pack(side=tk.LEFT, padx=6)
         ttk.Label(row, text="Model").pack(side=tk.LEFT)
-        self.model_var = tk.StringVar(
-            value=self.cfg.llm_model if "gemma" in (self.cfg.llm_model or "").lower() or self.cfg.llm_model
-            else "google/gemma-3-4b-it"
-        )
-        if any(x in (self.model_var.get() or "").lower() for x in ("gemini", "gpt", "claude", "openrouter")):
-            self.model_var.set("google/gemma-3-4b-it")
+        configured = (self.cfg.llm_model or "").strip()
+        if not configured or any(
+            x in configured.lower() for x in ("gemini", "gpt", "claude", "openrouter")
+        ):
+            configured = DEFAULT_LMSTUDIO_MODEL
+        self.model_var = tk.StringVar(value=configured)
         ttk.Entry(row, textvariable=self.model_var, width=28).pack(side=tk.LEFT, padx=6)
 
         row2 = ttk.Frame(self)
@@ -122,7 +127,7 @@ class ClassicNotesApp(tk.Tk):
         return LlmOptions(
             provider="lmstudio",
             base_url=self.url_var.get().strip().rstrip("/") or "http://127.0.0.1:1234",
-            model=self.model_var.get().strip() or "google/gemma-3-4b-it",
+            model=self.model_var.get().strip() or DEFAULT_LMSTUDIO_MODEL,
             max_tokens=int(getattr(self.cfg, "llm_max_tokens", 8192) or 8192),
             temperature=float(getattr(self.cfg, "llm_temperature", 0.3) or 0.3),
             api_key=self.cfg.llm_api_key or "lm-studio",
@@ -130,6 +135,11 @@ class ClassicNotesApp(tk.Tk):
 
     def _apply_lm_to_cfg(self) -> LlmOptions:
         opts = self._opts()
+        # Prefer whatever LLM is currently loaded in LM Studio.
+        loaded = lmstudio_loaded_model(opts.base_url, api_key=opts.api_key)
+        if loaded and loaded != opts.model:
+            self.model_var.set(loaded)
+            opts = self._opts()
         self.cfg.llm_provider = "lmstudio"
         self.cfg.llm_base_url = opts.base_url
         self.cfg.llm_model = opts.model
@@ -140,7 +150,7 @@ class ClassicNotesApp(tk.Tk):
 
     def _ping(self) -> None:
         opts = self._apply_lm_to_cfg()
-        ok = llm_reachable(self.cfg)
+        ok = llm_reachable(opts)
         self.status_var.set(
             f"LM Studio {'reachable' if ok else 'OFFLINE'} · {opts.base_url} · {opts.model}"
         )
@@ -187,7 +197,7 @@ class ClassicNotesApp(tk.Tk):
 
     def _ensure_lm(self) -> LlmOptions | None:
         opts = self._apply_lm_to_cfg()
-        if not llm_reachable(self.cfg):
+        if not llm_reachable(opts):
             messagebox.showerror(
                 "LM Studio offline",
                 f"Start LM Studio local server and load {opts.model}.\n{opts.base_url}",

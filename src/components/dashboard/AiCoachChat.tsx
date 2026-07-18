@@ -4,6 +4,7 @@ import { postInsightsChat, type ChatMessage } from "../../api/hubClient";
 import { loadLlmPrefs } from "../../api/transcriptsClient";
 import { Button } from "../../app/components/ui/button";
 import { Input } from "../../app/components/ui/input";
+import { useEaster } from "../../easter";
 
 type AiCoachChatProps = {
   /** Seed the thread with the daily review comment. */
@@ -31,6 +32,7 @@ export function AiCoachChat({
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const { burst } = useEaster();
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -39,6 +41,11 @@ export function AiCoachChat({
   const send = useCallback(async () => {
     const text = input.trim();
     if (!text || sending) return;
+    if (text.toLowerCase() === "psst") {
+      setInput("");
+      burst("hat");
+      return;
+    }
     setInput("");
     setError(null);
     const next: ChatMessage[] = [...messages, { role: "user", content: text }];
@@ -53,7 +60,7 @@ export function AiCoachChat({
     } finally {
       setSending(false);
     }
-  }, [input, messages, sending]);
+  }, [burst, input, messages, sending]);
 
   return (
     <div className={`flex flex-col min-h-0 ${className}`}>

@@ -196,12 +196,16 @@ def backlog_summary(db: Session, *, user_id: int) -> dict[str, Any]:
 
     decks = db.query(QuizDeck).filter(QuizDeck.user_id == user_id).count()
 
-    recommended = "sign_in"
-    if due_total > 0:
-        recommended = "review_due"
-    elif by_domain.get("vocab", 0) == 0:
-        recommended = "start_vocab"
-    elif decks == 0:
+    from backend.quiz.next_step import compute_next_step
+
+    next_step = compute_next_step(db, user_id=user_id)
+    # Alias for one release — maps new actions onto legacy enum when possible
+    recommended = str(next_step.get("action") or "lecture_notes")
+    if recommended == "math_drill":
+        recommended = "lecture_notes"  # legacy clients; FE should prefer next_step
+    elif recommended == "notes_quiz":
+        recommended = "lecture_notes"
+    elif recommended not in ("sign_in", "review_due", "start_vocab", "lecture_notes"):
         recommended = "lecture_notes"
 
     weak_topics = sorted(_weak_topic_labels(db, user_id))[:12]
@@ -213,6 +217,7 @@ def backlog_summary(db: Session, *, user_id: int) -> dict[str, Any]:
         "deck_count": decks,
         "next_due": next_due.isoformat() if next_due else None,
         "recommended_action": recommended,
+        "next_step": next_step,
         "weak_topics": weak_topics,
     }
 

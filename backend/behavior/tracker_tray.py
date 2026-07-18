@@ -65,15 +65,9 @@ def run_tray(service: "TrackerService") -> None:
     def make_icon() -> Image.Image:
         img = Image.new("RGB", (64, 64), color=(30, 41, 59))
         draw = ImageDraw.Draw(img)
-        color = (52, 211, 153) if not service.paused else (251, 146, 60)
-        draw.ellipse((12, 12, 52, 52), fill=color)
+        # Always "armed" — no tray Pause (hard-block stays strict).
+        draw.ellipse((12, 12, 52, 52), fill=(52, 211, 153))
         return img
-
-    def on_toggle(icon: pystray.Icon, _item: pystray.MenuItem) -> None:
-        service.set_paused(not service.paused)
-        icon.title = "CALT Tracker (Paused)" if service.paused else "CALT Tracker"
-        icon.icon = make_icon()
-        icon.menu = build_menu()
 
     def on_show_plan(_icon: pystray.Icon, _item: pystray.MenuItem) -> None:
         show_today_schedule_for_service(service)
@@ -94,19 +88,14 @@ def run_tray(service: "TrackerService") -> None:
         open_tracker_log()
 
     def build_menu() -> pystray.Menu:
-        status = "Paused" if service.paused else "Running"
         return pystray.Menu(
-            pystray.MenuItem(lambda _i: f"Status: {status}", None, enabled=False),
+            pystray.MenuItem(lambda _i: "Status: Running (no pause)", None, enabled=False),
             pystray.MenuItem(lambda _i: f"User: {service.username}", None, enabled=False),
             pystray.MenuItem(lambda _i: fmt_today(), None, enabled=False),
             pystray.MenuItem(lambda _i: _fmt_plan_now(service), None, enabled=False),
             pystray.MenuItem(lambda _i: _fmt_plan_next(service), None, enabled=False),
             pystray.Menu.SEPARATOR,
             pystray.MenuItem("Show today's plan", on_show_plan, default=True),
-            pystray.MenuItem(
-                "Resume" if service.paused else "Pause",
-                on_toggle,
-            ),
             pystray.Menu.SEPARATOR,
             pystray.MenuItem("Start API + frontend", on_start_app),
             pystray.MenuItem("Transcript Notes Studio", on_start_studio),
@@ -115,13 +104,17 @@ def run_tray(service: "TrackerService") -> None:
             pystray.MenuItem("View tracker log", on_open_log),
         )
 
+    # Ensure pause cannot stick from an older build
+    if service.paused:
+        service.set_paused(False)
+
     icon = pystray.Icon(
         "calt_tracker",
         make_icon(),
         "CALT Tracker — right-click for menu",
         menu=build_menu(),
     )
-    log.info("System tray icon active")
+    log.info("System tray icon active (pause disabled)")
     icon.run()
 
 

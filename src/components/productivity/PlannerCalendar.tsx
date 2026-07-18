@@ -8,7 +8,7 @@ import {
   Views,
 } from "react-big-calendar";
 import withDragAndDrop from "react-big-calendar/lib/addons/dragAndDrop";
-import { format, getDay, parse, startOfWeek, endOfWeek, startOfDay, endOfDay } from "date-fns";
+import { format, getDay, parse, startOfWeek, endOfWeek, startOfDay, endOfDay, startOfMonth, endOfMonth } from "date-fns";
 import { enUS } from "date-fns/locale";
 import {
   blockColor,
@@ -22,11 +22,14 @@ import {
   updatePlannerBlock,
   type ActualSession,
   type PlannerBlock,
+  type ProposedPlannerBlock,
 } from "../../api/plannerClient";
 import { mergeForCalendar, stackActualByHour, mergedIntervalLabel, parseApiDate, actualStackTimeSpan, eventsOverlapForFocus } from "./planVsActualUtils";
 import { ActualStackEvent } from "./ActualStackEvent";
 import { ActualFocusPanel, type EventAnchorRect } from "./ActualFocusPanel";
 import { CalendarFocusContext } from "./calendarFocusContext";
+import { Settings2 } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "../../app/components/ui/popover";
 import { PlannerBlockActions } from "./PlannerBlockActions";
 import { PlannerBlockForm } from "./PlannerBlockForm";
 import "react-big-calendar/lib/css/react-big-calendar.css";
@@ -60,6 +63,7 @@ type CalendarEvent = {
   resource: PlannerBlock;
   isActual?: boolean;
   isStack?: boolean;
+  isDraft?: boolean;
   actualStack?: import("./planVsActualUtils").MergedInterval[];
   stackTotalSeconds?: number;
 };
@@ -71,9 +75,11 @@ function EventChip(props: EventProps<CalendarEvent>) {
   return (
     <div className="text-[11px] leading-tight px-0.5 overflow-hidden">
       <div className="font-medium truncate">{props.event.title}</div>
-      {props.event.resource.status === "in_progress" && (
+      {props.event.isDraft ? (
+        <div className="opacity-80">draft</div>
+      ) : props.event.resource.status === "in_progress" ? (
         <div className="opacity-80">in progress</div>
-      )}
+      ) : null}
     </div>
   );
 }
@@ -84,11 +90,16 @@ function eventTitle(block: PlannerBlock): string {
   return `${block.title} (${block.remaining_minutes}m left)`;
 }
 
-function emptyActualResource(title: string, start: string, end: string): PlannerBlock {
+function emptyActualResource(
+  title: string,
+  start: string,
+  end: string,
+  category = "actual",
+): PlannerBlock {
   return {
     id: -1,
     title,
-    category: "actual",
+    category,
     start_at: start,
     end_at: end,
     planned_minutes: 0,
@@ -108,6 +119,11 @@ type Props = {
   refreshKey?: number;
   /** Taller layout + month view for dedicated Calendar tab */
   expanded?: boolean;
+  /** Controlled calendar view (day / week / month) */
+  view?: View;
+  onViewChange?: (view: View) => void;
+  /** Unsaved propose-plan blocks shown as draft overlays */
+  draftBlocks?: ProposedPlannerBlock[] | null;
 };
 
 export function PlannerCalendar({
@@ -115,9 +131,17 @@ export function PlannerCalendar({
   onSelectedDayChange,
   refreshKey = 0,
   expanded = false,
+  view: viewProp,
+  onViewChange,
+  draftBlocks = null,
 }: Props) {
-  const [view, setView] = useState<View>(Views.WEEK);
-  const [date, setDate] = useState(new Date());
+  const [viewInternal, setViewInternal] = useState<View>(Views.WEEK);
+  const view = viewProp ?? viewInternal;
+  const setView = (next: View) => {
+    if (viewProp === undefined) setViewInternal(next);
+    onViewChange?.(next);
+  };
+  const [date, setDate] = useState(() => (selectedDay ? startOfDay(selectedDay) : new Date()));
   const [step, setStep] = useState(30);
   const [blocks, setBlocks] = useState<PlannerBlock[]>([]);
   const [actuals, setActuals] = useState<ActualSession[]>([]);
@@ -135,6 +159,12 @@ export function PlannerCalendar({
   const range = useMemo(() => {
     if (view === Views.DAY) {
       return { from: startOfDay(date), to: endOfDay(date) };
+    }
+    if (view === Views.MONTH) {
+      return {
+        from: startOfWeek(startOfMonth(date), { weekStartsOn: 1 }),
+        to: endOfWeek(endOfMonth(date), { weekStartsOn: 1 }),
+      };
     }
     return { from: startOfWeek(date, { weekStartsOn: 1 }), to: endOfWeek(date, { weekStartsOn: 1 }) };
   }, [view, date]);
@@ -178,10 +208,27 @@ export function PlannerCalendar({
         resource: b,
       }));
 
-    if (!showActual) return planned;
+    const draftEvents: CalendarEvent[] = (draftBlocks ?? [])
+      .filter((b) => b.source !== "existing")
+      .map((b, i) => {
+        const start = parseApiDate(b.start_at);
+        const end = parseApiDate(b.end_at);
+        return {
+          id: -5000 - i,
+          title: b.title,
+          start,
+          end,
+          isDraft: true,
+          resource: emptyActualResource(b.title, b.start_at, b.end_at, b.category),
+        };
+      });
+
+    if (!showActual) {
+      return [...planned, ...draftEvents];
+    }
 
     const merged = mergeForCalendar(actuals);
-    const useStacks = view === Views.WEEK || view === Views.MONTH;
+    const useStacks = view === Views.MONTH; // week: real time spans
 
     let actualEvents: CalendarEvent[];
 
@@ -220,8 +267,8 @@ export function PlannerCalendar({
       }));
     }
 
-    return [...planned, ...actualEvents];
-  }, [blocks, actuals, showActual, view]);
+    return [...planned, ...draftEvents, ...actualEvents];
+  }, [blocks, actuals, showActual, view, draftBlocks]);
 
   const focusedEvent = useMemo(
     () => (focusedEventId == null ? null : events.find((e) => e.id === focusedEventId) ?? null),
@@ -356,6 +403,19 @@ export function PlannerCalendar({
           },
         };
       }
+      if (event.isDraft) {
+        const color = blockColor(event.resource.category, event.resource.color);
+        return {
+          className: ["planner-draft-event", focusClass].filter(Boolean).join(" "),
+          style: {
+            background: `linear-gradient(135deg, ${color}55, ${color}28)`,
+            border: `1.5px dashed ${color}`,
+            color: "#fff",
+            opacity: isDimmed ? 0.2 : 0.92,
+            borderRadius: 8,
+          },
+        };
+      }
       const color = blockColor(event.resource.category, event.resource.color);
       const faded = event.resource.status === "done";
       return {
@@ -372,7 +432,7 @@ export function PlannerCalendar({
   );
 
   const onEventDrop = async ({ event, start, end }: { event: CalendarEvent; start: Date; end: Date }) => {
-    if (event.isActual || event.id < 0) return;
+    if (event.isActual || event.isDraft || event.id < 0) return;
     try {
       const mins = event.resource.remaining_minutes;
       await updatePlannerBlock(event.id, {
@@ -427,64 +487,93 @@ export function PlannerCalendar({
     setSlotStart(slot.start);
   };
 
+  const isEmpty =
+    !loading &&
+    blocks.filter((b) => b.status !== "rolled").length === 0 &&
+    (!showActual || actuals.length === 0);
+
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2 justify-between planner-toolbar-row">
         <div className="flex flex-wrap gap-2 items-center">
-          <span className="text-xs text-muted-foreground uppercase tracking-wider">Zoom</span>
-          {[15, 30, 60].map((s) => (
-            <button
-              key={s}
-              type="button"
-              onClick={() => setStep(s)}
-              className={`px-2 py-1 rounded text-xs border ${
-                step === s
-                  ? "border-violet-500 bg-violet-500/20 text-violet-200"
-                  : "border-white/10 text-muted-foreground"
-              }`}
-            >
-              {s}m
-            </button>
-          ))}
-          <label className="flex items-center gap-1.5 text-xs text-muted-foreground ml-2">
+          <label
+            className="flex items-center gap-1.5 text-xs text-muted-foreground"
+            title="Blue blocks are tracked sessions. Click for details; ← → cycles overlaps."
+          >
             <input
               type="checkbox"
               checked={showActual}
               onChange={(e) => setShowActual(e.target.checked)}
             />
-            Show actual tracking
-            <span className="text-[10px] opacity-70">(click blue block for details · ← → cycles overlaps)</span>
+            Show actual
           </label>
-          <p className="text-[10px] text-muted-foreground w-full basis-full">
-            Calendar groups sessions within <strong className="text-foreground/80">15 min</strong>; Day ribbon uses{" "}
-            <strong className="text-foreground/80">2 min</strong> — same data, different zoom.
-          </p>
-          <p className="text-[10px] text-muted-foreground/80 w-full sm:w-auto">
-            Calendar groups sessions within <strong className="font-medium text-foreground/80">15 min</strong>; Day
-            ribbon uses <strong className="font-medium text-foreground/80">2 min</strong> — same data, different zoom.
-          </p>
-          <span className="text-xs text-muted-foreground uppercase tracking-wider ml-2">Height</span>
-          {(
-            [
-              ["compact", "S"],
-              ["normal", "M"],
-              ["tall", "L"],
-              ["xlo", "XL"],
-            ] as const
-          ).map(([key, label]) => (
-            <button
-              key={key}
-              type="button"
-              onClick={() => setHourStretch(key)}
-              className={`px-2 py-1 rounded text-xs border ${
-                hourStretch === key
-                  ? "border-sky-500 bg-sky-500/20 text-sky-200"
-                  : "border-white/10 text-muted-foreground"
-              }`}
-            >
-              {label}
-            </button>
-          ))}
+          <Popover>
+            <PopoverTrigger asChild>
+              <button
+                type="button"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs border border-white/10 text-muted-foreground hover:bg-white/5 hover:text-foreground"
+              >
+                <Settings2 size={12} />
+                Display
+                <span className="text-[10px] opacity-60">
+                  {step}m · {hourStretch === "compact" ? "S" : hourStretch === "normal" ? "M" : hourStretch === "tall" ? "L" : "XL"}
+                </span>
+              </button>
+            </PopoverTrigger>
+            <PopoverContent align="start" className="w-64 space-y-3 bg-popover/95 backdrop-blur-sm">
+              <div>
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1.5">Zoom</p>
+                <div className="flex gap-1.5">
+                  {[15, 30, 60].map((s) => (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => setStep(s)}
+                      className={`flex-1 px-2 py-1 rounded text-xs border ${
+                        step === s
+                          ? "border-primary/40 bg-primary/15 text-primary"
+                          : "border-white/10 text-muted-foreground"
+                      }`}
+                    >
+                      {s}m
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1.5">Row height</p>
+                <div className="flex gap-1.5">
+                  {(
+                    [
+                      ["compact", "S"],
+                      ["normal", "M"],
+                      ["tall", "L"],
+                      ["xlo", "XL"],
+                    ] as const
+                  ).map(([key, label]) => (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => setHourStretch(key)}
+                      className={`flex-1 px-2 py-1 rounded text-xs border ${
+                        hourStretch === key
+                          ? "border-primary/40 bg-primary/15 text-primary"
+                          : "border-white/10 text-muted-foreground"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <p className="text-[10px] text-muted-foreground leading-relaxed">
+                Calendar merges sessions within 15 min; Day ribbon uses 2 min — same data, different zoom.
+              </p>
+            </PopoverContent>
+          </Popover>
+          <span className="hidden sm:inline text-[10px] text-muted-foreground/80">
+            KPIs above follow Month / Week / Day
+          </span>
         </div>
         {loading && <span className="text-xs text-muted-foreground">Loading…</span>}
       </div>
@@ -497,6 +586,7 @@ export function PlannerCalendar({
           focusedEventId != null ? "planner-calendar--focus-mode overflow-visible" : ""
         } ${expanded ? "min-h-[640px]" : "min-h-[520px]"}`}
         data-hour-stretch={hourStretch}
+        data-calendar-view={view}
         onClickCapture={(e) => {
           if (focusedEventId == null) return;
           const t = e.target as HTMLElement;
@@ -510,17 +600,25 @@ export function PlannerCalendar({
           setEventAnchor(null);
         }}
       >
+        {isEmpty && (
+          <div className="pointer-events-none absolute inset-x-0 top-14 z-10 flex justify-center px-4">
+            <p className="rounded-lg border border-white/10 bg-black/70 px-3 py-2 text-center text-xs text-muted-foreground shadow-lg backdrop-blur-sm">
+              No blocks this view — click a time slot to plan, or open Import & routines for timetable / propose week.
+            </p>
+          </div>
+        )}
         <CalendarFocusContext.Provider value={{ focusedId: focusedEventId }}>
           <DnDCalendar
             localizer={localizer}
             events={events}
             view={view}
-            onView={setView}
+            onView={(next) => setView(next)}
             date={date}
             onNavigate={(newDate, nextView) => {
               setDate(newDate);
-              if (nextView === Views.DAY) {
-                onSelectedDayChange?.(startOfDay(newDate));
+              onSelectedDayChange?.(startOfDay(newDate));
+              if (nextView === Views.DAY || nextView === Views.WEEK || nextView === Views.MONTH) {
+                setView(nextView);
               }
             }}
             step={step}

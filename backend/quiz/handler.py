@@ -10,7 +10,8 @@ from typing import Any
 from sqlalchemy.orm import Session
 
 from backend.hub.services.knowledge_graph import log_observation, upsert_node
-from backend.math.services.randomizer import pick_from_bank
+from backend.math.answer_grade import answers_equivalent
+from backend.math.services.randomizer import pick_from_bank, pick_n_from_bank
 from backend.models import MathAttempt, QuizSession, User, WordProgress
 from backend.models.review_card import QuizDeck
 from backend.quiz import review_cards as rc_mod
@@ -177,8 +178,9 @@ def _item_to_question(
             "note_path": note_path,
             "answer_index": item.get("answer_index", 0),
             "hint": item.get("hint") or item.get("explanation"),
+            "concept": item.get("concept") or item.get("topic"),
             "review_card_id": item.get("review_card_id"),
-            "topic": item.get("topic"),
+            "topic": item.get("concept") or item.get("topic"),
             "source_chunk_id": item.get("source_chunk_id"),
             "citation": item.get("citation"),
         },
@@ -262,6 +264,85 @@ def start_deck_session(db: Session, *, user: User, deck_id: int) -> dict[str, An
     return {"session_id": session_id, "domain": domain, "question": q}
 
 
+def _auto_generate_study_questions(
+    db: Session,
+    user: User,
+    *,
+    note_path: str,
+    topic: str,
+    count: int = 12,
+    expand_siblings: bool = True,
+    llm: Any | None = None,
+    llm_tier: str | None = None,
+    confirm_heavy_budget: bool = False,
+) -> list[dict[str, Any]]:
+    """Build MCQs from an on-disk note via the global AI handler (task=quiz_gen)."""
+    from backend.core.ollama_client import LlmOptions
+    from backend.quiz.review_cards import weak_concepts_for_retrieval
+    from backend.transcripts.study_intel import (
+        expand_quiz_source_paths,
+        generate_quiz_items,
+        load_note_text,
+    )
+
+    rel = note_path.strip().replace("\\", "/")
+    if not rel:
+        return []
+    paths = expand_quiz_source_paths([rel]) if expand_siblings else [rel]
+    texts: list[str] = []
+    for path in paths[:8]:
+        try:
+            texts.append(load_note_text(db, user.id, path))
+        except (OSError, ValueError):
+            continue
+    if not any((t or "").strip() for t in texts):
+        return []
+
+    llm_opts = None
+    if isinstance(llm, LlmOptions):
+        llm_opts = llm
+    elif isinstance(llm, dict):
+        provider = llm.get("llm_provider") or llm.get("provider")
+        base_url = llm.get("llm_base_url") or llm.get("base_url")
+        model = llm.get("llm_model") or llm.get("model")
+        if any([provider, base_url, model]):
+            llm_opts = LlmOptions(provider=provider, base_url=base_url, model=model)
+
+    boost = weak_concepts_for_retrieval(db, user.id)
+    result = generate_quiz_items(
+        texts,
+        count=count,
+        topic=topic or rel.split("/")[-1].replace(".md", ""),
+        prefer_notes=True,
+        boost_concepts=boost or None,
+        source_labels=paths,
+        llm=llm_opts,
+        llm_tier=(llm_tier or "").strip() or None,
+        confirm_heavy_budget=bool(confirm_heavy_budget),
+    )
+    return list(result.get("questions") or [])
+
+
+def _is_low_quality_study_item(item: dict[str, Any]) -> bool:
+    prompt = str(item.get("question") or item.get("prompt") or "").casefold()
+    options = [str(option).casefold().strip() for option in item.get("options") or []]
+    junk_options = {
+        "description",
+        "why they matter",
+        "python list vs numpy array",
+        "housekeeping",
+        "setup",
+    }
+    return (
+        "which statement best matches" in prompt
+        or "which statement best describes the note section" in prompt
+        or "completes this claim" in prompt
+        or "____" in prompt
+        or any(option.startswith(("it relates to:", "mainly about:")) for option in options)
+        or any(option in junk_options for option in options)
+    )
+
+
 def start_session(
     db: Session,
     *,
@@ -313,38 +394,98 @@ def start_session(
 
     if domain == "math":
         topic = str(config.get("topic") or "Arithmetic")
-        problem = pick_from_bank(db, topic) or pick_from_bank(db, None)
-        if not problem:
-            raise ValueError("No math questions in bank. Add templates or import questions first.")
-        payload = _build_session_payload(config, extra={"topic": topic, "problem": problem})
+        count = int(config.get("count") or config.get("question_count") or 5)
+        skill_id = config.get("node_id") or config.get("skill_id")
+        skill_id_s = str(skill_id).strip() if skill_id else None
+
+        items: list[dict[str, Any]] = []
+        if skill_id_s:
+            from backend.math.skills import generate_drill_items, get_node, node_status
+
+            node = get_node(skill_id_s)
+            if not node:
+                raise ValueError(f"Unknown math skill node: {skill_id_s}")
+            st = node_status(db, user_id=user.id, node=node)
+            if st == "locked":
+                raise ValueError(f"Skill '{skill_id_s}' is locked. Master prerequisites first.")
+            items = generate_drill_items(skill_id_s, count, db=db, user_id=user.id)
+            topic = str(node.get("topic") or topic)
+        else:
+            problems = pick_n_from_bank(db, topic, count, skill_id=None)
+            if not problems and topic:
+                problems = pick_n_from_bank(db, None, count, skill_id=None)
+            if not problems:
+                problem = pick_from_bank(db, topic) or pick_from_bank(db, None)
+                if not problem:
+                    raise ValueError("No math questions in bank. Add templates or import questions first.")
+                problems = [problem]
+            items = [
+                {
+                    "kind": "math",
+                    "id": str(p.get("question_id") or f"{topic}-{i}"),
+                    "prompt": p.get("prompt") or f"Solve: {topic}",
+                    "expected_answer": p.get("expected_answer"),
+                    "topic": p.get("topic") or topic,
+                    "hint": p.get("explanation"),
+                    "question_id": p.get("question_id"),
+                    "generated_id": p.get("generated_id"),
+                    "skill_id": None,
+                }
+                for i, p in enumerate(problems)
+            ]
+
+        extra: dict[str, Any] = {"topic": topic}
+        if skill_id_s:
+            extra["skill_id"] = skill_id_s
+            extra["node_id"] = skill_id_s
+        payload = _build_session_payload(config, items=items, extra=extra)
         session_id = create_global_session(db, user_id=user.id, domain="math", payload=payload)
-        q = _item_to_question(
-            {
-                "kind": "math",
-                "id": problem.get("question_id") or topic,
-                "prompt": problem.get("prompt") or f"Solve: {topic}",
-                "expected_answer": problem.get("expected_answer"),
-                "topic": topic,
-            },
-            0,
-            1,
-            "",
-            db,
-            payload,
-        )
+        q = _study_question_from_payload(items, 0, "", db, payload)
         return {"session_id": session_id, "domain": "math", "question": q}
 
     if domain in ("study", "code", "mixed"):
-        questions = config.get("questions") or []
-        drills = config.get("drills") or []
+        questions = [
+            q
+            for q in list(config.get("questions") or [])
+            if isinstance(q, dict) and not _is_low_quality_study_item(q)
+        ]
+        drills = list(config.get("drills") or [])
         items: list[dict[str, Any]] = list(config.get("items") or [])
+        note_path = str(config.get("note_path") or "")
+
+        if not questions and not drills and not items and note_path and config.get("auto_generate", True):
+            count = int(config.get("count") or config.get("question_count") or 5)
+            topic = str(config.get("topic") or note_path.split("/")[-1].replace(".md", ""))
+            llm_cfg = {
+                "llm_provider": config.get("llm_provider"),
+                "llm_base_url": config.get("llm_base_url"),
+                "llm_model": config.get("llm_model"),
+            }
+            generated = _auto_generate_study_questions(
+                db,
+                user,
+                note_path=note_path,
+                topic=topic,
+                count=count,
+                expand_siblings=bool(config.get("expand_siblings", True)),
+                llm=llm_cfg,
+                llm_tier=str(config.get("llm_tier") or "").strip() or None,
+                confirm_heavy_budget=bool(config.get("confirm_heavy_budget")),
+            )
+            if not generated:
+                raise ValueError(
+                    "Could not auto-generate quiz from note. Open Lecture Notes and use Generate quiz first."
+                )
+            questions = generated
+
         for q in questions:
             items.append({"kind": "mcq", **q})
         for d in drills:
             items.append({"kind": "code", **d})
         if not items:
-            raise ValueError("Provide questions and/or drills for study/code quizzes.")
-        note_path = str(config.get("note_path") or "")
+            raise ValueError(
+                "Provide questions/drills, or set note_path with auto_generate for study quizzes."
+            )
         payload = _build_session_payload(config, items=items, extra={"note_path": note_path})
         session_domain = domain if domain != "mixed" else "mixed"
         if session_domain == "mixed":
@@ -529,7 +670,7 @@ def _submit_math(
 ) -> dict[str, Any]:
     problem = sess["payload"].get("problem") or {}
     expected = str(problem.get("expected_answer") or problem.get("answer") or "")
-    correct = _normalize_answer(response) == _normalize_answer(expected)
+    correct = answers_equivalent(expected, response)
     topic = str(sess["payload"].get("topic") or "Arithmetic")
     attempt = MathAttempt(
         user_id=user.id,
@@ -632,13 +773,62 @@ def _submit_study(
         topic = word.get("word")
     elif kind == "math":
         expected = str(item.get("expected_answer") or "")
-        correct = _normalize_answer(response) == _normalize_answer(expected)
-        feedback = "Correct!" if correct else f"Expected: {expected}"
+        correct = answers_equivalent(expected, response)
+        strategy = str(item.get("hint") or item.get("explanation") or "").strip()
+        if correct:
+            feedback = "Correct!"
+            if time_taken_ms and time_taken_ms <= 3000:
+                feedback = "Correct — instant!"
+            elif time_taken_ms and time_taken_ms <= 8000:
+                feedback = "Correct — solid pace."
+            else:
+                feedback = "Correct — aim for under 8s next time."
+        else:
+            feedback = f"Expected: {expected}"
+            if strategy:
+                feedback = f"{feedback}\n\nStrategy: {strategy}"
         label = str(item.get("prompt") or item.get("topic") or "Math")[:300]
         domain = "math"
         payload = dict(item)
         fmt = "free_text"
-        topic = str(item.get("topic") or "math")
+        topic = str(item.get("topic") or sess["payload"].get("topic") or "math")
+        attempt = MathAttempt(
+            user_id=user.id,
+            topic=topic,
+            prompt=str(item.get("prompt") or ""),
+            user_answer=response,
+            expected_answer=expected,
+            is_correct=correct,
+            question_id=item.get("question_id"),
+            generated_id=item.get("generated_id"),
+        )
+        db.add(attempt)
+        db.commit()
+        math_node = upsert_node(db, user_id=user.id, label=topic, node_type="math_topic")
+        math_meta = json.loads(math_node.metadata_json or "{}") if math_node.metadata_json else {}
+        math_state = srs_mod.schedule_after_answer(
+            srs_mod.srs_from_metadata(math_meta.get("srs")), correct=correct, elapsed_ms=time_taken_ms
+        )
+        math_meta["srs"] = srs_mod.srs_to_metadata(math_state)
+        # Speed samples for mastery unlock
+        recent_ms = list(math_meta.get("recent_ms") or [])
+        if time_taken_ms > 0:
+            recent_ms.append(int(time_taken_ms) if correct else int(time_taken_ms * 1.15))
+            math_meta["recent_ms"] = recent_ms[-40:]
+        factors = item.get("factors") or []
+        if not correct and factors:
+            weak = list(math_meta.get("weak_factors") or [])
+            weak.extend(int(f) for f in factors if isinstance(f, (int, float)) or str(f).isdigit())
+            math_meta["weak_factors"] = weak[-60:]
+        math_node.metadata_json = json.dumps(math_meta)
+        db.commit()
+        log_observation(
+            db,
+            node_id=math_node.id,
+            user_id=user.id,
+            interaction_type="math_pass" if correct else "math_fail",
+            value=1.0 if correct else 0.0,
+        )
     elif kind == "code" or "starter_code" in item:
         starter = str(item.get("starter_code") or "").strip()
         submitted = response.strip()
@@ -656,58 +846,74 @@ def _submit_study(
         ans_idx = int(item.get("answer_index", 0))
         expected = opts[ans_idx] if opts and 0 <= ans_idx < len(opts) else ""
         correct = response.strip() == expected.strip()
-        feedback = item.get("explanation") or ("Correct!" if correct else f"Expected: {expected}")
+        concept = str(item.get("concept") or item.get("topic") or "").strip()
+        base_fb = item.get("explanation") or ("Correct!" if correct else f"Expected: {expected}")
+        if correct:
+            feedback = str(base_fb)
+        elif concept:
+            feedback = f"{base_fb}\n\nTopic to review: {concept}"
+        else:
+            feedback = str(base_fb)
         label = str(item.get("question") or item.get("prompt") or "Question")[:300]
         domain = str(item.get("domain") or sess["domain"] or "study")
         if domain == "mixed":
             domain = "study"
         payload = dict(item)
         fmt = "mcq"
-        topic = str(item.get("question") or sess["payload"].get("topic") or "study")[:120]
+        topic = concept or str(sess["payload"].get("topic") or "study")[:120]
 
     source_chunk_id = str(item.get("source_chunk_id") or payload.get("source_chunk_id") or "").strip()
+    eligible_for_review = not (
+        kind not in ("vocab", "math", "code")
+        and _is_low_quality_study_item(item)
+    )
 
-    if source_chunk_id:
-        node = upsert_node(
-            db,
-            user_id=user.id,
-            label=f"chunk:{source_chunk_id}",
-            node_type="chunk",
-            metadata={"chunk_id": source_chunk_id},
-            note_path=note_path or None,
+    if kind != "math" and eligible_for_review:
+        if source_chunk_id:
+            node = upsert_node(
+                db,
+                user_id=user.id,
+                label=f"chunk:{source_chunk_id}",
+                node_type="chunk",
+                metadata={"chunk_id": source_chunk_id},
+                note_path=note_path or None,
+            )
+        else:
+            node = upsert_node(
+                db, user_id=user.id, label=topic or label, node_type="concept", note_path=note_path or None
+            )
+        meta = json.loads(node.metadata_json or "{}") if node.metadata_json else {}
+        state = srs_mod.schedule_after_answer(
+            srs_mod.srs_from_metadata(meta.get("srs")), correct=correct, elapsed_ms=time_taken_ms
         )
-    else:
-        node = upsert_node(db, user_id=user.id, label=topic or label, node_type="concept", note_path=note_path or None)
-    meta = json.loads(node.metadata_json or "{}") if node.metadata_json else {}
-    state = srs_mod.schedule_after_answer(
-        srs_mod.srs_from_metadata(meta.get("srs")), correct=correct, elapsed_ms=time_taken_ms
-    )
-    meta["srs"] = srs_mod.srs_to_metadata(state)
-    meta["domain"] = domain
-    node.metadata_json = json.dumps(meta)
-    db.commit()
-    log_observation(
-        db,
-        node_id=node.id,
-        user_id=user.id,
-        interaction_type="quiz_pass" if correct else "quiz_fail",
-        value=1.0 if correct else 0.0,
-    )
+        meta["srs"] = srs_mod.srs_to_metadata(state)
+        meta["domain"] = domain
+        node.metadata_json = json.dumps(meta)
+        db.commit()
+        log_observation(
+            db,
+            node_id=node.id,
+            user_id=user.id,
+            interaction_type="quiz_pass" if correct else "quiz_fail",
+            value=1.0 if correct else 0.0,
+        )
 
-    mastery = _record_review_card(
-        db,
-        user=user,
-        domain=domain,
-        item_id=str(item.get("id") or item_id),
-        label=label,
-        payload=payload,
-        correct=correct,
-        time_taken_ms=time_taken_ms,
-        topic=topic,
-        note_path=note_path or None,
-        fmt=fmt,
-        deck_id=int(deck_id) if deck_id else None,
-    )
+    mastery = 0
+    if eligible_for_review:
+        mastery = _record_review_card(
+            db,
+            user=user,
+            domain=domain,
+            item_id=str(item.get("id") or item_id),
+            label=label,
+            payload=payload,
+            correct=correct,
+            time_taken_ms=time_taken_ms,
+            topic=topic,
+            note_path=note_path or None,
+            fmt=fmt,
+            deck_id=int(deck_id) if deck_id else None,
+        )
 
     sess["attempts"].append(
         {
@@ -719,6 +925,24 @@ def _submit_study(
             "label": label,
         }
     )
+    requeued = False
+    if (
+        not correct
+        and eligible_for_review
+        and not item.get("_requeued")
+        and (
+            (fmt == "mcq" and kind not in ("vocab", "math", "code"))
+            or kind == "math"
+        )
+    ):
+        # Re-ask later in this session (mental math: drill weak facts again).
+        retry = dict(item)
+        retry["id"] = f"{item.get('id') or item_id}-retry"
+        retry["_requeued"] = True
+        items.append(retry)
+        sess["payload"]["items"] = items
+        requeued = True
+
     sess["index"] += 1
     save_global_session(db, sess)
     next_q = (
@@ -732,11 +956,14 @@ def _submit_study(
         "mastery": mastery,
         "complete": next_q is None,
         "next_question": next_q,
-        "added_to_review": True,
+        "added_to_review": eligible_for_review,
+        "requeued": requeued,
     }
 
 
 def complete_session(db: Session, *, user: User, session_id: str) -> dict[str, Any]:
+    from backend.quiz.next_step import compute_next_step
+
     vocab_sess = get_quiz_session(db, session_id, user.id)
     if vocab_sess and _is_vocab_session(vocab_sess):
         hub_id = complete_quiz_session(db, session_id, user.id)
@@ -751,6 +978,7 @@ def complete_session(db: Session, *, user: User, session_id: str) -> dict[str, A
             "total_time_ms": total_ms,
             "attempts": attempts,
             "hub_session_id": hub_id,
+            "next_step": compute_next_step(db, user_id=user.id),
         }
 
     hub_id = complete_global_session(db, session_id, user.id)
@@ -777,6 +1005,7 @@ def complete_session(db: Session, *, user: User, session_id: str) -> dict[str, A
         "attempts": attempts,
         "domain": (sess or {}).get("domain"),
         "hub_session_id": hub_id,
+        "next_step": compute_next_step(db, user_id=user.id),
     }
 
 

@@ -73,6 +73,14 @@ SUBJECT_CATALOG: list[dict[str, Any]] = [
         "ingest_priority": 5,
         "auto_chapters": None,
     },
+    {
+        "id": "supervised_learning",
+        "label": "Introduction to Statistical Learning",
+        "short_label": "ISLR / ISLP",
+        "description": "Optional PDF for Module 4 (regression, classification, trees). Free book: https://www.statlearning.com/",
+        "ingest_priority": 3,
+        "auto_chapters": None,
+    },
 ]
 
 

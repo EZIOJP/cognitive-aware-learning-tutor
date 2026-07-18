@@ -6,13 +6,31 @@ import { Button } from "../app/components/ui/button";
 import { Card } from "../app/components/ui/card";
 import { fetchFaceEnrolled, postFaceEnroll } from "../api/faceClient";
 import { useFaceAuthCapture } from "../face-tracker/useFaceAuthCapture";
+import { useEaster, useTapCombo } from "../easter";
+
+const SILLY_NAMES = [
+  "Captain Focus",
+  "Professor Potato",
+  "Sir Cramalot",
+  "Quiz Wizard",
+  "Byte Knight",
+  "Study Goblin",
+];
 
 export function ProfilePage() {
   const { user, isAuthenticated, logout } = useAuth();
   const nav = useNavigate();
+  const { burst } = useEaster();
   const [enrolled, setEnrolled] = useState<boolean | null>(null);
   const [enrolling, setEnrolling] = useState(false);
   const [faceMsg, setFaceMsg] = useState<string | null>(null);
+  const [sillyName, setSillyName] = useState<string | null>(null);
+  const onNameTap = useTapCombo(3, () => {
+    const next = SILLY_NAMES[Math.floor(Math.random() * SILLY_NAMES.length)];
+    setSillyName(next);
+    burst("confetti", next);
+    window.setTimeout(() => setSillyName(null), 4000);
+  });
   const { videoRef, ready, error: camError, startCamera, stopCamera, captureEmbedding } =
     useFaceAuthCapture();
 
@@ -67,7 +85,13 @@ export function ProfilePage() {
       <div className="bg-card border border-border/50 rounded-xl p-6 shadow-sm space-y-4">
         <div className="space-y-1">
           <p className="text-sm font-medium text-muted-foreground">Username</p>
-          <p className="text-lg font-semibold">{user?.username}</p>
+          <p
+            className="text-lg font-semibold cursor-pointer select-none"
+            onClick={onNameTap}
+            title="Triple-tap…"
+          >
+            {sillyName ?? user?.username}
+          </p>
         </div>
         
         <div className="space-y-1">

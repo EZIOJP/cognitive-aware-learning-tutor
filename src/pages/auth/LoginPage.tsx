@@ -15,14 +15,19 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [faceLoading, setFaceLoading] = useState(false);
+  const [showFaceId, setShowFaceId] = useState(false);
   const [error, setError] = useState("");
   const { videoRef, ready, error: camError, startCamera, stopCamera, captureEmbedding } =
     useFaceAuthCapture();
 
   useEffect(() => {
+    if (!showFaceId) {
+      stopCamera();
+      return undefined;
+    }
     void startCamera();
     return () => stopCamera();
-  }, [startCamera, stopCamera]);
+  }, [showFaceId, startCamera, stopCamera]);
 
   const onSubmit = async (mode: "login" | "register") => {
     setLoading(true);
@@ -87,30 +92,50 @@ export default function LoginPage() {
         </div>
 
         <div className="border-t border-border/50 pt-4 space-y-3">
-          <p className="text-xs font-medium text-muted-foreground">Face ID (username required)</p>
-          <video
-            ref={videoRef}
-            muted
-            playsInline
-            className="w-full rounded-md bg-black/80 aspect-video object-cover"
-          />
-          {camError && <p className="text-xs text-destructive">{camError}</p>}
           <Button
-            variant="secondary"
+            type="button"
+            variant={showFaceId ? "secondary" : "outline"}
             className="w-full"
-            disabled={!ready || faceLoading}
-            onClick={() => void onFaceLogin()}
+            onClick={() => {
+              setShowFaceId((value) => !value);
+              setError("");
+            }}
           >
-            {faceLoading ? (
-              <Loader2 className="w-4 h-4 animate-spin mr-1" />
-            ) : (
-              <ScanFace className="w-4 h-4 mr-1" />
-            )}
-            Login with face
+            <ScanFace className="w-4 h-4 mr-1" />
+            {showFaceId ? "Hide Face ID sign-in" : "Sign in with Face ID"}
           </Button>
-          <p className="text-[10px] text-muted-foreground">
-            Enroll on Profile after password login. Uses facemesh if faceres model is not installed.
-          </p>
+          {showFaceId ? (
+            <div className="space-y-3 rounded-xl border border-border/50 bg-background/40 p-3">
+              <p className="text-xs font-medium text-muted-foreground">Face ID requires your username.</p>
+              <video
+                ref={videoRef}
+                muted
+                playsInline
+                className="w-full rounded-md bg-black/80 aspect-video object-cover"
+              />
+              {camError && <p className="text-xs text-destructive">{camError}</p>}
+              <Button
+                variant="secondary"
+                className="w-full"
+                disabled={!ready || faceLoading}
+                onClick={() => void onFaceLogin()}
+              >
+                {faceLoading ? (
+                  <Loader2 className="w-4 h-4 animate-spin mr-1" />
+                ) : (
+                  <ScanFace className="w-4 h-4 mr-1" />
+                )}
+                Login with face
+              </Button>
+              <p className="text-[10px] text-muted-foreground">
+                Enroll on Profile after password login. Uses facemesh if faceres model is not installed.
+              </p>
+            </div>
+          ) : (
+            <p className="text-[10px] text-muted-foreground">
+              Optional camera sign-in. Click only when you want to use Face ID.
+            </p>
+          )}
         </div>
       </Card>
     </div>

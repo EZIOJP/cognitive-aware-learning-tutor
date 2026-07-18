@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
-import { fetchActualOverlay, fetchAdherence, fetchPlannerBlocks } from "../api/plannerClient";
+import { fetchActualOverlay, fetchAdherenceRange, fetchPlannerBlocks } from "../api/plannerClient";
 import type { ActualSession, PlannerBlock } from "../api/plannerClient";
 import { fetchDesktopTimeline } from "../api/behaviorClient";
 import type { DesktopTimeline } from "../api/behaviorClient";
 import {
   type AdherenceDay,
-  lastNDays,
+  daysEndingOn,
   toDayString,
 } from "../components/productivity/planVsActualUtils";
 
@@ -81,7 +81,10 @@ export function useDesktopTimeline(day: string, refreshKey = 0): FetchState<Desk
   );
 }
 
-function normalizeAdherenceDay(date: string, raw: Awaited<ReturnType<typeof fetchAdherence>> | null): AdherenceDay {
+function normalizeAdherenceDay(
+  date: string,
+  raw: Awaited<ReturnType<typeof fetchAdherenceRange>>[number] | null,
+): AdherenceDay {
   if (!raw) {
     return {
       date,
@@ -104,28 +107,26 @@ function normalizeAdherenceDay(date: string, raw: Awaited<ReturnType<typeof fetc
   };
 }
 
-export function useAdherenceRange(days: number): FetchState<AdherenceDay[]> {
-  const dayList = lastNDays(days).join(",");
-
+export function useAdherenceRange(days: number, endDay?: Date): FetchState<AdherenceDay[]> {
+  const endMs = endDay ? startOfDayMs(endDay) : startOfDayMs(new Date());
   return useFetch(
     async () => {
-      const dates = lastNDays(days);
-      const results = await Promise.all(
-        dates.map(async (dateStr) => {
-          try {
-            const [y, m, d] = dateStr.split("-").map(Number);
-            const raw = await fetchAdherence(new Date(y, m - 1, d));
-            return normalizeAdherenceDay(dateStr, raw);
-          } catch {
-            return normalizeAdherenceDay(dateStr, null);
-          }
-        }),
-      );
-      return results.sort((a, b) => a.date.localeCompare(b.date));
+      const end = new Date(endMs);
+      const rows = await fetchAdherenceRange(days, end);
+      const byDate = new Map(rows.map((r) => [r.day, r]));
+      return daysEndingOn(end, days)
+        .map((dateStr) => normalizeAdherenceDay(dateStr, byDate.get(dateStr) ?? null))
+        .sort((a, b) => a.date.localeCompare(b.date));
     },
-    [dayList, days],
+    [days, endMs],
     [],
   );
+}
+
+function startOfDayMs(d: Date): number {
+  const x = new Date(d);
+  x.setHours(0, 0, 0, 0);
+  return x.getTime();
 }
 
 export { toDayString };

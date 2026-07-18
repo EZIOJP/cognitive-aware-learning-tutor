@@ -1,15 +1,19 @@
-"""Unified notes generation — RAG-first when corpus + LLM are available."""
+"""Unified notes generation — transcript-first; corpus RAG only when explicitly enabled."""
 
 from __future__ import annotations
 
 from pathlib import Path
 from typing import Any
 
+from backend.config import get_settings
 from backend.core.ollama_client import LlmOptions, ollama_available
 from backend.corpus.retrieve import corpus_available
 
 
 def rag_notes_available(*, llm: LlmOptions | None = None) -> bool:
+    """True only when CORPUS_GROUNDED_NOTES=1 and corpus + LLM are ready."""
+    if not get_settings().corpus_grounded_notes:
+        return False
     return bool(corpus_available() and ollama_available(llm))
 
 
@@ -22,6 +26,8 @@ def resolve_grounding(
 
     grounded = textbook RAG contributed citations; degraded = transcript-only / no textbook hits.
     """
+    if not get_settings().corpus_grounded_notes:
+        return "degraded", "corpus_rag_disabled"
     if not corpus_available():
         return "degraded", "corpus_unavailable"
     if mode.startswith("legacy"):
@@ -62,7 +68,7 @@ def generate_notes_unified(
     llm: LlmOptions | None = None,
     llm_tier: str | None = None,
     confirm_heavy_budget: bool = False,
-    ingest_corpus: bool = True,
+    ingest_corpus: bool = False,
     force_legacy: bool = False,
     assemble_mode: bool = False,
     **legacy_kwargs: Any,
@@ -70,11 +76,15 @@ def generate_notes_unified(
     """
     Returns (note_path, markdown, mode, rag_result_or_none).
 
-    Default path when ``assemble_mode``: lecture-first extractive notes (no LLM rewrite).
-    Textbooks attach only via gated retrieve. LLM+RAG hybrid only when assemble_mode is False.
+    Default (CORPUS_GROUNDED_NOTES off): transcript-only notes via legacy generator.
+    RAG / hybrid only when CORPUS_GROUNDED_NOTES=1 and corpus is available.
     """
     subject = topic or title
     on_progress = legacy_kwargs.get("on_progress")
+    # Never ingest into corpus unless RAG is explicitly enabled for notes
+    if not get_settings().corpus_grounded_notes:
+        ingest_corpus = False
+        force_legacy = True if not assemble_mode else force_legacy
 
     if assemble_mode:
         from backend.transcripts.assemble_notes import assemble_notes_from_transcript
@@ -153,9 +163,14 @@ def generate_notes_unified(
         folder_path=folder_path,
         **legacy_kwargs,
     )
-    reason = "corpus_unavailable" if not corpus_available() else "no_textbook_chunks_retrieved"
-    if force_legacy:
+    if not get_settings().corpus_grounded_notes:
+        reason = "corpus_rag_disabled"
+    elif force_legacy:
         reason = "force_legacy"
+    elif not corpus_available():
+        reason = "corpus_unavailable"
+    else:
+        reason = "no_textbook_chunks_retrieved"
     meta = {
         "grounding_status": "degraded",
         "grounding_reason": reason,

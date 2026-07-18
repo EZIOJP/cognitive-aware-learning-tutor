@@ -12,7 +12,6 @@ from backend.corpus.code_lint import lint_python_block
 from backend.transcripts.cleanup import postprocess_markdown
 from backend.transcripts.note_document import (
     finalize_note_markdown,
-    layout_safe_mermaid_blocks,
     list_fenced_blocks,
     mermaid_still_broken,
     prepare_note_markdown,
@@ -34,17 +33,14 @@ def polish_chunk_after_generation(section: str) -> str:
     Run after each LLM chunk before append:
     1. Strip preamble / repair fences (postprocess)
     2. Step-code + mermaid fence repair (prepare)
-    3. Mermaid layout-safe sanitize
-    4. Python lint annotations on bad blocks
+    3. Python lint annotations on bad blocks
     """
     if not (section or "").strip():
         return section
-    text = postprocess_markdown(section)
+    text = postprocess_markdown(section, sanitize_mermaid=False)
     text = prepare_note_markdown(text)
-    text = layout_safe_mermaid_blocks(text)
     text = sanitize_note_content(text)
     return text.strip()
-
 
 def _lint_failures(markdown: str) -> list[dict[str, Any]]:
     failures: list[dict[str, Any]] = []

@@ -44,6 +44,15 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  // Pyodide is loaded from CDN at runtime — keep npm package out of the browser graph
+  optimizeDeps: {
+    exclude: ['pyodide'],
+  },
+  build: {
+    rollupOptions: {
+      external: ['pyodide'],
+    },
+  },
 
   // File types to support raw imports. Never add .css, .tsx, or .ts files to this.
   assetsInclude: ['**/*.svg', '**/*.csv'],

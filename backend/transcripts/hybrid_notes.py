@@ -140,6 +140,12 @@ def generate_hybrid_grounded_notes(
     semantic_chunk_percentile: float = 95.0,
     narrative_judge: bool = False,
 ) -> dict[str, Any]:
+    from backend.config import get_settings
+
+    if not get_settings().corpus_grounded_notes:
+        raise RuntimeError(
+            "Corpus RAG notes are disabled (CORPUS_GROUNDED_NOTES=0). Use transcript-only generation."
+        )
     with llm_job(tier=llm_tier, task="notes_job"):
         return _generate_hybrid_grounded_notes_impl(
             transcript_file=transcript_file,
@@ -445,6 +451,12 @@ def generate_grounded_notes_smart(
     **kwargs: Any,
 ) -> dict[str, Any]:
     """Pick hybrid chunked RAG vs single-shot grounded based on transcript length."""
+    from backend.config import get_settings
+
+    if not get_settings().corpus_grounded_notes:
+        raise RuntimeError(
+            "Corpus RAG notes are disabled (CORPUS_GROUNDED_NOTES=0). Use transcript-only generation."
+        )
     transcript_path = resolve_transcript_path(transcript_file)
     pre_cleaned = kwargs.get("pre_cleaned")
     use_hybrid = force_hybrid or should_use_hybrid_chunked(

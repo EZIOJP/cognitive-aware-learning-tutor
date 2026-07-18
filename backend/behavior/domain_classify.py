@@ -124,11 +124,10 @@ _DOMAIN_RULES: list[tuple[str, str, int]] = [
 ]
 
 _TITLE_STUDY_BOOST = re.compile(
-    r"lecture|tutorial|course|lesson|assignment|homework|exam|quiz"
-    r"|documentation|api\s*reference|getting\s*started|how\s*to"
-    r"|python|javascript|typescript|react|algorithm|data\s*struct"
-    r"|machine\s*learning|deep\s*learning|gre\s|gre\b|math|calculus"
-    r"|linear\s*algebra|statistics|probability",
+    r"\b(lecture|tutorial|assignment|homework|exam|quiz)\b"
+    r"|\b(api\s*reference|getting\s*started)\b"
+    r"|\b(machine\s*learning|deep\s*learning|data\s*struct|linear\s*algebra)\b"
+    r"|\b(scaler|leetcode|coursera|udemy|khan\s*academy)\b",
     re.I,
 )
 

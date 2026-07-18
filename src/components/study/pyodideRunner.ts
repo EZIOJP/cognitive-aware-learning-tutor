@@ -1,10 +1,18 @@
-import type { PyodideInterface } from "pyodide";
+/** Minimal Pyodide surface — loaded from CDN at runtime (never bundled by Vite). */
+export type PyodideInterface = {
+  loadPackagesFromImports: (source: string) => Promise<unknown>;
+  loadPackage: (packages: string | string[]) => Promise<unknown>;
+  runPython: (code: string) => unknown;
+  runPythonAsync: (code: string) => Promise<unknown>;
+};
+
+type LoadPyodideFn = (opts: { indexURL: string }) => Promise<PyodideInterface>;
 
 let pyodidePromise: Promise<PyodideInterface> | null = null;
 const loadedPackages = new Set<string>();
 
-const PYODIDE_INDEX =
-  "https://cdn.jsdelivr.net/pyodide/v0.26.4/full/";
+const PYODIDE_VERSION = "0.26.4";
+const PYODIDE_INDEX = `https://cdn.jsdelivr.net/pyodide/v${PYODIDE_VERSION}/full/`;
 
 const PACKAGE_IMPORT_RE: Array<{ re: RegExp; pkg: string }> = [
   { re: /\b(import numpy|from numpy)\b/, pkg: "numpy" },
@@ -29,11 +37,20 @@ async function ensurePackages(pyodide: PyodideInterface, source: string): Promis
   toLoad.forEach((pkg) => loadedPackages.add(pkg));
 }
 
+async function loadPyodideFromCdn(): Promise<LoadPyodideFn> {
+  // Browser build of Pyodide — do not import the npm package (it pulls Node builtins).
+  const mod = await import(
+    /* @vite-ignore */
+    `${PYODIDE_INDEX}pyodide.mjs`
+  );
+  return (mod as { loadPyodide: LoadPyodideFn }).loadPyodide;
+}
+
 /** Lazy-load Pyodide once; WASM fetched only on first Run. */
 export async function getPyodide(): Promise<PyodideInterface> {
   if (!pyodidePromise) {
     pyodidePromise = (async () => {
-      const { loadPyodide } = await import("pyodide");
+      const loadPyodide = await loadPyodideFromCdn();
       return loadPyodide({ indexURL: PYODIDE_INDEX });
     })();
   }

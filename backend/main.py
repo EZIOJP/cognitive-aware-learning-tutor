@@ -41,11 +41,33 @@ from backend.core.llm_router import router as llm_router
 from backend.app.router import router as app_router
 from backend.timetable.router import router as timetable_router
 from backend.planner.router import router as planner_router
+from backend.wearables.router import router as wearables_router
 from backend.journal.router import router as journal_router
 from backend.behavior.classification_router import router as classification_router
 
 settings = get_settings()
 _request_log = logging.getLogger("backend.request")
+
+
+def _install_windows_disconnect_filter() -> None:
+    """Quiet harmless Proactor disconnect noise on Windows websocket closes."""
+    import asyncio
+
+    loop = asyncio.get_running_loop()
+    previous = loop.get_exception_handler()
+    log = logging.getLogger("backend.websocket")
+
+    def _handler(loop, context):
+        exc = context.get("exception")
+        if isinstance(exc, ConnectionResetError) and getattr(exc, "winerror", None) == 10054:
+            log.debug("Ignored websocket/client disconnect: %s", exc)
+            return
+        if previous:
+            previous(loop, context)
+        else:
+            loop.default_exception_handler(context)
+
+    loop.set_exception_handler(_handler)
 
 
 def _seed_math_templates(db: Session) -> None:
@@ -95,10 +117,20 @@ def _seed_math_templates(db: Session) -> None:
 async def lifespan(app: FastAPI):
     import asyncio
 
+    _install_windows_disconnect_filter()
     ensure_at_head()
     seed_reading_definitions(SessionLocal())
     with SessionLocal() as db:
+        from backend.core.auth import merge_demo_planner_into_solo
+
         ensure_default_admin(db)
+        if settings.solo_local_user:
+            moved = merge_demo_planner_into_solo(db)
+            if moved:
+                logging.getLogger("backend.main").info(
+                    "solo_local_user: merged %s demo planner blocks into admin",
+                    moved,
+                )
         _seed_math_templates(db)
         admin = db.query(User).filter_by(username="admin").first()
         if admin:
@@ -189,6 +221,7 @@ app.include_router(system_router)
 app.include_router(llm_router)
 app.include_router(timetable_router)
 app.include_router(planner_router)
+app.include_router(wearables_router)
 app.include_router(journal_router)
 app.include_router(classification_router)
 app.include_router(app_router)

@@ -108,11 +108,49 @@ def _openai_api_base(base: str) -> str:
     return f"{base}/v1"
 
 
-def llm_reachable(opts: LlmOptions | None = None) -> bool:
+DEFAULT_LMSTUDIO_MODEL = "google/gemma-4-e4b"
+
+
+def lmstudio_loaded_model(base_url: str, *, api_key: str = "lm-studio") -> str | None:
+    """Return the first loaded LM Studio LLM model key, if any."""
+    base = (base_url or "").strip().rstrip("/") or "http://127.0.0.1:1234"
+    try:
+        with httpx.Client(timeout=4.0) as client:
+            res = client.get(f"{base}/api/v1/models", headers=_auth_headers(api_key))
+            res.raise_for_status()
+            data = res.json()
+    except Exception:
+        return None
+    models = data.get("models") if isinstance(data, dict) else None
+    if not isinstance(models, list):
+        return None
+    # Prefer a currently loaded LLM instance.
+    for item in models:
+        if not isinstance(item, dict) or item.get("type") == "embedding":
+            continue
+        loaded = item.get("loaded_instances") or []
+        if isinstance(loaded, list) and loaded:
+            key = item.get("key") or item.get("id")
+            if isinstance(key, str) and key.strip():
+                return key.strip()
+    for item in models:
+        if not isinstance(item, dict) or item.get("type") == "embedding":
+            continue
+        key = item.get("key") or item.get("id")
+        if isinstance(key, str) and key.strip():
+            return key.strip()
+    return None
+
+
+def llm_reachable(opts: LlmOptions | AppConfig | None = None) -> bool:
     cfg = load_config()
     if not cfg.llm_enabled:
         return False
-    opts = opts or options_from_config(cfg)
+    if opts is None:
+        opts = options_from_config(cfg)
+    elif isinstance(opts, AppConfig):
+        # Callers often pass AppConfig; coerce so .provider / .base_url work.
+        opts = options_from_config(opts)
     cache_key = f"{opts.provider}|{opts.base_url}"
     now = time.monotonic()
     with _LLM_REACHABLE_LOCK:

@@ -34,9 +34,14 @@ export function MermaidBlockShell({ code, sectionHandlers }: MermaidBlockShellPr
 
   if (isBrokenBlockContent(displayContent) && !editing) {
     return (
-      <div className="study-mermaid-block relative my-4 overflow-hidden rounded-lg border border-border/60 bg-muted/20 p-3">
-        <p className="text-xs text-destructive">Diagram source is missing or invalid</p>
-        {toolbar && <div className="mt-2">{toolbar}</div>}
+      <div className="study-mermaid-block relative my-4 overflow-hidden rounded-lg border border-destructive/30 bg-destructive/5">
+        <div className="flex items-center justify-between gap-2 border-b border-destructive/20 bg-muted/25 px-3 py-1.5">
+          <span className="text-[10px] uppercase tracking-wide text-muted-foreground font-mono">
+            mermaid
+          </span>
+          {toolbar}
+        </div>
+        <p className="px-3 py-3 text-xs text-destructive">Diagram source is missing or invalid</p>
       </div>
     );
   }

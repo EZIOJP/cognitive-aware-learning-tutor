@@ -67,19 +67,42 @@ def score_for_category(category: str | None, scores: dict[str, int]) -> int:
     return scores.get(category, DEFAULT_SCORE)
 
 
-def serialize_tracked_session(row: Any, scores: dict[str, int]) -> dict:
+def serialize_tracked_session(
+    row: Any,
+    scores: dict[str, int],
+    policy: dict | None = None,
+) -> dict:
     """Shared payload shape for timeline / overlay / timetable responses."""
+    from backend.behavior.productivity_policy import (
+        resolve_category_with_overrides,
+        resolve_session_score,
+    )
+
     category = row.category if hasattr(row, "category") else row.get("category")
+    app_name = row.app_name if hasattr(row, "app_name") else row.get("app_name")
+    title = row.window_title if hasattr(row, "window_title") else row.get("window_title")
+    override = None
+    if hasattr(row, "override_productive"):
+        override = row.override_productive
+    elif isinstance(row, dict):
+        override = row.get("override_productive")
+
+    effective_cat = resolve_category_with_overrides(
+        category, app_name=app_name, window_title=title, policy=policy
+    )
+    score = resolve_session_score(row, scores, policy) if policy is not None else score_for_category(category, scores)
+
     return {
         "session_id": row.session_id if hasattr(row, "session_id") else row.get("session_id"),
         "start_time": iso_utc(row.start_time) if hasattr(row, "start_time") else row.get("start_time"),
         "end_time": iso_utc(row.end_time) if hasattr(row, "end_time") else row.get("end_time"),
         "source": row.source if hasattr(row, "source") else row.get("source"),
-        "category": category,
-        "productivity_score": score_for_category(category, scores),
-        "window_title": row.window_title if hasattr(row, "window_title") else row.get("window_title"),
-        "app_name": row.app_name if hasattr(row, "app_name") else row.get("app_name"),
+        "category": effective_cat if policy is not None else category,
+        "productivity_score": score,
+        "window_title": title,
+        "app_name": app_name,
         "task_id": row.task_id if hasattr(row, "task_id") else row.get("task_id"),
+        "override_productive": override,
     }
 
 

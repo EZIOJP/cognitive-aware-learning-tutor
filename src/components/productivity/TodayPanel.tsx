@@ -25,24 +25,31 @@ function fmtTime(iso: string): string {
   return new Date(iso).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
 }
 
-function blocksForToday(blocks: PlannerBlock[]): PlannerBlock[] {
-  const now = new Date();
+function blocksForDay(blocks: PlannerBlock[], day: Date): PlannerBlock[] {
   return blocks
     .filter((b) => {
       const start = new Date(b.start_at);
-      return start >= startOfDay(now) && start <= endOfDay(now);
+      return start >= startOfDay(day) && start <= endOfDay(day);
     })
     .sort((a, b) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime());
 }
 
 type Props = {
+  day?: Date;
   refreshKey?: number;
   dueReviews?: number;
   onPlannerChange?: () => void;
   compact?: boolean;
 };
 
-export function TodayPanel({ refreshKey = 0, dueReviews = 0, onPlannerChange, compact = false }: Props) {
+export function TodayPanel({
+  day: dayProp,
+  refreshKey = 0,
+  dueReviews = 0,
+  onPlannerChange,
+  compact = false,
+}: Props) {
+  const day = dayProp ?? new Date();
   const [blocks, setBlocks] = useState<PlannerBlock[]>([]);
   const [loading, setLoading] = useState(true);
   const [quickTitle, setQuickTitle] = useState("");
@@ -52,20 +59,24 @@ export function TodayPanel({ refreshKey = 0, dueReviews = 0, onPlannerChange, co
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const from = startOfDay(new Date());
-      const to = endOfDay(new Date());
+      const from = startOfDay(day);
+      const to = endOfDay(day);
       const data = await fetchPlannerBlocks(from, to);
       setBlocks(data);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [day.getTime()]);
 
   useEffect(() => {
     void load();
   }, [load, refreshKey]);
 
-  const todayBlocks = useMemo(() => blocksForToday(blocks), [blocks]);
+  const todayBlocks = useMemo(() => blocksForDay(blocks, day), [blocks, day.getTime()]);
+  const isToday = startOfDay(day).getTime() === startOfDay(new Date()).getTime();
+  const dayLabel = isToday
+    ? "Today"
+    : day.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
   const active = useMemo(
     () => todayBlocks.find((b) => b.status === "in_progress"),
     [todayBlocks],
@@ -91,8 +102,12 @@ export function TodayPanel({ refreshKey = 0, dueReviews = 0, onPlannerChange, co
     if (!title) return;
     setAdding(true);
     try {
-      const start = new Date();
-      start.setMinutes(start.getMinutes() + 5 - (start.getMinutes() % 5));
+      const start = isToday ? new Date() : startOfDay(day);
+      if (isToday) {
+        start.setMinutes(start.getMinutes() + 5 - (start.getMinutes() % 5));
+      } else {
+        start.setHours(9, 0, 0, 0);
+      }
       await createPlannerBlock({
         title,
         category: "personal",
@@ -127,7 +142,7 @@ export function TodayPanel({ refreshKey = 0, dueReviews = 0, onPlannerChange, co
       <div className={`flex flex-wrap items-center gap-3 ${compact ? "justify-between" : "justify-between"}`}>
         <h2 className="font-semibold flex items-center gap-2 text-sm shrink-0">
           <ListTodo size={16} className="text-violet-400" />
-          Today
+          {dayLabel}
         </h2>
         <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
           <span>
@@ -219,7 +234,7 @@ export function TodayPanel({ refreshKey = 0, dueReviews = 0, onPlannerChange, co
         </div>
       ) : todayBlocks.length === 0 ? (
         <p className="text-sm text-muted-foreground py-4 text-center">
-          No blocks today — add a task above or import a timetable.
+          No blocks for {dayLabel.toLowerCase()} — add a task above or import a timetable.
         </p>
       ) : (
         <ul className={`space-y-1 overflow-y-auto pr-1 ${compact ? "max-h-48" : "max-h-64"}`}>

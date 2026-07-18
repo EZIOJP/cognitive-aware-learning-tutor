@@ -16,6 +16,11 @@ DEFAULT_DEFINITIONS = [
     ("browser_event", "Browser activity", "count", "realtime", "browser"),
     ("calories", "Calories", "kcal", "manual", "nutrition"),
     ("steps", "Steps", "count", "batch", "health"),
+    ("heart_rate", "Heart rate", "bpm", "batch", "health"),
+    ("spo2", "Blood oxygen", "percent", "batch", "health"),
+    ("stress", "Stress", "score", "batch", "health"),
+    ("pai", "PAI", "score", "batch", "health"),
+    ("distance_m", "Distance", "meters", "batch", "health"),
 ]
 
 from backend.hub.services.catalog import default_plugin_toggles

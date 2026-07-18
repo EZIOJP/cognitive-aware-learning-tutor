@@ -37,9 +37,9 @@ export function CodeBlock({ code, language, sectionHandlers }: CodeBlockProps) {
           <button
             type="button"
             onClick={() => void onCopy()}
-            className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-[10px] text-emerald-200/90 hover:bg-emerald-900/50"
+            className="inline-flex items-center gap-1.5 rounded-md h-8 px-2.5 text-xs text-emerald-200/90 hover:bg-emerald-900/50"
           >
-            {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+            {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
             {copied ? "Copied" : "Copy"}
           </button>
         </div>

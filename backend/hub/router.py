@@ -149,9 +149,13 @@ def get_daily(
             raise HTTPException(status_code=400, detail="Invalid date YYYY-MM-DD") from e
 
     life = db.query(LifeDailyLog).filter(LifeDailyLog.user_id == user.id, LifeDailyLog.date == d).first()
-    rollup = db.query(DailyRollup).filter(DailyRollup.user_id == user.id, DailyRollup.date == d).first()
-    if not rollup:
+    # Always refresh today's rollup so the life-clock litmus ring tracks the desktop tracker.
+    if day in ("today", "now") or d == date.today():
         rollup = rebuild_daily_rollup(db, user.id, d)
+    else:
+        rollup = db.query(DailyRollup).filter(DailyRollup.user_id == user.id, DailyRollup.date == d).first()
+        if not rollup:
+            rollup = rebuild_daily_rollup(db, user.id, d)
     return daily_payload(rollup, life)
 
 

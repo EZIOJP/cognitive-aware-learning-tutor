@@ -20,7 +20,25 @@ function headers(json = true): HeadersInit {
 
 function apiErrorMessage(data: unknown, status: number): string {
   if (data && typeof data === "object") {
-    const envelope = data as { error?: { message?: string }; detail?: unknown };
+    const envelope = data as {
+      error?: { message?: string; details?: unknown };
+      detail?: unknown;
+    };
+    const details = envelope.error?.details;
+    if (Array.isArray(details) && details.length > 0) {
+      const bits = details
+        .map((d) => {
+          if (!d || typeof d !== "object") return null;
+          const row = d as { loc?: unknown[]; msg?: string };
+          const loc = Array.isArray(row.loc) ? row.loc.filter((x) => x !== "body").join(".") : "";
+          return row.msg ? (loc ? `${loc}: ${row.msg}` : row.msg) : null;
+        })
+        .filter(Boolean);
+      if (bits.length) {
+        const base = envelope.error?.message || "Request validation failed";
+        return `${base} — ${bits.slice(0, 3).join("; ")}`;
+      }
+    }
     if (envelope.error?.message) return envelope.error.message;
     const detail = envelope.detail;
     if (typeof detail === "string") return detail;
@@ -37,6 +55,7 @@ export type LlmConfig = {
   max_tokens: number;
   reachable: boolean;
   corpus_grounded_notes?: boolean;
+  corpus_study_intel?: boolean;
   corpus_available?: boolean;
   default_tier?: string;
   selected_tier?: string;
@@ -241,7 +260,10 @@ export async function getLlmEnvStatus(): Promise<LlmEnvStatus> {
   return data as LlmEnvStatus;
 }
 
-export async function patchLlmKeys(body: LlmKeysPatch): Promise<LlmEnvStatus> {
+export async function patchLlmKeys(body: LlmKeysPatch): Promise<{
+  written: string[];
+  env: LlmEnvStatus;
+}> {
   const res = await fetch(`${BASE}/api/system/llm/keys`, {
     method: "PATCH",
     headers: headers(),
@@ -249,7 +271,12 @@ export async function patchLlmKeys(body: LlmKeysPatch): Promise<LlmEnvStatus> {
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(apiErrorMessage(data, res.status));
-  return (data as { env: LlmEnvStatus }).env;
+  return {
+    written: Array.isArray((data as { written?: string[] }).written)
+      ? ((data as { written: string[] }).written)
+      : [],
+    env: (data as { env: LlmEnvStatus }).env,
+  };
 }
 
 export async function testLlmEntry(body: {
@@ -745,7 +772,7 @@ export async function generateNotes(
       use_tag_extraction: options.useTagExtraction ?? false,
       fast_mode: options.fastMode ?? false,
       enrich_visuals: options.enrichVisuals,
-      force_legacy: options.forceLegacy ?? false,
+      force_legacy: options.forceLegacy ?? true,
       ...llmBodyFieldsForTask("notes_job", options.llm, options.confirmHeavyBudget),
     }),
   });
@@ -782,6 +809,7 @@ export async function generateNotesFromToday(
       use_tag_extraction: options.useTagExtraction ?? false,
       fast_mode: options.fastMode ?? false,
       enrich_visuals: options.enrichVisuals,
+      force_legacy: options.forceLegacy ?? true,
       ...llmBodyFieldsForTask("notes_job", options.llm, options.confirmHeavyBudget),
     }),
   });
@@ -877,21 +905,86 @@ export async function runGapAnalysis(
 
 export async function generateLibraryQuiz(
   sourcePaths: string[],
-  opts?: { count?: number; topic?: string; llm?: LlmOverrides },
+  opts?: {
+    count?: number;
+    topic?: string;
+    focus?: "mixed" | "concept" | "coding" | "cover_all";
+    llm?: LlmOverrides;
+    expandSiblings?: boolean;
+    save?: boolean;
+    folderPath?: string;
+  },
 ): Promise<{
   questions: QuizQuestion[];
   markdown: string;
   session_item: Omit<StudySessionItem, "approved">;
   source?: string;
+  focus?: string;
+  call_plan?: { role: string; count: number }[];
+  sections_covered?: string[];
+  saved?: boolean;
+  saved_path?: string | null;
+  source_paths_used?: string[];
+  source_paths_requested?: string[];
+  expanded?: boolean;
+  llm_calls?: number;
+  questions_from_llm?: number;
+  questions_from_extractive?: number;
+  target_count?: number;
+  filled_count?: number;
 }> {
   const res = await fetch(`${BASE}/api/transcripts/library/generate-quiz`, {
     method: "POST",
     headers: headers(),
     body: JSON.stringify({
       source_paths: sourcePaths,
-      count: opts?.count ?? 5,
+      count: opts?.count ?? 12,
       topic: opts?.topic ?? "",
+      focus: opts?.focus ?? "mixed",
+      expand_siblings: opts?.expandSiblings ?? true,
+      save: opts?.save,
+      folder_path: opts?.folderPath ?? "",
       ...llmBodyFieldsForTask("quiz_gen", opts?.llm),
+    }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(apiErrorMessage(data, res.status));
+  return data as {
+    questions: QuizQuestion[];
+    markdown: string;
+    session_item: Omit<StudySessionItem, "approved">;
+    source?: string;
+    focus?: string;
+    call_plan?: { role: string; count: number }[];
+    sections_covered?: string[];
+    saved?: boolean;
+    saved_path?: string | null;
+    source_paths_used?: string[];
+    source_paths_requested?: string[];
+    expanded?: boolean;
+    llm_calls?: number;
+    questions_from_llm?: number;
+    questions_from_extractive?: number;
+    target_count?: number;
+    filled_count?: number;
+  };
+}
+
+export async function pasteLibraryQuiz(
+  text: string,
+  opts?: { topic?: string },
+): Promise<{
+  questions: QuizQuestion[];
+  markdown: string;
+  session_item: Omit<StudySessionItem, "approved">;
+  source?: string;
+}> {
+  const res = await fetch(`${BASE}/api/transcripts/library/paste-quiz`, {
+    method: "POST",
+    headers: headers(),
+    body: JSON.stringify({
+      text,
+      topic: opts?.topic ?? "",
     }),
   });
   const data = await res.json().catch(() => ({}));
@@ -991,7 +1084,7 @@ export async function startTopicStudyFlow(opts: {
       transcript_file: opts.transcriptFile,
       folder_path: opts.folderPath ?? "",
       title: opts.title ?? "",
-      ingest_corpus: opts.ingestCorpus ?? true,
+      ingest_corpus: opts.ingestCorpus ?? false,
       quiz_count: opts.quizCount ?? 8,
       start_quiz: opts.startQuiz ?? false,
       ...llmBodyFieldsForTask("notes_job", opts.llm, opts.confirmHeavyBudget),

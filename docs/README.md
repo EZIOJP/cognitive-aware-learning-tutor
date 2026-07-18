@@ -30,6 +30,7 @@ All project docs live here. Use with the file kernel at repo root.
 | [../gre/INDEX.md](../gre/INDEX.md) | **GRE lane design pack** — GIST / HLD / LLD for vocab + math practice + OCR |
 | [DEPENDENCIES.md](DEPENDENCIES.md) | **Fresh-machine install** (Windows/Linux/macOS) |
 | [SETUP_AND_COMMANDS.md](SETUP_AND_COMMANDS.md) | Quick commands and scripts |
+| [GOOGLE_CALENDAR_AMAZFIT.md](GOOGLE_CALENDAR_AMAZFIT.md) | Push planner → Google Calendar → Amazfit watch |
 | [DATABASE.md](DATABASE.md) | Schema and env vars |
 | [MIGRATIONS.md](MIGRATIONS.md) | Alembic revisions |
 | [API_CONTRACT.md](API_CONTRACT.md) | HTTP API reference |

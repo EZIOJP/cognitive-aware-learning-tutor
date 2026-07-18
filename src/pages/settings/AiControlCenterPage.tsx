@@ -258,10 +258,17 @@ export default function AiControlCenterPage() {
           patch[envKey] = draft;
         }
       }
-      const updated = await patchLlmKeys(patch);
+      const { written, env: updated } = await patchLlmKeys(patch);
       setEnv(updated);
       setKeyDrafts({});
-      setKeySaveMsg("Saved to .env — settings reloaded.");
+      const keyWrites = written.filter((k) => k !== "LLM_ROUTE_PROFILE");
+      setKeySaveMsg(
+        keyWrites.length
+          ? `Saved ${keyWrites.join(", ")} to .env — settings reloaded.`
+          : written.length
+            ? `Updated ${written.join(", ")} (no new key values were typed — paste a key then Save).`
+            : "Nothing written.",
+      );
       const config = await getLlmConfig({ llm_tier: defaultTier });
       setCfg(config);
     } catch (e) {

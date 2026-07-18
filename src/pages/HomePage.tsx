@@ -38,6 +38,19 @@ type WidgetStateMap = Record<string, WidgetState>;
 const LS_WIDGET_STATE = "dashboard:widget_state";
 const LS_WIDGET_ORDER = "dashboard:widget_order";
 const LS_FOCUS_MODE = "dashboard:focus_mode";
+const COMPACT_WIDGET_IDS = new Set([
+  "study-time",
+  "community",
+  "lemillion-assistant",
+  "hero-progress",
+]);
+const DATA_HEAVY_WIDGET_IDS = new Set([
+  "life-clock",
+  "life-score",
+  "browser-activity",
+  "study-loop",
+  "ai-comments",
+]);
 
 function loadWidgetState(): WidgetStateMap {
   try {
@@ -212,6 +225,8 @@ function CustomizerDrawer({
           {widgets.map((w) => {
             const st = stateMap[w.id] ?? { colSpan: w.defaultColSpan ?? 1, rowSpan: w.defaultRowSpan ?? 1, hidden: false };
             const Icon = w.icon;
+            const isCompactWidget = COMPACT_WIDGET_IDS.has(w.id);
+            const isDataHeavyWidget = DATA_HEAVY_WIDGET_IDS.has(w.id);
             return (
               <div
                 key={w.id}
@@ -266,13 +281,14 @@ function CustomizerDrawer({
                           <button
                             key={v}
                             onClick={() => onRowSpan(w.id, v)}
+                            disabled={(isCompactWidget && v === 2) || (isDataHeavyWidget && v === 1)}
                             className={`flex-1 py-1 transition-colors ${
-                              st.rowSpan === v
+                              (isCompactWidget ? v === 1 : isDataHeavyWidget ? v === 2 : st.rowSpan === v)
                                 ? "bg-primary text-primary-foreground"
-                                : "hover:bg-accent/60 text-muted-foreground"
+                                : "hover:bg-accent/60 text-muted-foreground disabled:opacity-40 disabled:hover:bg-transparent"
                             }`}
                           >
-                            {v === 1 ? "Short" : "Tall"}
+                            {v === 1 ? (isDataHeavyWidget ? "Locked" : "Short") : isCompactWidget ? "Locked" : "Tall"}
                           </button>
                         ))}
                       </div>
@@ -330,6 +346,7 @@ export function HomePage() {
   const { getWidgets, isLoaded } = usePlugins();
   const { user } = useAuth();
   const { widgets: themeWidgets } = useTheme();
+  const dragClickBlockRef = useRef(false);
 
   useEffect(() => {
     fetchInsightsDaily().then(setInsights);
@@ -485,13 +502,18 @@ export function HomePage() {
   // Drag-to-reorder
   const handleDragStart = (e: React.DragEvent, idx: number) => {
     setDraggedIdx(idx);
+    dragClickBlockRef.current = true;
     e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", allWidgets[idx]?.id ?? "");
     (e.currentTarget as HTMLElement).style.opacity = "0.4";
   };
   const handleDragEnd = (e: React.DragEvent) => {
     setDraggedIdx(null);
     (e.currentTarget as HTMLElement).style.opacity = "1";
     persistLayout(allWidgets, stateMap, focusMode);
+    window.setTimeout(() => {
+      dragClickBlockRef.current = false;
+    }, 0);
   };
   const handleDragOver = (e: React.DragEvent, idx: number) => {
     e.preventDefault();
@@ -525,6 +547,15 @@ export function HomePage() {
         </div>
 
         <div className="flex items-center gap-2">
+          {!user ? (
+            <Link
+              to="/login"
+              className="flex items-center gap-1.5 rounded-xl border border-primary/35 bg-primary/10 px-2.5 py-2 text-xs font-medium text-primary transition-colors hover:bg-primary/15"
+              title="Sign in to sync plugins, save layout, and unlock AI review + hub export"
+            >
+              Sign in
+            </Link>
+          ) : null}
           <button
             type="button"
             onClick={() => {
@@ -568,20 +599,6 @@ export function HomePage() {
         </div>
       </div>
 
-      {!user ? (
-        <div className="mx-4 mb-2 px-4 py-3 rounded-xl border border-primary/30 bg-primary/5 text-sm flex flex-wrap items-center justify-between gap-2 shrink-0">
-          <span>
-            Sign in to sync plugins, save your dashboard layout, and unlock AI review + hub export.
-          </span>
-          <Link
-            to="/login"
-            className="font-medium text-primary hover:underline"
-          >
-            Sign in (admin / admin123)
-          </Link>
-        </div>
-      ) : null}
-
       {/* ── Responsive full-bleed grid ───────────── */}
       <div
         className="flex-1 overflow-y-auto px-4 pb-4"
@@ -593,19 +610,31 @@ export function HomePage() {
           }`}
         >
           {visibleWidgets.map((widget, idx) => {
-            const st = stateMap[widget.id] ?? {
+            const savedState = stateMap[widget.id] ?? {
               colSpan: widget.defaultColSpan ?? 1,
               rowSpan: widget.defaultRowSpan ?? 1,
               hidden: false,
+            };
+            const isCompactWidget = COMPACT_WIDGET_IDS.has(widget.id);
+            const isDataHeavyWidget = DATA_HEAVY_WIDGET_IDS.has(widget.id);
+            const st = {
+              ...savedState,
+              rowSpan: (
+                isCompactWidget
+                  ? 1
+                  : isDataHeavyWidget
+                    ? Math.max(2, savedState.rowSpan) as 1 | 2
+                    : savedState.rowSpan
+              ) as 1 | 2,
             };
             const { id, title, type, content, icon: Icon, accent, to, component, description } = widget;
 
             const cardBody = (
               <Card
                 className={`
-                  gloss-panel h-full flex flex-col p-5
+                  hub-widget-card gloss-panel h-full flex flex-col gap-0 p-4
                   bg-gradient-to-br ${accent}
-                  group relative transition-all duration-200
+                  group relative transition-all duration-200 hover:-translate-y-0.5
                 `}
               >
                 {/* Drag handle — top right on hover */}
@@ -618,14 +647,14 @@ export function HomePage() {
                 </div>
 
                 {/* Icon + title */}
-                <div className="flex items-start gap-3 mb-3">
-                  <div className="w-9 h-9 rounded-xl bg-background/30 flex items-center justify-center shrink-0">
-                    <Icon className="w-5 h-5 text-foreground/90" />
+                <div className="flex min-h-10 items-center gap-3 pb-3">
+                  <div className="grid w-9 h-9 place-items-center rounded-xl bg-background/35 border border-white/10 shrink-0 shadow-sm">
+                    <Icon className="block w-5 h-5 text-foreground/90" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-base leading-tight truncate">{title}</h3>
+                    <h3 className="font-semibold text-base leading-snug truncate">{title}</h3>
                     {type === "info" && content && (
-                      <span className="text-xs px-1.5 py-0.5 bg-background/40 rounded mt-1 inline-block">
+                      <span className="text-xs px-2 py-0.5 bg-background/40 border border-white/10 rounded-full mt-1 inline-block">
                         {content}
                       </span>
                     )}
@@ -633,7 +662,7 @@ export function HomePage() {
                 </div>
 
                 {/* Widget body */}
-                <div className="flex-1 min-h-0 overflow-hidden">
+                <div className="hub-widget-body flex-1 content-start pr-1">
                   {component
                     ? component
                     : <p className="text-sm text-muted-foreground leading-relaxed">{description}</p>
@@ -654,15 +683,17 @@ export function HomePage() {
                       ? <ChevronLeft className="w-3 h-3" />
                       : <ChevronRight className="w-3 h-3" />}
                   </button>
-                  <button
-                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); setRowSpan(id, st.rowSpan === 1 ? 2 : 1); }}
-                    className="p-1 rounded bg-background/50 hover:bg-background/80 text-muted-foreground hover:text-foreground transition-colors"
-                    title={st.rowSpan === 2 ? "Make short" : "Make tall"}
-                  >
-                    {st.rowSpan === 2
-                      ? <Minimize2 className="w-3 h-3" />
-                      : <Maximize2 className="w-3 h-3" />}
-                  </button>
+                  {!isCompactWidget && (
+                    <button
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); setRowSpan(id, st.rowSpan === 1 ? 2 : 1); }}
+                      className="p-1 rounded bg-background/50 hover:bg-background/80 text-muted-foreground hover:text-foreground transition-colors"
+                      title={st.rowSpan === 2 ? "Make short" : "Make tall"}
+                    >
+                      {st.rowSpan === 2
+                        ? <Minimize2 className="w-3 h-3" />
+                        : <Maximize2 className="w-3 h-3" />}
+                    </button>
+                  )}
                 </div>
               </Card>
             );
@@ -675,6 +706,7 @@ export function HomePage() {
                 onDragStart={(e) => handleDragStart(e, idx)}
                 onDragEnd={handleDragEnd}
                 onDragOver={(e) => handleDragOver(e, idx)}
+                onDrop={(e) => e.preventDefault()}
                 style={{
                   gridColumn: `span ${st.colSpan}`,
                   gridRow: `span ${st.rowSpan}`,
@@ -683,7 +715,15 @@ export function HomePage() {
                 className="transition-all duration-300 cursor-grab active:cursor-grabbing"
               >
                 {to && id !== "community" ? (
-                  <Link to={to} className="block h-full">
+                  <Link
+                    to={to}
+                    className="block h-full"
+                    onClick={(e) => {
+                      if (!dragClickBlockRef.current) return;
+                      e.preventDefault();
+                      e.stopPropagation();
+                    }}
+                  >
                     {cardBody}
                   </Link>
                 ) : (

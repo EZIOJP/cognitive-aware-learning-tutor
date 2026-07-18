@@ -14,7 +14,13 @@ from typing import Callable
 from transcript_studio.auto_pipeline import tune_transcript
 from transcript_studio.config import AppConfig, load_config, save_config
 from transcript_studio.live_captions import LiveCaptionsScraper, check_captions_deps, ensure_windows
-from transcript_studio.llm_client import LlmOptions, generate, llm_reachable
+from transcript_studio.llm_client import (
+    DEFAULT_LMSTUDIO_MODEL,
+    LlmOptions,
+    generate,
+    llm_reachable,
+    lmstudio_loaded_model,
+)
 from transcript_studio.note_title import suggest_note_title
 from transcript_studio.notes_generator import generate_notes_from_file
 from transcript_studio.paths import notes_dir, repo_root
@@ -100,14 +106,31 @@ def run_classic_auto(
             raise RuntimeError(dep_msg)
         ensure_windows()
 
-        studio_opts = opts or LlmOptions(
-            provider="lmstudio",
-            base_url=cfg.llm_base_url or "http://127.0.0.1:1234",
-            model=cfg.llm_model or "google/gemma-3-4b-it",
-            max_tokens=int(cfg.llm_max_tokens or 8192),
-            temperature=float(cfg.llm_temperature or 0.3),
-            api_key=cfg.llm_api_key or "lm-studio",
+        base_url = (opts.base_url if opts else None) or cfg.llm_base_url or "http://127.0.0.1:1234"
+        api_key = (opts.api_key if opts else None) or cfg.llm_api_key or "lm-studio"
+        requested = (opts.model if opts else None) or cfg.llm_model or ""
+        cloudish = any(
+            x in requested.lower() for x in ("gemini", "gpt", "claude", "openrouter", "gemma-3")
         )
+        model = requested
+        if not model or cloudish:
+            model = lmstudio_loaded_model(base_url, api_key=api_key) or DEFAULT_LMSTUDIO_MODEL
+        elif opts is None:
+            model = lmstudio_loaded_model(base_url, api_key=api_key) or model
+        studio_opts = LlmOptions(
+            provider="lmstudio",
+            base_url=base_url,
+            model=model,
+            max_tokens=int(
+                (opts.max_tokens if opts else None) or cfg.llm_max_tokens or 8192
+            ),
+            temperature=float(
+                (opts.temperature if opts else None) or cfg.llm_temperature or 0.3
+            ),
+            api_key=api_key,
+        )
+        cfg.llm_model = studio_opts.model
+        cfg.llm_base_url = studio_opts.base_url
 
         _phase(phases, "capturing", on_phase=on_phase, message="Starting Live Captions capture")
         scraper = LiveCaptionsScraper(

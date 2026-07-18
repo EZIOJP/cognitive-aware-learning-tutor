@@ -1,101 +1,103 @@
-/* Study Library — Stitch export: animated_study_generator_dashboard + review_sync_workflow */
+/* Study Library — theme-token surfaces (follows app accent / light-dark) */
 
 .study-library-page {
   position: relative;
   height: 100%;
   min-height: 0;
   overflow: hidden;
+  color: var(--foreground);
 }
 
 .study-library-glass {
-  background: color-mix(in srgb, rgb(6 78 59 / 0.45) 70%, transparent);
+  background: color-mix(in srgb, var(--card) 88%, transparent);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgb(52 211 153 / 0.2);
+  border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
   border-radius: 1rem;
-  box-shadow: 0 4px 24px rgb(0 0 0 / 0.25);
+  box-shadow: 0 4px 24px color-mix(in srgb, var(--foreground) 6%, transparent);
 }
 
 .study-library-glass-card {
-  background: color-mix(in srgb, rgb(6 78 59 / 0.35) 80%, transparent);
-  border: 1px solid rgb(52 211 153 / 0.12);
+  background: color-mix(in srgb, var(--muted) 55%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
   border-radius: 0.75rem;
-  transition: border-color 0.2s, transform 0.2s;
+  transition: border-color 0.2s, transform 0.2s, background 0.2s;
 }
 
 .study-library-glass-card:hover {
-  border-color: rgb(52 211 153 / 0.35);
+  border-color: color-mix(in srgb, var(--primary) 35%, var(--border));
+  background: color-mix(in srgb, var(--muted) 70%, transparent);
 }
 
 .study-library-nav-tab {
-  color: rgb(156 163 175);
-  transition: color 0.15s;
+  color: var(--muted-foreground);
+  transition: color 0.15s, border-color 0.15s;
+  border-bottom: 2px solid transparent;
 }
 
 .study-library-nav-tab:hover {
-  color: rgb(243 244 246);
+  color: var(--foreground);
 }
 
 .study-library-nav-tab[data-active="true"] {
-  color: rgb(96 165 250);
-  border-bottom: 2px solid rgb(59 130 246);
+  color: var(--primary);
+  border-bottom-color: var(--primary);
 }
 
 .study-library-step {
-  color: rgb(156 163 175);
+  color: var(--muted-foreground);
 }
 
 .study-library-step[data-active="true"] {
-  color: rgb(52 211 153);
-  background: rgb(16 185 129 / 0.1);
-  border: 1px solid rgb(16 185 129 / 0.3);
-  box-shadow: 0 0 15px rgb(16 185 129 / 0.25);
+  color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--primary) 30%, transparent);
 }
 
 .study-library-compare-pane .lecture-notes-markdown h1,
 .study-library-compare-pane .lecture-notes-markdown h2 {
-  color: rgb(96 165 250);
+  color: var(--primary);
 }
 
 .study-library-sync-badge {
-  background: rgb(6 78 59 / 0.5);
-  border: 1px solid rgb(16 185 129 / 0.4);
-  color: rgb(52 211 153);
+  background: color-mix(in srgb, var(--card) 90%, transparent);
+  border: 1px solid color-mix(in srgb, var(--primary) 35%, var(--border));
+  color: var(--primary);
 }
 
 .study-library-file-selected {
-  background: rgb(16 185 129 / 0.25);
-  border: 1px solid rgb(16 185 129 / 0.35);
-  color: rgb(209 250 229);
+  background: color-mix(in srgb, var(--primary) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--primary) 32%, transparent);
+  color: var(--foreground);
 }
 
 .study-library-file-compare {
-  background: rgb(59 130 246 / 0.15);
-  border: 1px solid rgb(59 130 246 / 0.35);
+  background: color-mix(in srgb, var(--accent) 35%, transparent);
+  border: 1px solid color-mix(in srgb, var(--primary) 28%, var(--border));
 }
 
 .study-note-editor-textarea {
   tab-size: 2;
-  scrollbar-color: rgb(16 185 129 / 0.35) transparent;
+  scrollbar-color: color-mix(in srgb, var(--primary) 35%, transparent) transparent;
 }
 
 .study-note-editor-textarea::placeholder {
-  color: rgb(110 231 183 / 0.35);
+  color: color-mix(in srgb, var(--muted-foreground) 70%, transparent);
 }
 
 .study-image-placeholder figcaption {
-  color: rgb(156 163 175);
+  color: var(--muted-foreground);
 }
 
 .study-library-intel-tab[data-active="true"] {
-  background: rgb(4 120 87 / 0.5);
-  border-color: rgb(16 185 129 / 0.5);
-  color: white;
+  background: color-mix(in srgb, var(--primary) 16%, transparent);
+  border-color: color-mix(in srgb, var(--primary) 40%, var(--border));
+  color: var(--foreground);
 }
 
 .study-library-markdown-scroll {
   scrollbar-width: thin;
-  scrollbar-color: rgb(52 211 153 / 0.35) transparent;
+  scrollbar-color: color-mix(in srgb, var(--muted-foreground) 40%, transparent) transparent;
 }
 
 .study-library-viewer-header {
@@ -103,19 +105,19 @@
   align-items: center;
   gap: 0.75rem;
   padding: 0.75rem 1rem;
-  border-bottom: 1px solid rgb(52 211 153 / 0.2);
-  background: rgb(0 0 0 / 0.15);
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in srgb, var(--muted) 40%, transparent);
 }
 
 .study-library-viewer-title {
   font-size: 0.9375rem;
   font-weight: 600;
-  color: rgb(209 250 229);
+  color: var(--foreground);
 }
 
 .study-library-viewer-path {
   font-size: 0.6875rem;
-  color: rgb(100 116 139);
+  color: var(--muted-foreground);
   margin-top: 0.125rem;
 }
 
@@ -138,16 +140,16 @@
   gap: 0.5rem;
   padding: 0.5rem 0.75rem;
   border-radius: 0.75rem;
-  border: 1px solid rgb(59 130 246 / 0.25);
-  background: rgb(59 130 246 / 0.08);
+  border: 1px solid color-mix(in srgb, var(--primary) 25%, var(--border));
+  background: color-mix(in srgb, var(--primary) 8%, transparent);
 }
 
 .study-library-explorer-compare-hint {
   padding: 0.35rem 0.65rem;
-  border-top: 1px solid rgb(52 211 153 / 0.12);
+  border-top: 1px solid var(--border);
   font-size: 0.625rem;
-  color: rgb(148 163 184);
-  background: rgb(0 0 0 / 0.15);
+  color: var(--muted-foreground);
+  background: color-mix(in srgb, var(--muted) 35%, transparent);
 }
 
 .study-library-markdown-scroll::-webkit-scrollbar {
@@ -155,7 +157,7 @@
 }
 
 .study-library-markdown-scroll::-webkit-scrollbar-thumb {
-  background: rgb(52 211 153 / 0.35);
+  background: color-mix(in srgb, var(--muted-foreground) 35%, transparent);
   border-radius: 3px;
 }
 
@@ -169,8 +171,8 @@
   gap: 0.5rem;
   padding: 0.65rem 0.75rem;
   border-radius: 0.75rem;
-  border: 1px solid rgb(52 211 153 / 0.18);
-  background: rgb(0 0 0 / 0.25);
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--muted) 45%, transparent);
   transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
 }
 
@@ -180,19 +182,19 @@
   gap: 0.5rem;
   padding: 0.55rem 0.65rem;
   border-radius: 0.65rem;
-  border: 1px solid rgb(52 211 153 / 0.12);
-  background: rgb(0 0 0 / 0.18);
+  border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+  background: color-mix(in srgb, var(--card) 70%, transparent);
   margin-bottom: 0.35rem;
 }
 
 .study-library-organize-file:hover {
-  border-color: rgb(52 211 153 / 0.28);
+  border-color: color-mix(in srgb, var(--primary) 30%, var(--border));
 }
 
 .study-library-drop-active {
-  border-color: rgb(52 211 153 / 0.65) !important;
-  background: rgb(16 185 129 / 0.12) !important;
-  box-shadow: 0 0 0 1px rgb(52 211 153 / 0.35);
+  border-color: color-mix(in srgb, var(--primary) 55%, var(--border)) !important;
+  background: color-mix(in srgb, var(--primary) 10%, transparent) !important;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--primary) 30%, transparent);
 }
 
 .study-library-kind-pill {
@@ -201,8 +203,8 @@
   letter-spacing: 0.04em;
   padding: 0.15rem 0.4rem;
   border-radius: 9999px;
-  border: 1px solid rgb(52 211 153 / 0.25);
-  color: rgb(167 243 208 / 0.85);
+  border: 1px solid var(--border);
+  color: var(--muted-foreground);
 }
 
 /* File Explorer–style library panel */
@@ -229,7 +231,7 @@
   gap: 0.65rem;
   height: 100%;
   padding: 0.5rem 0.35rem;
-  border-right: 1px solid rgb(52 211 153 / 0.12);
+  border-right: 1px solid var(--border);
 }
 
 .study-library-sidebar-rail-btn {
@@ -239,21 +241,21 @@
   width: 2rem;
   height: 2rem;
   border-radius: 0.4rem;
-  color: rgb(167 243 208 / 0.9);
-  background: rgb(16 185 129 / 0.12);
-  border: 1px solid rgb(52 211 153 / 0.25);
+  color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--primary) 28%, var(--border));
   transition: background 0.15s ease;
 }
 
 .study-library-sidebar-rail-btn:hover {
-  background: rgb(16 185 129 / 0.22);
+  background: color-mix(in srgb, var(--primary) 22%, transparent);
 }
 
 .study-library-sidebar-rail-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: rgb(148 163 184 / 0.85);
+  color: var(--muted-foreground);
 }
 
 .study-library-sidebar-rail-note {
@@ -265,7 +267,7 @@
   transform: rotate(180deg);
   font-size: 0.625rem;
   line-height: 1.2;
-  color: rgb(167 243 208 / 0.75);
+  color: var(--muted-foreground);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -273,7 +275,7 @@
 }
 
 .study-library-explorer {
-  background: rgb(15 23 42 / 0.55);
+  background: color-mix(in srgb, var(--muted) 30%, transparent);
 }
 
 .study-library-explorer-toolbar {
@@ -282,8 +284,8 @@
   align-items: center;
   gap: 0.15rem;
   padding: 0.35rem 0.5rem;
-  border-bottom: 1px solid rgb(52 211 153 / 0.15);
-  background: rgb(0 0 0 / 0.2);
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in srgb, var(--muted) 40%, transparent);
 }
 
 .study-library-explorer-tool {
@@ -293,13 +295,13 @@
   padding: 0.3rem 0.55rem;
   border-radius: 0.35rem;
   font-size: 0.6875rem;
-  color: rgb(203 213 225);
+  color: var(--foreground);
   transition: background 0.12s, color 0.12s;
 }
 
 .study-library-explorer-tool:hover:not(:disabled) {
-  background: rgb(16 185 129 / 0.15);
-  color: rgb(209 250 229);
+  background: color-mix(in srgb, var(--primary) 12%, transparent);
+  color: var(--primary);
 }
 
 .study-library-explorer-tool:disabled {
@@ -310,13 +312,13 @@
 .study-library-explorer-tool-icon {
   padding: 0.35rem;
   border-radius: 0.35rem;
-  color: rgb(148 163 184);
+  color: var(--muted-foreground);
 }
 
 .study-library-explorer-tool-icon.active,
 .study-library-explorer-tool-icon:hover {
-  background: rgb(16 185 129 / 0.2);
-  color: rgb(167 243 208);
+  background: color-mix(in srgb, var(--primary) 14%, transparent);
+  color: var(--primary);
 }
 
 .study-library-explorer-address {
@@ -325,8 +327,8 @@
   align-items: center;
   gap: 0.1rem;
   padding: 0.4rem 0.65rem;
-  border-bottom: 1px solid rgb(52 211 153 / 0.12);
-  background: rgb(0 0 0 / 0.12);
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in srgb, var(--muted) 25%, transparent);
 }
 
 .study-library-explorer-body {
@@ -337,8 +339,8 @@
 
 .study-library-explorer-quickaccess {
   shrink: 0;
-  border-top: 1px solid rgb(52 211 153 / 0.15);
-  background: rgb(0 0 0 / 0.22);
+  border-top: 1px solid var(--border);
+  background: color-mix(in srgb, var(--muted) 35%, transparent);
   padding: 0.35rem 0.5rem 0.45rem;
 }
 
@@ -347,7 +349,7 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: rgb(100 116 139);
+  color: var(--muted-foreground);
   margin-bottom: 0.3rem;
 }
 
@@ -365,22 +367,22 @@
   gap: 0.35rem;
   padding: 0.3rem 0.55rem;
   border-radius: 9999px;
-  border: 1px solid rgb(52 211 153 / 0.12);
+  border: 1px solid var(--border);
   font-size: 0.625rem;
-  color: rgb(203 213 225);
-  background: rgb(255 255 255 / 0.03);
+  color: var(--foreground);
+  background: color-mix(in srgb, var(--card) 60%, transparent);
   max-width: 8.5rem;
 }
 
 .study-library-explorer-quickaccess-item:hover {
-  background: rgb(255 255 255 / 0.08);
-  border-color: rgb(52 211 153 / 0.25);
+  background: color-mix(in srgb, var(--accent) 50%, transparent);
+  border-color: color-mix(in srgb, var(--primary) 25%, var(--border));
 }
 
 .study-library-explorer-quickaccess-item.active {
-  background: rgb(16 185 129 / 0.22);
-  border-color: rgb(16 185 129 / 0.4);
-  color: rgb(209 250 229);
+  background: color-mix(in srgb, var(--primary) 16%, transparent);
+  border-color: color-mix(in srgb, var(--primary) 40%, var(--border));
+  color: var(--foreground);
 }
 
 .study-library-explorer-main {
@@ -415,8 +417,8 @@
 }
 
 .study-library-explorer-tile:hover {
-  background: rgb(255 255 255 / 0.04);
-  border-color: rgb(52 211 153 / 0.15);
+  background: color-mix(in srgb, var(--muted) 50%, transparent);
+  border-color: var(--border);
 }
 
 .study-library-explorer-list-row {
@@ -431,19 +433,19 @@
 }
 
 .study-library-explorer-list-row:hover {
-  background: rgb(255 255 255 / 0.04);
+  background: color-mix(in srgb, var(--muted) 45%, transparent);
 }
 
 .study-library-explorer-selected {
-  background: rgb(59 130 246 / 0.22) !important;
-  border-color: rgb(96 165 250 / 0.45) !important;
-  outline: 1px solid rgb(96 165 250 / 0.35);
+  background: color-mix(in srgb, var(--primary) 14%, transparent) !important;
+  border-color: color-mix(in srgb, var(--primary) 40%, var(--border)) !important;
+  outline: 1px solid color-mix(in srgb, var(--primary) 28%, transparent);
 }
 
 .study-library-explorer-label {
   font-size: 0.6875rem;
   line-height: 1.25;
-  color: rgb(226 232 240);
+  color: var(--foreground);
   word-break: break-word;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -464,7 +466,7 @@
   align-items: center;
   justify-content: center;
   border-radius: 0.35rem;
-  background: linear-gradient(180deg, rgb(251 191 36 / 0.25), rgb(245 158 11 / 0.08));
+  background: color-mix(in srgb, var(--accent) 55%, transparent);
 }
 
 .study-library-explorer-file-icon {
@@ -475,8 +477,8 @@
   align-items: center;
   justify-content: center;
   border-radius: 0.35rem;
-  background: linear-gradient(180deg, rgb(248 250 252 / 0.12), rgb(148 163 184 / 0.08));
-  border: 1px solid rgb(255 255 255 / 0.08);
+  background: color-mix(in srgb, var(--muted) 60%, transparent);
+  border: 1px solid var(--border);
 }
 
 .study-library-explorer-file-kind {
@@ -485,7 +487,7 @@
   right: 0.25rem;
   font-size: 0.5rem;
   text-transform: uppercase;
-  color: rgb(52 211 153 / 0.8);
+  color: var(--muted-foreground);
 }
 
 .study-library-explorer-empty {
@@ -503,7 +505,7 @@
 }
 
 .lecture-notes-markdown .study-code-block .linenumber {
-  color: rgb(52 211 153 / 0.35);
+  color: color-mix(in srgb, var(--muted-foreground) 55%, transparent);
   min-width: 2em;
   padding-right: 0.75em;
   user-select: none;
@@ -515,7 +517,7 @@
 }
 
 .lecture-notes-markdown .study-python-editor:focus {
-  box-shadow: inset 0 0 0 1px rgb(52 211 153 / 0.25);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 35%, transparent);
 }
 
 .lecture-notes-markdown .study-python-output {
@@ -523,38 +525,51 @@
   font-family: ui-monospace, monospace;
   font-size: 0.8125rem;
   line-height: 1.5;
-  color: rgb(209 250 229 / 0.9);
+  color: var(--foreground);
 }
 
 .lecture-notes-markdown .study-python-output--error {
-  color: rgb(248 113 113);
+  color: var(--destructive);
 }
 
 .lecture-notes-markdown .study-python-output--stderr {
-  color: rgb(251 191 36 / 0.9);
+  color: color-mix(in srgb, var(--muted-foreground) 80%, orange);
 }
 
 .study-mermaid-preview-pane {
-  background: rgb(0 0 0 / 0.08);
+  background: color-mix(in srgb, var(--muted) 30%, transparent);
 }
 
-.lecture-notes-markdown .study-mermaid-block svg {
+.study-mermaid-block {
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--foreground) 4%, transparent);
+}
+
+.study-mermaid-toolbar .study-section-toolbar {
   max-width: 100%;
+}
+
+/* Readable column width — diagram SVGs only (not Lucide toolbar icons). */
+.study-mermaid-block .study-mermaid-render > svg,
+.study-mermaid-block .study-mermaid-render svg.study-mermaid-svg,
+.lecture-notes-markdown .study-mermaid-block .study-mermaid-render > svg {
+  display: block;
+  max-width: 42rem;
+  width: 100%;
   height: auto;
+  margin-inline: 0;
 }
 
-/* Never show Mermaid's default huge "Syntax error in text" diagram */
-.study-mermaid-block svg:has(.error-text),
-.study-mermaid-block svg:has(.error-icon) {
-  display: none !important;
+.study-mermaid-toolbar svg,
+.study-section-toolbar svg {
+  width: 0.875rem !important;
+  height: 0.875rem !important;
+  max-width: none !important;
+  display: inline-block;
 }
 
-/* Hide stray temp containers Mermaid may append to document.body */
-body > div[id^="dmermaid-"],
-body > div[id^="d3-mermaid-"] {
+/* Hide only real Mermaid error diagrams (elements), not class names inside <style>. */
+.study-mermaid-block .study-mermaid-render svg:has(g.error-icon),
+.study-mermaid-block .study-mermaid-render svg:has(text.error-text),
+.study-mermaid-block .study-mermaid-render svg:has(.error-text > tspan) {
   display: none !important;
-  visibility: hidden !important;
-  height: 0 !important;
-  overflow: hidden !important;
-  pointer-events: none !important;
 }

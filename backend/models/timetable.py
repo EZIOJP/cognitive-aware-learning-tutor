@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import relationship
 
 from backend.db.base import Base
@@ -46,5 +46,7 @@ class TrackedSession(Base):
     app_name = Column(String(255), nullable=True)
     category_source = Column(String, nullable=True, default="rule")
     category_before_llm = Column(String, nullable=True)
+    # None = use policy; True = force productive; False = force unproductive
+    override_productive = Column(Boolean, nullable=True)
 
     task = relationship("TimetableTask", back_populates="sessions")

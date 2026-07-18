@@ -85,7 +85,7 @@ def apply_routines(
     skip_overlaps: bool = True,
 ) -> list[PlannerBlock]:
     """Create planner blocks from enabled routines for target_date (default today)."""
-    target = target_date or datetime.now(timezone.utc).date()
+    target = target_date or datetime.now().astimezone().date()
     day_key = _weekday_key(target)
 
     routines = (

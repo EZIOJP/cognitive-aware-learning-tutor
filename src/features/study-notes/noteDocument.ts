@@ -1,7 +1,6 @@
 /**
  * Canonical note-document model — mirrors backend/transcripts/note_document.py
  */
-import { layoutSafeMermaidSource } from "../mermaid/pipeline";
 import {
   repairAllFences,
   repairMermaidFences,
@@ -9,6 +8,7 @@ import {
   repairSplitCodeFences,
   repairStepCodeBlocks,
 } from "../../components/study/markdownRepair";
+import { sanitizeMermaidSource } from "../mermaid/pipeline";
 
 export type FencedBlock = {
   index: number;
@@ -19,7 +19,6 @@ export type FencedBlock = {
 };
 
 const FENCE_BLOCK_RE = /```(\w*)[^\S\r\n]*\r?\n([\s\S]*?)```/g;
-const MERMAID_RE = /```mermaid\s*\n([\s\S]*?)```/gi;
 
 export { repairNoteMarkdown };
 
@@ -62,8 +61,9 @@ export function replaceFencedBlock(markdown: string, blockIndex: number, newCont
   return markdown.slice(0, block.start) + formatFence(block.lang, newContent) + markdown.slice(block.end);
 }
 
+/** Trim + strip fence wrappers only — do not rewrite Mermaid syntax. */
 export function applyMermaidLayoutSafe(body: string): string {
-  return layoutSafeMermaidSource(body);
+  return sanitizeMermaidSource(body);
 }
 
 export function applyBlockUpdate(
@@ -77,20 +77,16 @@ export function applyBlockUpdate(
   if (!block) {
     throw new Error(`Block index ${blockIndex} out of range`);
   }
-  const lang = opts?.lang ?? block.lang;
-  const body = lang === "mermaid" ? applyMermaidLayoutSafe(newContent) : newContent;
+  const body = (opts?.lang ?? block.lang) === "mermaid" ? newContent.trim() : newContent;
   return replaceFencedBlock(markdown, blockIndex, body);
 }
 
 export function finalizeNoteMarkdown(md: string): string {
-  const prepared = prepareNoteMarkdown(md);
-  return prepared.replace(MERMAID_RE, (_match, inner: string) => {
-    const body = applyMermaidLayoutSafe(inner);
-    return `\`\`\`mermaid\n${body}\n\`\`\``;
-  });
+  // Fence repair only — leave ```mermaid bodies untouched for Mermaid.js.
+  return prepareNoteMarkdown(md);
 }
 
-export { layoutSafeMermaidSource } from "../mermaid/pipeline";
+export { layoutSafeMermaidSource, sanitizeMermaidSource } from "../mermaid/pipeline";
 
 // Re-export repair steps for tests / direct use
 export { repairSplitCodeFences, repairAllFences, repairStepCodeBlocks, repairMermaidFences };

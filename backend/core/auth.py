@@ -51,7 +51,7 @@ def ensure_demo_user(db: Session) -> User:
     return demo
 
 
-def ensure_default_admin(db: Session) -> None:
+def ensure_default_admin(db: Session) -> User:
     admin = db.query(User).filter(User.username == "admin").first()
     if admin:
         changed = False
@@ -63,7 +63,7 @@ def ensure_default_admin(db: Session) -> None:
             changed = True
         if changed:
             db.commit()
-        return
+        return admin
     admin = User(
         username="admin",
         password_hash=pwd_context.hash("admin123"),
@@ -72,12 +72,44 @@ def ensure_default_admin(db: Session) -> None:
     )
     db.add(admin)
     db.commit()
+    db.refresh(admin)
+    return admin
+
+
+def ensure_solo_owner(db: Session) -> User:
+    """Single local calendar owner (admin). Used when solo_local_user is on."""
+    return ensure_default_admin(db)
+
+
+def merge_demo_planner_into_solo(db: Session) -> int:
+    """Move demo planner rows onto admin so phone/web see one calendar."""
+    from backend.models.planner import PlannerBlock
+    from backend.models.planner_routine import PlannerRoutine
+
+    owner = ensure_solo_owner(db)
+    demo = db.query(User).filter(User.username == "demo").first()
+    if not demo or demo.id == owner.id:
+        return 0
+    moved = (
+        db.query(PlannerBlock)
+        .filter(PlannerBlock.user_id == demo.id)
+        .update({PlannerBlock.user_id: owner.id}, synchronize_session=False)
+    )
+    db.query(PlannerRoutine).filter(PlannerRoutine.user_id == demo.id).update(
+        {PlannerRoutine.user_id: owner.id},
+        synchronize_session=False,
+    )
+    db.commit()
+    return int(moved or 0)
 
 
 def get_current_user(
     credentials: HTTPAuthorizationCredentials | None = Depends(security),
     db: Session = Depends(get_db),
 ) -> User:
+    # Solo local mode: one calendar for phone + web. Ignore identity splits.
+    if settings.solo_local_user:
+        return ensure_solo_owner(db)
     if credentials and credentials.scheme.lower() == "bearer":
         user = decode_user(credentials.credentials, db)
         if user:

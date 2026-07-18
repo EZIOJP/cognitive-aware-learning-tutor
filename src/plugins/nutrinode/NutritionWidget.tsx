@@ -1,8 +1,11 @@
 import { Apple, Plus } from "lucide-react";
 import { useNutrition } from "./NutritionContext";
+import { useEaster, useTapCombo } from "../../easter";
 
 export function NutritionWidget() {
   const { todayTotals, status } = useNutrition();
+  const { burst } = useEaster();
+  const onCalTap = useTapCombo(5, () => burst("avocado"));
 
   const cal = Math.round(todayTotals?.total_kcal || 0);
   const pro = Math.round(todayTotals?.protein_g || 0);
@@ -17,7 +20,11 @@ export function NutritionWidget() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <div className="flex flex-col">
+        <div
+          className="flex flex-col cursor-pointer select-none"
+          onClick={onCalTap}
+          title="Tap kcal 5×…"
+        >
           <span className="text-2xl font-bold">{cal} <span className="text-sm font-normal text-muted-foreground">/ {calTarget} kcal</span></span>
         </div>
         <div

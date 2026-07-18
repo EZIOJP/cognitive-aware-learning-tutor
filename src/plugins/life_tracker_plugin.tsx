@@ -1,4 +1,4 @@
-import { Heart, Monitor } from "lucide-react";
+import { Activity, Heart } from "lucide-react";
 import type { PluginDef } from "./types";
 import { registerPlugin } from "./registry";
 import { LifeTrackerPage } from "../pages/LifeTrackerPage";
@@ -22,12 +22,13 @@ export const LifeTrackerPlugin: PluginDef = {
     {
       id: "browser-activity",
       type: "browser-activity",
-      title: "Browser Activity",
-      description: "Live feed from your SelfTracker extension.",
-      icon: Monitor,
-      accent: "from-indigo-500/20 to-violet-500/10",
+      title: "Desktop Activity",
+      description: "Live apps & sites from the desktop tracker (and browser extension).",
+      icon: Activity,
+      accent: "from-teal-600/15 to-slate-900/40",
       defaultColSpan: 2,
-      component: <BrowserActivityWidget />
+      defaultRowSpan: 2,
+      component: <BrowserActivityWidget />,
     },
     {
       id: "life-score",
@@ -39,9 +40,9 @@ export const LifeTrackerPlugin: PluginDef = {
       to: "/life-tracker",
       defaultColSpan: 1,
       defaultRowSpan: 2,
-      component: <LifeScoreWidget />
-    }
-  ]
+      component: <LifeScoreWidget />,
+    },
+  ],
 };
 
 registerPlugin(LifeTrackerPlugin);

@@ -60,7 +60,8 @@ export function WeeklyAdherenceHeatmap({ days, selectedDay, onSelectDay, loading
         </div>
       )}
       <p className="text-[10px] text-muted-foreground">
-        Green ≥75% · Amber 40–74% · Red &lt;40% · Gray = no plan
+        % of planned time spent in on-plan focus (capped at 100%). Off-plan productive apps = drift, not
+        success. Green ≥75% · Amber 40–74% · Red &lt;40% · Gray = no plan
       </p>
     </div>
   );

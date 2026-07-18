@@ -7,5 +7,6 @@ export {
   prepareNoteMarkdown,
   replaceFencedBlock,
   repairNoteMarkdown,
+  sanitizeMermaidSource,
   type FencedBlock,
 } from "./noteDocument";

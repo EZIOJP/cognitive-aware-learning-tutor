@@ -54,7 +54,8 @@ def test_life_daily_today_returns_iso_date():
 
 def test_validation_error_envelope():
     r = client.put(f"/api/life/daily/{date.today().isoformat()}", json={})
-    assert r.status_code in (200, 422)
+    # Empty body → 400 (no fields) or legacy 422 envelope
+    assert r.status_code in (200, 400, 422)
     if r.status_code == 422:
         data = r.json()
         assert "error" in data

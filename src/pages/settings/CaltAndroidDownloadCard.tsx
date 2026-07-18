@@ -1,6 +1,10 @@
-import { useEffect, useState } from "react";
-import { Download, RefreshCw, Smartphone } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Download, RefreshCw, Smartphone, QrCode } from "lucide-react";
 import { Button } from "../../app/components/ui/button";
+import QRCode from "qrcode";
+import { useAuth } from "../../context/AuthContext";
+import { resolveApiUrl } from "../../utils/resolveBackendUrl";
+import { buildCaltPairPayload, encodeCaltPairPayload } from "../../features/calt-pair/pairing";
 import {
   caltAndroidDownloadUrl,
   fetchCaltAndroidLatest,
@@ -12,16 +16,26 @@ export function CaltAndroidDownloadCard() {
   const [info, setInfo] = useState<CaltAndroidLatest | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const { token, user, isAuthenticated } = useAuth();
+  const qrCanvasRef = useRef<HTMLCanvasElement>(null);
+  const [showQr, setShowQr] = useState(false);
 
   const load = async () => {
     setLoading(true);
     setError(null);
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => controller.abort(), 8000);
     try {
-      setInfo(await fetchCaltAndroidLatest());
+      setInfo(await fetchCaltAndroidLatest(controller.signal));
     } catch (e) {
       setInfo(null);
-      setError(e instanceof Error ? e.message : "Could not reach server");
+      if (e instanceof DOMException && e.name === "AbortError") {
+        setError("Server not responding — is the backend running on port 8000?");
+      } else {
+        setError(e instanceof Error ? e.message : "Could not reach server");
+      }
     } finally {
+      window.clearTimeout(timer);
       setLoading(false);
     }
   };
@@ -29,6 +43,20 @@ export function CaltAndroidDownloadCard() {
   useEffect(() => {
     void load();
   }, []);
+
+  useEffect(() => {
+    if (!showQr || !qrCanvasRef.current || !isAuthenticated || !token) return;
+    const payload = buildCaltPairPayload({
+      apiBaseUrl: resolveApiUrl(),
+      token,
+      username: user?.username,
+    });
+    QRCode.toCanvas(qrCanvasRef.current, encodeCaltPairPayload(payload), {
+      width: 180,
+      margin: 2,
+      color: { dark: "#000000", light: "#ffffff" },
+    }).catch(console.error);
+  }, [showQr, isAuthenticated, token, user?.username]);
 
   const downloadUrl = caltAndroidDownloadUrl();
 
@@ -38,6 +66,32 @@ export function CaltAndroidDownloadCard() {
         Install or update the CALT Timetable companion on your phone. Open this page on
         Android, tap download, then allow install from your browser.
       </p>
+
+      {isAuthenticated ? (
+        <div className="space-y-2 rounded-lg border border-border bg-muted/30 p-3">
+          <p className="text-sm font-medium">Pair phone with this PC</p>
+          <p className="text-xs text-muted-foreground">
+            Same account + same calendar — no typing the LAN URL. In the Android app:
+            Settings → Scan Pairing QR.
+          </p>
+          <Button type="button" variant="outline" onClick={() => setShowQr(!showQr)}>
+            <QrCode className="w-4 h-4 mr-1" />
+            {showQr ? "Hide Pairing QR" : "Show Pairing QR"}
+          </Button>
+          {showQr && (
+            <div className="bg-white p-3 rounded-xl inline-block border border-border mt-1">
+              <canvas ref={qrCanvasRef} />
+              <p className="text-[10px] text-center text-slate-500 mt-1 uppercase font-bold tracking-wider">
+                Scan in Mobile App Settings
+              </p>
+            </div>
+          )}
+        </div>
+      ) : (
+        <p className="text-sm text-muted-foreground">
+          Sign in to show a pairing QR for the phone app.
+        </p>
+      )}
 
       {loading && (
         <p className="text-sm text-muted-foreground">Checking for build on server…</p>

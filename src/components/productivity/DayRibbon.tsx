@@ -12,6 +12,7 @@ import {
   mergedIntervalLabel,
   minutesSinceMidnight,
   parseApiDate,
+  PRODUCTIVE_THRESHOLD,
   startOfDay,
   toDayString,
   toSegmentStyle,
@@ -24,7 +25,7 @@ type Props = {
 };
 
 type FocusState =
-  | { kind: "actual"; interval: MergedInterval; onPlan: boolean }
+  | { kind: "actual"; interval: MergedInterval; onPlan: boolean; productive: boolean }
   | { kind: "planned"; block: PlannerBlock };
 
 function hourLabels(axisStart: number, axisEnd: number): number[] {
@@ -52,11 +53,16 @@ export const DayRibbon = forwardRef<HTMLDivElement, Props>(function DayRibbon({ 
   const [focus, setFocus] = useState<FocusState | null>(null);
   const [anchor, setAnchor] = useState<EventAnchorRect | null>(null);
 
+  const [localRefresh, setLocalRefresh] = useState(0);
   const { data: blocks, loading: blocksLoading, error: blocksError } = usePlannerBlocks(from, to);
-  const { data: timeline, loading: timelineLoading, error: timelineError } = useDesktopTimeline(dayStr, refreshKey);
+  const { data: timeline, loading: timelineLoading, error: timelineError } = useDesktopTimeline(
+    dayStr,
+    refreshKey + localRefresh,
+  );
 
   const intervals = mergeAdjacentIntervals(
     (timeline?.intervals ?? []).map((iv) => ({
+      session_id: iv.session_id,
       start_time: iv.start_time,
       end_time: iv.end_time,
       app_name: iv.app_name,
@@ -114,7 +120,9 @@ export const DayRibbon = forwardRef<HTMLDivElement, Props>(function DayRibbon({ 
     <div ref={ref} className="scroll-mt-4">
       <div
         ref={wrapRef}
-        className="relative rounded-xl border border-white/10 bg-white/[0.03] p-4 space-y-3"
+        className={`relative min-w-0 rounded-xl border border-white/10 bg-white/[0.03] p-4 space-y-3 ${
+          focus ? "overflow-visible" : "overflow-hidden"
+        }`}
         onClickCapture={(e) => {
           if (!focus) return;
           const t = e.target as HTMLElement;
@@ -135,13 +143,29 @@ export const DayRibbon = forwardRef<HTMLDivElement, Props>(function DayRibbon({ 
           )}
         </div>
 
-        <div className="relative">
-          <div className="flex justify-between text-[10px] text-muted-foreground tabular-nums mb-1 px-0.5">
-            {hours.map((h) => (
-              <span key={h} style={{ position: "relative", left: `${((h * 60 - axisStart) / (axisEnd - axisStart)) * 100}%` }}>
-                {formatHour(h)}
-              </span>
-            ))}
+        <div className="relative min-w-0">
+          <div className="relative h-4 mb-1">
+            {hours.map((h, i) => {
+              const pct = ((h * 60 - axisStart) / Math.max(1, axisEnd - axisStart)) * 100;
+              const clamped = Math.min(100, Math.max(0, pct));
+              // Keep tick alignment with tracks below; pin edge labels so they stay fully visible.
+              const isFirst = i === 0 || clamped <= 0.5;
+              const isLast = i === hours.length - 1 || clamped >= 99.5;
+              const alignClass = isFirst
+                ? "translate-x-0"
+                : isLast
+                  ? "-translate-x-full"
+                  : "-translate-x-1/2";
+              return (
+                <span
+                  key={h}
+                  className={`absolute top-0 text-[10px] text-muted-foreground tabular-nums whitespace-nowrap ${alignClass}`}
+                  style={{ left: `${clamped}%` }}
+                >
+                  {formatHour(h)}
+                </span>
+              );
+            })}
           </div>
 
           {loading ? (
@@ -193,14 +217,27 @@ export const DayRibbon = forwardRef<HTMLDivElement, Props>(function DayRibbon({ 
                     const s1 = minutesSinceMidnight(new Date(iv.end_time));
                     const style = toSegmentStyle(s0, s1, axisStart, axisEnd);
                     const onPlan = actualOverlapsPlanned(s0, s1, blocks);
+                    const productive = (iv.productivity_score ?? 0) >= PRODUCTIVE_THRESHOLD;
+                    const segmentClass = onPlan
+                      ? productive
+                        ? "bg-emerald-500"
+                        : "bg-rose-500"
+                      : "bg-amber-500";
                     return (
                       <button
                         key={`${iv.start_time}-${idx}`}
                         type="button"
-                        className={`ribbon-segment absolute top-0 bottom-0 rounded-sm cursor-pointer hover:brightness-110 focus:outline-none focus:ring-1 focus:ring-sky-400/60 ${onPlan ? "bg-emerald-500" : "bg-amber-500"} opacity-85`}
+                        className={`ribbon-segment absolute top-0 bottom-0 rounded-sm cursor-pointer hover:brightness-110 focus:outline-none focus:ring-1 focus:ring-sky-400/60 ${segmentClass} opacity-85`}
                         style={style}
                         title={mergedIntervalLabel(iv)}
-                        onClick={(e) => openAt(e.currentTarget, { kind: "actual", interval: iv, onPlan })}
+                        onClick={(e) =>
+                          openAt(e.currentTarget, {
+                            kind: "actual",
+                            interval: iv,
+                            onPlan,
+                            productive,
+                          })
+                        }
                       />
                     );
                   })}
@@ -209,12 +246,15 @@ export const DayRibbon = forwardRef<HTMLDivElement, Props>(function DayRibbon({ 
             </div>
           )}
 
-          <div className="flex gap-4 mt-2 text-[10px] text-muted-foreground">
+          <div className="flex flex-wrap gap-4 mt-2 text-[10px] text-muted-foreground">
             <span className="flex items-center gap-1">
-              <span className="w-2 h-2 rounded-sm bg-emerald-500" /> On plan
+              <span className="w-2 h-2 rounded-sm bg-emerald-500" /> On-plan focus
             </span>
             <span className="flex items-center gap-1">
-              <span className="w-2 h-2 rounded-sm bg-amber-500" /> Drift
+              <span className="w-2 h-2 rounded-sm bg-rose-500" /> Distraction during plan
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="w-2 h-2 rounded-sm bg-amber-500" /> Drift (off plan)
             </span>
             <span className="text-sky-300/60">Click a segment for details</span>
           </div>
@@ -231,7 +271,13 @@ export const DayRibbon = forwardRef<HTMLDivElement, Props>(function DayRibbon({ 
             end={parseApiDate(focus.interval.end_time)}
             items={[focus.interval]}
             totalSeconds={focus.interval.duration_seconds}
-            planContext={focus.onPlan ? "on_plan" : "drift"}
+            planContext={
+              focus.onPlan
+                ? focus.productive
+                  ? "focus"
+                  : "distraction"
+                : "drift"
+            }
             onClose={() => {
               setFocus(null);
               setAnchor(null);

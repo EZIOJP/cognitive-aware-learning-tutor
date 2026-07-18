@@ -9,19 +9,25 @@ let activeTitle = null;
 let sessionStart = Date.now();
 let tabSwitchCount = 0;
 let dailyLog = [];
+/** Outbound queue — local store first, bulk WS every few minutes */
+let outboundQueue = [];
 
 let ws = null;
 
+const BULK_FLUSH_MINUTES = 3;
+const BULK_FLUSH_MAX = 25;
+
 // ── Boot: storage + alarms + WS ───────────────────────────
-chrome.storage.local.get(["dailyLog", "tabSwitchCount"], (result) => {
+chrome.storage.local.get(["dailyLog", "tabSwitchCount", "outboundQueue"], (result) => {
   if (result.dailyLog) dailyLog = result.dailyLog;
   if (result.tabSwitchCount) tabSwitchCount = result.tabSwitchCount;
+  if (Array.isArray(result.outboundQueue)) outboundQueue = result.outboundQueue;
 });
 
 function scheduleAlarms() {
-  // Chrome/Edge require periodInMinutes >= 1 for repeating alarms (0.5 crashes SW)
-  chrome.alarms.create("flush", { periodInMinutes: 1 });
-  chrome.alarms.create("ws-keepalive", { periodInMinutes: 1 });
+  // Chrome/Edge require periodInMinutes >= 1 for repeating alarms
+  chrome.alarms.create("flush", { periodInMinutes: BULK_FLUSH_MINUTES });
+  chrome.alarms.create("ws-keepalive", { periodInMinutes: 2 });
 }
 
 chrome.runtime.onInstalled.addListener(() => {
@@ -49,6 +55,7 @@ function connectWebSocket() {
     ws.onopen = () => {
       console.log("SelfTracker: connected to backend");
       chrome.alarms.clear("ws-retry");
+      flushOutboundQueue();
     };
 
     ws.onmessage = () => {
@@ -115,6 +122,31 @@ function isInternalUrl(url) {
   return !url || url.startsWith("chrome://") || url.startsWith("edge://") || url.startsWith("about:");
 }
 
+function enqueueOutbound(payload) {
+  outboundQueue.push(payload);
+  if (outboundQueue.length > 2000) outboundQueue = outboundQueue.slice(-2000);
+  chrome.storage.local.set({ outboundQueue });
+  if (outboundQueue.length >= BULK_FLUSH_MAX) {
+    flushOutboundQueue();
+  }
+}
+
+function flushOutboundQueue() {
+  if (!outboundQueue.length) return;
+  if (!ws || ws.readyState !== WebSocket.OPEN) return;
+
+  const batch = outboundQueue.splice(0, outboundQueue.length);
+  chrome.storage.local.set({ outboundQueue });
+  try {
+    ws.send(JSON.stringify({ type: "BATCH", events: batch, source: "extension" }));
+  } catch (e) {
+    // Put back if send fails
+    outboundQueue = batch.concat(outboundQueue);
+    chrome.storage.local.set({ outboundQueue });
+    console.warn("SelfTracker: batch flush failed", e);
+  }
+}
+
 function logCurrentSession(reason = "tab_switch") {
   if (isInternalUrl(activeUrl)) return;
 
@@ -139,9 +171,8 @@ function logCurrentSession(reason = "tab_switch") {
   if (dailyLog.length > 5000) dailyLog = dailyLog.slice(-5000);
   chrome.storage.local.set({ dailyLog, lastEntry: entry, tabSwitchCount });
 
-  if (ws && ws.readyState === WebSocket.OPEN) {
-    ws.send(JSON.stringify({ type: "SESSION_END", ...entry }));
-  }
+  // Store locally; bulk to backend on a timer (not every tab switch)
+  enqueueOutbound({ type: "SESSION_END", source: "extension", ...entry });
 }
 
 // ── Tab / window / idle listeners ───────────────────────────
@@ -193,24 +224,24 @@ chrome.alarms.onAlarm.addListener((alarm) => {
     return;
   }
 
-  if (alarm.name === "flush" && activeUrl && !isInternalUrl(activeUrl)) {
-    const category = classifyUrl(activeUrl, activeTitle);
-    const liveEntry = {
-      timestamp: sessionStart,
-      end_timestamp: Date.now(),
-      duration_seconds: Math.round((Date.now() - sessionStart) / 1000),
-      url: activeUrl,
-      title: activeTitle || "Untitled",
-      domain: extractDomain(activeUrl),
-      category,
-      productivity_score: productivityScore(category),
-      reason: "live",
-      tab_switches_today: tabSwitchCount,
-    };
-    chrome.storage.local.set({ liveEntry });
-
-    if (ws && ws.readyState === WebSocket.OPEN) {
-      ws.send(JSON.stringify({ type: "LIVE_SNAPSHOT", ...liveEntry }));
+  if (alarm.name === "flush") {
+    flushOutboundQueue();
+    // Optional live snapshot for popup UI only — not persisted to DB anymore
+    if (activeUrl && !isInternalUrl(activeUrl)) {
+      const category = classifyUrl(activeUrl, activeTitle);
+      const liveEntry = {
+        timestamp: sessionStart,
+        end_timestamp: Date.now(),
+        duration_seconds: Math.round((Date.now() - sessionStart) / 1000),
+        url: activeUrl,
+        title: activeTitle || "Untitled",
+        domain: extractDomain(activeUrl),
+        category,
+        productivity_score: productivityScore(category),
+        reason: "live",
+        tab_switches_today: tabSwitchCount,
+      };
+      chrome.storage.local.set({ liveEntry });
     }
   }
 });
@@ -233,9 +264,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       chrome.storage.local.set({ behavioralLog: log });
     });
 
-    if (ws && ws.readyState === WebSocket.OPEN) {
-      ws.send(JSON.stringify(rawPayload));
-    }
+    enqueueOutbound(rawPayload);
     return false;
   }
 

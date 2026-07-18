@@ -158,14 +158,40 @@ export function fmtDurationMinutes(m: number): string {
 }
 
 export function lastNDays(n: number): string[] {
+  return daysEndingOn(new Date(), n);
+}
+
+/** Inclusive calendar days ending on `end` (oldest first when reversed for charts). */
+export function daysEndingOn(end: Date, n: number): string[] {
   const out: string[] = [];
-  const today = new Date();
+  const anchor = startOfDay(end);
   for (let i = 0; i < n; i++) {
-    const d = new Date(today);
-    d.setDate(today.getDate() - i);
+    const d = new Date(anchor);
+    d.setDate(anchor.getDate() - i);
     out.push(toDayString(d));
   }
   return out;
+}
+
+export type CalendarStatsView = "day" | "week" | "month";
+
+export function statsRangeForView(
+  view: CalendarStatsView,
+  anchor: Date,
+): { from: Date; to: Date; dayCount: number; label: string } {
+  const day = startOfDay(anchor);
+  if (view === "day") {
+    return { from: day, to: endOfDay(day), dayCount: 1, label: "selected day" };
+  }
+  if (view === "week") {
+    const from = startOfWeekMonday(day);
+    const to = endOfWeekSunday(day);
+    return { from, to, dayCount: 7, label: "this week" };
+  }
+  const from = startOfDay(new Date(day.getFullYear(), day.getMonth(), 1));
+  const to = endOfDay(new Date(day.getFullYear(), day.getMonth() + 1, 0));
+  const dayCount = to.getDate();
+  return { from, to, dayCount, label: "this month" };
 }
 
 export function startOfWeekMonday(d: Date): Date {
@@ -200,6 +226,7 @@ export function isIgnoredTrackerApp(appName?: string | null, title?: string | nu
 }
 
 export type MergedInterval = {
+  session_id?: string | null;
   start_time: string;
   end_time: string;
   app_name: string | null;
@@ -209,9 +236,23 @@ export type MergedInterval = {
   productivity_score: number | null;
   duration_seconds: number;
   merged_count: number;
+  children: MergedIntervalChild[];
+};
+
+export type MergedIntervalChild = {
+  session_id?: string | null;
+  start_time: string;
+  end_time: string;
+  app_name?: string | null;
+  category?: string | null;
+  window_title?: string | null;
+  site?: string | null;
+  productivity_score?: number | null;
+  duration_seconds: number;
 };
 
 type Mergeable = {
+  session_id?: string | null;
   start_time: string;
   end_time: string;
   app_name?: string | null;
@@ -230,6 +271,20 @@ function mergeKey(item: Mergeable): string {
 
 function durationSec(start: string, end: string): number {
   return Math.max(0, Math.round((new Date(end).getTime() - new Date(start).getTime()) / 1000));
+}
+
+function childFrom(item: Mergeable): MergedIntervalChild {
+  return {
+    session_id: item.session_id ?? null,
+    start_time: item.start_time,
+    end_time: item.end_time,
+    app_name: item.app_name ?? null,
+    category: item.category ?? null,
+    window_title: item.window_title ?? null,
+    site: item.site ?? null,
+    productivity_score: item.productivity_score ?? null,
+    duration_seconds: item.duration_seconds ?? durationSec(item.start_time, item.end_time),
+  };
 }
 
 /**
@@ -260,6 +315,7 @@ export function mergeAdjacentIntervals<T extends Mergeable>(
       prev.end_time = item.end_time;
       prev.duration_seconds = durationSec(prev.start_time, prev.end_time);
       prev.merged_count += 1;
+      prev.children.push(childFrom(item));
       if (item.window_title && !prev.window_title) prev.window_title = item.window_title;
       if (item.site && !prev.site) prev.site = item.site;
       const score = item.productivity_score ?? 0;
@@ -270,6 +326,7 @@ export function mergeAdjacentIntervals<T extends Mergeable>(
     }
 
     out.push({
+      session_id: item.session_id ?? null,
       start_time: item.start_time,
       end_time: item.end_time,
       app_name: item.app_name ?? null,
@@ -279,6 +336,7 @@ export function mergeAdjacentIntervals<T extends Mergeable>(
       productivity_score: item.productivity_score ?? null,
       duration_seconds: item.duration_seconds ?? durationSec(item.start_time, item.end_time),
       merged_count: 1,
+      children: [childFrom(item)],
     });
   }
 
@@ -291,6 +349,7 @@ export function mergeActualSessions(sessions: ActualSession[], maxGapSec = TRACK
     sessions
       .filter((s) => s.start_time && s.end_time && !isIgnoredTrackerApp(s.app_name, s.window_title))
       .map((s) => ({
+        session_id: s.session_id,
         start_time: s.start_time!,
         end_time: s.end_time!,
         app_name: (s as ActualSession & { app_name?: string }).app_name ?? null,

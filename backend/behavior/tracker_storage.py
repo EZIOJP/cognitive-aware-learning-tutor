@@ -6,6 +6,7 @@ import csv
 import json
 import logging
 import os
+import threading
 import time
 from dataclasses import asdict, dataclass, field
 from datetime import UTC, date, datetime, timedelta
@@ -30,21 +31,30 @@ CHECKPOINT_PATH = APP_DATA_DIR / "tracker_state.json"
 FLUSH_REQUEST_PATH = APP_DATA_DIR / "tracker_flush.request"
 FLUSH_ACK_PATH = APP_DATA_DIR / "tracker_flush.ack"
 
+# Quieter defaults: poll less often, keep longer sessions, bulk SQLite less often.
 DEFAULT_CONFIG = {
-    "poll_interval_s": 2.0,
-    "max_session_s": 120.0,
+    "poll_interval_s": 5.0,
+    "max_session_s": 600.0,
     "idle_threshold_s": 300.0,
     "sleep_gap_s": 60.0,
+    "bulk_flush_s": 60.0,
+    "checkpoint_interval_s": 30.0,
     "user_id": None,
 }
+
+_pending_lock = threading.Lock()
+_pending_events: list[tuple[int, dict[str, Any]]] = []
+_last_bulk_flush_at = 0.0
 
 
 @dataclass
 class TrackerConfig:
-    poll_interval_s: float = 2.0
-    max_session_s: float = 120.0
+    poll_interval_s: float = 5.0
+    max_session_s: float = 600.0
     idle_threshold_s: float = 300.0
     sleep_gap_s: float = 60.0
+    bulk_flush_s: float = 60.0
+    checkpoint_interval_s: float = 30.0
     user_id: int | None = None
 
     @classmethod
@@ -60,16 +70,20 @@ class TrackerConfig:
             data["poll_interval_s"] = float(os.environ["DESKTOP_POLL_INTERVAL"])
         if os.environ.get("DESKTOP_MAX_SESSION"):
             data["max_session_s"] = float(os.environ["DESKTOP_MAX_SESSION"])
+        if os.environ.get("DESKTOP_BULK_FLUSH"):
+            data["bulk_flush_s"] = float(os.environ["DESKTOP_BULK_FLUSH"])
         if os.environ.get("TRACKER_USER_ID"):
             data["user_id"] = int(os.environ["TRACKER_USER_ID"])
         uid = data.get("user_id")
         if uid is not None:
             uid = int(uid)
         return cls(
-            poll_interval_s=float(data.get("poll_interval_s", 2.0)),
-            max_session_s=float(data.get("max_session_s", 120.0)),
+            poll_interval_s=float(data.get("poll_interval_s", 5.0)),
+            max_session_s=float(data.get("max_session_s", 600.0)),
             idle_threshold_s=float(data.get("idle_threshold_s", 300.0)),
             sleep_gap_s=float(data.get("sleep_gap_s", 60.0)),
+            bulk_flush_s=float(data.get("bulk_flush_s", 60.0)),
+            checkpoint_interval_s=float(data.get("checkpoint_interval_s", 30.0)),
             user_id=uid,
         )
 
@@ -190,9 +204,10 @@ def append_csv_event(ev: dict) -> None:
         writer.writerow(ev)
 
 
-def persist_event(user_id: int, ev: dict, *, retries: int = 8) -> bool:
-    """Write SESSION_END to SQLite (authoritative) and CSV backup."""
-    append_csv_event(ev)
+def persist_event(user_id: int, ev: dict, *, retries: int = 8, write_csv: bool = True) -> bool:
+    """Write one SESSION_END to SQLite (and optionally CSV). Prefer enqueue_event for normal path."""
+    if write_csv:
+        append_csv_event(ev)
     for attempt in range(retries):
         db = SessionLocal()
         try:
@@ -210,6 +225,58 @@ def persist_event(user_id: int, ev: dict, *, retries: int = 8) -> bool:
         finally:
             db.close()
     return False
+
+
+def enqueue_event(user_id: int, ev: dict, *, bulk_flush_s: float = 60.0) -> None:
+    """Store to CSV immediately; buffer SQLite writes and flush in batches."""
+    append_csv_event(ev)
+    global _last_bulk_flush_at
+    with _pending_lock:
+        _pending_events.append((user_id, ev))
+        pending_n = len(_pending_events)
+    due = (time.time() - _last_bulk_flush_at) >= max(5.0, bulk_flush_s)
+    if pending_n >= 40 or due:
+        flush_pending_events()
+
+
+def flush_pending_events(*, retries: int = 8) -> int:
+    """Commit buffered SESSION_END rows in one DB session. Returns rows attempted."""
+    global _last_bulk_flush_at
+    with _pending_lock:
+        batch = list(_pending_events)
+        _pending_events.clear()
+        _last_bulk_flush_at = time.time()
+    if not batch:
+        return 0
+
+    for attempt in range(retries):
+        db = SessionLocal()
+        try:
+            for user_id, ev in batch:
+                ingest_desktop_session(db, user_id=user_id, payload=ev)
+            log.info("[bulk_flush] wrote %s session(s) to SQLite", len(batch))
+            return len(batch)
+        except OperationalError as exc:
+            if "locked" in str(exc).lower() and attempt < retries - 1:
+                time.sleep(0.2 * (attempt + 1))
+                continue
+            log.warning("Bulk SQLite flush failed: %s — re-queueing %s", exc, len(batch))
+            with _pending_lock:
+                _pending_events[:0] = batch
+            return 0
+        except Exception as exc:  # noqa: BLE001
+            log.warning("Bulk flush failed: %s — re-queueing %s", exc, len(batch))
+            with _pending_lock:
+                _pending_events[:0] = batch
+            return 0
+        finally:
+            db.close()
+    return 0
+
+
+def pending_event_count() -> int:
+    with _pending_lock:
+        return len(_pending_events)
 
 
 def today_total_seconds(user_id: int) -> int:

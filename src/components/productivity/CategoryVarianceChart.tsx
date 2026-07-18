@@ -13,15 +13,19 @@ import { useActualOverlay, usePlannerBlocks } from "../../hooks/usePlanVsActual"
 import {
   aggregateActualByCategory,
   aggregatePlannedByTask,
+  endOfDay,
   endOfWeekSunday,
+  startOfDay,
   startOfWeekMonday,
 } from "./planVsActualUtils";
 
-type RangePreset = "today" | "week" | "last7";
+type RangePreset = "day" | "week" | "month" | "last7";
 
 type Props = {
   from?: Date;
   to?: Date;
+  baseDate?: Date;
+  defaultPreset?: RangePreset;
 };
 
 function buildTaskMap(timetables: Awaited<ReturnType<typeof fetchTimetables>>): Map<number, string> {
@@ -88,30 +92,29 @@ function ChartPanel({
   );
 }
 
-export function CategoryVarianceChart({ from: fromProp, to: toProp }: Props) {
-  const [preset, setPreset] = useState<RangePreset>("today");
+export function CategoryVarianceChart({ from: fromProp, to: toProp, baseDate, defaultPreset = "day" }: Props) {
+  const [preset, setPreset] = useState<RangePreset>(defaultPreset);
   const [taskMap, setTaskMap] = useState<Map<number, string>>(new Map());
 
   const { from, to } = useMemo(() => {
     if (fromProp && toProp) return { from: fromProp, to: toProp };
-    const now = new Date();
-    if (preset === "today") {
-      const start = new Date(now);
-      start.setHours(0, 0, 0, 0);
-      const end = new Date(now);
-      end.setHours(23, 59, 59, 999);
-      return { from: start, to: end };
+    const anchor = baseDate ? new Date(baseDate) : new Date();
+    if (preset === "day") {
+      return { from: startOfDay(anchor), to: endOfDay(anchor) };
     }
     if (preset === "week") {
-      return { from: startOfWeekMonday(now), to: endOfWeekSunday(now) };
+      return { from: startOfWeekMonday(anchor), to: endOfWeekSunday(anchor) };
     }
-    const end = new Date(now);
-    end.setHours(23, 59, 59, 999);
-    const start = new Date(now);
+    if (preset === "month") {
+      const start = new Date(anchor.getFullYear(), anchor.getMonth(), 1);
+      const end = new Date(anchor.getFullYear(), anchor.getMonth() + 1, 0);
+      return { from: startOfDay(start), to: endOfDay(end) };
+    }
+    const end = endOfDay(anchor);
+    const start = new Date(anchor);
     start.setDate(start.getDate() - 6);
-    start.setHours(0, 0, 0, 0);
-    return { from: start, to: end };
-  }, [fromProp, toProp, preset]);
+    return { from: startOfDay(start), to: end };
+  }, [fromProp, toProp, baseDate?.getTime(), preset]);
 
   const { data: blocks, loading: blocksLoading } = usePlannerBlocks(from, to);
   const { data: sessions, loading: sessionsLoading } = useActualOverlay(from, to);
@@ -141,15 +144,17 @@ export function CategoryVarianceChart({ from: fromProp, to: toProp }: Props) {
             aria-label="Chart date range"
             className="text-xs rounded-lg border border-white/10 bg-white/5 px-2 py-1"
           >
-            <option value="today">Today</option>
-            <option value="week">This week (Mon–Sun)</option>
-            <option value="last7">Last 7 days</option>
+            <option value="day">Selected day</option>
+            <option value="week">Selected week (Mon–Sun)</option>
+            <option value="month">Selected month</option>
+            <option value="last7">7 days ending selected day</option>
           </select>
         )}
       </div>
 
       <p className="text-[11px] text-muted-foreground">
-        Planned uses task names; actual uses desktop tracker categories for the selected range.
+        Planned uses task names; actual uses desktop tracker categories for{" "}
+        {from.toLocaleDateString()} – {to.toLocaleDateString()}.
       </p>
 
       {loading ? (

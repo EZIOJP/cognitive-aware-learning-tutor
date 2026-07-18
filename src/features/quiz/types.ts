@@ -13,6 +13,7 @@ export type GlobalQuizQuestion = {
   starter_code?: string;
   meta?: {
     hint?: string;
+    concept?: string;
     topic?: string;
     note_path?: string;
     time_limit_sec?: number;
@@ -31,6 +32,22 @@ export type GlobalQuizAnswerResult = {
   complete: boolean;
   next_question?: GlobalQuizQuestion | null;
   added_to_review?: boolean;
+  requeued?: boolean;
+};
+
+export type QuizNextStep = {
+  action:
+    | "sign_in"
+    | "review_due"
+    | "math_drill"
+    | "notes_quiz"
+    | "start_vocab"
+    | "lecture_notes";
+  label: string;
+  to: string;
+  reason?: string;
+  due_count?: number;
+  meta?: Record<string, unknown>;
 };
 
 export type QuizSessionSummary = {
@@ -46,6 +63,7 @@ export type QuizSessionSummary = {
     time_taken_ms?: number;
   }>;
   domain?: string;
+  next_step?: QuizNextStep;
 };
 
 export type DueReviewItem = {
@@ -71,6 +89,7 @@ export type QuizBacklog = {
   deck_count: number;
   next_due?: string | null;
   recommended_action: "sign_in" | "review_due" | "start_vocab" | "lecture_notes";
+  next_step?: QuizNextStep;
   weak_topics?: string[];
 };
 

@@ -16,6 +16,11 @@ type Props = {
   refreshKey?: number;
   /** Parent tracker health — avoids duplicate fetch when provided */
   trackerHealth?: TrackerHealth | null;
+  /** Heatmap window length (7 week / month length) */
+  adherenceDays?: number;
+  /** Inclusive end of adherence window */
+  adherenceEnd?: Date;
+  variancePreset?: "day" | "week" | "month" | "last7";
 };
 
 function TrackerDot({ health }: { health: TrackerHealth | null }) {
@@ -46,9 +51,15 @@ export function PlanVsActualDashboard({
   onSelectedDayChange,
   refreshKey = 0,
   trackerHealth: trackerHealthProp,
+  adherenceDays: adherenceWindow = 7,
+  adherenceEnd,
+  variancePreset = "week",
 }: Props) {
   const ribbonRef = useRef<HTMLDivElement>(null);
-  const { data: adherenceDays, loading: adherenceLoading } = useAdherenceRange(7);
+  const { data: adherenceDays, loading: adherenceLoading } = useAdherenceRange(
+    adherenceWindow,
+    adherenceEnd ?? selectedDay,
+  );
   const [trackerHealthLocal, setTrackerHealthLocal] = useState<TrackerHealth | null>(null);
   const [apiStale, setApiStale] = useState(false);
 
@@ -79,10 +90,18 @@ export function PlanVsActualDashboard({
   }, [trackerHealthProp]);
 
   useEffect(() => {
-    loadHealth();
-    const id = setInterval(loadHealth, 30_000);
+    if (trackerHealthProp !== undefined) {
+      // Parent already polls tracker health — only check API feature flags once.
+      void loadHealth();
+      return;
+    }
+    void loadHealth();
+    const id = setInterval(() => {
+      if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
+      void loadHealth();
+    }, 60_000);
     return () => clearInterval(id);
-  }, [loadHealth]);
+  }, [loadHealth, trackerHealthProp]);
 
   const handleSelectDay = (d: Date) => {
     onSelectedDayChange?.(d);
@@ -141,7 +160,11 @@ export function PlanVsActualDashboard({
           Category variance (planned vs actual)
         </summary>
         <div className="mt-3">
-          <CategoryVarianceChart />
+          <CategoryVarianceChart
+            key={variancePreset}
+            baseDate={selectedDay}
+            defaultPreset={variancePreset}
+          />
         </div>
       </details>
     </div>

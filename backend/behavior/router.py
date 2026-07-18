@@ -78,6 +78,35 @@ def _persist_behavior_event(enriched: dict, token: str | None) -> None:
         db.close()
 
 
+def _persist_behavior_batch(events: list[dict], token: str | None) -> int:
+    """Persist a BATCH of browser/extension events in one DB session."""
+    if not events:
+        return 0
+    db = SessionLocal()
+    n = 0
+    try:
+        user = _user_from_ws_token(token, db)
+        for data in events:
+            enriched = {**data, "received_at": datetime.now(UTC).isoformat()}
+            source = str(enriched.get("source") or "extension")
+            device = "desktop_tracker" if source == "desktop_tracker" else "extension"
+            try:
+                insert_reading(
+                    db,
+                    user_id=user.id,
+                    slug="browser_event",
+                    value_json=enriched,
+                    source_device=device,
+                    client_event_id=enriched.get("event_id") or enriched.get("received_at"),
+                )
+                n += 1
+            except (ValueError, Exception) as exc:
+                log.debug("batch event skipped: %s", exc)
+        return n
+    finally:
+        db.close()
+
+
 def _user_from_ws_token(token: str | None, db: Session) -> User:
     if token:
         user = decode_user(token, db)
@@ -98,9 +127,20 @@ async def behavior_websocket(websocket: WebSocket):
     try:
         while True:
             data = await websocket.receive_json()
+            if data.get("type") == "BATCH" and isinstance(data.get("events"), list):
+                events = [e for e in data["events"] if isinstance(e, dict)]
+                for ev in events:
+                    enriched = {**ev, "received_at": datetime.now(UTC).isoformat()}
+                    await asyncio.to_thread(_append_csv, enriched, today_str)
+                wrote = await asyncio.to_thread(_persist_behavior_batch, events, token)
+                await websocket.send_json({"status": "ok", "batched": wrote})
+                continue
+
             enriched = {**data, "received_at": datetime.now(UTC).isoformat()}
             await asyncio.to_thread(_append_csv, enriched, today_str)
-            await asyncio.to_thread(_persist_behavior_event, enriched, token)
+            # LIVE_SNAPSHOT is UI-only noise for DB — skip heavy ingest
+            if enriched.get("type") != "LIVE_SNAPSHOT":
+                await asyncio.to_thread(_persist_behavior_event, enriched, token)
             await websocket.send_json({"status": "ok"})
     except WebSocketDisconnect:
         pass
@@ -439,16 +479,22 @@ def _as_utc(dt: datetime) -> datetime:
 
 
 def _day_bounds(day: date) -> tuple[datetime, datetime]:
-    start = datetime.combine(day, datetime.min.time()).replace(tzinfo=UTC)
-    return start, start + timedelta(days=1)
+    """Host-local calendar day as UTC instants (matches planner adherence)."""
+    from backend.planner.service import local_day_bounds_utc
+
+    return local_day_bounds_utc(day)
 
 
-def _desktop_stats_from_tracked_sessions(db: Session, user_ids: list[int], day: date) -> dict:
+def _desktop_stats_from_tracked_sessions(
+    db: Session, user_ids: list[int], day: date, *, user_id: int | None = None
+) -> dict:
     """Primary: aggregate from tracked_sessions (standalone tracker SQLite writes)."""
     from backend.behavior.category_scores import load_score_map
+    from backend.behavior.productivity_policy import load_policy_dict
     from backend.behavior.session_merge import merge_tracked_rows
 
     scores = load_score_map(db)
+    policy = load_policy_dict(db, user_id) if user_id is not None else None
 
     start, end = _day_bounds(day)
     rows = (
@@ -469,7 +515,7 @@ def _desktop_stats_from_tracked_sessions(db: Session, user_ids: list[int], day: 
         desktop_sessions_payload,
     )
 
-    buckets, total = aggregate_session_rows(rows, scores=scores)
+    buckets, total = aggregate_session_rows(rows, scores=scores, policy=policy)
     sessions = desktop_sessions_payload(buckets)
 
     weighted = 0
@@ -642,7 +688,7 @@ def desktop_stats(
     from backend.behavior.category_scores import load_score_map
 
     scores = load_score_map(db)
-    payload = _desktop_stats_from_tracked_sessions(db, user_ids, d)
+    payload = _desktop_stats_from_tracked_sessions(db, user_ids, d, user_id=user.id)
     if payload["total_seconds"] == 0:
         legacy = _desktop_stats_from_readings(db, user.id, d)
         if legacy["total_seconds"] > 0:
@@ -746,9 +792,15 @@ def desktop_timeline(
     from backend.behavior.session_key import is_browser_exe
     from backend.behavior.tracker_ignore import is_ignored_app
     from backend.behavior.stats_aggregate import site_label
-    from backend.behavior.category_scores import load_score_map, score_for_category
+    from backend.behavior.category_scores import load_score_map
+    from backend.behavior.productivity_policy import (
+        load_policy_dict,
+        resolve_category_with_overrides,
+        resolve_session_score,
+    )
 
     scores = load_score_map(db)
+    policy = load_policy_dict(db, user.id)
     intervals = []
     for row in rows:
         if is_ignored_app(row.app_name or "", row.window_title or ""):
@@ -761,16 +813,20 @@ def desktop_timeline(
         exe = row.app_name or ""
         title = row.window_title
         site = site_label(exe, title) if is_browser_exe(exe) else None
+        cat = resolve_category_with_overrides(
+            row.category, app_name=exe, window_title=title, policy=policy
+        )
         intervals.append({
             "session_id": row.session_id,
             "start_time": iso_utc(row.start_time),
             "end_time": iso_utc(row.end_time),
             "duration_seconds": dur,
-            "category": row.category,
+            "category": cat,
             "app_name": row.app_name,
             "window_title": row.window_title,
             "site": site,
-            "productivity_score": score_for_category(row.category, scores),
+            "productivity_score": resolve_session_score(row, scores, policy),
+            "override_productive": row.override_productive,
         })
 
     return {
@@ -858,4 +914,149 @@ def tracker_force_sync(
         "last_event_at": iso_utc(last_at),
         "message": message,
     }
+
+
+# ── Productivity policy + category scores + session override ─────────────────
+
+
+@router.get("/api/behavior/policy")
+def get_productivity_policy(
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    from backend.behavior.productivity_policy import get_or_create_policy, serialize_policy
+
+    row = get_or_create_policy(db, user.id)
+    return serialize_policy(row)
+
+
+@router.get("/api/behavior/distraction-gate")
+def get_distraction_gate(
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Whether games/custom apps are hard-blocked until today's productive goal."""
+    from backend.behavior.distraction_gate import compute_distraction_gate
+
+    return compute_distraction_gate(db, user.id)
+
+
+@router.put("/api/behavior/policy")
+def put_productivity_policy(
+    body: dict,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    from backend.behavior.productivity_policy import update_policy
+
+    try:
+        return update_policy(db, user.id, body or {})
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+
+
+@router.get("/api/behavior/category-scores")
+def get_category_scores(
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    from backend.behavior.category_scores import load_score_map, seed_category_scores
+    from backend.models.category_score import CategoryScore
+
+    scores = load_score_map(db)
+    if not scores:
+        seed_category_scores(db)
+        scores = load_score_map(db)
+    _ = user  # auth required
+    rows = db.query(CategoryScore).order_by(CategoryScore.category).all()
+    return {
+        "scores": {r.category: r.score for r in rows},
+        "threshold_hint": 60,
+    }
+
+
+@router.put("/api/behavior/category-scores")
+def put_category_scores(
+    body: dict,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    from datetime import UTC, datetime
+
+    from backend.models.category_score import CategoryScore
+
+    scores = body.get("scores") if isinstance(body, dict) else None
+    if not isinstance(scores, dict):
+        raise HTTPException(status_code=400, detail="scores object required")
+    now = datetime.now(UTC)
+    updated = 0
+    for cat, score in scores.items():
+        cat_s = str(cat).strip()
+        if not cat_s:
+            continue
+        try:
+            val = int(score)
+        except (TypeError, ValueError):
+            raise HTTPException(status_code=400, detail=f"invalid score for {cat_s}") from None
+        if val < 0 or val > 100:
+            raise HTTPException(status_code=400, detail=f"score for {cat_s} must be 0–100")
+        row = db.query(CategoryScore).filter(CategoryScore.category == cat_s).first()
+        if row is None:
+            db.add(CategoryScore(category=cat_s, score=val, updated_at=now))
+        else:
+            row.score = val
+            row.updated_at = now
+        updated += 1
+    db.commit()
+    _ = user
+    from backend.behavior.category_scores import load_score_map
+
+    return {"updated": updated, "scores": load_score_map(db)}
+
+
+@router.patch("/api/behavior/tracked-sessions/{session_id}")
+def patch_tracked_session(
+    session_id: str,
+    body: dict,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Edge-case override: change category and/or force productive flag."""
+    from backend.behavior.classification_service import ALLOWED_CATEGORIES
+    from backend.behavior.category_scores import load_score_map, serialize_tracked_session
+    from backend.behavior.productivity_policy import load_policy_dict
+
+    user_ids = tracker_user_ids(db, user)
+    row = (
+        db.query(TrackedSession)
+        .filter(
+            TrackedSession.session_id == session_id,
+            TrackedSession.user_id.in_(user_ids),
+        )
+        .first()
+    )
+    if row is None:
+        raise HTTPException(status_code=404, detail="session not found")
+
+    if "category" in body and body["category"] is not None:
+        cat = str(body["category"]).strip()
+        if cat not in ALLOWED_CATEGORIES:
+            raise HTTPException(status_code=400, detail=f"category must be one of allowed list")
+        row.category = cat
+        row.category_source = "user_override"
+
+    if "override_productive" in body:
+        val = body["override_productive"]
+        if val is None:
+            row.override_productive = None
+        elif isinstance(val, bool):
+            row.override_productive = val
+        else:
+            raise HTTPException(status_code=400, detail="override_productive must be bool or null")
+
+    db.commit()
+    db.refresh(row)
+    scores = load_score_map(db)
+    policy = load_policy_dict(db, user.id)
+    return {"session": serialize_tracked_session(row, scores, policy)}
 

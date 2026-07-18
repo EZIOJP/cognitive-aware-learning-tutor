@@ -10,13 +10,13 @@ type Props = {
 const SEVERITY_CLASS: Record<string, string> = {
   high: "border-red-500/40 bg-red-500/10 text-red-200",
   medium: "border-amber-500/40 bg-amber-500/10 text-amber-100",
-  low: "border-emerald-500/30 bg-emerald-500/10 text-emerald-100",
+  low: "border-primary/30 bg-primary/10 text-foreground",
 };
 
 export function StudyLibraryGapPanel({ gap, loading }: Props) {
   if (loading) {
     return (
-      <div className="study-library-glass shrink-0 p-3 flex items-center gap-2 text-xs text-emerald-300">
+      <div className="study-library-glass shrink-0 p-3 flex items-center gap-2 text-xs text-primary">
         <Loader2 className="w-4 h-4 animate-spin" />
         Running gap analysis…
       </div>

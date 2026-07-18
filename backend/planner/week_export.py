@@ -10,25 +10,21 @@ from typing import Any
 
 from sqlalchemy.orm import Session
 
-from backend.behavior.category_scores import PRODUCTIVE_THRESHOLD, load_score_map, score_for_category
+from backend.behavior.category_scores import load_score_map
+from backend.behavior.productivity_policy import load_policy_dict, resolve_session_score
 from backend.behavior.tracker_ignore import is_ignored_app
 from backend.models import User
 from backend.models.planner import PlannerBlock
 from backend.models.timetable import TrackedSession
-from backend.planner.effective_focus import effective_focus_minutes
-from backend.planner.service import serialize_block
+from backend.planner.day_metrics import compute_day_metrics
+from backend.planner.service import _utc, local_day_bounds_utc, serialize_block
 from backend.timetable.tracker_query import tracker_user_ids
 
 _WEEKDAYS = ("mon", "tue", "wed", "thu", "fri", "sat", "sun")
 
 
-def _day_bounds_utc(day: date) -> tuple[datetime, datetime]:
-    start = datetime(day.year, day.month, day.day, tzinfo=timezone.utc)
-    return start, start + timedelta(days=1)
-
-
 def _local_hour(dt: datetime) -> int:
-    return dt.astimezone().hour
+    return _utc(dt).astimezone().hour
 
 
 def build_productivity_week_export(
@@ -44,9 +40,15 @@ def build_productivity_week_export(
     start = end - timedelta(days=days - 1)
 
     scores = load_score_map(db)
+    policy = load_policy_dict(db, user.id)
+    threshold = int(policy.get("threshold") or 60)
+
+    def score_fn(sess):
+        return resolve_session_score(sess, scores, policy)
+
     user_ids = tracker_user_ids(db, user)
-    range_start, _ = _day_bounds_utc(start)
-    _, range_end = _day_bounds_utc(end)
+    range_start, _ = local_day_bounds_utc(start)
+    _, range_end = local_day_bounds_utc(end)
 
     all_blocks = (
         db.query(PlannerBlock)
@@ -54,7 +56,7 @@ def build_productivity_week_export(
             PlannerBlock.user_id == user.id,
             PlannerBlock.start_at < range_end,
             PlannerBlock.end_at > range_start,
-            PlannerBlock.status.in_(("scheduled", "in_progress", "done", "rolled")),
+            PlannerBlock.status.in_(("scheduled", "in_progress", "done")),
         )
         .order_by(PlannerBlock.start_at)
         .all()
@@ -90,57 +92,49 @@ def build_productivity_week_export(
 
     for offset in range(days):
         day = start + timedelta(offset)
-        day_start, day_end = _day_bounds_utc(day)
+        day_start, day_end = local_day_bounds_utc(day)
         weekday = _WEEKDAYS[day.weekday()]
 
         day_blocks = [
             b
             for b in all_blocks
-            if b.start_at < day_end and b.end_at > day_start
+            if _utc(b.start_at) < day_end and _utc(b.end_at) > day_start
         ]
         day_sessions = [
             s
             for s in all_sessions
-            if s.start_time < day_end and s.end_time > day_start
+            if _utc(s.start_time) < day_end and _utc(s.end_time) > day_start
         ]
 
         hour_minutes = [0.0] * 24
         cat_minutes: dict[str, float] = defaultdict(float)
         app_minutes: dict[str, float] = defaultdict(float)
-        actual_minutes = 0.0
-        productive_minutes = 0.0
 
         for s in day_sessions:
-            # Clip session to day bounds
-            seg_start = max(s.start_time, day_start)
-            seg_end = min(s.end_time, day_end)
+            # Clip session to day bounds (normalize naive SQLite datetimes)
+            seg_start = max(_utc(s.start_time), day_start)
+            seg_end = min(_utc(s.end_time), day_end)
             secs = max(0.0, (seg_end - seg_start).total_seconds())
             if secs < 2:
                 continue
             mins = secs / 60.0
-            actual_minutes += mins
             cat = (s.category or "uncategorized").strip() or "uncategorized"
             app = (s.app_name or "unknown").strip() or "unknown"
             cat_minutes[cat] += mins
             app_minutes[app] += mins
             global_cat_minutes[cat] += mins
             global_app_minutes[app] += mins
-            score = score_for_category(s.category, scores)
-            if score >= PRODUCTIVE_THRESHOLD:
-                productive_minutes += mins
-
             # Attribute minutes to local hour of segment start (good enough for heatmaps)
             hour_minutes[_local_hour(seg_start)] += mins
 
-        planned_minutes = sum(b.planned_minutes for b in day_blocks)
-        effective_focus = effective_focus_minutes(
-            day_blocks,
-            day_sessions,
-            lambda cat: score_for_category(cat, scores),
+        metrics = compute_day_metrics(
+            day, day_blocks, day_sessions, score_fn, threshold=threshold
         )
-        adherence_pct = (
-            round(100 * actual_minutes / planned_minutes, 1) if planned_minutes else None
-        )
+        actual_minutes = float(metrics["actual_minutes"])
+        productive_minutes = float(metrics["productive_minutes"])
+        planned_minutes = metrics["planned_minutes"]
+        effective_focus = metrics["effective_focus_minutes"]
+        adherence_pct = metrics["adherence_pct"]
 
         top_apps = sorted(app_minutes.items(), key=lambda x: -x[1])[:8]
         top_cats = sorted(cat_minutes.items(), key=lambda x: -x[1])[:8]
@@ -153,9 +147,12 @@ def build_productivity_week_export(
                 "actual_minutes": round(actual_minutes, 1),
                 "productive_minutes": round(productive_minutes, 1),
                 "effective_focus_minutes": effective_focus,
+                "on_plan_focus_minutes": metrics["on_plan_focus_minutes"],
+                "off_plan_productive_minutes": metrics["off_plan_productive_minutes"],
+                "distraction_on_plan_minutes": metrics["distraction_on_plan_minutes"],
                 "adherence_pct": adherence_pct,
-                "block_count": len(day_blocks),
-                "session_count": len(day_sessions),
+                "block_count": metrics["block_count"],
+                "session_count": metrics["session_count"],
                 "planned_blocks": [serialize_block(b) for b in day_blocks],
                 "by_category_minutes": {
                     k: round(v, 1) for k, v in sorted(cat_minutes.items(), key=lambda x: -x[1])
@@ -244,7 +241,7 @@ def build_productivity_week_export(
         )
 
     return {
-        "export_version": "1.0",
+        "export_version": "1.1",
         "exported_at": datetime.now(timezone.utc).isoformat(),
         "purpose": (
             "Last-N-days productivity snapshot for designing weekly timetables "
@@ -255,6 +252,7 @@ def build_productivity_week_export(
             "end": end.isoformat(),
             "days": days,
         },
+        "policy_snapshot": policy,
         "summary": {
             "total_tracked_hours": round(total_tracked_minutes / 60.0, 2),
             "total_productive_hours": round(total_productive_minutes / 60.0, 2),
@@ -265,11 +263,48 @@ def build_productivity_week_export(
             "peak_hours": peak_hours[:5],
             "top_categories": top_categories,
             "top_apps": top_apps,
+            "threshold": threshold,
         },
         "weekday_patterns": weekday_patterns,
         "suggested_timetable_hints": hints,
         "by_day": by_day,
     }
+
+
+def filter_export_payload(
+    payload: dict[str, Any],
+    *,
+    include: set[str] | None = None,
+    productive_only: bool = False,
+) -> dict[str, Any]:
+    """Slim export for custom download / LLM propose."""
+    include = include or {"summary", "patterns", "by_day", "blocks", "hints", "policy"}
+    out: dict[str, Any] = {
+        "export_version": payload.get("export_version"),
+        "exported_at": payload.get("exported_at"),
+        "purpose": payload.get("purpose"),
+        "range": payload.get("range"),
+    }
+    if "policy" in include:
+        out["policy_snapshot"] = payload.get("policy_snapshot")
+    if "summary" in include:
+        out["summary"] = payload.get("summary")
+    if "patterns" in include:
+        out["weekday_patterns"] = payload.get("weekday_patterns")
+    if "hints" in include:
+        out["suggested_timetable_hints"] = payload.get("suggested_timetable_hints")
+    if "by_day" in include or "blocks" in include:
+        days = []
+        for day in payload.get("by_day") or []:
+            row = dict(day)
+            if "blocks" not in include:
+                row.pop("planned_blocks", None)
+            if productive_only:
+                # Keep day row but zero non-productive category breakdown noise
+                row["actual_minutes"] = row.get("productive_minutes", 0)
+            days.append(row)
+        out["by_day"] = days
+    return out
 
 
 def export_as_csv(payload: dict[str, Any]) -> str:

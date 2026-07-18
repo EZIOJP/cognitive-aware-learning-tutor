@@ -8,6 +8,7 @@ import { Button } from "../../../../app/components/ui/button";
 import { Card } from "../../../../app/components/ui/card";
 import { Input } from "../../../../app/components/ui/input";
 import { Textarea } from "../../../../app/components/ui/textarea";
+import { useEaster, useTapCombo } from "../../../../easter";
 
 const EMPTY = "—";
 
@@ -213,6 +214,8 @@ export function WordCard({
   aiBusy = false,
 }: WordCardProps) {
   const { token, isAdmin } = useAuth();
+  const { burst } = useEaster();
+  const onTripleTap = useTapCombo(3, () => burst("words", word.word));
   const [busy, setBusy] = useState(false);
   const [editingLocal, setEditingLocal] = useState(false);
   const editing = editingProp ?? editingLocal;
@@ -283,7 +286,10 @@ export function WordCard({
   };
 
   return (
-    <Card className="gloss-panel h-full flex flex-col overflow-hidden border-0 shadow-lg select-none">
+    <Card
+      className="gloss-panel h-full flex flex-col overflow-hidden border-0 shadow-lg select-none"
+      onClick={onTripleTap}
+    >
       <header className="shrink-0 px-4 sm:px-5 py-3 sm:py-4 border-b border-border/60 bg-gradient-to-r from-blue-50/80 to-violet-50/50 dark:from-zinc-900/80 dark:to-zinc-800/50">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">

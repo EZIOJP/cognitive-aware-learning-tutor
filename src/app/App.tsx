@@ -23,6 +23,7 @@ import { JournalPage } from "../pages/JournalPage";
 import "../plugins"; 
 import { PluginRegistryProvider, usePlugins } from "../plugins/registry";
 import { FeatureStudioPage } from "../pages/settings/FeatureStudioPage";
+import { EasterProvider } from "../easter";
 import { AppErrorBoundary } from "../components/layout/AppErrorBoundary";
 
 function AppRoutes() {
@@ -79,6 +80,7 @@ export default function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
+        <EasterProvider>
         <PluginRegistryProvider>
           <PomodoroProvider>
             <StudySessionProvider>
@@ -92,6 +94,7 @@ export default function App() {
             </StudySessionProvider>
           </PomodoroProvider>
         </PluginRegistryProvider>
+        </EasterProvider>
       </AuthProvider>
     </ThemeProvider>
   );

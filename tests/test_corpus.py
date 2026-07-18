@@ -134,6 +134,31 @@ def test_hybrid_retrieve_source_types_filter(isolated_corpus):
 
 
 def test_study_intel_prefer_notes(monkeypatch):
+    """Open-note quizzes must ignore corpus even if hits would be available."""
+    called = {"corpus": False}
+
+    def fake_hits(*a, **k):
+        called["corpus"] = True
+        return [{"chunk_id": "c1", "citation": "[Book]", "raw_payload": "textbook eigen"}]
+
+    monkeypatch.setattr(
+        "backend.transcripts.study_intel._corpus_hits_for_topic",
+        fake_hits,
+    )
+    from backend.transcripts.study_intel import _combined_source_material
+
+    text, hits = _combined_source_material(
+        ["## My lecture notes\n- eigenvalues"],
+        topic="eigenvalues",
+        prefer_notes=True,
+    )
+    assert "My lecture notes" in text
+    assert "textbook eigen" not in text
+    assert hits == []
+    assert called["corpus"] is False
+
+
+def test_study_intel_corpus_opt_in(monkeypatch):
     monkeypatch.setattr(
         "backend.transcripts.study_intel._corpus_hits_for_topic",
         lambda *a, **k: [{"chunk_id": "c1", "citation": "[Book]", "raw_payload": "textbook eigen"}],
@@ -143,7 +168,8 @@ def test_study_intel_prefer_notes(monkeypatch):
     text, hits = _combined_source_material(
         ["## My lecture notes\n- eigenvalues"],
         topic="eigenvalues",
-        prefer_notes=True,
+        prefer_notes=False,
+        use_corpus=True,
     )
     assert "My lecture notes" in text
     assert "textbook eigen" in text

@@ -16,6 +16,8 @@ import {
   Trash2,
 } from "lucide-react";
 import { Button } from "../../app/components/ui/button";
+import { getVocabToken } from "../../api/vocabClient";
+import { resolveApiUrl } from "../../utils/resolveBackendUrl";
 import {
   deleteQuizDeck,
   fetchDueReview,
@@ -24,15 +26,22 @@ import {
   fetchRecentQuizResults,
   saveQuizDeck,
 } from "../../api/globalQuizClient";
+import { llmBodyFieldsForTask } from "../../api/transcriptsClient";
 import { GlobalQuizRunner } from "../../features/quiz/GlobalQuizRunner";
 import type { DueReviewItem, QuizDeckSummary, QuizDomain } from "../../features/quiz/types";
 import { useAuth } from "../../context/AuthContext";
 
 type Tab = "due" | "start" | "decks" | "create" | "results";
 
-type ActiveQuiz = {
-  domain: QuizDomain;
-  config: Record<string, unknown>;
+type ActiveQuiz =
+  | { mode: "start"; domain: QuizDomain; config: Record<string, unknown> }
+  | { mode: "resume"; sessionId: string };
+
+type MathSkillNode = {
+  id: string;
+  title: string;
+  status: string;
+  layer?: number;
 };
 
 const EMPTY_MCQ = () => ({
@@ -48,6 +57,8 @@ export function ReviewHubPage() {
   const [searchParams] = useSearchParams();
   const initialTab = (searchParams.get("tab") as Tab) || "due";
   const fromLectureNotes = searchParams.get("source") === "lecture_notes";
+  const resumeSession = searchParams.get("session");
+  const mathNodeParam = searchParams.get("math_node");
   const [tab, setTab] = useState<Tab>(initialTab);
 
   useEffect(() => {
@@ -75,6 +86,11 @@ export function ReviewHubPage() {
   const [active, setActive] = useState<ActiveQuiz | null>(null);
   const [groupNumber, setGroupNumber] = useState(1);
   const [mathTopic, setMathTopic] = useState("Arithmetic");
+  const [mathNodeId, setMathNodeId] = useState(mathNodeParam || "times_1_20");
+  const [mathCount, setMathCount] = useState(5);
+  const [mathSkills, setMathSkills] = useState<MathSkillNode[]>([]);
+  const [notePath, setNotePath] = useState("");
+  const [noteQuizCount, setNoteQuizCount] = useState(5);
   const [timeLimitMin, setTimeLimitMin] = useState(10);
   const [perQuestionSec, setPerQuestionSec] = useState(60);
 
@@ -109,6 +125,21 @@ export function ReviewHubPage() {
         total_cards: bl.total_cards,
         weak_topics: bl.weak_topics,
       });
+      try {
+        const token = getVocabToken();
+        const res = await fetch(`${resolveApiUrl()}/api/math/skills`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        if (res.ok) {
+          const data = (await res.json()) as { nodes?: MathSkillNode[]; next_node_id?: string };
+          setMathSkills(data.nodes || []);
+          if (data.next_node_id && !mathNodeParam) {
+            setMathNodeId(data.next_node_id);
+          }
+        }
+      } catch {
+        /* skills optional */
+      }
     } catch {
       setDue([]);
     } finally {
@@ -120,10 +151,43 @@ export function ReviewHubPage() {
     void refresh();
   }, [user]);
 
+  useEffect(() => {
+    if (resumeSession) {
+      setActive({ mode: "resume", sessionId: resumeSession });
+    }
+  }, [resumeSession]);
+
+  useEffect(() => {
+    if (mathNodeParam) {
+      setMathNodeId(mathNodeParam);
+      setTab("start");
+    }
+  }, [mathNodeParam]);
+
   const startDueReview = () => {
     setActive({
+      mode: "start",
       domain: "review",
       config: { limit: 25, ...timeOpts },
+    });
+  };
+
+  const startAutoGenerateFromNote = () => {
+    const path = notePath.trim();
+    if (!path) return;
+    setActive({
+      mode: "start",
+      domain: "study",
+      config: {
+        note_path: path,
+        topic: path.split("/").pop()?.replace(/\.md$/i, "") ?? "Study",
+        count: noteQuizCount,
+        auto_generate: true,
+        expand_siblings: true,
+        // Same global AI prefs / quiz_gen tier as Lecture Notes generate-quiz
+        ...llmBodyFieldsForTask("quiz_gen"),
+        ...timeOpts,
+      },
     });
   };
 
@@ -160,16 +224,35 @@ export function ReviewHubPage() {
 
   if (active) {
     return (
-      <div className="mx-auto max-w-2xl py-6">
-        <GlobalQuizRunner
-          domain={active.domain}
-          config={active.config}
-          onDone={() => {
-            setActive(null);
-            void refresh();
-          }}
-          onClose={() => setActive(null)}
-        />
+      <div
+        className={`mx-auto py-6 ${
+          active.mode === "resume" || (active.mode === "start" && active.domain === "math")
+            ? "max-w-3xl"
+            : "max-w-2xl"
+        }`}
+      >
+        {active.mode === "resume" ? (
+          <GlobalQuizRunner
+            sessionId={active.sessionId}
+            navigateOnComplete={false}
+            onDone={() => {
+              setActive(null);
+              void refresh();
+            }}
+            onClose={() => setActive(null)}
+          />
+        ) : (
+          <GlobalQuizRunner
+            domain={active.domain}
+            config={active.config}
+            navigateOnComplete={false}
+            onDone={() => {
+              setActive(null);
+              void refresh();
+            }}
+            onClose={() => setActive(null)}
+          />
+        )}
       </div>
     );
   }
@@ -391,6 +474,7 @@ export function ReviewHubPage() {
                     className="border-amber-500/40 hover:bg-amber-500/15"
                     onClick={() =>
                       setActive({
+                        mode: "start",
                         domain: "review",
                         config: { limit: 1, domains: [item.domain], ...timeOpts },
                       })
@@ -407,57 +491,175 @@ export function ReviewHubPage() {
 
       {tab === "start" && (
         <section className="gloss-panel rounded-xl p-5 space-y-4">
-          <h2 className="font-medium">Start a timed quiz</h2>
+          <h2 className="font-medium">Start from content</h2>
+          <p className="text-xs text-muted-foreground">
+            Pick Math skill, Notes deck, or Vocab — then start. One short form, same quiz runner.
+          </p>
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="rounded-lg border p-3 space-y-2">
               <div className="flex items-center gap-2 text-sm font-medium">
-                <BookOpen className="h-4 w-4" /> Vocab group
+                <Calculator className="h-4 w-4" /> Math skill
               </div>
-              <input
-                type="number"
-                min={1}
-                value={groupNumber}
-                onChange={(e) => setGroupNumber(Number(e.target.value) || 1)}
+              <select
+                value={mathNodeId}
+                onChange={(e) => setMathNodeId(e.target.value)}
                 className="w-full rounded border bg-background px-2 py-1 text-sm"
-              />
+              >
+                {(mathSkills.length
+                  ? mathSkills
+                  : [{ id: "times_1_20", title: "Times tables 1–20", status: "available" }]
+                ).map((n) => (
+                  <option key={n.id} value={n.id} disabled={n.status === "locked"}>
+                    {n.title}
+                    {n.status === "locked" ? " (locked)" : n.status === "mastered" ? " ✓" : ""}
+                  </option>
+                ))}
+              </select>
+              <div className="flex gap-2 items-center">
+                <label className="text-xs text-muted-foreground whitespace-nowrap">Questions</label>
+                <input
+                  type="number"
+                  min={1}
+                  max={20}
+                  value={mathCount}
+                  onChange={(e) => setMathCount(Number(e.target.value) || 5)}
+                  className="w-16 rounded border bg-background px-2 py-1 text-sm"
+                />
+              </div>
               <Button
                 size="sm"
                 onClick={() =>
                   setActive({
-                    domain: "vocab",
-                    config: { group_number: groupNumber, ...timeOpts },
+                    mode: "start",
+                    domain: "math",
+                    config: { node_id: mathNodeId, topic: mathTopic, count: mathCount, ...timeOpts },
                   })
                 }
               >
-                Quiz group
+                Start math drill
               </Button>
+              <p className="text-[10px] text-muted-foreground">
+                Or coarse topic bank:{" "}
+                <button
+                  type="button"
+                  className="text-primary underline"
+                  onClick={() =>
+                    setActive({
+                      mode: "start",
+                      domain: "math",
+                      config: { topic: mathTopic, count: mathCount, ...timeOpts },
+                    })
+                  }
+                >
+                  {mathTopic}
+                </button>
+              </p>
             </div>
             <div className="rounded-lg border p-3 space-y-2">
               <div className="flex items-center gap-2 text-sm font-medium">
-                <Calculator className="h-4 w-4" /> Math topic
+                <BookOpen className="h-4 w-4" /> Notes — auto-generate
               </div>
+              <p className="text-[10px] text-muted-foreground">
+                Paste a library note path (e.g. <code className="text-foreground">lecture_2/numpy_lecture_notes.md</code>).
+                Questions are built from the note file only — no corpus RAG.
+              </p>
               <input
-                value={mathTopic}
-                onChange={(e) => setMathTopic(e.target.value)}
+                type="text"
+                value={notePath}
+                onChange={(e) => setNotePath(e.target.value)}
+                placeholder="folder/note.md"
                 className="w-full rounded border bg-background px-2 py-1 text-sm"
               />
-              <Button
-                size="sm"
-                onClick={() =>
-                  setActive({ domain: "math", config: { topic: mathTopic, ...timeOpts } })
-                }
-              >
-                Practice problem
+              <div className="flex gap-2 items-center">
+                <label className="text-xs text-muted-foreground whitespace-nowrap">Questions</label>
+                <input
+                  type="number"
+                  min={1}
+                  max={20}
+                  value={noteQuizCount}
+                  onChange={(e) => setNoteQuizCount(Number(e.target.value) || 5)}
+                  className="w-16 rounded border bg-background px-2 py-1 text-sm"
+                />
+                <Button
+                  size="sm"
+                  className="gap-1"
+                  disabled={!notePath.trim()}
+                  onClick={startAutoGenerateFromNote}
+                >
+                  <Sparkles className="h-3.5 w-3.5" /> Auto-generate &amp; start
+                </Button>
+              </div>
+              {decks.length === 0 ? (
+                <p className="text-xs text-muted-foreground">
+                  Or{" "}
+                  <Link to="/lecture-notes" className="text-primary hover:underline">
+                    open Lecture Notes
+                  </Link>{" "}
+                  and use Generate &amp; quiz on a note.
+                </p>
+              ) : null}
+            </div>
+            <div className="rounded-lg border p-3 space-y-2">
+              <div className="flex items-center gap-2 text-sm font-medium">
+                <BookOpen className="h-4 w-4" /> Saved decks
+              </div>
+              {decks.length === 0 ? (
+                <p className="text-xs text-muted-foreground">
+                  No decks yet.{" "}
+                  <Link to="/lecture-notes" className="text-primary hover:underline">
+                    Generate quiz from Lecture Notes
+                  </Link>{" "}
+                  — cards land here automatically.
+                </p>
+              ) : (
+                <ul className="max-h-40 overflow-y-auto divide-y text-sm">
+                  {decks.slice(0, 8).map((d) => (
+                    <li key={d.id} className="flex items-center justify-between gap-2 py-1.5">
+                      <span className="truncate">{d.title}</span>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() =>
+                          setActive({ mode: "start", domain: "deck", config: { deck_id: d.id, ...timeOpts } })
+                        }
+                      >
+                        Quiz
+                      </Button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <Button size="sm" variant="outline" asChild>
+                <Link to="/lecture-notes">Open Lecture Notes</Link>
               </Button>
             </div>
+            <div className="rounded-lg border p-3 space-y-2 sm:col-span-2">
+              <div className="flex items-center gap-2 text-sm font-medium">
+                <BookOpen className="h-4 w-4" /> Vocab group
+              </div>
+              <div className="flex flex-wrap gap-2 items-end">
+                <input
+                  type="number"
+                  min={1}
+                  value={groupNumber}
+                  onChange={(e) => setGroupNumber(Number(e.target.value) || 1)}
+                  className="w-24 rounded border bg-background px-2 py-1 text-sm"
+                />
+                <Button
+                  size="sm"
+                  onClick={() =>
+                    setActive({
+                      mode: "start",
+                      domain: "vocab",
+                      config: { group_number: groupNumber, ...timeOpts },
+                    })
+                  }
+                >
+                  Quiz group
+                </Button>
+              </div>
+            </div>
           </div>
-          <p className="text-xs text-muted-foreground flex items-center gap-1">
-            <Code2 className="h-3 w-3" /> Study & code quizzes:{" "}
-            <Link to="/lecture-notes" className="text-primary hover:underline">
-              Lecture Notes
-            </Link>{" "}
-            → Intelligence Hub → Generate quiz → Take quiz
-          </p>
         </section>
       )}
 
@@ -480,7 +682,12 @@ export function ReviewHubPage() {
                     </p>
                   </div>
                   <div className="flex gap-1">
-                    <Button size="sm" onClick={() => setActive({ domain: "deck", config: { deck_id: d.id } })}>
+                    <Button
+                      size="sm"
+                      onClick={() =>
+                        setActive({ mode: "start", domain: "deck", config: { deck_id: d.id } })
+                      }
+                    >
                       Play
                     </Button>
                     <Button

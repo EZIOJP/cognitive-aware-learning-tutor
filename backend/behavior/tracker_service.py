@@ -22,6 +22,8 @@ from backend.behavior.tracker_storage import (
     TrackerConfig,
     consume_flush_request,
     enable_sqlite_wal,
+    enqueue_event,
+    flush_pending_events,
     persist_event,
     resolve_user_id,
     resolve_username,
@@ -35,6 +37,7 @@ from backend.behavior.tracker_win32 import get_foreground_info
 log = logging.getLogger("desktop_tracker")
 
 PLAN_REFRESH_S = 60.0
+GATE_REFRESH_S = 30.0
 
 ForegroundFn = Callable[[], tuple[str, str, int]]
 
@@ -147,6 +150,12 @@ class TrackerService:
         self._lock = threading.RLock()
         self._plan_context: PlanContext | None = None
         self._plan_updated_at: float = 0.0
+        self._gate: dict | None = None
+        self._gate_policy: dict | None = None
+        self._gate_updated_at: float = 0.0
+        self._last_checkpoint_at: float = 0.0
+        self._last_bulk_tick_at: float = time.time()
+        self._last_block_kill_at: float = 0.0
 
     @property
     def paused(self) -> bool:
@@ -156,12 +165,14 @@ class TrackerService:
         if value:
             self._paused.set()
             self.flush_current("pause")
+            flush_pending_events()
         else:
             self._paused.clear()
 
     def today_seconds(self) -> int:
         if not self._user_id:
             return 0
+        flush_pending_events()
         return today_total_seconds(self._user_id)
 
     def plan_context(self) -> PlanContext | None:
@@ -187,6 +198,97 @@ class TrackerService:
         except Exception as exc:  # noqa: BLE001
             log.debug("Plan context refresh failed: %s", exc)
 
+    def _refresh_gate_if_due(self) -> None:
+        if not self._user_id:
+            return
+        now = time.time()
+        if now - self._gate_updated_at < GATE_REFRESH_S:
+            return
+        try:
+            from backend.behavior.distraction_gate import compute_distraction_gate
+            from backend.behavior.productivity_policy import load_policy_dict
+            from backend.db.base import SessionLocal
+
+            db = SessionLocal()
+            try:
+                self._gate = compute_distraction_gate(db, self._user_id)
+                self._gate_policy = load_policy_dict(db, self._user_id)
+                self._gate_updated_at = now
+            finally:
+                db.close()
+        except Exception as exc:  # noqa: BLE001
+            log.debug("Distraction gate refresh failed: %s", exc)
+        else:
+            g = self._gate or {}
+            if g.get("enabled"):
+                log.info(
+                    "[hard_block] gate locked=%s productive=%s/%s remaining=%s",
+                    g.get("locked"),
+                    g.get("productive_minutes"),
+                    g.get("daily_goal_minutes"),
+                    g.get("remaining_minutes"),
+                )
+
+    def _maybe_hard_block(self, exe: str, title: str, pid: int) -> bool:
+        """Kill blocked apps while gate is locked. Returns True if killed."""
+        gate = self._gate or {}
+        policy = self._gate_policy or {}
+        if not gate.get("locked"):
+            return False
+        from backend.behavior.distraction_gate import (
+            list_blockable_pids,
+            should_hard_block,
+            terminate_blocked_process,
+        )
+        from backend.behavior.tracker_classify import classify_app
+
+        category, _score = classify_app(exe, title)
+        targets: list[tuple[int, str]] = []
+        if should_hard_block(exe, category, policy, pid=pid):
+            targets.append((pid, exe))
+        # Also sweep Steam/game processes that are not foreground yet
+        now = time.time()
+        if now - self._last_block_kill_at >= 2.0:
+            for spid, sname in list_blockable_pids(policy):
+                if spid != pid:
+                    targets.append((spid, sname))
+
+        if not targets:
+            return False
+
+        killed_any = False
+        if self._current and any(t[0] == self._current.pid for t in targets):
+            self.flush_current("hard_block", end_at=now)
+
+        for tpid, tname in targets:
+            if terminate_blocked_process(tpid, exe=tname):
+                killed_any = True
+                log.info(
+                    "[hard_block] killed %s (pid=%s) — %s productive min left until unlock",
+                    tname,
+                    tpid,
+                    gate.get("remaining_minutes"),
+                )
+        if killed_any:
+            self._last_block_kill_at = now
+            try:
+                from backend.behavior.tracker_block_gui import show_hard_block_notice
+
+                show_hard_block_notice(
+                    blocked_app=targets[0][1] if targets else exe,
+                    gate=gate,
+                )
+            except Exception as exc:  # noqa: BLE001
+                log.debug("hard-block notice: %s", exc)
+        return killed_any
+
+    def _poll_interval(self) -> float:
+        """Poll faster while hard-block is locked so Steam games die quickly."""
+        gate = self._gate or {}
+        if gate.get("locked"):
+            return min(0.75, float(self.config.poll_interval_s))
+        return float(self.config.poll_interval_s)
+
     def flush_current(self, reason: str, *, end_at: float | None = None) -> None:
         with self._lock:
             if not self._current:
@@ -194,7 +296,12 @@ class TrackerService:
             end = end_at if end_at is not None else time.time()
             ev = self._current.to_event(reason, end_at=end)
             if ev["duration_seconds"] >= 2 and self._user_id:
-                persist_event(self._user_id, ev)
+                # CSV immediately; SQLite via timed bulk flush
+                enqueue_event(
+                    self._user_id,
+                    ev,
+                    bulk_flush_s=self.config.bulk_flush_s,
+                )
                 try:
                     self._ws_queue.put_nowait(ev)
                 except queue.Full:
@@ -208,14 +315,19 @@ class TrackerService:
                     self._current.site,
                 )
             self._current = None
-            self._save_checkpoint()
+            self._save_checkpoint(force=True)
 
-    def _save_checkpoint(self) -> None:
+    def _save_checkpoint(self, *, force: bool = False) -> None:
+        now = time.time()
+        min_gap = max(5.0, self.config.checkpoint_interval_s)
+        if not force and (now - self._last_checkpoint_at) < min_gap:
+            return
         cp = SessionCheckpoint(
             last_poll_at=self._last_poll_at,
             current=self._current.to_dict() if self._current else None,
         )
         cp.save()
+        self._last_checkpoint_at = now
 
     def _recover_checkpoint(self) -> None:
         cp = SessionCheckpoint.load()
@@ -238,12 +350,22 @@ class TrackerService:
         if not consume_flush_request():
             return
         self.flush_current("force_sync")
+        flush_pending_events()
         write_flush_ack()
         log.info("[force_sync] flushed on UI request")
+
+    def _maybe_bulk_flush(self) -> None:
+        now = time.time()
+        if (now - self._last_bulk_tick_at) < max(5.0, self.config.bulk_flush_s):
+            return
+        self._last_bulk_tick_at = now
+        flush_pending_events()
 
     def _poll_once(self) -> None:
         self._handle_force_flush_request()
         self._refresh_plan_if_due()
+        self._refresh_gate_if_due()
+        self._maybe_bulk_flush()
 
         now = time.time()
         gap = now - self._last_poll_at
@@ -277,6 +399,11 @@ class TrackerService:
             self._save_checkpoint()
             return
 
+        if self._maybe_hard_block(exe, title, pid):
+            self._last_poll_at = now
+            self._save_checkpoint()
+            return
+
         group_key, site = session_identity(exe, title)
 
         with self._lock:
@@ -301,17 +428,18 @@ class TrackerService:
 
     def _poll_loop(self) -> None:
         log.info(
-            "Poll loop started  interval=%.0fs  max_session=%.0fs  idle=%.0fs",
+            "Poll loop started  interval=%.0fs  max_session=%.0fs  idle=%.0fs  bulk=%.0fs",
             self.config.poll_interval_s,
             self.config.max_session_s,
             self.config.idle_threshold_s,
+            self.config.bulk_flush_s,
         )
         while not self._stop.is_set():
             try:
                 self._poll_once()
             except Exception as exc:  # noqa: BLE001
                 log.warning("Poll error: %s", exc)
-            self._stop.wait(self.config.poll_interval_s)
+            self._stop.wait(self._poll_interval())
 
     def start(self) -> None:
         enable_sqlite_wal()
@@ -325,7 +453,9 @@ class TrackerService:
         )
         log.info("Activity log: %s", tracker_log_path())
         self._plan_updated_at = 0.0
+        self._gate_updated_at = 0.0
         self._refresh_plan_if_due()
+        self._refresh_gate_if_due()
         self._recover_checkpoint()
         atexit.register(lambda: self.shutdown())
         self._stop.clear()
@@ -339,6 +469,7 @@ class TrackerService:
         self._shutdown_done = True
         self._stop.set()
         self.flush_current("shutdown")
+        flush_pending_events()
         SessionCheckpoint().clear()
         if self._thread and self._thread.is_alive():
             self._thread.join(timeout=5)

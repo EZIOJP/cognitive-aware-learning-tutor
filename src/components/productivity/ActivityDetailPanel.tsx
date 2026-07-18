@@ -33,7 +33,7 @@ export type ActivityDetailPanelProps = {
   onCyclePrev?: () => void;
   onCycleNext?: () => void;
   plannedBlock?: { title: string; category: string; minutes: number };
-  planContext?: "on_plan" | "drift";
+  planContext?: "on_plan" | "focus" | "distraction" | "drift";
 };
 
 const CARD_W = 320;
@@ -106,7 +106,39 @@ function TitleRow({ text }: { text: string }) {
   );
 }
 
-function ActivityRow({ item }: { item: MergedInterval }) {
+function PageBreakdown({ item }: { item: MergedInterval }) {
+  const pages = (item.children ?? []).filter((child) => child.window_title || child.site);
+  if (pages.length <= 1) return null;
+
+  return (
+    <details className="rounded-lg border border-white/10 bg-white/[0.03] px-2 py-1">
+      <summary className="cursor-pointer text-[10px] text-sky-200/80 hover:text-sky-100">
+        Show {pages.length} pages / sessions
+      </summary>
+      <ul className="mt-1.5 max-h-32 overflow-y-auto space-y-1 pr-1">
+        {pages.map((page, idx) => (
+          <li key={`${page.start_time}-${idx}`} className="text-[10px] text-sky-100/80 leading-snug border-t border-white/5 pt-1">
+            <div className="flex justify-between gap-2 tabular-nums text-sky-300/55">
+              <span>
+                {format(new Date(page.start_time), "h:mm a")} – {format(new Date(page.end_time), "h:mm a")}
+              </span>
+              <span>{fmtDurationMinutes(Math.round(page.duration_seconds / 60))}</span>
+            </div>
+            <div className="line-clamp-2" title={page.window_title || page.site || ""}>
+              {page.window_title || page.site}
+            </div>
+          </li>
+        ))}
+      </ul>
+    </details>
+  );
+}
+
+function ActivityRow({
+  item,
+}: {
+  item: MergedInterval;
+}) {
   const name = shortAppName(item.app_name || item.category);
   const exe = item.app_name && shortAppName(item.app_name) !== name ? item.app_name : null;
   const mins = Math.round(item.duration_seconds / 60);
@@ -148,6 +180,7 @@ function ActivityRow({ item }: { item: MergedInterval }) {
           </span>
         )}
       </p>
+      <PageBreakdown item={item} />
       {titleSnippet && <TitleRow text={titleSnippet} />}
     </li>
   );
@@ -175,6 +208,21 @@ export function ActivityDetailCardBody({
   const uniqueApps = new Set(sorted.map((item) => item.app_name).filter(Boolean)).size;
   const showAggregateBanner = sorted.length > 1 || totalSessions > sorted.length;
 
+  const planLabel =
+    planContext === "focus" || planContext === "on_plan"
+      ? "During planned block · productive"
+      : planContext === "distraction"
+        ? "Distraction during plan"
+        : planContext === "drift"
+          ? "Outside planned blocks"
+          : null;
+  const planClass =
+    planContext === "focus" || planContext === "on_plan"
+      ? "bg-emerald-500/15 text-emerald-200 border-emerald-500/30"
+      : planContext === "distraction"
+        ? "bg-rose-500/15 text-rose-200 border-rose-500/30"
+        : "bg-amber-500/15 text-amber-200 border-amber-500/30";
+
   return (
     <>
       <div className="flex items-start justify-between gap-2">
@@ -184,15 +232,9 @@ export function ActivityDetailCardBody({
           </p>
           <h3 className="text-base font-semibold text-sky-50 truncate">{plannedBlock?.title ?? title}</h3>
           <p className="text-xs text-sky-200/80 mt-0.5 tabular-nums">{formatTimeRange(start, end)}</p>
-          {planContext && !plannedBlock && (
-            <span
-              className={`inline-block mt-1 text-[10px] px-2 py-0.5 rounded-full border ${
-                planContext === "on_plan"
-                  ? "bg-emerald-500/15 text-emerald-200 border-emerald-500/30"
-                  : "bg-amber-500/15 text-amber-200 border-amber-500/30"
-              }`}
-            >
-              {planContext === "on_plan" ? "On plan" : "Drift — outside planned blocks"}
+          {planLabel && !plannedBlock && (
+            <span className={`inline-block mt-1 text-[10px] px-2 py-0.5 rounded-full border ${planClass}`}>
+              {planLabel}
             </span>
           )}
         </div>
@@ -210,12 +252,8 @@ export function ActivityDetailCardBody({
           <button type="button" onClick={onCyclePrev} className="text-xs px-2.5 py-1 rounded-md border border-white/15 hover:bg-white/10 text-amber-50" aria-label="Previous">
             ←
           </button>
-          <span className="text-[11px] text-amber-100/95 tabular-nums text-center min-w-[5.5rem]">
-            <span className="font-semibold">{cycleIndex! + 1}</span>
-            <span className="text-amber-200/70"> / {cycleTotal}</span>
-            <span className="block text-[9px] text-amber-200/55 font-normal">
-              {cycleLabel === "in hour" ? "in this hour" : "overlapped"}
-            </span>
+          <span className="text-[11px] text-amber-100/95 text-center min-w-[5.5rem]">
+            {cycleLabel === "in hour" ? "More in this hour" : "More overlapped"}
           </span>
           <button type="button" onClick={onCycleNext} className="text-xs px-2.5 py-1 rounded-md border border-white/15 hover:bg-white/10 text-amber-50" aria-label="Next">
             →
@@ -247,7 +285,10 @@ export function ActivityDetailCardBody({
           </div>
           <ul className="space-y-2 overflow-y-auto pr-1 max-h-56">
             {sorted.map((item) => (
-              <ActivityRow key={`${item.start_time}-${item.app_name}`} item={item} />
+              <ActivityRow
+                key={`${item.start_time}-${item.app_name}`}
+                item={item}
+              />
             ))}
           </ul>
         </>

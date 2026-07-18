@@ -8,7 +8,6 @@ from typing import Any
 
 from backend.transcripts.cleanup import repair_all_fences, repair_split_code_fences
 from backend.transcripts.mermaid import (
-    aggressive_sanitize_mermaid_source,
     is_mermaid_likely_broken,
     sanitize_mermaid_source,
 )
@@ -160,16 +159,13 @@ def apply_block_update(markdown: str, block_index: int, new_content: str, *, lan
     blocks = list_fenced_blocks(markdown)
     if block_index < 0 or block_index >= len(blocks):
         raise ValueError(f"Block index {block_index} out of range")
-    block = blocks[block_index]
-    body = new_content
-    if (lang or block.lang) == "mermaid":
-        body = apply_mermaid_layout_safe(new_content)
+    body = new_content.strip() if (lang or blocks[block_index].lang) == "mermaid" else new_content
     return replace_fenced_block(markdown, block_index, body)
 
 
 def apply_mermaid_layout_safe(body: str) -> str:
-    """sanitize + aggressive layout pass (contract mirror of frontend layoutSafeMermaidSource)."""
-    return aggressive_sanitize_mermaid_source(sanitize_mermaid_source(body)).strip()
+    """Extract/dedupe only — do not rewrite Mermaid syntax."""
+    return sanitize_mermaid_source(body).strip()
 
 
 def layout_safe_mermaid_blocks(text: str) -> str:
@@ -181,9 +177,8 @@ def layout_safe_mermaid_blocks(text: str) -> str:
 
 
 def finalize_note_markdown(md: str) -> str:
-    """Prepare + layout-safe all mermaid fences before persisting to disk."""
-    return layout_safe_mermaid_blocks(prepare_note_markdown(md))
-
+    """Prepare fences before persisting — leave mermaid diagram bodies untouched."""
+    return prepare_note_markdown(md)
 
 def apply_block_replacements(markdown: str, replacements: dict[int, str]) -> str:
     if not replacements:

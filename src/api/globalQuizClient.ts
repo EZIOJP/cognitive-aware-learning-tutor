@@ -108,6 +108,12 @@ export async function completeGlobalQuiz(sessionId: string): Promise<QuizSession
   return quizRequest(`/${sessionId}/complete`, { method: "POST" });
 }
 
+export async function fetchGlobalQuizQuestion(
+  sessionId: string
+): Promise<{ question: GlobalQuizQuestion | null }> {
+  return quizRequest(`/${sessionId}/question`);
+}
+
 export async function fetchDueReview(limit = 40): Promise<{ items: DueReviewItem[]; count: number }> {
   return quizRequest(`/review/due?limit=${limit}`);
 }
@@ -131,7 +137,13 @@ export function buildStudyQuizConfig(
 
 export function buildMathQuizConfig(
   topic: string,
-  opts?: { time_limit_sec?: number }
+  opts?: { time_limit_sec?: number; count?: number; node_id?: string; per_question_sec?: number }
 ): Record<string, unknown> {
-  return { topic, time_limit_sec: opts?.time_limit_sec };
+  return {
+    topic,
+    count: opts?.count ?? 5,
+    node_id: opts?.node_id,
+    time_limit_sec: opts?.time_limit_sec,
+    per_question_sec: opts?.per_question_sec,
+  };
 }

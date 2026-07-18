@@ -22,6 +22,8 @@ from backend.models.journal import JournalEntry
 from backend.models.app_classification import AppClassificationCache, AppClassificationSuggestion
 from backend.models.category_score import CategoryScore
 from backend.models.coach_memory import CoachMemory
+from backend.models.productivity_policy import ProductivityPolicy
+from backend.models.wearable_daily import WearableDaily
 
 __all__ = [
     "User",
@@ -56,4 +58,6 @@ __all__ = [
     "AppClassificationSuggestion",
     "CategoryScore",
     "CoachMemory",
+    "ProductivityPolicy",
+    "WearableDaily",
 ]

@@ -318,29 +318,8 @@ def extract_mermaid_from_llm_output(raw: str) -> str:
 
 
 def aggressive_sanitize_mermaid_source(source: str) -> str:
-    """Second pass when layout still breaks: strip W[i], shorten labels, canonical indexing flow."""
-    out = _fix_syntax_lines_only(source)
-    out = re.sub(r"\bW\s*\[[^\]]*\]", "index -1", out)
-    out = re.sub(
-        r'\b([A-Za-z0-9_]+)\[([^"\]\{\}]+)\]',
-        lambda m: f'{m.group(1)}["{_soften_layout_label(m.group(2), max_len=34)}"]',
-        out,
-    )
-    out = re.sub(
-        r'\["([^"]+)"\]',
-        lambda m: f'["{_soften_layout_label(m.group(1), max_len=34)}"]',
-        out,
-    )
-    if re.search(r"\bDirection\b", out) and re.search(r"Index|index", out):
-        return (
-            "flowchart TD\n"
-            "    A[Start] --> B{Direction}\n"
-            "    B -->|L to R| C[Positive indices]\n"
-            "    B -->|R to L| D[Negative indices]\n"
-            "    D --> E[\"Last at index minus one\"]\n"
-            "    C --> F[Length minus one]"
-        )
-    return out
+    """No-op rewrite — Mermaid.js renders diagrams as-is. Kept for API compatibility."""
+    return sanitize_mermaid_source(source)
 
 
 def _without_pipe_edge_labels(source: str) -> str:
@@ -354,30 +333,14 @@ def _without_quoted_label_text(source: str) -> str:
 
 
 def mermaid_lint_issues(source: str) -> list[str]:
-    """Heuristic lint — returns human-readable issue strings."""
-    issues: list[str] = []
+    """Minimal lint — only flag empty / missing diagram header."""
     s = source.strip()
     if not s:
         return ["empty diagram"]
-    if not _MERMAID_HEADER_RE.match(s.splitlines()[0].strip()):
-        issues.append("missing flowchart/graph header")
-    lint_body = _without_pipe_edge_labels(s)
-    lint_body = _without_quoted_label_text(lint_body)
-    if re.search(r'\{"[^"]+"\}', s):
-        issues.append("quoted text inside diamond braces")
-    if re.search(r"\s--\s+[^|>\n][^>]*\s+-->", lint_body):
-        issues.append("legacy edge label syntax (-- text -->)")
-    if re.search(r"\b[A-Za-z0-9_]+\s*\(", lint_body):
-        issues.append("stadium node id(label)")
-    if re.search(r"\s&\s*[A-Za-z0-9_]+\s*(-->|---)", s):
-        issues.append("ampersand-merged edges")
-    if re.search(r"-->\s*\|:", s):
-        issues.append("malformed pipe edge (-->|:)")
-    if re.search(r"\[[^\]\"]+\]\s*:", s):
-        issues.append("colon after unquoted ] label")
-    if re.search(r"_\{[^}]+\}", s):
-        issues.append("brace characters in node id")
-    return issues
+    first = next((ln.strip() for ln in s.splitlines() if ln.strip()), "")
+    if not first or not _MERMAID_HEADER_RE.match(first):
+        return ["missing flowchart/graph header"]
+    return []
 
 
 def is_mermaid_likely_broken(source: str) -> bool:
@@ -393,46 +356,28 @@ def dedupe_headers(source: str) -> str:
 
 
 def _fix_syntax_lines_only(source: str) -> str:
-    lines = _ensure_diagram_header(source.splitlines())
-    fixed: list[str] = []
-    for line in lines:
-        for part in _fix_mermaid_line(line).splitlines():
-            fixed.append(part)
-    return "\n".join(fixed)
+    # Legacy helpers retained but unused by sanitize — identity path.
+    return source
 
 
 def fix_syntax_lines(source: str) -> str:
-    return _fix_syntax_lines_only(source)
+    return source.strip()
 
 
 def layout_canonical(source: str) -> str:
-    """Layout pass: W[-1] fix and canonical indexing diagram when matched."""
-    out = source
-    out = re.sub(r"\bW\s*\[[^\]]*\]", "index -1", out)
-    if re.search(r"\bDirection\b", out) and re.search(r"Index|index", out):
-        return (
-            "flowchart TD\n"
-            "    A[Start] --> B{Direction}\n"
-            "    B -->|L to R| C[Positive indices]\n"
-            "    B -->|R to L| D[Negative indices]\n"
-            '    D --> E["Last at index minus one"]\n'
-            "    C --> F[Length minus one]"
-        )
-    return out
+    """Identity — do not replace diagrams with hardcoded templates."""
+    return source.strip()
 
 
 def sanitize_mermaid_source(raw: str) -> str:
-    """Master pipeline: extract -> dedupe -> syntax -> layout."""
+    """Extract fence wrappers + dedupe repeated headers only. No syntax rewrites."""
     if not raw or not raw.strip():
         return ""
     s = extract_from_llm(raw)
     s = dedupe_headers(s)
-    s = fix_syntax_lines(s)
-    return layout_canonical(s).strip()
+    return s.strip()
 
 
 def layout_safe_mermaid_source(source: str) -> str:
-    """Full sanitize + aggressive layout pass (mirrors frontend layoutSafeMermaidSource)."""
-    if not source or not source.strip():
-        return ""
-    return aggressive_sanitize_mermaid_source(sanitize_mermaid_source(source)).strip()
+    """Alias of sanitize_mermaid_source (no layout rewriting)."""
+    return sanitize_mermaid_source(source)

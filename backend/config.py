@@ -19,6 +19,9 @@ class Settings(BaseSettings):
     dev_mode: bool = True
     app_env: str = "development"
     expose_password_plain: bool = True
+    # Local-first single calendar: anonymous API calls use admin (not demo).
+    # Phone + web share one planner without login when this is true.
+    solo_local_user: bool = True
     cors_origins: str = "*"
     group_size: int = 30
     mastery_mastered: int = 6
@@ -35,6 +38,9 @@ class Settings(BaseSettings):
     lmstudio_model: str = "google/gemma-4-e4b"
     llm_max_tokens: int = 8192
     corpus_grounded_notes: bool = False
+    # When False (default), quiz/drills/study-intel ignore corpus RAG and use open note text only.
+    # Set CORPUS_STUDY_INTEL=1 only if you intentionally want textbook chunks mixed into quizzes.
+    corpus_study_intel: bool = False
     llm_api_key: str = "lm-studio"
     llm_default_tier: str = "medium"
     llm_route_profile: str = "hybrid-free"
@@ -68,6 +74,14 @@ class Settings(BaseSettings):
     nim_vision_model: str = "nvidia/nemotron-nano-vl-8b-v1"
     nim_base_url: str = "https://integrate.api.nvidia.com/v1"
     tavily_api_key: str = ""
+    # Shared key for Amazfit/Zepp Mini Program ingest (Bearer or X-CALT-Wearable-Key)
+    wearables_ingest_key: str = "calt-local-wearables"
+    # Google Calendar (push planner → GCal → phone → Amazfit)
+    google_oauth_client_id: str = ""
+    google_oauth_client_secret: str = ""
+    google_oauth_redirect_uri: str = "http://127.0.0.1:8000/api/planner/google-calendar/callback"
+    google_calendar_id: str = "primary"
+    google_calendar_refresh_token: str = ""
 
 
 @lru_cache

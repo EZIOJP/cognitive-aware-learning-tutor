@@ -1,7 +1,8 @@
 import json
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import HTMLResponse, Response
 from sqlalchemy.orm import Session
 
 from backend.core.auth import get_current_user
@@ -19,12 +20,15 @@ from backend.planner.routines import (
     slots_to_planner_blocks,
 )
 from backend.planner.schemas import (
+    ApplyProposedBlocksBody,
     ApplyRoutinesBody,
     CompleteBlockBody,
     GenerateDayBody,
     GenerateWeekBody,
+    GoogleOAuthCredentialsBody,
     PlannerBlockCreate,
     PlannerBlockUpdate,
+    ProposeFromExportBody,
     RollForwardBody,
     RoutineCreate,
     RoutineUpdate,
@@ -33,6 +37,8 @@ from backend.planner.service import (
     _minutes_between,
     _utc,
     iso_utc,
+    local_day_bounds_utc,
+    local_tz,
     complete_block,
     end_from_start_and_minutes,
     roll_forward_block,
@@ -215,8 +221,6 @@ def overlay_actual(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    from backend.behavior.session_merge import merge_for_calendar
-
     start = _utc(from_dt)
     end = _utc(to_dt)
     user_ids = tracker_user_ids(db, user)
@@ -232,28 +236,124 @@ def overlay_actual(
         .order_by(TrackedSession.start_time)
         .all()
     )
-    sessions = merge_for_calendar(sessions)
     from backend.behavior.category_scores import load_score_map, serialize_tracked_session
+    from backend.behavior.productivity_policy import load_policy_dict
 
     scores = load_score_map(db)
+    policy = load_policy_dict(db, user.id)
     return {
-        "sessions": [serialize_tracked_session(s, scores) for s in sessions]
+        "sessions": [serialize_tracked_session(s, scores, policy) for s in sessions]
     }
+
+
+@router.get("/adherence", response_model=dict)
+def adherence_summary(
+    day: datetime = Query(...),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    return _adherence_for_day(db, user, day)
+
+
+@router.get("/adherence/range", response_model=dict)
+def adherence_range(
+    days: int = Query(7, ge=1, le=31),
+    end: datetime | None = Query(
+        None,
+        description="Inclusive end day (host-local). Defaults to today.",
+    ),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """N calendar days ending on `end` (default: today)."""
+    from datetime import timedelta
+
+    end_date = _utc(end).astimezone(local_tz()).date() if end is not None else datetime.now(local_tz()).date()
+    start = end_date - timedelta(days=days - 1)
+    out = []
+    cursor = start
+    while cursor <= end_date:
+        day_dt = datetime(cursor.year, cursor.month, cursor.day, tzinfo=local_tz())
+        out.append(_adherence_for_day(db, user, day_dt))
+        cursor = cursor + timedelta(days=1)
+    return {"days": out, "start": start.isoformat(), "end": end_date.isoformat()}
+
+
+def _adherence_for_day(db: Session, user: User, day: datetime) -> dict:
+    # Host-local calendar day of the query instant (matches wall-clock planning).
+    day_date = _utc(day).astimezone(local_tz()).date()
+    start, end = local_day_bounds_utc(day_date)
+
+    blocks = (
+        db.query(PlannerBlock)
+        .filter(
+            PlannerBlock.user_id == user.id,
+            PlannerBlock.start_at < end,
+            PlannerBlock.end_at > start,
+            PlannerBlock.status.in_(("scheduled", "in_progress", "done")),
+        )
+        .all()
+    )
+
+    from backend.behavior.tracker_ignore import is_ignored_app
+    from backend.behavior.productivity_policy import load_policy_dict, resolve_session_score
+    from backend.behavior.category_scores import load_score_map
+    from backend.planner.day_metrics import compute_day_metrics
+
+    sessions = (
+        db.query(TrackedSession)
+        .filter(
+            TrackedSession.user_id.in_(tracker_user_ids(db, user)),
+            TrackedSession.source == "desktop_tracker",
+            TrackedSession.start_time < end,
+            TrackedSession.end_time > start,
+        )
+        .all()
+    )
+    sessions = [
+        s
+        for s in sessions
+        if s.start_time
+        and s.end_time
+        and not is_ignored_app(s.app_name or "", s.window_title or "")
+    ]
+
+    scores = load_score_map(db)
+    policy = load_policy_dict(db, user.id)
+    threshold = int(policy.get("threshold") or 60)
+
+    def score_fn(sess):
+        return resolve_session_score(sess, scores, policy)
+
+    return compute_day_metrics(day_date, blocks, sessions, score_fn, threshold=threshold)
 
 
 @router.get("/export/last-7-days")
 def export_productivity_last_days(
     days: int = Query(7, ge=1, le=31, description="How many calendar days ending today"),
     format: str = Query("json", pattern="^(json|csv)$"),
+    include: str = Query(
+        "summary,patterns,by_day,blocks,hints,policy",
+        description="Comma list: summary,patterns,by_day,blocks,hints,policy",
+    ),
+    productive_only: bool = Query(False, description="Prefer productive metrics in by_day"),
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
     """Export recent planner + tracked usage for designing weekly timetables."""
     from fastapi.responses import Response
 
-    from backend.planner.week_export import build_productivity_week_export, export_as_csv
+    from backend.planner.week_export import (
+        build_productivity_week_export,
+        export_as_csv,
+        filter_export_payload,
+    )
 
     payload = build_productivity_week_export(db, user, days=days)
+    include_set = {p.strip() for p in include.split(",") if p.strip()}
+    payload = filter_export_payload(
+        payload, include=include_set, productive_only=productive_only
+    )
     stamp = payload["range"]["end"].replace("-", "")
     if format == "csv":
         body = export_as_csv(payload)
@@ -266,68 +366,137 @@ def export_productivity_last_days(
         )
     return payload
 
-    start = _utc(day).replace(hour=0, minute=0, second=0, microsecond=0)
-    end = start.replace(hour=23, minute=59, second=59, microsecond=999999)
 
-    blocks = (
-        db.query(PlannerBlock)
-        .filter(
-            PlannerBlock.user_id == user.id,
-            PlannerBlock.start_at < end,
-            PlannerBlock.end_at > start,
-            PlannerBlock.status.in_(("scheduled", "in_progress", "done")),
+@router.post("/propose-from-export", response_model=dict)
+def propose_from_export(
+    body: ProposeFromExportBody,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """LLM (or rule-based) propose planner blocks from productivity export + routines."""
+    from datetime import date as date_cls
+
+    from backend.planner.llm_propose import propose_week_from_export
+    from backend.planner.week_export import build_productivity_week_export, filter_export_payload
+
+    payload = build_productivity_week_export(db, user, days=body.days)
+    payload = filter_export_payload(
+        payload,
+        include={"summary", "patterns", "hints", "policy", "by_day"},
+        productive_only=False,
+    )
+    range_start = None
+    raw_start = body.range_start or body.week_start
+    if raw_start:
+        range_start = date_cls.fromisoformat(raw_start[:10])
+
+    routines: list[dict] = []
+    if body.include_routines:
+        rows = (
+            db.query(PlannerRoutine)
+            .filter(PlannerRoutine.user_id == user.id, PlannerRoutine.enabled.is_(True))
+            .order_by(PlannerRoutine.sort_order, PlannerRoutine.id)
+            .all()
         )
-        .all()
-    )
-    planned_minutes = sum(b.planned_minutes for b in blocks)
+        routines = [serialize_routine(r) for r in rows]
 
-    sessions = (
-        db.query(TrackedSession)
-        .filter(
-            TrackedSession.user_id.in_(tracker_user_ids(db, user)),
-            TrackedSession.start_time < end,
-            TrackedSession.end_time > start,
+    # Existing calendar blocks — treat as busy so propose doesn't double-book
+    busy_blocks: list[dict] = []
+    try:
+        from datetime import timedelta as _td
+
+        from backend.planner.service import local_day_bounds_utc, local_tz, serialize_block
+
+        rs = range_start or datetime.now(local_tz()).date()
+        start_utc, _ = local_day_bounds_utc(rs)
+        _, end_utc = local_day_bounds_utc(rs + _td(days=max(1, body.horizon_days) - 1))
+        cal_rows = (
+            db.query(PlannerBlock)
+            .filter(
+                PlannerBlock.user_id == user.id,
+                PlannerBlock.start_at < end_utc,
+                PlannerBlock.end_at > start_utc,
+            )
+            .all()
         )
-        .all()
-    )
-    actual_seconds = sum(
-        (s.end_time - s.start_time).total_seconds()
-        for s in sessions
-        if s.start_time and s.end_time
-    )
-    actual_minutes = int(actual_seconds // 60)
+        busy_blocks = [
+            {
+                "title": b.title,
+                "category": b.category,
+                "start_at": serialize_block(b)["start_at"],
+                "end_at": serialize_block(b)["end_at"],
+            }
+            for b in cal_rows
+        ]
+    except Exception:
+        busy_blocks = []
 
-    from backend.behavior.category_scores import (
-        PRODUCTIVE_THRESHOLD,
-        load_score_map,
-        score_for_category,
-    )
-    from backend.planner.effective_focus import effective_focus_minutes
-
-    scores = load_score_map(db)
-    productive_minutes = sum(
-        int((s.end_time - s.start_time).total_seconds() // 60)
-        for s in sessions
-        if s.start_time and s.end_time
-        and score_for_category(s.category, scores) >= PRODUCTIVE_THRESHOLD
-    )
-    effective_focus = effective_focus_minutes(
-        blocks,
-        sessions,
-        lambda cat: score_for_category(cat, scores),
+    return propose_week_from_export(
+        payload,
+        goals=body.goals,
+        week_start=range_start,
+        range_start=range_start,
+        horizon_days=body.horizon_days,
+        use_llm=body.use_llm,
+        routines=routines,
+        mode=body.mode,
+        draft_blocks=body.draft_blocks,
+        busy_blocks=busy_blocks,
+        db=db,
+        user_id=user.id,
     )
 
-    pct = round(100 * actual_minutes / planned_minutes, 1) if planned_minutes else None
 
+@router.post("/apply-proposed-blocks", response_model=dict)
+def apply_proposed_blocks(
+    body: ApplyProposedBlocksBody,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Apply previewed LLM/rule blocks to the planner calendar."""
+    from backend.planner.routines import _has_overlap
+
+    created = []
+    skipped = 0
+    for raw in body.blocks or []:
+        if not isinstance(raw, dict):
+            continue
+        title = str(raw.get("title") or "Study block").strip()[:200]
+        category = str(raw.get("category") or "study").strip()[:80]
+        start_raw = raw.get("start_at")
+        end_raw = raw.get("end_at")
+        if not start_raw or not end_raw:
+            continue
+        try:
+            start = _utc(datetime.fromisoformat(str(start_raw).replace("Z", "+00:00")))
+            end = _utc(datetime.fromisoformat(str(end_raw).replace("Z", "+00:00")))
+        except ValueError:
+            continue
+        if end <= start:
+            continue
+        if _has_overlap(db, user.id, start, end):
+            skipped += 1
+            continue
+        minutes = _minutes_between(start, end)
+        block = PlannerBlock(
+            user_id=user.id,
+            title=title,
+            category=category,
+            start_at=start,
+            end_at=end,
+            planned_minutes=minutes,
+            remaining_minutes=minutes,
+            status="scheduled",
+        )
+        db.add(block)
+        created.append(block)
+    db.commit()
+    for b in created:
+        db.refresh(b)
     return {
-        "day": start.date().isoformat(),
-        "planned_minutes": planned_minutes,
-        "actual_minutes": actual_minutes,
-        "productive_minutes": productive_minutes,
-        "effective_focus_minutes": effective_focus,
-        "adherence_pct": pct,
-        "block_count": len(blocks),
-        "session_count": len(sessions),
+        "created": len(created),
+        "skipped_overlaps": skipped,
+        "blocks": [serialize_block(b) for b in created],
     }
 
 
@@ -554,3 +723,142 @@ def routines_auto_apply_today(
 ):
     """Once per local day per user: materialize enabled routines on today's calendar."""
     return auto_apply_routines_today(db, user.id)
+
+
+# --- Google Calendar (web → GCal → phone → Amazfit) ---
+
+
+@router.get("/google-calendar/status", response_model=dict)
+def google_calendar_status(user: User = Depends(get_current_user)):
+    from backend.planner.google_calendar import google_calendar_configured
+
+    del user
+    return google_calendar_configured()
+
+
+@router.post("/google-calendar/credentials", response_model=dict)
+def google_calendar_save_credentials(
+    body: GoogleOAuthCredentialsBody,
+    user: User = Depends(get_current_user),
+):
+    """Save OAuth client id/secret from the web UI (local-only file)."""
+    from backend.planner.google_calendar import save_oauth_client
+
+    del user
+    try:
+        return {
+            "ok": True,
+            **save_oauth_client(body.client_id, body.client_secret),
+        }
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+
+
+@router.get("/google-calendar/auth-url", response_model=dict)
+def google_calendar_auth_url(user: User = Depends(get_current_user)):
+    from backend.planner.google_calendar import build_auth_url
+
+    del user
+    try:
+        return {"ok": True, "url": build_auth_url()}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+
+
+@router.get("/google-calendar/callback")
+def google_calendar_callback(
+    code: str | None = Query(None),
+    error: str | None = Query(None),
+):
+    """OAuth redirect target — returns a tiny HTML page the user can close."""
+    from backend.planner.google_calendar import exchange_code
+
+    if error:
+        return HTMLResponse(
+            f"<html><body><h3>Google auth failed</h3><p>{error}</p></body></html>",
+            status_code=400,
+        )
+    if not code:
+        return HTMLResponse("<html><body><h3>Missing code</h3></body></html>", status_code=400)
+    try:
+        exchange_code(code)
+    except Exception as e:
+        return HTMLResponse(
+            f"<html><body><h3>Token exchange failed</h3><p>{e}</p></body></html>",
+            status_code=400,
+        )
+    return HTMLResponse(
+        "<html><body style='font-family:sans-serif;padding:2rem'>"
+        "<h2>CALT connected to Google Calendar</h2>"
+        "<p>You can close this tab and click <b>Push to Google</b> in Productivity.</p>"
+        "</body></html>"
+    )
+
+
+@router.post("/google-calendar/disconnect", response_model=dict)
+def google_calendar_disconnect(user: User = Depends(get_current_user)):
+    from backend.planner.google_calendar import disconnect_google
+
+    del user
+    disconnect_google()
+    return {"ok": True}
+
+
+@router.post("/google-calendar/sync", response_model=dict)
+def google_calendar_sync(
+    days: int = Query(14, ge=1, le=62),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Push upcoming planner blocks to Google Calendar."""
+    from backend.planner.google_calendar import sync_blocks_to_google
+
+    now = datetime.now(timezone.utc)
+    end = now + timedelta(days=days)
+    start = now - timedelta(days=1)
+    rows = (
+        db.query(PlannerBlock)
+        .filter(
+            PlannerBlock.user_id == user.id,
+            PlannerBlock.end_at >= start,
+            PlannerBlock.start_at <= end,
+            PlannerBlock.status.notin_(("cancelled", "rolled")),
+        )
+        .order_by(PlannerBlock.start_at.asc())
+        .all()
+    )
+    blocks = [serialize_block(b) for b in rows]
+    result = sync_blocks_to_google(blocks)
+    result["block_count"] = len(blocks)
+    return result
+
+
+@router.get("/calendar.ics")
+def planner_calendar_ics(
+    days: int = Query(14, ge=1, le=62),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Download ICS of upcoming planner blocks (import into Google Calendar)."""
+    from backend.planner.google_calendar import blocks_to_ics
+
+    now = datetime.now(timezone.utc)
+    end = now + timedelta(days=days)
+    start = now - timedelta(days=1)
+    rows = (
+        db.query(PlannerBlock)
+        .filter(
+            PlannerBlock.user_id == user.id,
+            PlannerBlock.end_at >= start,
+            PlannerBlock.start_at <= end,
+            PlannerBlock.status.notin_(("cancelled", "rolled")),
+        )
+        .order_by(PlannerBlock.start_at.asc())
+        .all()
+    )
+    ics = blocks_to_ics([serialize_block(b) for b in rows])
+    return Response(
+        content=ics,
+        media_type="text/calendar; charset=utf-8",
+        headers={"Content-Disposition": 'attachment; filename="calt-planner.ics"'},
+    )

@@ -5,16 +5,27 @@ import { Button } from "../../app/components/ui/button";
 import { Progress } from "../../app/components/ui/progress";
 import { PythonCodeBlock } from "../../components/study/PythonCodeBlock";
 import { rebuildHubDaily } from "../../api/hubClient";
+import { submitTrainSample } from "../../api/mathClient";
 import {
   completeGlobalQuiz,
+  fetchGlobalQuizQuestion,
   startGlobalQuiz,
   submitGlobalQuizAnswer,
 } from "../../api/globalQuizClient";
 import type { GlobalQuizQuestion, QuizDomain, QuizSessionSummary } from "./types";
+import {
+  MathQuizAnswerPanel,
+  type MathQuizOcrMeta,
+} from "./MathQuizAnswerPanel";
+import { useEaster } from "../../easter";
 
 type Props = {
-  domain: QuizDomain;
-  config: Record<string, unknown>;
+  domain?: QuizDomain;
+  config?: Record<string, unknown>;
+  /** Resume an existing session instead of POST /start */
+  sessionId?: string;
+  /** When false, stay on complete screen (for Lecture Notes embeds). Default true. */
+  navigateOnComplete?: boolean;
   onDone?: (summary: QuizSessionSummary) => void;
   onClose?: () => void;
 };
@@ -25,9 +36,17 @@ function formatMs(ms: number): string {
   return `${m}:${String(s % 60).padStart(2, "0")}`;
 }
 
-export function GlobalQuizRunner({ domain, config, onDone, onClose }: Props) {
+export function GlobalQuizRunner({
+  domain,
+  config = {},
+  sessionId: resumeSessionId,
+  navigateOnComplete = true,
+  onDone,
+  onClose,
+}: Props) {
   const navigate = useNavigate();
-  const [sessionId, setSessionId] = useState<string | null>(null);
+  const { burst } = useEaster();
+  const [sessionId, setSessionId] = useState<string | null>(resumeSessionId ?? null);
   const [question, setQuestion] = useState<GlobalQuizQuestion | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
   const [freeText, setFreeText] = useState("");
@@ -40,9 +59,15 @@ export function GlobalQuizRunner({ domain, config, onDone, onClose }: Props) {
   const [showHint, setShowHint] = useState(false);
   const [now, setNow] = useState(Date.now());
   const [sessionDeadline, setSessionDeadline] = useState<number | undefined>(undefined);
+  const [ocrMeta, setOcrMeta] = useState<MathQuizOcrMeta | null>(null);
+  const [holdAdvance, setHoldAdvance] = useState(false);
+  const pendingNextRef = useRef<GlobalQuizQuestion | null | undefined>(undefined);
   const timedOutRef = useRef(false);
+  const hintRevealsRef = useRef(0);
 
   const configKey = useMemo(() => JSON.stringify(config), [config]);
+  const isMathHandwrite =
+    question?.domain === "math" && question.format === "free_text";
 
   const perQuestionSec =
     question?.meta?.per_question_sec ??
@@ -61,16 +86,34 @@ export function GlobalQuizRunner({ domain, config, onDone, onClose }: Props) {
       setSummary(null);
       setSessionDeadline(undefined);
       try {
-        const res = await startGlobalQuiz(domain, config);
-        if (cancelled) return;
-        setSessionId(res.session_id);
-        setQuestion(res.question);
-        setStartedAt(Date.now());
-        const metaDeadline = res.question?.meta?.session_deadline_ms;
-        if (typeof metaDeadline === "number") {
-          setSessionDeadline(metaDeadline);
-        } else if (typeof config.time_limit_sec === "number" && Number(config.time_limit_sec) > 0) {
-          setSessionDeadline(Date.now() + Number(config.time_limit_sec) * 1000);
+        if (resumeSessionId) {
+          const res = await fetchGlobalQuizQuestion(resumeSessionId);
+          if (cancelled) return;
+          if (!res.question) {
+            setError("This quiz session has no remaining questions.");
+            return;
+          }
+          setSessionId(resumeSessionId);
+          setQuestion(res.question);
+          setStartedAt(Date.now());
+          const metaDeadline = res.question?.meta?.session_deadline_ms;
+          if (typeof metaDeadline === "number") setSessionDeadline(metaDeadline);
+        } else {
+          if (!domain) {
+            setError("Missing quiz domain");
+            return;
+          }
+          const res = await startGlobalQuiz(domain, config);
+          if (cancelled) return;
+          setSessionId(res.session_id);
+          setQuestion(res.question);
+          setStartedAt(Date.now());
+          const metaDeadline = res.question?.meta?.session_deadline_ms;
+          if (typeof metaDeadline === "number") {
+            setSessionDeadline(metaDeadline);
+          } else if (typeof config.time_limit_sec === "number" && Number(config.time_limit_sec) > 0) {
+            setSessionDeadline(Date.now() + Number(config.time_limit_sec) * 1000);
+          }
         }
       } catch (e) {
         if (!cancelled) setError(e instanceof Error ? e.message : "Could not start quiz");
@@ -81,7 +124,7 @@ export function GlobalQuizRunner({ domain, config, onDone, onClose }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [domain, configKey]);
+  }, [domain, configKey, resumeSessionId]);
 
   useEffect(() => {
     if (question?.format === "code") {
@@ -93,6 +136,9 @@ export function GlobalQuizRunner({ domain, config, onDone, onClose }: Props) {
     setFeedback(null);
     setLastCorrect(null);
     setShowHint(false);
+    setOcrMeta(null);
+    setHoldAdvance(false);
+    pendingNextRef.current = undefined;
     setStartedAt(Date.now());
     timedOutRef.current = false;
   }, [question?.item_id, question?.format, question?.starter_code]);
@@ -113,11 +159,39 @@ export function GlobalQuizRunner({ domain, config, onDone, onClose }: Props) {
         setSummary(result);
         onDone?.(result);
         void rebuildHubDaily();
-        navigate("/review?tab=due");
+        if (navigateOnComplete) {
+          navigate("/review?tab=due");
+        }
       }
       setQuestion(null);
     },
-    [sessionId, onDone, navigate]
+    [sessionId, onDone, navigate, navigateOnComplete]
+  );
+
+  const logOcrCorrectionIfNeeded = useCallback(
+    async (confirmed: string) => {
+      if (!ocrMeta || !confirmed.trim()) return;
+      const predicted = (ocrMeta.predictedLatex || "").trim();
+      const confirmedNorm = confirmed.trim();
+      if (!predicted) return;
+      const action =
+        predicted.replace(/\s+/g, "") === confirmedNorm.replace(/\s+/g, "")
+          ? "confirm"
+          : "correct";
+      await submitTrainSample({
+        tier: "quiz",
+        prompt_id: question?.item_id || "math-quiz",
+        prompt_text: question?.prompt?.slice(0, 200) || "math quiz",
+        canvas_image: ocrMeta.canvasImage,
+        predicted_latex: predicted,
+        confirmed_latex: confirmedNorm,
+        action,
+        paths_json: ocrMeta.pathsJson,
+        stroke_metrics_json: ocrMeta.strokeMetricsJson,
+        target_latex: confirmedNorm,
+      });
+    },
+    [ocrMeta, question?.item_id, question?.prompt]
   );
 
   const submit = async (timedOut = false) => {
@@ -135,21 +209,36 @@ export function GlobalQuizRunner({ domain, config, onDone, onClose }: Props) {
     if (!timedOut && !response.trim()) return;
     setBusy(true);
     try {
+      if (isMathHandwrite && ocrMeta && !timedOut) {
+        void logOcrCorrectionIfNeeded(response);
+      }
       const result = await submitGlobalQuizAnswer(sessionId, {
         item_id: question.item_id,
         response,
         time_taken_ms: Date.now() - startedAt,
       });
-      setFeedback(timedOut ? "Time's up — marked incorrect." : result.feedback);
-      setLastCorrect(timedOut ? false : result.correct);
+      const correct = timedOut ? false : result.correct;
+      let fb = timedOut ? "Time's up — marked incorrect." : result.feedback;
+      if (!correct && result.requeued) {
+        fb = `${fb}\n\nRe-added to this session — you'll see it again.`;
+      }
+      setFeedback(fb);
+      setLastCorrect(correct);
+      // Math OCR: pause so you can review recognition before next Q
+      if (isMathHandwrite && !timedOut) {
+        setHoldAdvance(true);
+        pendingNextRef.current = result.complete ? null : result.next_question;
+        return;
+      }
+      const pauseMs = timedOut ? 400 : correct ? 900 : 2200;
       if (result.complete) {
         setTimeout(async () => {
           await advance(null);
-        }, timedOut ? 400 : 900);
+        }, pauseMs);
       } else if (result.next_question) {
         setTimeout(async () => {
           await advance(result.next_question);
-        }, timedOut ? 400 : 900);
+        }, pauseMs);
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Submit failed");
@@ -158,8 +247,15 @@ export function GlobalQuizRunner({ domain, config, onDone, onClose }: Props) {
     }
   };
 
+  const continueAfterMath = async () => {
+    const next = pendingNextRef.current;
+    setHoldAdvance(false);
+    pendingNextRef.current = undefined;
+    await advance(next);
+  };
+
   useEffect(() => {
-    if (!question || feedback || busy || timedOutRef.current) return;
+    if (!question || feedback || busy || timedOutRef.current || holdAdvance) return;
     if (questionTimeLeft !== null && questionTimeLeft <= 0) {
       void submit(true);
       return;
@@ -167,7 +263,7 @@ export function GlobalQuizRunner({ domain, config, onDone, onClose }: Props) {
     if (sessionTimeLeft !== null && sessionTimeLeft <= 0) {
       void submit(true);
     }
-  }, [question, questionTimeLeft, sessionTimeLeft, feedback, busy]); // eslint-disable-line
+  }, [question, questionTimeLeft, sessionTimeLeft, feedback, busy, holdAdvance]); // eslint-disable-line
 
   if (error) {
     return (
@@ -207,6 +303,13 @@ export function GlobalQuizRunner({ domain, config, onDone, onClose }: Props) {
           </p>
         )}
         <p className="text-sm text-emerald-600">Cards added to your spaced repetition queue.</p>
+        {summary.next_step && (
+          <Button asChild className="self-start gap-1">
+            <Link to={summary.next_step.to}>
+              <Play className="h-4 w-4" /> Next: {summary.next_step.label}
+            </Link>
+          </Button>
+        )}
         {summary.attempts && summary.attempts.length > 0 && (
           <ul className="text-xs divide-y rounded-lg border max-h-40 overflow-y-auto">
             {summary.attempts.map((a, i) => (
@@ -234,9 +337,7 @@ export function GlobalQuizRunner({ domain, config, onDone, onClose }: Props) {
   }
 
   if (!question) {
-    return (
-      <div className="p-4 text-sm text-muted-foreground">Quiz ended.</div>
-    );
+    return <div className="p-4 text-sm text-muted-foreground">Quiz ended.</div>;
   }
 
   const pct = question.total > 0 ? Math.round((question.index / question.total) * 100) : 0;
@@ -290,7 +391,17 @@ export function GlobalQuizRunner({ domain, config, onDone, onClose }: Props) {
         </div>
       )}
 
-      {(question.format === "free_text" || question.format === "code") && question.format === "free_text" && (
+      {question.format === "free_text" && isMathHandwrite && (
+        <MathQuizAnswerPanel
+          disabled={!!feedback}
+          value={freeText}
+          onChange={setFreeText}
+          onOcrMetaChange={setOcrMeta}
+          resetKey={question.item_id}
+        />
+      )}
+
+      {question.format === "free_text" && !isMathHandwrite && (
         <textarea
           className="min-h-[120px] w-full rounded-lg border bg-background p-3 font-mono text-sm"
           value={freeText}
@@ -302,7 +413,7 @@ export function GlobalQuizRunner({ domain, config, onDone, onClose }: Props) {
 
       {question.format === "code" && (
         <PythonCodeBlock
-            code={freeText || (question.starter_code ?? "")}
+          code={freeText || (question.starter_code ?? "")}
           onCodeChange={setFreeText}
           readOnly={!!feedback}
         />
@@ -314,7 +425,18 @@ export function GlobalQuizRunner({ domain, config, onDone, onClose }: Props) {
           variant="ghost"
           size="sm"
           className="self-start text-xs gap-1"
-          onClick={() => setShowHint((v) => !v)}
+          onClick={() => {
+            setShowHint((v) => {
+              if (!v) {
+                hintRevealsRef.current += 1;
+                if (hintRevealsRef.current >= 7) {
+                  hintRevealsRef.current = 0;
+                  burst("glow");
+                }
+              }
+              return !v;
+            });
+          }}
         >
           <Lightbulb className="h-3.5 w-3.5" />
           {showHint ? "Hide hint" : "Show hint"}
@@ -324,7 +446,25 @@ export function GlobalQuizRunner({ domain, config, onDone, onClose }: Props) {
 
       {feedback && (
         <div className="space-y-1">
-          <p className={`text-sm ${lastCorrect ? "text-emerald-600" : "text-amber-600"}`}>{feedback}</p>
+          <p
+            className={`text-sm whitespace-pre-wrap ${lastCorrect ? "text-emerald-600" : "text-amber-600"}`}
+          >
+            {feedback}
+          </p>
+          {!lastCorrect && question.meta?.concept ? (
+            <p className="text-xs text-muted-foreground">
+              Hint topic: {String(question.meta.concept)}
+            </p>
+          ) : null}
+          {ocrMeta && (
+            <p className="text-xs text-muted-foreground">
+              OCR saw: <code className="font-mono">{ocrMeta.predictedLatex || "—"}</code>
+              {freeText.trim() && freeText.trim() !== ocrMeta.predictedLatex.trim()
+                ? ` · you submitted: ${freeText.trim()}`
+                : ""}{" "}
+              (edits are logged for OCR training)
+            </p>
+          )}
           {question.meta?.citation ? (
             <p className="text-xs text-muted-foreground">Source: {String(question.meta.citation)}</p>
           ) : null}
@@ -335,6 +475,11 @@ export function GlobalQuizRunner({ domain, config, onDone, onClose }: Props) {
         {!feedback && (
           <Button onClick={() => void submit()} disabled={busy}>
             {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Submit"}
+          </Button>
+        )}
+        {holdAdvance && (
+          <Button onClick={() => void continueAfterMath()} disabled={busy}>
+            Continue
           </Button>
         )}
         {onClose && (

@@ -6,28 +6,27 @@ import {
   BookOpen,
   Shield,
   Settings2,
-  ChevronLeft,
-  ChevronRight,
+  Menu,
 } from "lucide-react";
 import { cn } from "../app/components/ui/utils";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 
-import { usePlugins } from "../plugins/registry";
+import { usePluginsOptional } from "../plugins/registry";
 
 const LS_KEY = "sidebar:collapsed";
 
 export function AppSidebar() {
   const [collapsed, setCollapsed] = useState(true);
   const { isAdmin } = useAuth();
-  const { getNavItems } = usePlugins();
+  const plugins = usePluginsOptional();
   const { typographyPack } = useTheme();
   const titleClass =
     typographyPack !== "study" ? "hero-label text-primary" : "text-sm font-semibold";
   
   const baseNavItems = [
     { to: "/", label: "Home", icon: Home, end: true },
-    ...getNavItems(),
+    ...(plugins?.getNavItems() ?? []),
     { to: "/settings", label: "Settings", icon: Settings2, end: false },
     { to: "/admin", label: "Admin", icon: Shield, end: false },
   ];
@@ -58,21 +57,20 @@ export function AppSidebar() {
         collapsed ? "w-14" : "w-56"
       )}
     >
-      <div className="flex items-center justify-between p-2 border-b border-border/50">
+      <div className="flex h-16 items-center justify-between px-2">
         {!collapsed && (
           <span className={cn("px-2 truncate", titleClass)}>Study Hub</span>
         )}
         <button
           type="button"
           onClick={() => setCollapsed((v) => !v)}
-          className="ml-auto p-2 rounded-lg hover:bg-accent/80 focus:outline-none focus:ring-2 focus:ring-ring"
+          className={cn(
+            "p-2 rounded-lg hover:bg-accent/80 focus:outline-none focus:ring-2 focus:ring-ring",
+            collapsed ? "mx-auto" : "ml-auto"
+          )}
           aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
-          {collapsed ? (
-            <ChevronRight className="w-4 h-4" />
-          ) : (
-            <ChevronLeft className="w-4 h-4" />
-          )}
+          <Menu className="w-4 h-4" />
         </button>
       </div>
 
@@ -85,11 +83,12 @@ export function AppSidebar() {
               title={collapsed ? label : undefined}
               className={({ isActive }) =>
                 cn(
-                  "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
-                  "hover:bg-accent/70 focus:outline-none focus:ring-2 focus:ring-ring",
+                  "flex items-center rounded-xl text-sm font-medium transition-all duration-150",
+                  collapsed ? "h-10 w-10 justify-center p-0" : "gap-3 px-3 py-2.5",
+                  "focus:outline-none focus:ring-2 focus:ring-ring",
                   isActive
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "text-foreground/80"
+                    ? "bg-primary text-primary-foreground shadow-sm ring-1 ring-primary/25 hover:bg-primary/90 hover:text-primary-foreground"
+                    : "text-foreground/80 hover:bg-accent/70 hover:text-foreground"
                 )
               }
             >
@@ -100,7 +99,7 @@ export function AppSidebar() {
         ))}
       </ul>
 
-      <div className="p-2 text-[10px] text-muted-foreground select-none border-t border-border/50">
+      <div className="p-2 text-[10px] text-muted-foreground select-none">
         {!collapsed ? "Cognitive Study Companion" : "CSC"}
       </div>
     </nav>

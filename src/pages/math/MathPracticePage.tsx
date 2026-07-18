@@ -12,6 +12,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useStudySession } from "../../context/StudySessionContext";
 import { postMathTutorHint } from "../../api/mathClient";
 import { getMathTopic, LOCAL_QUESTION_SETS } from "../../features/math/data/topics";
+import { useEaster } from "../../easter";
 
 interface MathProblem {
   generated_id: string;
@@ -39,6 +40,7 @@ export function MathPracticePage() {
   const { topicId = "algebra" } = useParams();
   const topic = getMathTopic(topicId);
   const { token } = useAuth();
+  const { burst } = useEaster();
   const {
     handleCanvasChange,
     notifyEraserStroke,
@@ -324,7 +326,11 @@ export function MathPracticePage() {
               <Input
                 value={answer}
                 disabled={showResult}
-                onChange={(e) => setAnswer(e.target.value)}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setAnswer(v);
+                  if (v.trim() === "42") burst("pi");
+                }}
                 onKeyDown={(e) => e.key === "Enter" && !showResult && submitLocal()}
                 placeholder="Your answer"
               />

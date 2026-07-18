@@ -16,7 +16,11 @@ from backend.db.base import Base
 from backend.models.planner import PlannerBlock
 from backend.models.timetable import TrackedSession
 from backend.models.user import User
-from backend.planner.effective_focus import effective_focus_minutes, productive_minutes_from_sessions
+from backend.planner.effective_focus import (
+    effective_focus_minutes,
+    plan_adherence_pct,
+    productive_minutes_from_sessions,
+)
 from backend.planner.service import complete_block, roll_forward_block, suggest_next_slot
 
 
@@ -126,6 +130,16 @@ def test_effective_focus_minutes_inside_planned_block(db_session):
     score_fn = lambda cat: score_for_category(cat, scores)
 
     assert effective_focus_minutes([block], [session], score_fn) == 15
+
+
+def test_plan_adherence_uses_effective_focus_not_raw_screen_time():
+    """370%-style bugs: raw tracked >> planned must not inflate adherence."""
+    assert plan_adherence_pct(effective_focus=15, planned_minutes=60) == 25.0
+    assert plan_adherence_pct(effective_focus=60, planned_minutes=60) == 100.0
+    # Cap — even if caller passes nonsense
+    assert plan_adherence_pct(effective_focus=200, planned_minutes=60) == 100.0
+    assert plan_adherence_pct(effective_focus=0, planned_minutes=60) == 0.0
+    assert plan_adherence_pct(effective_focus=10, planned_minutes=0) is None
 
 
 def test_effective_focus_zero_when_below_threshold(db_session):

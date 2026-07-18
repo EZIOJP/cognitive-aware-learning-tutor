@@ -187,7 +187,7 @@ export function StudyLibraryViewer({
   if (loading) {
     return (
       <section className="study-library-glass flex flex-1 items-center justify-center min-w-0">
-        <Loader2 className="w-6 h-6 animate-spin text-emerald-400" />
+        <Loader2 className="w-6 h-6 animate-spin text-primary" />
       </section>
     );
   }
@@ -207,10 +207,10 @@ export function StudyLibraryViewer({
             <p className="text-[10px] mt-0.5">
               <span
                 className={
-                  llmReachable ? "text-emerald-400/80" : "text-amber-400/90"
+                  llmReachable ? "text-primary/80" : "text-amber-400/90"
                 }
               >
-                {llmReachable ? "● LLM online" : "● LLM offline — Fix syntax works without AI"}
+                {llmReachable ? "● LLM online" : "● LLM offline"}
                 {llmTier ? ` · tier ${llmTier}` : ""}
               </span>
             </p>
@@ -225,6 +225,11 @@ export function StudyLibraryViewer({
                   variant={quizReady ? "default" : "outline"}
                   className="h-8 text-xs gap-1.5"
                   disabled={quizDisabled || quizLoading}
+                  title={
+                    quizReady
+                      ? "Take the generated quiz for this note"
+                      : "Generate a quiz draft from this note (does not start the quiz)"
+                  }
                   onClick={onTakeQuiz}
                 >
                   {quizLoading ? (
@@ -232,7 +237,7 @@ export function StudyLibraryViewer({
                   ) : (
                     <Play className="w-3.5 h-3.5" />
                   )}
-                  {quizReady ? "Take quiz" : "Quiz"}
+                  {quizReady ? "Take quiz" : "Generate quiz"}
                 </Button>
               )}
 
@@ -243,7 +248,7 @@ export function StudyLibraryViewer({
                   size="sm"
                   className="h-8 text-xs gap-1 border-amber-800/40"
                   disabled={repairingSyntax || repairingAll}
-                  title="Fix Mermaid syntax locally (no AI)"
+                  title="Repair broken markdown fences (no AI)"
                   onClick={() => {
                     setRepairingSyntax(true);
                     void onRepairSyntaxOnly()
@@ -256,16 +261,15 @@ export function StudyLibraryViewer({
                   ) : (
                     <Wrench className="w-3.5 h-3.5" />
                   )}
-                  Fix syntax
+                  Repair fences
                 </Button>
               )}
-
               {onRepairAllBlocks && relativePath && primaryContent && (
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
-                  className="h-8 text-xs gap-1 border-emerald-800/40"
+                  className="h-8 text-xs gap-1 border-border"
                   disabled={repairingAll || repairingSyntax || !llmReachable}
                   title={
                     llmReachable
@@ -405,8 +409,8 @@ export function StudyLibraryViewer({
               <NoteDocumentView content={primaryContent} sectionEdit={sectionEdit} />
             ) : (
               <div className="study-library-viewer-empty">
-                <FileText className="w-10 h-10 text-emerald-500/40 mb-3" />
-                <p className="text-sm font-medium text-emerald-100/90">No note selected</p>
+                <FileText className="w-10 h-10 text-muted-foreground/40 mb-3" />
+                <p className="text-sm font-medium text-foreground/90">No note selected</p>
                 <p className="text-xs text-muted-foreground mt-1 max-w-xs text-center">
                   Choose a note from the library, or create one from live captions.
                 </p>
@@ -422,13 +426,13 @@ export function StudyLibraryViewer({
   return (
     <section className="study-library-glass flex flex-col flex-1 min-w-0 overflow-hidden relative">
       {showSyncHeader && (
-        <div className="flex items-center justify-center py-2 border-b border-emerald-900/40 text-emerald-400 text-xs gap-2">
+        <div className="flex items-center justify-center py-2 border-b border-border text-primary text-xs gap-2">
           Side-by-side compare
         </div>
       )}
       <div className="flex flex-1 min-h-0 relative">
-        <div className="study-library-compare-pane flex-1 flex flex-col min-w-0 border-r border-emerald-900/30">
-          <div className="px-4 py-2 border-b border-emerald-900/30 bg-black/20 text-xs font-medium text-slate-300 truncate">
+        <div className="study-library-compare-pane flex-1 flex flex-col min-w-0 border-r border-border">
+          <div className="px-4 py-2 border-b border-border bg-muted/40 text-xs font-medium text-muted-foreground truncate">
             {primaryTitle}
           </div>
           <div className="flex-1 overflow-y-auto study-library-markdown-scroll study-library-viewer-body">
@@ -437,7 +441,7 @@ export function StudyLibraryViewer({
         </div>
         <div className="study-library-sync-badge absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 rounded-full w-8 h-8 flex items-center justify-center shadow-lg" />
         <div className="flex-1 flex flex-col min-w-0">
-          <div className="px-4 py-2 border-b border-emerald-900/30 bg-black/20 text-xs font-medium text-slate-300 truncate">
+          <div className="px-4 py-2 border-b border-border bg-muted/40 text-xs font-medium text-muted-foreground truncate">
             {secondaryTitle ?? "Reference"}
           </div>
           <div className="flex-1 overflow-y-auto study-library-markdown-scroll study-library-viewer-body">

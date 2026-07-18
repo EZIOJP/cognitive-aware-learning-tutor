@@ -29,7 +29,8 @@ _APP_RULES: list[tuple[str, str, int]] = [
      "Music / Media", 20),
     (r"netflix|primevideo|hotstar|jiocinema|mxplayer|popcorntime",
      "Video Streaming", 10),
-    (r"steam|epicgameslauncher|battle\.net|roblox|minecraft|valorant|csgo|dota2|league",
+    (r"steam|epicgameslauncher|battle\.net|roblox|minecraft|valorant|csgo|dota2|league"
+     r"|start_protected_game|gameoverlayui|steamwebhelper|steamservice",
      "Gaming", 10),
     (r"taskmgr|perfmon|processexplorer|resmon|task manager",
      "System Tools", 30),
@@ -43,11 +44,21 @@ _STUDY_TITLE = re.compile(
 
 
 def classify_app(exe: str, title: str) -> tuple[str, int]:
+    # Browsers must use title/domain rules — never match IDE patterns like
+    # "cursor" inside a page title (e.g. Edge tab "Cursor Agents" → false IDE 95).
+    from backend.behavior.session_key import is_browser_exe
+
+    if is_browser_exe(exe):
+        from backend.behavior.domain_classify import classify_browser_title
+
+        return classify_browser_title(title)
+
     hay = f"{exe} {title}".lower()
     for pattern, category, score in _APP_RULES:
         if re.search(pattern, hay, re.I):
             if category == "Browser":
                 from backend.behavior.domain_classify import classify_browser_title
+
                 return classify_browser_title(title)
             return category, score
     return "Other", 35

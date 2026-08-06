@@ -40,10 +40,30 @@ def test_protected_exe_never_blocked():
     policy = {
         "hard_block_enabled": True,
         "hard_block_gaming": True,
-        "hard_block_exes": ["explorer.exe", "python.exe"],
+        "hard_block_exes": ["explorer.exe", "python.exe", "Cursor.exe", "chrome.exe", "msedge.exe"],
     }
     assert not should_hard_block("explorer.exe", "Gaming", policy)
     assert not should_hard_block("python.exe", "Gaming", policy)
+    assert not should_hard_block("Cursor.exe", "IDE / Code Editor", policy)
+    assert not should_hard_block("chrome.exe", "Other (Browser)", policy)
+    assert not should_hard_block("msedge.exe", "Other (Browser)", policy)
+    assert not should_hard_block("zen.exe", "Other (Browser)", policy)
+
+
+def test_commitment_escape_tools_blocked_when_armed():
+    """Task Manager etc. are closed while hard-block is armed so tracker is harder to kill."""
+    policy = {
+        "hard_block_enabled": True,
+        "hard_block_gaming": True,
+        "hard_block_exes": [],
+    }
+    assert should_hard_block("taskmgr.exe", "Other", policy)
+    assert should_hard_block("procexp64.exe", "Other", policy)
+    assert not should_hard_block(
+        "taskmgr.exe",
+        "Other",
+        {**policy, "hard_block_enabled": False},
+    )
 
 
 def test_start_protected_game_blocked_by_name():
@@ -59,14 +79,49 @@ def test_start_protected_game_blocked_by_name():
     assert should_hard_block("steamwebhelper.exe", "Other", policy, pid=0)
 
 
-def test_compute_gate_unlocks_when_goal_met(monkeypatch):
+def test_seed_exes_apply_even_if_custom_list_empty():
+    """Empty hard_block_exes must not disable Steam when hard_block_gaming is on."""
+    from backend.behavior.distraction_gate import hard_block_exe_set
+
+    policy = {
+        "hard_block_enabled": True,
+        "hard_block_gaming": True,
+        "hard_block_exes": [],
+    }
+    assert "steam.exe" in hard_block_exe_set(policy)
+    assert should_hard_block("steam.exe", "Other", policy)
+    assert should_hard_block("steamwebhelper.exe", "Other", policy)
+    # Browsers / Cursor stay protected even if somehow listed
+    assert not should_hard_block("chrome.exe", "Other", policy)
+    assert not should_hard_block("Cursor.exe", "IDE / Code Editor", policy)
+
+
+def test_disarmed_never_blocks_games():
+    policy = {
+        "hard_block_enabled": False,
+        "hard_block_gaming": True,
+        "hard_block_exes": list(DEFAULT_HARD_BLOCK_EXES),
+    }
+    assert not should_hard_block("steam.exe", "Gaming", policy)
+    assert not should_hard_block("MHUR.exe", "Gaming", policy)
+    assert not should_hard_block("start_protected_game.exe", "Other", policy)
+
+
+def test_compute_gate_unlocks_when_goal_met(monkeypatch, tmp_path):
     from backend.behavior import distraction_gate as dg
+    from backend.planner import morning_rewards as mr
+
+    monkeypatch.setattr(mr, "_STORE", tmp_path / "morning_rewards.json")
+    monkeypatch.setattr("backend.bible.store.chapter_goal_met", lambda uid: True)
 
     class FakeSess:
         def __init__(self, mins: int, score: int):
             from datetime import datetime, timedelta, timezone
 
-            self.start_time = datetime(2026, 7, 17, 8, 0, tzinfo=timezone.utc)
+            # Must fall inside today's local day bounds (productive minutes clip to day).
+            self.start_time = datetime.now(timezone.utc).replace(
+                hour=8, minute=0, second=0, microsecond=0
+            )
             self.end_time = self.start_time + timedelta(minutes=mins)
             self._score = score
             self.category = "IDE / Code Editor"
@@ -118,6 +173,26 @@ def test_compute_gate_unlocks_when_goal_met(monkeypatch):
         "backend.behavior.productivity_policy.resolve_session_score",
         lambda sess, scores, policy: sess._score,
     )
+    monkeypatch.setattr(
+        "backend.bible.store.summary",
+        lambda uid: {
+            "bible_minutes": 0,
+            "game_bank_remaining_seconds": 0,
+            "game_bank_remaining_minutes": 0,
+            "day_pass": False,
+            "chapter_goal": {"met": True, "target": 1, "completed": 1},
+            "chapters_completed_today": ["John 1"],
+            "day_pass_status": {"used": 0, "limit": 2, "remaining": 2},
+        },
+    )
+    monkeypatch.setattr(
+        "backend.planner.morning_plan.count_blocks_today",
+        lambda db, uid, day=None: 2,
+    )
+    monkeypatch.setattr(
+        "backend.planner.morning_plan.is_plan_confirmed",
+        lambda uid, day=None: True,
+    )
 
     out = mod.compute_distraction_gate(FakeDb(), 1)
     assert out["enabled"] is True
@@ -125,3 +200,96 @@ def test_compute_gate_unlocks_when_goal_met(monkeypatch):
     assert out["unlocked"] is True
     assert out["locked"] is False
     assert out["remaining_minutes"] == 0
+    assert out["chapter_goal_met"] is True
+    assert out["morning"]["next"] == "open"
+    assert out["morning"]["bible_done"] is True
+    assert out["morning"]["plan_done"] is True
+
+
+def test_morning_gate_bible_then_plan(monkeypatch, tmp_path):
+    from backend.behavior import distraction_gate as mod
+    from backend.planner import morning_rewards as mr
+
+    monkeypatch.setattr(mr, "_STORE", tmp_path / "morning_rewards.json")
+
+    class FakeQuery:
+        def filter(self, *a, **k):
+            return self
+
+        def all(self):
+            return []
+
+    class FakeDb:
+        def query(self, *a, **k):
+            return FakeQuery()
+
+    monkeypatch.setattr(
+        "backend.behavior.productivity_policy.load_policy_dict",
+        lambda db, uid: {
+            "hard_block_enabled": False,
+            "daily_goal_minutes": 100,
+            "threshold": 60,
+            "hard_block_gaming": True,
+            "hard_block_exes": [],
+            "productive_categories": [],
+            "blocked_categories": [],
+            "app_overrides": {},
+        },
+    )
+    monkeypatch.setattr("backend.behavior.category_scores.load_score_map", lambda db: {})
+    monkeypatch.setattr(
+        "backend.behavior.productivity_policy.resolve_session_score",
+        lambda sess, scores, policy: 0,
+    )
+    monkeypatch.setenv("MORNING_GATE", "1")
+
+    monkeypatch.setattr(
+        "backend.bible.store.summary",
+        lambda uid: {
+            "bible_minutes": 0,
+            "game_bank_remaining_seconds": 0,
+            "game_bank_remaining_minutes": 0,
+            "day_pass": False,
+            "chapter_goal": {"met": False, "target": 1, "completed": 0},
+            "chapters_completed_today": [],
+            "day_pass_status": {},
+        },
+    )
+    monkeypatch.setattr("backend.bible.store.chapter_goal_met", lambda uid: False)
+    monkeypatch.setattr(
+        "backend.planner.morning_plan.count_blocks_today",
+        lambda db, uid, day=None: 0,
+    )
+    monkeypatch.setattr(
+        "backend.planner.morning_plan.is_plan_confirmed",
+        lambda uid, day=None: False,
+    )
+    out = mod.compute_distraction_gate(FakeDb(), 1)
+    assert out["morning"]["next"] == "bible"
+    assert out["morning"]["allow_paths"] == ["/bible", "/login"]
+
+    monkeypatch.setattr(
+        "backend.bible.store.summary",
+        lambda uid: {
+            "bible_minutes": 5,
+            "game_bank_remaining_seconds": 0,
+            "game_bank_remaining_minutes": 0,
+            "day_pass": False,
+            "chapter_goal": {"met": True, "target": 1, "completed": 1},
+            "chapters_completed_today": ["John 1"],
+            "day_pass_status": {},
+        },
+    )
+    monkeypatch.setattr("backend.bible.store.chapter_goal_met", lambda uid: True)
+    out2 = mod.compute_distraction_gate(FakeDb(), 1)
+    assert out2["morning"]["next"] == "plan"
+    assert "/productivity" in out2["morning"]["allow_paths"]
+    assert out2["morning"]["rewards"]["awards"]["bible"]["granted"] is True
+
+    monkeypatch.setattr(
+        "backend.planner.morning_plan.is_plan_confirmed",
+        lambda uid, day=None: True,
+    )
+    out3 = mod.compute_distraction_gate(FakeDb(), 1)
+    assert out3["morning"]["next"] == "open"
+    assert "rewards" in out3["morning"]

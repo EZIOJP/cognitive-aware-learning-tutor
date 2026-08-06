@@ -1,18 +1,23 @@
 {
   "manifest_version": 3,
-  "name": "SelfTracker — Deep Context Monitor",
-  "version": "1.0.0",
-  "description": "Tracks your every digital move for behavioral self-analysis.",
+  "name": "CALT SelfTracker (Edge / Chrome)",
+  "version": "1.5.13",
+  "description": "Tracks browsing; DNR + single-tab softLand; crash-safe (no 4s enforce); Jarvis caption.",
   "permissions": [
     "tabs",
     "activeTab",
     "scripting",
     "storage",
     "alarms",
-    "idle"
+    "idle",
+    "history",
+    "webNavigation",
+    "declarativeNetRequest"
   ],
   "host_permissions": [
-    "<all_urls>"
+    "<all_urls>",
+    "http://127.0.0.1:8000/*",
+    "http://localhost:8000/*"
   ],
   "background": {
     "service_worker": "background.js"
@@ -27,6 +32,7 @@
   ],
   "action": {
     "default_popup": "popup.html",
+    "default_title": "CALT SelfTracker",
     "default_icon": {
       "16": "icon.png",
       "48": "icon.png",
@@ -37,5 +43,11 @@
     "16": "icon.png",
     "48": "icon.png",
     "128": "icon.png"
-  }
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["locked.html", "gate_policy.js"],
+      "matches": ["<all_urls>"]
+    }
+  ]
 }

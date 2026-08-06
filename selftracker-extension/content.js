@@ -386,4 +386,194 @@
 
   trackInterval(sendSnapshot, 30000);
   trackTimeout(sendSnapshot, 5000);
+
+  // Jarvis live caption — draggable toast + word typewriter (voice is desktop TTS)
+  try {
+    var jarvisDrag = { active: false, ox: 0, oy: 0, pid: null };
+    var jarvisTypeTimer = null;
+
+    function bindJarvisDrag(el) {
+      if (el.__calt_drag_bound) return;
+      el.__calt_drag_bound = true;
+
+      function clientXY(ev) {
+        if (ev.touches && ev.touches[0]) {
+          return { x: ev.touches[0].clientX, y: ev.touches[0].clientY };
+        }
+        return { x: ev.clientX, y: ev.clientY };
+      }
+
+      function onPointerDown(ev) {
+        if (ev.pointerType === "mouse" && ev.button !== 0) return;
+        var r = el.getBoundingClientRect();
+        var p = clientXY(ev);
+        jarvisDrag.active = true;
+        jarvisDrag.ox = p.x - r.left;
+        jarvisDrag.oy = p.y - r.top;
+        jarvisDrag.pid = ev.pointerId != null ? ev.pointerId : null;
+        el.style.setProperty("right", "auto", "important");
+        el.style.setProperty("left", r.left + "px", "important");
+        el.style.setProperty("top", r.top + "px", "important");
+        el.style.cursor = "grabbing";
+        try {
+          if (ev.pointerId != null && el.setPointerCapture) {
+            el.setPointerCapture(ev.pointerId);
+          }
+        } catch (e) {
+          /* ignore */
+        }
+        ev.preventDefault();
+        ev.stopPropagation();
+      }
+
+      function onPointerMove(ev) {
+        if (!jarvisDrag.active) return;
+        if (jarvisDrag.pid != null && ev.pointerId != null && ev.pointerId !== jarvisDrag.pid) {
+          return;
+        }
+        var p = clientXY(ev);
+        var maxX = Math.max(8, window.innerWidth - el.offsetWidth - 8);
+        var maxY = Math.max(8, window.innerHeight - el.offsetHeight - 8);
+        var x = Math.max(8, Math.min(maxX, p.x - jarvisDrag.ox));
+        var y = Math.max(8, Math.min(maxY, p.y - jarvisDrag.oy));
+        el.style.setProperty("left", x + "px", "important");
+        el.style.setProperty("top", y + "px", "important");
+        el.style.setProperty("right", "auto", "important");
+        ev.preventDefault();
+        ev.stopPropagation();
+      }
+
+      function onPointerUp(ev) {
+        if (!jarvisDrag.active) return;
+        jarvisDrag.active = false;
+        el.style.cursor = "grab";
+        try {
+          if (ev.pointerId != null && el.releasePointerCapture) {
+            el.releasePointerCapture(ev.pointerId);
+          }
+        } catch (e) {
+          /* ignore */
+        }
+        try {
+          var r = el.getBoundingClientRect();
+          chrome.storage.local.set({
+            jarvisToastPos: { left: Math.round(r.left), top: Math.round(r.top) },
+          });
+        } catch (e) {
+          /* ignore */
+        }
+        ev.stopPropagation();
+      }
+
+      el.addEventListener("pointerdown", onPointerDown, true);
+      el.addEventListener("pointermove", onPointerMove, true);
+      el.addEventListener("pointerup", onPointerUp, true);
+      el.addEventListener("pointercancel", onPointerUp, true);
+      // Fallback for older engines
+      el.addEventListener("mousedown", onPointerDown, true);
+      el.addEventListener("touchstart", onPointerDown, { capture: true, passive: false });
+      window.addEventListener("mousemove", onPointerMove, true);
+      window.addEventListener("touchmove", onPointerMove, { capture: true, passive: false });
+      window.addEventListener("mouseup", onPointerUp, true);
+      window.addEventListener("touchend", onPointerUp, true);
+    }
+
+    function ensureJarvisEl() {
+      var el = document.getElementById("__calt_jarvis_caption");
+      if (!el) {
+        el = document.createElement("div");
+        el.id = "__calt_jarvis_caption";
+        el.style.cssText =
+          "all:initial;position:fixed!important;z-index:2147483647!important;" +
+          "left:auto!important;right:16px!important;top:16px!important;" +
+          "max-width:min(420px,92vw)!important;box-sizing:border-box!important;" +
+          "background:#0f172af5!important;color:#e2e8f0!important;" +
+          "font:13px/1.45 Segoe UI,system-ui,sans-serif!important;" +
+          "padding:0!important;border-radius:12px!important;" +
+          "border:1px solid #475569!important;box-shadow:0 12px 32px #000c!important;" +
+          "cursor:grab!important;user-select:none!important;touch-action:none!important;" +
+          "pointer-events:auto!important;display:none;";
+        el.innerHTML =
+          '<div id="__calt_jarvis_grip" style="all:initial;display:block;padding:8px 12px 2px;' +
+          "font:10px/1 Segoe UI,system-ui,sans-serif;letter-spacing:.06em;" +
+          "text-transform:uppercase;color:#94a3b8;cursor:grab;pointer-events:none;" +
+          'user-select:none;">⠿ Jarvis · drag me</div>' +
+          '<div id="__calt_jarvis_body" style="all:initial;display:block;padding:4px 12px 12px;' +
+          "font:13px/1.45 Segoe UI,system-ui,sans-serif;color:#e2e8f0;" +
+          'pointer-events:none;user-select:none;min-height:1.4em;"></div>';
+        (document.body || document.documentElement).appendChild(el);
+      }
+      bindJarvisDrag(el);
+      return el;
+    }
+
+    function typeJarvisWords(body, fullText) {
+      if (jarvisTypeTimer) {
+        clearInterval(jarvisTypeTimer);
+        jarvisTypeTimer = null;
+      }
+      var prefix = "Jarvis: ";
+      var words = String(fullText || "")
+        .trim()
+        .split(/\s+/)
+        .filter(Boolean);
+      if (!words.length) {
+        body.textContent = prefix;
+        return;
+      }
+      body.textContent = prefix;
+      var i = 0;
+      jarvisTypeTimer = setInterval(function () {
+        if (i >= words.length) {
+          clearInterval(jarvisTypeTimer);
+          jarvisTypeTimer = null;
+          return;
+        }
+        body.textContent = prefix + words.slice(0, i + 1).join(" ");
+        i += 1;
+      }, 280);
+    }
+
+    chrome.runtime.onMessage.addListener(function (msg) {
+      if (!msg || msg.type !== "JARVIS_LINE") return;
+      var text = String(msg.text || "").trim();
+      if (!text) return;
+      text = text.slice(0, 220);
+      var el = ensureJarvisEl();
+      var body = document.getElementById("__calt_jarvis_body") || el;
+      try {
+        chrome.storage.local.get(["jarvisToastPos"], function (res) {
+          var pos = res && res.jarvisToastPos;
+          if (pos && typeof pos.left === "number" && typeof pos.top === "number") {
+            el.style.setProperty("right", "auto", "important");
+            el.style.setProperty("left", Math.max(8, pos.left) + "px", "important");
+            el.style.setProperty("top", Math.max(8, pos.top) + "px", "important");
+          }
+        });
+      } catch (e) {
+        /* ignore */
+      }
+      el.style.setProperty("display", "block", "important");
+      // Skip restarting typewriter if the same line is already fully shown.
+      if (el.__lastJarvisText === text && body.textContent && body.textContent.indexOf(text) >= 0) {
+        clearTimeout(el.__hideTimer);
+        var hideSame = Math.max(7000, 1200 + text.split(/\s+/).length * 280);
+        el.__hideTimer = setTimeout(function () {
+          el.style.setProperty("display", "none", "important");
+          el.__lastJarvisText = "";
+        }, hideSame);
+        return;
+      }
+      el.__lastJarvisText = text;
+      typeJarvisWords(body, text);
+      clearTimeout(el.__hideTimer);
+      var hideMs = Math.max(7000, 1200 + text.split(/\s+/).length * 280);
+      el.__hideTimer = setTimeout(function () {
+        el.style.setProperty("display", "none", "important");
+        el.__lastJarvisText = "";
+      }, hideMs);
+    });
+  } catch (e) {
+    /* ignore */
+  }
 })();

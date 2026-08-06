@@ -1,7 +1,20 @@
 // ============================================================
-// SelfTracker — background.js (MV3 service worker)
-// Tracks tab switches, active time, and streams to FastAPI
+// SelfTracker — background.js (Chromium MV3 / shared logic)
+// Tracks tabs + redirects distraction sites while gate locked
 // ============================================================
+
+/* global GATE_API_URL, GATE_ALERT_URL, GATE_POLL_ACTIVE_S, GATE_ALERT_GAP_MS,
+   isExtensionOrInternalUrl, DISTRACTION_DOMAINS, shouldBlockUrl, redirectTargetUrl,
+   isCaltSpaUrl, blockKindForUrl, startBrowserTelemetry, FORCE_WATCH_HOSTS,
+   isStrictDayMode */
+
+importScripts("gate_policy.js", "telemetry.js");
+
+/** DNR rule id range for watch hard-block (MV3 Edge/Chrome). */
+var DNR_WATCH_RULE_BASE = 9100;
+
+// Prefer chrome.* (callback-compatible). Firefox/Zen expose chrome + browser.
+const extAPI = typeof chrome !== "undefined" && chrome.runtime ? chrome : browser;
 
 let activeTabId = null;
 let activeUrl = null;
@@ -9,85 +22,668 @@ let activeTitle = null;
 let sessionStart = Date.now();
 let tabSwitchCount = 0;
 let dailyLog = [];
-/** Outbound queue — local store first, bulk WS every few minutes */
 let outboundQueue = [];
-
 let ws = null;
+/** @type {object|null} */
+let gateCache = null;
+let redirectsEnabled = true;
+let lastGateFetchAt = 0;
+let lastAlertAt = 0;
+let gatePollTimer = null;
+/** @type {number|null} */
+let caltTabId = null;
+let lastJarvisLine = "";
+/** Last text we actually pushed to a tab (avoid poll spam restarting the toast). */
+let lastJarvisBroadcast = "";
+let lastRuleJarvisAt = 0;
+/** Skip DNR updateDynamicRules when watch-block fingerprint unchanged (Edge crash guard). */
+let lastDnrFingerprint = "";
+/** Last soft-land target per tab — avoid tabs.update storms on the same URL. */
+var softLandDone = Object.create(null);
+var softLandInFlight = Object.create(null);
+var lastEnforceAt = 0;
+/** Enforce is rare (alarm ~1 min) — never on the ~4s light poll. */
+var ENFORCE_MIN_GAP_MS = 55000;
+var SOFTLAND_DEDUP_MS = 10000;
+var MAX_ENFORCE_UPDATES = 4;
+/** Cap DNR dynamic rules — Edge thrash if rule churn is huge. */
+var MAX_DNR_WATCH_HOSTS = 12;
+/** Circuit breaker: too many softLands → pause redirects (fail soft). */
+var softLandRecentAt = [];
+var SOFTLAND_STORM_MAX = 8;
+var SOFTLAND_STORM_WINDOW_MS = 30000;
+var REDIRECT_COOLDOWN_MS = 120000;
+var redirectCooldownUntil = 0;
 
 const BULK_FLUSH_MINUTES = 3;
 const BULK_FLUSH_MAX = 25;
 
-// ── Boot: storage + alarms + WS ───────────────────────────
-chrome.storage.local.get(["dailyLog", "tabSwitchCount", "outboundQueue"], (result) => {
-  if (result.dailyLog) dailyLog = result.dailyLog;
-  if (result.tabSwitchCount) tabSwitchCount = result.tabSwitchCount;
-  if (Array.isArray(result.outboundQueue)) outboundQueue = result.outboundQueue;
-});
+extAPI.storage.local.get(
+  ["dailyLog", "tabSwitchCount", "outboundQueue", "gateCache", "redirectsEnabled", "caltTabId", "lastJarvisLine"],
+  (result) => {
+    if (result.dailyLog) dailyLog = result.dailyLog;
+    if (result.tabSwitchCount) tabSwitchCount = result.tabSwitchCount;
+    if (Array.isArray(result.outboundQueue)) outboundQueue = result.outboundQueue;
+    if (result.gateCache) gateCache = result.gateCache;
+    if (typeof result.redirectsEnabled === "boolean") redirectsEnabled = result.redirectsEnabled;
+    if (typeof result.caltTabId === "number") caltTabId = result.caltTabId;
+    if (result.lastJarvisLine) {
+      lastJarvisLine = String(result.lastJarvisLine);
+      // Seed so the first post-restart poll does not re-toast a stale API line.
+      lastJarvisBroadcast = lastJarvisLine;
+    }
+  },
+);
 
 function scheduleAlarms() {
-  // Chrome/Edge require periodInMinutes >= 1 for repeating alarms
-  chrome.alarms.create("flush", { periodInMinutes: BULK_FLUSH_MINUTES });
-  chrome.alarms.create("ws-keepalive", { periodInMinutes: 2 });
+  extAPI.alarms.create("flush", { periodInMinutes: BULK_FLUSH_MINUTES });
+  extAPI.alarms.create("ws-keepalive", { periodInMinutes: 2 });
+  // Idle backup — Chrome alarms min ~1 min; active refresh uses setInterval ~4s
+  extAPI.alarms.create("gate-poll", { periodInMinutes: 1 });
 }
 
-chrome.runtime.onInstalled.addListener(() => {
+function startLightGatePoll() {
+  if (gatePollTimer) return;
+  var ms = Math.max(3000, Math.min(8000, (GATE_POLL_ACTIVE_S || 4) * 1000));
+  gatePollTimer = setInterval(function () {
+    // Cache + DNR fingerprint only — NEVER enforce/tabs.query every 4s (Edge crash).
+    void pollDistractionGate({ opportunistic: true, enforce: false });
+    void pollCaltTabCommand();
+  }, ms);
+}
+
+function redirectsPausedByCircuit() {
+  return redirectCooldownUntil && Date.now() < redirectCooldownUntil;
+}
+
+function noteSoftLandAttempt() {
+  var now = Date.now();
+  softLandRecentAt.push(now);
+  while (softLandRecentAt.length && now - softLandRecentAt[0] > SOFTLAND_STORM_WINDOW_MS) {
+    softLandRecentAt.shift();
+  }
+  if (softLandRecentAt.length >= SOFTLAND_STORM_MAX) {
+    redirectCooldownUntil = now + REDIRECT_COOLDOWN_MS;
+    softLandRecentAt = [];
+    console.warn(
+      "SelfTracker: softLand circuit breaker — redirects paused",
+      REDIRECT_COOLDOWN_MS / 1000,
+      "s (fail soft; Edge stay alive)",
+    );
+    return true;
+  }
+  return false;
+}
+
+extAPI.runtime.onInstalled.addListener(() => {
   scheduleAlarms();
+  startLightGatePoll();
   connectWebSocket();
+  pollDistractionGate();
 });
 
-chrome.runtime.onStartup.addListener(() => {
+extAPI.runtime.onStartup.addListener(() => {
   scheduleAlarms();
+  startLightGatePoll();
   connectWebSocket();
+  pollDistractionGate();
 });
 
 scheduleAlarms();
+startLightGatePoll();
 connectWebSocket();
+pollDistractionGate();
+try {
+  startBrowserTelemetry(extAPI, function () {
+    return gateCache;
+  });
+} catch (e) {
+  console.warn("SelfTracker: telemetry start failed", e);
+}
 
-// ── WebSocket to local FastAPI ──────────────────────────────
 function connectWebSocket() {
   if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) {
     return;
   }
-
   try {
     ws = new WebSocket("ws://localhost:8000/ws/behavior");
-
     ws.onopen = () => {
       console.log("SelfTracker: connected to backend");
-      chrome.alarms.clear("ws-retry");
+      extAPI.alarms.clear("ws-retry");
       flushOutboundQueue();
     };
-
-    ws.onmessage = () => {
-      // Drain server acks
-    };
-
+    ws.onmessage = () => {};
     ws.onclose = () => {
       console.log("SelfTracker: backend disconnected — retry in 5s");
       ws = null;
-      chrome.alarms.create("ws-retry", { delayInMinutes: 5 / 60 });
+      extAPI.alarms.create("ws-retry", { delayInMinutes: 5 / 60 });
     };
-
     ws.onerror = () => {
       ws = null;
     };
   } catch (e) {
     console.warn("SelfTracker: WebSocket unavailable", e);
-    chrome.alarms.create("ws-retry", { delayInMinutes: 10 / 60 });
+    extAPI.alarms.create("ws-retry", { delayInMinutes: 10 / 60 });
   }
 }
 
-// ── Helpers ─────────────────────────────────────────────────
+async function pollDistractionGate(opts) {
+  opts = opts || {};
+  // Default: light poll refreshes cache/DNR only. Full tab sweep only when enforce:true
+  // (1 min alarm / explicit REFRESH / toggle redirects).
+  var doEnforce = opts.enforce === true;
+  var now = Date.now();
+  if (opts.opportunistic && lastGateFetchAt && now - lastGateFetchAt < (GATE_POLL_ACTIVE_S || 4) * 1000) {
+    return;
+  }
+  try {
+    const r = await fetch(GATE_API_URL, { cache: "no-store" });
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    const g = await r.json();
+    lastGateFetchAt = Date.now();
+    const morning = g.morning || {};
+    const browser = g.browser || {};
+    gateCache = {
+      ok: true,
+      stale: false,
+      degraded: false,
+      fetched_at: lastGateFetchAt,
+      locked: Boolean(g.locked),
+      unlocked: Boolean(g.unlocked),
+      enabled: Boolean(g.enabled),
+      remaining_minutes: g.remaining_minutes ?? null,
+      chapter_goal_met: Boolean(g.chapter_goal_met),
+      day_unlimited: Boolean(g.day_unlimited),
+      day_pass: Boolean(g.day_pass),
+      productive_minutes: g.productive_minutes ?? 0,
+      daily_goal_minutes: g.daily_goal_minutes ?? 0,
+      suggested_links: Array.isArray(g.suggested_links) ? g.suggested_links : [],
+      current_block: g.current_block || null,
+      morning: {
+        next: morning.next || "open",
+        bible_done: Boolean(morning.bible_done),
+        plan_done: Boolean(morning.plan_done),
+        bible_url: morning.bible_url || null,
+        plan_url: morning.plan_url || null,
+        redirect_url: morning.redirect_url || null,
+        hint: morning.hint || "",
+      },
+      browser: browser,
+      enforce: Boolean(browser.enforce) || Boolean(g.locked),
+    };
+    await extAPI.storage.local.set({ gateCache });
+    await syncDeclarativeWatchBlock();
+    if (doEnforce && (gateCache.enforce || gateCache.locked) && redirectsEnabled && !redirectsPausedByCircuit()) {
+      await enforceDistractionRedirects();
+    }
+  } catch (e) {
+    // Fail-closed: keep last known strict/armed policy so YouTube stays blocked when API blips.
+    const err = String(e && e.message ? e.message : e);
+    const prev = gateCache && typeof gateCache === "object" ? gateCache : null;
+    const prevBrowser = (prev && prev.browser) || {};
+    const prevMode = String(prevBrowser.mode || "").toLowerCase();
+    const keepStrict = ["bible", "planning", "study"].indexOf(prevMode) >= 0;
+    const keepArmed = Boolean(prev && (prev.enabled || prev.locked || prev.enforce));
+    if (prev && (prev.ok || prev.degraded) && (keepStrict || keepArmed)) {
+      const browser = Object.assign({}, prevBrowser, {
+        block_watch_sites: true,
+        block_porn: prevBrowser.block_porn !== false,
+        enforce: true,
+        mode: prevMode || "study",
+        mode_label: prevBrowser.mode_label || (prevMode || "study").toUpperCase(),
+      });
+      gateCache = Object.assign({}, prev, {
+        ok: true,
+        stale: true,
+        degraded: true,
+        fetched_at: Date.now(),
+        error: err,
+        enforce: true,
+        browser: browser,
+      });
+    } else {
+      // No usable cache: default fail-closed study (watch + adult blocked). Tradeoff: offline API
+      // briefly looks like study until gate recovers — preferred over open YouTube.
+      gateCache = {
+        ok: true,
+        stale: true,
+        degraded: true,
+        fetched_at: Date.now(),
+        locked: true,
+        unlocked: false,
+        enabled: true,
+        enforce: true,
+        error: err,
+        morning: { next: "open", bible_done: false, plan_done: false },
+        browser: {
+          mode: "study",
+          mode_label: "STUDY",
+          enforce: true,
+          block_watch_sites: true,
+          block_porn: true,
+          block_social: true,
+          block_other: true,
+          block_keywords: true,
+          allow_domains: typeof FALLBACK_ALLOW_DOMAINS !== "undefined" ? FALLBACK_ALLOW_DOMAINS : [],
+          watch_domains: typeof FALLBACK_WATCH_DOMAINS !== "undefined" ? FALLBACK_WATCH_DOMAINS : ["youtube.com", "youtu.be"],
+          bible_url: typeof CALT_BIBLE_URL !== "undefined" ? CALT_BIBLE_URL : "http://localhost:5173/bible",
+          plan_url:
+            typeof CALT_PRODUCTIVITY_URL !== "undefined"
+              ? CALT_PRODUCTIVITY_URL
+              : "http://localhost:5173/productivity?tab=plan",
+          morning_next: "open",
+        },
+      };
+    }
+    await extAPI.storage.local.set({ gateCache });
+    await syncDeclarativeWatchBlock();
+    // Error path: still never bulk-enforce on light poll — DNR covers watch hosts.
+    if (doEnforce && redirectsEnabled && !redirectsPausedByCircuit()) {
+      await enforceDistractionRedirects();
+    }
+  }
+}
+
+function lockedPageUrl() {
+  return extAPI.runtime.getURL("locked.html");
+}
+
+function reportGateAlert(kind, detail) {
+  var now = Date.now();
+  if (now - lastAlertAt < (GATE_ALERT_GAP_MS || 45000)) return;
+  lastAlertAt = now;
+  try {
+    fetch(GATE_ALERT_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ kind: kind || "generic_rule_break", detail: detail || "" }),
+      cache: "no-store",
+    }).catch(function () {});
+  } catch (e) {
+    /* ignore */
+  }
+}
+
+function watchBlockActive() {
+  if (!redirectsEnabled) return false;
+  if (!gateCache || (!gateCache.ok && !gateCache.degraded)) return false;
+  var browser = (gateCache.browser) || {};
+  if (browser.block_watch_sites) return true;
+  return isStrictDayMode(browser.mode);
+}
+
+/** MV3: redirect watch hosts to extension locked.html (not SPA — avoids N CALT tabs). */
+async function syncDeclarativeWatchBlock(opts) {
+  opts = opts || {};
+  if (!extAPI.declarativeNetRequest || !extAPI.declarativeNetRequest.updateDynamicRules) {
+    return;
+  }
+  var raw = typeof FORCE_WATCH_HOSTS !== "undefined" ? FORCE_WATCH_HOSTS : ["youtube.com", "youtu.be"];
+  // Cap hosts — never explode dynamic rule count (Edge crash guard).
+  var hosts = raw.slice(0, MAX_DNR_WATCH_HOSTS);
+  var active = watchBlockActive();
+  // Fingerprint only policy state — locked.html URL is stable per install.
+  var fingerprint = (active ? "1" : "0") + "|" + hosts.join(",");
+  if (!opts.force && fingerprint === lastDnrFingerprint) {
+    return;
+  }
+  var removeIds = [];
+  for (var i = 0; i < MAX_DNR_WATCH_HOSTS + 4; i++) removeIds.push(DNR_WATCH_RULE_BASE + i);
+  try {
+    if (!active) {
+      await extAPI.declarativeNetRequest.updateDynamicRules({
+        removeRuleIds: removeIds,
+        addRules: [],
+      });
+      lastDnrFingerprint = fingerprint;
+      return;
+    }
+    var target = lockedPageUrl();
+    var addRules = [];
+    for (var j = 0; j < hosts.length; j++) {
+      addRules.push({
+        id: DNR_WATCH_RULE_BASE + j,
+        priority: 100,
+        action: { type: "redirect", redirect: { url: target } },
+        condition: {
+          requestDomains: [hosts[j]],
+          resourceTypes: ["main_frame"],
+        },
+      });
+    }
+    await extAPI.declarativeNetRequest.updateDynamicRules({
+      removeRuleIds: removeIds,
+      addRules: addRules,
+    });
+    lastDnrFingerprint = fingerprint;
+  } catch (e) {
+    console.warn("SelfTracker: DNR watch block sync failed", e);
+  }
+}
+
+function caltSpaUrlPattern() {
+  return [
+    "http://localhost:5173/*",
+    "http://127.0.0.1:5173/*",
+  ];
+}
+
+async function findCaltTabs() {
+  try {
+    return await extAPI.tabs.query({ url: caltSpaUrlPattern() });
+  } catch (e) {
+    return [];
+  }
+}
+
+async function sweepExtraCaltTabs() {
+  // v1.5.13: NEVER tabs.remove for cleanup — closing tabs felt like Edge "closing".
+  // Only remember the newest CALT SPA tab id for FOCUS_CALT reuse.
+  var tabs = await findCaltTabs();
+  if (!tabs || !tabs.length) return;
+  tabs.sort(function (a, b) {
+    return (b.id || 0) - (a.id || 0);
+  });
+  caltTabId = tabs[0].id;
+  try {
+    await extAPI.storage.local.set({ caltTabId: caltTabId });
+  } catch (e) {
+    /* ignore */
+  }
+}
+
+function urlsRoughlyEqual(a, b) {
+  if (!a || !b) return false;
+  if (a === b) return true;
+  // locked.html with/without query
+  if (String(a).indexOf("locked.html") >= 0 && String(b).indexOf("locked.html") >= 0) return true;
+  try {
+    var ua = new URL(a);
+    var ub = new URL(b);
+    return ua.origin === ub.origin && ua.pathname === ub.pathname && ua.search === ub.search;
+  } catch (e) {
+    return false;
+  }
+}
+
+/**
+ * Ensure one primary CALT SPA tab at *spaUrl*.
+ * Only for explicit FOCUS_CALT / OPEN_PATH / consumed tab commands — never gate poll.
+ * Never windows.update focus (Edge crash / "closing" feel). Never tabs.remove.
+ * Returns tab id or null.
+ */
+async function ensureOneCaltTab(spaUrl) {
+  var tabs = await findCaltTabs();
+  tabs = tabs || [];
+  if (caltTabId != null) {
+    try {
+      var t = await extAPI.tabs.get(caltTabId);
+      if (t && t.id != null) {
+        // Already on target — activate only, skip URL rewrite + window thrash.
+        if (t.url && urlsRoughlyEqual(t.url, spaUrl)) {
+          try {
+            await extAPI.tabs.update(t.id, { active: true });
+          } catch (e) {
+            /* ignore */
+          }
+          return t.id;
+        }
+        await extAPI.tabs.update(t.id, { url: spaUrl, active: true });
+        // Do NOT windows.update({ focused: true }) — steals OS focus / thrash Edge.
+        await sweepExtraCaltTabs();
+        return t.id;
+      }
+    } catch (e) {
+      caltTabId = null;
+    }
+  }
+  if (tabs.length) {
+    tabs.sort(function (a, b) {
+      return (b.id || 0) - (a.id || 0);
+    });
+    caltTabId = tabs[0].id;
+    try {
+      var cur = tabs[0];
+      if (cur && cur.url && urlsRoughlyEqual(cur.url, spaUrl)) {
+        await extAPI.tabs.update(caltTabId, { active: true });
+      } else {
+        await extAPI.tabs.update(caltTabId, { url: spaUrl, active: true });
+      }
+      await extAPI.storage.local.set({ caltTabId: caltTabId });
+    } catch (e) {
+      /* ignore */
+    }
+    await sweepExtraCaltTabs();
+    return caltTabId;
+  }
+  try {
+    var created = await extAPI.tabs.create({ url: spaUrl, active: true });
+    caltTabId = created && created.id != null ? created.id : null;
+    if (caltTabId != null) {
+      await extAPI.storage.local.set({ caltTabId: caltTabId });
+    }
+    return caltTabId;
+  } catch (e) {
+    return null;
+  }
+}
+
+/**
+ * Park ONLY the offending tab. Never focus other windows, never rewrite
+ * unrelated tabs — that thrashed Edge and felt like a whole-browser block.
+ *
+ * Morning bible/plan: send this tab to the SPA soft-land URL.
+ * Study / armed: send this tab to locked.html (DNR also covers YT main_frame).
+ */
+async function softLandBlockedTab(tabId, spaUrl) {
+  if (tabId == null) return false;
+  if (!redirectsEnabled || redirectsPausedByCircuit()) return false;
+  var mode = "";
+  var next = "";
+  try {
+    mode = String((gateCache && gateCache.browser && gateCache.browser.mode) || "").toLowerCase();
+    next = String((gateCache && gateCache.morning && gateCache.morning.next) || "").toLowerCase();
+  } catch (e) {
+    /* ignore */
+  }
+  var morningSoft =
+    next === "bible" ||
+    next === "plan" ||
+    mode === "bible" ||
+    mode === "planning";
+  var target = lockedPageUrl();
+  if (morningSoft && spaUrl && String(spaUrl).indexOf("locked.html") < 0) {
+    target = spaUrl;
+  }
+  // In-flight / recent same-target: skip (onCommitted + rare enforce).
+  if (softLandInFlight[tabId] === target) return false;
+  var done = softLandDone[tabId];
+  if (done && done.target === target && Date.now() - done.at < SOFTLAND_DEDUP_MS) {
+    return false;
+  }
+  try {
+    var existing = await extAPI.tabs.get(tabId);
+    if (!existing) return false;
+    var eu = existing.url ? String(existing.url) : "";
+    if (eu.indexOf("locked.html") >= 0) {
+      // Already parked. Morning may upgrade locked.html → bible/plan SPA once;
+      // study stays on locked.html (DNR + softLand share that target).
+      if (!morningSoft || String(target).indexOf("locked.html") >= 0) {
+        softLandDone[tabId] = { target: target, at: Date.now() };
+        return false;
+      }
+    }
+    if (eu && isCaltSpaUrl(eu) && morningSoft) {
+      softLandDone[tabId] = { target: target, at: Date.now() };
+      return false;
+    }
+    if (eu && urlsRoughlyEqual(eu, target)) {
+      softLandDone[tabId] = { target: target, at: Date.now() };
+      return false;
+    }
+    // Count only real navigations toward the storm breaker.
+    if (noteSoftLandAttempt()) return false;
+    softLandInFlight[tabId] = target;
+    // Do not set active:true — bulk enforce must not steal focus across tabs.
+    await extAPI.tabs.update(tabId, { url: target });
+    softLandDone[tabId] = { target: target, at: Date.now() };
+    return true;
+  } catch (e) {
+    /* tab gone */
+    return false;
+  } finally {
+    delete softLandInFlight[tabId];
+  }
+}
+
+async function maybeRedirectTab(tabId, url, title) {
+  if (!redirectsEnabled || redirectsPausedByCircuit()) return false;
+  if (!gateCache || (!gateCache.ok && !gateCache.degraded)) return false;
+  if (!url || isExtensionOrInternalUrl(url)) return false;
+  if (url.indexOf("locked.html") >= 0) return false;
+  if (isCaltSpaUrl(url)) return false;
+  if (!shouldBlockUrl(url, gateCache, title || "")) return false;
+  const kind = blockKindForUrl(url, gateCache, title || "");
+  reportGateAlert(kind, url.slice(0, 120));
+  broadcastJarvisLine(kind);
+  var spa = redirectTargetUrl(gateCache, lockedPageUrl());
+  if (!spa || spa.indexOf("locked.html") >= 0) {
+    spa = (gateCache.browser && gateCache.browser.bible_url) || CALT_BIBLE_URL;
+    var next = (gateCache.morning && gateCache.morning.next) || "";
+    if (next === "plan" || (gateCache.browser && gateCache.browser.mode === "planning")) {
+      spa = (gateCache.browser && gateCache.browser.plan_url) || CALT_PRODUCTIVITY_URL;
+    } else if (next !== "bible") {
+      spa = (gateCache.browser && gateCache.browser.plan_url) || CALT_PRODUCTIVITY_URL;
+    }
+  }
+  return softLandBlockedTab(tabId, spa);
+}
+
+async function enforceDistractionRedirects() {
+  // Rare backup only (alarm / explicit). Primary block = DNR + onCommitted softLand.
+  if (redirectsPausedByCircuit()) return;
+  var now = Date.now();
+  if (lastEnforceAt && now - lastEnforceAt < ENFORCE_MIN_GAP_MS) return;
+  lastEnforceAt = now;
+  try {
+    // Only rewrite blocked tabs in place — never mass-focus or cull CALT here.
+    const tabs = await extAPI.tabs.query({});
+    var updates = 0;
+    for (const tab of tabs) {
+      if (updates >= MAX_ENFORCE_UPDATES) break;
+      if (tab.id == null || !tab.url) continue;
+      if (isExtensionOrInternalUrl(tab.url)) continue;
+      if (String(tab.url).indexOf("locked.html") >= 0) continue;
+      var did = await maybeRedirectTab(tab.id, tab.url, tab.title);
+      if (did) updates++;
+    }
+  } catch (e) {
+    console.warn("SelfTracker: enforce redirects failed", e);
+  }
+}
+
+function broadcastJarvisLine(kind) {
+  var now = Date.now();
+  // Gate enforce runs ~every 4s — do not restart the toast on every sweep.
+  if (now - lastRuleJarvisAt < (GATE_ALERT_GAP_MS || 45000)) return;
+  lastRuleJarvisAt = now;
+  var text = "Rule break — " + (kind || "blocked");
+  lastJarvisBroadcast = text;
+  try {
+    extAPI.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+      if (!tabs || !tabs[0] || tabs[0].id == null) return;
+      extAPI.tabs.sendMessage(
+        tabs[0].id,
+        { type: "JARVIS_LINE", text: text },
+        function () {
+          void extAPI.runtime.lastError;
+        }
+      );
+    });
+  } catch (e) {
+    /* ignore */
+  }
+}
+
+async function pollCaltTabCommand() {
+  try {
+    var r = await fetch(CALT_TAB_CMD_URL + "?consume=1", { cache: "no-store" });
+    if (!r.ok) return;
+    var data = await r.json();
+    if (data && data.jarvis && data.jarvis.text) {
+      var t = String(data.jarvis.text).trim();
+      if (t) {
+        lastJarvisLine = t;
+        try {
+          await extAPI.storage.local.set({ lastJarvisLine: lastJarvisLine });
+        } catch (e) {
+          /* ignore */
+        }
+        // Only push caption when the line *changes* — API returns the same
+        // last_jarvis_line for up to ~1h on every ~4s poll (was an infinite toast loop).
+        if (t !== lastJarvisBroadcast) {
+          lastJarvisBroadcast = t;
+          broadcastJarvisCaption(t);
+        }
+      }
+    }
+    var cmd = data && data.command;
+    if (!cmd || !cmd.action) return;
+    var path = cmd.path || "/";
+    if (path.indexOf("http") === 0) {
+      await ensureOneCaltTab(path);
+    } else {
+      var origin = typeof CALT_ORIGIN !== "undefined" ? CALT_ORIGIN : "http://localhost:5173";
+      if (!path.startsWith("/")) path = "/" + path;
+      await ensureOneCaltTab(origin + path);
+    }
+  } catch (e) {
+    /* API down */
+  }
+}
+
+function broadcastJarvisCaption(text) {
+  try {
+    extAPI.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+      if (!tabs || !tabs[0] || tabs[0].id == null) return;
+      extAPI.tabs.sendMessage(
+        tabs[0].id,
+        { type: "JARVIS_LINE", text: text },
+        function () {
+          void extAPI.runtime.lastError;
+        }
+      );
+    });
+  } catch (e) {
+    /* ignore */
+  }
+}
+
 function classifyUrl(url, title) {
   if (!url) return "Unknown";
   const u = url.toLowerCase();
-
+  const t = String(title || "").toLowerCase();
+  if (u.includes("localhost") || u.includes("127.0.0.1")) {
+    if (
+      u.includes("lecture-notes") ||
+      u.includes("/bible") ||
+      u.includes("/quiz") ||
+      u.includes("/review") ||
+      u.includes("/math") ||
+      u.includes("/gre") ||
+      u.includes("/vocab") ||
+      t.includes("lecture notes") ||
+      t.includes("study library")
+    ) {
+      return "Coursework";
+    }
+  }
   if (u.includes("github") || u.includes("gitlab") || u.includes("stackoverflow") || u.includes("docs.") || u.includes("developer.") || u.includes("mdn")) return "Dev / Docs";
   if (u.includes("notion") || u.includes("obsidian") || u.includes("roamresearch") || u.includes("logseq")) return "Knowledge Work";
   if (u.includes("figma") || u.includes("canva") || u.includes("excalidraw")) return "Design";
   if (u.includes("mail") || u.includes("gmail") || u.includes("outlook") || u.includes("calendar")) return "Admin / Email";
   if (u.includes("meet.google") || u.includes("zoom") || u.includes("teams.microsoft") || u.includes("discord")) return "Communication";
-  if (u.includes("coursera") || u.includes("udemy") || u.includes("edx") || u.includes("khanacademy") || u.includes("leetcode") || u.includes("brilliant") || u.includes("scaler.com")) return "Coursework";
+  if (u.includes("coursera") || u.includes("udemy") || u.includes("edx") || u.includes("khanacademy") || u.includes("leetcode") || u.includes("brilliant") || u.includes("scaler.com") || u.includes("scaler.")) return "Coursework";
   if (u.includes("wikipedia") || u.includes("arxiv") || u.includes("scholar.google") || u.includes("pubmed") || u.includes("jstor")) return "Research";
   if (u.includes("youtube") || u.includes("twitch") || u.includes("netflix") || u.includes("primevideo") || u.includes("disneyplus")) return "Video / Streaming";
   if (u.includes("reddit") || u.includes("twitter") || u.includes("x.com") || u.includes("instagram") || u.includes("tiktok") || u.includes("facebook") || u.includes("linkedin")) return "Social Media";
@@ -96,7 +692,6 @@ function classifyUrl(url, title) {
   if (u.includes("news") || u.includes("bbc") || u.includes("cnn") || u.includes("theguardian")) return "News";
   if (u.includes("amazon") || u.includes("flipkart") || u.includes("myntra") || u.includes("ebay")) return "Shopping";
   if (u === "chrome://newtab/" || u === "about:blank" || u === "") return "Idle / New Tab";
-
   return "Browsing";
 }
 
@@ -118,41 +713,31 @@ function extractDomain(url) {
   }
 }
 
-function isInternalUrl(url) {
-  return !url || url.startsWith("chrome://") || url.startsWith("edge://") || url.startsWith("about:");
-}
-
 function enqueueOutbound(payload) {
   outboundQueue.push(payload);
   if (outboundQueue.length > 2000) outboundQueue = outboundQueue.slice(-2000);
-  chrome.storage.local.set({ outboundQueue });
-  if (outboundQueue.length >= BULK_FLUSH_MAX) {
-    flushOutboundQueue();
-  }
+  extAPI.storage.local.set({ outboundQueue });
+  if (outboundQueue.length >= BULK_FLUSH_MAX) flushOutboundQueue();
 }
 
 function flushOutboundQueue() {
   if (!outboundQueue.length) return;
   if (!ws || ws.readyState !== WebSocket.OPEN) return;
-
   const batch = outboundQueue.splice(0, outboundQueue.length);
-  chrome.storage.local.set({ outboundQueue });
+  extAPI.storage.local.set({ outboundQueue });
   try {
     ws.send(JSON.stringify({ type: "BATCH", events: batch, source: "extension" }));
   } catch (e) {
-    // Put back if send fails
     outboundQueue = batch.concat(outboundQueue);
-    chrome.storage.local.set({ outboundQueue });
+    extAPI.storage.local.set({ outboundQueue });
     console.warn("SelfTracker: batch flush failed", e);
   }
 }
 
 function logCurrentSession(reason = "tab_switch") {
-  if (isInternalUrl(activeUrl)) return;
-
+  if (isExtensionOrInternalUrl(activeUrl)) return;
   const duration = Math.round((Date.now() - sessionStart) / 1000);
   if (duration < 2) return;
-
   const category = classifyUrl(activeUrl, activeTitle);
   const entry = {
     timestamp: sessionStart,
@@ -165,69 +750,88 @@ function logCurrentSession(reason = "tab_switch") {
     productivity_score: productivityScore(category),
     reason,
     tab_switches_today: tabSwitchCount,
+    gate_locked: Boolean(gateCache && gateCache.locked),
   };
-
   dailyLog.push(entry);
   if (dailyLog.length > 5000) dailyLog = dailyLog.slice(-5000);
-  chrome.storage.local.set({ dailyLog, lastEntry: entry, tabSwitchCount });
-
-  // Store locally; bulk to backend on a timer (not every tab switch)
+  extAPI.storage.local.set({ dailyLog, lastEntry: entry, tabSwitchCount });
   enqueueOutbound({ type: "SESSION_END", source: "extension", ...entry });
 }
 
-// ── Tab / window / idle listeners ───────────────────────────
-chrome.tabs.onActivated.addListener(async (info) => {
+extAPI.tabs.onActivated.addListener(async (info) => {
   logCurrentSession("tab_switch");
   tabSwitchCount++;
-
   try {
-    const tab = await chrome.tabs.get(info.tabId);
+    const tab = await extAPI.tabs.get(info.tabId);
     activeTabId = info.tabId;
     activeUrl = tab.url;
     activeTitle = tab.title;
     sessionStart = Date.now();
+    await maybeRedirectTab(info.tabId, tab.url, tab.title);
   } catch {
     /* tab may be gone */
   }
 });
 
-chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+extAPI.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  // v1.5.13: softLand ONLY via webNavigation.onCommitted (single committed tab).
+  // onUpdated loading/complete + URL change stacked with onCommitted → Edge crash.
   if (tabId !== activeTabId) return;
   if (changeInfo.status !== "complete") return;
-
   logCurrentSession("navigation");
   activeUrl = tab.url;
   activeTitle = tab.title;
   sessionStart = Date.now();
 });
 
-chrome.windows.onFocusChanged.addListener((windowId) => {
-  if (windowId === chrome.windows.WINDOW_ID_NONE) {
+// Primary softLand path — one committed main-frame navigation per tab.
+if (extAPI.webNavigation && extAPI.webNavigation.onCommitted) {
+  extAPI.webNavigation.onCommitted.addListener((details) => {
+    if (details.frameId !== 0) return;
+    if (!details.url || !details.tabId) return;
+    void maybeRedirectTab(details.tabId, details.url, "");
+  });
+}
+
+if (extAPI.tabs.onRemoved) {
+  extAPI.tabs.onRemoved.addListener(function (tabId) {
+    delete softLandDone[tabId];
+    delete softLandInFlight[tabId];
+  });
+}
+
+extAPI.windows.onFocusChanged.addListener((windowId) => {
+  if (windowId === extAPI.windows.WINDOW_ID_NONE) {
     logCurrentSession("window_blur");
   } else {
     sessionStart = Date.now();
   }
 });
 
-chrome.idle.setDetectionInterval(60);
-chrome.idle.onStateChanged.addListener((state) => {
-  if (state === "idle" || state === "locked") {
-    logCurrentSession("idle");
-  } else if (state === "active") {
-    sessionStart = Date.now();
-  }
-});
+if (extAPI.idle && extAPI.idle.setDetectionInterval) {
+  extAPI.idle.setDetectionInterval(60);
+  extAPI.idle.onStateChanged.addListener((state) => {
+    if (state === "idle" || state === "locked") {
+      logCurrentSession("idle");
+    } else if (state === "active") {
+      sessionStart = Date.now();
+    }
+  });
+}
 
-chrome.alarms.onAlarm.addListener((alarm) => {
+extAPI.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name === "ws-retry" || alarm.name === "ws-keepalive") {
     connectWebSocket();
     return;
   }
-
+  if (alarm.name === "gate-poll") {
+    // ~1 min: refresh + rare enforce sweep (not the 4s light poll).
+    void pollDistractionGate({ enforce: true });
+    return;
+  }
   if (alarm.name === "flush") {
     flushOutboundQueue();
-    // Optional live snapshot for popup UI only — not persisted to DB anymore
-    if (activeUrl && !isInternalUrl(activeUrl)) {
+    if (activeUrl && !isExtensionOrInternalUrl(activeUrl)) {
       const category = classifyUrl(activeUrl, activeTitle);
       const liveEntry = {
         timestamp: sessionStart,
@@ -240,43 +844,85 @@ chrome.alarms.onAlarm.addListener((alarm) => {
         productivity_score: productivityScore(category),
         reason: "live",
         tab_switches_today: tabSwitchCount,
+        gate_locked: Boolean(gateCache && gateCache.locked),
       };
-      chrome.storage.local.set({ liveEntry });
+      extAPI.storage.local.set({ liveEntry });
     }
   }
 });
 
-// ── Messages from popup / content script ────────────────────
-chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+extAPI.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg.type === "BEHAVIORAL_UPDATE") {
     const rawPayload = {
       type: "BEHAVIORAL_UPDATE",
       timestamp: Date.now(),
       url: sender.tab?.url || "",
       domain: sender.tab?.url ? extractDomain(sender.tab.url) : "",
+      gate_locked: Boolean(gateCache && gateCache.locked),
       ...msg.data,
     };
-
-    chrome.storage.local.get(["behavioralLog"], (result) => {
+    extAPI.storage.local.get(["behavioralLog"], (result) => {
       const log = result.behavioralLog || [];
       log.push(rawPayload);
       if (log.length > 2000) log.splice(0, log.length - 2000);
-      chrome.storage.local.set({ behavioralLog: log });
+      extAPI.storage.local.set({ behavioralLog: log });
     });
-
     enqueueOutbound(rawPayload);
     return false;
   }
 
   if (msg.type === "GET_STATS") {
-    chrome.storage.local.get(["dailyLog", "behavioralLog", "tabSwitchCount", "liveEntry"], (result) => {
-      sendResponse({ type: "STATS_RESPONSE", data: result });
+    extAPI.storage.local.get(
+      ["dailyLog", "behavioralLog", "tabSwitchCount", "liveEntry", "gateCache", "redirectsEnabled"],
+      (result) => {
+        sendResponse({ type: "STATS_RESPONSE", data: result });
+      },
+    );
+    return true;
+  }
+
+  if (msg.type === "GET_GATE") {
+    sendResponse({ gateCache, redirectsEnabled, domains: DISTRACTION_DOMAINS });
+    return false;
+  }
+
+  if (msg.type === "SET_REDIRECTS") {
+    redirectsEnabled = Boolean(msg.enabled);
+    extAPI.storage.local.set({ redirectsEnabled });
+    sendResponse({ ok: true, redirectsEnabled });
+    // Force DNR sync when user toggles redirects (fingerprint may be stale).
+    lastDnrFingerprint = "";
+    void syncDeclarativeWatchBlock({ force: true });
+    if (redirectsEnabled && gateCache && (gateCache.enforce || gateCache.locked) && !redirectsPausedByCircuit()) {
+      void enforceDistractionRedirects();
+    }
+    return false;
+  }
+
+  if (msg.type === "REFRESH_GATE") {
+    pollDistractionGate({ enforce: true }).then(() => sendResponse({ gateCache })).catch(() => sendResponse({ gateCache }));
+    return true;
+  }
+
+  if (msg.type === "FOCUS_CALT" || msg.type === "OPEN_PATH") {
+    var path = msg.path || "/bible";
+    var origin = typeof CALT_ORIGIN !== "undefined" ? CALT_ORIGIN : "http://localhost:5173";
+    var url = path.indexOf("http") === 0 ? path : origin + (path.startsWith("/") ? path : "/" + path);
+    ensureOneCaltTab(url).then(function (id) {
+      sendResponse({ ok: true, tabId: id });
+    }).catch(function () {
+      sendResponse({ ok: false });
     });
     return true;
   }
 
+  if (msg.type === "GET_JARVIS") {
+    sendResponse({ text: lastJarvisLine || "", gateCache: gateCache });
+    return false;
+  }
+
   if (msg.type === "EXPORT_CSV") {
-    chrome.storage.local.get(["dailyLog"], (result) => {
+    extAPI.storage.local.get(["dailyLog"], (result) => {
       sendResponse({ type: "CSV_READY", data: result.dailyLog || [] });
     });
     return true;
@@ -285,7 +931,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg.type === "CLEAR_DATA") {
     dailyLog = [];
     tabSwitchCount = 0;
-    chrome.storage.local.set({ dailyLog: [], behavioralLog: [], tabSwitchCount: 0, liveEntry: null });
+    extAPI.storage.local.set({ dailyLog: [], behavioralLog: [], tabSwitchCount: 0, liveEntry: null });
     sendResponse({ ok: true });
     return false;
   }

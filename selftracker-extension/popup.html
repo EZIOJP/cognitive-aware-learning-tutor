@@ -203,13 +203,74 @@
     font-family: 'JetBrains Mono', monospace;
     letter-spacing: 0.1em;
   }
+
+  .gate-panel {
+    background: #111120;
+    border: 1px solid #1e1e38;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 14px;
+  }
+  .gate-chip {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  .gate-chip.locked { background: #f59e0b33; color: #fbbf24; border: 1px solid #f59e0b55; }
+  .gate-chip.open { background: #00ff8833; color: #00ff88; border: 1px solid #00ff8855; }
+  .gate-chip.down { background: #ff444433; color: #ff8888; border: 1px solid #ff444455; }
+  .gate-chip.enforce {
+    background: #dc2626;
+    color: #fff;
+    border: 2px solid #fca5a5;
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    animation: pulse 1.4s infinite;
+  }
+  .enforce-banner {
+    display: none;
+    margin-bottom: 12px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: #7f1d1d;
+    border: 2px solid #ef4444;
+    color: #fecaca;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-align: center;
+    text-transform: uppercase;
+  }
+  .enforce-banner.on { display: block; }
+  .gate-meta { font-size: 10px; color: #6b6b80; line-height: 1.4; }
+  .gate-toggle { display: flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 11px; color: #a1a1b5; }
 </style>
 </head>
 <body>
 
 <div class="header">
   <div class="dot"></div>
-  <h1>SelfTracker</h1>
+  <h1>CALT SelfTracker</h1>
+</div>
+
+<div class="enforce-banner" id="enforceBanner">ENFORCING · YT BLOCKED</div>
+
+<div class="gate-panel">
+  <div class="gate-chip down" id="gateChip">Gate…</div>
+  <div class="gate-meta" id="gateMeta">Polling distraction gate…</div>
+  <div id="jarvisLine" style="margin-top:8px;font-size:11px;color:#94a3b8;line-height:1.35;min-height:1.2em;"></div>
+  <label class="gate-toggle">
+    <input type="checkbox" id="redirectsToggle" checked />
+    Redirect blocked sites in <em>this tab</em> (other tabs stay open)
+  </label>
+  <div class="btn-row" style="margin-top:10px;">
+    <button type="button" class="primary" id="openBibleBtn">Bible</button>
+    <button type="button" id="openPlanBtn">Plan</button>
+  </div>
 </div>
 
 <div class="current-session">
@@ -249,9 +310,10 @@
   <button id="exportBtn">⬇ Export CSV</button>
 </div>
 
-<div class="footer">TRACKING ACTIVE · STORING LOCALLY</div>
+<div class="footer">EDGE/CHROME · GATE-AWARE · LOCAL</div>
 
 <script>
+const api = (typeof chrome !== 'undefined' && chrome.runtime) ? chrome : browser;
 const CATEGORY_COLORS = {
   'Dev / Docs': '#00ff88',
   'Research': '#44ffcc',
@@ -275,12 +337,85 @@ function formatMin(seconds) {
   return Math.round(seconds / 60);
 }
 
+function renderGate(gateCache, redirectsEnabled) {
+  const chip = document.getElementById('gateChip');
+  const meta = document.getElementById('gateMeta');
+  const toggle = document.getElementById('redirectsToggle');
+  const banner = document.getElementById('enforceBanner');
+  toggle.checked = redirectsEnabled !== false;
+  const setBanner = (on, text) => {
+    if (!banner) return;
+    banner.className = on ? 'enforce-banner on' : 'enforce-banner';
+    if (text) banner.textContent = text;
+  };
+  if (!gateCache || (gateCache.ok === false && !gateCache.degraded)) {
+    chip.className = 'gate-chip down';
+    chip.textContent = 'API down';
+    meta.textContent = 'Start CALT backend (:8000). Cold Turkey is backup for sites.';
+    setBanner(false);
+    return;
+  }
+  const browser = gateCache.browser || {};
+  const modeRaw = String(browser.mode || '').toLowerCase();
+  const mode = (browser.mode_label || modeRaw.toUpperCase() || '').trim();
+  const enforce = Boolean(gateCache.enforce || browser.enforce || gateCache.degraded);
+  const ytBlocked = Boolean(browser.block_watch_sites) || ['bible','planning','study'].includes(modeRaw);
+  if (ytBlocked && redirectsEnabled !== false) {
+    setBanner(true, 'THIS TAB · YT BLOCKED');
+  } else if (modeRaw === 'free') {
+    setBanner(false);
+  } else {
+    setBanner(ytBlocked, 'THIS TAB · YT BLOCKED');
+  }
+  if (gateCache.stale || gateCache.degraded) {
+    chip.className = 'gate-chip enforce';
+    chip.textContent = (mode || 'STUDY') + ' · fail-closed';
+    meta.textContent = 'Gate API unreachable — keeping last mode; blocked sites rewrite this tab only. ' + (gateCache.error || '');
+    return;
+  }
+  if (!gateCache.enabled && !enforce) {
+    chip.className = 'gate-chip open';
+    chip.textContent = mode ? mode + ' · gate soft' : 'Hard-block off';
+    meta.textContent = 'Arm hard-block in Productivity Policy for game kill; modes still filter sites when enforce is on.';
+    return;
+  }
+  if (mode) {
+    chip.className = ytBlocked ? 'gate-chip enforce' : (gateCache.locked || browser.block_other ? 'gate-chip locked' : 'gate-chip open');
+    chip.textContent = ytBlocked ? ('THIS TAB · ' + mode + ' · YT') : (mode + (enforce ? ' · tab lock' : ''));
+    const bits = [];
+    if (ytBlocked) bits.push('blocked sites → this tab only');
+    if (browser.block_other) bits.push('allowlist only');
+    else if (browser.block_porn) bits.push('adult filter');
+    if (gateCache.locked) bits.push('games locked');
+    const morning = (gateCache.morning && gateCache.morning.next) || browser.morning_next;
+    if (morning && morning !== 'open') bits.push('next: ' + morning);
+    meta.textContent = bits.join(' · ') || 'Mode from distraction-gate';
+    return;
+  }
+  if (gateCache.locked) {
+    chip.className = 'gate-chip locked';
+    chip.textContent = 'Games locked · other tabs free';
+    const left = gateCache.remaining_minutes != null ? gateCache.remaining_minutes + 'm study left' : '';
+    const bible = gateCache.chapter_goal_met ? 'Bible done' : 'Bible chapter needed';
+    meta.textContent = [left, bible].filter(Boolean).join(' · ');
+  } else {
+    chip.className = 'gate-chip open';
+    chip.textContent = 'Unlocked';
+    meta.textContent = 'Blocked sites rewrite only the offending tab.';
+  }
+}
+
 function load() {
-  chrome.storage.local.get(['dailyLog', 'tabSwitchCount', 'liveEntry'], (result) => {
+  api.storage.local.get(['dailyLog', 'tabSwitchCount', 'liveEntry', 'gateCache', 'redirectsEnabled', 'lastJarvisLine'], (result) => {
     const log = result.dailyLog || [];
     const live = result.liveEntry;
+    renderGate(result.gateCache, result.redirectsEnabled);
+    const jl = document.getElementById('jarvisLine');
+    if (jl) {
+      const t = (result.lastJarvisLine || '').trim();
+      jl.textContent = t ? ('Jarvis: ' + t) : '';
+    }
 
-    // Current session
     if (live) {
       try {
         const domain = new URL(live.url).hostname.replace('www.', '');
@@ -291,7 +426,6 @@ function load() {
       document.getElementById('currentCategory').textContent = live.category || '—';
     }
 
-    // Stats
     document.getElementById('totalSessions').textContent = log.length;
     document.getElementById('tabSwitches').textContent = result.tabSwitchCount || 0;
 
@@ -304,7 +438,6 @@ function load() {
     document.getElementById('productiveTime').textContent = formatMin(prodSec);
     document.getElementById('leisureTime').textContent = formatMin(leiSec);
 
-    // Categories
     const catTotals = {};
     log.forEach(e => {
       catTotals[e.category] = (catTotals[e.category] || 0) + e.duration_seconds;
@@ -325,14 +458,26 @@ function load() {
       `).join('');
     }
   });
+  api.runtime.sendMessage({ type: 'REFRESH_GATE' }, () => {});
 }
 
+document.getElementById('redirectsToggle').addEventListener('change', (e) => {
+  api.runtime.sendMessage({ type: 'SET_REDIRECTS', enabled: e.target.checked });
+});
+
 document.getElementById('openDash').addEventListener('click', () => {
-  chrome.tabs.create({ url: chrome.runtime.getURL('dashboard.html') });
+  api.tabs.create({ url: api.runtime.getURL('dashboard.html') });
+});
+
+document.getElementById('openBibleBtn')?.addEventListener('click', () => {
+  api.runtime.sendMessage({ type: 'FOCUS_CALT', path: '/bible' }, () => void api.runtime.lastError);
+});
+document.getElementById('openPlanBtn')?.addEventListener('click', () => {
+  api.runtime.sendMessage({ type: 'FOCUS_CALT', path: '/productivity?tab=plan' }, () => void api.runtime.lastError);
 });
 
 document.getElementById('exportBtn').addEventListener('click', () => {
-  chrome.storage.local.get(['dailyLog'], (result) => {
+  api.storage.local.get(['dailyLog'], (result) => {
     const log = result.dailyLog || [];
     if (!log.length) { alert('No data to export yet.'); return; }
 

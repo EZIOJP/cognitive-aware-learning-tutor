@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CALT — This tab locked</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      background:
+        radial-gradient(ellipse 80% 50% at 50% -10%, rgba(245, 158, 11, 0.12), transparent 55%),
+        #0a0a0f;
+      color: #e8e8f0;
+      padding: 24px;
+    }
+    .card {
+      max-width: 480px;
+      width: 100%;
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 16px;
+      padding: 28px;
+      background: rgba(255,255,255,0.03);
+    }
+    .eyebrow {
+      font-size: 0.65rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #6b6b80;
+      margin-bottom: 10px;
+    }
+    h1 { font-size: 1.25rem; margin-bottom: 10px; color: #fbbf24; }
+    p { font-size: 0.9rem; line-height: 1.5; color: #a1a1b5; margin-bottom: 12px; }
+    .meta { font-size: 0.8rem; color: #6b6b80; margin-bottom: 16px; }
+    .section-label {
+      font-size: 0.65rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #6b6b80;
+      margin: 18px 0 10px;
+    }
+    .stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .stat {
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 10px;
+      padding: 10px 12px;
+      background: rgba(0,0,0,0.25);
+    }
+    .stat.wide { grid-column: 1 / -1; }
+    .stat .k {
+      font-size: 0.65rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #6b6b80;
+      margin-bottom: 4px;
+    }
+    .stat .v {
+      font-size: 1.05rem;
+      font-weight: 650;
+      color: #e8e8f0;
+    }
+    .stat .v.accent { color: #fbbf24; }
+    .stat .v.muted { color: #8b8ba0; font-size: 0.9rem; font-weight: 500; }
+    .bar {
+      margin-top: 8px;
+      height: 6px;
+      border-radius: 99px;
+      background: #1a1a28;
+      overflow: hidden;
+    }
+    .bar > span {
+      display: block;
+      height: 100%;
+      background: linear-gradient(90deg, #d97706, #fbbf24);
+      border-radius: 99px;
+      width: 0%;
+      transition: width 0.35s ease;
+    }
+    .links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    a.link {
+      display: inline-block;
+      padding: 9px 12px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: #e8e8f0;
+      background: #1e1e32;
+      border: 1px solid #333348;
+    }
+    a.link.primary {
+      background: #f59e0b;
+      color: #111;
+      border-color: transparent;
+    }
+    a.link.goal { border-color: rgba(251, 191, 36, 0.35); }
+    a.link.notes { border-color: rgba(96, 165, 250, 0.35); }
+    .empty {
+      font-size: 0.8rem;
+      color: #6b6b80;
+      font-style: italic;
+    }
+    .hint {
+      margin-top: 16px;
+      font-size: 0.75rem;
+      color: #5a5a70;
+      line-height: 1.4;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="eyebrow">This tab only</div>
+    <h1 id="title">Distraction site blocked</h1>
+    <p id="body">
+      This tab was redirected. Your other Edge tabs stay open. Adult sites, YouTube, and Netflix stay blocked in study mode.
+    </p>
+    <p class="meta" id="status">Checking gate…</p>
+
+    <div class="section-label">Study progress</div>
+    <div class="stats" id="stats">
+      <div class="stat wide"><div class="k">Status</div><div class="v muted">Loading…</div></div>
+    </div>
+
+    <div class="section-label">Go somewhere useful</div>
+    <div class="links" id="links">
+      <span class="empty" id="linksEmpty">Loading shortcuts…</span>
+    </div>
+
+    <p class="hint">Links open in this tab (no mass focus). Reload the extension after updates.</p>
+  </div>
+  <script src="gate_policy.js"></script>
+  <script>
+    const FALLBACK_LINKS = [
+      { title: "Bible reader", url: "http://localhost:5173/bible", source: "calt" },
+      { title: "Today's plan", url: "http://localhost:5173/productivity?tab=plan", source: "calt" },
+      { title: "Lecture notes", url: "http://localhost:5173/lecture-notes", source: "calt" },
+      { title: "Review hub", url: "http://localhost:5173/review", source: "calt" },
+      { title: "Scaler", url: "https://www.scaler.com/", source: "allowlist" },
+      { title: "Colab", url: "https://colab.research.google.com/", source: "allowlist" },
+      { title: "GitHub", url: "https://github.com/", source: "allowlist" },
+    ];
+
+    function fmtMin(n) {
+      if (n == null || Number.isNaN(Number(n))) return "—";
+      const m = Math.max(0, Math.round(Number(n)));
+      if (m >= 60) {
+        const h = Math.floor(m / 60);
+        const r = m % 60;
+        return r ? h + "h " + r + "m" : h + "h";
+      }
+      return m + "m";
+    }
+
+    function renderStats(g) {
+      const root = document.getElementById("stats");
+      if (!g || g._offline) {
+        root.innerHTML =
+          '<div class="stat wide"><div class="k">Status</div>' +
+          '<div class="v muted">Gate API unreachable — start CALT (:8000). Shortcuts below still work.</div></div>';
+        return;
+      }
+      const prod = g.productive_minutes;
+      const goal = g.daily_goal_minutes;
+      const left = g.remaining_minutes;
+      const mode = ((g.browser && (g.browser.mode_label || g.browser.mode)) || g.browser_mode || "—");
+      const pct = goal > 0 && prod != null ? Math.min(100, Math.round((Number(prod) / Number(goal)) * 100)) : 0;
+      const bible = g.chapter_goal_met ? "Done" : "Needed";
+      const unlock = g.day_unlimited || g.unlocked
+        ? "Games unlocked"
+        : left != null
+          ? fmtMin(left) + " study left"
+          : "Locked";
+      const block = g.current_block;
+      let blockHtml = "";
+      if (block && block.title) {
+        const leftB = block.minutes_left != null ? " · " + fmtMin(block.minutes_left) + " left in block" : "";
+        blockHtml =
+          '<div class="stat wide"><div class="k">Now on plan</div>' +
+          '<div class="v muted">' + escapeHtml(block.title) +
+          (block.category ? " · " + escapeHtml(block.category) : "") +
+          escapeHtml(leftB) + "</div></div>";
+      }
+      root.innerHTML =
+        '<div class="stat"><div class="k">Studied today</div><div class="v">' + escapeHtml(fmtMin(prod)) + "</div></div>" +
+        '<div class="stat"><div class="k">Daily goal</div><div class="v">' + escapeHtml(fmtMin(goal)) + "</div></div>" +
+        '<div class="stat wide"><div class="k">Time left to unlock</div>' +
+        '<div class="v accent">' + escapeHtml(unlock) + "</div>" +
+        '<div class="bar"><span style="width:' + pct + '%"></span></div></div>' +
+        '<div class="stat"><div class="k">Mode</div><div class="v">' + escapeHtml(String(mode).toUpperCase()) + "</div></div>" +
+        '<div class="stat"><div class="k">Bible chapter</div><div class="v">' + escapeHtml(bible) + "</div></div>" +
+        blockHtml;
+    }
+
+    function escapeHtml(s) {
+      return String(s == null ? "" : s)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function linkClass(source, index) {
+      if (index < 2 && source === "calt") return "link primary";
+      if (source === "goal") return "link goal";
+      if (source === "notes" || source === "notes_link") return "link notes";
+      return "link";
+    }
+
+    function renderLinks(links) {
+      const root = document.getElementById("links");
+      const list = Array.isArray(links) && links.length ? links : FALLBACK_LINKS;
+      root.innerHTML = "";
+      list.forEach(function (item, i) {
+        if (!item || !item.url) return;
+        const a = document.createElement("a");
+        a.className = linkClass(item.source || "", i);
+        a.href = item.url;
+        a.textContent = item.title || item.url;
+        // Same-tab navigate — avoid FOCUS_CALT / ensureOneCaltTab from this page.
+        a.target = "_self";
+        a.rel = "noopener";
+        root.appendChild(a);
+      });
+    }
+
+    function applyGate(g, fromCache) {
+      const status = document.getElementById("status");
+      const title = document.getElementById("title");
+      const body = document.getElementById("body");
+      if (!g || g._offline) {
+        status.textContent = "Gate unreachable — start CALT API (:8000). Showing fallback shortcuts.";
+        renderStats(g || { _offline: true });
+        renderLinks(null);
+        return;
+      }
+      const morning = g.morning || {};
+      const browser = g.browser || {};
+      const next = morning.next || browser.morning_next || "open";
+      if (next === "bible") {
+        title.textContent = "Morning — Bible first";
+        body.textContent =
+          "Finish today’s Bible chapter, then confirm your plan. Only this tab is locked; other tabs are untouched.";
+      } else if (next === "plan") {
+        title.textContent = "Morning — Confirm plan";
+        body.textContent = "Review goals and confirm today’s plan. Pick a shortcut below — opens in this tab.";
+      } else {
+        title.textContent = "Distraction site blocked";
+        body.textContent =
+          "This tab was redirected. Other Edge tabs stay open. Adult sites, YouTube, Netflix stay blocked in study.";
+      }
+      const mode = (browser.mode_label || browser.mode || "").toUpperCase();
+      const bits = ["Mode: " + (mode || "—")];
+      if (g.locked) bits.push("games locked");
+      bits.push("tab-local lock");
+      if (fromCache) bits.push("cached");
+      if (g.stale || g.degraded) bits.push("stale");
+      status.textContent = bits.join(" · ");
+      renderStats(g);
+      renderLinks(g.suggested_links);
+    }
+
+    async function refresh() {
+      const api = (typeof chrome !== "undefined" && chrome.runtime) ? chrome : (typeof browser !== "undefined" ? browser : null);
+      // Prefer live gate; fall back to background gateCache (includes stats + links).
+      try {
+        const r = await fetch(GATE_API_URL, { cache: "no-store" });
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        const g = await r.json();
+        applyGate(g, false);
+        return;
+      } catch (err) {
+        /* try cache */
+      }
+      if (api && api.storage && api.storage.local) {
+        try {
+          const result = await new Promise(function (resolve) {
+            api.storage.local.get(["gateCache"], resolve);
+          });
+          if (result && result.gateCache) {
+            applyGate(result.gateCache, true);
+            return;
+          }
+        } catch (e) { /* ignore */ }
+      }
+      applyGate({ _offline: true }, false);
+    }
+
+    refresh();
+    setInterval(refresh, 5000);
+  </script>
+</body>
+</html>

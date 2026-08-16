@@ -72,6 +72,59 @@ def test_week_export_tolerates_naive_session_datetimes():
     db.close()
 
 
+def test_week_export_includes_daily_wearable_metrics():
+    """Watch snapshots join the matching local export day."""
+    from datetime import date
+
+    from sqlalchemy import create_engine
+    from sqlalchemy.orm import sessionmaker
+
+    from backend.behavior.category_scores import seed_category_scores
+    from backend.db.base import Base
+    from backend.models.user import User
+    from backend.models.wearable_daily import WearableDaily
+    from backend.planner.week_export import build_productivity_week_export, export_as_csv
+
+    engine = create_engine("sqlite:///:memory:")
+    Base.metadata.create_all(engine)
+    Session = sessionmaker(bind=engine)
+    db = Session()
+    user = User(id=1, username="export_wearable", password_hash="x")
+    db.add(user)
+    db.add(
+        WearableDaily(
+            user_id=1,
+            local_date=date(2026, 7, 10),
+            source="zepp",
+            sleep_hours=7.5,
+            sleep_score=88,
+            sleep_deep_min=95,
+            steps=8421,
+            step_target=10000,
+            calories=430,
+            distance_m=6100,
+            hr_last=72,
+            hr_resting=58,
+            spo2=97,
+            stress=31,
+            pai_today=18,
+            stand_hours=9,
+            battery_pct=64,
+        )
+    )
+    db.commit()
+    seed_category_scores(db)
+
+    payload = build_productivity_week_export(db, user, days=1, end_day=date(2026, 7, 10))
+    wearable = payload["by_day"][0]["wearable"]
+    assert wearable["steps"] == 8421
+    assert wearable["sleep_hours"] == 7.5
+    assert wearable["heart_rate_resting"] == 58
+    assert wearable["spo2_pct"] == 97
+    assert "steps" in export_as_csv(payload).splitlines()[0]
+    db.close()
+
+
 def test_local_day_bounds_utc_spans_one_local_day():
     from datetime import date, timedelta
 

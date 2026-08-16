@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import csv
 import io
+import json
 from collections import defaultdict
 from datetime import date, datetime, timedelta, timezone
 from typing import Any
@@ -16,6 +17,7 @@ from backend.behavior.tracker_ignore import is_ignored_app
 from backend.models import User
 from backend.models.planner import PlannerBlock
 from backend.models.timetable import TrackedSession
+from backend.models.wearable_daily import WearableDaily
 from backend.planner.day_metrics import compute_day_metrics
 from backend.planner.service import _utc, local_day_bounds_utc, serialize_block
 from backend.timetable.tracker_query import tracker_user_ids
@@ -25,6 +27,41 @@ _WEEKDAYS = ("mon", "tue", "wed", "thu", "fri", "sat", "sun")
 
 def _local_hour(dt: datetime) -> int:
     return _utc(dt).astimezone().hour
+
+
+def _wearable_export(row: WearableDaily | None) -> dict[str, Any] | None:
+    """Serialize every normalized watch metric plus its original payload, if any."""
+    if row is None:
+        return None
+    raw_payload: Any = None
+    if row.payload_json:
+        try:
+            raw_payload = json.loads(row.payload_json)
+        except (TypeError, ValueError):
+            raw_payload = row.payload_json
+    return {
+        "source": row.source,
+        "sleep_hours": row.sleep_hours,
+        "sleep_score": row.sleep_score,
+        "sleep_deep_minutes": row.sleep_deep_min,
+        "steps": row.steps,
+        "step_target": row.step_target,
+        "calories": row.calories,
+        "calorie_target": row.calorie_target,
+        "distance_meters": row.distance_m,
+        "heart_rate_last": row.hr_last,
+        "heart_rate_resting": row.hr_resting,
+        "spo2_pct": row.spo2,
+        "stress": row.stress,
+        "pai_today": row.pai_today,
+        "pai_total": row.pai_total,
+        "stand_hours": row.stand_hours,
+        "stand_target": row.stand_target,
+        "battery_pct": row.battery_pct,
+        "captured_at": row.last_captured_at.isoformat() if row.last_captured_at else None,
+        "synced_at": row.synced_at.isoformat() if row.synced_at else None,
+        "raw_payload": raw_payload,
+    }
 
 
 def build_productivity_week_export(
@@ -80,6 +117,16 @@ def build_productivity_week_export(
         and s.end_time
         and not is_ignored_app(s.app_name or "", s.window_title or "")
     ]
+    wearable_by_day = {
+        row.local_date: row
+        for row in db.query(WearableDaily)
+        .filter(
+            WearableDaily.user_id == user.id,
+            WearableDaily.local_date >= start,
+            WearableDaily.local_date <= end,
+        )
+        .all()
+    }
 
     by_day: list[dict[str, Any]] = []
     weekday_hour_sum: dict[str, list[float]] = {k: [0.0] * 24 for k in _WEEKDAYS}
@@ -161,6 +208,7 @@ def build_productivity_week_export(
                 "top_apps": [
                     {"app": a, "minutes": round(m, 1)} for a, m in top_apps
                 ],
+                "wearable": _wearable_export(wearable_by_day.get(day)),
             }
         )
 
@@ -241,11 +289,11 @@ def build_productivity_week_export(
         )
 
     return {
-        "export_version": "1.1",
+        "export_version": "1.2",
         "exported_at": datetime.now(timezone.utc).isoformat(),
         "purpose": (
-            "Last-N-days productivity snapshot for designing weekly timetables "
-            "(weekday patterns, peak hours, plan vs actual)."
+            "Last-N-days productivity and wearable snapshot for designing weekly "
+            "timetables (weekday patterns, peak hours, plan vs actual, health context)."
         ),
         "range": {
             "start": start.isoformat(),
@@ -278,7 +326,7 @@ def filter_export_payload(
     productive_only: bool = False,
 ) -> dict[str, Any]:
     """Slim export for custom download / LLM propose."""
-    include = include or {"summary", "patterns", "by_day", "blocks", "hints", "policy"}
+    include = include or {"summary", "patterns", "by_day", "blocks", "hints", "policy", "wearable"}
     out: dict[str, Any] = {
         "export_version": payload.get("export_version"),
         "exported_at": payload.get("exported_at"),
@@ -299,6 +347,8 @@ def filter_export_payload(
             row = dict(day)
             if "blocks" not in include:
                 row.pop("planned_blocks", None)
+            if "wearable" not in include:
+                row.pop("wearable", None)
             if productive_only:
                 # Keep day row but zero non-productive category breakdown noise
                 row["actual_minutes"] = row.get("productive_minutes", 0)
@@ -322,12 +372,25 @@ def export_as_csv(payload: dict[str, Any]) -> str:
             "adherence_pct",
             "top_category",
             "top_app",
+            "sleep_hours",
+            "sleep_score",
+            "steps",
+            "step_target",
+            "calories",
+            "distance_meters",
+            "heart_rate_resting",
+            "spo2_pct",
+            "stress",
+            "pai_today",
+            "stand_hours",
+            "battery_pct",
             *[f"h{h:02d}" for h in range(24)],
         ]
     )
     for day in payload.get("by_day") or []:
         cats = day.get("by_category_minutes") or {}
         apps = day.get("top_apps") or []
+        wearable = day.get("wearable") or {}
         top_cat = next(iter(cats.keys()), "")
         top_app = apps[0]["app"] if apps else ""
         hours = day.get("by_hour_minutes") or {}
@@ -342,6 +405,18 @@ def export_as_csv(payload: dict[str, Any]) -> str:
                 day.get("adherence_pct") if day.get("adherence_pct") is not None else "",
                 top_cat,
                 top_app,
+                wearable.get("sleep_hours", ""),
+                wearable.get("sleep_score", ""),
+                wearable.get("steps", ""),
+                wearable.get("step_target", ""),
+                wearable.get("calories", ""),
+                wearable.get("distance_meters", ""),
+                wearable.get("heart_rate_resting", ""),
+                wearable.get("spo2_pct", ""),
+                wearable.get("stress", ""),
+                wearable.get("pai_today", ""),
+                wearable.get("stand_hours", ""),
+                wearable.get("battery_pct", ""),
                 *[hours.get(str(h), 0) for h in range(24)],
             ]
         )

@@ -490,6 +490,7 @@ export function ProductivityPage() {
     blocks: true,
     hints: true,
     policy: true,
+    wearable: true,
   });
   const [exportProductiveOnly, setExportProductiveOnly] = useState(false);
   const [proposing, setProposing] = useState(false);
@@ -1863,7 +1864,7 @@ export function ProductivityPage() {
                     Include sections
                   </p>
                   <div className="flex flex-wrap gap-2">
-                    {(["summary", "patterns", "by_day", "blocks", "hints", "policy"] as const).map((k) => (
+                    {(["summary", "patterns", "by_day", "blocks", "hints", "policy", "wearable"] as const).map((k) => (
                       <label
                         key={k}
                         className={`flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs transition-colors ${

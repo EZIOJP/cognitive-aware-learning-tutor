@@ -410,14 +410,14 @@ def export_productivity_last_days(
     days: int = Query(7, ge=1, le=31, description="How many calendar days ending today"),
     format: str = Query("json", pattern="^(json|csv)$"),
     include: str = Query(
-        "summary,patterns,by_day,blocks,hints,policy",
-        description="Comma list: summary,patterns,by_day,blocks,hints,policy",
+        "summary,patterns,by_day,blocks,hints,policy,wearable",
+        description="Comma list: summary,patterns,by_day,blocks,hints,policy,wearable",
     ),
     productive_only: bool = Query(False, description="Prefer productive metrics in by_day"),
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    """Export recent planner + tracked usage for designing weekly timetables."""
+    """Export recent planner, tracked usage, and optional watch metrics."""
     from fastapi.responses import Response
 
     from backend.planner.week_export import (
@@ -459,7 +459,7 @@ def propose_from_export(
     payload = build_productivity_week_export(db, user, days=body.days)
     payload = filter_export_payload(
         payload,
-        include={"summary", "patterns", "hints", "policy", "by_day"},
+        include={"summary", "patterns", "hints", "policy", "by_day", "wearable"},
         productive_only=False,
     )
     range_start = None

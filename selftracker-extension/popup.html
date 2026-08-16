@@ -265,7 +265,7 @@
   <div id="jarvisLine" style="margin-top:8px;font-size:11px;color:#94a3b8;line-height:1.35;min-height:1.2em;"></div>
   <label class="gate-toggle">
     <input type="checkbox" id="redirectsToggle" checked />
-    Redirect blocked sites in <em>this tab</em> (other tabs stay open)
+    Redirects: use <strong>CALT Gate</strong> popup (this toggle is display-only)
   </label>
   <div class="btn-row" style="margin-top:10px;">
     <button type="button" class="primary" id="openBibleBtn">Bible</button>
@@ -385,7 +385,7 @@ function renderGate(gateCache, redirectsEnabled) {
     const bits = [];
     if (ytBlocked) bits.push('blocked sites → this tab only');
     if (browser.block_other) bits.push('allowlist only');
-    else if (browser.block_porn) bits.push('adult filter');
+    else if (browser.block_porn) bits.push('distraction filter');
     if (gateCache.locked) bits.push('games locked');
     const morning = (gateCache.morning && gateCache.morning.next) || browser.morning_next;
     if (morning && morning !== 'open') bits.push('next: ' + morning);

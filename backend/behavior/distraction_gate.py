@@ -11,8 +11,10 @@ from sqlalchemy.orm import Session
 
 log = logging.getLogger("calt.distraction_gate")
 
-# Seed list — common launchers / clients (user can extend via hard_block_exes).
+# Seed list — common launchers / clients / desktop distractions
+# (user can extend via hard_block_exes). Browsers are never seeded here.
 DEFAULT_HARD_BLOCK_EXES: list[str] = [
+    # Steam / Epic / Riot / GOG / Battle.net
     "steam.exe",
     "steamwebhelper.exe",
     "steamservice.exe",
@@ -21,17 +23,60 @@ DEFAULT_HARD_BLOCK_EXES: list[str] = [
     "epicgameslauncher.exe",
     "epicwebhelper.exe",
     "galaxyclient.exe",
+    "galaxyclientservice.exe",
     "battle.net.exe",
+    "agent.exe",  # Battle.net agent (often named Agent.exe under Battle.net)
     "riotclientservices.exe",
+    "riotclientux.exe",
     "leagueclient.exe",
     "leagueclientux.exe",
     "valorant.exe",
     "fortniteclient-win64-shipping.exe",
     "minecraft.exe",
+    "minecraftlauncher.exe",
     "robloxplayerbeta.exe",
+    "robloxplayerlauncher.exe",
+    # EA / Ubisoft / Rockstar / Xbox / itch
+    "eadesktop.exe",
+    "ealauncher.exe",
+    "origin.exe",
+    "upc.exe",
+    "ubisoftconnect.exe",
+    "ubisoftgamelauncher.exe",
+    "rockstarservice.exe",
+    "launcherpatcher.exe",
+    "socialclub.exe",
+    "gamingservices.exe",
+    "gamingservicesnet.exe",
+    "xboxapp.exe",
+    "xboxpcapp.exe",
+    "gamebar.exe",
+    "itch.exe",
+    # Desktop distraction clients (not browsers)
+    "discord.exe",
+    "discordptb.exe",
+    "discordcanary.exe",
+    "spotify.exe",
+    "netflix.exe",
+    "primevideo.exe",
+    "disneyplus.exe",
+    "hulu.exe",
+    "twitch.exe",
 ]
 
-# Path fragments that mean "this process is a Steam/Epic game install"
+# Categories that hard-kill when Armed (desktop apps only — never browsers).
+HARD_BLOCK_DISTRACTION_CATEGORIES: frozenset[str] = frozenset(
+    {
+        "gaming",
+        "video streaming",
+        "music / media",
+        "social media",
+        "entertainment",
+        "live streaming",
+    }
+)
+
+# Path fragments that mean "this process is a game install / launcher tree"
 _GAME_PATH_MARKERS: tuple[str, ...] = (
     "\\steam\\steamapps\\common\\",
     "\\steamapps\\common\\",
@@ -40,12 +85,52 @@ _GAME_PATH_MARKERS: tuple[str, ...] = (
     "\\epicgames\\",
     "\\riot games\\",
     "\\xboxgames\\",
+    "\\xbox games\\",
+    "\\ea games\\",
+    "\\electronic arts\\",
+    "\\origin games\\",
+    "\\ubisoft\\ubisoft game launcher\\",
+    "\\ubisoft game launcher\\",
+    "\\rockstar games\\",
+    "\\gog galaxy\\games\\",
+    "\\gog games\\",
+    "\\itch\\apps\\",
+    "\\battlenet\\",
+    "\\battle.net\\",
 )
 
 _STEAM_NAME_PREFIXES: tuple[str, ...] = (
     "steam",
     "gameoverlay",
     "start_protected_game",
+)
+
+_LAUNCHER_NAME_MARKERS: tuple[str, ...] = (
+    "epicgames",
+    "epicgameslauncher",
+    "galaxyclient",
+    "battlenet",
+    "riotclient",
+    "leagueclient",
+    "eadesktop",
+    "ealauncher",
+    "ubisoftconnect",
+    "ubisoftgamelauncher",
+    "rockstarservice",
+    "gamingservices",
+    "xboxapp",
+    "xboxpcapp",
+    "gamebar",
+)
+
+# Exact stems only (too short for prefix match)
+_LAUNCHER_NAME_EXACT: frozenset[str] = frozenset(
+    {
+        "origin",
+        "upc",
+        "itch",
+        "battle.net",
+    }
 )
 
 # Never kill these even if listed (safety). Editors / shells stay usable while games die.
@@ -140,7 +225,12 @@ def hard_block_exe_set(policy: dict[str, Any]) -> set[str]:
 
 
 def is_protected_exe(exe: str | None) -> bool:
-    return normalize_exe(exe) in PROTECTED_EXES
+    from backend.behavior.browser_catalog import is_music_player_exe
+
+    if normalize_exe(exe) in PROTECTED_EXES:
+        return True
+    # Pear / YouTube Music may report without .exe
+    return is_music_player_exe(exe)
 
 
 def is_commitment_escape_exe(exe: str | None) -> bool:
@@ -159,7 +249,7 @@ def process_exe_path(pid: int) -> str:
 
 
 def looks_like_game_process(exe: str | None, pid: int = 0) -> bool:
-    """True for Steam/Epic/Riot launchers and games running from game install folders."""
+    """True for Steam/Epic/Riot/EA/… launchers and games under known install folders."""
     name = normalize_exe(exe)
     if not name or name in PROTECTED_EXES:
         return False
@@ -170,6 +260,17 @@ def looks_like_game_process(exe: str | None, pid: int = 0) -> bool:
     for prefix in _STEAM_NAME_PREFIXES:
         if stem == prefix or stem.startswith(prefix):
             return True
+    compact = stem.replace(" ", "").replace("-", "").replace("_", "")
+    for marker in _LAUNCHER_NAME_MARKERS:
+        if compact == marker or compact.startswith(marker):
+            return True
+    if stem in _LAUNCHER_NAME_EXACT or compact in _LAUNCHER_NAME_EXACT:
+        return True
+    # Common shipping exe suffixes from Unreal/Unity/store builds
+    if stem.endswith("-win64-shipping") or stem.endswith("-win64-shipping.exe"):
+        return True
+    if "win64-shipping" in stem or "win32-shipping" in stem:
+        return True
     path = process_exe_path(pid) if pid else ""
     if path:
         for marker in _GAME_PATH_MARKERS:
@@ -182,7 +283,20 @@ def looks_like_game_process(exe: str | None, pid: int = 0) -> bool:
                 "gameoverlayui.exe",
             }:
                 return True
+        # Generic ...\Games\<title>\... when not a protected system path
+        if "\\games\\" in path and "\\windows\\" not in path:
+            return True
     return False
+
+
+def _category_is_hard_block_distraction(category: str | None) -> bool:
+    cat = (category or "").strip().lower()
+    if not cat:
+        return False
+    if cat in HARD_BLOCK_DISTRACTION_CATEGORIES:
+        return True
+    # Gaming already listed; accept loose "Gaming (...)" labels if any
+    return cat.startswith("gaming")
 
 
 def is_game_bank_drain_target(
@@ -192,20 +306,20 @@ def is_game_bank_drain_target(
     *,
     pid: int = 0,
 ) -> bool:
-    """True only for real games — never Task Manager / system tools (those must not eat bank)."""
+    """True only for real games — never Task Manager / Discord / Spotify (those must not eat bank)."""
     if not policy.get("hard_block_enabled"):
         return False
     name = normalize_exe(exe)
     if not name or name in PROTECTED_EXES or name in COMMITMENT_ESCAPE_EXES:
         return False
-    if name in hard_block_exe_set(policy):
+    if is_known_browser(name) or is_allowed_browser(name):
+        return False
+    cat = (category or "").strip().lower()
+    if cat == "gaming" or cat.startswith("gaming"):
         return True
-    if policy.get("hard_block_gaming", True):
-        cat = (category or "").strip()
-        if cat.lower() == "gaming" or cat == "Gaming":
-            return True
-        if looks_like_game_process(exe, pid):
-            return True
+    if policy.get("hard_block_gaming", True) and looks_like_game_process(exe, pid):
+        return True
+    # Seed list includes Discord/Spotify — those hard-block but do not drain game bank.
     return False
 
 
@@ -222,14 +336,16 @@ def should_hard_block(
     name = normalize_exe(exe)
     if not name or name in PROTECTED_EXES:
         return False
+    # Never hard-kill browsers — site blocking is extension/gate territory.
+    if is_known_browser(name) or is_allowed_browser(name):
+        return False
     # Close Task Manager / process tools so killing the tracker is harder (only while locked).
     if name in COMMITMENT_ESCAPE_EXES:
         return True
     if name in hard_block_exe_set(policy):
         return True
     if policy.get("hard_block_gaming", True):
-        cat = (category or "").strip()
-        if cat.lower() == "gaming" or cat == "Gaming":
+        if _category_is_hard_block_distraction(category):
             return True
         # Steam launches real games as start_protected_game.exe / GameName.exe
         # under steamapps — those often classify as Other, not Gaming.
@@ -265,15 +381,21 @@ def list_blockable_pids(policy: dict[str, Any]) -> list[tuple[int, str]]:
 def terminate_blocked_process(pid: int, *, exe: str = "") -> bool:
     """Best-effort terminate. Returns True if a kill was attempted successfully.
 
-    Never kills Microsoft Edge or any catalog browser — Edge is the allowed study
-    shell; process-kill would feel like the browser 'closing too much'.
+    Never kills Microsoft Edge, catalog browsers, or Pear/YouTube Music — Edge is
+    the allowed study shell; music players are not games. Soft-lock never calls
+    this for browsers.
     """
+    from backend.behavior.browser_catalog import is_music_player_exe
+
     if pid <= 0:
         return False
     if pid == os.getpid():
         return False
     if is_protected_exe(exe):
         log.info("Skip kill protected exe=%s pid=%s", exe, pid)
+        return False
+    if is_music_player_exe(exe):
+        log.info("Skip kill music player exe=%s pid=%s", exe, pid)
         return False
     # Explicit Edge bail (defense in depth — even if catalog drifts).
     if is_allowed_browser(exe) or normalize_exe(exe) in {
@@ -293,6 +415,9 @@ def terminate_blocked_process(pid: int, *, exe: str = "") -> bool:
             pname = exe
         if is_protected_exe(pname):
             return False
+        if is_music_player_exe(pname):
+            log.info("Skip kill music player pname=%s pid=%s", pname, pid)
+            return False
         if is_allowed_browser(pname) or normalize_exe(pname) in {
             "msedge.exe",
             "msedgewebview2.exe",
@@ -311,6 +436,8 @@ def terminate_blocked_process(pid: int, *, exe: str = "") -> bool:
             try:
                 cname = child.name()
                 if is_protected_exe(cname) or is_allowed_browser(cname):
+                    continue
+                if is_music_player_exe(cname):
                     continue
                 if normalize_exe(cname) in {
                     "msedge.exe",
@@ -411,6 +538,7 @@ def _suggested_wake_note(
 def compute_distraction_gate(db: Session, user_id: int) -> dict[str, Any]:
     """Games locked unless: day unlimited (study goal + 1 chapter) or day pass."""
     from backend.behavior.category_scores import load_score_map
+    from backend.behavior.demo_clock import is_demo, now_local, status as demo_status
     from backend.behavior.productivity_policy import load_policy_dict, resolve_session_score
     from backend.bible import store as bible_store
     from backend.models.timetable import TrackedSession
@@ -421,7 +549,9 @@ def compute_distraction_gate(db: Session, user_id: int) -> dict[str, Any]:
     goal = max(1, int(policy.get("daily_goal_minutes") or 240))
     threshold = int(policy.get("threshold") or 60)
 
-    day_date = datetime.now(local_tz()).date()
+    demo_on = is_demo()
+    gate_now = now_local()
+    day_date = gate_now.date()
     start, end = local_day_bounds_utc(day_date)
     # Same scope as stats APIs: admin tracker rows + legacy demo mis-attributions.
     from backend.models import User
@@ -499,11 +629,19 @@ def compute_distraction_gate(db: Session, user_id: int) -> dict[str, Any]:
     bank_remaining_s = int(bible.get("game_bank_remaining_seconds") or 0)
     bank_remaining_m = float(bible.get("game_bank_remaining_minutes") or 0)
     day_pass = bool(bible.get("day_pass"))
+    reward_day = bool(bible.get("reward_day"))
     chapter_goal = bible.get("chapter_goal") or {}
     chapters_today = list(bible.get("chapters_completed_today") or [])
     chapter_met = bool(chapter_goal.get("met")) or len(chapters_today) >= 1
-    # Study goal + ≥1 chapter today → unlimited until midnight (day pass bypasses Bible)
-    day_unlimited = bool(day_pass or (productive >= goal and chapter_met))
+    from backend.behavior import reward_days
+
+    reward_status = reward_days.record_qualifying_day(
+        user_id,
+        qualified=productive >= goal and chapter_met,
+    )
+    # Study goal + ≥1 chapter, a controlled day pass, or an earned reward day
+    # unlocks games and normal browsing until midnight.
+    day_unlimited = bool(reward_day or day_pass or (productive >= goal and chapter_met))
     # Legacy bank no longer unlocks midday (chapter+study is the primary path)
     has_bank = False
     unlocked = (not enabled) or day_unlimited
@@ -525,12 +663,14 @@ def compute_distraction_gate(db: Session, user_id: int) -> dict[str, Any]:
     bible_done = bool(chapter_met)  # intentional: day_pass does not skip morning Bible
     blocks_today = morning_store.count_blocks_today(db, user_id, day_date)
     plan_confirmed = morning_store.is_plan_confirmed(user_id, day_date)
+    # Confirmation is explicit only (Productivity Confirm / morning-plan API).
+    # Having calendar blocks does NOT auto-satisfy the morning plan gate.
     plan_done = bool(plan_confirmed)
 
     from backend.planner import morning_rewards as morning_rewards_store
 
     # Lazy catch-up: Bible done elsewhere (tracker) → grant + expose rewards
-    if bible_done:
+    if bible_done and not demo_on:
         try:
             morning_rewards_store.maybe_grant_bible(user_id)
         except Exception:
@@ -542,6 +682,7 @@ def compute_distraction_gate(db: Session, user_id: int) -> dict[str, Any]:
     plan_window = morning_store.evaluate_plan_window(
         bible_done=bible_done,
         bible_completed_at=bible_completed_at,
+        now=gate_now,
     )
 
     if not morning_on:
@@ -557,45 +698,30 @@ def compute_distraction_gate(db: Session, user_id: int) -> dict[str, Any]:
         # Before window or during window: stay on plan (confirm may be disabled)
         next_step = "plan"
 
-    # Lazy catch-up: Bible done → draft plan once if Productivity is still empty
-    auto_plan_payload: dict | None = None
-    if next_step == "plan":
-        try:
-            from backend.planner import auto_plan as auto_plan_mod
+    # An earned reward day is the explicit all-day browser/game reward. Unlike
+    # a weekly day-pass, it also bypasses the morning browser redirect.
+    if reward_day:
+        next_step = "open"
 
-            draft = auto_plan_mod.auto_draft_day_plan(
-                db,
-                user_id,
-                day=day_date,
-                bible_done=True,
-                bible_completed_at=bible_completed_at,
-            )
-            auto_plan_payload = draft.get("auto_plan") if isinstance(draft, dict) else None
-            if draft and not draft.get("skipped"):
-                blocks_today = morning_store.count_blocks_today(db, user_id, day_date)
-                # Optional auto-confirm may have flipped plan_done
-                plan_confirmed = morning_store.is_plan_confirmed(user_id, day_date)
-                plan_done = bool(plan_confirmed)
-                if plan_done:
-                    next_step = "open"
-            elif auto_plan_payload is None:
-                auto_plan_payload = auto_plan_mod.auto_plan_summary(user_id, day_date)
-        except Exception:
-            auto_plan_payload = None
-    else:
-        try:
-            from backend.planner import auto_plan as auto_plan_mod
-
-            auto_plan_payload = auto_plan_mod.auto_plan_summary(user_id, day_date)
-        except Exception:
-            auto_plan_payload = None
-
-    if next_step == "bible":
+    # Website stays navigable during demos; SelfTracker still uses browser.mode.
+    if demo_on:
+        allow_paths = ["*"]
+    elif next_step == "bible":
         allow_paths = ["/bible", "/login"]
     elif next_step == "plan":
         allow_paths = ["/bible", "/productivity", "/login"]
     else:
         allow_paths = ["*"]
+
+    # Read-only auto-plan status for UI / Jarvis — never draft or confirm here.
+    # Drafting belongs to explicit POST /morning-plan/auto-draft (or Bible UI action).
+    auto_plan_payload: dict | None = None
+    try:
+        from backend.planner import auto_plan as auto_plan_mod
+
+        auto_plan_payload = auto_plan_mod.auto_plan_summary(user_id, day_date)
+    except Exception:
+        auto_plan_payload = None
 
     from backend.behavior.browser_gate_policy import (
         DEFAULT_BIBLE_URL,
@@ -612,7 +738,7 @@ def compute_distraction_gate(db: Session, user_id: int) -> dict[str, Any]:
     planner_title: str | None = None
     planner_minutes_left: int | None = None
     try:
-        plan_ctx = fetch_plan_context(user_id, db=db)
+        plan_ctx = fetch_plan_context(user_id, now=gate_now, db=db)
         if plan_ctx.current is not None:
             planner_category = plan_ctx.current.category
             planner_title = plan_ctx.current.title
@@ -626,6 +752,15 @@ def compute_distraction_gate(db: Session, user_id: int) -> dict[str, Any]:
         rewards_total=int(rewards.get("total_points") or 0),
         morning_on=morning_on,
     )
+
+    daily_practice: dict[str, Any] | None = None
+    if plan_done or next_step == "open":
+        try:
+            from backend.quiz.daily_practice import build_daily_practice_nudge
+
+            daily_practice = build_daily_practice_nudge(db, user_id=user_id)
+        except Exception as exc:  # noqa: BLE001
+            log.debug("daily_practice nudge skipped: %s", exc)
 
     auto_plan_cfg_on = True
     auto_plan_confirm_on = False
@@ -655,6 +790,7 @@ def compute_distraction_gate(db: Session, user_id: int) -> dict[str, Any]:
         "plan_window": plan_window,
         "hint": hint,
         "auto_plan": auto_plan_payload,
+        "daily_practice": daily_practice,
         # Soft only — CALT cannot write Zepp/T-Rex hardware smart alarms
         "suggested_wake": _suggested_wake_note(db, user_id, day_date, next_step),
         # Read-only env knobs for Productivity Settings (not writable via API)
@@ -675,6 +811,8 @@ def compute_distraction_gate(db: Session, user_id: int) -> dict[str, Any]:
         planner_title=planner_title,
         bible_url=bible_url,
         plan_url=plan_url,
+        day_unlimited=day_unlimited,
+        now=gate_now,
     )
     day_mode = str(browser.get("mode") or "study")
 
@@ -717,6 +855,8 @@ def compute_distraction_gate(db: Session, user_id: int) -> dict[str, Any]:
         "day_unlimited": day_unlimited,
         "day_pass": day_pass,
         "day_pass_status": bible.get("day_pass_status"),
+        "reward_day": reward_day,
+        "reward_day_status": reward_status,
         "unlock_mode": (
             "off"
             if not enabled
@@ -729,6 +869,7 @@ def compute_distraction_gate(db: Session, user_id: int) -> dict[str, Any]:
         "morning": morning,
         "browser": browser,
         "browser_mode": day_mode,
+        "demo": demo_status(),
         "suggested_links": list(locked_extras.get("suggested_links") or []),
         "current_block": locked_extras.get("current_block"),
     }

@@ -8,7 +8,7 @@ import { BrowserActivityWidget, LifeScoreWidget } from "./LifeTrackerWidgets";
 export const LifeTrackerPlugin: PluginDef = {
   id: "life-tracker",
   name: "Life & Behavior Tracker",
-  description: "Track health, productivity, and digital wellbeing. Includes Chrome extension monitoring.",
+  description: "Track health, productivity, and digital wellbeing. Includes Edge SelfTracker monitoring.",
   icon: Heart,
   isCore: false,
   Provider: GoalTrackerProvider,

@@ -232,13 +232,14 @@ export function ThemeToggle({ className = "", size = "md", variant: variantProp 
   const celestialSize = s.icon + (size === "sm" ? 3 : 6);
 
   return (
+    <span className={`relative inline-flex shrink-0 flex-col items-center ${className}`}>
     <button
       type="button"
       onPointerDown={handlePointerDown}
       onPointerUp={handlePointerUp}
       onPointerLeave={handlePointerUp}
       onClick={handleClick}
-      className={`${className} relative rounded-full inline-flex items-center justify-center cursor-pointer group overflow-hidden shrink-0`}
+      className="relative rounded-full inline-flex items-center justify-center cursor-pointer group overflow-hidden shrink-0"
       style={{
         width: s.button,
         height: s.button,
@@ -575,5 +576,26 @@ export function ThemeToggle({ className = "", size = "md", variant: variantProp 
         transition={{ duration: 1.2, ease: [0.33, 1, 0.68, 1] }}
       />
     </button>
+
+    <AnimatePresence>
+      {meteorBurst > 0 ? (
+        <motion.span
+          key={`wish-${meteorBurst}`}
+          aria-hidden
+          className="pointer-events-none absolute left-1/2 top-full z-20 mt-0.5 -translate-x-1/2 whitespace-nowrap text-[8px] font-medium tracking-wide text-violet-200/90 drop-shadow-[0_1px_2px_rgba(0,0,0,0.65)]"
+          initial={{ opacity: 0, y: -3 }}
+          animate={{ opacity: [0, 1, 1, 0], y: [-3, 0, 0, 2] }}
+          exit={{ opacity: 0 }}
+          transition={{
+            duration: 3.6,
+            times: [0, 0.12, 0.72, 1],
+            ease: "easeOut",
+          }}
+        >
+          make a wish
+        </motion.span>
+      ) : null}
+    </AnimatePresence>
+    </span>
   );
 }

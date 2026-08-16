@@ -68,3 +68,35 @@ Productivity Policy panel: toggle, goal minutes, gaming checkbox, custom exe lis
 - After productive minutes ≥ goal, same exe is left alone until midnight.
 - Custom exe on the list is blocked the same way.
 - Tests cover match rules + unlock math; API returns gate payload.
+
+---
+
+## Addendum (2026-08-04) — SelfTracker browser policy
+
+Desktop hard-block remains **games/exe only**. Site control is via SelfTracker extensions polling the same gate:
+
+- Payload: `browser` (+ `morning.bible_url` / `redirect_url`) from `backend/behavior/browser_gate_policy.py`
+- Allowlist wins (Colab, Scaler, GitHub, localhost, docs, …)
+- Always block porn while Armed or morning locked
+- Block watch sites (YouTube, Netflix, …) while Armed or morning locked (`block_watch_sites`)
+- Morning `bible` / `plan` soft-land to SPA URLs; Armed distractions → `locked.html`
+- **Keywords (v1.3):** case-insensitive blocklist on URL path/query + page/window title only (~0 cost; not keylogging). Allowlist still wins. Synced via `browser.block_keywords_list`.
+- **Allowed browsers while enforcing:** Zen + Edge only. Other browsers → soft-lock card + canned voice (never kill Cursor/IDEs; browsers stay in `PROTECTED_EXES`).
+- **NSFW screen (optional, light):** every ~60s CPU screenshot when Armed — see `backend/behavior/nsfw_screen_scan.py` + `data/nsfw/README.md`. **Not** continuous GPU video.
+- **Voice alerts:** canned Jarvis lines from `voice_agent/block_dialogues.py` (random/rotate). Rate-limited (~45s). No LLM/`call_brain` for YouTube/porn blocks.
+
+### Light routine (intervals)
+
+| Path | Interval | Cost |
+|------|----------|------|
+| Extension keyword/URL check | On navigation / tab focus only | String match |
+| Extension gate poll (active) | ~4s opportunistic GET | Tiny JSON |
+| Extension gate poll (idle) | 1 min alarm backup | Tiny JSON |
+| NSFW screen scan | ~60s when Armed | Brief CPU spike, ~0 VRAM |
+| Speak alert | Max ~1 / 45s | edge-tts ephemeral |
+
+### Deferred explicitly
+
+- Keylogging / keyboard content filters
+- Continuous webcam or frame-by-frame GPU NSFW
+- LLM-generated narration for routine blocks

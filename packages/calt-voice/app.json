@@ -1,0 +1,70 @@
+{
+  "configVersion": "v3",
+  "app": {
+    "appName": "CALT Voice",
+    "appId": 1088803,
+    "appType": "app",
+    "version": {
+      "code": 2,
+      "name": "1.0.1"
+    },
+    "icon": "icon.png",
+    "vender": "calt",
+    "description": "Black-screen voice notes — auto-record on open, 5 min max, 1GB free required"
+  },
+  "permissions": [
+    "data:os.device.info",
+    "device:os.local_storage",
+    "device:os.mic",
+    "device:os.audio",
+    "record",
+    "media",
+    "storage"
+  ],
+  "runtime": {
+    "apiVersion": {
+      "compatible": "3.0",
+      "target": "4.0",
+      "minVersion": "3.0"
+    }
+  },
+  "targets": {
+    "480x480-t-rex-3": {
+      "module": {
+        "page": {
+          "pages": ["page/index"]
+        },
+        "app-widget": {
+          "widgets": [
+            {
+              "path": "app-widget/index",
+              "icon": "icon.png",
+              "name": "Voice",
+              "runtime": {
+                "type": "js"
+              }
+            }
+          ]
+        }
+      },
+      "platforms": [
+        { "name": "t-rex-3", "deviceSource": 8716544 },
+        { "name": "t-rex-3-w", "deviceSource": 8716545 },
+        { "name": "t-rex-3-c", "deviceSource": 8716547 },
+        { "name": "t-rex-3-pro-48", "deviceSource": 10551552 },
+        { "name": "t-rex-3-pro-48-w", "deviceSource": 10551553 },
+        { "name": "t-rex-3-pro-48-c", "deviceSource": 10551555 },
+        { "name": "t-rex-3-pro-44", "deviceSource": 10682624 },
+        { "name": "t-rex-3-pro-44-w", "deviceSource": 10682625 },
+        { "name": "t-rex-3-pro-44-c", "deviceSource": 10682627 }
+      ],
+      "designWidth": 480
+    }
+  },
+  "i18n": {
+    "en-US": {
+      "appName": "CALT Voice"
+    }
+  },
+  "defaultLanguage": "en-US"
+}

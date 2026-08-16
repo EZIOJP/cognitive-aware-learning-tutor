@@ -42,6 +42,60 @@ export function listFencedBlocks(markdown: string): FencedBlock[] {
   return blocks;
 }
 
+/** Normalize fence body for index/content matching (renderer vs regex). */
+export function normalizeFenceBody(s: string): string {
+  return String(s ?? "")
+    .replace(/\r\n/g, "\n")
+    .replace(/\n$/, "")
+    .trimEnd();
+}
+
+function langsCompatible(a: string, b: string): boolean {
+  const x = (a || "text").toLowerCase();
+  const y = (b || "text").toLowerCase();
+  if (x === y) return true;
+  if ((x === "python" || x === "py") && (y === "python" || y === "py")) return true;
+  if ((x === "javascript" || x === "js") && (y === "javascript" || y === "js")) return true;
+  if ((x === "typescript" || x === "ts") && (y === "typescript" || y === "ts")) return true;
+  if ((x === "text" || x === "") && (y === "text" || y === "")) return true;
+  return false;
+}
+
+/**
+ * Resolve a fenced block index for save/regenerate.
+ * Prefer hintIndex when it still matches; otherwise match by body (+ optional lang).
+ */
+export function resolveFencedBlockIndex(
+  markdown: string,
+  opts: { hintIndex?: number; lang?: string; content?: string },
+): number {
+  const blocks = listFencedBlocks(markdown);
+  const want = opts.content != null ? normalizeFenceBody(opts.content) : "";
+  const lang = (opts.lang || "").toLowerCase();
+
+  if (opts.hintIndex != null && blocks[opts.hintIndex]) {
+    const b = blocks[opts.hintIndex];
+    if (!want || normalizeFenceBody(b.content) === want) {
+      if (!lang || langsCompatible(b.lang, lang)) return opts.hintIndex;
+    }
+  }
+
+  if (want) {
+    const exact = blocks.findIndex(
+      (b) =>
+        normalizeFenceBody(b.content) === want && (!lang || langsCompatible(b.lang, lang)),
+    );
+    if (exact >= 0) return exact;
+    // Lang-only unique match when body already changed (AI fix) but hint was wrong
+    if (lang) {
+      const sameLang = blocks.filter((b) => langsCompatible(b.lang, lang));
+      if (sameLang.length === 1) return sameLang[0].index;
+    }
+  }
+
+  return -1;
+}
+
 function formatFence(lang: string, body: string): string {
   const l = lang.trim();
   if (l && l !== "text") {
@@ -70,15 +124,23 @@ export function applyBlockUpdate(
   markdown: string,
   blockIndex: number,
   newContent: string,
-  opts?: { lang?: string },
+  opts?: { lang?: string; previousContent?: string },
 ): string {
-  const blocks = listFencedBlocks(markdown);
-  const block = blocks[blockIndex];
-  if (!block) {
-    throw new Error(`Block index ${blockIndex} out of range`);
+  const resolved = resolveFencedBlockIndex(markdown, {
+    hintIndex: blockIndex,
+    lang: opts?.lang,
+    content: opts?.previousContent,
+  });
+  if (resolved < 0) {
+    const n = listFencedBlocks(markdown).length;
+    throw new Error(
+      `Block index ${blockIndex} out of range (note has ${n} fenced block${n === 1 ? "" : "s"}). Hard-refresh (Ctrl+Shift+R) and try again.`,
+    );
   }
+  const blocks = listFencedBlocks(markdown);
+  const block = blocks[resolved];
   const body = (opts?.lang ?? block.lang) === "mermaid" ? newContent.trim() : newContent;
-  return replaceFencedBlock(markdown, blockIndex, body);
+  return replaceFencedBlock(markdown, resolved, body);
 }
 
 export function finalizeNoteMarkdown(md: string): string {

@@ -184,18 +184,36 @@ function segmentsToActivities(segments: HubSegment[], variant: ClockVariant): Ac
       : variant === "oceanic-aurora"
         ? OCEANIC_META
         : ACTIVITY_META;
-  return segments.map((s) => {
+  const out: Activity[] = [];
+  for (const s of segments) {
     const type = s.type || "untracked";
     const meta = palette[type] || palette.untracked;
-    return {
+    const base = {
       type,
       label: s.label || meta.label,
-      startHour: s.startHour,
-      endHour: s.endHour,
-      // Litmus colors by activity type (server color as backup)
-      color: meta.color || s.color || palette.untracked.color,
+      color: s.color || meta.color,
       isProductive: meta.isProductive,
     };
+    // Overnight wrap: bedtime→24 and 0→wake (same color) so sleep starts at night, not at 00
+    if (s.crossesMidnight) {
+      out.push({ ...base, startHour: s.startHour, endHour: 24 });
+      out.push({ ...base, startHour: 0, endHour: s.endHour });
+    } else if (s.endHour > s.startHour) {
+      out.push({ ...base, startHour: s.startHour, endHour: s.endHour });
+    }
+  }
+  return out;
+}
+
+/** Keep hub sleep segments; never invent a midnight→duration wedge. */
+function ensureSleepOnRing(
+  segments: HubSegment[],
+  _sleepMinutes: number,
+  variant: ClockVariant,
+  opts?: { minMinutes?: number; quantizeMin?: number },
+): Activity[] {
+  return cleanActivitiesForRing(segmentsToActivities(segments, variant), opts?.minMinutes ?? 12, {
+    quantizeMin: opts?.quantizeMin ?? 15,
   });
 }
 
@@ -287,12 +305,22 @@ type LifeClockWidgetProps = {
   /** Smaller ring for Life Tracker header */
   compact?: boolean;
   showLegend?: boolean;
+  /** Calendar day YYYY-MM-DD or "today" (default). Past days show full 24h ring. */
+  day?: string;
 };
+
+function localDateKey(d = new Date()): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
 
 export function LifeClockWidget({
   embedded = false,
   compact = false,
   showLegend = !compact,
+  day = "today",
 }: LifeClockWidgetProps) {
   const { accentColor, isDarkMode } = useTheme();
   const clockVariant = clockVariantFromAccent(accentColor, isDarkMode);
@@ -301,9 +329,14 @@ export function LifeClockWidget({
   const oceanic = clockVariant === "oceanic-aurora";
   const dashboard = embedded && !compact;
 
+  const dayKey = day === "today" || day === "now" ? localDateKey() : day.slice(0, 10);
+  const isToday = dayKey === localDateKey();
+
   const [now, setNow] = useState(() => new Date());
   const [hub, setHub] = useState<HubDailyPayload | null>(null);
   const [life, setLife] = useState<LifeDailyApi | null>(null);
+  /** Resolved last-night sleep when today has no wearable sync yet */
+  const [sleepMinutesOverride, setSleepMinutesOverride] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [skin, setSkin] = useState<LifeClockSkinId>(() =>
@@ -322,15 +355,17 @@ export function LifeClockWidget({
     let cancelled = false;
     setLoading(true);
     setError(false);
+    const apiDay = isToday ? "today" : dayKey;
     const load = () => {
       setError(false);
-      Promise.all([fetchHubDaily("today"), fetchLifeDaily("today")])
+      Promise.all([fetchHubDaily(apiDay), fetchLifeDaily(apiDay)])
         .then(([payload, lifePayload]) => {
-          if (!cancelled) {
-            setHub(payload);
-            setLife(lifePayload);
-            setError(!payload);
-          }
+          if (cancelled) return;
+          setHub(payload);
+          setLife(lifePayload);
+          setError(!payload);
+          const hubSleepM = Number(payload?.sleep_minutes || 0);
+          setSleepMinutesOverride(hubSleepM > 0 ? hubSleepM : 0);
         })
         .catch(() => {
           if (!cancelled) setError(true);
@@ -340,33 +375,52 @@ export function LifeClockWidget({
         });
     };
     load();
-    // Refresh often so the litmus ring tracks desktop activity
-    const poll = window.setInterval(load, 60_000);
+    // Only poll live for today
+    if (!isToday) {
+      return () => {
+        cancelled = true;
+      };
+    }
+    const pollMs = () =>
+      typeof document !== "undefined" && document.visibilityState === "visible" ? 15_000 : 60_000;
+    let poll = window.setInterval(load, pollMs());
     const onRefresh = () => load();
+    const onVis = () => {
+      window.clearInterval(poll);
+      poll = window.setInterval(load, pollMs());
+      if (document.visibilityState === "visible") load();
+    };
     window.addEventListener("hub:refresh", onRefresh);
+    document.addEventListener("visibilitychange", onVis);
     return () => {
       cancelled = true;
       window.clearInterval(poll);
       window.removeEventListener("hub:refresh", onRefresh);
+      document.removeEventListener("visibilitychange", onVis);
     };
-  }, []);
+  }, [dayKey, isToday]);
 
   useEffect(() => {
+    if (!isToday) return;
     const id = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(id);
-  }, []);
+  }, [isToday]);
 
-  const localCurrentHour = now.getHours() + now.getMinutes() / 60 + now.getSeconds() / 3600;
+  const localCurrentHour = isToday
+    ? now.getHours() + now.getMinutes() / 60 + now.getSeconds() / 3600
+    : 24;
   const localTimeLeft = Math.max(0, 24 - localCurrentHour);
   const localPercentElapsed = Math.round((localCurrentHour / 24) * 1000) / 10;
   const hasLifeLog = Boolean(life && !life.empty);
 
   const activities = useMemo(() => {
     if (hub?.segments?.length) {
-      return cleanActivitiesForRing(segmentsToActivities(hub.segments, clockVariant), 12, {
+      return ensureSleepOnRing(hub.segments, sleepMinutesOverride, clockVariant, {
+        minMinutes: 12,
         quantizeMin: 15,
       });
     }
+    // Duration-only sleep has no bedtime — do not paint a fake midnight wedge.
     const elapsed = Math.max(0, Math.min(24, localCurrentHour));
     return [
       {
@@ -386,22 +440,26 @@ export function LifeClockWidget({
         isProductive: false,
       },
     ].filter((a) => a.endHour > a.startHour);
-  }, [hub, clockVariant, localCurrentHour]);
+  }, [hub, clockVariant, localCurrentHour, sleepMinutesOverride]);
 
   /** Omnitrix / Sectograph: denser tracker pour (real colors, less quantize). */
   const pourActivities = useMemo(() => {
     if (!hub?.segments?.length) return activities;
-    return cleanActivitiesForRing(segmentsToActivities(hub.segments, clockVariant), 3, {
+    return ensureSleepOnRing(hub.segments, sleepMinutesOverride, clockVariant, {
+      minMinutes: 3,
       quantizeMin: 0,
     });
-  }, [hub, clockVariant, activities]);
+  }, [hub, clockVariant, activities, sleepMinutesOverride]);
 
   const currentHour = localCurrentHour;
 
   const stats = useMemo(() => {
     const studyMinutes = life?.study_minutes ?? 0;
     const exerciseMinutes = life?.exercise_minutes ?? 0;
-    const sleepMinutes = Math.round((life?.sleep_hours ?? 0) * 60);
+    const sleepMinutes = Math.max(
+      sleepMinutesOverride,
+      hub?.sleep_minutes ?? 0,
+    );
     const trackerProductive =
       hub?.stats?.tracker_productive_minutes ?? hub?.productive_minutes ?? 0;
     const productiveMinutes =
@@ -409,7 +467,7 @@ export function LifeClockWidget({
     if (hub) {
       return {
         productiveMinutes,
-        sleepMinutes: sleepMinutes || hub.sleep_minutes || 0,
+        sleepMinutes,
         timeLeft: localTimeLeft,
         percentElapsed: localPercentElapsed,
         lifeScore: life?.life_score ?? hub.life_score,
@@ -434,7 +492,7 @@ export function LifeClockWidget({
       .reduce((s, a) => s + (a.endHour - a.startHour), 0);
     return {
       productiveMinutes: Math.round(productiveHours * 60),
-      sleepMinutes: Math.round(sleepHours * 60),
+      sleepMinutes: Math.max(sleepMinutesOverride, Math.round(sleepHours * 60)),
       timeLeft: localTimeLeft,
       percentElapsed: localPercentElapsed,
       lifeScore: 0,
@@ -445,7 +503,7 @@ export function LifeClockWidget({
       vocabEvents: 0,
       litmus: false,
     };
-  }, [hub, life, activities, currentHour, localTimeLeft, localPercentElapsed]);
+  }, [hub, life, activities, currentHour, localTimeLeft, localPercentElapsed, sleepMinutesOverride]);
 
   const legendSummary = useMemo(() => aggregateLegend(activities), [activities]);
 

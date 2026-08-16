@@ -16,6 +16,18 @@ def is_browser_exe(exe: str) -> bool:
     return bool(_BROWSER_EXE.search(exe or ""))
 
 
+def looks_like_domain(value: str | None) -> bool:
+    """True for hostname-like app_name values (extension stores domain here)."""
+    v = (value or "").strip().lower()
+    if not v or " " in v:
+        return False
+    if v.startswith("calt_spa:") or v.endswith((".exe", ".app", ".dll")):
+        return False
+    if v.startswith(".") or v.endswith("."):
+        return False
+    return "." in v
+
+
 def normalize_site_from_title(title: str) -> str:
     """Return a stable site label (e.g. youtube.com) from a browser window title."""
     cleaned = _BROWSER_SUFFIX.sub("", title or "").strip()

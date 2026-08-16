@@ -26,6 +26,6 @@ if errorlevel 1 (
   exit /b 1
 )
 call "%~dp0_log_tracker_launch.bat" headless "process started"
-echo Tracker launched in background. Stop: scripts\desktop_tracker\stop_desktop_tracker.bat
+echo Tracker launched in background. Stop ^(PIN^): scripts\admin_only\stop_desktop_tracker.bat
 echo Logs: data\logs\desktop_tracker.log
 endlocal

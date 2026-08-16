@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Link } from "react-router";
 import {
-  Clock, MessageSquare, Users, GripVertical, Brain,
+  Clock, MessageSquare, GripVertical, Brain,
   Settings2, X, Eye, EyeOff, Maximize2, Minimize2,
-  ChevronLeft, ChevronRight, LayoutGrid, Sparkles, Timer, Target, Bot, Plus
+  ChevronLeft, ChevronRight, LayoutGrid, Timer, Target, Bot
 } from "lucide-react";
 import { Card } from "../app/components/ui/card";
 import { useStudySession } from "../context/StudySessionContext";
@@ -20,8 +20,8 @@ import {
 } from "../api/hubClient";
 import { AiReviewWidget } from "../components/dashboard/AiReviewWidget";
 import { StudyLoopWidget } from "../components/dashboard/StudyLoopWidget";
-import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
+import { useDashboardChrome } from "../context/DashboardChromeContext";
 import { HeroProgress, LemillionAssistant } from "../components/hero";
 import { WidgetPickerModal } from "../components/widgets/WidgetPickerModal";
 import { getCatalogEntry } from "../components/widgets/widgetCatalog";
@@ -40,7 +40,6 @@ const LS_WIDGET_ORDER = "dashboard:widget_order";
 const LS_FOCUS_MODE = "dashboard:focus_mode";
 const COMPACT_WIDGET_IDS = new Set([
   "study-time",
-  "community",
   "lemillion-assistant",
   "hero-progress",
 ]);
@@ -93,7 +92,7 @@ function buildCoreWidgets(
       id: "study-time",
       type: "info",
       title: "Study Time & Focus",
-      description: "Your focus is up 15% compared to yesterday. Keep it up!",
+      description: "Minutes logged today from Life Tracker / hub.",
       content: "0m today",
       icon: Clock,
       accent: "from-amber-500/20 to-orange-500/10",
@@ -117,15 +116,6 @@ function buildCoreWidgets(
       accent: "from-blue-500/20 to-cyan-500/10",
       defaultColSpan: 2,
       component: <AiReviewWidget />,
-    },
-    {
-      id: "community",
-      type: "info",
-      title: "Community",
-      description: "Study rooms and shared focus — coming soon.",
-      content: "Coming soon",
-      icon: Users,
-      accent: "from-rose-500/20 to-pink-500/10",
     },
   ];
 
@@ -314,12 +304,6 @@ function CustomizerDrawer({
 }
 
 // ─── Main HomePage ────────────────────────────────────────────────────────
-function greetingForHour(h: number): string {
-  if (h < 12) return "Good morning";
-  if (h < 17) return "Good afternoon";
-  return "Good evening";
-}
-
 const PERF_LABELS: Record<InsightsDailyPayload["overall_performance"], string> = {
   excellent: "Excellent Retention",
   good: "Good Progress",
@@ -344,9 +328,13 @@ export function HomePage() {
 
   const { sessionData, diagnosticsSummary } = useStudySession();
   const { getWidgets, isLoaded } = usePlugins();
-  const { user } = useAuth();
   const { widgets: themeWidgets } = useTheme();
+  const { setActions: setDashboardChrome } = useDashboardChrome();
   const dragClickBlockRef = useRef(false);
+  const widgetsRef = useRef(allWidgets);
+  const stateMapRef = useRef(stateMap);
+  widgetsRef.current = allWidgets;
+  stateMapRef.current = stateMap;
 
   useEffect(() => {
     fetchInsightsDaily().then(setInsights);
@@ -499,6 +487,22 @@ export function HomePage() {
     [stateMap, focusMode, persistLayout]
   );
 
+  useEffect(() => {
+    setDashboardChrome({
+      focusMode,
+      toggleFocus: () => {
+        setFocusMode((v) => {
+          const next = !v;
+          persistLayout(widgetsRef.current, stateMapRef.current, next);
+          return next;
+        });
+      },
+      openAddWidget: () => setPickerOpen(true),
+      openCustomize: () => setCustomizerOpen(true),
+    });
+    return () => setDashboardChrome(null);
+  }, [focusMode, persistLayout, setDashboardChrome]);
+
   // Drag-to-reorder
   const handleDragStart = (e: React.DragEvent, idx: number) => {
     setDraggedIdx(idx);
@@ -533,75 +537,9 @@ export function HomePage() {
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
-      {/* ── Header bar ────────────────────────────── */}
-      <div className="flex items-center justify-between px-4 pt-4 pb-3 shrink-0">
-        <div>
-          <div className="flex items-center gap-2 text-primary mb-0.5">
-            <Sparkles className="w-4 h-4" />
-            <span className="text-xs font-medium uppercase tracking-wider">Dashboard</span>
-          </div>
-          <h1 className="text-xl font-bold">
-            {greetingForHour(new Date().getHours())}, {user?.username ?? "Learner"}
-          </h1>
-          <p className="text-sm text-muted-foreground">Your cognitive-aware command center</p>
-        </div>
-
-        <div className="flex items-center gap-2">
-          {!user ? (
-            <Link
-              to="/login"
-              className="flex items-center gap-1.5 rounded-xl border border-primary/35 bg-primary/10 px-2.5 py-2 text-xs font-medium text-primary transition-colors hover:bg-primary/15"
-              title="Sign in to sync plugins, save layout, and unlock AI review + hub export"
-            >
-              Sign in
-            </Link>
-          ) : null}
-          <button
-            type="button"
-            onClick={() => {
-              setFocusMode((v) => {
-                const next = !v;
-                persistLayout(allWidgets, stateMap, next);
-                return next;
-              });
-            }}
-            className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium border transition-all ${
-              focusMode
-                ? "border-primary bg-primary/10 text-primary"
-                : "gloss-panel border-border/50 hover:border-primary/50"
-            }`}
-            title="Focus mode — life clock and study time only"
-          >
-            {focusMode ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-            Focus
-          </button>
-          <button
-            type="button"
-            onClick={() => setPickerOpen(true)}
-            className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium
-                       gloss-panel border border-border/50 hover:border-primary/50
-                       hover:text-primary transition-all duration-200"
-            title="Add widgets to dashboard"
-          >
-            <Plus className="w-4 h-4" />
-            Add Widget
-          </button>
-          <button
-            id="dashboard-customize-btn"
-            onClick={() => setCustomizerOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium
-                       gloss-panel border border-border/50 hover:border-primary/50
-                       hover:text-primary transition-all duration-200"
-          >
-            <LayoutGrid className="w-4 h-4" />
-            Customize
-          </button>
-        </div>
-      </div>
-
-      {/* ── Responsive full-bleed grid ───────────── */}
+      {/* Widget ops live in AppTopBar (DashboardChromeDock) — dashboard only */}
       <div
-        className="flex-1 overflow-y-auto px-4 pb-4"
+        className="flex-1 overflow-y-auto px-4 pt-2 pb-4"
         style={{ minHeight: 0 }}
       >
         <div
@@ -714,7 +652,7 @@ export function HomePage() {
                 }}
                 className="transition-all duration-300 cursor-grab active:cursor-grabbing"
               >
-                {to && id !== "community" ? (
+                {to ? (
                   <Link
                     to={to}
                     className="block h-full"

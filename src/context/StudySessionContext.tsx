@@ -12,8 +12,9 @@ import { config } from "../config";
 import { usePluginsOptional } from "../plugins/registry";
 import { useAuth } from "./AuthContext";
 import { postHubReading } from "../api/hubClient";
-import { patchInterventionRecover, postMathIntervention } from "../api/mathClient";
+import { patchInterventionCorrect, patchInterventionRecover, postMathIntervention } from "../api/mathClient";
 import { EEGWebSocketClient } from "../utils/websocket";
+import type { StrokeMetricsSnapshot } from "../components/math-canvas";
 
 interface StressPoint {
   concept: string;
@@ -35,11 +36,14 @@ interface InterventionState {
   latex?: string;
   incompleteStep?: boolean;
   confidence?: number;
+  structuralConfidence?: number;
+  tutorSilent?: boolean;
 }
 
 export interface CanvasBridge {
   exportPng: () => Promise<string | null>;
   exportPaths: () => Promise<unknown[] | null>;
+  exportStrokeMetrics?: () => StrokeMetricsSnapshot | null;
   getEraserEventCount: () => number;
   resetEraserCount: () => void;
 }
@@ -59,6 +63,8 @@ interface StudySessionContextValue {
   registerCanvasBridge: (bridge: CanvasBridge | null) => void;
   handleInterventionDismiss: () => void;
   handleInterventionResponse: (response: string) => void;
+  handleInterventionConfirmLatex: () => void;
+  handleInterventionCorrectLatex: (latex: string) => void;
   handleSessionComplete: () => void;
   handleNewSession: () => void;
   setShowDiagnostics: (v: boolean) => void;
@@ -132,8 +138,13 @@ export function StudySessionProvider({ children }: { children: ReactNode }) {
       latex?: string;
       incomplete_step?: boolean;
       confidence?: number;
+      structural_confidence?: number;
+      tutor_silent?: boolean;
     }) => {
       if (!result.triggered) return;
+      // Fully silent: no panel (soft stuckness still sends a non-empty hint).
+      if (result.tutor_silent && !(result.hint || "").trim()) return;
+
       setIntervention({
         message: result.hint,
         question: result.question,
@@ -142,6 +153,8 @@ export function StudySessionProvider({ children }: { children: ReactNode }) {
         latex: result.latex,
         incompleteStep: result.incomplete_step,
         confidence: result.confidence,
+        structuralConfidence: result.structural_confidence,
+        tutorSilent: result.tutor_silent,
       });
       setShowIntervention(true);
       lastInterventionRef.current = Date.now();
@@ -193,12 +206,15 @@ export function StudySessionProvider({ children }: { children: ReactNode }) {
 
     const paths = bridge ? await bridge.exportPaths() : null;
     const pathsJson = paths ? JSON.stringify(paths) : undefined;
+    const metrics = bridge?.exportStrokeMetrics?.() ?? null;
+    const strokeMetricsJson = metrics ? JSON.stringify(metrics) : undefined;
 
     interventionInFlightRef.current = true;
     try {
       const result = await postMathIntervention({
         canvas_image: png,
         paths_json: pathsJson,
+        stroke_metrics_json: strokeMetricsJson,
         topic: "math practice",
         gamma,
         attention,
@@ -309,7 +325,8 @@ export function StudySessionProvider({ children }: { children: ReactNode }) {
 
   const handleInterventionDismiss = useCallback(() => {
     if (intervention.sessionSnapshotId) {
-      void patchInterventionRecover(intervention.sessionSnapshotId, "dismissed");
+      // Dismiss must NOT count as SRS success.
+      void patchInterventionRecover(intervention.sessionSnapshotId, "dismissed", false);
     }
     setShowIntervention(false);
   }, [intervention.sessionSnapshotId]);
@@ -317,7 +334,28 @@ export function StudySessionProvider({ children }: { children: ReactNode }) {
   const handleInterventionResponse = useCallback(
     (response: string) => {
       if (intervention.sessionSnapshotId) {
-        void patchInterventionRecover(intervention.sessionSnapshotId, `response:${response}`);
+        void patchInterventionRecover(
+          intervention.sessionSnapshotId,
+          `response:${response}`,
+          true
+        );
+      }
+      setShowIntervention(false);
+    },
+    [intervention.sessionSnapshotId]
+  );
+
+  const handleInterventionConfirmLatex = useCallback(() => {
+    if (intervention.sessionSnapshotId) {
+      void patchInterventionRecover(intervention.sessionSnapshotId, "latex_confirmed", true);
+    }
+    setShowIntervention(false);
+  }, [intervention.sessionSnapshotId]);
+
+  const handleInterventionCorrectLatex = useCallback(
+    (latex: string) => {
+      if (intervention.sessionSnapshotId) {
+        void patchInterventionCorrect(intervention.sessionSnapshotId, latex, "ui_correct");
       }
       setShowIntervention(false);
     },
@@ -366,6 +404,8 @@ export function StudySessionProvider({ children }: { children: ReactNode }) {
         registerCanvasBridge,
         handleInterventionDismiss,
         handleInterventionResponse,
+        handleInterventionConfirmLatex,
+        handleInterventionCorrectLatex,
         handleSessionComplete,
         handleNewSession,
         setShowDiagnostics,

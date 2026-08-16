@@ -1,0 +1,12 @@
+{
+  "name": "calt-voice",
+  "version": "1.0.0",
+  "private": true,
+  "description": "CALT Voice — black-screen recorder for Amazfit T-Rex 3",
+  "scripts": {
+    "preview": "zeus preview",
+    "dev": "zeus dev",
+    "build": "zeus build",
+    "login": "zeus login"
+  }
+}

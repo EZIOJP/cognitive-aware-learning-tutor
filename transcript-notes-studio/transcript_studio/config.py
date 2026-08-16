@@ -30,10 +30,10 @@ class AppConfig:
     aggressive_dedup_default: bool = False
     last_transcript: str = ""
     last_output_dir: str = ""
-    whisper_engine: str = "transformers"
-    whisper_model: str = "openai/whisper-large-v3-turbo"
+    whisper_engine: str = "faster-whisper"
+    whisper_model: str = "large-v3-turbo"
     whisper_device: str = "auto"
-    whisper_language: str = ""
+    whisper_language: str = ""  # empty = auto (Hindi + English / Hinglish)
     whisper_task: str = "transcribe"
     last_audio_file: str = ""
     capture_enabled: bool = False
@@ -136,8 +136,8 @@ def load_config() -> AppConfig:
         aggressive_dedup_default=bool(data.get("aggressive_dedup_default", False)),
         last_transcript=data.get("last_transcript", ""),
         last_output_dir=data.get("last_output_dir", ""),
-        whisper_engine=data.get("whisper_engine", "transformers"),
-        whisper_model=data.get("whisper_model", "openai/whisper-large-v3-turbo"),
+        whisper_engine=data.get("whisper_engine", "faster-whisper"),
+        whisper_model=data.get("whisper_model", "large-v3-turbo"),
         whisper_device=data.get("whisper_device", "auto"),
         whisper_language=data.get("whisper_language", ""),
         whisper_task=data.get("whisper_task", "transcribe"),

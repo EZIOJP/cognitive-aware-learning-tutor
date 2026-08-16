@@ -25,10 +25,42 @@ import {
   type MotionLevelId,
   type ThemeWidgetToggles,
   type ThemeLayerBundle,
+  type TopbarTitleStyleId,
+  type TopbarTitleFontId,
+  type TopbarTitleSizeId,
   STUDY_DEFAULT_LAYERS,
   PRESET_LAYER_BUNDLES,
   mergeLayerBundle,
+  TOPBAR_TITLE_DEFAULTS,
 } from "../theme/layers";
+
+const TOPBAR_TITLE_PREF_VERSION = "5";
+
+function loadTopbarTitleStyle(): TopbarTitleStyleId {
+  const migrated = localStorage.getItem("topbarTitlePrefsV");
+  if (migrated !== TOPBAR_TITLE_PREF_VERSION) {
+    localStorage.setItem("topbarTitlePrefsV", TOPBAR_TITLE_PREF_VERSION);
+    // v5: 3D smooth plate — kill letter-stroke speech-bubble outlines
+    localStorage.setItem("topbarTitleStyle", TOPBAR_TITLE_DEFAULTS.style);
+    localStorage.setItem("topbarTitleFont", TOPBAR_TITLE_DEFAULTS.font);
+    localStorage.setItem("topbarTitleSize", TOPBAR_TITLE_DEFAULTS.size);
+  }
+  const raw = localStorage.getItem("topbarTitleStyle") as TopbarTitleStyleId | null;
+  if (raw === "plain" || raw === "parchment" || raw === "contour") return raw;
+  return TOPBAR_TITLE_DEFAULTS.style;
+}
+
+function loadTopbarTitleFont(): TopbarTitleFontId {
+  const raw = localStorage.getItem("topbarTitleFont") as TopbarTitleFontId | null;
+  if (raw === "cursive" || raw === "serif" || raw === "sans") return raw;
+  return TOPBAR_TITLE_DEFAULTS.font;
+}
+
+function loadTopbarTitleSize(): TopbarTitleSizeId {
+  const raw = localStorage.getItem("topbarTitleSize") as TopbarTitleSizeId | null;
+  if (raw === "sm" || raw === "md" || raw === "lg") return raw;
+  return TOPBAR_TITLE_DEFAULTS.size;
+}
 
 interface ThemeContextValue {
   isDarkMode: boolean;
@@ -45,6 +77,9 @@ interface ThemeContextValue {
   buttonVariant: ButtonVariantId;
   motionLevel: MotionLevelId;
   widgets: ThemeWidgetToggles;
+  topbarTitleStyle: TopbarTitleStyleId;
+  topbarTitleFont: TopbarTitleFontId;
+  topbarTitleSize: TopbarTitleSizeId;
   setAccentColor: (color: string) => void;
   setRadius: (radius: string) => void;
   setIntensity: (intensity: number) => void;
@@ -56,6 +91,9 @@ interface ThemeContextValue {
   setMotionLevel: (level: MotionLevelId) => void;
   setWidgets: (widgets: ThemeWidgetToggles) => void;
   toggleWidget: (key: keyof ThemeWidgetToggles) => void;
+  setTopbarTitleStyle: (style: TopbarTitleStyleId) => void;
+  setTopbarTitleFont: (font: TopbarTitleFontId) => void;
+  setTopbarTitleSize: (size: TopbarTitleSizeId) => void;
   applyPreset: (presetId: string) => void;
   resetStudyDefaults: () => void;
   isHeroLayersActive: boolean;
@@ -162,6 +200,15 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [widgets, setWidgets] = useState<ThemeWidgetToggles>(() =>
     loadJson("themeWidgets", STUDY_DEFAULT_LAYERS.widgets)
   );
+  const [topbarTitleStyle, setTopbarTitleStyle] = useState<TopbarTitleStyleId>(
+    loadTopbarTitleStyle
+  );
+  const [topbarTitleFont, setTopbarTitleFont] = useState<TopbarTitleFontId>(
+    loadTopbarTitleFont
+  );
+  const [topbarTitleSize, setTopbarTitleSize] = useState<TopbarTitleSizeId>(
+    loadTopbarTitleSize
+  );
 
   const applyPreset = (presetId: string) => {
     const preset = PRESET_BY_ID[presetId];
@@ -187,6 +234,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     setAccentColor("default");
     setRadius("md");
     setIntensity(50);
+    setTopbarTitleStyle(TOPBAR_TITLE_DEFAULTS.style);
+    setTopbarTitleFont(TOPBAR_TITLE_DEFAULTS.font);
+    setTopbarTitleSize(TOPBAR_TITLE_DEFAULTS.size);
     applyLayerBundleToState(STUDY_DEFAULT_LAYERS, {
       setTypographyPack,
       setSurfaceStyle,
@@ -232,6 +282,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     localStorage.setItem("buttonVariant", buttonVariant);
     localStorage.setItem("motionLevel", motionLevel);
     localStorage.setItem("themeWidgets", JSON.stringify(widgets));
+    localStorage.setItem("topbarTitleStyle", topbarTitleStyle);
+    localStorage.setItem("topbarTitleFont", topbarTitleFont);
+    localStorage.setItem("topbarTitleSize", topbarTitleSize);
 
     const root = document.documentElement;
     const presetId = resolvePresetId(accentColor);
@@ -243,6 +296,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     root.setAttribute("data-button-style", buttonStyle);
     root.setAttribute("data-bg-style", backgroundStyle);
     root.setAttribute("data-color-scheme", isDarkMode ? "dark" : "light");
+    root.setAttribute("data-topbar-title-style", topbarTitleStyle);
+    root.setAttribute("data-topbar-title-font", topbarTitleFont);
+    root.setAttribute("data-topbar-title-size", topbarTitleSize);
     root.classList.toggle("dark", isDarkMode);
 
     applyLayerBundle(root, layers);
@@ -303,6 +359,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     buttonVariant,
     motionLevel,
     widgets,
+    topbarTitleStyle,
+    topbarTitleFont,
+    topbarTitleSize,
   ]);
 
   const toggleTheme = () => setIsDarkMode((v) => !v);
@@ -324,6 +383,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         buttonVariant,
         motionLevel,
         widgets,
+        topbarTitleStyle,
+        topbarTitleFont,
+        topbarTitleSize,
         setAccentColor,
         setRadius,
         setIntensity,
@@ -335,6 +397,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         setMotionLevel,
         setWidgets,
         toggleWidget,
+        setTopbarTitleStyle,
+        setTopbarTitleFont,
+        setTopbarTitleSize,
         applyPreset,
         resetStudyDefaults,
         isHeroLayersActive,

@@ -1,22 +1,24 @@
-import { useState, useEffect, useCallback, useMemo, type ReactNode } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef, type ReactNode } from "react";
 import {
   Monitor, Globe, RefreshCw, AlertCircle, CheckCircle2,
-  Clock, Zap, BarChart2, Terminal, Code2, BookOpen, PenLine,
+  Clock, Zap, Terminal, Code2, BookOpen, PenLine,
   Gamepad2, Music, MessageSquare, FileText, Folder, Cpu, CalendarDays,
   ChevronDown, ChevronRight, Download, Loader2,
 } from "lucide-react";
 import { Views, type View } from "react-big-calendar";
-import { fetchDesktopStats, fetchBrowserStats, fetchTrackerHealth, fetchDesktopTimeline, forceTrackerSync } from "../api/behaviorClient";
-import type { DesktopStats, BrowserStats, AppSession, BrowserSite, BrowserDomain, TrackerHealth, DesktopTimeline } from "../api/behaviorClient";
+import { fetchDesktopStats, fetchBrowserStats, fetchTrackerHealth, fetchDesktopTimeline, forceTrackerSync, clearDemoClock, fetchDemoClock } from "../api/behaviorClient";
+import type { DesktopStats, BrowserStats, AppSession, BrowserSite, BrowserDomain, TrackerHealth, DesktopTimeline, DemoClockStatus } from "../api/behaviorClient";
 import { PlannerCalendar } from "../components/productivity/PlannerCalendar";
-import { CalendarInfographics } from "../components/productivity/CalendarInfographics";
+import { GlanceBar } from "../components/productivity/GlanceBar";
 import { PlanVsActualDashboard } from "../components/productivity/PlanVsActualDashboard";
 import { TimetablePanel } from "../components/productivity/TimetablePanel";
-import { TodayPanel } from "../components/productivity/TodayPanel";
+import { PlanningSettingsPanel } from "../components/productivity/PlanningSettingsPanel";
+import { DemoModePanel } from "../components/productivity/DemoModePanel";
 import { RoutinesPanel } from "../components/productivity/RoutinesPanel";
-import { ProposePlanPreview } from "../components/productivity/ProposePlanPreview";
+import { ProposeStepPanel, applyRangeForHorizon } from "../components/productivity/ProposeStepPanel";
 import { resolveProposedOverlaps } from "../components/productivity/resolveProposedOverlaps";
-import { Link } from "react-router";
+import { proposeBlockStatKind, blockDurationMinutes } from "../components/productivity/proposeBlockStats";
+import { Link, useSearchParams } from "react-router";
 import { useEaster, useLongPress } from "../easter";
 import {
   fetchAdherence,
@@ -32,6 +34,7 @@ import {
   type PlannerRoutine,
 } from "../api/plannerClient";
 import { fetchDueReview } from "../api/globalQuizClient";
+import { fetchHubDaily } from "../api/hubClient";
 import ClassificationReview from "../components/productivity/ClassificationReview";
 import ProductivityPolicyPanel from "../components/productivity/ProductivityPolicyPanel";
 import ProductivityGoalsPanel, {
@@ -44,8 +47,10 @@ import GoogleCalendarSyncPanel from "../components/productivity/GoogleCalendarSy
 import PlannerRemindersPanel from "../components/productivity/PlannerRemindersPanel";
 import {
   statsRangeForView,
+  draftCoveredBySavedBlocks,
   type CalendarStatsView,
 } from "../components/productivity/planVsActualUtils";
+import { endOfDay, startOfDay } from "date-fns";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -266,34 +271,6 @@ async function fetchBrowserStatsForRange(from: Date, to: Date): Promise<BrowserS
   };
 }
 
-// ── Score ring SVG ────────────────────────────────────────────────────────────
-
-function ScoreRing({ score, size = 100 }: { score: number; size?: number }) {
-  const r = (size - 16) / 2;
-  const circ = 2 * Math.PI * r;
-  const dash = (score / 100) * circ;
-  const col =
-    score >= 80 ? "#34d399" :
-    score >= 60 ? "#4ade80" :
-    score >= 40 ? "#facc15" :
-    score >= 20 ? "#fb923c" : "#f87171";
-
-  return (
-    <svg width={size} height={size} className="rotate-[-90deg]">
-      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth={8} />
-      <circle
-        cx={size / 2} cy={size / 2} r={r}
-        fill="none"
-        stroke={col}
-        strokeWidth={8}
-        strokeDasharray={`${dash} ${circ - dash}`}
-        strokeLinecap="round"
-        style={{ transition: "stroke-dasharray 0.6s ease" }}
-      />
-    </svg>
-  );
-}
-
 // ── App bar row ───────────────────────────────────────────────────────────────
 
 function AppRow({
@@ -335,9 +312,16 @@ function SiteRow({ site, maxSeconds }: { site: BrowserSite; maxSeconds: number }
   return (
     <div className="flex items-center gap-3 py-1.5">
       <div className="w-3.5 shrink-0" />
-      <div className="flex items-center gap-2 w-36 min-w-0">
+      <div className="flex items-center gap-2 w-44 min-w-0">
         <Globe size={12} className="text-sky-400 shrink-0" />
-        <span className="text-xs truncate text-muted-foreground" title={site.site}>{site.site}</span>
+        <div className="min-w-0">
+          <span className="text-xs truncate text-foreground/80 block" title={site.site}>{site.site}</span>
+          {site.category && (
+            <span className="text-[10px] truncate text-muted-foreground/75 block" title={site.category}>
+              {site.category}
+            </span>
+          )}
+        </div>
       </div>
       <div className="flex-1 relative h-4 rounded-full bg-white/5 overflow-hidden">
         <div
@@ -456,9 +440,43 @@ export function ProductivityPage() {
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
   const [adherence, setAdherence] = useState<AdherenceSummary | null>(null);
   const [dueReviews, setDueReviews] = useState(0);
-  const [plannerDay, setPlannerDay] = useState(new Date());
-  const [calendarView, setCalendarView] = useState<View>(Views.WEEK);
-  const [tab, setTab] = useState<"calendar" | "plan" | "settings">("calendar");
+  const [sleepHours, setSleepHours] = useState<number | null>(null);
+  const [plannerDay, setPlannerDay] = useState(() => {
+    const raw = new URLSearchParams(window.location.search).get("day");
+    if (raw && /^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+      const [y, m, d] = raw.split("-").map(Number);
+      return new Date(y, m - 1, d, 12, 0, 0, 0);
+    }
+    return new Date();
+  });
+  const [calendarView, setCalendarView] = useState<View>(Views.DAY);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [demoClock, setDemoClock] = useState<DemoClockStatus | null>(null);
+  const rawTab = searchParams.get("tab");
+  const tab: "calendar" | "plan" | "settings" =
+    rawTab === "plan" || rawTab === "settings" ? rawTab : "calendar";
+  const setTab = useCallback(
+    (id: "calendar" | "plan" | "settings") => {
+      if (id === "calendar") {
+        setPlannerDay(startOfDay(new Date()));
+        setCalendarView(Views.DAY);
+      }
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          if (id === "calendar") {
+            next.delete("tab");
+            next.delete("day");
+          } else {
+            next.set("tab", id);
+          }
+          return next;
+        },
+        { replace: true },
+      );
+    },
+    [setSearchParams],
+  );
   const [plannerRefresh, setPlannerRefresh] = useState(0);
   const [syncing, setSyncing] = useState(false);
   const [syncHint, setSyncHint] = useState<string | null>(null);
@@ -488,21 +506,81 @@ export function ProductivityPage() {
   const [hasRoutines, setHasRoutines] = useState(false);
   const [hasTimetableBlocks, setHasTimetableBlocks] = useState(false);
   /** Active Plan-tab step — completed steps stay collapsed on the left rail */
-  const [planStep, setPlanStep] = useState<"goals" | "routines" | "propose" | "done">("goals");
+  const [planStep, setPlanStep] = useState<"goals" | "routines" | "propose" | "done" | "sync">("routines");
+  const [dayLockedHours, setDayLockedHours] = useState(0);
+  /** Goals step only checks off after Save or Next — not because defaults prefill text */
+  const [goalsConfirmed, setGoalsConfirmed] = useState(false);
 
   const onRoutinesChange = useCallback((rows: PlannerRoutine[]) => {
     setHasRoutines(rows.length > 0);
   }, []);
 
-  const goalsDone = Boolean(proposeGoals.trim());
+  const goalsDone = goalsConfirmed;
   const routinesDone = hasRoutines || hasTimetableBlocks;
   const proposeDone = Boolean(proposed?.length) || planAppliedThisSession;
   const finishDone = planAppliedThisSession;
+  const syncDone = planAppliedThisSession; // last step available after apply
+  const planStepOrder = ["routines", "goals", "propose", "done", "sync"] as const;
+  const planStepRef = useRef<HTMLDivElement>(null);
+
+  // Do not auto-force planStep here — that blocked Goals/Build/Apply/Watch clicks
+  // whenever a draft existed. Advance only from propose/apply success handlers.
 
   useEffect(() => {
-    if (planAppliedThisSession) setPlanStep("done");
-    else if (proposed?.length) setPlanStep("propose");
-  }, [proposed?.length, planAppliedThisSession]);
+    planStepRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }, [planStep]);
+
+  useEffect(() => {
+    let cancelled = false;
+    void fetchDemoClock()
+      .then((d) => {
+        if (!cancelled) setDemoClock(d);
+      })
+      .catch(() => {
+        if (!cancelled) setDemoClock(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [plannerRefresh, lastRefresh]);
+
+  useEffect(() => {
+    const raw = searchParams.get("day");
+    if (!raw || !/^\d{4}-\d{2}-\d{2}$/.test(raw)) return;
+    const [y, m, d] = raw.split("-").map(Number);
+    const next = new Date(y, m - 1, d, 12, 0, 0, 0);
+    setPlannerDay((prev) =>
+      prev.getFullYear() === next.getFullYear() &&
+      prev.getMonth() === next.getMonth() &&
+      prev.getDate() === next.getDate()
+        ? prev
+        : next,
+    );
+  }, [searchParams]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const from = startOfDay(plannerDay);
+    const to = endOfDay(plannerDay);
+    void fetchPlannerBlocks(from, to)
+      .then((rows) => {
+        if (cancelled) return;
+        const mins = rows
+          .filter((b) => b.status !== "rolled")
+          .reduce((sum, b) => {
+            const a = new Date(b.start_at).getTime();
+            const e = new Date(b.end_at).getTime();
+            return sum + Math.max(0, (e - a) / 60_000);
+          }, 0);
+        setDayLockedHours(mins / 60);
+      })
+      .catch(() => {
+        if (!cancelled) setDayLockedHours(0);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [plannerDay, plannerRefresh]);
 
   const horizonDays =
     proposeHorizon === "day" ? 1 : proposeHorizon === "week" ? 7 : proposeHorizon === "month" ? 30 : customHorizonDays;
@@ -549,7 +627,17 @@ export function ProductivityPage() {
     void loadDue();
   }, [plannerDay, loadAdherence, loadDue]);
 
-  /** Header + CalendarInfographics — follow selected month/week/day. */
+  useEffect(() => {
+    const day = toApiDay(plannerDay);
+    void fetchHubDaily(day)
+      .then((h) => {
+        if (h && (h.sleep_minutes || 0) > 0) setSleepHours(h.sleep_minutes / 60);
+        else setSleepHours(null);
+      })
+      .catch(() => setSleepHours(null));
+  }, [plannerDay, plannerRefresh]);
+
+  /** Header + GlanceBar — follow selected month/week/day. */
   const loadCore = useCallback(async () => {
     const results = await Promise.allSettled([
       fetchDesktopStatsForRange(statsRange.from, statsRange.to),
@@ -698,10 +786,13 @@ export function ProductivityPage() {
           existing_id: b.id,
         }));
 
-        const proposedFresh = (res.blocks || []).map((b) => ({
-          ...b,
-          source: (b.source ?? "study") as ProposedPlannerBlock["source"],
-        }));
+        const proposedFresh = (res.blocks || [])
+          .map((b) => ({
+            ...b,
+            source: (b.source ?? "study") as ProposedPlannerBlock["source"],
+          }))
+          // Drop drafts already on the calendar (routines applied earlier, etc.)
+          .filter((b) => !draftCoveredBySavedBlocks(b, calendarBlocks));
 
         const hasRoutineFromApi = proposedFresh.some((b) => b.source === "routine");
         const routineBlocks = hasRoutineFromApi
@@ -710,10 +801,10 @@ export function ProductivityPage() {
               routines.filter((r) => r.enabled),
               proposeRangeStart,
               horizonDays,
-            );
+            ).filter((r) => !draftCoveredBySavedBlocks(r, calendarBlocks));
 
-        // Keep all proposed study/break/routine hours (matches step-1 targets).
-        // Overlay existing calendar only where it doesn't collide.
+        // Keep proposed study/break/routine hours that aren't already saved.
+        // Overlay existing calendar only where it doesn't collide with drafts.
         const proposedCore = [
           ...proposedFresh,
           ...routineBlocks.filter((r) => !proposedFresh.some((p) => blocksOverlap(p, r))),
@@ -732,33 +823,36 @@ export function ProductivityPage() {
         const merged = resolveProposedOverlaps(mergedFiltered);
 
         setProposed(merged);
+        const label =
+          horizonDays === 1 ? "day" : horizonDays === 7 ? "week" : horizonDays === 30 ? "month" : `${horizonDays}-day`;
+        const nR = merged.filter((b) => proposeBlockStatKind(b) === "routine").length;
+        const nB = merged.filter((b) => proposeBlockStatKind(b) === "break").length;
+        const nE = merged.filter((b) => b.source === "existing").length;
+        const nDraftStudy = merged.filter((b) => b.source === "study").length;
+        const studyMin = merged
+          .filter((b) => proposeBlockStatKind(b) === "study")
+          .reduce((acc, b) => acc + blockDurationMinutes(b), 0);
+        const alreadyOnCalendar = merged.length > 0 && nE === merged.length;
+        const modeLabel = mode === "review" ? "AI review" : mode === "smart" ? "Smart gap-fill" : "AI propose";
+
+        let rationale = res.rationale;
+        if (alreadyOnCalendar) {
+          rationale =
+            `Plan already on calendar for this ${label} — showing ${merged.length} saved blocks ` +
+            `(${(studyMin / 60).toFixed(1)}h study, ${nR} life/routines, ${nB} breaks). ` +
+            `Edit on the schedule; Apply skips slots that are already saved.`;
+        }
+
         setProposeMeta({
-          rationale: res.rationale,
+          rationale,
           used_llm: res.used_llm,
           scaled_daily_hours: res.scaled_daily_hours,
         });
         setPlanStep("propose");
-        const label =
-          horizonDays === 1 ? "day" : horizonDays === 7 ? "week" : horizonDays === 30 ? "month" : `${horizonDays}-day`;
-        const nR = merged.filter((b) => b.source === "routine").length;
-        const nE = merged.filter((b) => b.source === "existing").length;
-        const nB = merged.filter((b) => b.source === "break").length;
-        const studyMin = merged
-          .filter((b) => b.source === "study")
-          .reduce(
-            (acc, b) =>
-              acc +
-              Math.max(
-                0,
-                Math.round(
-                  (new Date(b.end_at).getTime() - new Date(b.start_at).getTime()) / 60_000,
-                ),
-              ),
-            0,
-          );
-        const modeLabel = mode === "review" ? "AI review" : mode === "smart" ? "Smart gap-fill" : "AI propose";
         setExportHint(
-          `${modeLabel} · ${label}: ${(studyMin / 60).toFixed(1)}h study / goal · ${merged.length} blocks (${nR} routines, ${nB} breaks, ${nE} calendar)`,
+          alreadyOnCalendar
+            ? `${modeLabel} · ${label}: already on calendar — ${(studyMin / 60).toFixed(1)}h study · ${merged.length} blocks (${nR} life/routines, ${nB} breaks)`
+            : `${modeLabel} · ${label}: ${(studyMin / 60).toFixed(1)}h study / goal · ${merged.length} blocks (${nR} routines, ${nB} breaks, ${nE} calendar${nDraftStudy ? `, ${nDraftStudy} new study` : ""})`,
         );
       } catch (e: unknown) {
         setExportHint(e instanceof Error ? e.message : "Propose failed");
@@ -877,8 +971,34 @@ export function ProductivityPage() {
   const avgScore = desktop?.avg_productivity_score ?? 0;
 
   return (
-    <div className="h-full overflow-y-auto bg-background text-foreground p-6">
-      <div className="mx-auto w-full max-w-7xl space-y-6 pb-20">
+    <div className="h-full overflow-y-auto bg-background text-foreground px-0 py-0 sm:px-0">
+      <div className="w-full max-w-none space-y-5 pb-16">
+
+      {demoClock?.enabled ? (
+        <div className="rounded-xl border border-amber-400/40 bg-amber-500/15 px-4 py-2.5 text-sm text-amber-50 flex flex-wrap items-center justify-between gap-2">
+          <span>
+            Demo clock on —{" "}
+            {demoClock.now_iso
+              ? new Date(demoClock.now_iso).toLocaleString()
+              : demoClock.day || "?"}{" "}
+            <span className="text-amber-100/70 text-xs">
+              (real data only · no fake productive)
+            </span>
+          </span>
+          <button
+            type="button"
+            className="text-xs px-2.5 py-1 rounded-md border border-amber-300/40 hover:bg-amber-400/20"
+            onClick={() => {
+              void clearDemoClock().then((st) => {
+                setDemoClock(st);
+                setPlannerRefresh((n) => n + 1);
+              });
+            }}
+          >
+            Back to real time
+          </button>
+        </div>
+      ) : null}
 
       {/* Header: tabs + actions (page title lives in AppTopBar) */}
       <div className="gloss-panel rounded-3xl border border-border/50 p-4">
@@ -1028,63 +1148,28 @@ export function ProductivityPage() {
 
       {tab === "calendar" && (
       <div className="space-y-6">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="col-span-2 md:col-span-1 bg-white/[0.03] border border-white/10 rounded-2xl p-5 flex flex-col items-center gap-2">
-            <div className="relative">
-              <ScoreRing score={avgScore} size={88} />
-              <div className="absolute inset-0 flex items-center justify-center flex-col">
-                <span className={`text-2xl font-bold ${scoreColor(avgScore)}`}>{avgScore}</span>
-                <span className="text-[10px] text-muted-foreground">/ 100</span>
-              </div>
-            </div>
-            <div className="text-center">
-              <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                Productivity Score
-              </div>
-              <div className="text-xs text-muted-foreground mt-0.5">weighted by time · {statsRange.label}</div>
-            </div>
-          </div>
+        <GlanceBar
+          desktop={desktop}
+          dueReviews={dueReviews}
+          rangeLabel={statsRange.label}
+          sleepHours={sleepHours}
+          onScheduleReview={() => {
+            const start = new Date(plannerDay);
+            if (toApiDay(plannerDay) === toApiDay(new Date())) {
+              start.setMinutes(start.getMinutes() + 15 - (start.getMinutes() % 15));
+            } else {
+              start.setHours(9, 0, 0, 0);
+            }
+            void createPlannerBlock({
+              title: "SRS review",
+              category: "review",
+              start_at: start.toISOString(),
+              duration_minutes: Math.min(30, 15 + dueReviews * 2),
+            }).then(() => bumpPlanner());
+          }}
+        />
 
-          <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-5 flex flex-col gap-1 justify-center">
-            <Clock size={18} className="text-blue-400 mb-1" />
-            <div className="text-2xl font-bold">{totalHours}h</div>
-            <div className="text-xs text-muted-foreground">Tracked {statsRange.label}</div>
-          </div>
-
-          <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-5 flex flex-col gap-1 justify-center">
-            <BarChart2 size={18} className="text-purple-400 mb-1" />
-            <div className="text-2xl font-bold">{desktop?.sessions.length ?? 0}</div>
-            <div className="text-xs text-muted-foreground">Apps used</div>
-          </div>
-
-          <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-5 flex flex-col gap-1 justify-center">
-            <Zap size={18} className="text-yellow-400 mb-1" />
-            <div className="text-2xl font-bold">{browser?.events_today ?? 0}</div>
-            <div className="text-xs text-muted-foreground">Browser events · {statsRange.label}</div>
-          </div>
-        </div>
-
-        <GoogleCalendarSyncPanel refreshKey={plannerRefresh} />
-
-        <div className="w-full bg-white/[0.03] border border-white/10 rounded-2xl p-6 space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <h2 className="font-semibold flex items-center gap-2">
-              <CalendarDays size={16} className="text-primary" />
-              Planner calendar
-            </h2>
-            {adherence && (
-              <span
-                className="rounded-full border border-emerald-500/25 bg-emerald-500/10 px-2.5 py-1 text-xs text-emerald-200 tabular-nums"
-                title="Effective focus for the selected day (planned ∩ productive)"
-              >
-                On-plan {(adherence.effective_focus_minutes / 60).toFixed(1)}h
-                {adherence.planned_minutes > 0
-                  ? ` · ${Math.round((adherence.adherence_pct ?? 0))}% plan`
-                  : ""}
-              </span>
-            )}
-          </div>
-
+        <div className="w-full bg-white/[0.03] border border-white/10 rounded-2xl p-5 sm:p-6">
           <PlannerCalendar
             expanded
             refreshKey={plannerRefresh}
@@ -1092,55 +1177,39 @@ export function ProductivityPage() {
             onSelectedDayChange={setPlannerDay}
             view={calendarView}
             onViewChange={setCalendarView}
+            headerTitle={
+              <h2 className="planner-cal-header__title">
+                <CalendarDays size={16} className="planner-cal-header__title-icon" aria-hidden />
+                Planner calendar
+              </h2>
+            }
+            headerBadge={
+              adherence ? (
+                <span
+                  className="planner-cal-header__kpi"
+                  title="Effective focus for the selected day (planned ∩ productive)"
+                >
+                  On-plan {(adherence.effective_focus_minutes / 60).toFixed(1)}h
+                  {adherence.planned_minutes > 0
+                    ? ` · ${Math.round((adherence.adherence_pct ?? 0))}% plan`
+                    : ""}
+                </span>
+              ) : null
+            }
           />
         </div>
 
-        <TodayPanel
-          compact
-          day={plannerDay}
-          refreshKey={plannerRefresh}
-          dueReviews={dueReviews}
-          onPlannerChange={bumpPlanner}
-        />
-
-        <details className="group rounded-2xl border border-white/10 bg-white/[0.03] open:pb-4">
-          <summary className="cursor-pointer list-none flex items-center gap-2 px-5 py-3.5 text-sm font-medium text-muted-foreground hover:text-foreground">
-            <ChevronRight size={14} className="transition-transform group-open:rotate-90 text-primary" />
-            Plan vs actual & insights
-            <span className="text-[10px] font-normal opacity-70">day ribbon, streak, variance</span>
-          </summary>
-          <div className="px-5 space-y-6">
-            <PlanVsActualDashboard
-              selectedDay={plannerDay}
-              onSelectedDayChange={setPlannerDay}
-              refreshKey={plannerRefresh}
-              trackerHealth={trackerHealth}
-              adherenceDays={adherenceWindow}
-              adherenceEnd={adherenceEnd}
-              variancePreset={variancePreset}
-            />
-
-            <CalendarInfographics
-              desktop={desktop}
-              dueReviews={dueReviews}
-              rangeLabel={statsRange.label}
-              onScheduleReview={() => {
-                const start = new Date(plannerDay);
-                if (toApiDay(plannerDay) === toApiDay(new Date())) {
-                  start.setMinutes(start.getMinutes() + 15 - (start.getMinutes() % 15));
-                } else {
-                  start.setHours(9, 0, 0, 0);
-                }
-                void createPlannerBlock({
-                  title: "SRS review",
-                  category: "review",
-                  start_at: start.toISOString(),
-                  duration_minutes: Math.min(30, 15 + dueReviews * 2),
-                }).then(() => bumpPlanner());
-              }}
-            />
-          </div>
-        </details>
+        <div className="space-y-5 rounded-2xl border border-white/10 bg-white/[0.03] p-5 sm:p-6">
+          <PlanVsActualDashboard
+            selectedDay={plannerDay}
+            onSelectedDayChange={setPlannerDay}
+            refreshKey={plannerRefresh}
+            trackerHealth={trackerHealth}
+            adherenceDays={adherenceWindow}
+            adherenceEnd={adherenceEnd}
+            variancePreset={variancePreset}
+          />
+        </div>
 
         <details className="group rounded-2xl border border-white/10 bg-white/[0.03] open:pb-4">
           <summary className="cursor-pointer list-none flex items-center gap-2 px-5 py-3.5 text-sm font-medium text-muted-foreground hover:text-foreground">
@@ -1287,269 +1356,356 @@ export function ProductivityPage() {
       )}
 
       {tab === "plan" && (
-      <div className="grid gap-4 xl:grid-cols-[minmax(18rem,22rem)_minmax(0,1fr)] items-start">
-        {/* Left: steps */}
-        <div className="space-y-3 min-w-0 xl:sticky xl:top-3 xl:max-h-[calc(100vh-6rem)] xl:overflow-y-auto xl:pr-1">
-          <ol className="grid grid-cols-4 gap-1 text-[10px]">
-            {(
-              [
-                { id: "goals" as const, n: 1, label: "Goals", done: goalsDone },
-                { id: "routines" as const, n: 2, label: "Routines", done: routinesDone },
-                { id: "propose" as const, n: 3, label: "Propose", done: proposeDone },
-                { id: "done" as const, n: 4, label: "Apply", done: finishDone },
-              ] as const
-            ).map((s) => (
-              <li key={s.id}>
-                <button
-                  type="button"
-                  onClick={() => setPlanStep(s.id)}
-                  className={`w-full rounded-lg border px-1.5 py-2 flex flex-col items-center gap-1 text-center transition-colors ${
-                    planStep === s.id
-                      ? "border-primary/50 bg-primary/15 text-foreground"
-                      : s.done
-                        ? "border-emerald-500/35 bg-emerald-500/10 text-emerald-100"
-                        : "border-white/10 bg-white/[0.03] text-muted-foreground hover:bg-white/[0.05]"
-                  }`}
-                >
-                  <span
-                    className={`h-5 w-5 rounded-full text-[10px] font-semibold flex items-center justify-center ${
-                      s.done ? "bg-emerald-500/80 text-white" : planStep === s.id ? "bg-primary/80 text-primary-foreground" : "bg-white/10"
-                    }`}
-                  >
-                    {s.done ? <CheckCircle2 size={11} /> : s.n}
-                  </span>
-                  {s.label}
-                </button>
-              </li>
-            ))}
-          </ol>
-
-          {planStep === "goals" && (
-            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 space-y-3">
-              <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">1 · Goals</h2>
-              <ProductivityGoalsPanel
-                adherence={adherence}
-                onGoalsTextChange={(text) => setProposeGoals(text)}
+      <div className="grid gap-5 xl:grid-cols-2 items-start">
+        {/* Left: planning steps */}
+        <div className="flex min-w-0 flex-col gap-3 xl:sticky xl:top-3 xl:h-[calc(100vh-5.5rem)] xl:max-h-[calc(100vh-5.5rem)]">
+          <div className="shrink-0 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2.5 space-y-1">
+            <h2 className="text-sm font-semibold text-foreground">Today’s plan</h2>
+            <p className="text-[11px] text-muted-foreground">
+              Work the steps below · confirm morning plan when ready · browser stays STUDY until free
+              time / break blocks.
+            </p>
+          </div>
+          <nav aria-label="Plan steps" className="shrink-0 px-1 pt-0.5 pb-0.5">
+            <ol className="relative grid grid-cols-5">
+              <div
+                aria-hidden
+                className="pointer-events-none absolute left-[10%] right-[10%] top-[9px] h-px bg-white/15"
               />
-              <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
-                <Link to="/journal" className="text-xs text-primary hover:underline inline-flex items-center gap-1">
-                  <PenLine size={12} /> Journal
-                </Link>
-                <button
-                  type="button"
-                  disabled={!goalsDone}
-                  onClick={() => setPlanStep("routines")}
-                  className="rounded-lg bg-primary px-3 py-1.5 text-xs text-primary-foreground hover:bg-primary/90 disabled:opacity-40"
-                >
-                  Next · Routines
-                </button>
-              </div>
-            </div>
-          )}
+              <div
+                aria-hidden
+                className="pointer-events-none absolute left-[10%] top-[9px] h-px bg-emerald-500/70 transition-[width] duration-300"
+                style={{
+                  width: `${Math.max(0, planStepOrder.indexOf(planStep)) * 20}%`,
+                }}
+              />
+              {(
+                [
+                  { id: "routines" as const, n: 1, label: "Routines", done: routinesDone },
+                  { id: "goals" as const, n: 2, label: "Goals", done: goalsDone },
+                  { id: "propose" as const, n: 3, label: "Build", done: proposeDone },
+                  { id: "done" as const, n: 4, label: "Apply", done: finishDone },
+                  { id: "sync" as const, n: 5, label: "Watch", done: syncDone && planStep === "sync" },
+                ] as const
+              ).map((s) => {
+                const active = planStep === s.id;
+                return (
+                  <li key={s.id} className="relative z-[1] flex justify-center">
+                    <button
+                      type="button"
+                      onClick={() => setPlanStep(s.id)}
+                      aria-current={active ? "step" : undefined}
+                      className="flex flex-col items-center gap-1 min-w-0"
+                    >
+                      <span
+                        className={`flex h-[18px] w-[18px] items-center justify-center rounded-full border text-[9px] font-semibold transition-colors ${
+                          s.done
+                            ? "border-emerald-500 bg-emerald-500 text-white"
+                            : active
+                              ? "border-primary bg-primary text-primary-foreground ring-2 ring-primary/30"
+                              : "border-white/25 bg-background text-muted-foreground"
+                        }`}
+                      >
+                        {s.done ? <CheckCircle2 size={11} /> : s.n}
+                      </span>
+                      <span
+                        className={`text-[10px] leading-none ${
+                          active
+                            ? "font-semibold text-foreground"
+                            : s.done
+                              ? "text-emerald-200/90"
+                              : "text-muted-foreground"
+                        }`}
+                      >
+                        {s.label}
+                      </span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ol>
+          </nav>
 
+          <div
+            ref={planStepRef}
+            className="min-h-0 flex-1 overflow-y-auto overscroll-contain pr-1 space-y-3"
+          >
           {planStep === "routines" && (
-            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 space-y-3">
-              <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">2 · Routines</h2>
-              <p className="text-xs text-muted-foreground">
-                Lock daily rhythm, then build the week.
-              </p>
+            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 space-y-4">
+              <div>
+                <h2 className="text-sm font-semibold text-foreground">1 · Routines</h2>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Lock fixed times first (meals, workout, devotion). The day list on the right updates as you apply.
+                </p>
+              </div>
               <div className="space-y-4">
                 <div className="rounded-xl border border-white/10 bg-black/20 p-4">
                   <RoutinesPanel onApplied={bumpPlanner} onRoutinesChange={onRoutinesChange} />
                 </div>
-                <div className="rounded-xl border border-white/10 bg-black/20 p-4">
-                  <TimetablePanel
-                    onPlannerUpdated={() => {
-                      bumpPlanner();
-                      setHasTimetableBlocks(true);
-                    }}
-                  />
-                </div>
+                <details open className="rounded-xl border border-white/10 bg-black/20 open:pb-1">
+                  <summary className="cursor-pointer list-none px-4 py-3 text-xs font-medium text-muted-foreground hover:text-foreground">
+                    Weekly timetable (optional)
+                  </summary>
+                  <div className="px-4 pb-4">
+                    <TimetablePanel
+                      onPlannerUpdated={() => {
+                        bumpPlanner();
+                        setHasTimetableBlocks(true);
+                      }}
+                    />
+                  </div>
+                </details>
               </div>
-              <div className="flex flex-wrap justify-between gap-2 pt-1">
+            </div>
+          )}
+
+          {planStep === "goals" && (
+            <div className="space-y-3">
+              <ProductivityGoalsPanel
+                adherence={adherence}
+                lockedHours={dayLockedHours}
+                onGoalsTextChange={(text) => setProposeGoals(text)}
+                onConfirmed={() => setGoalsConfirmed(true)}
+              />
+            </div>
+          )}
+
+          {planStep === "propose" && (
+              <ProposeStepPanel
+                horizon={proposeHorizon}
+                onHorizonChange={setProposeHorizon}
+                customHorizonDays={customHorizonDays}
+                onCustomHorizonDaysChange={setCustomHorizonDays}
+                horizonDays={horizonDays}
+                rangeStart={proposeRangeStart}
+                exportDays={exportDays}
+                onExportDaysChange={setExportDays}
+                proposing={proposing}
+                onGenerate={(mode) => void runPropose(mode)}
+                exportHint={exportHint}
+                proposed={proposed}
+                proposeMeta={proposeMeta}
+                onProposedChange={setProposed}
+                onApply={(range) => void applyPropose(range)}
+                onDismissDraft={() => {
+                  setProposed(null);
+                  setProposeMeta(null);
+                }}
+              />
+          )}
+
+          {planStep === "done" && (
+            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 space-y-4">
+              <div>
+                <h2 className="text-sm font-semibold text-foreground">4 · Apply</h2>
+              </div>
+              {finishDone ? (
+                <div className="space-y-3">
+                  <p className="text-sm text-emerald-200">
+                    Your schedule is on the calendar. Next: push it to Google so Amazfit can see it.
+                  </p>
+                  {exportHint ? (
+                    <p className="text-xs text-sky-300 break-words" title={exportHint}>{exportHint}</p>
+                  ) : null}
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setPlanStep("propose")}
+                      className="rounded-xl border border-white/10 px-3 py-2.5 text-xs hover:bg-white/5"
+                    >
+                      Build again
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPlanStep("sync")}
+                      className="rounded-xl bg-primary px-3 py-2.5 text-xs text-primary-foreground hover:bg-primary/90"
+                    >
+                      Next · Watch sync
+                    </button>
+                  </div>
+                </div>
+              ) : proposed?.length ? (
+                <div className="space-y-3">
+                  <p className="text-sm text-foreground">
+                    Draft ready · {proposed.length} block{proposed.length === 1 ? "" : "s"}. Open Build
+                    and use Apply to write them to the calendar.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setPlanStep("propose")}
+                    className="rounded-xl bg-primary px-4 py-2.5 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+                  >
+                    Open Build to apply
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <p className="text-sm text-muted-foreground">
+                    Nothing applied yet. Generate a draft in Build, then apply it to the calendar.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setPlanStep("propose")}
+                    className="rounded-xl bg-primary px-4 py-2.5 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+                  >
+                    Go to Build
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {planStep === "sync" && (
+            <div className="space-y-3">
+              <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 space-y-2">
+                <h2 className="text-sm font-semibold text-foreground">5 · Watch (Google → Amazfit)</h2>
+                <p className="text-xs text-muted-foreground">
+                  Last planning step — push today&apos;s blocks to Google Calendar so Zepp/Amazfit can show them.
+                </p>
+                {finishDone ? (
+                  <p className="text-xs text-emerald-200/90">Schedule already applied — sync when ready.</p>
+                ) : (
+                  <p className="text-xs text-amber-200/90">Apply a schedule in step 4 first for a full push.</p>
+                )}
+              </div>
+              <GoogleCalendarSyncPanel refreshKey={plannerRefresh} />
+            </div>
+          )}
+
+          </div>
+
+          {/* Sticky step footer — always visible in the left column */}
+          <div className="shrink-0 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-white/10 bg-background/90 backdrop-blur-sm px-3 py-2.5">
+            {planStep === "routines" ? (
+              <>
+                <span className="text-[11px] text-muted-foreground">Lock times, then set focus hours</span>
                 <button
                   type="button"
                   onClick={() => setPlanStep("goals")}
-                  className="rounded-lg border border-white/10 px-3 py-1.5 text-xs hover:bg-white/5"
+                  className="rounded-xl bg-primary px-4 py-2 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+                >
+                  Next · Goals
+                </button>
+              </>
+            ) : planStep === "goals" ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setPlanStep("routines")}
+                  className="rounded-xl border border-white/10 px-4 py-2 text-xs hover:bg-white/5"
+                >
+                  Back
+                </button>
+                <div className="flex items-center gap-2">
+                  <Link to="/journal" className="text-xs text-primary hover:underline inline-flex items-center gap-1">
+                    <PenLine size={12} /> Journal
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setGoalsConfirmed(true);
+                      setPlanStep("propose");
+                    }}
+                    className="rounded-xl bg-primary px-4 py-2 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+                  >
+                    Next · Build
+                  </button>
+                </div>
+              </>
+            ) : planStep === "propose" ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setPlanStep("goals")}
+                  className="rounded-xl border border-white/10 px-4 py-2 text-xs hover:bg-white/5"
+                >
+                  Back
+                </button>
+                {proposed?.length ? (
+                  <button
+                    type="button"
+                    disabled={proposing}
+                    onClick={() =>
+                      void applyPropose(
+                        applyRangeForHorizon(proposeRangeStart, horizonDays, proposeHorizon),
+                      )
+                    }
+                    className="rounded-xl bg-primary px-4 py-2 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                  >
+                    {proposing
+                      ? "Applying…"
+                      : proposeHorizon === "day"
+                        ? "Apply today"
+                        : proposeHorizon === "week"
+                          ? "Apply this week"
+                          : proposeHorizon === "month"
+                            ? "Apply this month"
+                            : `Apply ${horizonDays} days`}
+                  </button>
+                ) : (
+                  <span className="text-[11px] text-muted-foreground">Generate a schedule to continue</span>
+                )}
+              </>
+            ) : planStep === "done" ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setPlanStep("propose")}
+                  className="rounded-xl border border-white/10 px-4 py-2 text-xs hover:bg-white/5"
                 >
                   Back
                 </button>
                 <button
                   type="button"
-                  onClick={() => setPlanStep("propose")}
-                  className="rounded-lg bg-primary px-3 py-1.5 text-xs text-primary-foreground hover:bg-primary/90"
+                  onClick={() => setPlanStep("sync")}
+                  className="rounded-xl bg-primary px-4 py-2 text-xs font-medium text-primary-foreground hover:bg-primary/90"
                 >
-                  Next · Propose
+                  Next · Watch
                 </button>
-              </div>
-            </div>
-          )}
-
-          {(planStep === "propose" || planStep === "done") && (
-            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 space-y-4">
-              <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                {planStep === "done" ? "4 · Applied" : "3 · Propose"}
-              </h2>
-
-              {planStep === "done" ? (
-                <div className="space-y-3">
-                  <p className="text-sm text-emerald-200">
-                    Plan written to the calendar on the right.
-                  </p>
-                  {exportHint ? (
-                    <p className="text-xs text-sky-300 truncate" title={exportHint}>{exportHint}</p>
-                  ) : null}
-                  <div className="flex flex-wrap gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setPlanStep("propose")}
-                      className="rounded-lg border border-white/10 px-3 py-1.5 text-xs hover:bg-white/5"
-                    >
-                      Propose again
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setTab("calendar")}
-                      className="rounded-lg bg-primary px-3 py-1.5 text-xs text-primary-foreground hover:bg-primary/90"
-                    >
-                      Open Calendar tab
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <>
-                  <p className="text-xs text-muted-foreground">
-                    Smart fill uses goals + free gaps. Drafts appear dashed on the calendar.
-                  </p>
-                  <div className="space-y-3 rounded-xl border border-white/10 bg-black/20 p-3">
-                    <div className="space-y-1.5">
-                      <span className="text-[10px] text-muted-foreground">Horizon</span>
-                      <div className="grid grid-cols-2 gap-1.5">
-                        {(
-                          [
-                            ["day", "Today"],
-                            ["week", "7 days"],
-                            ["month", "30 days"],
-                            ["custom", "Custom"],
-                          ] as const
-                        ).map(([id, label]) => (
-                          <button
-                            key={id}
-                            type="button"
-                            onClick={() => setProposeHorizon(id)}
-                            className={`rounded-lg px-2 py-1.5 text-[11px] border transition-colors ${
-                              proposeHorizon === id
-                                ? "border-primary/50 bg-primary/20 text-foreground"
-                                : "border-white/10 bg-black/30 text-muted-foreground hover:bg-white/5"
-                            }`}
-                          >
-                            {label}
-                          </button>
-                        ))}
-                      </div>
-                      {proposeHorizon === "custom" && (
-                        <div className="flex items-center gap-2 text-xs">
-                          <span className="text-muted-foreground">Days</span>
-                          <input
-                            type="number"
-                            min={1}
-                            max={62}
-                            value={customHorizonDays}
-                            onChange={(e) =>
-                              setCustomHorizonDays(Math.max(1, Math.min(62, Number(e.target.value) || 14)))
-                            }
-                            className="w-14 rounded border border-white/10 bg-black/40 px-2 py-1 text-foreground"
-                          />
-                        </div>
-                      )}
-                    </div>
-                    <label className="flex items-center gap-2 text-[11px] text-muted-foreground">
-                      Look-back
-                      <input
-                        type="number"
-                        min={1}
-                        max={31}
-                        value={exportDays}
-                        onChange={(e) => setExportDays(Math.max(1, Math.min(31, Number(e.target.value) || 7)))}
-                        className="w-12 rounded border border-white/10 bg-black/40 px-1.5 py-1 text-foreground"
-                      />
-                      days
-                    </label>
-                    <button
-                      type="button"
-                      disabled={proposing}
-                      onClick={() => void runPropose("smart")}
-                      className="w-full flex items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-                    >
-                      {proposing ? <Loader2 size={14} className="animate-spin" /> : <CalendarDays size={14} />}
-                      Build smart
-                    </button>
-                    <button
-                      type="button"
-                      disabled={proposing || !proposed?.length}
-                      onClick={() => void runPropose("review")}
-                      className="w-full rounded-lg border border-primary/40 bg-primary/10 px-3 py-1.5 text-xs hover:bg-primary/20 disabled:opacity-50"
-                    >
-                      AI review draft
-                    </button>
-                    <button
-                      type="button"
-                      disabled={proposing}
-                      onClick={() => void runPropose("full")}
-                      className="w-full rounded-lg border border-white/15 bg-white/5 px-3 py-1.5 text-xs text-muted-foreground hover:bg-white/10 disabled:opacity-50"
-                    >
-                      AI from scratch
-                    </button>
-                    {exportHint ? (
-                      <p className="text-[10px] text-sky-300 truncate" title={exportHint}>{exportHint}</p>
-                    ) : null}
-                  </div>
-
-                  {(proposed || proposeMeta) && (
-                    <ProposePlanPreview
-                      embedded
-                      blocks={proposed || []}
-                      rationale={proposeMeta?.rationale}
-                      usedLlm={proposeMeta?.used_llm}
-                      proposing={proposing}
-                      goalsText={proposeGoals}
-                      scaledDailyHours={proposeMeta?.scaled_daily_hours}
-                      onChange={setProposed}
-                      onApply={(range) => void applyPropose(range)}
-                      onDismiss={() => {
-                        setProposed(null);
-                        setProposeMeta(null);
-                      }}
-                    />
-                  )}
-                </>
-              )}
-            </div>
-          )}
+              </>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setPlanStep(finishDone ? "done" : "propose")}
+                  className="rounded-xl border border-white/10 px-4 py-2 text-xs hover:bg-white/5"
+                >
+                  Back
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTab("calendar")}
+                  className="rounded-xl bg-primary px-4 py-2 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+                >
+                  See tracking
+                </button>
+              </>
+            )}
+          </div>
         </div>
 
-        {/* Right: live calendar (Plan only) */}
-        <div className="min-w-0 rounded-2xl border border-white/10 bg-white/[0.03] p-4 space-y-3 xl:sticky xl:top-3">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <h2 className="font-semibold text-sm flex items-center gap-2">
-              <CalendarDays size={15} className="text-primary" />
-              Live calendar
-              {proposed?.length ? (
-                <span className="rounded-md border border-primary/35 bg-primary/10 px-1.5 py-0.5 text-[10px] font-normal text-primary">
-                  {proposed.filter((b) => b.source !== "existing").length} drafts
-                </span>
-              ) : null}
-            </h2>
-            <span className="text-[10px] text-muted-foreground">Dashed = not applied yet</span>
+        {/* Right: planning calendar */}
+        <div className="min-w-0 rounded-2xl border border-white/10 bg-white/[0.03] p-4 xl:sticky xl:top-3 xl:max-h-[calc(100vh-5.5rem)] xl:overflow-y-auto space-y-3">
+          <div className="flex items-center justify-between gap-2 px-0.5">
+            <div>
+              <h2 className="text-sm font-semibold text-foreground">Schedule preview</h2>
+              <p className="text-[11px] text-muted-foreground mt-0.5">
+                {proposed?.length
+                  ? "Day timeline · dashed = draft · edit / move / delete on each block"
+                  : "Today’s blocks live here — generate a schedule, draft auto plan, or click an hour to add."}
+              </p>
+            </div>
           </div>
           <PlannerCalendar
             expanded
+            planningOnly
             refreshKey={plannerRefresh}
             selectedDay={plannerDay}
             onSelectedDayChange={setPlannerDay}
             view={calendarView}
             onViewChange={setCalendarView}
             draftBlocks={proposed}
+            onDraftBlocksChange={setProposed}
           />
         </div>
       </div>
@@ -1557,9 +1713,61 @@ export function ProductivityPage() {
 
       {tab === "settings" && (
       <div className="space-y-8">
-        <div className="rounded-xl border border-border/50 bg-background/35 px-4 py-3 text-sm text-muted-foreground">
-          Tracker scoring, wearables, reminders, and exports.
+        <div className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-muted-foreground">
+          <p className="font-medium text-foreground text-xs uppercase tracking-wider mb-1">Settings</p>
+          Planning prefs, tracker scoring, wearables, reminders, and exports — grouped below.
+          <p className="text-[11px] mt-2">
+            <a href="#demo-mode" className="text-amber-200 underline underline-offset-2 hover:text-white">
+              Demo mode
+            </a>
+            {" "}
+            (time travel for Soft-land / blocking demos) is further down this tab.
+          </p>
         </div>
+
+        <section className="space-y-3">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Planning
+          </h2>
+          <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6">
+            <PlanningSettingsPanel
+              refreshKey={plannerRefresh}
+              onPlannerChange={bumpPlanner}
+            />
+          </div>
+        </section>
+
+        <section id="demo-mode" className="space-y-3 scroll-mt-24">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-amber-200/90">
+            Demo mode
+          </h2>
+          <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6">
+            <DemoModePanel
+              onChanged={() => {
+                setPlannerRefresh((n) => n + 1);
+                void fetchDemoClock()
+                  .then(setDemoClock)
+                  .catch(() => setDemoClock(null));
+              }}
+              onJumpToDay={(day) => {
+                setPlannerDay(day);
+                setSearchParams(
+                  (prev) => {
+                    const next = new URLSearchParams(prev);
+                    next.delete("tab");
+                    const y = day.getFullYear();
+                    const m = String(day.getMonth() + 1).padStart(2, "0");
+                    const d = String(day.getDate()).padStart(2, "0");
+                    next.set("day", `${y}-${m}-${d}`);
+                    return next;
+                  },
+                  { replace: true },
+                );
+                setCalendarView(Views.DAY);
+              }}
+            />
+          </div>
+        </section>
 
         <section className="space-y-3">
           <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -1701,6 +1909,35 @@ export function ProductivityPage() {
 
         <section className="space-y-3">
           <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Tracker setup</h2>
+          <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6 space-y-3">
+            <h3 className="font-semibold flex items-center gap-2 text-sm">
+              <Terminal size={15} className="text-sky-400" />
+              Edge SelfTracker
+            </h3>
+            <p className="text-[11px] text-muted-foreground leading-relaxed">
+              Study browsing is <strong className="text-foreground/85">Microsoft Edge only</strong>. Load the
+              extension, then keep Policy Armed / day mode STUDY so YouTube and other browsers soft-lock.
+            </p>
+            <ol className="space-y-2 text-sm text-muted-foreground list-decimal list-inside">
+              <li>
+                Open <code className="bg-black/40 px-1.5 py-0.5 rounded text-xs font-mono">edge://extensions</code>{" "}
+                → Developer mode → Load unpacked →{" "}
+                <code className="bg-black/40 px-1.5 py-0.5 rounded text-xs font-mono">selftracker-extension/</code>
+              </li>
+              <li>
+                Or run{" "}
+                <code className="bg-black/40 px-1.5 py-0.5 rounded text-xs font-mono">
+                  scripts\launch_selftracker_edge.bat
+                </code>
+              </li>
+              <li>
+                After code updates: <strong className="text-foreground/85">Reload</strong> the extension (v1.5.3+)
+              </li>
+              <li>
+                Chrome / Firefox / installers → soft-lock + Jarvis while enforcing (never killed)
+              </li>
+            </ol>
+          </div>
           <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6 space-y-3">
             <h3 className="font-semibold flex items-center gap-2 text-sm">
               <Terminal size={15} className="text-green-400" />

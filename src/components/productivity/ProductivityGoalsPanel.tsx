@@ -83,7 +83,13 @@ function HoursStepper({
 
 type Props = {
   adherence: AdherenceSummary | null;
+  /** Hours already locked by routines / blocks on the selected day */
+  lockedHours?: number;
+  /** Assumed waking window for capacity hint (default 16h) */
+  wakingHours?: number;
   onGoalsTextChange?: (text: string) => void;
+  /** Fired when the user explicitly Saves — marks the Plan stepper Goals step complete */
+  onConfirmed?: () => void;
 };
 
 export function loadProductivityGoals(): ProductivityGoals {
@@ -125,7 +131,13 @@ export function formatGoalsForPrompt(goals: ProductivityGoals): string {
   return `${goals.mainGoal} Daily effective-focus target: ${goals.focusHoursPerDay}h. Weekly target: ${goals.weeklyFocusHours}h. Reward: ${goals.reward}.${extraBlock}`;
 }
 
-export function ProductivityGoalsPanel({ adherence, onGoalsTextChange }: Props) {
+export function ProductivityGoalsPanel({
+  adherence,
+  lockedHours = 0,
+  wakingHours = 16,
+  onGoalsTextChange,
+  onConfirmed,
+}: Props) {
   const [goals, setGoals] = useState<ProductivityGoals>(() => loadProductivityGoals());
   const [saved, setSaved] = useState(false);
   const [draftExtra, setDraftExtra] = useState("");
@@ -137,6 +149,15 @@ export function ProductivityGoalsPanel({ adherence, onGoalsTextChange }: Props) 
       : 0;
   const remaining = Math.max(0, goals.focusHoursPerDay - effectiveHours);
   const openExtras = goals.extraGoals.filter((g) => !g.done && g.title.trim()).length;
+  const freeHours = Math.max(0, wakingHours - lockedHours);
+  const focusFit =
+    goals.focusHoursPerDay <= 0
+      ? "ok"
+      : goals.focusHoursPerDay <= freeHours * 0.85
+        ? "easy"
+        : goals.focusHoursPerDay <= freeHours
+          ? "ok"
+          : "tight";
 
   const goalsText = useMemo(() => formatGoalsForPrompt(goals), [goals]);
 
@@ -149,6 +170,7 @@ export function ProductivityGoalsPanel({ adherence, onGoalsTextChange }: Props) 
     setSaved(true);
     window.setTimeout(() => setSaved(false), 1800);
     onGoalsTextChange?.(goalsText);
+    onConfirmed?.();
   };
 
   const addExtra = () => {
@@ -170,7 +192,7 @@ export function ProductivityGoalsPanel({ adherence, onGoalsTextChange }: Props) 
             Goals & motivation
           </h3>
           <p className="text-xs text-muted-foreground mt-1">
-            Main goal sets focus hours. Extra goals/todos feed AI propose (and sit beside routines).
+            Routines already locked fixed times. Set focus hours to match free gaps — propose fills the rest.
           </p>
         </div>
         <button
@@ -182,39 +204,72 @@ export function ProductivityGoalsPanel({ adherence, onGoalsTextChange }: Props) 
         </button>
       </div>
 
-      <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto_auto] md:items-end">
-        <label className="text-xs text-muted-foreground">
+      <div
+        className={cn(
+          "rounded-xl border px-3 py-2.5 text-xs space-y-1",
+          focusFit === "tight"
+            ? "border-amber-500/40 bg-amber-500/10 text-amber-100"
+            : focusFit === "easy"
+              ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-100"
+              : "border-white/10 bg-black/25 text-muted-foreground",
+        )}
+      >
+        <p className="font-medium text-foreground/90">
+          Selected day capacity
+        </p>
+        <p>
+          Locked (routines/blocks): <span className="tabular-nums text-foreground">{lockedHours.toFixed(1)}h</span>
+          {" · "}
+          Free in ~{wakingHours}h day: <span className="tabular-nums text-foreground">{freeHours.toFixed(1)}h</span>
+          {" · "}
+          Daily focus: <span className="tabular-nums text-foreground">{goals.focusHoursPerDay}h</span>
+        </p>
+        <p className="text-[11px] opacity-90">
+          {focusFit === "tight"
+            ? "Focus target is higher than free time — lower daily hours or free gaps before propose."
+            : focusFit === "easy"
+              ? "Comfortable fit — propose can fill study blocks up to your focus target."
+              : "Tight but workable — propose will pack free gaps near your focus target."}
+        </p>
+      </div>
+
+      <div className="space-y-3">
+        <label className="block text-xs text-muted-foreground">
           Main goal
-          <input
+          <textarea
             value={goals.mainGoal}
             onChange={(e) => setGoals({ ...goals, mainGoal: e.target.value })}
-            className="mt-1 w-full rounded border border-white/10 bg-black/30 px-2 py-1.5 text-xs text-foreground h-8"
+            rows={3}
+            className="mt-1 w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm text-foreground leading-relaxed resize-y min-h-[4.5rem]"
           />
         </label>
-        <HoursStepper
-          label="Daily focus h"
-          value={goals.focusHoursPerDay}
-          min={0.5}
-          max={16}
-          step={0.5}
-          onChange={(n) => setGoals({ ...goals, focusHoursPerDay: n })}
-        />
-        <HoursStepper
-          label="Weekly focus h"
-          value={goals.weeklyFocusHours}
-          min={1}
-          max={80}
-          step={1}
-          onChange={(n) => setGoals({ ...goals, weeklyFocusHours: n })}
-        />
+        <div className="flex flex-wrap gap-4">
+          <HoursStepper
+            label="Daily focus h"
+            value={goals.focusHoursPerDay}
+            min={0.5}
+            max={16}
+            step={0.5}
+            onChange={(n) => setGoals({ ...goals, focusHoursPerDay: n })}
+          />
+          <HoursStepper
+            label="Weekly focus h"
+            value={goals.weeklyFocusHours}
+            min={1}
+            max={80}
+            step={1}
+            onChange={(n) => setGoals({ ...goals, weeklyFocusHours: n })}
+          />
+        </div>
       </div>
 
       <label className="block text-xs text-muted-foreground">
         Reward after target
-        <input
+        <textarea
           value={goals.reward}
           onChange={(e) => setGoals({ ...goals, reward: e.target.value })}
-          className="mt-1 w-full rounded border border-white/10 bg-black/30 px-2 py-1.5 text-xs text-foreground"
+          rows={3}
+          className="mt-1 w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm text-foreground leading-relaxed resize-y min-h-[4.5rem]"
         />
       </label>
 

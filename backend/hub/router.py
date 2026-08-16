@@ -140,8 +140,10 @@ def get_daily(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
+    from backend.planner.service import local_tz
+
     if day in ("today", "now"):
-        d = date.today()
+        d = datetime.now(local_tz()).date()
     else:
         try:
             d = date.fromisoformat(day)
@@ -149,13 +151,8 @@ def get_daily(
             raise HTTPException(status_code=400, detail="Invalid date YYYY-MM-DD") from e
 
     life = db.query(LifeDailyLog).filter(LifeDailyLog.user_id == user.id, LifeDailyLog.date == d).first()
-    # Always refresh today's rollup so the life-clock litmus ring tracks the desktop tracker.
-    if day in ("today", "now") or d == date.today():
-        rollup = rebuild_daily_rollup(db, user.id, d)
-    else:
-        rollup = db.query(DailyRollup).filter(DailyRollup.user_id == user.id, DailyRollup.date == d).first()
-        if not rollup:
-            rollup = rebuild_daily_rollup(db, user.id, d)
+    # Always rebuild so calendars / life-clock pick up wearable_daily + tracker from central DB
+    rollup = rebuild_daily_rollup(db, user.id, d)
     return daily_payload(rollup, life)
 
 
@@ -390,4 +387,53 @@ def get_graph_context(
     return {
         "query": query,
         "graph_context": ctx,
+    }
+
+
+@router.get("/bible-verse")
+def hub_bible_verse(
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Rotating verse from today's completed chapters (JWT; watch prefers tracker hub)."""
+    import time as _time
+
+    from backend.bible import store as bible_store
+    from backend.bible import structured as bible_text
+
+    keys = bible_store.chapters_completed_today(user.id)
+    summary = bible_store.summary(user.id)
+    cur_book = str(summary.get("last_book") or "")
+    cur_ch = int(summary.get("last_chapter") or 0)
+    if cur_book and cur_ch > 0:
+        cur_key = bible_text.chapter_key(cur_book, cur_ch)
+        if cur_key not in keys:
+            keys = [*keys, cur_key]
+    pool = bible_text.verses_for_chapter_keys(keys, version="web", limit=400)
+    if not pool:
+        return {
+            "ok": True,
+            "schema": 1,
+            "ref": "",
+            "text": "Read one chapter to feed the watch.",
+            "book": "",
+            "chapter": 0,
+            "verse": 0,
+            "rotation_index": 0,
+            "source_chapters": [],
+            "fallback": True,
+        }
+    idx = int(_time.time() // 600) % len(pool)
+    v = pool[idx]
+    return {
+        "ok": True,
+        "schema": 1,
+        "ref": v["ref"],
+        "text": v["text"],
+        "book": v["book"],
+        "chapter": v["chapter"],
+        "verse": v["verse"],
+        "rotation_index": idx,
+        "source_chapters": keys,
+        "fallback": False,
     }

@@ -5,7 +5,9 @@ import {
   fmtDurationMinutes,
   scoreAccent,
   scoreLabel,
+  intervalDisplayName,
   shortAppName,
+  reconcileMergedInterval,
   type MergedInterval,
 } from "./planVsActualUtils";
 
@@ -107,7 +109,15 @@ function TitleRow({ text }: { text: string }) {
 }
 
 function PageBreakdown({ item }: { item: MergedInterval }) {
-  const pages = (item.children ?? []).filter((child) => child.window_title || child.site);
+  const parentApp = (item.app_name || "").trim().toLowerCase();
+  const pages = (item.children ?? []).filter((child) => {
+    if (!child.window_title && !child.site) return false;
+    // Keep only pages that belong to this app (avoid Netflix under "Cursor")
+    if (!parentApp) return true;
+    const childApp = (child.app_name || "").trim().toLowerCase();
+    if (!childApp) return true;
+    return childApp === parentApp || childApp.includes(parentApp) || parentApp.includes(childApp);
+  });
   if (pages.length <= 1) return null;
 
   return (
@@ -127,6 +137,11 @@ function PageBreakdown({ item }: { item: MergedInterval }) {
             <div className="line-clamp-2" title={page.window_title || page.site || ""}>
               {page.window_title || page.site}
             </div>
+            {(page.site || page.category) && (
+              <div className="text-sky-300/55 truncate">
+                {[page.site, page.category].filter(Boolean).join(" · ")}
+              </div>
+            )}
           </li>
         ))}
       </ul>
@@ -139,11 +154,21 @@ function ActivityRow({
 }: {
   item: MergedInterval;
 }) {
-  const name = shortAppName(item.app_name || item.category);
-  const exe = item.app_name && shortAppName(item.app_name) !== name ? item.app_name : null;
-  const mins = Math.round(item.duration_seconds / 60);
-  const titleSnippet = item.window_title?.trim();
-  const score = item.productivity_score ?? 35;
+  const reconciled = reconcileMergedInterval(item);
+  const name = intervalDisplayName(reconciled);
+  const isSleep = name === "Sleep";
+  const exe =
+    !isSleep && reconciled.app_name && shortAppName(reconciled.app_name) !== name
+      ? reconciled.app_name
+      : null;
+  const mins = Math.round(reconciled.duration_seconds / 60);
+  const titleSnippet = reconciled.window_title?.trim();
+  const score = reconciled.productivity_score ?? 35;
+  const corrected =
+    shortAppName(item.app_name || "").toLowerCase() !== shortAppName(reconciled.app_name || "").toLowerCase();
+  const src = (reconciled.source || item.source || "").toLowerCase();
+  const sourceLabel =
+    src === "extension" ? "Web · extension" : src === "calt_spa" ? "CALT notes" : src === "desktop_tracker" ? "Desktop" : null;
 
   return (
     <li className="rounded-lg border border-white/10 bg-black/30 px-3 py-2.5 space-y-1.5">
@@ -158,32 +183,51 @@ function ActivityRow({
         <span className="text-xs tabular-nums text-sky-200 shrink-0">{fmtDurationMinutes(mins)}</span>
       </div>
       <div className="flex flex-wrap gap-1.5 text-[10px]">
-        {item.category && (
+        {reconciled.category && (
           <span className="px-2 py-0.5 rounded-full bg-sky-500/15 text-sky-200 border border-sky-400/20">
-            {item.category}
+            {reconciled.category}
           </span>
         )}
         <span className="px-2 py-0.5 rounded-full bg-white/5 text-sky-100/80 border border-white/10">
           {score} · {scoreLabel(score)}
         </span>
-        {item.site && (
-          <span className="px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-200/90 border border-cyan-400/20 truncate max-w-[140px]">
-            {item.site}
+        {(reconciled.site || (looksLikeDomain(reconciled.app_name) ? reconciled.app_name : null)) && (
+          <span className="px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-200/90 border border-cyan-400/20 truncate max-w-[160px]" title={reconciled.site || reconciled.app_name || ""}>
+            {reconciled.site || reconciled.app_name}
+          </span>
+        )}
+        {sourceLabel && (
+          <span className="px-2 py-0.5 rounded-full bg-violet-500/10 text-violet-200/90 border border-violet-400/20">
+            {sourceLabel}
+          </span>
+        )}
+        {corrected && (
+          <span
+            className="px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-100 border border-amber-400/25"
+            title={`Tracker exe was “${item.app_name}”; window title says ${name}`}
+          >
+            title-corrected
           </span>
         )}
       </div>
       <p className="text-[10px] text-sky-300/50 tabular-nums">
-        {format(new Date(item.start_time), "h:mm a")} – {format(new Date(item.end_time), "h:mm a")}
-        {item.merged_count > 1 && (
+        {format(new Date(reconciled.start_time), "h:mm a")} – {format(new Date(reconciled.end_time), "h:mm a")}
+        {reconciled.merged_count > 1 && (
           <span className="ml-1 text-amber-200/70">
-            · merges {item.merged_count} tracker sessions (display only)
+            · merges {reconciled.merged_count} tracker sessions (display only)
           </span>
         )}
       </p>
-      <PageBreakdown item={item} />
+      <PageBreakdown item={reconciled} />
       {titleSnippet && <TitleRow text={titleSnippet} />}
     </li>
   );
+}
+
+function looksLikeDomain(value: string | null | undefined): boolean {
+  const v = (value || "").trim().toLowerCase();
+  if (!v || /\s/.test(v) || v.endsWith(".exe") || v.startsWith("calt_spa")) return false;
+  return v.includes(".");
 }
 
 export function ActivityDetailCardBody({

@@ -2,6 +2,9 @@
 
 Desktop tracker soft-locks unauthorized browsers and installers while the gate
 enforces. Never process-kill (see PROTECTED merge in distraction_gate).
+
+Pear Desktop / YouTube Music (Electron) are music players — never treat as
+browsers, never soft-lock as unauthorized browsers, never process-kill.
 """
 
 from __future__ import annotations
@@ -10,6 +13,28 @@ import re
 
 # Only Microsoft Edge is allowed while bible/planning/study (or Armed).
 ALLOWED_BROWSER_EXES: frozenset[str] = frozenset({"msedge.exe"})
+
+# Electron / desktop music shells — NOT browsers (title often contains "YouTube").
+MUSIC_PLAYER_EXES: frozenset[str] = frozenset(
+    {
+        "youtube music.exe",
+        "youtube-music.exe",
+        "youtubemusic.exe",
+        "pear desktop.exe",
+        "pear-desktop.exe",
+        "pear.exe",
+        "peardesktop.exe",
+    }
+)
+
+_MUSIC_PLAYER_NAME_RE = re.compile(
+    r"(?:"
+    r"youtube[\s\-]?music|"
+    r"pear[\s\-]?desktop|"
+    r"^pear\.exe$"
+    r")",
+    re.I,
+)
 
 KNOWN_BROWSER_EXES: frozenset[str] = frozenset(
     {
@@ -106,6 +131,27 @@ def normalize_exe(exe: str | None) -> str:
     return name
 
 
+def is_music_player_exe(exe: str | None) -> bool:
+    """Pear Desktop / YouTube Music Electron shells — music, not browsers."""
+    name = normalize_exe(exe)
+    if not name:
+        return False
+    if name in MUSIC_PLAYER_EXES:
+        return True
+    # Allow bare name without .exe (window-class / partial reports)
+    bare = name[:-4] if name.endswith(".exe") else name
+    if f"{bare}.exe" in MUSIC_PLAYER_EXES or bare in {
+        "youtube music",
+        "youtube-music",
+        "youtubemusic",
+        "pear desktop",
+        "pear-desktop",
+        "pear",
+    }:
+        return True
+    return bool(_MUSIC_PLAYER_NAME_RE.search(name) or _MUSIC_PLAYER_NAME_RE.search(bare))
+
+
 def is_allowed_browser(exe: str | None) -> bool:
     return normalize_exe(exe) in ALLOWED_BROWSER_EXES
 
@@ -119,6 +165,8 @@ def is_browser_installer(exe: str | None) -> bool:
     name = normalize_exe(exe)
     if not name or name in _EDGE_SETUP_EXES:
         return False
+    if is_music_player_exe(name):
+        return False
     if name in BROWSER_INSTALLER_EXES:
         return True
     # Strip spaces for pattern check ("Firefox Installer.exe" → already spaced)
@@ -126,6 +174,11 @@ def is_browser_installer(exe: str | None) -> bool:
     if _INSTALLER_NAME_RE.search(name) or _INSTALLER_NAME_RE.search(compact):
         # Avoid matching bare firefox.exe / chrome.exe as installers
         if name in KNOWN_BROWSER_EXES:
+            return False
+        # YouTube-Music-Web-Setup is Pear's installer, not a browser install
+        if "youtube" in name and "music" in name:
+            return False
+        if "pear" in name:
             return False
         return True
     return False
@@ -135,6 +188,8 @@ def is_unauthorized_browser(exe: str | None) -> bool:
     """Known non-Edge browser or browser installer → soft-lock while enforcing."""
     name = normalize_exe(exe)
     if not name or name in ALLOWED_BROWSER_EXES:
+        return False
+    if is_music_player_exe(name):
         return False
     if is_browser_installer(name):
         return True
@@ -146,6 +201,8 @@ def unauthorized_kind(exe: str | None) -> str | None:
     name = normalize_exe(exe)
     if not name or name in ALLOWED_BROWSER_EXES:
         return None
+    if is_music_player_exe(name):
+        return None
     if is_browser_installer(name):
         return "browser_installer"
     if name in KNOWN_BROWSER_EXES:
@@ -154,10 +211,11 @@ def unauthorized_kind(exe: str | None) -> str | None:
 
 
 def protected_browser_exes() -> frozenset[str]:
-    """All catalog browsers + installers + Edge helpers — never process-kill.
+    """All catalog browsers + installers + Edge helpers + music players — never kill.
 
     Edge is the allowed study browser; killing msedge.exe (or helpers) would look
     like the browser 'closing constantly'. Soft-lock unauthorized browsers only.
+    Pear / YouTube Music must never be killed or treated as browsers.
     """
     edge_helpers = frozenset(
         {
@@ -169,7 +227,13 @@ def protected_browser_exes() -> frozenset[str]:
             "identity_helper.exe",  # Edge identity helper (when named alone)
         }
     )
-    return frozenset(KNOWN_BROWSER_EXES | BROWSER_INSTALLER_EXES | _EDGE_SETUP_EXES | edge_helpers)
+    return frozenset(
+        KNOWN_BROWSER_EXES
+        | BROWSER_INSTALLER_EXES
+        | _EDGE_SETUP_EXES
+        | edge_helpers
+        | MUSIC_PLAYER_EXES
+    )
 
 
 def catalog_payload() -> dict[str, list[str]]:
@@ -178,4 +242,5 @@ def catalog_payload() -> dict[str, list[str]]:
         "allowed_browsers": sorted(ALLOWED_BROWSER_EXES),
         "known_browsers": sorted(KNOWN_BROWSER_EXES),
         "browser_installers": sorted(BROWSER_INSTALLER_EXES),
+        "music_players_exempt": sorted(MUSIC_PLAYER_EXES),
     }

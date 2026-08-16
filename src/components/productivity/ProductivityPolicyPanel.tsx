@@ -9,6 +9,7 @@ import {
   type DistractionGate,
   type ProductivityPolicy,
 } from "../../api/behaviorClient";
+import { requestBibleDayPass, requestRewardDay } from "../../api/bibleClient";
 
 const COMMON_CATEGORIES = [
   "IDE / Code Editor",
@@ -188,18 +189,121 @@ export function ProductivityPolicyPanel({ onSaved }: Props) {
           <div>
             <p className="text-xs font-semibold text-amber-100">Hard-block until daily goal</p>
             <p className="text-[11px] text-muted-foreground mt-0.5">
-              Desktop tracker kills games (and custom exes) until today’s productive minutes hit the
-              goal. Use Cold Turkey for YouTube/Netflix sites — don’t add chrome.exe here.
+              CALT hard-block = <strong className="text-foreground/80">games only</strong> (Steam/Epic
+              + custom game exes). Cursor, VS Code, and Edge are never killed. Distraction{" "}
+              <strong className="text-foreground/80">sites</strong> (Netflix/YouTube) are redirected by
+              SelfTracker on Edge (`selftracker-extension/`) while this gate is Armed and locked. Cold
+              Turkey remains an optional backup if the API is down.
             </p>
           </div>
           <label className="flex items-center gap-2 text-xs shrink-0">
             <input
               type="checkbox"
               checked={Boolean(policy.hard_block_enabled)}
-              onChange={(e) => setPolicy({ ...policy, hard_block_enabled: e.target.checked })}
+              onChange={(e) => {
+                const on = e.target.checked;
+                if (!on && policy.hard_block_enabled) {
+                  const ok = window.prompt(
+                    'Type UNLOCK to turn off hard-block (breaks your commitment device):',
+                  );
+                  if (ok !== "UNLOCK") return;
+                }
+                setPolicy({ ...policy, hard_block_enabled: on });
+              }}
             />
-            Enabled
+            Armed
           </label>
+        </div>
+        <p className="text-[11px] text-muted-foreground">
+          Games unlock when you hit your <strong className="text-foreground/80">study goal</strong>{" "}
+          and complete <strong className="text-foreground/80">1 Bible chapter</strong> (unlimited
+          until midnight).{" "}
+          <a className="underline text-amber-200/90" href="/bible">
+            Open Bible reader
+          </a>
+        </p>
+        <div className="rounded-md border border-white/10 bg-black/20 p-2.5 space-y-2">
+          <p className="text-[11px] text-muted-foreground">
+            Controlled skip: <strong className="text-foreground/80">2 day-passes per week</strong>{" "}
+            (Mon–Sun). Unlocks games until midnight without reading. Type{" "}
+            <code className="text-amber-200/90">PASS</code> to confirm.
+            {gate?.day_pass_status
+              ? ` · ${gate.day_pass_status.remaining ?? 0} left this week (${gate.day_pass_status.used ?? 0}/${gate.day_pass_status.limit ?? 2} used)`
+              : ""}
+          </p>
+          <button
+            type="button"
+            className="text-xs px-3 py-1.5 rounded-md bg-amber-500/20 text-amber-100 border border-amber-400/30 hover:bg-amber-500/30 disabled:opacity-40"
+            disabled={Boolean(
+              gate?.day_pass ||
+                gate?.day_unlimited ||
+                (gate?.day_pass_status && (gate.day_pass_status.remaining ?? 0) <= 0),
+            )}
+            onClick={() => {
+              const ok = window.prompt(
+                "Skip Bible for today? Type PASS to spend 1 weekly day-pass (games unlocked until midnight):",
+              );
+              if (ok !== "PASS") return;
+              void (async () => {
+                try {
+                  const r = await requestBibleDayPass("PASS");
+                  const g = await fetchDistractionGate().catch(() => null);
+                  setGate(g);
+                  setHint(r.message || "Day pass granted — games unlocked until midnight.");
+                } catch (e: unknown) {
+                  setError(e instanceof Error ? e.message : "Day pass failed");
+                }
+              })();
+            }}
+          >
+            {gate?.day_pass || gate?.day_unlimited
+              ? "Day pass active today"
+              : (gate?.day_pass_status?.remaining ?? 0) <= 0
+                ? "No day-passes left this week"
+                : "Use day pass (skip Bible today)"}
+          </button>
+        </div>
+        <div className="rounded-md border border-teal-400/25 bg-teal-500/5 p-2.5 space-y-2">
+          <p className="text-[11px] text-muted-foreground">
+            Earned Free Day: complete your study goal and one Bible chapter on{" "}
+            <strong className="text-foreground/80">4 days</strong> to bank one reward day. Reward days stack
+            and unlock games plus normal browsing until midnight; tracking stays on and the adult filter remains on.
+            {gate?.reward_day_status
+              ? ` · ${gate.reward_day_status.available} banked · ${gate.reward_day_status.days_to_next_reward} day(s) to next`
+              : ""}
+          </p>
+          <button
+            type="button"
+            className="text-xs px-3 py-1.5 rounded-md bg-teal-500/15 text-teal-100 border border-teal-400/30 hover:bg-teal-500/25 disabled:opacity-40"
+            disabled={Boolean(
+              gate?.reward_day ||
+                gate?.day_unlimited ||
+                !gate?.reward_day_status ||
+                gate.reward_day_status.available <= 0,
+            )}
+            onClick={() => {
+              const ok = window.prompt(
+                "Use one earned reward day? It unlocks games and normal browsing until midnight. Type REWARD:",
+              );
+              if (ok !== "REWARD") return;
+              void (async () => {
+                try {
+                  const r = await requestRewardDay("REWARD");
+                  const g = await fetchDistractionGate().catch(() => null);
+                  setGate(g);
+                  setHint(r.message || "Reward day active — free mode until midnight.");
+                } catch (e: unknown) {
+                  setError(e instanceof Error ? e.message : "Reward day failed");
+                }
+              })();
+            }}
+          >
+            {gate?.reward_day || gate?.day_unlimited
+              ? "Free day active today"
+              : (gate?.reward_day_status?.available ?? 0) > 0
+                ? `Use reward day (${gate?.reward_day_status?.available} banked)`
+                : `Earn reward day (${gate?.reward_day_status?.days_to_next_reward ?? 4} days left)`}
+          </button>
         </div>
         {gate && (
           <div className="rounded-md border border-white/10 bg-black/30 p-2.5 flex gap-3 items-center">
@@ -252,16 +356,57 @@ export function ProductivityPolicyPanel({ onSaved }: Props) {
             </div>
             <div className="min-w-0 flex-1 space-y-0.5">
               <p className="text-xs font-medium text-foreground/95">
-                {gate.locked
-                  ? "Games locked — work first"
-                  : gate.enabled
-                    ? "Unlocked for the rest of today"
-                    : "Hard-block is off"}
+                {!gate.enabled
+                  ? "Hard-block is off"
+                  : gate.day_unlimited
+                    ? "Unlimited games today (study + Bible done)"
+                    : gate.locked
+                      ? "Games locked — Bible bank or finish study+Bible"
+                      : `Game bank open · ${Math.round(gate.game_bank_remaining_minutes ?? 0)}m left`}
               </p>
               <p className="text-[11px] text-muted-foreground">
-                {gate.productive_minutes} / {gate.daily_goal_minutes} productive min
-                {gate.locked ? ` · ${fmtRemainMinutes(gate.remaining_minutes)} left to unlock` : ""}
+                Study {gate.productive_minutes}/{gate.daily_goal_minutes}m · Bible{" "}
+                {Math.round(gate.bible_minutes ?? 0)}/30m
+                {gate.locked && gate.remaining_minutes
+                  ? ` · ${fmtRemainMinutes(gate.remaining_minutes)} study left`
+                  : ""}
               </p>
+              {(gate.browser?.mode || gate.browser_mode) && (
+                <p className="text-[11px] mt-1">
+                  <span
+                    className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 font-semibold tracking-wide ${
+                      ["bible", "planning", "study"].includes(
+                        String(gate.browser?.mode || gate.browser_mode || "").toLowerCase(),
+                      )
+                        ? "bg-amber-500/20 text-amber-100 border border-amber-400/30"
+                        : "bg-teal-500/15 text-teal-100 border border-teal-400/25"
+                    }`}
+                  >
+                    Mode:{" "}
+                    {gate.browser?.mode_label ||
+                      String(gate.browser?.mode || gate.browser_mode || "").toUpperCase()}
+                  </span>
+                  <span className="text-muted-foreground ml-2">
+                    {["bible", "planning", "study"].includes(
+                      String(gate.browser?.mode || gate.browser_mode || "").toLowerCase(),
+                    )
+                      ? "YouTube blocked until daily focus goal · then FREE (distraction filter stays on)"
+                      : "FREE — YouTube OK · distraction filter still on"}
+                  </span>
+                </p>
+              )}
+              {gate.browser?.note && (
+                <p className="text-[10px] text-muted-foreground/90 mt-1 leading-snug">{gate.browser.note}</p>
+              )}
+              {gate.browser?.allowed_browsers && gate.browser.allowed_browsers.length > 0 && (
+                <p className="text-[10px] text-muted-foreground mt-0.5">
+                  Allowed browser:{" "}
+                  <code className="font-mono text-foreground/80">
+                    {gate.browser.allowed_browsers.join(", ")}
+                  </code>
+                  {" · "}others / installers soft-lock while enforcing
+                </p>
+              )}
               <div className="h-1.5 rounded-full bg-muted/30 overflow-hidden mt-1">
                 <div
                   className={`h-full rounded-full ${gate.locked ? "bg-amber-400" : "bg-teal-400"}`}

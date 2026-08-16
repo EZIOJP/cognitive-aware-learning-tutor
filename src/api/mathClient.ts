@@ -32,6 +32,14 @@ export type MathEvalResult = {
   error?: string | null;
 };
 
+export type MathOcrLine = {
+  latex: string;
+  bbox: { x: number; y: number; w: number; h: number };
+  confidence: number;
+  structural_confidence: number;
+  source: string;
+};
+
 export type MathOcrResult = {
   latex: string;
   incomplete_step: boolean;
@@ -40,11 +48,16 @@ export type MathOcrResult = {
   teacher_latex: string;
   needs_review: boolean;
   tier: string;
+  lines?: MathOcrLine[];
+  structural_confidence?: number;
 };
 
 export type MathOcrExtras = {
   paths_json?: string;
   stroke_metrics_json?: string;
+  crop_bbox?: { x: number; y: number; w: number; h: number };
+  multiline?: boolean;
+  ollama_vision_fallback?: boolean;
 };
 
 export type TrainPrompt = {
@@ -152,6 +165,8 @@ export type MathInterventionResult = {
   question: string;
   detected_concept: string;
   use_llm: boolean;
+  structural_confidence?: number;
+  tutor_silent?: boolean;
 };
 
 export type MathTutorHintResult = {
@@ -182,6 +197,7 @@ export async function postMathTutorHint(body: {
 export async function postMathIntervention(body: {
   canvas_image: string;
   paths_json?: string;
+  stroke_metrics_json?: string;
   prompt?: string;
   topic?: string;
   gamma?: number;
@@ -214,6 +230,23 @@ export async function patchInterventionRecover(
       method: "PATCH",
       headers: headers(),
       body: JSON.stringify({ notes, learner_recovered: learnerRecovered }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+export async function patchInterventionCorrect(
+  snapshotId: string,
+  correctLatex: string,
+  notes = ""
+): Promise<boolean> {
+  try {
+    const res = await fetch(`${BASE}/api/math/intervention/${snapshotId}/correct`, {
+      method: "PATCH",
+      headers: headers(),
+      body: JSON.stringify({ correct_latex: correctLatex, notes }),
     });
     return res.ok;
   } catch {

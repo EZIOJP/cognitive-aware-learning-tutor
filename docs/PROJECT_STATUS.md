@@ -1,22 +1,43 @@
 # Project Status
 
-Last updated: 2026-06-02
+Last updated: 2026-08-05
 
 ## Current focus
 
-Modular **hub + plugins** platform: users enable modules, add custom features/metrics, and drive a customizable dashboard from central data.
+Tight gate UX (2026-08-05): SelfTracker **1.5.3** on **Edge only** — browser catalog soft-locks other browsers + installers; Settings lists Edge SelfTracker load/reload. Restart tracker + reload extension after pull.
 
-## Working now
 
-- **Core hub**: readings, rollups, life daily log, `GET/PUT /api/hub/dashboard-layout`
-- **Plugins** (toggle + server sync): Core Hub, Math Tutor, GRE Vocab, Life Tracker, EEG, Focus Mirror, NutriNode
-- **Feature Studio**: create/edit/delete custom features, export JSON/CSV
-- **Dashboard**: 24h Life Clock, AI review card, drag/resize layout (local + server when signed in)
-- **Behavior extension** → hub `browser_event` + richer stats API
-- **Python focus mirror** (`backend/face_tracker.py`) + calibration UI (`/focus/calibrate`)
-- **Math tutor hint** — rule-based by default; Ollama only if `OLLAMA_ENABLED=1`
-- **EEG**: `GET /ws/eeg` + optional UDP (`EEG_ENABLED=1`, port 5005); frontend uses WS when simulation off
-- Vocab, math bank, Docker compose, Alembic through `0006_user_features`
+Study Flow and corpus/Knowledge Base were **removed** (2026-08-04) per user request. Daily study path: **Lecture Notes** (transcript → notes) → quiz → **Review Hub**. GRE vocab remains.
+
+## Working now (daily-use product)
+
+### Study loop
+- Lecture Notes / Study Library — notes, quiz, mermaid (non-corpus / non-RAG path)
+- Review Hub + `StudyLoopWidget` with `next_step` / “Review N due”
+- Math quiz multi-Q + Layer 0 skills + SymPy grading path
+- GRE Vocab Phase 1 (read / cycle / low-mastery)
+
+### Removed
+- Study Flow (`/study-flow`, `POST /api/transcripts/study-flow/start`)
+- Knowledge Base UI (`/knowledge-base`) and live corpus RAG API (`/api/corpus`); thin stubs remain so imports do not break boot
+
+### Productivity
+- Desktop tracker → plan vs actual, day ribbon, calendar
+- Productivity **policy** (productive vs distraction) + session overrides
+- LLM **propose plan** → preview → multi-day apply
+- Routines, week export, Google Calendar sync panel
+- Distraction hard-block (policy + gate) when enabled
+
+### Life / hub / extras
+- Life Tracker + Life Clock skins
+- Hub / AI Coach chat
+- Wearables / Zepp daily ingest bridge (migrations `0027`)
+- Journal, NutriNode widget, theme meteor / easter eggs
+
+### Platform
+- FastAPI `backend.main`, Alembic through `0027_wearable_daily`
+- Plugins registry, Feature Studio, JWT auth
+- `run.bat` / `newrun.bat` / `control.bat` + `scripts/server_lifecycle.py`
 
 ## Run locally
 
@@ -24,31 +45,23 @@ Modular **hub + plugins** platform: users enable modules, add custom features/me
 run.bat
 ```
 
-(`run.bat` runs migrations automatically.) Daily checklist: **[WORKING_PRODUCT.md](./WORKING_PRODUCT.md)**.
+Health: `GET http://127.0.0.1:8000/health` → `schema_ok: true`  
+Frontend: `http://localhost:5173`
 
-Optional:
+Prototype login: `admin` / `admin123`
 
-```bat
-set EEG_ENABLED=1
-scripts\run_face_tracker.bat
-```
+## Cape-time checklist
 
-## Prototype login
+| Check | Doc |
+|-------|-----|
+| One lecture A5 walkthrough | [TASK_COMPLETION.md](./TASK_COMPLETION.md) Lane A5 |
+| GRE regression | Lane C |
+| pytest + build | Lane G1 |
+| Docs / empty states | Sprint 5 |
 
-```text
-username: admin
-password: admin123
-```
+## Explicitly later (not cape blockers)
 
-## GRE Phase 1 (done)
-
-- Read / cycle / low-mastery use API when signed in; `POST /progress/{id}/read`
-- Hub + cycle empty/error states; admin group export — [GRE_VOCAB_PHASE1.md](./GRE_VOCAB_PHASE1.md)
-
-## Next (see docs/ROADMAP.md)
-
-- Phase 2 hardware (ESP32) when boards arrive
-- Ollama vision on whiteboard snapshots
-- Community module
-- User-defined ingest handlers (JS / FastAPI webhooks)
-- PostgreSQL + production hardening
+- ESP32 / hardware firmware
+- Math OCR Phase 3c / WebGazer
+- PostgreSQL + community plugins
+- Expanding Zepp OS app beyond current ingest bridge

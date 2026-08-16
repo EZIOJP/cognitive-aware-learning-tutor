@@ -66,7 +66,8 @@ export function StudyLoopWidget() {
   if (!backlog) return null;
 
   const next = backlog.next_step;
-  const fallback = FALLBACK_LINKS[backlog.recommended_action];
+  const fallback =
+    FALLBACK_LINKS[backlog.recommended_action] ?? FALLBACK_LINKS.lecture_notes;
   const primaryLabel = next?.label ?? fallback.label;
   const primaryTo = next?.to ?? fallback.to;
   const hint = next?.reason ?? fallback.hint;

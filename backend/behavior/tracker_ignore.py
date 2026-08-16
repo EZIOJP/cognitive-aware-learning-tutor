@@ -1,4 +1,9 @@
-"""Apps excluded from tracking and productivity stats (keep-awake utilities, etc.)."""
+"""Apps excluded from tracking and productivity stats.
+
+Desktop tracker owns non-browser apps. Edge browsing is owned by the
+SelfTracker extension (`source=extension`) — ignore msedge* here so we
+don't double-count against URL/domain sessions.
+"""
 
 from __future__ import annotations
 
@@ -10,12 +15,17 @@ _IGNORED_PATTERNS: list[re.Pattern[str]] = [
     for p in (
         r"move\s*mouse",
         r"movemouse",
-        r"caffeine",          # common keep-awake tool
-        r"amphetamine",       # mac keep-awake (harmless if unused on Windows)
+        r"caffeine",  # common keep-awake tool
+        r"amphetamine",  # mac keep-awake (harmless if unused on Windows)
         r"don't\s*sleep",
         r"lockapp",
         r"searchhost\.exe",
         r"steamwebhelper",
+        # Edge: extension reports real sites; desktop only sees "msedge.exe"
+        r"msedge\.exe",
+        r"msedgewebview2\.exe",
+        r"msedge_proxy\.exe",
+        r"(^|[/\\])msedge(\.exe)?$",
     )
 ]
 

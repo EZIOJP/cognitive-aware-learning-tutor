@@ -37,7 +37,17 @@ export interface ActualSession {
   task_id?: number | null;
   app_name?: string | null;
   window_title?: string | null;
+  /** Domain / site label (extension URL sessions, desktop browser). */
+  site?: string | null;
 }
+
+/** Backend hour_slices from GET /api/planner/overlay/actual */
+export type OverlayHourSlice = import("../components/productivity/hourSliceTypes").HourSlice;
+
+export type ActualOverlayPayload = {
+  sessions: ActualSession[];
+  hour_slices: OverlayHourSlice[];
+};
 
 export interface AdherenceSummary {
   day: string;
@@ -151,6 +161,11 @@ export async function rollForwardPlannerBlock(
 }
 
 export async function fetchActualOverlay(from: Date, to: Date): Promise<ActualSession[]> {
+  const payload = await fetchActualOverlayFull(from, to);
+  return payload.sessions;
+}
+
+export async function fetchActualOverlayFull(from: Date, to: Date): Promise<ActualOverlayPayload> {
   const params = new URLSearchParams({
     from: from.toISOString(),
     to: to.toISOString(),
@@ -159,8 +174,11 @@ export async function fetchActualOverlay(from: Date, to: Date): Promise<ActualSe
     headers: authHeaders(),
   });
   if (!res.ok) throw new Error(await res.text());
-  const data = (await res.json()) as { sessions: ActualSession[] };
-  return data.sessions;
+  const data = (await res.json()) as ActualOverlayPayload;
+  return {
+    sessions: data.sessions ?? [],
+    hour_slices: data.hour_slices ?? [],
+  };
 }
 
 export async function fetchAdherence(day: Date): Promise<AdherenceSummary> {
@@ -275,12 +293,20 @@ export async function deleteRoutine(id: number): Promise<void> {
 }
 
 export async function applyRoutines(date?: string): Promise<{ created: number }> {
-  const res = await fetch(resolveApiUrl("/api/planner/routines/apply"), {
-    method: "POST",
-    headers: authHeaders(),
-    body: JSON.stringify({ date: date ?? null }),
-  });
-  if (!res.ok) throw new Error(await res.text());
+  let res: Response;
+  try {
+    res = await fetch(resolveApiUrl("/api/planner/routines/apply"), {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({ date: date ?? null, skip_overlaps: true }),
+    });
+  } catch {
+    throw new Error("Cannot reach API (is the backend running on port 8000?)");
+  }
+  if (!res.ok) {
+    const body = (await res.text()).trim();
+    throw new Error(body || `Apply failed (HTTP ${res.status})`);
+  }
   return res.json();
 }
 

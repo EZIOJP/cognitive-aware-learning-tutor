@@ -11,6 +11,8 @@ export interface MealEntry {
   timestamp: string;
   food_item: string;
   weight_g: number;
+  servings?: number;
+  meal_type?: string;
   total_kcal: number;
   protein_g: number;
   carbs_g: number;
@@ -20,6 +22,7 @@ export interface MealEntry {
   is_healthy: boolean | null;
   location_tag: string;
   source: string;
+  macros_source?: string;
 }
 
 export interface NutritionTotals {
@@ -31,6 +34,56 @@ export interface NutritionTotals {
   meal_count: number;
 }
 
+export interface FoodSearchHit {
+  id: string;
+  name: string;
+  group: string;
+  source: string;
+  default_serving_g: number;
+  per_100g: {
+    kcal: number;
+    protein_g: number;
+    carbs_g: number;
+    fat_g: number;
+    fiber_g: number;
+  };
+}
+
+export interface NutritionEstimate {
+  food_name: string;
+  total_kcal: number;
+  protein_g: number;
+  carbs_g: number;
+  fat_g: number;
+  fiber_g: number;
+  macros_source: string;
+  confidence?: number;
+  notes?: string;
+  per_g?: { kcal: number; p: number; c: number; f: number; fiber: number };
+  per_100g?: FoodSearchHit["per_100g"];
+}
+
+export interface PhotoSuggestItem {
+  suggested_name: string;
+  estimated_weight_g: number | null;
+  confidence: number;
+}
+
+export interface MealDraftItem {
+  food_name: string;
+  weight_g: number;
+  servings: number;
+  macros_source?: string;
+  ai_per_g?: NutritionEstimate["per_g"];
+  preview?: {
+    total_kcal: number;
+    protein_g: number;
+    carbs_g: number;
+    fat_g: number;
+    fiber_g: number;
+  };
+}
+
 interface NutritionState {
   status: "connected" | "disconnected" | "error" | "connecting" | "idle";
   liveWsEnabled: boolean;
@@ -39,6 +92,17 @@ interface NutritionState {
   todayMeals: MealEntry[];
   refreshToday: () => Promise<void>;
   logManualMeal: (foodItem: string, weightGrams: number, locationTag?: string) => Promise<void>;
+  searchFoods: (q: string) => Promise<FoodSearchHit[]>;
+  estimateFood: (foodName: string, weightG: number) => Promise<NutritionEstimate>;
+  saveCustomFood: (payload: {
+    name: string;
+    display_name?: string;
+    per_g: NonNullable<NutritionEstimate["per_g"]>;
+    default_serving_g?: number;
+  }) => Promise<void>;
+  analyzePhoto: (file: File) => Promise<{ items: PhotoSuggestItem[]; description: string }>;
+  confirmMeal: (items: MealDraftItem[], mealType: string) => Promise<void>;
+  deleteMeal: (mealId: string) => Promise<void>;
   runPipeline: () => Promise<unknown>;
 }
 
@@ -46,6 +110,27 @@ const NutritionContext = createContext<NutritionState | undefined>(undefined);
 
 const MAX_WS_RETRIES = 3;
 const WS_RETRY_MS = 5000;
+
+function coerceMeal(row: Record<string, unknown>): MealEntry {
+  return {
+    meal_id: String(row.meal_id || ""),
+    timestamp: String(row.timestamp || ""),
+    food_item: String(row.food_item || ""),
+    weight_g: Number(row.weight_g || 0),
+    servings: row.servings != null ? Number(row.servings) : undefined,
+    meal_type: row.meal_type != null ? String(row.meal_type) : undefined,
+    total_kcal: Number(row.total_kcal || 0),
+    protein_g: Number(row.protein_g || 0),
+    carbs_g: Number(row.carbs_g || 0),
+    fat_g: Number(row.fat_g || 0),
+    fiber_g: Number(row.fiber_g || 0),
+    confidence: Number(row.confidence || 0),
+    is_healthy: row.is_healthy == null || row.is_healthy === "" ? null : Boolean(row.is_healthy),
+    location_tag: String(row.location_tag || ""),
+    source: String(row.source || ""),
+    macros_source: row.macros_source != null ? String(row.macros_source) : undefined,
+  };
+}
 
 export function NutritionProvider({ children }: { children: React.ReactNode }) {
   const [liveWsEnabled, setLiveWsEnabledState] = useState(isNutritionLiveWsEnabled);
@@ -56,9 +141,9 @@ export function NutritionProvider({ children }: { children: React.ReactNode }) {
   const retryCountRef = useRef(0);
   const gaveUpRef = useRef(false);
 
-  const applyTodayPayload = useCallback((data: { totals?: NutritionTotals; meals?: MealEntry[] }) => {
+  const applyTodayPayload = useCallback((data: { totals?: NutritionTotals; meals?: Record<string, unknown>[] }) => {
     if (data.totals) setTodayTotals(data.totals);
-    if (data.meals) setTodayMeals(data.meals);
+    if (data.meals) setTodayMeals(data.meals.map(coerceMeal));
   }, []);
 
   const refreshToday = useCallback(async () => {
@@ -146,7 +231,7 @@ export function NutritionProvider({ children }: { children: React.ReactNode }) {
           if (msg.event === "init") {
             applyTodayPayload(msg.data);
           } else if (msg.event === "new_meal") {
-            setTodayMeals((prev) => [msg.data, ...prev]);
+            setTodayMeals((prev) => [coerceMeal(msg.data), ...prev]);
             setTodayTotals((prev) => {
               if (!prev) return prev;
               return {
@@ -158,6 +243,8 @@ export function NutritionProvider({ children }: { children: React.ReactNode }) {
                 meal_count: prev.meal_count + 1,
               };
             });
+          } else if (msg.event === "meal_deleted") {
+            void refreshToday();
           }
         } catch (e) {
           console.warn("WS msg parse error", e);
@@ -187,7 +274,7 @@ export function NutritionProvider({ children }: { children: React.ReactNode }) {
       wsRef.current?.close();
       wsRef.current = null;
     };
-  }, [liveWsEnabled, applyTodayPayload]);
+  }, [liveWsEnabled, applyTodayPayload, refreshToday]);
 
   const logManualMeal = async (foodItem: string, weightGrams: number, locationTag = "manual") => {
     await fetch(`${resolveApiUrl()}/api/nutrition/manual`, {
@@ -199,6 +286,86 @@ export function NutritionProvider({ children }: { children: React.ReactNode }) {
         location_tag: locationTag,
       }),
     });
+    await refreshToday();
+  };
+
+  const searchFoods = async (q: string): Promise<FoodSearchHit[]> => {
+    const res = await fetch(`${resolveApiUrl()}/api/nutrition/foods/search?q=${encodeURIComponent(q)}`);
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.results || [];
+  };
+
+  const estimateFood = async (foodName: string, weightG: number): Promise<NutritionEstimate> => {
+    const res = await fetch(`${resolveApiUrl()}/api/nutrition/foods/estimate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ food_name: foodName, weight_g: weightG }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || "Estimate failed");
+    }
+    return res.json();
+  };
+
+  const saveCustomFood = async (payload: {
+    name: string;
+    display_name?: string;
+    per_g: NonNullable<NutritionEstimate["per_g"]>;
+    default_serving_g?: number;
+  }) => {
+    await fetch(`${resolveApiUrl()}/api/nutrition/foods/custom`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+  };
+
+  const analyzePhoto = async (file: File) => {
+    const form = new FormData();
+    form.append("image", file);
+    const res = await fetch(`${resolveApiUrl()}/api/nutrition/analyze-photo`, {
+      method: "POST",
+      body: form,
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || "Photo analysis failed");
+    }
+    return res.json();
+  };
+
+  const confirmMeal = async (items: MealDraftItem[], mealType: string) => {
+    const res = await fetch(`${resolveApiUrl()}/api/nutrition/meals`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        meal_type: mealType,
+        items: items.map((it) => ({
+          food_name: it.food_name,
+          weight_g: it.weight_g,
+          servings: it.servings,
+          macros_source: it.macros_source,
+          ai_per_g: it.ai_per_g,
+        })),
+      }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || "Failed to log meal");
+    }
+    await refreshToday();
+  };
+
+  const deleteMeal = async (mealId: string) => {
+    const res = await fetch(`${resolveApiUrl()}/api/nutrition/meals/${encodeURIComponent(mealId)}`, {
+      method: "DELETE",
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || "Delete failed");
+    }
     await refreshToday();
   };
 
@@ -217,6 +384,12 @@ export function NutritionProvider({ children }: { children: React.ReactNode }) {
         todayMeals,
         refreshToday,
         logManualMeal,
+        searchFoods,
+        estimateFood,
+        saveCustomFood,
+        analyzePhoto,
+        confirmMeal,
+        deleteMeal,
         runPipeline,
       }}
     >

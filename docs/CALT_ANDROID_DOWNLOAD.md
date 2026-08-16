@@ -87,3 +87,19 @@ Or open the Cognitive web app on the phone → **Settings**.
 The CALT app calls `GET /api/app/calt-android/latest` using the **same server URL** configured in Settings. If `version_code` on the server is higher than installed, it offers **Download**.
 
 See also: `New folder (6)/calt-timetable/docs/RELEASE.md`
+
+---
+
+## In-repo Expo Tracker (day rules bridge)
+
+Timetable APK is the calendar/solo-sync app. For **tracker / morning / day-mode** on phone:
+
+```bat
+cd packages\calt-android-tracker
+npm install
+npx expo start
+```
+
+Hits `GET /api/behavior/day-status` (or hub `:8765`). Spec:
+`docs/superpowers/specs/2026-08-04-amazfit-android-tracker-bridge-design.md`.
+

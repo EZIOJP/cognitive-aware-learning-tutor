@@ -7,7 +7,12 @@ export type SectionBlockHandlers = {
   language: string;
   allowSectionEdit?: boolean;
   llmReachable?: boolean;
-  onBlockSave?: (blockIndex: number, language: string, content: string) => Promise<void>;
+  onBlockSave?: (
+    blockIndex: number,
+    language: string,
+    content: string,
+    opts?: { previousContent?: string },
+  ) => Promise<void>;
   onBlockRegenerate?: (
     blockIndex: number,
     language: string,
@@ -61,14 +66,16 @@ export function useSectionBlockEdit(
     setSaving(true);
     setLocalError(null);
     try {
-      await handlers.onBlockSave(handlers.blockIndex, handlers.language, draft);
+      await handlers.onBlockSave(handlers.blockIndex, handlers.language, draft, {
+        previousContent: initialContent,
+      });
       setEditing(false);
     } catch (err) {
       setLocalError(err instanceof Error ? err.message : "Could not save block");
     } finally {
       setSaving(false);
     }
-  }, [draft, handlers]);
+  }, [draft, handlers, initialContent]);
 
   const onRegenerate = useCallback(async () => {
     if (!handlers?.onBlockRegenerate) return;
@@ -93,7 +100,9 @@ export function useSectionBlockEdit(
       );
       setDraft(fixed);
       if (regenerateAutoSave && handlers.onBlockSave) {
-        await handlers.onBlockSave(handlers.blockIndex, handlers.language, fixed);
+        await handlers.onBlockSave(handlers.blockIndex, handlers.language, fixed, {
+          previousContent: source,
+        });
         setEditing(false);
       } else {
         setEditing(true);

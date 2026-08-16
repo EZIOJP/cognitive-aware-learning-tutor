@@ -27,3 +27,6 @@ httpx>=0.27.0
 psutil>=5.9.0
 pystray>=0.19.5
 huey>=2.5.0
+# Optional — CALT voice agent Jarvis-like TTS (Microsoft neural voices; falls back to Piper/SAPI):
+#   pip install edge-tts
+# Optional STT / PTT: SpeechRecognition PyAudio pynput

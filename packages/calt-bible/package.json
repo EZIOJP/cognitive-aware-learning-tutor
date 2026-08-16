@@ -1,0 +1,13 @@
+{
+  "name": "calt-bible",
+  "version": "1.0.6",
+  "private": true,
+  "description": "CALT Bible — offline WEB reader for Amazfit T-Rex 3",
+  "scripts": {
+    "pack": "python ../../scripts/pack_watch_bible.py",
+    "preview": "zeus preview",
+    "dev": "zeus dev",
+    "build": "zeus build",
+    "login": "zeus login"
+  }
+}

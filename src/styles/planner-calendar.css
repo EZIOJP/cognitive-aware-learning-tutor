@@ -19,6 +19,239 @@
   border-color: rgba(255, 255, 255, 0.22);
 }
 
+/* One header band: title + KPI + meta toggles | nav cluster */
+.planner-calendar-shell {
+  --planner-cal-control-h: 1.75rem; /* 28px */
+  --planner-cal-header-pad-x: 0.4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+/* Floating create / mark-done panels over the calendar grid */
+.planner-cal-float {
+  position: absolute;
+  z-index: 45;
+  max-width: min(340px, calc(100% - 1.5rem));
+  pointer-events: auto;
+}
+
+.planner-cal-float--center {
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(340px, calc(100% - 1.5rem));
+}
+
+.planner-cal-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.35rem 0.65rem;
+  padding: 0.3rem var(--planner-cal-header-pad-x);
+  border-radius: 0.65rem;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(0, 0, 0, 0.14);
+}
+
+.planner-cal-header__brand {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.45rem;
+  min-width: 0;
+  min-height: var(--planner-cal-control-h);
+  flex: 1 1 12rem;
+}
+
+.planner-cal-header__title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--foreground, #f3f4f6);
+  line-height: 1.15;
+}
+
+.planner-cal-header__title-icon {
+  color: var(--primary, #10b981);
+  flex-shrink: 0;
+  opacity: 0.9;
+}
+
+.planner-cal-header__kpi {
+  display: inline-flex;
+  align-items: center;
+  height: 1.35rem;
+  border-radius: 999px;
+  border: 1px solid rgba(16, 185, 129, 0.18);
+  background: rgba(16, 185, 129, 0.06);
+  padding: 0 0.45rem;
+  font-size: 0.625rem;
+  font-weight: 500;
+  color: rgba(167, 243, 208, 0.82);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.planner-cal-header__nav {
+  min-width: 0;
+  margin-left: auto;
+}
+
+/* Custom PlannerCalendarToolbar — lives inside header band */
+.planner-calendar-shell .planner-cal-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.3rem;
+  margin: 0;
+  padding: 0;
+  min-height: 0;
+}
+
+/* Adjacent controls: ‹ › Today · date chip · D W M — no outer card chrome */
+.planner-calendar-shell .planner-cal-toolbar__cluster {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+.planner-calendar-shell .planner-cal-toolbar__nav-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.1rem;
+  height: var(--planner-cal-control-h);
+}
+
+.planner-calendar-shell .planner-cal-toolbar__cluster .planner-cal-toolbar__chip {
+  max-width: min(100%, 13.5rem);
+}
+
+.planner-calendar-shell .planner-cal-toolbar__icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  border: 1px solid transparent !important;
+  background: transparent !important;
+  color: rgba(156, 163, 175, 0.9);
+  border-radius: 0.35rem;
+  padding: 0 !important;
+  line-height: 1;
+  width: var(--planner-cal-control-h);
+  height: var(--planner-cal-control-h);
+  min-width: var(--planner-cal-control-h);
+  min-height: var(--planner-cal-control-h);
+}
+
+.planner-calendar-shell .planner-cal-toolbar__icon-btn:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: var(--foreground, #e5e7eb);
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.planner-calendar-shell .planner-cal-toolbar__today {
+  box-sizing: border-box;
+  border: 1px solid transparent !important;
+  background: transparent !important;
+  color: rgba(156, 163, 175, 0.9);
+  border-radius: 0.35rem;
+  padding: 0 0.45rem !important;
+  font-size: 0.6875rem !important;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  height: var(--planner-cal-control-h);
+  min-height: var(--planner-cal-control-h);
+  line-height: 1;
+}
+
+.planner-calendar-shell .planner-cal-toolbar__today:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: var(--foreground, #e5e7eb);
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.planner-calendar-shell .planner-cal-toolbar__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  box-sizing: border-box;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  background: rgba(0, 0, 0, 0.22) !important;
+  color: var(--foreground, #e5e7eb) !important;
+  border-radius: 999px !important;
+  padding: 0 0.55rem !important;
+  font-size: 0.6875rem !important;
+  font-weight: 500;
+  letter-spacing: 0.005em;
+  max-width: min(100%, 15rem);
+  height: var(--planner-cal-control-h);
+  min-height: var(--planner-cal-control-h);
+  line-height: 1;
+}
+
+.planner-calendar-shell .planner-cal-toolbar__chip:hover,
+.planner-calendar-shell .planner-cal-toolbar__chip[data-state="open"] {
+  background: rgba(255, 255, 255, 0.07) !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+.planner-calendar-shell .planner-cal-toolbar__chip span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.planner-calendar-shell .planner-cal-toolbar__views {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  height: var(--planner-cal-control-h);
+}
+
+/* Compact letter-only D / W / M — equal min-width, shared control height */
+.planner-calendar-shell .planner-cal-toolbar__view-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-width: 1.75rem;
+  width: 1.75rem;
+  height: var(--planner-cal-control-h);
+  min-height: var(--planner-cal-control-h);
+  padding: 0 !important;
+  border-radius: 999px !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  background: transparent !important;
+  color: rgba(156, 163, 175, 0.88) !important;
+  font-size: 0.6875rem !important;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+}
+
+.planner-calendar-shell .planner-cal-toolbar__view-pill:hover {
+  background: rgba(255, 255, 255, 0.06) !important;
+  color: var(--foreground, #e5e7eb) !important;
+  border-color: rgba(255, 255, 255, 0.16) !important;
+}
+
+.planner-calendar-shell .planner-cal-toolbar__view-pill--active {
+  background: color-mix(in srgb, var(--primary, #10b981) 16%, transparent) !important;
+  color: var(--primary, #34d399) !important;
+  border-color: color-mix(in srgb, var(--primary, #10b981) 32%, transparent) !important;
+}
+
 .planner-calendar-wrap .rbc-header,
 .planner-calendar-wrap .rbc-time-header-content,
 .planner-calendar-wrap .rbc-time-content {
@@ -31,9 +264,95 @@
   font-weight: 600;
 }
 
-.planner-calendar-wrap .rbc-time-slot,
-.planner-calendar-wrap .rbc-day-slot .rbc-time-slot {
-  border-color: rgba(255, 255, 255, 0.04);
+/* ——— Collapse unused all-day header (app has no all-day events) ———
+   RBC hardcodes minRows=2 for the all-day EventRow, so allDayMaxRows={0}
+   alone still leaves empty rows + .rbc-time-header-gutter. */
+.planner-calendar-wrap--no-allday .rbc-allday-cell,
+.planner-calendar-wrap--no-allday .rbc-allday-cell .rbc-row-bg,
+.planner-calendar-wrap--no-allday .rbc-allday-cell .rbc-row-content,
+.planner-calendar-wrap--no-allday .rbc-allday-cell .rbc-addons-dnd-row-body,
+.planner-calendar-wrap--no-allday .rbc-allday-cell .rbc-row {
+  display: none !important;
+  height: 0 !important;
+  min-height: 0 !important;
+  max-height: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+  overflow: hidden !important;
+  visibility: hidden !important;
+}
+
+.planner-calendar-wrap--no-allday .rbc-time-header-gutter {
+  min-height: 0 !important;
+  height: 0 !important;
+  max-height: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+  overflow: hidden !important;
+}
+
+.planner-calendar-wrap--no-allday .rbc-time-header {
+  flex: 0 0 auto;
+  min-height: 0 !important;
+}
+
+/* Day view: reclaim the whole time-header band (date already in toolbar) */
+.planner-calendar-wrap--no-allday[data-calendar-view="day"] .rbc-time-header {
+  display: none !important;
+  height: 0 !important;
+  min-height: 0 !important;
+  border: none !important;
+  overflow: hidden !important;
+}
+
+.planner-calendar-wrap--no-allday[data-calendar-view="week"] .rbc-time-header-gutter {
+  /* Match slim day-name header only */
+  height: auto !important;
+  min-height: 1.5rem !important;
+  max-height: none !important;
+  visibility: visible !important;
+  overflow: visible !important;
+}
+
+.planner-calendar-wrap--no-allday[data-calendar-view="week"] .rbc-header {
+  padding: 0.25rem 0;
+  min-height: 0;
+  line-height: 1.15;
+  font-size: 0.7rem;
+}
+
+/* Full-width day column + taller hour rows (height still driven by calendar style.height) */
+.planner-calendar-wrap .rbc-calendar,
+.planner-calendar-wrap .rbc-time-view,
+.planner-calendar-wrap .rbc-time-content,
+.planner-calendar-wrap .rbc-day-slot {
+  width: 100%;
+}
+
+.planner-calendar-wrap .rbc-addons-dnd.rbc-calendar {
+  width: 100%;
+}
+
+.planner-calendar-wrap .rbc-time-view {
+  min-height: 100%;
+}
+
+.planner-calendar-wrap .rbc-time-content {
+  min-height: 0;
+  flex: 1 1 auto;
+}
+
+/* Hour boundaries only — no horizontal quarter-hour lines inside each hour */
+.planner-calendar-wrap[data-calendar-view="day"] .rbc-day-slot .rbc-timeslot-group,
+.planner-calendar-wrap[data-calendar-view="week"] .rbc-day-slot .rbc-timeslot-group {
+  background-image: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.planner-calendar-wrap[data-calendar-view="day"] .rbc-day-slot .rbc-time-slot,
+.planner-calendar-wrap[data-calendar-view="week"] .rbc-day-slot .rbc-time-slot {
+  border-top-color: transparent;
 }
 
 /* Today column: month + week only (day view is already a single day). */
@@ -57,12 +376,8 @@
   overflow: hidden;
 }
 
-/* Focus popup must escape the grid clip */
-.planner-calendar-wrap.planner-calendar--focus-mode .rbc-time-view,
-.planner-calendar-wrap.planner-calendar--focus-mode .rbc-month-view,
-.planner-calendar-wrap.planner-calendar--focus-mode .rbc-time-content {
-  overflow: visible;
-}
+/* Keep grid clipped so focused events cannot spill out of the card.
+   Focus popup is positioned inside .planner-calendar-wrap (overflow visible only on wrap). */
 
 .planner-calendar-wrap .rbc-event {
   border-radius: 4px;
@@ -92,12 +407,61 @@
   display: none;
 }
 
-.planner-toolbar-row {
-  row-gap: 0.5rem;
+/* Meta toggles live in header brand (title · KPI · controls) — no separate band */
+.planner-cal-header__brand .planner-cal-meta__controls {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.15rem 0.4rem;
+  min-width: 0;
 }
 
-.planner-toolbar-row > .flex-wrap {
-  gap: 0.375rem 0.5rem;
+.planner-cal-header__brand .planner-cal-meta__check {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.22rem;
+  height: var(--planner-cal-control-h);
+  font-size: 0.625rem;
+  color: rgba(156, 163, 175, 0.72);
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.planner-cal-header__brand .planner-cal-meta__check:hover {
+  color: rgba(209, 213, 219, 0.9);
+}
+
+.planner-cal-header__brand .planner-cal-meta__check input {
+  width: 0.7rem;
+  height: 0.7rem;
+  accent-color: var(--primary, #60a5fa);
+}
+
+.planner-cal-header__brand .planner-cal-meta__display {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  height: var(--planner-cal-control-h);
+  padding: 0 0.25rem;
+  border: none;
+  border-radius: 0.3rem;
+  background: transparent;
+  font-size: 0.625rem;
+  color: rgba(156, 163, 175, 0.7);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.planner-cal-header__brand .planner-cal-meta__display:hover {
+  color: rgba(229, 231, 235, 0.92);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.planner-cal-header__brand .planner-cal-meta__loading {
+  font-size: 0.625rem;
+  color: rgba(156, 163, 175, 0.65);
+  white-space: nowrap;
 }
 
 .planner-calendar-wrap .rbc-event-label {
@@ -107,6 +471,16 @@
 .planner-calendar-wrap .rbc-time-gutter .rbc-timeslot-group {
   font-size: 11px;
   color: rgba(156, 163, 175, 0.9);
+}
+
+.planner-calendar-wrap .rbc-time-gutter .rbc-timeslot-group,
+.planner-calendar-wrap .rbc-time-gutter .rbc-label {
+  cursor: pointer;
+}
+
+.planner-calendar-wrap .rbc-time-gutter .rbc-timeslot-group:hover .rbc-label,
+.planner-calendar-wrap .rbc-time-gutter .rbc-label:hover {
+  color: rgb(165, 180, 252);
 }
 
 .planner-calendar-wrap .rbc-current-time-indicator {
@@ -190,3 +564,373 @@
 .planner-calendar-wrap .rbc-event.actual-single-event {
   pointer-events: auto;
 }
+
+/*
+ * Overlaps: RBC packs events into side-by-side lanes (weird uneven widths).
+ * Tracker/sleep actuals use full column width so a 6–7 block stays a clean
+ * rectangle; time is vertical, overlaps stack (click to inspect).
+ */
+.planner-calendar-wrap .rbc-day-slot .rbc-event.actual-single-event,
+.planner-calendar-wrap .rbc-day-slot .rbc-event.actual-stack-event,
+.planner-calendar-wrap .rbc-day-slot .rbc-event.actual-sleep-event {
+  left: 0 !important;
+  width: 100% !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+/* ——— 2D hour track layer ——— */
+.planner-calendar-wrap .day-grid-actual-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.planner-calendar-wrap .hour-cell {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  box-sizing: border-box;
+}
+
+/* Full row height — horizontal % matches sticky top 0–60 ruler */
+.planner-calendar-wrap .hour-cell__body {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* Sticky top minute axis (one for the day column) */
+.planner-calendar-wrap .day-grid-minute-ruler {
+  height: 18px;
+  box-sizing: border-box;
+  border-radius: 0 0 4px 4px;
+  background: rgba(8, 12, 24, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-top: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(6px);
+}
+
+.planner-calendar-wrap .day-grid-minute-ruler .hour-minute-scale {
+  position: relative;
+  top: auto;
+  left: auto;
+  right: auto;
+  height: 100%;
+  border-bottom: none;
+  background:
+    linear-gradient(
+      to right,
+      transparent 0,
+      transparent calc(25% - 0.5px),
+      rgba(255, 255, 255, 0.14) calc(25% - 0.5px),
+      rgba(255, 255, 255, 0.14) calc(25% + 0.5px),
+      transparent calc(25% + 0.5px),
+      transparent calc(50% - 0.5px),
+      rgba(255, 255, 255, 0.2) calc(50% - 0.5px),
+      rgba(255, 255, 255, 0.2) calc(50% + 0.5px),
+      transparent calc(50% + 0.5px),
+      transparent calc(75% - 0.5px),
+      rgba(255, 255, 255, 0.14) calc(75% - 0.5px),
+      rgba(255, 255, 255, 0.14) calc(75% + 0.5px),
+      transparent calc(75% + 0.5px),
+      transparent 100%
+    );
+}
+
+.planner-calendar-wrap .day-grid-minute-ruler .hour-minute-scale__label {
+  font-size: 9px;
+  color: rgba(226, 232, 240, 0.92);
+}
+
+.planner-calendar-wrap .day-grid-minute-ruler .hour-minute-scale__tick {
+  height: 5px;
+  background: rgba(226, 232, 240, 0.7);
+}
+
+.planner-calendar-wrap .hour-cell--empty .hour-minute-scale {
+  opacity: 0.7;
+}
+
+/* Horizontal 60-minute scale (left → right = 0 → 60) */
+.planner-calendar-wrap .hour-minute-scale {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 15px;
+  pointer-events: none;
+  z-index: 1;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  background:
+    linear-gradient(
+      to right,
+      rgba(255, 255, 255, 0.03) 0%,
+      transparent 8%,
+      transparent 92%,
+      rgba(255, 255, 255, 0.03) 100%
+    ),
+    linear-gradient(
+      to right,
+      transparent 0,
+      transparent calc(25% - 0.5px),
+      rgba(255, 255, 255, 0.1) calc(25% - 0.5px),
+      rgba(255, 255, 255, 0.1) calc(25% + 0.5px),
+      transparent calc(25% + 0.5px),
+      transparent calc(50% - 0.5px),
+      rgba(255, 255, 255, 0.14) calc(50% - 0.5px),
+      rgba(255, 255, 255, 0.14) calc(50% + 0.5px),
+      transparent calc(50% + 0.5px),
+      transparent calc(75% - 0.5px),
+      rgba(255, 255, 255, 0.1) calc(75% - 0.5px),
+      rgba(255, 255, 255, 0.1) calc(75% + 0.5px),
+      transparent calc(75% + 0.5px),
+      transparent 100%
+    );
+}
+
+/* Continuous vertical minute guides (15 / 30 / 45) under the sticky x-axis */
+.planner-calendar-wrap .day-grid-minute-rails {
+  background-image: linear-gradient(
+    to right,
+    transparent 0,
+    transparent calc(25% - 0.5px),
+    rgba(255, 255, 255, 0.11) calc(25% - 0.5px),
+    rgba(255, 255, 255, 0.11) calc(25% + 0.5px),
+    transparent calc(25% + 0.5px),
+    transparent calc(50% - 0.5px),
+    rgba(255, 255, 255, 0.16) calc(50% - 0.5px),
+    rgba(255, 255, 255, 0.16) calc(50% + 0.5px),
+    transparent calc(50% + 0.5px),
+    transparent calc(75% - 0.5px),
+    rgba(255, 255, 255, 0.11) calc(75% - 0.5px),
+    rgba(255, 255, 255, 0.11) calc(75% + 0.5px),
+    transparent calc(75% + 0.5px),
+    transparent 100%
+  );
+}
+
+/* Faint full-height minute rails inside the hour body (2D track) — kept soft; main rails above */
+.planner-calendar-wrap[data-2d-track="1"] .hour-cell__body {
+  background-image: none;
+}
+
+.planner-calendar-wrap .hour-minute-scale__mark {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+}
+
+.planner-calendar-wrap .hour-minute-scale__mark--edge {
+  transform: translateX(0);
+}
+
+.planner-calendar-wrap .hour-minute-scale__mark--edge:last-child {
+  transform: translateX(-100%);
+}
+
+.planner-calendar-wrap .hour-minute-scale__tick {
+  width: 1px;
+  height: 4px;
+  background: rgba(148, 163, 184, 0.55);
+}
+
+.planner-calendar-wrap .hour-minute-scale__label {
+  font-size: 8px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  color: rgba(148, 163, 184, 0.85);
+  letter-spacing: 0.01em;
+}
+
+.planner-calendar-wrap .hour-minute-scale--compact .hour-minute-scale__label {
+  font-size: 7px;
+  color: rgba(148, 163, 184, 0.65);
+}
+
+.planner-calendar-wrap .hour-minute-scale--compact .hour-minute-scale__mark:not(.hour-minute-scale__mark--edge) .hour-minute-scale__label {
+  opacity: 0.85;
+}
+
+/* 2D track: plan blocks use the minute X-axis overlay — hide full-width RBC pills */
+.planner-calendar-wrap[data-2d-track="1"] .rbc-event.planner-plan-event,
+.planner-calendar-wrap[data-2d-track="1"] .rbc-event.planner-draft-event {
+  opacity: 0 !important;
+  pointer-events: none !important;
+  box-shadow: none !important;
+}
+
+.planner-calendar-wrap .hour-seg-plan {
+  opacity: 1;
+  border-width: 0;
+  border-left-style: solid;
+  /* Quiet UI font — avoid theme display faces that look “generated” on block titles */
+  font-family: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+  font-weight: 500;
+  color: #fff;
+  /* Solid fill set inline — no translucent gradient (unlike tracked-app chips) */
+  background-image: none !important;
+  box-shadow:
+    0 2px 0 rgba(0, 0, 0, 0.35),
+    0 4px 10px rgba(0, 0, 0, 0.22);
+}
+
+.planner-calendar-wrap .hour-seg-plan:hover {
+  opacity: 1;
+  filter: brightness(1.06);
+}
+
+.planner-calendar-wrap .hour-seg-plan--focused {
+  outline: 2px solid rgba(255, 255, 255, 0.95);
+  outline-offset: 1px;
+  z-index: 40 !important;
+  box-shadow:
+    0 0 0 1px rgba(59, 130, 246, 0.8),
+    0 3px 0 rgba(0, 0, 0, 0.4),
+    0 8px 18px rgba(0, 0, 0, 0.35);
+}
+
+.planner-calendar-wrap .hour-seg-plan--draft {
+  border: 2px dashed rgba(255, 255, 255, 0.85) !important;
+  box-shadow: none;
+}
+
+.planner-calendar-wrap .hour-seg-plan--faded {
+  opacity: 0.55;
+  filter: saturate(0.7);
+}
+
+.planner-calendar-wrap .hour-seg-plan__inner {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1px;
+  min-width: 0;
+  height: 100%;
+  padding: 2px 6px;
+  text-align: left;
+  overflow: hidden;
+}
+
+.planner-calendar-wrap .hour-seg-plan__time {
+  display: block;
+  font-size: 9px;
+  font-weight: 500;
+  line-height: 1.15;
+  letter-spacing: 0;
+  opacity: 0.88;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.planner-calendar-wrap .hour-seg-plan__title {
+  display: block;
+  font-family: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Non-2D RBC plan pills — same quiet title face */
+.planner-calendar-wrap .rbc-event.planner-plan-event,
+.planner-calendar-wrap .rbc-event.planner-draft-event {
+  font-family: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+/* Tracked apps stay softer / translucent so plans read as solid schedule */
+.planner-calendar-wrap .hour-seg-overlap:not(.hour-seg-plan) {
+  opacity: 0.72;
+}
+
+.planner-calendar-wrap .hour-seg-block {
+  position: absolute;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 1px 3px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #e5e7eb;
+  font-size: 10px;
+  line-height: 1.15;
+  text-align: left;
+  overflow: hidden;
+  cursor: pointer;
+  pointer-events: auto;
+  box-shadow:
+    0 2px 0 rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+/* Concurrent apps share the full hour height (no vertical lane split). */
+.planner-calendar-wrap .hour-seg-overlap {
+  opacity: 0.88;
+}
+
+.planner-calendar-wrap .hour-seg-overlap.hour-seg-sleep {
+  opacity: 0.72;
+}
+
+.planner-calendar-wrap .hour-seg-overlap:hover {
+  opacity: 1;
+  filter: brightness(1.12);
+}
+
+.planner-calendar-wrap .hour-seg-block:hover {
+  filter: brightness(1.12);
+  z-index: 2;
+}
+
+.planner-calendar-wrap .hour-seg-sleep {
+  opacity: 0.88;
+  border-color: rgba(165, 180, 252, 0.35);
+}
+
+.planner-calendar-wrap .hour-seg-label {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 500;
+}
+
+.planner-calendar-wrap .hour-cell--compressed .hour-seg-label,
+.planner-calendar-wrap .hour-cell--overflow .hour-seg-label {
+  font-size: 9px;
+  font-weight: 400;
+}
+
+.planner-calendar-wrap .hour-seg-overflow {
+  position: absolute;
+  right: 2px;
+  bottom: 2px;
+  z-index: 3;
+  pointer-events: auto;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(15, 23, 42, 0.85);
+  color: #cbd5e1;
+  font-size: 9px;
+  font-weight: 600;
+  padding: 1px 5px;
+  cursor: pointer;
+}
+
+.planner-calendar-wrap .hour-seg-overflow:hover {
+  background: rgba(30, 41, 59, 0.95);
+  color: #fff;
+}
+

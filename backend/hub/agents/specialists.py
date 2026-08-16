@@ -65,7 +65,10 @@ def run_corpus_specialist(
     if not query.strip():
         return "Ask a question about your lecture corpus.", []
     if not corpus_available():
-        return "Corpus is not built yet. Ingest lectures first.", []
+        return (
+            "Textbook/corpus RAG was removed. Use **/lecture-notes** for transcript notes, "
+            "or **Review Hub** for quizzes."
+        ), []
     hits = hybrid_retrieve(query, top_k=6)
     context = format_hits_for_prompt(hits, max_chars=6000)
     prompt = f"""Student question: {query}
@@ -145,11 +148,11 @@ def run_study_specialist(
         preview = ""
     count = notes.get("count") if isinstance(notes, dict) else len(recent) if isinstance(recent, list) else 0
     reply = (
-        f"For **{topic}**, use Study Flow: grounded notes → quiz → SRS.\n\n"
-        f"Open **/study-flow** and enter that topic. "
+        f"For **{topic}**, open **/lecture-notes** to generate notes from a transcript, "
+        f"then quiz and review due cards in **Review Hub**.\n\n"
         f"Your library has {count or 0} indexed lecture note(s)"
         + (f" (recent: {preview})" if preview else "")
         + ".\n\n"
-        "Use **Corpus** mode here for direct RAG Q&A, or **Chat** for coaching."
+        "Use **Chat** for coaching, or pick a lecture and generate notes there."
     )
     return reply, []

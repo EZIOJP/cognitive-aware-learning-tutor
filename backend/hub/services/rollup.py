@@ -11,7 +11,7 @@ from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from backend.models import DailyRollup, LifeDailyLog, MathAttempt, WordProgress
+from backend.models import DailyRollup, LifeDailyLog, MathAttempt, WearableDaily, WordProgress
 from backend.models.timetable import TrackedSession
 
 # Litmus palette — readable at a glance on the 24h ring
@@ -207,51 +207,89 @@ def _coalesce_micro_segments(
 
 
 def _fill_idle_gaps(segments: list[dict[str, Any]], *, until_hour: float) -> list[dict[str, Any]]:
-    """Fill uncovered [0, until_hour) with idle so the ring reads as a full day so far."""
+    """Fill uncovered [0, until_hour) with idle so the ring reads as a full day so far.
+
+    Sleep keeps its full timed window even when it extends past \"now\". Idle is
+    never painted on top of sleep (that hid morning sleep under a grey wedge).
+    """
     until = max(0.0, min(24.0, until_hour))
+    sleep_segs = [s for s in segments if (s.get("type") or "") == "sleep"]
+    awake = [s for s in segments if (s.get("type") or "") != "sleep"]
+    sleep_clips = [
+        (float(s["startHour"]), float(s["endHour"]))
+        for s in sleep_segs
+        if float(s["endHour"]) > float(s["startHour"])
+    ]
     if until <= 0.05:
-        return segments
-    covered = _merge_segments(segments)
+        return [*sleep_segs, *awake]
+
+    def _idle_minus_sleep(a: float, b: float) -> list[tuple[float, float]]:
+        pieces = [(a, b)]
+        for ss, se in sleep_clips:
+            nxt: list[tuple[float, float]] = []
+            for x, y in pieces:
+                if y <= ss or x >= se:
+                    nxt.append((x, y))
+                    continue
+                if x < ss:
+                    nxt.append((x, ss))
+                if y > se:
+                    nxt.append((se, y))
+            pieces = [(x, y) for x, y in nxt if y - x >= 1 / 60]
+        return pieces
+
+    covered = _merge_segments(awake)
     filled: list[dict[str, Any]] = []
     cursor = 0.0
     for seg in covered:
-        start = max(0.0, min(until, seg["startHour"]))
-        end = max(0.0, min(until, seg["endHour"]))
+        start = max(0.0, min(until, float(seg["startHour"])))
+        end = max(0.0, min(until, float(seg["endHour"])))
         if start > cursor + 0.02:
+            for a, b in _idle_minus_sleep(cursor, start):
+                filled.append(
+                    {
+                        "label": "Idle / off",
+                        "startHour": a,
+                        "endHour": b,
+                        "color": SEGMENT_COLORS["idle"],
+                        "type": "idle",
+                    }
+                )
+        if end > start:
+            filled.append({**seg, "startHour": start, "endHour": end})
+            cursor = max(cursor, end)
+        elif float(seg["startHour"]) >= until:
+            break
+    if cursor < until - 0.02:
+        for a, b in _idle_minus_sleep(cursor, until):
             filled.append(
                 {
                     "label": "Idle / off",
-                    "startHour": cursor,
-                    "endHour": start,
+                    "startHour": a,
+                    "endHour": b,
                     "color": SEGMENT_COLORS["idle"],
                     "type": "idle",
                 }
             )
-        if end > start:
-            filled.append({**seg, "startHour": start, "endHour": end})
-            cursor = max(cursor, end)
-        elif seg["startHour"] >= until:
-            break
-    if cursor < until - 0.02:
-        filled.append(
-            {
-                "label": "Idle / off",
-                "startHour": cursor,
-                "endHour": until,
-                "color": SEGMENT_COLORS["idle"],
-                "type": "idle",
-            }
-        )
-    return filled
+    out = [*sleep_segs, *filled]
+    out.sort(key=lambda s: (float(s["startHour"]), float(s["endHour"])))
+    return out
 
 
 def _segments_from_tracker(db: Session, user_id: int, day: date) -> tuple[list[dict[str, Any]], int]:
-    """Real wall-clock segments from desktop tracker + productive minutes."""
+    """Real wall-clock segments from desktop tracker + productive minutes.
+
+    Productive seconds exclude overlap with wearable sleep (PC left on overnight).
+    """
     from backend.behavior.category_scores import load_score_map
     from backend.behavior.productivity_policy import load_policy_dict, resolve_session_score
     from backend.models import User
     from backend.planner.service import local_day_bounds_utc
     from backend.timetable.tracker_query import tracker_user_ids
+    from backend.wearables.sleep_window import (
+        partition_around_sleep,
+        sleep_bouts_for_user_day,
+    )
 
     user = db.query(User).filter(User.id == user_id).first()
     if user is None:
@@ -273,6 +311,7 @@ def _segments_from_tracker(db: Session, user_id: int, day: date) -> tuple[list[d
     scores = load_score_map(db)
     policy = load_policy_dict(db, user_id)
     threshold = int(policy.get("threshold") or 60)
+    sleeps = sleep_bouts_for_user_day(db, user_id, day, pad_days=1)
 
     raw: list[dict[str, Any]] = []
     productive_seconds = 0.0
@@ -281,28 +320,34 @@ def _segments_from_tracker(db: Session, user_id: int, day: date) -> tuple[list[d
             continue
         score = resolve_session_score(sess, scores, policy)
         bucket, label = _session_bucket(sess.category, score, threshold)
-        h0 = _hour_fraction(sess.start_time, day)
-        h1 = _hour_fraction(sess.end_time, day)
-        if h1 <= h0:
-            continue
-        # Clip to day
-        h0 = max(0.0, min(24.0, h0))
-        h1 = max(0.0, min(24.0, h1))
-        if h1 - h0 < 0.5 / 60:
-            continue
-        raw.append(
-            {
-                "label": label,
-                "startHour": h0,
-                "endHour": h1,
-                "color": SEGMENT_COLORS[bucket],
-                "type": bucket,
-            }
+        # Clip tracker span against sleep before painting / scoring
+        a = sess.start_time if sess.start_time.tzinfo else sess.start_time.replace(tzinfo=UTC)
+        b = sess.end_time if sess.end_time.tzinfo else sess.end_time.replace(tzinfo=UTC)
+        awake_spans = (
+            [(x, y) for x, y, idle in partition_around_sleep(a, b, sleeps) if not idle]
+            if sleeps
+            else [(a, b)]
         )
-        if score >= threshold:
-            # Overlap with local day only
-            overlap = (h1 - h0) * 3600.0
-            productive_seconds += overlap
+        for x, y in awake_spans:
+            h0 = _hour_fraction(x, day)
+            h1 = _hour_fraction(y, day)
+            if h1 <= h0:
+                continue
+            h0 = max(0.0, min(24.0, h0))
+            h1 = max(0.0, min(24.0, h1))
+            if h1 - h0 < 0.5 / 60:
+                continue
+            raw.append(
+                {
+                    "label": label,
+                    "startHour": h0,
+                    "endHour": h1,
+                    "color": SEGMENT_COLORS[bucket],
+                    "type": bucket,
+                }
+            )
+            if score >= threshold:
+                productive_seconds += (h1 - h0) * 3600.0
 
     merged = _coalesce_micro_segments(_paint_timeline(raw, bin_minutes=5.0), min_minutes=4.0)
     return merged, int(productive_seconds // 60)
@@ -344,35 +389,143 @@ def rebuild_daily_rollup(db: Session, user_id: int, day: date) -> DailyRollup:
         or 0
     )
 
-    sleep_minutes = int((life.sleep_hours * 60) if life else 0)
+    sleep_hours = 0.0
+    sleep_payload: dict | str | None = None
+    wearable_anchor: date | None = None
+
+    wd_today = (
+        db.query(WearableDaily)
+        .filter(WearableDaily.user_id == user_id, WearableDaily.local_date == day)
+        .first()
+    )
+    wd_yest = (
+        db.query(WearableDaily)
+        .filter(WearableDaily.user_id == user_id, WearableDaily.local_date == day - timedelta(days=1))
+        .first()
+    )
+    wd_tomorrow = (
+        db.query(WearableDaily)
+        .filter(WearableDaily.user_id == user_id, WearableDaily.local_date == day + timedelta(days=1))
+        .first()
+    )
+
+    def _wd_ok(wd: WearableDaily | None) -> bool:
+        return bool(wd and wd.sleep_hours is not None and float(wd.sleep_hours) > 0)
+
+    # Wearable timed sleep only — never invent from life-log hours alone
+    if _wd_ok(wd_today):
+        sleep_hours = float(wd_today.sleep_hours)
+        sleep_payload = wd_today.payload_json
+        wearable_anchor = wd_today.local_date
+
+    # Soft-fill life ONLY on the wearable's own local_date — never copy last night onto "today"
+    if sleep_hours > 0 and wearable_anchor is not None and wearable_anchor == day:
+        if not life:
+            life = LifeDailyLog(user_id=user_id, date=day)
+            db.add(life)
+        if not life.sleep_hours or float(life.sleep_hours) <= 0:
+            life.sleep_hours = sleep_hours
+            if wd_today and wd_today.sleep_score is not None:
+                from backend.wearables.ingest_service import score_to_quality
+
+                life.sleep_quality = score_to_quality(wd_today.sleep_score)
+
+    from backend.wearables.sleep_window import resolve_sleep_for_day
+
+    # Timed wedges from today / yesterday / tomorrow wearable rows (overnight + naps).
+    sleep_clips: list[tuple[float, float, bool]] = []
+    sleep_minutes = 0
+    for wd in (wd_today, wd_yest, wd_tomorrow):
+        if not _wd_ok(wd):
+            continue
+        view = resolve_sleep_for_day(
+            day=day,
+            sleep_hours=float(wd.sleep_hours),
+            sleep_payload=wd.payload_json,
+            wearable_local_date=wd.local_date,
+        )
+        if not view.get("has_timed_window"):
+            continue
+        # Stats: calendar intersection only (no double-count of bedtime visual)
+        sleep_minutes += int(view.get("sleep_minutes") or 0)
+        # Paint: ring_clips (may wrap overnight bedtime→wake)
+        raw_clips = view.get("ring_clips") or view.get("clips") or []
+        if raw_clips:
+            for c in raw_clips:
+                start_h = float(c.get("startHour") or 0.0)
+                end_h = float(c.get("endHour") or 0.0)
+                crosses = bool(c.get("crossesMidnight"))
+                if crosses or end_h > start_h:
+                    sleep_clips.append((start_h, end_h, crosses))
+        else:
+            start_h = float(view.get("startHour") or 0.0)
+            end_h = float(view.get("endHour") or 0.0)
+            if end_h > start_h:
+                sleep_clips.append((start_h, end_h, False))
+
+    # sleep_clips entries are (start, end, crossesMidnight)
+    paint_segs: list[dict[str, Any]] = []
+    if sleep_clips:
+        for s, e, crosses in sleep_clips:
+            paint_segs.append(
+                {
+                    "label": "Sleep",
+                    "startHour": s,
+                    "endHour": e,
+                    "color": SEGMENT_COLORS["sleep"],
+                    "type": "sleep",
+                    "crossesMidnight": crosses,
+                }
+            )
+    elif sleep_hours > 0 and wearable_anchor == day:
+        sleep_minutes = int(round(sleep_hours * 60))
+    else:
+        if not sleep_minutes:
+            sleep_minutes = 0
+
     study_minutes = life.study_minutes if life else 0
 
     tracker_segs, tracker_productive = _segments_from_tracker(db, user_id, day)
 
-    segments: list[dict[str, Any]] = []
-    if sleep_minutes > 0:
-        # Approximate last night's sleep as early morning block (classic life-clock)
-        end = min(24.0, sleep_minutes / 60.0)
-        segments.append(
-            {
-                "label": "Sleep",
-                "startHour": 0.0,
-                "endHour": end,
-                "color": SEGMENT_COLORS["sleep"],
-                "type": "sleep",
-            }
-        )
+    segments: list[dict[str, Any]] = list(paint_segs)
+
+    # Flat hour ranges for clipping awake activity (expand wrap into two ranges)
+    sleep_ranges: list[tuple[float, float]] = []
+    for seg in paint_segs:
+        s0 = float(seg["startHour"])
+        e0 = float(seg["endHour"])
+        if seg.get("crossesMidnight"):
+            sleep_ranges.append((s0, 24.0))
+            sleep_ranges.append((0.0, e0))
+        elif e0 > s0:
+            sleep_ranges.append((s0, e0))
+
+    def _clip_awake_against_sleep(s0: float, e0: float) -> list[tuple[float, float]]:
+        """Return awake intervals after cutting out all sleep ranges."""
+        pieces = [(s0, e0)]
+        for sleep_start, sleep_end in sleep_ranges:
+            nxt: list[tuple[float, float]] = []
+            for a, b in pieces:
+                if b <= sleep_start or a >= sleep_end:
+                    nxt.append((a, b))
+                    continue
+                if a < sleep_start:
+                    nxt.append((a, sleep_start))
+                if b > sleep_end:
+                    nxt.append((sleep_end, b))
+            pieces = [(a, b) for a, b in nxt if b - a >= 1 / 60]
+        return pieces
 
     if tracker_segs:
-        # Prefer real tracker timeline (litmus); sleep may overlap early morning — tracker wins after sleep
-        sleep_end = segments[0]["endHour"] if segments else 0.0
+        # Prefer real tracker timeline; clip awake segments that overlap sleep
         for seg in tracker_segs:
-            if seg["endHour"] <= sleep_end:
+            s0 = float(seg["startHour"])
+            e0 = float(seg["endHour"])
+            if e0 <= s0:
                 continue
-            start = max(seg["startHour"], sleep_end)
-            if seg["endHour"] <= start:
-                continue
-            segments.append({**seg, "startHour": start})
+            for a, b in _clip_awake_against_sleep(s0, e0):
+                segments.append({**seg, "startHour": a, "endHour": b})
+        segments.sort(key=lambda s: (float(s["startHour"]), float(s["endHour"])))
         now_local = datetime.now(local_tz())
         until = 24.0
         if now_local.date() == day:

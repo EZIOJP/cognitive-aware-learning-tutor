@@ -8,11 +8,11 @@
 
 var TELEMETRY_URL = "http://127.0.0.1:8000/api/behavior/browser-telemetry";
 /** Active / focus cadence (ms). */
-var TELEMETRY_CADENCE_MS = 45000;
+var TELEMETRY_CADENCE_MS = 90000;
 /** When browser idle or locked. */
-var TELEMETRY_IDLE_BACKOFF_MS = 120000;
+var TELEMETRY_IDLE_BACKOFF_MS = 180000;
 /** Max open-tab URLs/domains sampled. */
-var TELEMETRY_TOP_TABS = 8;
+var TELEMETRY_TOP_TABS = 5;
 /** Recent history visit sample size (requires history permission). */
 var TELEMETRY_HISTORY_N = 6;
 /** If true, never send full paths — hostname only. */

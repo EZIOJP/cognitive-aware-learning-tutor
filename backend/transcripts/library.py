@@ -76,6 +76,18 @@ def merge_disk_files_into_tree(files_by_folder: dict[str, list[dict[str, Any]]],
 
 def sync_disk_notes_for_user(db: Session, user_id: int) -> int:
     """Index unowned on-disk markdown into the current user's library."""
+    from backend.transcripts.note_topics import remap_legacy_note_path
+
+    # Remap old lecture_N / lecture5 paths after the data_foundations move
+    for row in db.query(LectureNote).filter(LectureNote.user_id == user_id).all():
+        old = (row.relative_path or row.filename or "").replace("\\", "/")
+        new = remap_legacy_note_path(old)
+        if new != old and (NOTES_DIR / new).is_file():
+            row.relative_path = new
+            row.filename = new
+            row.folder_path = _folder_from_relative(new)
+    db.commit()
+
     indexed_global = {
         (r.relative_path or r.filename or "").replace("\\", "/")
         for r in db.query(LectureNote).all()

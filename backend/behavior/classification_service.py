@@ -60,6 +60,7 @@ ALLOWED_CATEGORIES = {
     "Gaming",
     "System Tools",
     "Other",
+    "Spiritual",
 }
 
 _SYSTEM_PROMPT = (

@@ -22,6 +22,10 @@ _PRIORITY_ALLOW_HOSTS: tuple[tuple[str, str], ...] = (
     ("arxiv.org", "arXiv"),
     ("wikipedia.org", "Wikipedia"),
     ("chatgpt.com", "ChatGPT"),
+    ("numpy.org", "NumPy"),
+    ("pandas.pydata.org", "Pandas"),
+    ("kaggle.com", "Kaggle"),
+    ("huggingface.co", "Hugging Face"),
 )
 
 # Map planner title / category tokens → allowlisted host shortcuts.
@@ -39,6 +43,13 @@ _GOAL_HOST_HINTS: tuple[tuple[str, str, str], ...] = (
     ("coursera", "coursera.org", "Coursera (plan)"),
     ("udemy", "udemy.com", "Udemy (plan)"),
     ("khan", "khanacademy.org", "Khan Academy (plan)"),
+    ("numpy", "numpy.org", "NumPy (plan)"),
+    ("pandas", "pandas.pydata.org", "Pandas (plan)"),
+    ("kaggle", "kaggle.com", "Kaggle (plan)"),
+    ("huggingface", "huggingface.co", "Hugging Face (plan)"),
+    ("pytorch", "pytorch.org", "PyTorch (plan)"),
+    ("sklearn", "scikit-learn.org", "scikit-learn (plan)"),
+    ("datacamp", "datacamp.com", "DataCamp (plan)"),
 )
 
 _URL_RE = re.compile(r"https?://[^\s\)\]\>\"\'\<]+", re.IGNORECASE)

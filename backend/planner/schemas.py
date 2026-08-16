@@ -93,6 +93,7 @@ class RoutineUpdate(BaseModel):
 
 class ApplyRoutinesBody(BaseModel):
     date: Optional[str] = None
+    skip_overlaps: bool = True
 
 
 class GoogleOAuthCredentialsBody(BaseModel):

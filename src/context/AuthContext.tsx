@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { autoApplyRoutinesToday } from "../api/plannerClient";
+import { loadPlanningPrefs } from "../components/productivity/planningPrefs";
 import { resolveApiUrl, resolveVocabApiUrl } from "../utils/resolveBackendUrl";
 
 interface AuthUser {
@@ -20,7 +21,15 @@ interface AuthContextValue {
 
 const TOKEN_KEY = "vocab:auth-token";
 
-const AuthContext = createContext<AuthContextValue | null>(null);
+/** Survive Vite HMR: a new createContext() would orphan AuthProvider and crash useAuth. */
+const AUTH_CTX_KEY = "__calt_auth_context__";
+type AuthCtx = ReturnType<typeof createContext<AuthContextValue | null>>;
+const AuthContext: AuthCtx =
+  (typeof globalThis !== "undefined" && (globalThis as Record<string, AuthCtx | undefined>)[AUTH_CTX_KEY]) ||
+  createContext<AuthContextValue | null>(null);
+if (typeof globalThis !== "undefined") {
+  (globalThis as Record<string, AuthCtx>)[AUTH_CTX_KEY] = AuthContext;
+}
 
 async function apiFetch(path: string, init?: RequestInit, token?: string) {
   const headers = new Headers(init?.headers || {});
@@ -61,6 +70,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!token || !user) return;
+    if (!loadPlanningPrefs().autoApplyRoutinesOnLogin) return;
     autoApplyRoutinesToday().catch(() => {
       /* API may be offline at login — routines apply is best-effort */
     });
@@ -113,6 +123,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+export function useAuthOptional(): AuthContextValue | null {
+  return useContext(AuthContext);
 }
 
 export function useAuth() {

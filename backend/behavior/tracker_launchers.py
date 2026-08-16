@@ -34,11 +34,19 @@ def _start_console(title: str, work_dir: Path, inner: str) -> None:
 
 
 def launch_app_fe_be() -> None:
-    """Start FastAPI + Vite via run.bat (same as project root run.bat)."""
+    """Start FastAPI + Vite via run.bat (same as project root run.bat).
+
+    Does **not** start the desktop tracker — tracker is already running and
+    protected by single-instance mutex.
+    """
     if not RUN_APP_BAT.is_file():
-        log.warning("Missing %s", RUN_APP_BAT)
-        return
+        raise FileNotFoundError(f"Missing {RUN_APP_BAT}")
     _start_console("CALT API+Frontend", ROOT, "call run.bat")
+
+
+def launch_calt_stack() -> None:
+    """Alias — tray / rules “Start CALT stack” (API + Vite only)."""
+    launch_app_fe_be()
 
 
 def launch_transcript_studio() -> None:
@@ -50,10 +58,10 @@ def launch_transcript_studio() -> None:
 
 
 def open_login_page() -> None:
-    import webbrowser
+    from backend.behavior.stack_health import open_calt_page
 
-    webbrowser.open(LOGIN_URL)
-    log.info("Opened login page %s", LOGIN_URL)
+    open_calt_page("/login", speak=True, auto_start=True)
+    log.info("Open login (auto-start if stack down)")
 
 
 def open_tracker_log() -> None:

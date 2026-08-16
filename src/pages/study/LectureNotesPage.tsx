@@ -3,11 +3,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { buildStudyQuizConfig } from "../../api/globalQuizClient";
 import { GlobalQuizRunner } from "../../features/quiz/GlobalQuizRunner";
 import {
-  Database,
   BookOpen,
   ClipboardList,
-  FolderOpen,
   Loader2,
+  MoreHorizontal,
   PanelLeftClose,
   PanelLeftOpen,
   PanelRight,
@@ -16,7 +15,6 @@ import {
   Search,
   X,
 } from "lucide-react";
-import { generateGroundedNotes } from "../../api/corpusClient";
 import {
   createLibraryFile,
   createLibraryFolder,
@@ -28,9 +26,9 @@ import {
   generateLibraryDrills,
   generateLibraryQuiz,
   pasteLibraryQuiz,
+  fetchNoteTopics,
   generateNotes,
   generateNotesFromToday,
-  generatePrimer,
   indexNote,
   getLlmConfig,
   getNoteContent,
@@ -58,14 +56,14 @@ import {
   type TranscriptFile,
 } from "../../api/transcriptsClient";
 import { setActiveTranscript } from "../../face-tracker/activeTranscript";
-import { StudyLibraryBackground } from "../../components/study/StudyLibraryBackground";
 import { StudyLibraryGapPanel } from "../../components/study/StudyLibraryGapPanel";
 import { StudyLibraryIntelligenceHub } from "../../components/study/StudyLibraryIntelligenceHub";
 import { StudyLibraryReviewPanel } from "../../components/study/StudyLibraryReviewPanel";
 import { StudyLibraryStepper, type StudyWorkflowStep } from "../../components/study/StudyLibraryStepper";
 import { StudyLibraryExplorer } from "../../components/study/StudyLibraryExplorer";
 import { StudyLibraryLogPanel } from "../../components/study/StudyLibraryLogPanel";
-import { findLibraryFile, withPreservedScroll } from "../../components/study/studyLibraryUtils";
+import { findLibraryFile, isImportableNoteFile, titleFromImportFileName, withPreservedScroll } from "../../components/study/studyLibraryUtils";
+import { setLectureNotesPresence } from "../../utils/lectureNotesPresence";
 import {
   applyBlockUpdate,
   finalizeNoteMarkdown,
@@ -73,10 +71,15 @@ import {
   sanitizeMermaidSource,
 } from "../../features/study-notes";
 import { extractBlockSurroundingContext, extractSelectionSurroundingContext } from "../../components/study/noteBlockUtils";
-import { cn } from "../../app/components/ui/utils";
 import { StudyLibraryViewer } from "../../components/study/StudyLibraryViewer";
 import { StudyLibraryCreateSheet } from "../../components/study/StudyLibraryCreateSheet";
 import { Button } from "../../app/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "../../app/components/ui/dropdown-menu";
 import { useEaster, useKonami } from "../../easter";
 
 type LibraryTab = "library" | "gap" | "review";
@@ -89,9 +92,45 @@ const NOTE_KINDS = [
   { value: "note", label: "Note" },
 ];
 
+const LS_FILE_MANAGER_COLLAPSED = "lecture-notes:file-manager-collapsed";
+const LS_LAST_OPEN_NOTE = "lecture-notes:last-open-path";
+
 function folderOf(relativePath: string): string {
   const parts = relativePath.split("/");
   return parts.length <= 1 ? "" : parts.slice(0, -1).join("/");
+}
+
+function remapLegacyNotePath(path: string): string {
+  const rel = path.replace(/\\/g, "/").replace(/^\/+/, "");
+  if (!rel || rel.startsWith("data_foundations/")) return rel;
+  const aliases: [string, string][] = [
+    ["lecture5/", "data_foundations/lecture_5/"],
+    ["lecture_5/", "data_foundations/lecture_5/"],
+    ["lecture_4/", "data_foundations/lecture_4/"],
+    ["lecture_3/", "data_foundations/lecture_3/"],
+    ["lecture_2/", "data_foundations/lecture_2/"],
+  ];
+  for (const [old, neu] of aliases) {
+    if (rel.startsWith(old)) return neu + rel.slice(old.length);
+  }
+  return rel;
+}
+
+function readLastOpenNote(): string {
+  try {
+    const raw = localStorage.getItem(LS_LAST_OPEN_NOTE)?.trim() || "";
+    return remapLegacyNotePath(raw);
+  } catch {
+    return "";
+  }
+}
+
+function writeLastOpenNote(path: string) {
+  try {
+    if (path) localStorage.setItem(LS_LAST_OPEN_NOTE, path);
+  } catch {
+    /* ignore */
+  }
 }
 
 export function LectureNotesPage() {
@@ -102,6 +141,7 @@ export function LectureNotesPage() {
   const [searchParams] = useSearchParams();
   const [createSheetOpen, setCreateSheetOpen] = useState(false);
   const [studyToolsOpen, setStudyToolsOpen] = useState(false);
+  const [docChromeHost, setDocChromeHost] = useState<HTMLElement | null>(null);
 
   const [transcripts, setTranscripts] = useState<TranscriptFile[]>([]);
   const [libraryTree, setLibraryTree] = useState<LibraryTree | null>(null);
@@ -114,7 +154,7 @@ export function LectureNotesPage() {
   const [libraryViewMode, setLibraryViewMode] = useState<"grid" | "list">("list");
   const [fileManagerCollapsed, setFileManagerCollapsed] = useState(() => {
     try {
-      return localStorage.getItem("lecture-notes:file-manager-collapsed") === "1";
+      return localStorage.getItem(LS_FILE_MANAGER_COLLAPSED) === "1";
     } catch {
       return false;
     }
@@ -125,6 +165,8 @@ export function LectureNotesPage() {
   const [openScrollTop, setOpenScrollTop] = useState(0);
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const activeNoteRef = useRef("");
+  /** Last user activity (scroll / focus) while a note is open — keeps reading credit fresh. */
+  const lastReadActivityRef = useRef(Date.now());
   const [newFileKind, setNewFileKind] = useState("note");
   const [content, setContent] = useState("");
   const [noteMtime, setNoteMtime] = useState<number | null>(null);
@@ -138,6 +180,11 @@ export function LectureNotesPage() {
   const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[]>([]);
   const [quizCount, setQuizCount] = useState(12);
   const [quizFocus, setQuizFocus] = useState<"mixed" | "concept" | "coding" | "cover_all">("mixed");
+  const [noteTopics, setNoteTopics] = useState<
+    { topic_id: string; title: string; label: string; char_count?: number; source?: string }[]
+  >([]);
+  const [selectedTopicIds, setSelectedTopicIds] = useState<string[]>([]);
+  const [topicsLoading, setTopicsLoading] = useState(false);
   const [drills, setDrills] = useState<CodeDrill[]>([]);
   const [activeQuiz, setActiveQuiz] = useState<{
     domain: "study" | "code";
@@ -156,6 +203,7 @@ export function LectureNotesPage() {
   const [includeDiagrams, setIncludeDiagrams] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  const [importing, setImporting] = useState(false);
   const [llmConfig, setLlmConfig] = useState<LlmConfig | null>(null);
   const [llmTier, setLlmTier] = useState(
     () => loadLlmPrefs().llm_tier ?? "medium",
@@ -204,11 +252,40 @@ export function LectureNotesPage() {
 
   useEffect(() => {
     try {
-      localStorage.setItem("lecture-notes:file-manager-collapsed", fileManagerCollapsed ? "1" : "0");
+      localStorage.setItem(LS_FILE_MANAGER_COLLAPSED, fileManagerCollapsed ? "1" : "0");
     } catch {
       /* ignore */
     }
   }, [fileManagerCollapsed]);
+
+  useEffect(() => {
+    const path = remapLegacyNotePath(selectedNote || "");
+    if (!path || !path.endsWith(".md")) {
+      setNoteTopics([]);
+      setSelectedTopicIds([]);
+      return;
+    }
+    let cancelled = false;
+    setTopicsLoading(true);
+    void fetchNoteTopics(path)
+      .then((res) => {
+        if (cancelled) return;
+        setNoteTopics(res.topics || []);
+        setSelectedTopicIds([]);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setNoteTopics([]);
+          setSelectedTopicIds([]);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setTopicsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedNote]);
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -228,15 +305,20 @@ export function LectureNotesPage() {
         tree.root.folders.flatMap(function pick(n): typeof tree.root.files {
           return [...n.files, ...n.folders.flatMap(pick)];
         })[0];
-      if (!selectedNote && firstFile) {
-        setSelectedNote(firstFile.relative_path);
-      }
+      const fromUrl = searchParams.get("file")?.trim() || "";
+      const lastOpen = readLastOpenNote();
+      setSelectedNote((prev) => {
+        if (prev && findLibraryFile(tree, prev)) return prev;
+        if (fromUrl && findLibraryFile(tree, fromUrl)) return fromUrl;
+        if (lastOpen && findLibraryFile(tree, lastOpen)) return lastOpen;
+        return firstFile?.relative_path ?? "";
+      });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load library");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [searchParams]);
 
   useEffect(() => {
     if (selectedTranscript) setActiveTranscript(selectedTranscript);
@@ -246,6 +328,17 @@ export function LectureNotesPage() {
     const file = searchParams.get("file")?.trim();
     if (file) setSelectedNote(file);
   }, [searchParams]);
+
+  useEffect(() => {
+    if (!selectedNote) return;
+    writeLastOpenNote(selectedNote);
+    setSelectedFolder((prev) => {
+      const folder = folderOf(selectedNote);
+      // Keep browse folder aligned when restoring last note (don't fight user browsing)
+      if (!prev) return folder;
+      return prev;
+    });
+  }, [selectedNote]);
 
   useEffect(() => {
     void refresh();
@@ -284,7 +377,12 @@ export function LectureNotesPage() {
         setNoteMtime(mtime ?? null);
         setError(null);
       } catch (e) {
-        setError(e instanceof Error ? e.message : "Failed to load note");
+        setContent("");
+        setNoteMtime(null);
+        // Don't sticky-banner note fetch failures (shows as noisy "Failed to fetch")
+        const msg = e instanceof Error ? e.message : "Failed to load note";
+        setToast(msg);
+        setTimeout(() => setToast(null), 4000);
       } finally {
         setContentLoading(false);
       }
@@ -306,7 +404,9 @@ export function LectureNotesPage() {
         setCompareContents([a.content, b.content]);
         setError(null);
       } catch (e) {
-        setError(e instanceof Error ? e.message : "Failed to load compare view");
+        const msg = e instanceof Error ? e.message : "Failed to load compare view";
+        setToast(msg);
+        setTimeout(() => setToast(null), 4000);
       } finally {
         setContentLoading(false);
       }
@@ -498,13 +598,21 @@ export function LectureNotesPage() {
   }, []);
 
   const handleBlockSave = useCallback(
-    async (blockIndex: number, _language: string, newBlockContent: string) => {
+    async (
+      blockIndex: number,
+      _language: string,
+      newBlockContent: string,
+      opts?: { previousContent?: string },
+    ) => {
       if (!selectedNote) {
         throw new Error("No note selected — pick a file in the library first.");
       }
       await withPreservedScroll(scrollContainerRef.current, async () => {
         const base = prepareNoteMarkdown(content);
-        const updated = applyBlockUpdate(base, blockIndex, newBlockContent, { lang: _language });
+        const updated = applyBlockUpdate(base, blockIndex, newBlockContent, {
+          lang: _language,
+          previousContent: opts?.previousContent,
+        });
         await persistNote(selectedNote, updated);
       });
       setToast("Block saved");
@@ -678,6 +786,62 @@ export function LectureNotesPage() {
     return () => document.removeEventListener("visibilitychange", onHide);
   }, [selectedNote, showCompare, persistReadingPosition]);
 
+  // Publish reading signal for SPA study credit (loaded note + visible/focused + recent activity).
+  useEffect(() => {
+    const notesLoaded =
+      Boolean(selectedNote) && !showCompare && !contentLoading && Boolean(content.trim());
+    const noteTitleHint =
+      findLibraryFile(libraryTree, selectedNote)?.title || selectedNote || null;
+
+    const publish = () => {
+      const visible =
+        typeof document === "undefined" || document.visibilityState === "visible";
+      const focused = typeof document === "undefined" || document.hasFocus();
+      // Fresh open counts as reading for 2 minutes; scroll/pointer refresh the timer.
+      const recent = Date.now() - lastReadActivityRef.current < 120_000;
+      const reading = notesLoaded && visible && focused && recent;
+      setLectureNotesPresence({
+        notesLoaded,
+        reading,
+        documentId: selectedNote || null,
+        title: noteTitleHint,
+      });
+    };
+
+    if (notesLoaded) {
+      lastReadActivityRef.current = Date.now();
+    }
+    publish();
+    if (!notesLoaded) {
+      return () => setLectureNotesPresence(null);
+    }
+
+    const onActivity = () => {
+      lastReadActivityRef.current = Date.now();
+      publish();
+    };
+    const onVis = () => publish();
+    const id = window.setInterval(publish, 15_000);
+    document.addEventListener("visibilitychange", onVis);
+    window.addEventListener("focus", onActivity);
+    window.addEventListener("blur", onVis);
+    const el = scrollContainerRef.current;
+    el?.addEventListener("scroll", onActivity, { passive: true });
+    document.addEventListener("pointerdown", onActivity, { passive: true });
+    document.addEventListener("keydown", onActivity);
+
+    return () => {
+      window.clearInterval(id);
+      document.removeEventListener("visibilitychange", onVis);
+      window.removeEventListener("focus", onActivity);
+      window.removeEventListener("blur", onVis);
+      el?.removeEventListener("scroll", onActivity);
+      document.removeEventListener("pointerdown", onActivity);
+      document.removeEventListener("keydown", onActivity);
+      setLectureNotesPresence(null);
+    };
+  }, [selectedNote, showCompare, contentLoading, content, libraryTree]);
+
   const handleSetBookmark = useCallback(async (path: string, scrollTop: number) => {
     setReadingOverrides((prev) => ({
       ...prev,
@@ -705,6 +869,40 @@ export function LectureNotesPage() {
       setTimeout(() => setToast(null), 3000);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not create file");
+    }
+  };
+
+  const handleImportFiles = async (files: File[], destFolder: string) => {
+    const candidates = files.filter(isImportableNoteFile);
+    const skipped = files.length - candidates.length;
+    if (!candidates.length) {
+      setError("Drop .md, .markdown, or .txt note files");
+      return;
+    }
+    setImporting(true);
+    setError(null);
+    let lastPath = "";
+    let imported = 0;
+    try {
+      for (const file of candidates) {
+        if (file.size > 500_000) {
+          throw new Error(`“${file.name}” is too large (max 500 KB)`);
+        }
+        const content = await file.text();
+        const title = titleFromImportFileName(file.name);
+        const row = await createLibraryFile(title, destFolder, newFileKind, { content });
+        lastPath = row.relative_path ?? row.filename;
+        imported += 1;
+      }
+      await refresh();
+      if (lastPath) setSelectedNote(lastPath);
+      const skipMsg = skipped > 0 ? ` · skipped ${skipped} unsupported` : "";
+      setToast(`Imported ${imported} note${imported === 1 ? "" : "s"}${skipMsg}`);
+      setTimeout(() => setToast(null), 4000);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not import files");
+    } finally {
+      setImporting(false);
     }
   };
 
@@ -758,49 +956,6 @@ export function LectureNotesPage() {
     }
   };
 
-  const handleGenerateGrounded = async () => {
-    if (!selectedTranscript) return;
-    setGenerating(true);
-    setError(null);
-    try {
-      const result = await runWithBudgetConfirm((llm) =>
-        generateGroundedNotes({
-          transcriptFile: selectedTranscript,
-          title: noteTitle.trim() || undefined,
-          topic: noteTitle.trim() || undefined,
-          folderPath: folderForSave,
-          llm,
-        }),
-      );
-      if (!result.filename) {
-        throw new Error("Grounded generation did not return a saved note path");
-      }
-      await refresh();
-      setSelectedNote(result.filename);
-      void indexNote(result.filename).catch(() => undefined);
-      setCreateSheetOpen(false);
-      const handoff = result.corpus_handoff;
-      const corpusMsg =
-        handoff != null
-          ? ` · corpus: ${handoff.transcript_chunks ?? 0} + ${handoff.note_chunks ?? 0} chunks`
-          : "";
-      setToast(`Grounded notes (${result.mode})${corpusMsg}`);
-      if ((result as { grounding_status?: string }).grounding_status === "degraded") {
-        setGroundingBanner({
-          status: "degraded",
-          reason: (result as { grounding_reason?: string }).grounding_reason,
-        });
-      } else {
-        setGroundingBanner(null);
-      }
-      setTimeout(() => setToast(null), 5000);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Grounded generation failed");
-    } finally {
-      setGenerating(false);
-    }
-  };
-
   const handleGenerateToday = async () => {
     setGenerating(true);
     setError(null);
@@ -835,28 +990,6 @@ export function LectureNotesPage() {
       setError(e instanceof Error ? e.message : "Generation failed");
     } finally {
       setGenerating(false);
-    }
-  };
-
-  const handleGeneratePrimer = async () => {
-    const topic =
-      noteTitle.trim() ||
-      window.prompt("Primer topic (corpus outline before lecture)", selectedNote?.split("/").pop()?.replace(/\.md$/i, "") ?? "")?.trim();
-    if (!topic) return;
-    setIntelGenerating(true);
-    setError(null);
-    try {
-      const result = await runWithBudgetConfirm((llm) =>
-        generatePrimer(topic, { folderPath: folderForSave, llm }),
-      );
-      await refresh();
-      setSelectedNote(result.relative_path);
-      setToast(`Primer saved (${result.corpus_hits ?? 0} corpus hits)`);
-      setTimeout(() => setToast(null), 4000);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Primer failed");
-    } finally {
-      setIntelGenerating(false);
     }
   };
 
@@ -913,8 +1046,8 @@ export function LectureNotesPage() {
     if (sourcePaths.length === 0) return [];
     setIntelGenerating(true);
     setIntelStatus(
-      quizFocus === "cover_all"
-        ? "Starting bulk cover-all (multi-call)…"
+      noteTopics.length > 0
+        ? "Looping topics with small context → combining tagged quiz…"
         : "Starting quiz generation…",
     );
     setError(null);
@@ -923,20 +1056,27 @@ export function LectureNotesPage() {
         selectedNote && selectedNote.includes("/")
           ? selectedNote.replace(/\\/g, "/").split("/").slice(0, -1).join("/")
           : folderForSave;
-      if (quizFocus === "cover_all") {
-        setIntelStatus("Sending section + role batches to AI…");
+      if (noteTopics.length > 0) {
+        setIntelStatus(
+          selectedTopicIds.length
+            ? `Topic loop (${selectedTopicIds.length} topics)…`
+            : `Topic loop (${noteTopics.length} topics)…`,
+        );
       } else {
         setIntelStatus("Calling AI (quiz_gen)…");
       }
       const result = await runWithBudgetConfirm((llm) =>
         generateLibraryQuiz(sourcePaths, {
-          count: quizFocus === "cover_all" ? Math.max(quizCount, 20) : quizCount,
-          focus: quizFocus,
+          count: noteTopics.length > 0 ? Math.max(quizCount, Math.min(40, noteTopics.length * 2)) : quizCount,
+          focus: quizFocus === "cover_all" ? "mixed" : quizFocus,
           topic: noteTitle.trim() || primaryMeta?.title,
           llm,
-          expandSiblings: true,
-          save: quizFocus === "cover_all" ? true : undefined,
+          expandSiblings: false,
+          save: true,
+          seedDeck: true,
           folderPath,
+          // Empty = walk every topic (the accurate engine). Selection only narrows.
+          topicIds: selectedTopicIds.length > 0 ? selectedTopicIds : undefined,
         }),
       );
       setIntelStatus("Packaging draft…");
@@ -950,9 +1090,13 @@ export function LectureNotesPage() {
             : ` · ${nFiles} notes`
           : "";
       const saveHint = result.saved_path ? ` · saved ${result.saved_path}` : "";
+      const deckHint =
+        result.deck_id != null
+          ? ` · deck #${result.deck_id}${result.cards_seeded ? ` (${result.cards_seeded} SRS)` : ""}`
+          : "";
       const coverHint =
-        quizFocus === "cover_all" && result.sections_covered?.length
-          ? ` · ${result.sections_covered.length} sections`
+        result.topics_covered?.length || result.sections_covered?.length
+          ? ` · ${result.topics_covered?.length || result.sections_covered?.length} topics`
           : "";
       const callHint =
         typeof result.llm_calls === "number" && result.llm_calls > 0
@@ -966,22 +1110,18 @@ export function LectureNotesPage() {
           : "";
       if (result.source === "extractive" || result.source === "template") {
         setToast(
-          `Quiz draft from note facts (LLM offline / failed)${fileHint}${callHint} — check AI in Settings; bulk needs a working model`,
+          `Quiz draft from note facts (LLM offline / failed)${fileHint}${callHint} — check AI in Settings`,
         );
       } else if (result.source === "mixed") {
         setToast(
-          `Partial AI quiz: ${result.questions.length} Qs${fillHint}${coverHint}${saveHint} — review carefully`,
-        );
-        if (result.saved) void refresh();
-      } else if (quizFocus === "cover_all") {
-        setToast(
-          `Bulk quiz ready: ${result.questions.length} Qs${callHint}${fillHint}${coverHint}${saveHint} — review, then Take quiz`,
+          `Partial AI quiz: ${result.questions.length} Qs${fillHint}${coverHint}${deckHint}${saveHint} — review carefully`,
         );
         if (result.saved) void refresh();
       } else {
         setToast(
-          `Quiz draft ready (${result.source ?? "ok"})${callHint}${fileHint} — review, then Take quiz`,
+          `Quiz ready: ${result.questions.length} Qs${callHint}${fillHint}${coverHint}${deckHint}${saveHint} — tagged for review`,
         );
+        if (result.saved) void refresh();
       }
       setTimeout(() => setToast(null), 5500);
       return result.questions;
@@ -1101,71 +1241,96 @@ export function LectureNotesPage() {
 
   return (
     <div className="study-library-page flex flex-col min-h-0">
-      <StudyLibraryBackground />
-
       <div className="relative z-10 flex flex-col h-full min-h-0 p-4 gap-3">
-        <header className="study-library-glass flex flex-wrap items-center gap-3 px-4 py-3 shrink-0">
-          <div className="min-w-0 flex-1">
-            <h1 className="text-lg font-bold text-foreground tracking-wide">Study Library</h1>
-            <p className="text-xs text-muted-foreground">Read, edit, and export your lecture notes</p>
-          </div>
+        <header className="study-library-glass flex flex-col gap-2 px-3 py-2 shrink-0">
+          <div className="flex items-center gap-2 min-w-0">
+            <Button
+              type="button"
+              size="icon"
+              variant={fileManagerCollapsed ? "outline" : "secondary"}
+              className="h-8 w-8 shrink-0"
+              onClick={() => setFileManagerCollapsed((c) => !c)}
+              title={fileManagerCollapsed ? "Show files" : "Hide files"}
+              aria-label={fileManagerCollapsed ? "Show files" : "Hide files"}
+              aria-pressed={!fileManagerCollapsed}
+            >
+              {fileManagerCollapsed ? (
+                <PanelLeftOpen className="w-4 h-4" />
+              ) : (
+                <PanelLeftClose className="w-4 h-4" />
+              )}
+            </Button>
 
-          <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
-            <label className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-              <span className="sr-only">LLM tier</span>
+            <div
+              ref={setDocChromeHost}
+              className="min-w-0 flex-1 flex items-center"
+              aria-label="Current note"
+            />
+
+            <div className="hidden md:block h-6 w-px shrink-0 bg-border/70" aria-hidden />
+
+            <div className="flex items-center gap-1 shrink-0">
               <select
                 value={llmTier}
                 onChange={(e) => setLlmTier(e.target.value)}
-                className="h-8 rounded-md border border-border bg-background/60 px-2 text-xs text-foreground"
+                className="h-8 max-w-[5.5rem] rounded-md border border-border bg-background/60 px-1.5 text-xs text-foreground"
+                title="LLM tier for note AI actions"
+                aria-label="LLM tier"
               >
                 <option value="light">Light</option>
                 <option value="medium">Medium</option>
                 <option value="heavy">Heavy</option>
               </select>
-            </label>
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              className="h-8 text-xs"
-              asChild
-            >
-              <Link to="/knowledge-base">
-                <Database className="w-3.5 h-3.5 mr-1.5" />
-                Knowledge Base
-              </Link>
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              className="h-8 text-xs"
-              onClick={() => setCreateSheetOpen(true)}
-            >
-              <Plus className="w-3.5 h-3.5 mr-1.5" />
-              New from captions
-            </Button>
-            {tab === "library" && (
               <Button
                 type="button"
                 size="sm"
-                variant={studyToolsOpen ? "default" : "outline"}
-                className="h-8 text-xs"
-                onClick={() => setStudyToolsOpen((o) => !o)}
+                variant="outline"
+                className="h-8 text-xs px-2"
+                onClick={() => setCreateSheetOpen(true)}
+                title="New note from captions"
               >
-                <PanelRight className="w-3.5 h-3.5 mr-1.5" />
-                Study tools
+                <Plus className="w-3.5 h-3.5" />
+                <span className="hidden lg:inline ml-1">Captions</span>
               </Button>
-            )}
-            <Button size="sm" variant="ghost" className="h-8 text-xs" asChild>
-              <Link to="/review?tab=due&source=lecture_notes">Review Hub</Link>
-            </Button>
-            <Button size="sm" variant="ghost" className="h-8 text-xs" asChild>
-              <Link to="/system-logs">
-                <ScrollText className="w-3.5 h-3.5 mr-1" />
-                Logs
-              </Link>
-            </Button>
+              {tab === "library" && (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={studyToolsOpen ? "default" : "outline"}
+                  className="h-8 text-xs px-2"
+                  onClick={() => setStudyToolsOpen((o) => !o)}
+                  title="Study tools"
+                >
+                  <PanelRight className="w-3.5 h-3.5" />
+                  <span className="hidden xl:inline ml-1">Tools</span>
+                </Button>
+              )}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="ghost"
+                    className="h-8 w-8"
+                    title="More"
+                    aria-label="More"
+                  >
+                    <MoreHorizontal className="w-4 h-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="min-w-[11rem]">
+                  <DropdownMenuItem asChild>
+                    <Link to="/review?tab=due&source=lecture_notes">Review Hub</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/system-logs" className="flex items-center gap-2">
+                      <ScrollText className="w-4 h-4" />
+                      Logs
+                    </Link>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
 
           {navItems.length > 1 && (
@@ -1210,35 +1375,8 @@ export function LectureNotesPage() {
         )}
 
         <main className="flex flex-1 gap-3 min-h-0 overflow-hidden">
-          <aside
-            className={cn(
-              "study-library-glass study-library-sidebar shrink-0 flex flex-col min-h-0 overflow-hidden",
-              fileManagerCollapsed
-                ? "study-library-sidebar--collapsed"
-                : "study-library-sidebar--expanded",
-            )}
-          >
-            {fileManagerCollapsed ? (
-              <div className="study-library-sidebar-rail">
-                <button
-                  type="button"
-                  className="study-library-sidebar-rail-btn"
-                  onClick={() => setFileManagerCollapsed(false)}
-                  title="Expand file manager"
-                  aria-label="Expand file manager"
-                >
-                  <PanelLeftOpen className="w-4 h-4" />
-                </button>
-                <div className="study-library-sidebar-rail-icon" title="Library">
-                  <FolderOpen className="w-4 h-4" />
-                </div>
-                {selectedNote ? (
-                  <span className="study-library-sidebar-rail-note" title={selectedNote}>
-                    {selectedNote.split("/").pop()}
-                  </span>
-                ) : null}
-              </div>
-            ) : (
+          {!fileManagerCollapsed && (
+            <aside className="study-library-glass study-library-sidebar study-library-sidebar--expanded shrink-0 flex flex-col min-h-0 overflow-hidden">
               <div className="flex-1 min-h-0 overflow-hidden">
                 {loading ? (
                   <div className="flex items-center justify-center h-full">
@@ -1261,6 +1399,8 @@ export function LectureNotesPage() {
                     onSummarizeFolder={(path) => void handleSummarizeFolder(path)}
                     onNewFolder={() => void handleCreateFolder()}
                     onNewFile={() => void handleCreateFile()}
+                    onImportFiles={(files, dest) => void handleImportFiles(files, dest)}
+                    importing={importing}
                     viewMode={libraryViewMode}
                     onViewModeChange={setLibraryViewMode}
                     summarizingFolder={summarizingFolder}
@@ -1268,13 +1408,11 @@ export function LectureNotesPage() {
                   />
                 ) : null}
               </div>
-            )}
-          </aside>
+            </aside>
+          )}
 
           <div className="flex-1 flex flex-col min-w-0 min-h-0 gap-2">
-            {error && !loading && (
-              <p className="text-xs text-red-400 shrink-0 px-1">{error}</p>
-            )}
+            {/* Note/content fetch errors use toast — no sticky red banner here */}
 
             {comparePaths.length > 0 && tab === "library" && (
               <div className="study-library-compare-bar shrink-0">
@@ -1313,6 +1451,7 @@ export function LectureNotesPage() {
               mode={showCompare ? "compare" : "single"}
               showSyncHeader={showCompare}
               loading={contentLoading}
+              chromeHost={!showCompare ? docChromeHost : null}
               primaryTitle={primaryMeta?.title ?? "Lecture notes"}
               secondaryTitle={secondaryMeta?.title ?? "Reference"}
               primaryContent={showCompare ? compareContents[0] : content}
@@ -1382,19 +1521,20 @@ export function LectureNotesPage() {
               quizFocus={quizFocus}
               onQuizCountChange={setQuizCount}
               onQuizFocusChange={(f) => {
-                setQuizFocus(f);
-                if (f === "cover_all" && quizCount < 20) setQuizCount(30);
+                setQuizFocus(f === "cover_all" ? "mixed" : f);
               }}
+              noteTopics={noteTopics}
+              selectedTopicIds={selectedTopicIds}
+              onSelectedTopicIdsChange={setSelectedTopicIds}
+              topicsLoading={topicsLoading}
               onGenerateQuiz={() => void handleGenerateQuiz()}
               onGenerateDrills={() => void handleGenerateDrills()}
               onPasteQuiz={(text) => void handlePasteQuiz(text)}
               onRemoveQuestion={(id) =>
                 setQuizQuestions((prev) => prev.filter((q) => q.id !== id))
               }
-              onGeneratePrimer={
-                llmConfig?.corpus_grounded_notes ? () => void handleGeneratePrimer() : undefined
-              }
-              corpusGroundedNotes={Boolean(llmConfig?.corpus_grounded_notes)}
+              onGeneratePrimer={undefined}
+              corpusGroundedNotes={false}
               onTakeQuiz={handleTakeQuiz}
               onEditItem={(id, content) =>
                 setSessionItems((prev) =>
@@ -1428,9 +1568,7 @@ export function LectureNotesPage() {
         generating={generating}
         snapshotting={snapshotting}
         onGenerate={() => void handleGenerate()}
-        onGenerateGrounded={
-          llmConfig?.corpus_grounded_notes ? () => void handleGenerateGrounded() : undefined
-        }
+        onGenerateGrounded={undefined}
         onGenerateToday={() => void handleGenerateToday()}
         onSnapshot={() => void handleSnapshot()}
         referenceHint={referenceHint || undefined}

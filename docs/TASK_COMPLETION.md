@@ -1,10 +1,24 @@
 # Task Completion — Polish & Final Build
 
-**Last updated:** 2026-06-26  
+**Last updated:** 2026-07-19  
+**Mode:** **Cape time** — study-loop build is largely shipped; finish verification + polish. See [COMPLETION_SPRINT.md](./COMPLETION_SPRINT.md).  
 **Purpose:** Single checklist for finishing connections, closing study loops, verification, and production-ready polish.  
-**Architecture context:** [HLD.md](./HLD.md) · [LLD.md](./LLD.md) · [ROADMAP.md](./ROADMAP.md)
+**Architecture context:** [HLD.md](./HLD.md) · [LLD.md](./LLD.md) · [ROADMAP.md](./ROADMAP.md) · [PROJECT_STATUS.md](./PROJECT_STATUS.md)
 
-Use this as the master “what’s left” doc. Check items off as you complete them; move blockers to [SESSION_LOG.md](./SESSION_LOG.md).
+Use this as the master “what’s left” doc. Check items off as you **verify** them; move blockers to [SESSION_LOG.md](./SESSION_LOG.md).
+
+---
+
+## Cape-time status
+
+| Area | Status |
+|------|--------|
+| Study Flow orchestrator + stepper UI | **Shipped** — still run A5 once |
+| Quiz `next_step` + math Layer 0 | **Shipped** |
+| Productivity policy + propose-plan | **Shipped** (bonus lane) |
+| Wearables ingest | **Shipped** (bonus; don’t expand) |
+| Sprint 4 verify (pytest / build / GRE / A5) | **Open — do next** |
+| Sprint 5 polish + PROJECT_STATUS | PROJECT_STATUS refreshed; empty states TBD |
 
 ---
 
@@ -82,21 +96,21 @@ TranscriptSaved → corpus ingest → grounded note → quiz from note → SRS c
 
 ### A3. Notes → quiz → SRS
 
-- [ ] From Lecture Notes: **Generate quiz** → launches global quiz or review deck
+- [x] Study Flow / Lecture Notes can start global quiz sessions (`/api/quiz`)
+- [ ] From Lecture Notes: **Generate quiz** → launches global quiz or review deck (confirm in A5)
 - [ ] Complete quiz → `review_cards` updated (`schedule_after_answer` in `backend/quiz/srs.py`)
 - [ ] Weak topics from failures appear in backlog (`weak_topics` in `backlog_summary`)
 - [ ] `/review` shows due cards from lecture quiz
-- [ ] `GET /api/quiz/backlog` → `StudyLoopWidget` shows `review_due` when cards due
+- [x] `GET /api/quiz/backlog` exposes `next_step` for `StudyLoopWidget`
 
-**Files:** `backend/transcripts/study_intel.py`, `backend/quiz/handler.py`, `src/components/dashboard/StudyLoopWidget.tsx`, `src/pages/quiz/ReviewHubPage.tsx`
+**Files:** `backend/transcripts/study_intel.py`, `backend/quiz/handler.py`, `backend/quiz/next_step.py`, `src/components/dashboard/StudyLoopWidget.tsx`, `src/pages/quiz/ReviewHubPage.tsx`
 
 ### A4. Dashboard nudge
 
-- [ ] Signed-in user with due cards sees **Review N due** on home dashboard
+- [x] `StudyLoopWidget` renders backlog / `next_step` CTA
+- [ ] Signed-in user with due cards sees **Review N due** on home dashboard (confirm in A5)
 - [ ] User with notes but no quiz sees nudge toward lecture notes or quiz generation
-- [ ] `recommended_action` logic matches real user state (not stuck on `lecture_notes` when review is due)
-
-**Files:** `backend/quiz/review_cards.py`, `src/components/dashboard/StudyLoopWidget.tsx`
+- [ ] `recommended_action` / `next_step` matches real user state
 
 ### A5. Manual acceptance test (one lecture)
 
@@ -259,7 +273,8 @@ EEG_ENABLED=0
 ### G4. Documentation sync
 
 - [x] HLD / LLD written ([HLD.md](./HLD.md), [LLD.md](./LLD.md))
-- [ ] Update [PROJECT_STATUS.md](./PROJECT_STATUS.md) date and “current focus” to second-brain loop closure
+- [x] Update [PROJECT_STATUS.md](./PROJECT_STATUS.md) date and “current focus” to cape time / daily use
+- [x] [COMPLETION_SPRINT.md](./COMPLETION_SPRINT.md) + [AGENTS.md](../AGENTS.md) shifted to verify → polish
 - [ ] Prune stale items in [TASKS.md](./TASKS.md) (intervention mount, etc.)
 - [ ] Mark Phase 3a items done in [ROADMAP.md](./ROADMAP.md) where MATH doc says shipped
 
@@ -307,13 +322,12 @@ App side ready; firmware execution only.
 
 ---
 
-## Suggested work order (when plan runs out / solo time)
+## Suggested work order (cape time)
 
-1. **One afternoon:** Lane A1 + A5 manual acceptance test  
-2. **Next:** Lane B1–B3 (remove path confusion)  
-3. **Then:** Lane C + D verification pytest/benchmark  
-4. **Then:** Lane G1 build + G3 empty states  
-5. **Hardware / platform:** only when Lane A–G done for daily use  
+1. **Today:** Lane A5 one-lecture acceptance + note transcript in SESSION_LOG  
+2. **Same session:** Lane C GRE smoke + Lane G1 (`pytest` + `npm run build`)  
+3. **Then:** Sprint 5 empty states / leftover G3 only if something feels unfinished  
+4. **Hardware / platform / new specs:** parked — `docs/superpowers/plans/` is archive unless you reopen a lane  
 
 ---
 
@@ -321,7 +335,9 @@ App side ready; firmware execution only.
 
 | Doc | Use |
 |-----|-----|
+| [COMPLETION_SPRINT.md](./COMPLETION_SPRINT.md) | Cape-time sprint board |
 | [SESSION_LOG.md](./SESSION_LOG.md) | Per-session checkoffs |
+| [PROJECT_STATUS.md](./PROJECT_STATUS.md) | What’s working today |
 | [TASKS.md](./TASKS.md) | Simple kanban (sync with this file periodically) |
 | [WORKING_PRODUCT.md](./WORKING_PRODUCT.md) | Daily startup checklist |
 | [CORPUS_STATUS.md](./CORPUS_STATUS.md) | Corpus benchmarks & chunk table |

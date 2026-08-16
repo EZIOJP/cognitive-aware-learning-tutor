@@ -1,0 +1,12 @@
+{
+  "name": "adaptive-focus",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Standalone Zepp OS adaptive Pomodoro (stress/HR/typing-aware)",
+  "scripts": {
+    "preview": "zeus preview",
+    "dev": "zeus dev",
+    "build": "zeus build",
+    "login": "zeus login"
+  }
+}

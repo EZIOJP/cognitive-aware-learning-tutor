@@ -64,7 +64,7 @@ export function SessionOverridePanel({ timeline, onSaved }: Props) {
             {sessions.map((s) => (
               <option key={s.session_id} value={s.session_id}>
                 {new Date(s.start_time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} ·{" "}
-                {shortAppName(s.app_name || s.category)} · {fmtDurationMinutes(Math.round(s.duration_seconds / 60))} ·{" "}
+                {s.site || shortAppName(s.app_name || s.category)} · {fmtDurationMinutes(Math.round(s.duration_seconds / 60))} ·{" "}
                 {s.productivity_score ?? 35} {scoreLabel(s.productivity_score)}
               </option>
             ))}
@@ -73,7 +73,9 @@ export function SessionOverridePanel({ timeline, onSaved }: Props) {
           {selected && (
             <div className="rounded-lg border border-white/10 bg-black/20 p-3 text-xs space-y-1">
               <div className="flex justify-between gap-2">
-                <span className="font-medium text-sky-100">{shortAppName(selected.app_name || selected.category)}</span>
+                <span className="font-medium text-sky-100">
+                  {selected.site || shortAppName(selected.app_name || selected.category)}
+                </span>
                 <span className="text-muted-foreground tabular-nums">
                   {new Date(selected.start_time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} –{" "}
                   {new Date(selected.end_time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
@@ -81,6 +83,7 @@ export function SessionOverridePanel({ timeline, onSaved }: Props) {
               </div>
               <p className="text-muted-foreground">
                 {selected.category} · {selected.productivity_score ?? 35} {scoreLabel(selected.productivity_score)}
+                {selected.source ? ` · ${selected.source}` : ""}
               </p>
               {selected.window_title && (
                 <p className="text-sky-200/70 line-clamp-2" title={selected.window_title}>{selected.window_title}</p>

@@ -10,6 +10,9 @@ from pathlib import Path
 from backend.transcripts.live_captions import (
     LiveCaptionsScraper as _BackendLiveCaptionsScraper,
     extract_caption_delta,
+    find_live_captions_hwnd,
+    find_live_captions_pid,
+    launch_live_captions,
     ensure_windows as _backend_ensure_windows,
 )
 
@@ -20,6 +23,9 @@ __all__ = [
     "check_captions_deps",
     "ensure_windows",
     "extract_caption_delta",
+    "find_live_captions_hwnd",
+    "find_live_captions_pid",
+    "launch_live_captions",
 ]
 
 
@@ -32,11 +38,20 @@ def check_captions_deps() -> tuple[bool, str]:
     if platform.system() != "Windows":
         return False, "Windows 11 required for Live Captions."
     try:
-        import pywinauto  # noqa: F401
-
-        return True, "pywinauto installed — enable captions with Win+Ctrl+L"
+        import comtypes.client  # noqa: F401
     except ImportError:
-        return False, "Install captions extras: pip install -r backend/requirements-captions.txt"
+        try:
+            import pywinauto  # noqa: F401
+        except ImportError:
+            return False, "Install captions extras: pip install -r backend/requirements-captions.txt"
+    pid = find_live_captions_pid()
+    if pid:
+        return True, f"pywinauto installed — Windows Live Captions is running (pid {pid})."
+    return True, (
+        "pywinauto installed — Windows Live Captions is not open. "
+        "Press Win+Ctrl+L (black caption bar). Start capture will try to launch it. "
+        "DeLive / YouTube / browser captions are not used."
+    )
 
 
 class LiveCaptionsScraper(_BackendLiveCaptionsScraper):

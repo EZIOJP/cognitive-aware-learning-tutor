@@ -1,0 +1,255 @@
+.life-tracker-page {
+  --life-ink: var(--foreground);
+  --life-muted: color-mix(in srgb, var(--muted-foreground) 88%, transparent);
+  --life-line: color-mix(in srgb, var(--border) 72%, transparent);
+  --life-accent: #7dd3fc;
+  --life-accent-soft: rgba(56, 189, 248, 0.11);
+  --life-violet: #a78bfa;
+  background:
+    radial-gradient(900px 420px at 10% -14%, rgba(56, 189, 248, 0.1), transparent 66%),
+    radial-gradient(780px 340px at 96% 16%, rgba(139, 92, 246, 0.09), transparent 72%),
+    var(--background);
+}
+
+.life-tracker-shell {
+  padding: clamp(1.25rem, 3vw, 2.6rem);
+}
+
+.life-tracker-hero {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding: 0.45rem 0 0.25rem;
+}
+
+.life-tracker-hero__copy {
+  max-width: 44rem;
+}
+
+.life-tracker-hero__eyebrow,
+.life-tracker-section-heading > div > span,
+.life-tracker-score__eyebrow {
+  display: block;
+  margin-bottom: 0.34rem;
+  color: var(--life-accent);
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.life-tracker-hero h1 {
+  margin: 0;
+  font-family: var(--font-headline, inherit);
+  font-size: clamp(2rem, 4vw, 3.5rem);
+  font-weight: 700;
+  letter-spacing: -0.06em;
+  line-height: 0.94;
+}
+
+.life-tracker-hero p {
+  max-width: 39rem;
+  margin: 0.7rem 0 0;
+  color: var(--life-muted);
+  font-size: 0.88rem;
+  line-height: 1.55;
+}
+
+.life-tracker-hero__controls {
+  padding: 0.42rem;
+  border: 1px solid var(--life-line);
+  border-radius: 1rem;
+  background: color-mix(in srgb, var(--card) 72%, transparent);
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.12);
+}
+
+.life-tracker-hero__controls > button,
+.life-tracker-hero__controls > div {
+  border-color: transparent !important;
+}
+
+.life-tracker-daynav {
+  background: color-mix(in srgb, var(--muted) 35%, transparent);
+}
+
+.life-tracker-daynav__btn:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--foreground) 8%, transparent);
+}
+
+.life-tracker-source {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.7rem 0.95rem;
+  border: 1px solid color-mix(in srgb, var(--life-accent) 18%, var(--life-line));
+  border-radius: 0.85rem;
+  background: linear-gradient(90deg, var(--life-accent-soft), transparent 65%);
+  color: var(--life-muted);
+  font-size: 0.72rem;
+}
+
+.life-tracker-source > svg,
+.life-tracker-source > span:first-of-type {
+  color: var(--life-accent);
+}
+
+.life-tracker-source > span:first-of-type {
+  font-weight: 700;
+}
+
+.life-tracker-source__dot {
+  width: 0.25rem;
+  height: 0.25rem;
+  border-radius: 99px;
+  background: var(--life-violet);
+}
+
+.life-tracker-watch {
+  position: relative;
+  overflow: hidden;
+  border-color: color-mix(in srgb, var(--life-accent) 19%, var(--life-line));
+  background:
+    linear-gradient(120deg, rgba(56, 189, 248, 0.065), transparent 42%),
+    var(--gloss-surface);
+}
+
+.life-tracker-watch::after {
+  position: absolute;
+  top: -8rem;
+  right: -6rem;
+  width: 22rem;
+  height: 22rem;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(139, 92, 246, 0.12), transparent 68%);
+  content: "";
+  pointer-events: none;
+}
+
+.life-tracker-watch > * {
+  position: relative;
+  z-index: 1;
+}
+
+.life-tracker-section-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.life-tracker-section-heading h2 {
+  margin: 0;
+  color: var(--life-ink);
+  font-size: 1.08rem;
+  font-weight: 650;
+  letter-spacing: -0.025em;
+}
+
+.life-tracker-section-heading > p,
+.life-tracker-section-heading__day {
+  margin: 0;
+  color: var(--life-muted);
+  font-size: 0.7rem;
+}
+
+.life-tracker-section-heading__day {
+  padding: 0.35rem 0.55rem;
+  border: 1px solid var(--life-line);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--background) 45%, transparent);
+  font-variant-numeric: tabular-nums;
+}
+
+.life-tracker-section-heading--compact {
+  margin-bottom: 0.35rem;
+}
+
+.life-tracker-watch__hint {
+  max-width: 38rem;
+  margin: -0.5rem 0 1.2rem;
+  color: var(--life-muted);
+  font-size: 0.74rem;
+  line-height: 1.4;
+}
+
+.life-tracker-overview {
+  align-items: stretch;
+}
+
+.life-tracker-clock > section,
+.life-tracker-score,
+.life-tracker-trend {
+  border-color: var(--life-line);
+}
+
+.life-tracker-clock > section {
+  height: 100%;
+  background: linear-gradient(145deg, color-mix(in srgb, var(--card) 82%, rgba(99, 102, 241, 0.06)), var(--gloss-surface));
+}
+
+.life-tracker-summary {
+  display: flex;
+  flex-direction: column;
+}
+
+.life-tracker-score {
+  position: relative;
+  overflow: hidden;
+  flex: 1;
+  background:
+    radial-gradient(260px 180px at 105% -4%, rgba(125, 211, 252, 0.16), transparent 70%),
+    linear-gradient(145deg, color-mix(in srgb, var(--card) 94%, rgba(139, 92, 246, 0.05)), var(--gloss-surface));
+}
+
+.life-tracker-score__pillars {
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--life-line);
+}
+
+.life-tracker-trend {
+  background: color-mix(in srgb, var(--card) 78%, transparent);
+}
+
+.life-tracker-pillars {
+  padding-top: 0.5rem;
+}
+
+.life-tracker-pillars__grid > * {
+  border-color: var(--life-line);
+  background: color-mix(in srgb, var(--card) 82%, transparent);
+  transition: border-color 180ms ease, transform 180ms ease, background 180ms ease;
+}
+
+.life-tracker-pillars__grid > *:hover {
+  border-color: color-mix(in srgb, var(--primary) 42%, var(--life-line));
+  background: color-mix(in srgb, var(--card) 94%, var(--primary) 3%);
+  transform: translateY(-2px);
+}
+
+@media (max-width: 720px) {
+  .life-tracker-shell {
+    padding: 1rem;
+  }
+
+  .life-tracker-hero {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .life-tracker-hero__controls {
+    width: 100%;
+  }
+
+  .life-tracker-source {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .life-tracker-section-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

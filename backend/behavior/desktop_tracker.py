@@ -55,21 +55,29 @@ def main() -> None:
         print("[desktop_tracker] Windows only.")
         sys.exit(1)
 
+    # Spawned children inherit this and must not start a second tracker.
+    if os.environ.get("CALT_TRACKER_PRIMARY") == "1":
+        sys.exit(0)
+
+    # Single-instance BEFORE heavy imports (uvicorn/sqlalchemy) that can spawn.
+    from backend.behavior.tracker_instance import acquire_single_instance, release_single_instance
+
+    if not acquire_single_instance():
+        sys.exit(0)
+    os.environ["CALT_TRACKER_PRIMARY"] = "1"
+
     try:
         import psutil  # noqa: F401
     except ImportError:
+        release_single_instance()
         print("[desktop_tracker] Missing dependency: psutil")
         print("  pip install psutil pystray")
         sys.exit(1)
 
     _configure_logging()
 
-    from backend.behavior.tracker_instance import acquire_single_instance, release_single_instance
     from backend.behavior.tracker_service import TrackerService
     from backend.behavior.tracker_tray import run_headless_loop, run_tray
-
-    if not acquire_single_instance():
-        sys.exit(0)
 
     service = TrackerService()
     service.start()
@@ -91,4 +99,8 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    # Windows multiprocessing spawn re-imports this module in children.
+    import multiprocessing as _mp
+
+    if _mp.current_process().name == "MainProcess":
+        main()

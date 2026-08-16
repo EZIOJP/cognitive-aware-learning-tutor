@@ -62,6 +62,10 @@ var FALLBACK_ALLOW_DOMAINS = [
   "127.0.0.1",
   "colab.research.google.com",
   "scaler.com",
+  "interviewbit.com",
+  "scaleracademy.com",
+  // Scaler lecture PDFs on S3 (also matched via isScalerAttachmentHost)
+  "scaler-production-new.s3.ap-southeast-1.amazonaws.com",
   "github.com",
   "githubusercontent.com",
   "gitlab.com",
@@ -80,6 +84,14 @@ var FALLBACK_ALLOW_DOMAINS = [
   "aistudio.google.com",
   "bard.google.com",
   "googleusercontent.com",
+  // Omnibox / new-tab search hops — without these, typing scaler.com soft-lands
+  // Bing/Google as "restricted" before the allowlisted destination loads.
+  "google.com",
+  "bing.com",
+  "duckduckgo.com",
+  "search.brave.com",
+  "ntp.msn.com",
+  "msn.com",
   "notion.so",
   "leetcode.com",
   "coursera.org",
@@ -89,9 +101,44 @@ var FALLBACK_ALLOW_DOMAINS = [
   "wikipedia.org",
   "developer.mozilla.org",
   "python.org",
+  "docs.python.org",
   "chatgpt.com",
   "claude.ai",
   "figma.com",
+  // Data science / AI learning (keep in sync with browser_gate_policy.py)
+  "numpy.org",
+  "pandas.pydata.org",
+  "scipy.org",
+  "scikit-learn.org",
+  "matplotlib.org",
+  "seaborn.pydata.org",
+  "plotly.com",
+  "pytorch.org",
+  "tensorflow.org",
+  "keras.io",
+  "huggingface.co",
+  "jax.dev",
+  "readthedocs.io",
+  "polars.tech",
+  "realpython.com",
+  "pydata.org",
+  "kaggle.com",
+  "datacamp.com",
+  "towardsdatascience.com",
+  "medium.com",
+  "fast.ai",
+  "course.fast.ai",
+  "deeplearning.ai",
+  "paperswithcode.com",
+  "distill.pub",
+  "ocw.mit.edu",
+  "cs231n.stanford.edu",
+  "statisticsbyjim.com",
+  "paperspace.com",
+  "deepnote.com",
+  "databricks.com",
+  "stats.stackexchange.com",
+  "datascience.stackexchange.com",
 ];
 
 var FALLBACK_WATCH_DOMAINS = [
@@ -120,7 +167,7 @@ var FORCE_WATCH_HOSTS = [
 var STRICT_DAY_MODES = ["bible", "planning", "study"];
 
 /**
- * Always blocked (adult filter) — like FORCE_WATCH, but every mode including free.
+ * Always blocked (distraction filter) — like FORCE_WATCH, but every mode including free.
  * Runs before enforce early-return so Disarmed / stale flags cannot open these.
  */
 var FORCE_PORN_HOSTS = [
@@ -139,6 +186,19 @@ var FORCE_PORN_HOSTS = [
   "nhentai.net",
   "rule34.xxx",
   "hentaihaven.xxx",
+  "erome.com",
+  "eporner.com",
+  "hqporner.com",
+  "porntrex.com",
+  "beeg.com",
+  "txxx.com",
+  "redgifs.com",
+  "imagefap.com",
+  "motherless.com",
+  "fapello.com",
+  "missav.com",
+  "jable.tv",
+  "thisvid.com",
 ];
 var FORCE_PORN_SUFFIXES = [".xxx", ".adult", ".porn", ".sex"];
 
@@ -154,6 +214,13 @@ var FALLBACK_SOCIAL_DOMAINS = [
   "tiktok.com",
   "facebook.com",
 ];
+
+/**
+ * Temporary per-host soft-allow from locked.html (extension chrome.storage.local).
+ * Short TTL on purpose — long windows get abused for YouTube.
+ */
+var TEMP_ALLOW_MS = 60000;
+var TEMP_ALLOW_STORAGE_KEY = "tempAllows";
 
 /** Offline keyword seed — prefer server block_keywords_list. Avoid bare "ass"/"sex". */
 var FALLBACK_BLOCK_KEYWORDS = [
@@ -184,6 +251,10 @@ var FALLBACK_BLOCK_KEYWORDS = [
   "xvideos",
   "pornhub",
   "chaturbate",
+  "redgifs",
+  "hqporner",
+  "eporner",
+  "erome",
   "camgirl",
   "sex cam",
   "sex tape",
@@ -213,6 +284,17 @@ function hostMatchesDomain(host, domain) {
   return h === d || h.endsWith("." + d);
 }
 
+/** Scaler lecture attachment buckets on S3 — not all of amazonaws.com. */
+function isScalerAttachmentHost(host) {
+  var h = String(host || "")
+    .toLowerCase()
+    .replace(/^www\./, "");
+  if (!h.endsWith(".amazonaws.com")) return false;
+  if (h.indexOf(".s3.") < 0) return false;
+  var bucket = h.split(".")[0] || "";
+  return bucket.indexOf("scaler") === 0;
+}
+
 function listMatch(host, domains) {
   if (!domains || !domains.length) return false;
   for (var i = 0; i < domains.length; i++) {
@@ -239,6 +321,112 @@ function isForcePornHost(host) {
     if (h.endsWith(FORCE_PORN_SUFFIXES[i])) return true;
   }
   return false;
+}
+
+function normalizeHost(host) {
+  return String(host || "")
+    .toLowerCase()
+    .replace(/^www\./, "");
+}
+
+/**
+ * Watch / porn / social (and force lists) must never receive a temp allow.
+ * @returns {boolean}
+ */
+function isTempAllowExcludedHost(host, policy) {
+  var h = normalizeHost(host);
+  if (!h) return true;
+  if (isForceWatchHost(h) || isForcePornHost(h)) return true;
+  var pol = policy || browserPolicyOrFallback(null);
+  var cat = classifyHostCategory(h, pol);
+  return cat === "watch" || cat === "porn" || cat === "social";
+}
+
+/** Drop expired entries; keep { host, until } shape. */
+function pruneTempAllows(list, now) {
+  var t = typeof now === "number" ? now : Date.now();
+  var out = [];
+  if (!list || !list.length) return out;
+  for (var i = 0; i < list.length; i++) {
+    var e = list[i];
+    if (!e || !e.host) continue;
+    var until = Number(e.until);
+    if (!until || until <= t) continue;
+    out.push({ host: normalizeHost(e.host), until: until });
+  }
+  return out;
+}
+
+/**
+ * @returns {boolean} true if host has a non-expired temp allow and is not excluded.
+ */
+function isHostTempAllowed(host, tempAllows, now, policy) {
+  var h = normalizeHost(host);
+  if (!h) return false;
+  if (isTempAllowExcludedHost(h, policy)) return false;
+  var t = typeof now === "number" ? now : Date.now();
+  var list = pruneTempAllows(tempAllows, t);
+  for (var i = 0; i < list.length; i++) {
+    if (hostMatchesDomain(h, list[i].host) || hostMatchesDomain(list[i].host, h)) {
+      if (t < list[i].until) return true;
+    }
+  }
+  return false;
+}
+
+function tempAllowUntilForHost(host, tempAllows, now) {
+  var h = normalizeHost(host);
+  if (!h) return 0;
+  var t = typeof now === "number" ? now : Date.now();
+  var list = pruneTempAllows(tempAllows, t);
+  var best = 0;
+  for (var i = 0; i < list.length; i++) {
+    if (hostMatchesDomain(h, list[i].host) || hostMatchesDomain(list[i].host, h)) {
+      if (list[i].until > best) best = list[i].until;
+    }
+  }
+  return best > t ? best : 0;
+}
+
+/**
+ * Decide whether locked.html may grant a temp allow for this host.
+ * @returns {{ ok: boolean, error?: string, entry?: { host: string, until: number } }}
+ */
+function buildTempAllowGrant(host, now, policy) {
+  var h = normalizeHost(host);
+  var t = typeof now === "number" ? now : Date.now();
+  var pol = policy || browserPolicyOrFallback(null);
+  if (!h) return { ok: false, error: "No host to allow" };
+  if (isTempAllowExcludedHost(h, pol)) {
+    var cat = classifyHostCategory(h, pol);
+    if (isForceWatchHost(h) || cat === "watch") {
+      return { ok: false, error: "Watch sites can't be temporarily allowed" };
+    }
+    if (isForcePornHost(h) || cat === "porn") {
+      return { ok: false, error: "Distractions can't be temporarily allowed" };
+    }
+    if (cat === "social") {
+      return { ok: false, error: "Social sites can't be temporarily allowed" };
+    }
+    return { ok: false, error: "This site can't be temporarily allowed" };
+  }
+  return { ok: true, entry: { host: h, until: t + TEMP_ALLOW_MS } };
+}
+
+/** Upsert one grant into the list (prunes expired). */
+function upsertTempAllow(list, entry, now) {
+  var t = typeof now === "number" ? now : Date.now();
+  var out = pruneTempAllows(list, t);
+  if (!entry || !entry.host) return out;
+  var h = normalizeHost(entry.host);
+  var until = Number(entry.until) || 0;
+  if (!h || until <= t) return out;
+  var next = [];
+  for (var i = 0; i < out.length; i++) {
+    if (out[i].host !== h) next.push(out[i]);
+  }
+  next.push({ host: h, until: until });
+  return next;
 }
 
 function decodeUriSafe(s) {
@@ -321,7 +509,12 @@ function classifyHostCategory(host, policy) {
     .toLowerCase()
     .replace(/^www\./, "");
   if (!h) return "other";
-  if (h === "localhost" || h === "127.0.0.1" || listMatch(h, policy.allow_domains)) {
+  if (
+    h === "localhost" ||
+    h === "127.0.0.1" ||
+    listMatch(h, policy.allow_domains) ||
+    isScalerAttachmentHost(h)
+  ) {
     return "allow";
   }
   // Free / errands-lite: shopping & house sites allowed (study blocks unless allow_free_life)
@@ -363,6 +556,18 @@ function isDistractionUrl(url) {
  * Keywords: URL path/query + optional page title only (no DOM scraping).
  * @returns {boolean}
  */
+/** FREE / goal met / earned reward day — YouTube+games open; porn/keywords still blocked. */
+function isFreeDay(gateCache) {
+  if (!gateCache) return false;
+  var browser = browserPolicyOrFallback(gateCache.browser);
+  return (
+    browser.mode === "free" ||
+    Boolean(gateCache.day_unlimited) ||
+    Boolean(gateCache.reward_day) ||
+    Boolean(gateCache.unlocked && !isStrictDayMode(browser.mode))
+  );
+}
+
 function shouldBlockUrl(url, gateCache, title) {
   if (!url || typeof url !== "string") return false;
   // ok=true for live gate; degraded/stale still enforces last known strict mode (fail-closed).
@@ -372,8 +577,9 @@ function shouldBlockUrl(url, gateCache, title) {
   if (!host) return false;
 
   var cat = classifyHostCategory(host, browser);
+  var freeDay = isFreeDay(gateCache);
 
-  // Adult filter always on (before enforce) — stale Disarmed cannot open porn TLDs/domains.
+  // Distraction filter always on (before enforce) — stale Disarmed cannot open those TLDs/domains.
   if (isForcePornHost(host) || cat === "porn") return true;
   // Keywords on non-allow hosts always (allowlist still wins — e.g. Colab notebook ids).
   if (cat !== "allow" && browser.block_keywords !== false) {
@@ -384,6 +590,9 @@ function shouldBlockUrl(url, gateCache, title) {
     if (adultHit) return true;
   }
 
+  // FREE / goal met / reward day: never softLand YouTube/social/other — distractions above.
+  if (freeDay) return false;
+
   var enforce =
     Boolean(browser.enforce) ||
     Boolean(gateCache.enforce) ||
@@ -393,6 +602,12 @@ function shouldBlockUrl(url, gateCache, title) {
 
   // Hard force: youtube.com / youtu.be never allowed in bible / planning / study.
   if (isForceWatchHost(host) && isStrictDayMode(browser.mode)) return true;
+
+  // Per-host temp allow (locked.html "Allow this site 60 sec") — never watch/porn/social.
+  var tempAllows = gateCache.temp_allows || gateCache.tempAllows || [];
+  if (isHostTempAllowed(host, tempAllows, Date.now(), browser)) {
+    return false;
+  }
 
   if (cat === "allow") {
     if (browser.strict_allowlist && (host === "localhost" || host === "127.0.0.1")) {
@@ -457,20 +672,13 @@ function isExtensionOrInternalUrl(url) {
 }
 
 function isCaltSpaUrl(url) {
+  // Any local CALT origin (Vite SPA / API) — SelfTracker must not SESSION_END these;
+  // study minutes come from POST /api/behavior/study-presence (active productive lanes only).
   if (!url) return false;
   try {
     var u = new URL(url);
     var host = u.hostname.toLowerCase();
-    if (host !== "localhost" && host !== "127.0.0.1") return false;
-    var path = u.pathname || "/";
-    return (
-      path === "/bible" ||
-      path.indexOf("/bible/") === 0 ||
-      path === "/productivity" ||
-      path.indexOf("/productivity/") === 0 ||
-      path === "/login" ||
-      path.indexOf("/login") === 0
-    );
+    return host === "localhost" || host === "127.0.0.1";
   } catch (e) {
     return false;
   }

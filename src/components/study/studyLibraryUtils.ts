@@ -62,9 +62,30 @@ export function getDragPath(e: DragEvent): string {
 }
 
 export function isLibraryDrag(e: DragEvent): boolean {
-  return (
-    e.dataTransfer.types.includes(DRAG_PATH_KEY) || e.dataTransfer.types.includes("text/plain")
-  );
+  // Prefer explicit library payload — OS file drops also often include text/plain.
+  if (e.dataTransfer.types.includes(DRAG_PATH_KEY)) return true;
+  if (isOsFileDrag(e)) return false;
+  return e.dataTransfer.types.includes("text/plain");
+}
+
+/** True when the OS is dragging files into the browser (not an in-app note move). */
+export function isOsFileDrag(e: DragEvent): boolean {
+  return Array.from(e.dataTransfer.types).includes("Files");
+}
+
+export const IMPORTABLE_NOTE_EXTENSIONS = new Set([".md", ".markdown", ".txt"]);
+
+export function isImportableNoteFile(file: File): boolean {
+  const name = file.name.toLowerCase();
+  const dot = name.lastIndexOf(".");
+  if (dot < 0) return false;
+  return IMPORTABLE_NOTE_EXTENSIONS.has(name.slice(dot));
+}
+
+export function titleFromImportFileName(fileName: string): string {
+  const base = fileName.replace(/^.*[/\\]/, "");
+  const stem = base.replace(/\.(md|markdown|txt)$/i, "");
+  return stem.replace(/[_-]+/g, " ").trim() || "Imported note";
 }
 
 /** Keep the reader scroll position when note content updates in place (block save / AI fix). */

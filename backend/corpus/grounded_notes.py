@@ -1,221 +1,23 @@
-"""Corpus-grounded notes generation."""
+"""Grounded-notes stubs — corpus RAG removed; callers should use Lecture Notes legacy path."""
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
-from pathlib import Path
 from typing import Any
 
-from backend.core.ollama_client import LlmOptions, ollama_available, ollama_generate
-from backend.corpus.retrieve import (
-    NOTES_RAG_SOURCE_TYPES,
-    corpus_available,
-    format_hits_for_prompt,
-    hybrid_retrieve,
-)
-from backend.paths import NOTES_DIR
-from backend.transcripts.chunk_polish import finalize_full_note, polish_chunk_text_only
-from backend.transcripts.note_document import finalize_note_markdown
-from backend.transcripts.notes_generator import generate_notes_from_file, resolve_transcript_path
-from backend.transcripts.path_utils import build_relative_path, normalize_folder_path
 
-
-def _write_note_file(
-    markdown: str,
-    *,
-    title: str,
-    folder_path: str = "",
-) -> Path:
-    body = finalize_note_markdown(markdown.strip())
-    folder = normalize_folder_path(folder_path)
-    if folder:
-        (NOTES_DIR / folder).mkdir(parents=True, exist_ok=True)
-    stamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
-    safe_title = "".join(c if c.isalnum() or c in "-_" else "_" for c in title)[:60].strip()
-    safe_title = safe_title.replace(" ", "_") or "lecture"
-    relative = build_relative_path(folder, f"{safe_title}_{stamp}.md")
-    path = NOTES_DIR / relative
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(body, encoding="utf-8")
-    return path
-
-
-def _subject_tags_for_topic(topic: str) -> list[str] | None:
-    """Optional corpus filter; None = search all subjects."""
-    t = (topic or "").lower()
-    if "linear" in t or "algebra" in t or "matrix" in t or "eigen" in t:
-        return None  # hybrid retrieve works better without over-narrow tags
-    return None
-
-
-def generate_grounded_notes(
-    *,
-    transcript_file: str,
-    topic: str = "",
-    folder_path: str = "",
-    title: str | None = None,
-    llm: LlmOptions | None = None,
-    llm_tier: str | None = None,
-    confirm_heavy_budget: bool = False,
-    ingest_corpus: bool = True,
-    force_hybrid: bool = False,
-    on_progress: object | None = None,
-) -> dict[str, Any]:
-    """
-    Grounded notes: hybrid chunked RAG for long transcripts, single-shot for short.
-
-    Delegates to hybrid_notes when transcript exceeds word threshold or force_hybrid=True.
-    """
-    from backend.transcripts.hybrid_notes import generate_grounded_notes_smart
-
-    progress_cb = on_progress if callable(on_progress) else None
-    return generate_grounded_notes_smart(
-        transcript_file=transcript_file,
-        topic=topic,
-        folder_path=folder_path,
-        title=title,
-        llm=llm,
-        llm_tier=llm_tier,
-        confirm_heavy_budget=confirm_heavy_budget,
-        ingest_corpus=ingest_corpus,
-        on_progress=progress_cb,
-        force_hybrid=force_hybrid,
+def generate_grounded_notes(*_args: Any, **_kwargs: Any) -> dict[str, Any]:
+    raise RuntimeError(
+        "Corpus RAG was removed. Use Lecture Notes transcript generation (non-grounded path)."
     )
 
 
-def generate_grounded_notes_single_shot(
-    *,
-    transcript_file: str,
-    topic: str = "",
-    folder_path: str = "",
-    title: str | None = None,
-    llm: LlmOptions | None = None,
-    llm_tier: str | None = None,
-    confirm_heavy_budget: bool = False,
-    ingest_corpus: bool = True,
-    enrich_visuals: bool = True,
-) -> dict[str, Any]:
-    """Single LLM pass with top corpus hits (short transcripts)."""
-    transcript_path = resolve_transcript_path(transcript_file)
-    note_title = (title or topic or transcript_path.stem.replace("_", " ")).strip()
-
-    if not corpus_available():
-        notes_path, content = generate_notes_from_file(transcript_path, title=note_title, folder_path=folder_path)
-        handoff = None
-        if ingest_corpus:
-            from backend.corpus.handoff import ingest_lecture_handoff
-
-            handoff = ingest_lecture_handoff(transcript_path=transcript_path, note_path=notes_path)
-        rel = notes_path.relative_to(NOTES_DIR).as_posix()
-        return {
-            "mode": "legacy",
-            "filename": rel,
-            "notes_path": str(notes_path),
-            "markdown": content,
-            "corpus_handoff": handoff,
-        }
-
-    query = topic or transcript_path.stem.replace("_", " ")
-    hits = hybrid_retrieve(
-        query,
-        subject_tags=_subject_tags_for_topic(query),
-        source_types=list(NOTES_RAG_SOURCE_TYPES),
-        top_k=8,
+def generate_grounded_notes_single_shot(*_args: Any, **_kwargs: Any) -> dict[str, Any]:
+    raise RuntimeError(
+        "Corpus RAG was removed. Use Lecture Notes transcript generation (non-grounded path)."
     )
-    context = format_hits_for_prompt(hits, max_chars=14000)
 
-    if not ollama_available(llm):
-        notes_path, content = generate_notes_from_file(transcript_path, title=note_title, folder_path=folder_path)
-        handoff = None
-        if ingest_corpus:
-            from backend.corpus.handoff import ingest_lecture_handoff
 
-            handoff = ingest_lecture_handoff(transcript_path=transcript_path, note_path=notes_path)
-        rel = notes_path.relative_to(NOTES_DIR).as_posix()
-        return {
-            "mode": "legacy_llm_off",
-            "filename": rel,
-            "notes_path": str(notes_path),
-            "markdown": content,
-            "chunk_count": len(hits),
-            "corpus_handoff": handoff,
-        }
-
-    raw = transcript_path.read_text(encoding="utf-8")[:12000]
-
-    prompt = f"""Write CONCEPTUAL revision notes in markdown that BRIEF the lecture topics.
-
-This pipeline exists so textbook/corpus RAG produces proper concept coverage — not a speaker transcript or glossary dump.
-
-- REFERENCE CHUNKS are the conceptual authority (definitions, properties, standard steps, formulas) — use them to fill the brief.
-- TRANSCRIPT only indicates which topics were taught, in what order, and any class examples/emphasis.
-- Structure by ## topic/concept headings. Under each: a short conceptual brief (not Definition/Importance/Key Components templates).
-- Start with ## Topics covered (bullet list of concepts in this note).
-- DROP classroom/platform logistics and speaker narration (UI, notice board, chat, session structure, wrap-up, note-taking tips, thumbs up, "look at this slide").
-- Use ONLY facts supported by REFERENCE (+ transcript examples that match). Add <!-- cite: chunk_id --> after each major ## heading.
-- Do not assert any factual claim that is not traceable to a REFERENCE chunk / cite id.
-- Do not add mermaid or code blocks yet — enrich pass adds those.
-- Output markdown ONLY — no reasoning, planning, confidence scores, or meta commentary.
-
-REFERENCE CHUNKS (textbook / corpus):
-{context}
-
-LECTURE TRANSCRIPT (topic signal; strip filler):
-{raw}
-
-Output markdown only."""
-
-    md = ollama_generate(
-        prompt,
-        timeout=180.0,
-        llm=llm,
-        task="corpus_grounded",
-        tier=llm_tier,
-        confirm_heavy_budget=confirm_heavy_budget,
+def generate_grounded_notes_smart(*_args: Any, **_kwargs: Any) -> dict[str, Any]:
+    raise RuntimeError(
+        "Corpus RAG was removed. Use Lecture Notes transcript generation (non-grounded path)."
     )
-    if not md or not md.strip():
-        notes_path, content = generate_notes_from_file(transcript_path, title=note_title, folder_path=folder_path)
-        handoff = None
-        if ingest_corpus:
-            from backend.corpus.handoff import ingest_lecture_handoff
-
-            handoff = ingest_lecture_handoff(transcript_path=transcript_path, note_path=notes_path)
-        rel = notes_path.relative_to(NOTES_DIR).as_posix()
-        return {
-            "mode": "legacy_fallback",
-            "filename": rel,
-            "notes_path": str(notes_path),
-            "markdown": content,
-            "corpus_handoff": handoff,
-        }
-
-    polished = polish_chunk_text_only(md)
-    body = finalize_full_note(
-        polished,
-        repair_blocks=True,
-        use_llm_repair=False,
-        enrich_visuals=enrich_visuals,
-        llm=llm,
-    )
-    notes_path = _write_note_file(body, title=note_title, folder_path=folder_path)
-    handoff = None
-    if ingest_corpus:
-        from backend.corpus.handoff import ingest_lecture_handoff
-
-        handoff = ingest_lecture_handoff(transcript_path=transcript_path, note_path=notes_path)
-    rel = notes_path.relative_to(NOTES_DIR).as_posix()
-    out = {
-        "mode": "grounded",
-        "filename": rel,
-        "notes_path": str(notes_path),
-        "markdown": body,
-        "chunk_count": len(hits),
-        "citations": [h.get("chunk_id") for h in hits],
-        "corpus_handoff": handoff,
-    }
-    from backend.transcripts.note_generation import resolve_grounding
-
-    status, reason = resolve_grounding("grounded", out)
-    out["grounding_status"] = status
-    out["grounding_reason"] = reason
-    return out

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "../../app/components/ui/button";
 
 const CATEGORIES = ["reading", "study", "lecture", "review", "break"] as const;
@@ -12,19 +12,26 @@ type Props = {
     duration_minutes: number;
   }) => Promise<void>;
   onCancel: () => void;
+  /** Flatten into parent card (no nested border) */
+  embedded?: boolean;
 };
 
-export function PlannerBlockForm({ defaultStart, onSubmit, onCancel }: Props) {
+function toLocalInput(d: Date): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+export function PlannerBlockForm({ defaultStart, onSubmit, onCancel, embedded = false }: Props) {
   const [title, setTitle] = useState("1 hr reading");
   const [category, setCategory] = useState<string>("reading");
   const [duration, setDuration] = useState(60);
-  const [startLocal, setStartLocal] = useState(() => {
-    const d = defaultStart ?? new Date();
-    const pad = (n: number) => String(n).padStart(2, "0");
-    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-  });
+  const [startLocal, setStartLocal] = useState(() => toLocalInput(defaultStart ?? new Date()));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (defaultStart) setStartLocal(toLocalInput(defaultStart));
+  }, [defaultStart?.getTime()]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,7 +53,14 @@ export function PlannerBlockForm({ defaultStart, onSubmit, onCancel }: Props) {
   };
 
   return (
-    <form onSubmit={(e) => void handleSubmit(e)} className="space-y-3 p-4 rounded-lg border border-border bg-card">
+    <form
+      onSubmit={(e) => void handleSubmit(e)}
+      className={
+        embedded
+          ? "space-y-3 rounded-xl border border-white/10 bg-black/20 p-3"
+          : "space-y-3 p-4 rounded-lg border border-border bg-card"
+      }
+    >
       <h3 className="text-sm font-semibold text-foreground">Quick add block</h3>
       {error && <p className="text-xs text-red-400">{error}</p>}
       <label className="block text-xs text-muted-foreground">

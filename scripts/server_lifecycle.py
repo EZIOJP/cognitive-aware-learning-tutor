@@ -2,7 +2,7 @@
 Smart local server lifecycle for CALT (API :8000, Vite :5173).
 
 Never stops the desktop tracker (backend.behavior.desktop_tracker) —
-that is standalone; use scripts\\desktop_tracker\\stop_desktop_tracker.bat.
+that is standalone; use scripts\\admin_only\\stop_desktop_tracker.bat (PIN).
 
 Designed for run.bat so repeated launches don't hit WinError 10013.
 """

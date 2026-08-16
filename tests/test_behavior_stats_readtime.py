@@ -114,3 +114,5 @@ def test_overlay_actual_endpoint_returns_200():
     body = r.json()
     assert "sessions" in body
     assert isinstance(body["sessions"], list)
+    assert "hour_slices" in body
+    assert isinstance(body["hour_slices"], list)

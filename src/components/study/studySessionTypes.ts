@@ -24,11 +24,23 @@ export type QuizQuestion = {
   explanation?: string;
   hint?: string;
   concept?: string;
+  topic_id?: string;
+  topic?: string;
+  note_path?: string;
+  tags?: string[];
   source_chunk_id?: string;
   citation?: string;
 };
 
 export type QuizFocus = "mixed" | "concept" | "coding" | "cover_all";
+
+export type NoteTopicOption = {
+  topic_id: string;
+  title: string;
+  label: string;
+  char_count?: number;
+  source?: string;
+};
 
 export type CodeDrill = {
   id: string;

@@ -74,10 +74,12 @@ def expand_quiz_source_paths(
     add other .md files from the same folder (longest first) up to max_files.
     Never uses corpus RAG — disk notes only.
     """
+    from backend.transcripts.note_topics import canonical_library_path
+
     ordered: list[str] = []
     seen: set[str] = set()
     for raw in primary_paths:
-        p = (raw or "").replace("\\", "/").strip()
+        p = canonical_library_path((raw or "").replace("\\", "/").strip())
         if not p or p in seen or ".." in p:
             continue
         ordered.append(p)
@@ -820,30 +822,29 @@ def _quiz_call_plan(count: int, focus: str) -> list[tuple[str, int]]:
     return chunk("concept", concept_n) + chunk("coding", coding_n)
 
 
-def _split_note_sections(material: str, *, max_sections: int = 8, max_chars: int = 5500) -> list[tuple[str, str]]:
-    """Split notes into (heading, body) slices for cover-all multi-call generation."""
-    text = (material or "").strip()
-    if not text:
-        return []
-    parts = re.split(r"(?m)^(#{2,4}\s+.+)$", text)
-    sections: list[tuple[str, str]] = []
-    if len(parts) == 1:
-        return [("Full notes", text[:max_chars])]
-    # parts: [preamble, h1, body1, h2, body2, ...]
-    preamble = parts[0].strip()
-    if preamble and len(preamble) > 80:
-        sections.append(("Intro", preamble[:max_chars]))
-    i = 1
-    while i + 1 < len(parts) and len(sections) < max_sections:
-        heading = re.sub(r"^#+\s*", "", parts[i]).strip() or f"Section {len(sections) + 1}"
-        body = (parts[i + 1] or "").strip()
-        i += 2
-        if len(body) < 40:
-            continue
-        sections.append((heading[:80], body[:max_chars]))
-    if not sections:
-        return [("Full notes", text[:max_chars])]
-    return sections[:max_sections]
+def _split_note_sections(
+    material: str,
+    *,
+    max_sections: int = 40,
+    max_chars: int = 5500,
+    topic_ids: list[str] | None = None,
+) -> list[tuple[str, str]]:
+    """Split notes into quiz topics (L{n}-Txx preferred; decimal fallback).
+
+    Returns [] when no real topics are found so the caller can use the
+    whole-note role plan instead of a fake single \"Full notes\" slice.
+    """
+    from backend.transcripts.note_topics import parse_note_topics, topics_as_sections
+
+    topics = parse_note_topics(
+        material,
+        topic_ids=topic_ids,
+        max_topics=max_sections,
+        max_body_chars=max_chars,
+    )
+    if topics:
+        return topics_as_sections(topics)
+    return []
 
 
 def _quiz_role_prompt(
@@ -1043,28 +1044,38 @@ def generate_quiz_items(
     confirm_heavy_budget: bool = False,
     prefer_notes: bool | None = None,
     source_labels: list[str] | None = None,
+    topic_ids: list[str] | None = None,
 ) -> dict[str, Any]:
     """
     Generate MCQs from study notes via role-based AI handler calls (task=quiz_gen).
 
-    focus: mixed | concept | coding | cover_all
-    cover_all = multi-call bulk pass over note sections (up to 50 questions).
+    Default engine (when the note has topics): walk each topic with a *small*
+    context window (~3.5k chars), tag every question with topic_id + note_path,
+    then combine into one deck. Optional topic_ids only narrows the walk —
+    it is not a separate "partial page" mode.
 
-    Retries short LLM batches until each job quota is filled (or empty streak /
-    call budget). Returns diagnostics so the UI can show real call counts.
+    focus: mixed | concept | coding | cover_all (cover_all ≈ mixed style + topic walk)
     """
     focus_s = (focus or "mixed").strip().lower()
     if focus_s not in {"mixed", "concept", "coding", "cover_all"}:
         focus_s = "mixed"
-    max_n = 50 if focus_s == "cover_all" else 25
+    # cover_all is an alias for "walk every topic" — question style stays mixed
+    style_focus = "mixed" if focus_s == "cover_all" else focus_s
+    max_n = 50
     n = max(1, min(int(count or 12), max_n))
     if prefer_notes is None:
         prefer_notes = bool(any((t or "").strip() for t in source_texts))
 
+    primary_note = ""
+    if source_labels:
+        primary_note = str(source_labels[0] or "").replace("\\", "/").strip()
+
+    # Keep a modest whole-note buffer for connect / fallback only — per-topic
+    # calls use small slices (better accuracy, less context load).
     combined, source_hits = _combined_source_material(
         source_texts,
         topic=topic,
-        max_chars=24000 if focus_s == "cover_all" else 16000,
+        max_chars=16000,
         boost_concepts=boost_concepts,
         prefer_notes=prefer_notes,
         source_labels=source_labels,
@@ -1075,8 +1086,10 @@ def generate_quiz_items(
         "questions": [],
         "source": "none",
         "focus": focus_s,
+        "engine": "topic_loop",
         "call_plan": [],
         "sections_covered": [],
+        "topics_covered": [],
         "concepts": [],
         "llm_calls": 0,
         "questions_from_llm": 0,
@@ -1084,6 +1097,7 @@ def generate_quiz_items(
         "call_log": [],
         "target_count": n,
         "filled_count": 0,
+        "note_path": primary_note or None,
     }
 
     if not combined.strip():
@@ -1118,13 +1132,57 @@ def generate_quiz_items(
             + ".\n"
         )
 
-    plan = _quiz_call_plan(n, focus_s)
+    plan = _quiz_call_plan(n, style_focus)
     questions: list[dict[str, Any]] = []
     question_keys: set[str] = set()
     call_log: list[dict[str, Any]] = []
-    sections = _split_note_sections(combined, max_sections=14) if focus_s == "cover_all" else []
-    max_calls = 48 if focus_s == "cover_all" else max(12, len(plan) * 3)
+    # Prefer topic slices whenever the note has them (L{n}-Txx or decimal).
+    # Optional topic_ids only narrows which topics to walk — not a different engine.
+    sections = _split_note_sections(
+        combined,
+        max_sections=40,
+        max_chars=3500,  # small context per topic → clearer, more accurate MCQs
+        topic_ids=topic_ids,
+    )
+    use_topic_loop = bool(sections)
+    max_calls = 64 if use_topic_loop else max(12, len(plan) * 3)
     empty_streak = 0
+    TOPIC_BODY_CAP = 3500
+
+    def _tag_item(item: dict[str, Any], section_title: str = "") -> dict[str, Any]:
+        out = dict(item)
+        tid = ""
+        title = section_title.strip()
+        m = re.match(r"^(L\d+-T\d+)\s*[—\-–:]\s*(.+)$", title, re.I)
+        if m:
+            tid, title = m.group(1).upper(), m.group(2).strip()
+        else:
+            m = re.match(r"^(\d+(?:\.\d+)*)\s*[—\-–:]\s*(.+)$", title)
+            if m:
+                tid, title = m.group(1), m.group(2).strip()
+            elif re.match(r"^L\d+-T\d+$", title, re.I):
+                tid = title.upper()
+        if section_title and not out.get("concept"):
+            out["concept"] = (title or section_title)[:80]
+        if tid:
+            out["topic_id"] = tid
+            out["topic"] = tid
+        elif out.get("concept"):
+            out["topic"] = str(out["concept"])[:160]
+        if primary_note:
+            out["note_path"] = primary_note
+        tags: list[str] = []
+        if tid:
+            tags.append(tid)
+        if primary_note:
+            tags.append(primary_note)
+        concept = str(out.get("concept") or "").strip()
+        if concept and concept not in tags:
+            tags.append(concept[:80])
+        out["tags"] = tags
+        if not out.get("hint") and (tid or concept):
+            out["hint"] = f"Review topic: {tid or concept}"
+        return out
 
     def _run_batch(
         *,
@@ -1135,15 +1193,16 @@ def generate_quiz_items(
         label: str = "",
     ) -> int:
         nonlocal empty_streak
-        need = max(0, min(int(need), n - len(questions), 6))
+        need = max(0, min(int(need), n - len(questions), 4))
         if need <= 0 or len(call_log) >= max_calls:
             return 0
+        material_s = (material or "")[:TOPIC_BODY_CAP]
         prompt = _quiz_role_prompt(
             role=role,
             n=need,
             topic=topic,
             boost_line=boost_line,
-            material=material,
+            material=material_s,
             section_title=section_title,
         )
         raw = ollama_generate(
@@ -1164,11 +1223,7 @@ def generate_quiz_items(
             limit=need,
         )
         for item in batch:
-            if section_title and not item.get("concept"):
-                item["concept"] = section_title[:80]
-            if not item.get("hint") and item.get("concept"):
-                item["hint"] = f"Review topic: {item['concept']}"
-        questions.extend(batch)
+            questions.append(_tag_item(item, section_title))
         got = len(questions) - before
         call_log.append(
             {
@@ -1178,6 +1233,7 @@ def generate_quiz_items(
                 "got": got,
                 "error": err if got == 0 else None,
                 "ok": got > 0,
+                "context_chars": len(material_s),
             }
         )
         if got <= 0:
@@ -1211,62 +1267,88 @@ def generate_quiz_items(
             if got <= 0:
                 break
             remaining -= got
-            if attempts >= 8:
+            if attempts >= 6:
                 break
 
-    # cover_all: per-section mini-batches first, then role plan
-    if focus_s == "cover_all" and sections:
-        per_section = max(2, min(4, n // max(1, len(sections))))
-        for heading, body in sections:
+    def _topic_roles() -> list[str]:
+        if style_focus == "coding":
+            return ["coding"]
+        if style_focus == "concept":
+            return ["concept", "definition"]
+        return ["concept", "coding"]
+
+    # Primary engine: walk each topic with a small context window, then combine.
+    if use_topic_loop:
+        empty_streak = 0
+        roles = _topic_roles()
+        per_topic = max(1, min(3, (n + len(sections) - 1) // max(1, len(sections))))
+        for idx, (heading, body) in enumerate(sections):
+            if len(questions) >= n or empty_streak >= 4:
+                break
+            role = roles[idx % len(roles)]
+            _fill_job(
+                role=role,
+                quota=min(per_topic, n - len(questions)),
+                material=body,
+                section_title=heading,
+                label=f"topic:{heading[:48]}",
+            )
+        if len(questions) < n and empty_streak < 4 and len(sections) >= 2:
+            digest = "\n".join(
+                f"- {h}\n  {(b[:280]).strip()}" for h, b in sections[:12]
+            )[:TOPIC_BODY_CAP]
+            _fill_job(
+                role="connect",
+                quota=min(max(1, n // 10), n - len(questions)),
+                material=digest,
+                section_title="",
+                label="topic:connect",
+            )
+        # Fill remaining quota by rotating topics (still small context)
+        fill_roles = _topic_roles() + (["connect"] if len(sections) >= 2 else [])
+        fi = 0
+        while len(questions) < n and len(call_log) < max_calls and empty_streak < 6:
+            role = fill_roles[fi % len(fill_roles)]
+            heading, body = sections[fi % len(sections)]
+            fi += 1
+            material = body if role != "connect" else combined[:TOPIC_BODY_CAP]
+            section_title = heading if role != "connect" else ""
+            before = len(questions)
+            _run_batch(
+                role=role,
+                need=min(3, n - len(questions)),
+                material=material,
+                section_title=section_title,
+                label=f"fill:{role}",
+            )
+            if len(questions) == before:
+                break
+    else:
+        for role, batch_n in plan:
             if len(questions) >= n or empty_streak >= 4:
                 break
             _fill_job(
-                role="concept",
-                quota=min(per_section, n - len(questions)),
-                material=body,
-                section_title=heading,
-                label=f"section:{heading[:40]}",
+                role=role,
+                quota=min(batch_n, n - len(questions)),
+                material=combined[:TOPIC_BODY_CAP],
+                section_title="",
+                label=f"role:{role}",
             )
-
-    for role, batch_n in plan:
-        if len(questions) >= n or empty_streak >= 4:
-            break
-        material = combined
-        section_title = ""
-        if focus_s == "cover_all" and sections:
-            heading, body = sections[len(questions) % len(sections)]
-            material = body if role != "connect" else combined[:14000]
-            section_title = heading if role != "connect" else ""
-        _fill_job(
-            role=role,
-            quota=min(batch_n, n - len(questions)),
-            material=material,
-            section_title=section_title,
-            label=f"role:{role}",
-        )
-
-    # Extra rotating fill if still short and LLM still responding
-    fill_roles = ["definition", "concept", "coding", "connect"]
-    fi = 0
-    while len(questions) < n and len(call_log) < max_calls and empty_streak < 6:
-        role = fill_roles[fi % len(fill_roles)]
-        fi += 1
-        material = combined
-        section_title = ""
-        if focus_s == "cover_all" and sections and role != "connect":
-            heading, body = sections[fi % len(sections)]
-            material = body
-            section_title = heading
-        before = len(questions)
-        _run_batch(
-            role=role,
-            need=min(6, n - len(questions)),
-            material=material,
-            section_title=section_title,
-            label=f"fill:{role}",
-        )
-        if len(questions) == before:
-            break
+        fill_roles = ["definition", "concept", "coding", "connect"]
+        fi = 0
+        while len(questions) < n and len(call_log) < max_calls and empty_streak < 6:
+            role = fill_roles[fi % len(fill_roles)]
+            fi += 1
+            before = len(questions)
+            _run_batch(
+                role=role,
+                need=min(4, n - len(questions)),
+                material=combined[:TOPIC_BODY_CAP],
+                section_title="",
+                label=f"fill:{role}",
+            )
+            if len(questions) == before:
+                break
 
     llm_count = len(questions)
     if len(questions) < n:
@@ -1277,15 +1359,13 @@ def generate_quiz_items(
                 continue
             item = dict(item)
             item["id"] = f"q{len(questions) + 1}"
-            if not item.get("hint") and item.get("concept"):
-                item["hint"] = f"Review topic: {item['concept']}"
-            questions.append(item)
+            questions.append(_tag_item(item, ""))
             question_keys.add(quality_key)
             if len(questions) >= n:
                 break
 
     extracted = max(0, len(questions) - llm_count)
-    final = questions[:n]
+    final = [_tag_item(q) if "tags" not in q else q for q in questions[:n]]
     if llm_count >= n:
         source = "llm"
     elif llm_count > 0:
@@ -1300,12 +1380,23 @@ def generate_quiz_items(
     except Exception:  # noqa: BLE001
         pass
 
+    topics_covered = []
+    for h, _ in sections:
+        m = re.match(r"^(L\d+-T\d+)", h, re.I)
+        if m:
+            topics_covered.append(m.group(1).upper())
+            continue
+        m2 = re.match(r"^(\d+(?:\.\d+)*)\b", h)
+        topics_covered.append(m2.group(1) if m2 else h[:80])
+
     return {
         "questions": final,
         "source": source,
         "focus": focus_s,
+        "engine": "topic_loop" if use_topic_loop else "whole_note",
         "call_plan": [{"role": r, "count": c} for r, c in plan],
         "sections_covered": [h for h, _ in sections] if sections else [],
+        "topics_covered": topics_covered,
         "concepts": [q.get("concept") for q in final if q.get("concept")],
         "llm_calls": len(call_log),
         "questions_from_llm": min(llm_count, len(final)),
@@ -1313,6 +1404,7 @@ def generate_quiz_items(
         "call_log": call_log,
         "target_count": n,
         "filled_count": len(final),
+        "note_path": primary_note or None,
     }
 
 

@@ -34,6 +34,7 @@ def build_scores_from_rules() -> dict[str, int]:
     merge("Study (Browser)", 78)
     merge("Entertainment", 15)
     merge("Other (Browser)", 35)
+    merge("Spiritual", 40)
 
     for category in ALLOWED_CATEGORIES:
         if category not in scores:
@@ -77,10 +78,13 @@ def serialize_tracked_session(
         resolve_category_with_overrides,
         resolve_session_score,
     )
+    from backend.behavior.session_key import is_browser_exe, looks_like_domain
+    from backend.behavior.stats_aggregate import site_label
 
     category = row.category if hasattr(row, "category") else row.get("category")
     app_name = row.app_name if hasattr(row, "app_name") else row.get("app_name")
     title = row.window_title if hasattr(row, "window_title") else row.get("window_title")
+    source = row.source if hasattr(row, "source") else row.get("source")
     override = None
     if hasattr(row, "override_productive"):
         override = row.override_productive
@@ -92,15 +96,24 @@ def serialize_tracked_session(
     )
     score = resolve_session_score(row, scores, policy) if policy is not None else score_for_category(category, scores)
 
+    site = None
+    if isinstance(row, dict) and row.get("site"):
+        site = row.get("site")
+    elif source == "extension" or looks_like_domain(app_name or ""):
+        site = app_name
+    elif is_browser_exe(app_name or ""):
+        site = site_label(app_name or "", title)
+
     return {
         "session_id": row.session_id if hasattr(row, "session_id") else row.get("session_id"),
         "start_time": iso_utc(row.start_time) if hasattr(row, "start_time") else row.get("start_time"),
         "end_time": iso_utc(row.end_time) if hasattr(row, "end_time") else row.get("end_time"),
-        "source": row.source if hasattr(row, "source") else row.get("source"),
+        "source": source,
         "category": effective_cat if policy is not None else category,
         "productivity_score": score,
         "window_title": title,
         "app_name": app_name,
+        "site": site,
         "task_id": row.task_id if hasattr(row, "task_id") else row.get("task_id"),
         "override_productive": override,
     }

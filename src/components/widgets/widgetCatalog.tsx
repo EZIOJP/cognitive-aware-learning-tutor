@@ -1,4 +1,4 @@
-import { Activity, Calculator, LineChart } from "lucide-react";
+import { Calculator, LineChart } from "lucide-react";
 import type { PluginWidget } from "../../plugins/types";
 import { DesmosGraphWidget } from "./DesmosGraphWidget";
 import { SymPyCalculatorWidget } from "./SymPyCalculatorWidget";
@@ -37,18 +37,6 @@ export const OPTIONAL_WIDGET_CATALOG: CatalogEntry[] = [
     category: "math",
     catalogOnly: true,
     component: <SymPyCalculatorWidget />,
-  },
-  {
-    id: "train-ocr-link",
-    type: "info",
-    title: "Train my OCR",
-    description: "Handwriting curriculum for TexTeller — opens when route is ready.",
-    icon: Activity,
-    accent: "from-emerald-500/20 to-teal-500/10",
-    defaultColSpan: 1,
-    category: "study",
-    catalogOnly: true,
-    to: "/math-tutor/train",
   },
 ];
 

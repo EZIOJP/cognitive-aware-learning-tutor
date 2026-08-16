@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { AlertCircle, Target } from "lucide-react";
+import { Target } from "lucide-react";
 import { fetchTrackerHealth } from "../../api/behaviorClient";
 import type { TrackerHealth } from "../../api/behaviorClient";
 import { resolveApiUrl } from "../../utils/resolveBackendUrl";
 import { useAdherenceRange } from "../../hooks/usePlanVsActual";
-import { AdherenceStreak } from "./AdherenceStreak";
 import { CategoryVarianceChart } from "./CategoryVarianceChart";
 import { DayRibbon } from "./DayRibbon";
 import { WeeklyAdherenceHeatmap } from "./WeeklyAdherenceHeatmap";
@@ -91,7 +90,6 @@ export function PlanVsActualDashboard({
 
   useEffect(() => {
     if (trackerHealthProp !== undefined) {
-      // Parent already polls tracker health — only check API feature flags once.
       void loadHealth();
       return;
     }
@@ -111,16 +109,11 @@ export function PlanVsActualDashboard({
   };
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-6 space-y-4">
-      {apiStale && (
-        <div className="flex items-start gap-2 p-3 rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-200 text-sm">
-          <AlertCircle size={16} className="shrink-0 mt-0.5" />
-          <p>
-            API server is running an old build (missing planner/tracker routes). Close the{" "}
-            <strong>API</strong> terminal window and run <code className="text-xs bg-black/30 px-1 rounded">run.bat</code>{" "}
-            again, then refresh this page.
-          </p>
-        </div>
+    <div className="space-y-5">
+      {import.meta.env.DEV && apiStale && (
+        <p className="text-[11px] text-amber-200/80">
+          Dev: API missing planner/tracker features — restart <code className="text-[10px]">run.bat</code>.
+        </p>
       )}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="font-semibold flex items-center gap-2 text-sm">
@@ -130,43 +123,26 @@ export function PlanVsActualDashboard({
         <TrackerDot health={trackerHealth} />
       </div>
 
-      <div className="flex flex-col md:flex-row gap-4">
-        <WeeklyAdherenceHeatmap
-          days={adherenceDays}
-          selectedDay={selectedDay}
-          onSelectDay={handleSelectDay}
-          loading={adherenceLoading}
-        />
-        <div className="shrink-0 md:w-44">
-          <AdherenceStreak days={adherenceDays} loading={adherenceLoading} />
-        </div>
-      </div>
+      <WeeklyAdherenceHeatmap
+        days={adherenceDays}
+        selectedDay={selectedDay}
+        onSelectDay={handleSelectDay}
+        loading={adherenceLoading}
+      />
 
       <DayRibbon ref={ribbonRef} day={selectedDay} refreshKey={refreshKey} />
 
       {trackerHealth?.status === "no_data" && (
-        <p className="text-xs text-muted-foreground -mt-2">
-          No tracked activity yet — run{" "}
-          <code className="bg-black/30 px-1 rounded text-[10px] font-mono">
-            scripts\desktop_tracker\run_desktop_tracker_headless.bat
-          </code>{" "}
-          then use Sync tracker above.
+        <p className="text-xs text-muted-foreground">
+          No tracked activity yet — start the desktop tracker, then Sync tracker.
         </p>
       )}
 
-      <details open className="group">
-        <summary className="cursor-pointer text-sm font-medium text-muted-foreground hover:text-foreground list-none flex items-center gap-2">
-          <span className="text-violet-400">▸</span>
-          Category variance (planned vs actual)
-        </summary>
-        <div className="mt-3">
-          <CategoryVarianceChart
-            key={variancePreset}
-            baseDate={selectedDay}
-            defaultPreset={variancePreset}
-          />
-        </div>
-      </details>
+      <CategoryVarianceChart
+        key={variancePreset}
+        baseDate={selectedDay}
+        defaultPreset={variancePreset}
+      />
     </div>
   );
 }

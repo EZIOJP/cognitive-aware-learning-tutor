@@ -62,6 +62,7 @@ TASK_DEFAULTS: dict[str, tuple[str, LlmRequirements]] = {
     "math_hint": ("light", LlmRequirements()),
     "planner_propose": ("medium", LlmRequirements(needs_json_schema=True)),
     "daily_review": ("heavy", LlmRequirements()),
+    "voice_agent": ("medium", LlmRequirements(needs_system_prompt=True)),
     "generic": ("medium", LlmRequirements()),
 }
 
@@ -362,6 +363,7 @@ def _try_entry(
     timeout: float,
     json_schema: dict | None,
     system_prompt: str | None,
+    keep_alive: int | None = None,
 ) -> TransportResult:
     limit = _context_limit(entry, requirements)
     if len(prompt) > limit:
@@ -374,6 +376,7 @@ def _try_entry(
         timeout=timeout,
         json_schema=json_schema,
         system_prompt=system_prompt,
+        keep_alive=keep_alive,
     )
     if result.error == LlmTransportError.EMPTY and result.text:
         return TransportResult(text=result.text, latency_ms=result.latency_ms)
@@ -388,6 +391,7 @@ def _try_entry(
             timeout=timeout,
             json_schema=json_schema,
             system_prompt=system_prompt,
+            keep_alive=keep_alive,
         )
         if retry.text and retry.error == LlmTransportError.NONE:
             return retry
@@ -482,6 +486,8 @@ def llm_complete(
     fallback_used = False
     last_error = LlmTransportError.UNKNOWN
     segment_idx = 0
+    # Voice sessions must not pin Ollama weights after the turn (VRAM / gaming).
+    ollama_keep_alive: int | None = 0 if task == "voice_agent" else None
 
     for kind, segment in iter_chain_segments(filtered):
         if kind == "openrouter_batch":
@@ -509,6 +515,7 @@ def llm_complete(
                 timeout=timeout,
                 json_schema=json_schema,
                 system_prompt=system_prompt,
+                keep_alive=ollama_keep_alive,
             )
             attempt_model = entry.model
             attempt_provider = entry.provider

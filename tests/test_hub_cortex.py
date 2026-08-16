@@ -32,7 +32,7 @@ def test_session_rag_ingest_and_retrieve():
 @patch("backend.hub.agents.cortex.resolve_agent")
 def test_run_hub_chat_study_agent(mock_resolve, mock_study):
     mock_resolve.return_value = ("study", ["manual:study"])
-    mock_study.return_value = ("Open /study-flow", [])
+    mock_study.return_value = ("Open /lecture-notes", [])
     db = MagicMock()
     result = run_hub_chat(
         db=db,
@@ -42,4 +42,4 @@ def test_run_hub_chat_study_agent(mock_resolve, mock_study):
         agent="study",
     )
     assert result.agent_used == "study"
-    assert "study-flow" in result.reply.lower() or "Study Flow" in result.reply
+    assert "lecture-notes" in result.reply.lower() or "Lecture Notes" in result.reply

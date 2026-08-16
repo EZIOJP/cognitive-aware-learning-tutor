@@ -16,9 +16,13 @@ from functools import lru_cache
 # ── (pattern, category, score) — first match wins ──────────────────────────
 
 _DOMAIN_RULES: list[tuple[str, str, int]] = [
+    # Local CALT SPA (Study Library / notes)
+    (r"localhost|127\.0\.0\.1",
+     "Study (Browser)", 85),
     # Study & coursework
     (r"coursera|udemy|edx|khanacademy|khan\s*academy|brilliant|codecademy"
      r"|datacamp|pluralsight|skillshare|educative|scaler|simplilearn"
+     r"|fast\.ai|deeplearning\.ai|paperswithcode|distill\.pub|ocw\.mit"
      r"|mit\.edu|stanford\.edu|\.edu/",
      "Coursework (Browser)", 92),
     (r"leetcode|hackerrank|codeforces|codechef|topcoder|exercism|neetcode"
@@ -37,7 +41,10 @@ _DOMAIN_RULES: list[tuple[str, str, int]] = [
      "Dev / Code", 88),
     (r"docs\.python|docs\.rust|developer\.mozilla|devdocs\.io|readthedocs"
      r"|man7\.org|cppreference|learn\.microsoft|docs\.microsoft"
-     r"|docs\.google\.com/document|docs\.oracle|api\.flutter",
+     r"|docs\.google\.com/document|docs\.oracle|api\.flutter"
+     r"|numpy\.org|pandas\.pydata|scipy\.org|scikit-learn|matplotlib\.org"
+     r"|seaborn\.pydata|plotly\.com|pytorch\.org|tensorflow\.org|keras\.io"
+     r"|jax\.dev|polars\.tech|realpython\.com|pydata\.org",
      "Documentation", 88),
     (r"pypi\.org|npmjs\.com|crates\.io|packagist|rubygems|maven"
      r"|hub\.docker\.com|registry\.terraform",
@@ -51,7 +58,7 @@ _DOMAIN_RULES: list[tuple[str, str, int]] = [
      r"|copilot\.microsoft|poe\.com|perplexity",
      "AI Tools", 80),
     (r"huggingface\.co|kaggle\.com|colab\.research\.google|jupyter|wandb\.ai"
-     r"|mlflow|tensorboard",
+     r"|mlflow|tensorboard|paperspace|deepnote|databricks",
      "AI / ML", 88),
 
     # Knowledge & productivity
@@ -87,9 +94,10 @@ _DOMAIN_RULES: list[tuple[str, str, int]] = [
     (r"linkedin\.com",
      "Professional Social", 45),
 
-    # Shopping — low
+    # Shopping / house / errands — low (free + errands-lite gate allow; study still blocks)
     (r"amazon\.|flipkart|myntra|ajio|ebay|etsy|aliexpress|shopify"
-     r"|walmart|target\.com|bestbuy",
+     r"|walmart|target\.com|bestbuy|bigbasket|blinkit|ikea\.com"
+     r"|housing\.com|magicbricks|nobroker|99acres|nykaa|meesho",
      "Shopping", 10),
 
     # Entertainment — low
@@ -125,9 +133,14 @@ _DOMAIN_RULES: list[tuple[str, str, int]] = [
 
 _TITLE_STUDY_BOOST = re.compile(
     r"\b(lecture|tutorial|assignment|homework|exam|quiz)\b"
+    r"|\blecture\d+\b"
     r"|\b(api\s*reference|getting\s*started)\b"
-    r"|\b(machine\s*learning|deep\s*learning|data\s*struct|linear\s*algebra)\b"
-    r"|\b(scaler|leetcode|coursera|udemy|khan\s*academy)\b",
+    r"|\b(machine\s*learning|deep\s*learning|data\s*struct|linear\s*algebra|numpy|pandas)\b"
+    r"|\b(scaler|leetcode|coursera|udemy|khan\s*academy)\b"
+    r"|\b(live\s*class|class\s*recording|module\s*\d+)\b"
+    r"|\b(study\s*library|lecture\s*notes)\b"
+    r"|\btopics\s*\|"  # Scaler Topics | …
+    r"|\bwatch\s*\|",  # Scaler Watch | …
     re.I,
 )
 
@@ -213,6 +226,8 @@ _TITLE_SITE_HINTS: list[tuple[str, str]] = [
     (r"\bGmail\b", "mail.google.com"),
     (r"\bGoogle\s*Calendar\b", "calendar.google.com"),
     (r"\bscaler\b", "scaler.com"),
+    (r"\blecture\s*notes\b|\bstudy\s*library\b", "localhost"),
+    (r"\bcognitive[- ]aware\b|\bcalt\b", "localhost"),
 ]
 
 
@@ -235,9 +250,14 @@ def classify_browser_title(window_title: str) -> tuple[str, int]:
     page_title = parts[0].strip() if parts else cleaned
 
     domain_guess = site_hint.lower().replace(" ", "")
-    combined_hay = f"{domain_guess} {page_title}"
+    combined_hay = f"{domain_guess} {page_title} {cleaned}"
 
-    return classify_domain(combined_hay, page_title)
+    # Study boost must see the full window title — Edge often puts
+    # "Lecture Notes" / site chrome in a later segment after " - ".
+    cat, score = classify_domain(combined_hay, cleaned)
+    if cat == "Other (Browser)" and _TITLE_STUDY_BOOST.search(cleaned):
+        return "Study (Browser)", 78
+    return cat, score
 
 
 BROWSER_CATEGORIES = sorted({cat for _, cat, _ in _DOMAIN_RULES} | {

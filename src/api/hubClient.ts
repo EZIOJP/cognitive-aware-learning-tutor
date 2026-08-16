@@ -16,6 +16,8 @@ export type HubSegment = {
   endHour: number;
   color: string;
   type?: string;
+  /** Overnight sleep: arc runs bedtime → 24 and 0 → wake */
+  crossesMidnight?: boolean;
 };
 
 export type HubDailyPayload = {

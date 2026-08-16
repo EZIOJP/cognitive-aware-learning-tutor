@@ -10,7 +10,7 @@ interface BehaviorStats {
   total_events: number;
   top_category: string;
   avg_productivity_score: number;
-  top_domains: { domain: string; seconds: number }[];
+  top_domains: { domain: string; seconds: number; category?: string; productivity_score?: number }[];
   recent_sites: string[];
   category_breakdown: Record<string, number>;
 }
@@ -166,12 +166,17 @@ export function DesktopActivityWidget() {
             <AppWindow className="w-3 h-3" />
             Top apps & sites
           </p>
-          {rows.map(({ domain, seconds }) => (
+          {rows.map(({ domain, seconds, category }) => (
             <div
               key={domain}
               className="flex items-center justify-between gap-2 rounded-md px-1.5 py-1 hover:bg-white/[0.04] transition-colors"
             >
-              <span className="text-xs text-foreground/75 truncate min-w-0">{domain}</span>
+              <div className="min-w-0 flex-1">
+                <span className="text-xs text-foreground/75 truncate block">{domain}</span>
+                {category && (
+                  <span className="text-[10px] text-muted-foreground/70 truncate block">{category}</span>
+                )}
+              </div>
               <span className="text-[11px] font-mono text-muted-foreground tabular-nums shrink-0">
                 {fmtDuration(seconds)}
               </span>

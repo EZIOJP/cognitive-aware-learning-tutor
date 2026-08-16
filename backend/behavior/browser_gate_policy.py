@@ -6,8 +6,9 @@ consume the `browser` section for site redirects.
 Day modes (after morning bible → plan confirm):
   - **study** (default daytime): goal allowlist; YouTube/Netflix/social blocked.
     Scaler/Colab/GitHub are *allowed* — nothing auto-opens Scaler.
-  - **free**: only explicit planner break/leisure blocks, after
-    ``BROWSER_FREE_AFTER`` (default 21:00), or tray “Free time” PIN override.
+  - **free**: daily focus goal met (``day_unlimited``), explicit planner
+    break/leisure blocks, after ``BROWSER_FREE_AFTER`` (default 21:00), or
+    tray “Free time” PIN override.
   - Porn + adult keywords stay blocked in every mode when extensions enforce.
 
 Keywords (URL path/query + page/window title) are cheap text filters — not
@@ -39,6 +40,12 @@ DEFAULT_ALLOW_DOMAINS: tuple[str, ...] = (
     "127.0.0.1",
     "colab.research.google.com",
     "scaler.com",
+    # Scaler legacy / sister hosts (InterviewBit era + academy branding)
+    "interviewbit.com",
+    "scaleracademy.com",
+    # Scaler lecture PDF / attachment buckets (virtual-hosted S3).
+    # Broader scaler-*.s3.*.amazonaws.com matched via is_scaler_attachment_host().
+    "scaler-production-new.s3.ap-southeast-1.amazonaws.com",
     "github.com",
     "githubusercontent.com",
     "gitlab.com",
@@ -58,6 +65,15 @@ DEFAULT_ALLOW_DOMAINS: tuple[str, ...] = (
     "aistudio.google.com",
     "bard.google.com",
     "googleusercontent.com",
+    # Omnibox / new-tab search hops (Edge→Bing, Chrome→Google). Without these,
+    # typing scaler.com soft-lands the search interstitial as "restricted" even
+    # though the destination is allowlisted. YouTube/Netflix hosts stay blocked.
+    "google.com",
+    "bing.com",
+    "duckduckgo.com",
+    "search.brave.com",
+    "ntp.msn.com",
+    "msn.com",
     "notion.so",
     "notion.site",
     "leetcode.com",
@@ -74,6 +90,7 @@ DEFAULT_ALLOW_DOMAINS: tuple[str, ...] = (
     "developer.mozilla.org",
     "mdn.io",
     "python.org",
+    "docs.python.org",
     "pypi.org",
     "npmjs.com",
     "vscode.dev",
@@ -87,6 +104,40 @@ DEFAULT_ALLOW_DOMAINS: tuple[str, ...] = (
     "obsidian.md",
     "zoom.us",
     "web.whatsapp.com",  # light allow — messaging for study groups
+    # Data science / AI learning (NumPy, Pandas, courses, notebooks)
+    "numpy.org",
+    "pandas.pydata.org",
+    "scipy.org",
+    "scikit-learn.org",
+    "matplotlib.org",
+    "seaborn.pydata.org",
+    "plotly.com",
+    "pytorch.org",
+    "tensorflow.org",
+    "keras.io",
+    "huggingface.co",
+    "jax.dev",
+    "readthedocs.io",
+    "polars.tech",
+    "realpython.com",
+    "pydata.org",
+    "kaggle.com",
+    "datacamp.com",
+    "towardsdatascience.com",
+    "medium.com",  # TDS / many DS articles redirect here
+    "fast.ai",
+    "course.fast.ai",
+    "deeplearning.ai",
+    "paperswithcode.com",
+    "distill.pub",
+    "ocw.mit.edu",
+    "cs231n.stanford.edu",
+    "statisticsbyjim.com",
+    "paperspace.com",
+    "deepnote.com",
+    "databricks.com",
+    "stats.stackexchange.com",
+    "datascience.stackexchange.com",
 )
 
 # Streaming / watch — blocked when Armed or morning locked (block_watch_sites).
@@ -104,7 +155,7 @@ DEFAULT_WATCH_DOMAINS: tuple[str, ...] = (
     "zee5.com",
 )
 
-# Modest adult-domain seed + suffixes (maintainable, not a 10k list).
+# Distraction / NSFW domain seed (always blocked — free mode too).
 DEFAULT_PORN_DOMAINS: tuple[str, ...] = (
     "pornhub.com",
     "xvideos.com",
@@ -121,6 +172,26 @@ DEFAULT_PORN_DOMAINS: tuple[str, ...] = (
     "hentaihaven.xxx",
     "nhentai.net",
     "rule34.xxx",
+    # Common hosts that used to slip through (not on mega-lists)
+    "erome.com",
+    "eporner.com",
+    "hqporner.com",
+    "porntrex.com",
+    "beeg.com",
+    "txxx.com",
+    "redgifs.com",
+    "imagefap.com",
+    "motherless.com",
+    "fapello.com",
+    "missav.com",
+    "jable.tv",
+    "thisvid.com",
+    "xhamster2.com",
+    "xhamster3.com",
+    "xvideos2.com",
+    "xnxx.tv",
+    "pornhub.org",
+    "pornhub.net",
 )
 
 DEFAULT_PORN_SUFFIXES: tuple[str, ...] = (
@@ -179,6 +250,10 @@ DEFAULT_BLOCK_KEYWORDS: tuple[str, ...] = (
     "redtube",
     "youporn",
     "spankbang",
+    "erome",
+    "eporner",
+    "hqporner",
+    "redgifs",
     "camgirl",
     "cam girl",
     "sex cam",
@@ -271,6 +346,21 @@ def host_matches_domain(host: str, domain: str) -> bool:
     return h == d or h.endswith("." + d)
 
 
+def is_scaler_attachment_host(host: str) -> bool:
+    """Scaler lecture attachments on S3 (not all of amazonaws.com).
+
+    Example: scaler-production-new.s3.ap-southeast-1.amazonaws.com
+    """
+    h = (host or "").strip().lower().removeprefix("www.")
+    if not h.endswith(".amazonaws.com"):
+        return False
+    # Virtual-hosted–style: <bucket>.s3.<region>.amazonaws.com
+    if ".s3." not in h:
+        return False
+    bucket = h.split(".", 1)[0]
+    return bucket.startswith("scaler")
+
+
 def hostname_from_url(url: str) -> str:
     try:
         host = urlparse(url).hostname or ""
@@ -303,7 +393,11 @@ def classify_browser_host(
     suffixes = tuple(porn_suffixes) if porn_suffixes is not None else DEFAULT_PORN_SUFFIXES
     social = tuple(social_domains) if social_domains is not None else DEFAULT_SOCIAL_DOMAINS
 
-    if _match_any(h, allow) or h in {"localhost", "127.0.0.1"}:
+    if (
+        _match_any(h, allow)
+        or h in {"localhost", "127.0.0.1"}
+        or is_scaler_attachment_host(h)
+    ):
         return {"action": "allow", "category": "allow"}
 
     if _match_any(h, porn) or any(h.endswith(s) for s in suffixes):
@@ -447,6 +541,11 @@ def mode_label(mode: str | None) -> str:
 
 
 def _token_hit(hay: str, tokens: frozenset[str]) -> bool:
+    """Match planner category/title tokens without short-substring false hits.
+
+    Short tokens like ``plan`` must not match inside ``explanation`` / ``plant``.
+    Multi-word tokens and longer needles still use substring containment.
+    """
     h = (hay or "").strip().lower().replace("-", " ").replace("_", " ")
     if not h:
         return False
@@ -456,7 +555,16 @@ def _token_hit(hay: str, tokens: frozenset[str]) -> bool:
     if compact in {t.replace(" ", "_") for t in tokens}:
         return True
     for t in tokens:
-        if len(t) >= 4 and t in h:
+        tl = t.strip().lower()
+        if not tl:
+            continue
+        if " " in tl or "_" in tl or len(tl) >= 6:
+            if tl in h or tl.replace(" ", "_") in compact:
+                return True
+            continue
+        if len(tl) >= 4 and re.search(
+            rf"(?<![a-z0-9]){re.escape(tl)}(?![a-z0-9])", h
+        ):
             return True
     return False
 
@@ -615,13 +723,15 @@ def resolve_day_mode(
     now: datetime | None = None,
     free_override_active: bool | None = None,
     free_after_hm: str | None = None,
+    day_unlimited: bool = False,
 ) -> str:
     """Resolve browser day mode from morning gate + planner + evening/override.
 
     After plan confirm (``morning_next=open``), daytime default is **study**
     (not free) — even with no calendar block, and even during personal/meal/
-    gym blocks. Free only when: explicit break/leisure category, evening
-    window (``BROWSER_FREE_AFTER``), or tray free-time PIN override.
+    gym blocks. Free when: daily focus goal met (``day_unlimited``), explicit
+    break/leisure category, evening window (``BROWSER_FREE_AFTER``), or tray
+    free-time PIN override.
     """
     next_step = (morning_next or "open").strip().lower()
     if next_step == "bible":
@@ -633,6 +743,11 @@ def resolve_day_mode(
     if free_override_active is None:
         free_override_active = free_override_until() is not None
     if free_override_active:
+        return "free"
+
+    # Daily productive goal + Bible chapter → entertainment for the rest of the day
+    # (same unlock as desktop games). Morning bible/plan above still win.
+    if day_unlimited:
         return "free"
 
     if is_planning_block(planner_category, planner_title):
@@ -896,6 +1011,7 @@ def build_browser_gate_section(
     now: datetime | None = None,
     free_override_active: bool | None = None,
     free_after_hm: str | None = None,
+    day_unlimited: bool = False,
 ) -> dict[str, Any]:
     """Payload nested under distraction-gate as `browser`."""
     free_hm = free_after_hm or browser_free_after_hm()
@@ -913,6 +1029,7 @@ def build_browser_gate_section(
             now=now,
             free_override_active=override_on,
             free_after_hm=free_hm,
+            day_unlimited=bool(day_unlimited),
         )
     flags = mode_policy_flags(resolved)
     enforce = extension_should_enforce(
@@ -969,23 +1086,26 @@ def build_browser_gate_section(
         "block_other": other_flag and enforce,
         "strict_allowlist": strict and enforce,
         "block_watch_sites": watch_flag and enforce,
-        "block_porn": porn_flag and enforce,
+        # Distractions always filtered — never tied to Armed/enforce (FREE still blocks).
+        "block_porn": porn_flag,
         "block_social": social_flag and enforce,
-        "block_keywords": kw_flag and enforce,
+        "block_keywords": kw_flag,
         "morning_next": (morning_next or "open").strip().lower(),
         "daytime_default": "study",
         "free_after": free_hm,
         "free_override_active": override_on,
         "free_override_until": ov_until.isoformat() if ov_until else None,
+        "day_unlimited": bool(day_unlimited),
         "allow_free_life": allow_free_life,
         "free_life_allow_domains": list(FREE_LIFE_ALLOW_DOMAINS),
         "note": (
             "Study browsing = Microsoft Edge + SelfTracker only. "
             "Other browsers and browser installers soft-lock while enforcing. "
             "Study mode allows Scaler/Colab/GitHub — it does not auto-open them. "
-            "YouTube/Netflix blocked in bible/planning/study. Free only for "
-            "explicit break/leisure blocks, after free_after, or tray Free time (PIN). "
-            "Personal/meal/gym blocks stay study (no YouTube). "
+            "YouTube/Netflix blocked in bible/planning/study. Free when daily "
+            "focus goal is met (day_unlimited), explicit break/leisure blocks, "
+            "after free_after, or tray Free time (PIN). "
+            "Personal/meal/gym blocks stay study (no YouTube) until goal is met. "
             "Shopping/errands blocks get free-life sites (Amazon etc.) without unlocking YouTube."
         ),
         "allow_domains": allow,

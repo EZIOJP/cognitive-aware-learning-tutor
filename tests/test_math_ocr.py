@@ -135,8 +135,17 @@ def test_recognize_canvas_blank_png_with_paths():
     if not texteller_available():
         pytest.skip("TexTeller ONNX not installed")
     result = recognize_canvas(url, paths_json=paths, ollama_vision_fallback=False)
-    assert result.tier in ("texteller", "contour", "per_cell", "texteller_rejected", "tier3_empty")
-
+    assert result.tier in (
+        "texteller",
+        "texteller_whole",
+        "texteller_fallback",
+        "multiline",
+        "contour",
+        "per_cell",
+        "texteller_rejected",
+        "tier3_empty",
+        "unavailable",
+    )
 
 def test_recognize_canvas_without_texteller():
     url = _png_data_url(lambda d: d.line([(20, 60), (160, 60)], fill="black", width=4))
@@ -172,8 +181,17 @@ def test_recognize_canvas_never_returns_table_noise():
     result = recognize_canvas(url, ollama_vision_fallback=False)
     assert not _ocr_looks_hallucinated(result.latex or "x") or result.latex == ""
     assert r"\begin{array}" not in (result.latex or "")
-    assert result.tier in ("texteller", "contour", "per_cell", "texteller_rejected", "tier3_empty")
-
+    assert result.tier in (
+        "texteller",
+        "texteller_whole",
+        "texteller_fallback",
+        "multiline",
+        "contour",
+        "per_cell",
+        "texteller_rejected",
+        "tier3_empty",
+        "unavailable",
+    )
 
 def test_training_sample_logs_paths_and_target(tmp_path, monkeypatch):
     import backend.math.training_log as tl

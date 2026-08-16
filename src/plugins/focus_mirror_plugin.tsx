@@ -15,18 +15,7 @@ export const FocusMirrorPlugin: PluginDef = {
   Provider: FaceTrackerProvider,
   routes: [{ path: "focus/calibrate", element: <CalibrationPage /> }],
   navItems: [],
-  widgets: [
-    {
-      id: "focus-mirror-hint",
-      type: "focus-mirror",
-      title: "Focus mirror",
-      description: "Start tracking from the top bar — calibrate per setup first.",
-      icon: ScanFace,
-      accent: "from-emerald-500/20 to-teal-500/10",
-      defaultColSpan: 1,
-      content: "Global browser tracker; red border during unfocused Pomodoro sessions.",
-    },
-  ],
+  widgets: [],
 };
 
 registerPlugin(FocusMirrorPlugin);

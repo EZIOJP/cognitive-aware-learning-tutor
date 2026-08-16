@@ -2,8 +2,8 @@ import type { EventProps } from "react-big-calendar";
 import { format } from "date-fns";
 import {
   fmtDurationMinutes,
+  intervalDisplayName,
   scoreAccent,
-  shortAppName,
   type MergedInterval,
 } from "./planVsActualUtils";
 import { useCalendarFocus } from "./calendarFocusContext";
@@ -36,14 +36,14 @@ export function ActualStackEvent({ event }: EventProps<StackEvent>) {
 
   const tooltip = items
     .map((i) => {
-      const name = shortAppName(i.app_name || i.category);
+      const name = intervalDisplayName(i);
       return `${name} · ${fmtDurationMinutes(Math.round(i.duration_seconds / 60))}`;
     })
     .join("\n");
 
   if (items.length <= 1 && items[0]) {
     const one = items[0];
-    const name = shortAppName(one.app_name || one.category);
+    const name = intervalDisplayName(one);
     const mins = Math.round(one.duration_seconds / 60);
     return (
       <div
@@ -72,19 +72,19 @@ export function ActualStackEvent({ event }: EventProps<StackEvent>) {
       </div>
       <div className="flex flex-col gap-px min-h-0 flex-1 overflow-hidden">
         {visible.map((item) => {
-          const name = shortAppName(item.app_name || item.category);
+          const name = intervalDisplayName(item);
           const mins = Math.round(item.duration_seconds / 60);
           return (
             <div key={`${item.start_time}-${name}`} className="flex items-center gap-1 min-w-0">
               <span className={`w-1 h-3 rounded-sm shrink-0 ${scoreAccent(item.productivity_score)}`} />
               <span className={`${textName} truncate flex-1 opacity-95`}>{name}</span>
-              <span className={`${textMeta} tabular-nums text-sky-200/60 shrink-0`}>{mins}m</span>
+              <span className={`${textMeta} tabular-nums text-sky-200/70 shrink-0`}>{fmtDurationMinutes(mins)}</span>
             </div>
           );
         })}
-        {hidden > 0 && (
-          <span className={`${textMeta} text-sky-300/60 pl-2`}>+{hidden} · click to expand</span>
-        )}
+        {hidden > 0 ? (
+          <span className={`${textMeta} text-sky-300/60 pl-2`}>+{hidden} more</span>
+        ) : null}
       </div>
     </div>
   );

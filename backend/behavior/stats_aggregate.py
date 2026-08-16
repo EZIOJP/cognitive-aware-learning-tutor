@@ -7,14 +7,16 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from backend.behavior.category_scores import score_for_category
-from backend.behavior.session_key import is_browser_exe, normalize_site_from_title
+from backend.behavior.session_key import is_browser_exe, looks_like_domain, normalize_site_from_title
 from backend.behavior.tracker_ignore import is_ignored_app
 
 
 def site_label(exe: str, title: str | None, domain: str | None = None) -> str:
     """Human-readable site/page label for a browser session."""
-    if domain and is_browser_exe(exe) and domain.lower() != (exe or "").lower():
-        return domain
+    if domain and domain.strip():
+        return domain.strip()
+    if looks_like_domain(exe):
+        return exe
     if is_browser_exe(exe):
         site = normalize_site_from_title(title or "")
         if site != "unknown":
@@ -56,11 +58,16 @@ def _row_fields(
         title = row.get("window_title") or row.get("title")
         domain = row.get("domain")
         category = row.get("category") or "Other"
+        source = row.get("source")
     else:
         exe = row.app_name or "unknown"
         title = row.window_title
         domain = None
         category = row.category or "Other"
+        source = getattr(row, "source", None)
+    # Extension stores domain in app_name — expose as domain for site bucketing.
+    if not domain and (source == "extension" or looks_like_domain(exe)):
+        domain = exe
     if policy is not None:
         category = resolve_category_with_overrides(
             category, app_name=exe, window_title=title, policy=policy
@@ -97,12 +104,13 @@ def aggregate_session_rows(
             continue
         total += dur
 
-        if exe not in buckets:
-            buckets[exe] = AppBucket(category=category, productivity_score=score)
-        bucket = buckets[exe]
-        bucket.seconds += dur
-
-        if is_browser_exe(exe):
+        if is_browser_exe(exe) or looks_like_domain(exe) or domain:
+            # Extension: group under Browser (extension); desktop: under browser exe.
+            bucket_key = exe if is_browser_exe(exe) else "Browser (Web)"
+            if bucket_key not in buckets:
+                buckets[bucket_key] = AppBucket(category=category, productivity_score=score)
+            bucket = buckets[bucket_key]
+            bucket.seconds += dur
             label = site_label(exe, title, domain)
             if label not in bucket.sites:
                 bucket.sites[label] = SiteBucket(category=category, productivity_score=score)
@@ -110,9 +118,15 @@ def aggregate_session_rows(
             site.seconds += dur
             if category and category != "Other":
                 site.category = category
-        elif category and category != "Other":
-            bucket.category = category
-            bucket.productivity_score = score
+                site.productivity_score = score
+        else:
+            if exe not in buckets:
+                buckets[exe] = AppBucket(category=category, productivity_score=score)
+            bucket = buckets[exe]
+            bucket.seconds += dur
+            if category and category != "Other":
+                bucket.category = category
+                bucket.productivity_score = score
 
     return buckets, total
 
@@ -122,7 +136,7 @@ def desktop_sessions_payload(buckets: dict[str, AppBucket], *, limit: int = 20) 
     entries: list[dict] = []
 
     for exe, bucket in buckets.items():
-        if is_browser_exe(exe) and bucket.sites:
+        if bucket.sites:
             sites = [
                 {
                     "site": site,
@@ -163,8 +177,8 @@ def browser_domains_payload(buckets: dict[str, AppBucket], *, limit: int = 15) -
     site_score: dict[str, int] = {}
     categories: Counter[str] = Counter()
 
-    for exe, bucket in buckets.items():
-        if not is_browser_exe(exe):
+    for _exe, bucket in buckets.items():
+        if not bucket.sites:
             continue
         for site, data in bucket.sites.items():
             site_seconds[site] += data.seconds

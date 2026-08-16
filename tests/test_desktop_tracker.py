@@ -256,6 +256,17 @@ def test_is_ignored_move_mouse():
     assert not is_ignored_app("Cursor.exe", "main.py")
 
 
+def test_is_ignored_msedge_for_extension_ownership():
+    """Desktop must not record Edge — SelfTracker extension owns browser sessions."""
+    from backend.behavior.tracker_ignore import is_ignored_app
+
+    assert is_ignored_app("msedge.exe", "Scaler | Dashboard")
+    assert is_ignored_app("msedgewebview2.exe", "")
+    assert is_ignored_app("C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe", "YouTube")
+    assert not is_ignored_app("chrome.exe", "Gmail")
+    assert not is_ignored_app("firefox.exe", "Mozilla Firefox")
+
+
 def test_merge_for_calendar_drops_move_mouse():
     from backend.behavior.session_merge import merge_for_calendar
 

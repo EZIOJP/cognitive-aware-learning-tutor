@@ -1,4 +1,5 @@
 import { resolveApiUrl } from "../utils/resolveBackendUrl";
+import { notifyPipeline } from "../utils/dataPipelineBus";
 import { llmBodyFieldsForTask, type LlmOverrides } from "./transcriptsClient";
 
 const TOKEN_KEY = "vocab:auth-token";
@@ -81,6 +82,7 @@ export interface TimelineInterval {
   app_name: string | null;
   window_title: string | null;
   site?: string | null;
+  source?: string | null;
   productivity_score: number | null;
   override_productive?: boolean | null;
 }
@@ -94,7 +96,7 @@ export interface DesktopTimeline {
 // ── API calls ─────────────────────────────────────────────────────────────────
 
 /**
- * Browser-tab stats (from Chrome extension → /ws/behavior).
+ * Browser-tab stats (from Edge SelfTracker → /ws/behavior).
  */
 export async function fetchBrowserStats(day?: string): Promise<BrowserStats> {
   const qs = day ? `?day=${day}` : "";
@@ -162,7 +164,9 @@ export async function forceTrackerSync(): Promise<TrackerForceSyncResult> {
     );
   }
   if (!res.ok) throw new Error(`behavior/tracker-force-sync: ${res.status}`);
-  return res.json();
+  const data = (await res.json()) as TrackerForceSyncResult;
+  notifyPipeline("tracker");
+  return data;
 }
 
 // ── Classification review API ────────────────────────────────────────────────
@@ -280,6 +284,124 @@ export interface ProductivityPolicy {
   hard_block_exes?: string[];
 }
 
+export interface MorningRewardAward {
+  points: number;
+  label: string;
+  granted: boolean;
+  granted_at?: string | null;
+}
+
+export interface MorningRewards {
+  day: string;
+  awards: {
+    bible?: MorningRewardAward;
+    plan?: MorningRewardAward;
+  };
+  total_points: number;
+  bible_points?: number;
+  plan_points?: number;
+}
+
+export interface MorningPlanWindow {
+  start: string;
+  end: string;
+  start_hhmm: string;
+  eod_hhmm: string;
+  start_clock: string;
+  end_clock: string;
+  end_label: string;
+  phase: "awaiting_bible" | "before_start" | "open" | "after_eod" | string;
+  confirm_available: boolean;
+  reason: string;
+  bible_completed_at?: string | null;
+}
+
+export interface MorningAutoPlan {
+  drafted?: boolean;
+  day?: string;
+  titles?: string[];
+  created?: number;
+  confirmed?: boolean;
+  reason?: string | null;
+  drafted_at?: string;
+}
+
+/** Read-only MORNING_* / auto-plan flags from server env (Settings display). */
+export interface MorningGateConfig {
+  gate?: boolean;
+  plan_start?: string;
+  plan_eod?: string;
+  auto_plan?: boolean;
+  auto_plan_confirm?: boolean;
+}
+
+export interface MorningDailyPractice {
+  show?: boolean;
+  due_count?: number;
+  action?: string;
+  label?: string;
+  to?: string;
+  reason?: string;
+}
+
+export interface MorningGate {
+  enabled: boolean;
+  day: string;
+  bible_done: boolean;
+  plan_done: boolean;
+  plan_confirmed?: boolean;
+  blocks_today: number;
+  next: "bible" | "plan" | "open";
+  allow_paths: string[];
+  rewards?: MorningRewards;
+  hint?: string;
+  plan_window?: MorningPlanWindow;
+  bible_url?: string;
+  plan_url?: string;
+  auto_plan?: MorningAutoPlan | null;
+  daily_practice?: MorningDailyPractice | null;
+  config?: MorningGateConfig;
+}
+
+export interface BrowserGateSection {
+  mode?: string;
+  mode_label?: string;
+  enforce?: boolean;
+  block_other?: boolean;
+  block_watch_sites?: boolean;
+  block_porn?: boolean;
+  block_social?: boolean;
+  block_keywords?: boolean;
+  strict_allowlist?: boolean;
+  morning_next?: string;
+  daytime_default?: string;
+  free_after?: string;
+  free_override_active?: boolean;
+  allow_free_life?: boolean;
+  free_life_allow_domains?: string[];
+  note?: string;
+  allow_domains?: string[];
+  watch_domains?: string[];
+  allowed_browsers?: string[];
+  known_browsers?: string[];
+  browser_installers?: string[];
+  bible_url?: string;
+  plan_url?: string;
+  redirect_url?: string | null;
+  redirect_reason?: string | null;
+}
+
+export interface RewardDayStatus {
+  qualifying_days: number;
+  qualifying_days_per_reward: number;
+  days_to_next_reward: number;
+  earned: number;
+  spent: number;
+  available: number;
+  active_today: boolean;
+  confirm_phrase: string;
+}
+
 export interface DistractionGate {
   enabled: boolean;
   locked: boolean;
@@ -290,6 +412,84 @@ export interface DistractionGate {
   hard_block_gaming: boolean;
   hard_block_exes: string[];
   day: string;
+  bible_minutes?: number;
+  chapters_completed_today?: string[];
+  chapter_goal?: { done?: number; target?: number; met?: boolean };
+  chapter_goal_met?: boolean;
+  game_bank_remaining_minutes?: number;
+  game_bank_remaining_seconds?: number;
+  day_unlimited?: boolean;
+  day_pass?: boolean;
+  day_pass_status?: {
+    week_start?: string;
+    limit?: number;
+    used?: number;
+    remaining?: number;
+    already_active_today?: boolean;
+    confirm_phrase?: string;
+  };
+  reward_day?: boolean;
+  reward_day_status?: RewardDayStatus;
+  unlock_mode?: string;
+  morning?: MorningGate;
+  /** Day browser mode payload (SelfTracker source of truth). */
+  browser?: BrowserGateSection;
+  browser_mode?: string;
+  /** Present when demo clock module is available (enabled or not). */
+  demo?: DemoClockStatus;
+}
+
+export interface DemoClockStatus {
+  enabled: boolean;
+  now_iso?: string | null;
+  day?: string | null;
+  real_now_iso?: string;
+  real_day?: string;
+  read_only?: boolean;
+  note?: string;
+}
+
+export interface DemoRealDay {
+  day: string;
+  events: number;
+  sources: string[];
+}
+
+export interface DemoClockPayload extends DemoClockStatus {
+  real_days?: DemoRealDay[];
+}
+
+export async function fetchDemoClock(): Promise<DemoClockPayload> {
+  const res = await fetch(resolveApiUrl("/api/behavior/demo-clock"), {
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error(`behavior/demo-clock: ${res.status}`);
+  return res.json();
+}
+
+export async function setDemoClock(body: {
+  enabled: boolean;
+  now_iso?: string | null;
+}): Promise<DemoClockStatus> {
+  const res = await fetch(resolveApiUrl("/api/behavior/demo-clock"), {
+    method: "PUT",
+    headers: authHeaders(),
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const detail = await res.text().catch(() => "");
+    throw new Error(detail || `behavior/demo-clock: ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function clearDemoClock(): Promise<DemoClockStatus> {
+  const res = await fetch(resolveApiUrl("/api/behavior/demo-clock"), {
+    method: "DELETE",
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error(`behavior/demo-clock: ${res.status}`);
+  return res.json();
 }
 
 export async function fetchProductivityPolicy(): Promise<ProductivityPolicy> {
@@ -303,6 +503,50 @@ export async function fetchDistractionGate(): Promise<DistractionGate> {
     headers: authHeaders(),
   });
   if (!res.ok) throw new Error(`behavior/distraction-gate: ${res.status}`);
+  return res.json();
+}
+
+export async function confirmMorningPlan(opts?: {
+  goals?: string;
+}): Promise<{
+  ok: boolean;
+  morning?: MorningGate;
+}> {
+  const res = await fetch(resolveApiUrl("/api/behavior/morning-plan/confirm"), {
+    method: "POST",
+    headers: { ...authHeaders(), "Content-Type": "application/json" },
+    body: JSON.stringify({ goals: opts?.goals ?? "" }),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.detail || `morning-plan/confirm: ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function draftMorningAutoPlan(opts?: {
+  addMore?: boolean;
+}): Promise<{
+  ok: boolean;
+  auto_plan?: MorningAutoPlan | null;
+  morning?: MorningGate;
+  draft?: {
+    skipped?: boolean;
+    reason?: string | null;
+    created?: number;
+    titles?: string[];
+    ask?: string;
+  };
+}> {
+  const res = await fetch(resolveApiUrl("/api/behavior/morning-plan/auto-draft"), {
+    method: "POST",
+    headers: { ...authHeaders(), "Content-Type": "application/json" },
+    body: JSON.stringify({ add_more: Boolean(opts?.addMore) }),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.detail || `morning-plan/auto-draft: ${res.status}`);
+  }
   return res.json();
 }
 
@@ -344,6 +588,25 @@ export async function patchTrackedSession(
 ): Promise<{ session: Record<string, unknown> }> {
   const res = await fetch(resolveApiUrl(`/api/behavior/tracked-sessions/${encodeURIComponent(sessionId)}`), {
     method: "PATCH",
+    headers: authHeaders(),
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+/** Lecture Notes / quiz / vocab / math (active focused tab) → study minutes. */
+export async function postStudyPresence(body: {
+  path: string;
+  focused?: boolean;
+  client?: string;
+  title?: string;
+  notes_loaded?: boolean;
+  reading?: boolean;
+  document_id?: string;
+}): Promise<{ ok: boolean; credited_seconds?: number; reason?: string; lane?: string }> {
+  const res = await fetch(resolveApiUrl("/api/behavior/study-presence"), {
+    method: "POST",
     headers: authHeaders(),
     body: JSON.stringify(body),
   });

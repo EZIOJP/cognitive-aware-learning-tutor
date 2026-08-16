@@ -14,15 +14,12 @@ export function SystemLogsPage() {
           </div>
           <h1 className="text-2xl font-semibold tracking-tight">App logs</h1>
           <p className="text-sm text-emerald-100/70 max-w-2xl leading-relaxed">
-            One place to read backend, note generation, corpus build, and Transcript Studio logs.
+            One place to read backend, note generation, and Transcript Studio logs.
             When something fails, check here before guessing.
           </p>
           <div className="flex flex-wrap gap-3 text-xs">
             <Link to="/lecture-notes" className="text-emerald-300 hover:underline">
               Lecture Notes
-            </Link>
-            <Link to="/knowledge-base" className="text-emerald-300 hover:underline">
-              Knowledge Base
             </Link>
           </div>
         </header>

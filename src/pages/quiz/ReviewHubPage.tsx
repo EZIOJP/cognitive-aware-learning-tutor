@@ -560,7 +560,7 @@ export function ReviewHubPage() {
                 <BookOpen className="h-4 w-4" /> Notes — auto-generate
               </div>
               <p className="text-[10px] text-muted-foreground">
-                Paste a library note path (e.g. <code className="text-foreground">lecture_2/numpy_lecture_notes.md</code>).
+                Paste a library note path (e.g. <code className="text-foreground">data_foundations/lecture_2/numpy_lecture_notes.md</code>).
                 Questions are built from the note file only — no corpus RAG.
               </p>
               <input

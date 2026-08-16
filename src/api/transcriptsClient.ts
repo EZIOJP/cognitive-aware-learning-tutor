@@ -631,11 +631,18 @@ export async function createLibraryFile(
   title: string,
   folderPath: string,
   kind: string,
+  opts?: { content?: string; topic?: string },
 ): Promise<NoteFile> {
   const res = await fetch(`${BASE}/api/transcripts/library/files`, {
     method: "POST",
     headers: headers(),
-    body: JSON.stringify({ title, folder_path: folderPath, kind }),
+    body: JSON.stringify({
+      title,
+      folder_path: folderPath,
+      kind,
+      ...(opts?.content != null ? { content: opts.content } : {}),
+      ...(opts?.topic != null ? { topic: opts.topic } : {}),
+    }),
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(apiErrorMessage(data, res.status));
@@ -913,6 +920,8 @@ export async function generateLibraryQuiz(
     expandSiblings?: boolean;
     save?: boolean;
     folderPath?: string;
+    topicIds?: string[];
+    seedDeck?: boolean;
   },
 ): Promise<{
   questions: QuizQuestion[];
@@ -922,8 +931,11 @@ export async function generateLibraryQuiz(
   focus?: string;
   call_plan?: { role: string; count: number }[];
   sections_covered?: string[];
+  topics_covered?: string[];
   saved?: boolean;
   saved_path?: string | null;
+  deck_id?: number | null;
+  cards_seeded?: number;
   source_paths_used?: string[];
   source_paths_requested?: string[];
   expanded?: boolean;
@@ -932,6 +944,8 @@ export async function generateLibraryQuiz(
   questions_from_extractive?: number;
   target_count?: number;
   filled_count?: number;
+  note_path?: string | null;
+  topic_ids?: string[];
 }> {
   const res = await fetch(`${BASE}/api/transcripts/library/generate-quiz`, {
     method: "POST",
@@ -944,6 +958,8 @@ export async function generateLibraryQuiz(
       expand_siblings: opts?.expandSiblings ?? true,
       save: opts?.save,
       folder_path: opts?.folderPath ?? "",
+      topic_ids: opts?.topicIds ?? [],
+      seed_deck: opts?.seedDeck,
       ...llmBodyFieldsForTask("quiz_gen", opts?.llm),
     }),
   });
@@ -957,8 +973,11 @@ export async function generateLibraryQuiz(
     focus?: string;
     call_plan?: { role: string; count: number }[];
     sections_covered?: string[];
+    topics_covered?: string[];
     saved?: boolean;
     saved_path?: string | null;
+    deck_id?: number | null;
+    cards_seeded?: number;
     source_paths_used?: string[];
     source_paths_requested?: string[];
     expanded?: boolean;
@@ -967,6 +986,26 @@ export async function generateLibraryQuiz(
     questions_from_extractive?: number;
     target_count?: number;
     filled_count?: number;
+    note_path?: string | null;
+    topic_ids?: string[];
+  };
+}
+
+export async function fetchNoteTopics(path: string): Promise<{
+  path: string;
+  topics: { topic_id: string; title: string; label: string; char_count?: number; source?: string }[];
+  count: number;
+}> {
+  const q = new URLSearchParams({ path });
+  const res = await fetch(`${BASE}/api/transcripts/library/note-topics?${q}`, {
+    headers: headers(),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(apiErrorMessage(data, res.status));
+  return data as {
+    path: string;
+    topics: { topic_id: string; title: string; label: string; char_count?: number; source?: string }[];
+    count: number;
   };
 }
 
@@ -1047,51 +1086,5 @@ export async function syncStudySession(
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(apiErrorMessage(data, res.status));
   return data as { saved: SyncSavedItem[]; count: number };
-}
-
-export type StudyFlowResult = {
-  run_id: string | null;
-  topic: string;
-  steps: {
-    retrieve: { hit_count: number };
-    notes: { mode: string; relative_path: string; filename: string };
-    corpus_handoff: { transcript_chunks?: number; note_chunks?: number };
-    quiz: { deck_id: number | null; question_count: number; session_id: string | null };
-  };
-  next_urls: {
-    notes: string;
-    quiz: string;
-    review_due: string;
-  };
-};
-
-export async function startTopicStudyFlow(opts: {
-  topic: string;
-  transcriptFile: string;
-  folderPath?: string;
-  title?: string;
-  ingestCorpus?: boolean;
-  quizCount?: number;
-  startQuiz?: boolean;
-  llm?: LlmOverrides;
-  confirmHeavyBudget?: boolean;
-}): Promise<StudyFlowResult> {
-  const res = await fetch(`${BASE}/api/transcripts/study-flow/start`, {
-    method: "POST",
-    headers: headers(),
-    body: JSON.stringify({
-      topic: opts.topic,
-      transcript_file: opts.transcriptFile,
-      folder_path: opts.folderPath ?? "",
-      title: opts.title ?? "",
-      ingest_corpus: opts.ingestCorpus ?? false,
-      quiz_count: opts.quizCount ?? 8,
-      start_quiz: opts.startQuiz ?? false,
-      ...llmBodyFieldsForTask("notes_job", opts.llm, opts.confirmHeavyBudget),
-    }),
-  });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(apiErrorMessage(data, res.status));
-  return data as StudyFlowResult;
 }
 

@@ -26,6 +26,7 @@ DEFAULT_PRODUCTIVE_CATEGORIES: list[str] = [
     "Office / Docs",
     "Design",
     "Coursework (Browser)",
+    "Study (Browser)",
     "Coding Practice",
     "Research",
     "Dev / Code",
@@ -99,8 +100,13 @@ def serialize_policy(row: ProductivityPolicy | None) -> dict[str, Any]:
     if not exes and not bool(getattr(row, "hard_block_enabled", False)):
         # Fresh row / empty JSON → seed defaults for UI
         exes = list(defaults["hard_block_exes"])
+    productive = _loads_list(row.productive_categories)
+    # Keep older saved policies current for Study Library / CALT SPA credit.
+    for must in ("Study (Browser)", "Coursework (Browser)"):
+        if must not in productive:
+            productive.append(must)
     return {
-        "productive_categories": _loads_list(row.productive_categories),
+        "productive_categories": productive,
         "blocked_categories": _loads_list(row.blocked_categories),
         "app_overrides": _loads_dict(row.app_overrides),
         "threshold": int(row.threshold or PRODUCTIVE_THRESHOLD),

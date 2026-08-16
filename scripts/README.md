@@ -47,8 +47,8 @@ chmod +x scripts/setup.sh scripts/run_all.sh scripts/migrate.sh scripts/install_
 | `run_transcript_to_notes.bat` | **Legacy** — delegates to `transcript-notes-studio` CLI `generate` |
 | `run_face_tracker.bat` | Python webcam focus mirror → hub |
 | `run_eeg.bat` | Legacy EEG prototype (`backend_example.py`) — use main API for integrated stack |
-| `launch_selftracker_chrome.bat` | Chrome + SelfTracker extension |
-| `launch_selftracker_edge.bat` | Edge + SelfTracker extension |
+| `launch_selftracker_chrome.bat` | Chrome + SelfTracker (legacy helper; prefer Edge) |
+| `launch_selftracker_edge.bat` | Edge + SelfTracker (supported browser gate) |
 
 ---
 

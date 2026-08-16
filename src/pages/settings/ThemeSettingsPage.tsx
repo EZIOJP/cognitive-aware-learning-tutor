@@ -23,6 +23,9 @@ import {
   SURFACE_STYLES,
   BUTTON_VARIANTS,
   MOTION_LEVELS,
+  TOPBAR_TITLE_STYLES,
+  TOPBAR_TITLE_FONTS,
+  TOPBAR_TITLE_SIZES,
 } from "../../theme/layers";
 
 const RADIUS_OPTIONS = [
@@ -148,6 +151,9 @@ export default function ThemeSettingsPage() {
     buttonVariant,
     motionLevel,
     widgets,
+    topbarTitleStyle,
+    topbarTitleFont,
+    topbarTitleSize,
     isHeroLayersActive,
     setAccentColor,
     setRadius,
@@ -159,6 +165,9 @@ export default function ThemeSettingsPage() {
     setButtonVariant,
     setMotionLevel,
     toggleWidget,
+    setTopbarTitleStyle,
+    setTopbarTitleFont,
+    setTopbarTitleSize,
     applyPreset,
     resetStudyDefaults,
   } = useTheme();
@@ -342,6 +351,39 @@ export default function ThemeSettingsPage() {
                       value={typographyPack}
                       onChange={setTypographyPack}
                     />
+                  </section>
+                  <section>
+                    <h3 className="text-sm font-medium mb-1">Top bar title</h3>
+                    <p className="text-xs text-muted-foreground mb-2">
+                      Default is editorial type with a short primary hairline that grows on hover.
+                      Rule keeps a full-width accent; Bare is title and subtitle only.
+                    </p>
+                    <div className="space-y-3">
+                      <div>
+                        <p className="text-[11px] text-muted-foreground mb-1">Look</p>
+                        <LayerOptionGrid
+                          options={TOPBAR_TITLE_STYLES}
+                          value={topbarTitleStyle}
+                          onChange={setTopbarTitleStyle}
+                        />
+                      </div>
+                      <div>
+                        <p className="text-[11px] text-muted-foreground mb-1">Font</p>
+                        <LayerOptionGrid
+                          options={TOPBAR_TITLE_FONTS}
+                          value={topbarTitleFont}
+                          onChange={setTopbarTitleFont}
+                        />
+                      </div>
+                      <div>
+                        <p className="text-[11px] text-muted-foreground mb-1">Size</p>
+                        <LayerOptionGrid
+                          options={TOPBAR_TITLE_SIZES}
+                          value={topbarTitleSize}
+                          onChange={setTopbarTitleSize}
+                        />
+                      </div>
+                    </div>
                   </section>
                   <section>
                     <h3 className="text-sm font-medium mb-1">Motion level</h3>

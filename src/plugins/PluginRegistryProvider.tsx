@@ -7,7 +7,7 @@ import {
   type ReactNode,
 } from "react";
 import { Sparkles } from "lucide-react";
-import { useAuth } from "../context/AuthContext";
+import { useAuthOptional } from "../context/AuthContext";
 import {
   BACKEND_PLUGIN_TO_FRONTEND,
   fetchHubPluginsState,
@@ -45,7 +45,8 @@ function backendStateToFrontendIds(plugins: { plugin_id: string; enabled: boolea
 }
 
 export function PluginRegistryProvider({ children }: { children: ReactNode }) {
-  const { isAuthenticated } = useAuth();
+  // Optional: avoid white-screen if Vite HMR briefly orphans AuthContext.
+  const isAuthenticated = Boolean(useAuthOptional()?.isAuthenticated);
   const [enabledIds, setEnabledIds] = useState<string[]>([]);
   const [customFeatures, setCustomFeatures] = useState<HubCustomFeature[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);

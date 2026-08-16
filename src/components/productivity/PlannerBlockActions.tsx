@@ -4,6 +4,8 @@ import type { PlannerBlock } from "../../api/plannerClient";
 
 type Props = {
   block: PlannerBlock;
+  /** Plan tab = schedule only (delete). Calendar = start / done / partial / roll. */
+  mode?: "plan" | "track";
   onStart: () => Promise<void>;
   onComplete: (minutes?: number) => Promise<void>;
   onRollForward: () => Promise<void>;
@@ -13,6 +15,7 @@ type Props = {
 
 export function PlannerBlockActions({
   block,
+  mode = "track",
   onStart,
   onComplete,
   onRollForward,
@@ -40,39 +43,57 @@ export function PlannerBlockActions({
           ? "In progress"
           : "Scheduled";
 
+  const showTrack = mode === "track" && block.status !== "done" && block.status !== "rolled";
+
   return (
-    <div className="space-y-3 p-4 rounded-lg border border-violet-500/30 bg-card">
+    <div
+      className={
+        mode === "track"
+          ? "space-y-3 p-4 rounded-xl border border-emerald-500/35 bg-gradient-to-b from-slate-900 via-emerald-950/40 to-slate-950 shadow-lg"
+          : "space-y-3 p-4 rounded-lg border border-violet-500/30 bg-card"
+      }
+    >
       <div className="flex items-start justify-between gap-2">
         <div>
+          <p className="text-[10px] uppercase tracking-wider text-emerald-300/70 font-medium">
+            {mode === "track" ? "Track this block" : "Scheduled block"}
+          </p>
           <h3 className="text-sm font-semibold text-foreground">{block.title}</h3>
           <p className="text-xs text-muted-foreground mt-0.5">
             {block.category} · {statusLabel} · {block.remaining_minutes}m left of {block.planned_minutes}m
           </p>
+          {mode === "plan" ? (
+            <p className="text-[11px] text-muted-foreground mt-1.5">
+              Scheduling view — use the Calendar tab to start or mark blocks done.
+            </p>
+          ) : null}
         </div>
         <Button type="button" variant="ghost" size="sm" onClick={onClose}>
           Close
         </Button>
       </div>
 
-      {block.status !== "done" && block.status !== "rolled" && (
-        <div className="flex flex-wrap gap-2">
+      {showTrack && (
+        <div className="flex flex-col gap-2">
+          <Button
+            type="button"
+            size="default"
+            className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold"
+            disabled={busy}
+            onClick={() => void run(() => onComplete())}
+            title="Count the full remaining time as completed"
+          >
+            {block.status === "in_progress" ? "Finish — mark done" : "Mark done"}
+          </Button>
           {block.status !== "in_progress" && (
             <Button type="button" size="sm" variant="outline" disabled={busy} onClick={() => void run(onStart)}>
               Start
             </Button>
           )}
-          <Button
-            type="button"
-            size="sm"
-            disabled={busy}
-            onClick={() => void run(() => onComplete())}
-          >
-            Mark done
-          </Button>
         </div>
       )}
 
-      {block.status !== "done" && block.status !== "rolled" && block.remaining_minutes > 0 && (
+      {showTrack && block.remaining_minutes > 0 && (
         <div className="flex flex-wrap items-end gap-2 border-t border-border pt-3">
           <label className="text-xs text-muted-foreground">
             Partial (min)

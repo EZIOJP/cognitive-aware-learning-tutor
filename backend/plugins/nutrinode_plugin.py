@@ -200,24 +200,43 @@ async def calculate_macros(food_name: str, weight_g: float) -> dict:
     }
 
 
+CSV_HEADERS = [
+    "timestamp", "meal_id", "source", "location_tag",
+    "food_item", "weight_g", "servings", "meal_type",
+    "total_kcal", "protein_g", "carbs_g", "fat_g", "fiber_g",
+    "confidence", "is_healthy", "cuisine_type", "allergens",
+    "macros_source", "description",
+]
+
+
 # ── DSC CSV Logger ────────────────────────────────────────────────────────────
 def log_to_csv(entry: dict):
     date_str = datetime.now().strftime("%Y-%m-%d")
     csv_path = LOG_DIR / f"DSC_nutrition_log_{date_str}.csv"
-    headers = [
-        "timestamp", "meal_id", "source", "location_tag",
-        "food_item", "weight_g",
-        "total_kcal", "protein_g", "carbs_g", "fat_g", "fiber_g",
-        "confidence", "is_healthy", "cuisine_type", "allergens",
-        "macros_source", "description"
-    ]
     file_exists = csv_path.exists()
     with open(csv_path, "a", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=headers)
+        writer = csv.DictWriter(f, fieldnames=CSV_HEADERS, extrasaction="ignore")
         if not file_exists:
             writer.writeheader()
-        writer.writerow({h: entry.get(h, "") for h in headers})
+        writer.writerow({h: entry.get(h, "") for h in CSV_HEADERS})
     log.info(f"📝 Logged to {csv_path.name}")
+
+
+def _today_csv_path() -> Path:
+    return LOG_DIR / f"DSC_nutrition_log_{date.today().strftime('%Y-%m-%d')}.csv"
+
+
+def _rewrite_today_csv(rows: list[dict]) -> None:
+    csv_path = _today_csv_path()
+    if not rows:
+        if csv_path.exists():
+            csv_path.unlink()
+        return
+    with open(csv_path, "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=CSV_HEADERS, extrasaction="ignore")
+        writer.writeheader()
+        for row in rows:
+            writer.writerow({h: row.get(h, "") for h in CSV_HEADERS})
 
 
 def _hub_log_calories(kcal: float) -> None:
@@ -303,30 +322,204 @@ class ManualMealLog(BaseModel):
     food_item: str
     weight_grams: float
     location_tag: str = "manual"
+    meal_type: str = "snack"
+    servings: float = 1.0
 
 @router.post("/api/nutrition/manual")
 async def manual_log(body: ManualMealLog):
+    from backend.plugins.nutrition_foods import resolve_item_nutrition
+
     timestamp = datetime.now()
     meal_id = f"MEAL_{timestamp.strftime('%Y%m%d_%H%M%S')}"
-    macros = await calculate_macros(body.food_item, body.weight_grams)
+    macros = await resolve_item_nutrition(body.food_item, body.weight_grams)
     entry = {
         "timestamp":    timestamp.isoformat(),
         "meal_id":      meal_id,
         "source":       "manual",
         "location_tag": body.location_tag,
-        "food_item":    body.food_item,
+        "food_item":    macros.get("matched_name") or body.food_item,
         "weight_g":     body.weight_grams,
+        "servings":     body.servings,
+        "meal_type":    body.meal_type,
         "confidence":   1.0,
         "is_healthy":   None,
         "cuisine_type": "",
         "allergens":    "[]",
         "description":  "Manually logged",
-        **macros,
+        **{k: macros[k] for k in ("total_kcal", "protein_g", "carbs_g", "fat_g", "fiber_g", "macros_source")},
     }
     log_to_csv(entry)
     _hub_log_calories(macros.get("total_kcal", 0))
     await manager.broadcast({"event": "new_meal", "data": entry})
     return {"status": "logged", **entry}
+
+
+class FoodEstimateBody(BaseModel):
+    food_name: str
+    weight_g: float = 100.0
+
+
+class CustomFoodBody(BaseModel):
+    name: str
+    display_name: str | None = None
+    per_g: dict
+    default_serving_g: float = 100.0
+
+
+class MealItemBody(BaseModel):
+    food_name: str
+    weight_g: float
+    servings: float = 1.0
+    macros_source: str | None = None
+    # Optional AI per-gram override when item came from estimate
+    ai_per_g: dict | None = None
+
+
+class MealConfirmBody(BaseModel):
+    items: List[MealItemBody]
+    meal_type: str = "snack"
+    location_tag: str = "manual"
+
+
+@router.get("/api/nutrition/foods/search")
+async def foods_search(q: str = "", limit: int = 20):
+    from backend.plugins.nutrition_foods import search_foods
+
+    return {"results": search_foods(q, limit=min(max(limit, 1), 50))}
+
+
+@router.post("/api/nutrition/foods/estimate")
+async def foods_estimate(body: FoodEstimateBody):
+    from backend.plugins.nutrition_ai import estimate_nutrition
+    from backend.plugins.nutrition_foods import find_food_exact, resolve_item_nutrition
+
+    # Prefer DB / IFCT first
+    resolved = await resolve_item_nutrition(body.food_name, body.weight_g, allow_off=True)
+    if resolved.get("macros_source") not in ("fallback",):
+        food = find_food_exact(body.food_name)
+        per_g = food["per_g"] if food else None
+        out = {
+            **resolved,
+            "food_name": resolved.get("matched_name") or body.food_name,
+            "confidence": 1.0,
+            "notes": "Matched local / IFCT database",
+            "per_g": per_g,
+            "per_100g": (
+                {
+                    "kcal": round(per_g["kcal"] * 100, 1),
+                    "protein_g": round(per_g["p"] * 100, 1),
+                    "carbs_g": round(per_g["c"] * 100, 1),
+                    "fat_g": round(per_g["f"] * 100, 1),
+                    "fiber_g": round(per_g.get("fiber", 0) * 100, 1),
+                }
+                if per_g
+                else None
+            ),
+        }
+        return out
+
+    try:
+        return estimate_nutrition(body.food_name, body.weight_g)
+    except Exception as e:
+        raise HTTPException(status_code=503, detail=str(e))
+
+
+@router.post("/api/nutrition/foods/custom")
+async def foods_custom(body: CustomFoodBody):
+    from backend.plugins.nutrition_foods import save_custom_food
+
+    row = save_custom_food(
+        {
+            "name": body.name,
+            "display_name": body.display_name or body.name,
+            "per_g": body.per_g,
+            "default_serving_g": body.default_serving_g,
+        }
+    )
+    return {"status": "saved", "food": row}
+
+
+@router.post("/api/nutrition/analyze-photo")
+async def analyze_photo_endpoint(
+    image: UploadFile = File(...),
+):
+    from backend.plugins.nutrition_ai import analyze_photo
+
+    image_bytes = await image.read()
+    if not image_bytes:
+        raise HTTPException(status_code=400, detail="Empty image")
+    mime = image.content_type or "image/jpeg"
+    try:
+        return analyze_photo(image_bytes, mime=mime)
+    except Exception as e:
+        raise HTTPException(status_code=503, detail=str(e))
+
+
+@router.post("/api/nutrition/meals")
+async def confirm_meal(body: MealConfirmBody):
+    from backend.plugins.nutrition_foods import resolve_item_nutrition
+
+    if not body.items:
+        raise HTTPException(status_code=400, detail="No items")
+
+    timestamp = datetime.now()
+    meal_id = f"MEAL_{timestamp.strftime('%Y%m%d_%H%M%S')}"
+    logged = []
+    total_kcal = 0.0
+
+    for i, item in enumerate(body.items):
+        macros = await resolve_item_nutrition(
+            item.food_name,
+            item.weight_g,
+            ai_per_g=item.ai_per_g,
+        )
+        if item.macros_source and macros.get("macros_source") == "fallback" and item.ai_per_g:
+            macros = await resolve_item_nutrition(
+                item.food_name, item.weight_g, ai_per_g=item.ai_per_g, allow_off=False
+            )
+        entry = {
+            "timestamp": timestamp.isoformat(),
+            "meal_id": f"{meal_id}_{i + 1}" if len(body.items) > 1 else meal_id,
+            "source": "meal_composer",
+            "location_tag": body.location_tag,
+            "food_item": macros.get("matched_name") or item.food_name,
+            "weight_g": item.weight_g,
+            "servings": item.servings,
+            "meal_type": body.meal_type,
+            "confidence": 1.0,
+            "is_healthy": None,
+            "cuisine_type": "",
+            "allergens": "[]",
+            "description": f"Meal composer · {body.meal_type}",
+            **{k: macros[k] for k in ("total_kcal", "protein_g", "carbs_g", "fat_g", "fiber_g", "macros_source")},
+        }
+        log_to_csv(entry)
+        total_kcal += float(entry.get("total_kcal") or 0)
+        logged.append(entry)
+        await manager.broadcast({"event": "new_meal", "data": entry})
+
+    _hub_log_calories(total_kcal)
+    return {"status": "logged", "meal_id": meal_id, "items": logged}
+
+
+@router.delete("/api/nutrition/meals/{meal_id}")
+async def delete_meal(meal_id: str):
+    csv_path = _today_csv_path()
+    if not csv_path.exists():
+        raise HTTPException(status_code=404, detail="No meals today")
+    kept: list[dict] = []
+    removed = 0
+    with open(csv_path, "r", encoding="utf-8") as f:
+        for row in csv.DictReader(f):
+            if row.get("meal_id") == meal_id:
+                removed += 1
+                continue
+            kept.append(row)
+    if removed == 0:
+        raise HTTPException(status_code=404, detail="Meal not found")
+    _rewrite_today_csv(kept)
+    await manager.broadcast({"event": "meal_deleted", "meal_id": meal_id})
+    return {"status": "deleted", "meal_id": meal_id, "removed": removed}
 
 
 # ── ENDPOINT: Get today's summary ─────────────────────────────────────────────

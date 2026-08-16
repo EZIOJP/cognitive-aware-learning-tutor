@@ -1,0 +1,67 @@
+{
+  "configVersion": "v3",
+  "app": {
+    "appName": "CALT Bible",
+    "appId": 1088804,
+    "appType": "app",
+    "version": {
+      "code": 7,
+      "name": "1.0.6"
+    },
+    "icon": "icon.png",
+    "vender": "calt",
+    "description": "Offline WEB Bible — full chapter scroll + hourly verse"
+  },
+  "permissions": [
+    "data:os.device.info",
+    "device:os.local_storage",
+    "device:os.bg_service",
+    "device:os.notification"
+  ],
+  "runtime": {
+    "apiVersion": {
+      "compatible": "3.0",
+      "target": "3.0",
+      "minVersion": "2.0"
+    }
+  },
+  "targets": {
+    "480x480-t-rex-3": {
+      "module": {
+        "page": {
+          "pages": [
+            "page/index",
+            "page/read",
+            "page/books",
+            "page/chapters",
+            "page/settings"
+          ]
+        },
+        "app-service": {
+          "services": ["app-service/bible"]
+        },
+        "app-event": {
+          "path": "app-service/bible"
+        }
+      },
+      "platforms": [
+        { "name": "t-rex-3", "deviceSource": 8716544 },
+        { "name": "t-rex-3-w", "deviceSource": 8716545 },
+        { "name": "t-rex-3-c", "deviceSource": 8716547 },
+        { "name": "t-rex-3-pro-48", "deviceSource": 10551552 },
+        { "name": "t-rex-3-pro-48-w", "deviceSource": 10551553 },
+        { "name": "t-rex-3-pro-48-c", "deviceSource": 10551555 },
+        { "name": "t-rex-3-pro-44", "deviceSource": 10682624 },
+        { "name": "t-rex-3-pro-44-w", "deviceSource": 10682625 },
+        { "name": "t-rex-3-pro-44-c", "deviceSource": 10682627 }
+      ],
+      "designWidth": 480
+    }
+  },
+  "i18n": {
+    "en-US": {
+      "appName": "CALT Bible"
+    }
+  },
+  "defaultLanguage": "en-US"
+}

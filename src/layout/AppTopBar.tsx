@@ -4,10 +4,9 @@ import { CircleUserRound, LogOut, Shield, LogIn } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { ThemeToggle } from "../components/theme/ThemeToggle";
 import { useAuth } from "../context/AuthContext";
-import { useTheme } from "../context/ThemeContext";
-import { cn } from "../app/components/ui/utils";
 import { PomodoroDock } from "./topbar/PomodoroDock";
 import { FaceTrackerDock } from "./topbar/FaceTrackerDock";
+import { DashboardChromeDock } from "./topbar/DashboardChromeDock";
 import { usePluginsOptional } from "../plugins/registry";
 import {
   DropdownMenu,
@@ -65,9 +64,7 @@ const PAGE_TITLES: Record<string, string> = {
   "/gre-vocab/read": "Vocab Read",
   "/gre-vocab/cycle": "Vocab Cycle",
   "/lecture-notes": "Lecture Notes",
-  "/knowledge-base": "Knowledge Base",
   "/review": "Review Hub",
-  "/study-flow": "Study Flow",
   "/study-room": "Study Room",
   "/hub": "Cortex Hub",
   "/ai-coach": "AI Coach",
@@ -86,7 +83,6 @@ const PAGE_SUBTITLES: Record<string, string> = {
   "/math-tutor": "Topics, drills, and progress",
   "/productivity": "Plan, track, and review focus",
   "/lecture-notes": "Capture and study lectures",
-  "/study-flow": "Topic → notes → quiz → review",
   "/review": "Spaced repetition due today",
   "/settings": "Appearance, AI, and plugins",
   "/settings/theme": "Preview and switch look",
@@ -156,14 +152,9 @@ export function AppTopBar() {
   const plugins = usePluginsOptional();
   const focusMirrorOn =
     Boolean(plugins?.isLoaded) && (plugins?.enabledIds.includes("focus-mirror") ?? false);
-  const { typographyPack, motionLevel } = useTheme();
   const title = resolvePageTitle(pathname, plugins?.getNavItems() ?? []);
   const subtitle =
     matchLongestPrefix(pathname, PAGE_SUBTITLES) ?? "Cognitive-aware learning hub";
-  const titleClass =
-    typographyPack !== "study"
-      ? cn("hero-headline text-base", motionLevel === "hero" && "hero-text-shadow")
-      : "text-lg font-semibold tracking-tight";
 
   const barRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLDivElement>(null);
@@ -212,7 +203,7 @@ export function AppTopBar() {
   };
 
   return (
-    <header className="gloss-topbar sticky top-0 z-40 h-16 shrink-0 overflow-hidden">
+    <header className="gloss-topbar sticky top-0 z-40 min-h-16 h-16 shrink-0 overflow-visible">
       <div ref={barRef} className="relative flex h-full items-center justify-between gap-6 px-5">
         <AnimatePresence>
           {rocketPass > 0 && flight ? (
@@ -253,27 +244,25 @@ export function AppTopBar() {
 
         <div
           ref={titleRef}
-          className="relative z-10 min-w-0 cursor-pointer select-none transition-transform hover:scale-[1.02] active:scale-[0.98]"
+          className="topbar-title-card relative z-10 min-w-0 cursor-pointer select-none"
           onPointerDown={onTitlePointerDown}
           onPointerUp={clearLongPress}
           onPointerLeave={clearLongPress}
           onPointerCancel={clearLongPress}
           title="Long-press for a surprise…"
         >
-          <div className="flex items-center gap-2">
-            <h1 className={cn("truncate", titleClass)}>{title}</h1>
-          </div>
-          <p className="text-[11px] text-muted-foreground/70 hidden sm:block truncate">
-            {subtitle}
-          </p>
+          <h1 className="topbar-title-card__heading" data-text={title}>
+            {title}
+          </h1>
+          <p className="topbar-title-card__sub hidden sm:block">{subtitle}</p>
         </div>
 
         <div className="relative z-10 flex items-center gap-3">
+          <DashboardChromeDock />
           {focusMirrorOn && <FaceTrackerDock />}
           <div ref={timerRef} className="inline-flex">
             <PomodoroDock />
           </div>
-          <div className="w-px h-6 bg-border/50" />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button

@@ -23,5 +23,5 @@ call "%~dp0desktop_tracker\run_desktop_tracker_headless.bat"
 echo.
 echo Full stack ready. Tracker logs: data\logs\desktop_tracker.log
 echo Stop servers: scripts\stop_servers.bat
-echo Stop tracker: scripts\desktop_tracker\stop_desktop_tracker.bat
+echo Stop tracker ^(PIN^): scripts\admin_only\stop_desktop_tracker.bat
 endlocal

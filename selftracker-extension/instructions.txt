@@ -1,46 +1,41 @@
 CALT SelfTracker — Microsoft Edge (Chromium MV3)
 ================================================
 
-CALT is Edge-only for browser gating. Do not use Zen/Firefox for study browsing.
+Tracking / telemetry / Jarvis only. **Site blocking is CALT Gate.**
 
-Install in Microsoft Edge:
+Folders (Load unpacked):
+  C:\Users\Lenovo\Desktop\Cognitive-Aware Learning Tutor\calt-gate-extension
+  C:\Users\Lenovo\Desktop\Cognitive-Aware Learning Tutor\selftracker-extension
+
+Install BOTH in Microsoft Edge:
 1. Start CALT backend (run.bat) so http://127.0.0.1:8000 is up.
-2. edge://extensions → Developer mode → Load unpacked
-3. Select folder: selftracker-extension/
-   Or run: scripts\launch_selftracker_edge.bat
+2. edge://extensions → Developer mode ON
+3. Load unpacked → calt-gate-extension  (v1.0.2)
+4. Load unpacked → selftracker-extension (v1.5.23)
 
-*** REQUIRED AFTER UPDATES (v1.5.13) — RELOAD REQUIRED ***
-edge://extensions → Reload on CALT SelfTracker.
-Also restart the desktop tracker / backend if it was already running
-(so Edge process-kill hardening is loaded).
-Accept new permissions if prompted.
-Keep "Redirect distraction sites while locked" checked in the extension popup.
-Tray → Today’s rules should show Mode: BIBLE/STUDY · YouTube blocked.
+*** REQUIRED AFTER UPDATES — REMOVE + RELOAD ***
+If you see: importScripts … gate_policy.js failed to load (NetworkError):
+  1. edge://extensions → Remove BOTH extensions
+  2. Load unpacked again from the folders above
+  3. Confirm versions: Gate 1.0.2 · SelfTracker 1.5.23
 
-What it does (v1.5.13):
-- Tracks tab URLs/time → ws://localhost:8000/ws/behavior (URL sessions credit study minutes)
-- Draggable Jarvis toast on the page + word typewriter (desktop TTS speaks the line separately)
-- Light snapshot → POST /api/behavior/browser-telemetry (~45s; idle backoff ~2m)
-- Gate poll ~4s: cache + DNR fingerprint ONLY — does NOT query/rewrite all tabs
-- Enforce sweep only on ~1 min alarm (or explicit Refresh / toggle redirects)
-- softLand only via webNavigation.onCommitted (single committed tab) — not onUpdated
-- Circuit breaker: >8 softLands in 30s → pause redirects 2 min (fail soft; Edge stays alive)
-- Never tabs.remove cleanup; never windows.update focus storms
-- DNR watch hosts capped; rules update only when fingerprint changes
-- **Tab-local lock:** blocked site → locked.html (or morning bible/plan SPA) in that tab only
-- **Locked screen:** study minutes / goal / time left; same-tab shortcuts (no FOCUS_CALT)
-- Explicit FOCUS_CALT / OPEN_PATH still opens/updates one CALT tab when requested (popup)
-- Keyword filter on URL + page title only (server block_keywords_list)
-- Day modes from server `browser.mode`: bible / planning / study / free
-  - After morning plan confirm, daytime default is **study** (not free)
-  - Study: allow Scaler/Colab/GitHub/Drive/Gemini/… — does NOT auto-open Scaler; blocks YouTube/Netflix/social
-  - Free: shopping/house allowlist; still blocks porn; YouTube only in true free windows
-  - bible/planning/study: **youtube.com / youtu.be always forced blocked**
-- **Fail-closed:** if gate API is unreachable, last known bible/planning/study mode is kept
-- On block → POST /api/behavior/gate-alert → canned Jarvis speak (tracker)
-- Popup: mode chip + Jarvis live line; Open Bible/Plan focuses one CALT tab
+Normal update (after code change):
+  powershell -File scripts\build_extension_workers.ps1
+  edge://extensions → Reload on both cards
 
-Desktop tracker: games hard-block; **never kill msedge.exe** (or Edge helpers);
-other browsers soft-lock + voice only. Optional ~60s CPU NSFW screen scan when Armed.
-Never kills Cursor.
-Tray: Free time… (same PIN/phrase as Confirm exit) for temporary free browsing.
+v1.5.23: Single service_worker.js bundle (fixes Edge importScripts NetworkError).
+v1.5.22: Active focused tab only; skip all localhost (CALT SPA owns presence).
+v1.5.21: Split — SelfTracker no longer does DNR/softLand (Edge crash load).
+
+What SelfTracker does (v1.5.23):
+- Tracks **active focused** internet tab URLs/time → ws://localhost:8000/ws/behavior
+- Does **not** SESSION_END localhost / 127.0.0.1
+- Hidden tabs: no content-script telemetry
+- Jarvis toast + browser telemetry
+
+What CALT Gate does (v1.0.2):
+- Poll distraction-gate + DNR redirect watch hosts → locked.html
+- Soft-land skips localhost CALT SPA
+- FREE / day_unlimited: YouTube stays open
+
+Keep redirects enabled in the **CALT Gate** popup (not SelfTracker).

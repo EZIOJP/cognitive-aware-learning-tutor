@@ -1,14 +1,17 @@
 // ============================================================
-// SelfTracker — background.js (Chromium MV3 / shared logic)
-// Tracks tabs + redirects distraction sites while gate locked
+// SelfTracker — background.js (Chromium MV3)
+// Tracking / telemetry / Jarvis only. Blocking → calt-gate-extension.
 // ============================================================
 
 /* global GATE_API_URL, GATE_ALERT_URL, GATE_POLL_ACTIVE_S, GATE_ALERT_GAP_MS,
    isExtensionOrInternalUrl, DISTRACTION_DOMAINS, shouldBlockUrl, redirectTargetUrl,
    isCaltSpaUrl, blockKindForUrl, startBrowserTelemetry, FORCE_WATCH_HOSTS,
-   isStrictDayMode */
+   isStrictDayMode, hostnameFromUrl, TEMP_ALLOW_STORAGE_KEY, TEMP_ALLOW_MS,
+   pruneTempAllows, buildTempAllowGrant, upsertTempAllow, isTempAllowExcludedHost,
+   tempAllowUntilForHost, browserPolicyOrFallback, isForceWatchHost, classifyHostCategory */
 
-importScripts("gate_policy.js", "telemetry.js");
+// Shared helpers are prepended by scripts/build_extension_workers.ps1 into service_worker.js
+// (Edge MV3 importScripts often fails with NetworkError on unpacked paths).
 
 /** DNR rule id range for watch hard-block (MV3 Edge/Chrome). */
 var DNR_WATCH_RULE_BASE = 9100;
@@ -20,6 +23,8 @@ let activeTabId = null;
 let activeUrl = null;
 let activeTitle = null;
 let sessionStart = Date.now();
+/** False when Edge loses OS focus — do not accrue internet time in background. */
+let windowFocused = true;
 let tabSwitchCount = 0;
 let dailyLog = [];
 let outboundQueue = [];
@@ -42,24 +47,26 @@ let lastDnrFingerprint = "";
 var softLandDone = Object.create(null);
 var softLandInFlight = Object.create(null);
 var lastEnforceAt = 0;
-/** Enforce is rare (alarm ~1 min) — never on the ~4s light poll. */
-var ENFORCE_MIN_GAP_MS = 55000;
-var SOFTLAND_DEDUP_MS = 10000;
-var MAX_ENFORCE_UPDATES = 4;
+/** Enforce is rare (alarm ~1 min) — never on the light poll. */
+var ENFORCE_MIN_GAP_MS = 60000;
+var SOFTLAND_DEDUP_MS = 15000;
+var MAX_ENFORCE_UPDATES = 2;
 /** Cap DNR dynamic rules — Edge thrash if rule churn is huge. */
-var MAX_DNR_WATCH_HOSTS = 12;
+var MAX_DNR_WATCH_HOSTS = 8;
 /** Circuit breaker: too many softLands → pause redirects (fail soft). */
 var softLandRecentAt = [];
-var SOFTLAND_STORM_MAX = 8;
-var SOFTLAND_STORM_WINDOW_MS = 30000;
-var REDIRECT_COOLDOWN_MS = 120000;
+var SOFTLAND_STORM_MAX = 5;
+var SOFTLAND_STORM_WINDOW_MS = 20000;
+var REDIRECT_COOLDOWN_MS = 180000;
 var redirectCooldownUntil = 0;
+/** In-memory temp allows: { host, until }[] — synced with chrome.storage.local. */
+var tempAllowsCache = [];
 
 const BULK_FLUSH_MINUTES = 3;
 const BULK_FLUSH_MAX = 25;
 
 extAPI.storage.local.get(
-  ["dailyLog", "tabSwitchCount", "outboundQueue", "gateCache", "redirectsEnabled", "caltTabId", "lastJarvisLine"],
+  ["dailyLog", "tabSwitchCount", "outboundQueue", "gateCache", "redirectsEnabled", "caltTabId", "lastJarvisLine", "tempAllows"],
   (result) => {
     if (result.dailyLog) dailyLog = result.dailyLog;
     if (result.tabSwitchCount) tabSwitchCount = result.tabSwitchCount;
@@ -71,6 +78,9 @@ extAPI.storage.local.get(
       lastJarvisLine = String(result.lastJarvisLine);
       // Seed so the first post-restart poll does not re-toast a stale API line.
       lastJarvisBroadcast = lastJarvisLine;
+    }
+    if (Array.isArray(result.tempAllows)) {
+      tempAllowsCache = pruneTempAllows(result.tempAllows, Date.now());
     }
   },
 );
@@ -84,9 +94,10 @@ function scheduleAlarms() {
 
 function startLightGatePoll() {
   if (gatePollTimer) return;
-  var ms = Math.max(3000, Math.min(8000, (GATE_POLL_ACTIVE_S || 4) * 1000));
+  // Slower than 4s — Edge crashes when SW wakes + DNR churn too often.
+  var ms = Math.max(8000, Math.min(15000, (GATE_POLL_ACTIVE_S || 4) * 2000));
   gatePollTimer = setInterval(function () {
-    // Cache + DNR fingerprint only — NEVER enforce/tabs.query every 4s (Edge crash).
+    // Cache + DNR fingerprint only — NEVER enforce/tabs.query on this timer.
     void pollDistractionGate({ opportunistic: true, enforce: false });
     void pollCaltTabCommand();
   }, ms);
@@ -195,6 +206,7 @@ async function pollDistractionGate(opts) {
       chapter_goal_met: Boolean(g.chapter_goal_met),
       day_unlimited: Boolean(g.day_unlimited),
       day_pass: Boolean(g.day_pass),
+      reward_day: Boolean(g.reward_day),
       productive_minutes: g.productive_minutes ?? 0,
       daily_goal_minutes: g.daily_goal_minutes ?? 0,
       suggested_links: Array.isArray(g.suggested_links) ? g.suggested_links : [],
@@ -212,25 +224,30 @@ async function pollDistractionGate(opts) {
       enforce: Boolean(browser.enforce) || Boolean(g.locked),
     };
     await extAPI.storage.local.set({ gateCache });
-    await syncDeclarativeWatchBlock();
-    if (doEnforce && (gateCache.enforce || gateCache.locked) && redirectsEnabled && !redirectsPausedByCircuit()) {
-      await enforceDistractionRedirects();
-    }
+    // Blocking / DNR owned by CALT Gate — tracker only caches mode for UI + Jarvis.
   } catch (e) {
-    // Fail-closed: keep last known strict/armed policy so YouTube stays blocked when API blips.
+    // Fail-closed for study/bible — but NEVER re-arm YouTube block while already FREE.
     const err = String(e && e.message ? e.message : e);
     const prev = gateCache && typeof gateCache === "object" ? gateCache : null;
     const prevBrowser = (prev && prev.browser) || {};
     const prevMode = String(prevBrowser.mode || "").toLowerCase();
-    const keepStrict = ["bible", "planning", "study"].indexOf(prevMode) >= 0;
+    const prevFree =
+      prevMode === "free" ||
+      Boolean(prev && (prev.day_unlimited || prev.reward_day || prev.unlocked));
+    const keepStrict = !prevFree && ["bible", "planning", "study"].indexOf(prevMode) >= 0;
     const keepArmed = Boolean(prev && (prev.enabled || prev.locked || prev.enforce));
-    if (prev && (prev.ok || prev.degraded) && (keepStrict || keepArmed)) {
+    if (prev && (prev.ok || prev.degraded) && (keepStrict || keepArmed || prevFree)) {
       const browser = Object.assign({}, prevBrowser, {
-        block_watch_sites: true,
+        // Keep FREE watch/social open across API blips; distraction filter stays on.
+        block_watch_sites: prevFree ? false : true,
+        block_social: prevFree ? false : prevBrowser.block_social === true,
+        block_other: prevFree ? false : true,
         block_porn: prevBrowser.block_porn !== false,
         enforce: true,
-        mode: prevMode || "study",
-        mode_label: prevBrowser.mode_label || (prevMode || "study").toUpperCase(),
+        mode: prevFree ? "free" : prevMode || "study",
+        mode_label: prevFree
+          ? "FREE"
+          : prevBrowser.mode_label || (prevMode || "study").toUpperCase(),
       });
       gateCache = Object.assign({}, prev, {
         ok: true,
@@ -239,11 +256,13 @@ async function pollDistractionGate(opts) {
         fetched_at: Date.now(),
         error: err,
         enforce: true,
+        day_unlimited: Boolean(prev.day_unlimited) || prevFree,
+        reward_day: Boolean(prev.reward_day),
+        unlocked: Boolean(prev.unlocked) || prevFree,
         browser: browser,
       });
     } else {
-      // No usable cache: default fail-closed study (watch + adult blocked). Tradeoff: offline API
-      // briefly looks like study until gate recovers — preferred over open YouTube.
+      // No usable cache: default fail-closed study (watch + adult blocked).
       gateCache = {
         ok: true,
         stale: true,
@@ -260,32 +279,60 @@ async function pollDistractionGate(opts) {
           mode_label: "STUDY",
           enforce: true,
           block_watch_sites: true,
-          block_porn: true,
           block_social: true,
           block_other: true,
+          block_porn: true,
           block_keywords: true,
-          allow_domains: typeof FALLBACK_ALLOW_DOMAINS !== "undefined" ? FALLBACK_ALLOW_DOMAINS : [],
-          watch_domains: typeof FALLBACK_WATCH_DOMAINS !== "undefined" ? FALLBACK_WATCH_DOMAINS : ["youtube.com", "youtu.be"],
-          bible_url: typeof CALT_BIBLE_URL !== "undefined" ? CALT_BIBLE_URL : "http://localhost:5173/bible",
-          plan_url:
-            typeof CALT_PRODUCTIVITY_URL !== "undefined"
-              ? CALT_PRODUCTIVITY_URL
-              : "http://localhost:5173/productivity?tab=plan",
-          morning_next: "open",
         },
       };
     }
     await extAPI.storage.local.set({ gateCache });
-    await syncDeclarativeWatchBlock();
-    // Error path: still never bulk-enforce on light poll — DNR covers watch hosts.
-    if (doEnforce && redirectsEnabled && !redirectsPausedByCircuit()) {
-      await enforceDistractionRedirects();
-    }
   }
 }
 
 function lockedPageUrl() {
   return extAPI.runtime.getURL("locked.html");
+}
+
+/** locked.html?host=&from= so the interstitial can offer a 60s temp allow. */
+function lockedPageUrlForBlocked(blockedUrl) {
+  var base = lockedPageUrl();
+  var host = "";
+  try {
+    host = typeof hostnameFromUrl === "function" ? hostnameFromUrl(blockedUrl) : "";
+  } catch (e) {
+    host = "";
+  }
+  if (!host) return base;
+  var q = "host=" + encodeURIComponent(host);
+  try {
+    if (blockedUrl && String(blockedUrl).indexOf("http") === 0) {
+      q += "&from=" + encodeURIComponent(String(blockedUrl).slice(0, 500));
+    }
+  } catch (e2) {
+    /* ignore */
+  }
+  return base + "?" + q;
+}
+
+/** Attach pruned temp allows onto a gateCache copy for shouldBlockUrl. */
+function gateCacheForBlockCheck() {
+  if (!gateCache) return null;
+  tempAllowsCache = pruneTempAllows(tempAllowsCache, Date.now());
+  return Object.assign({}, gateCache, { temp_allows: tempAllowsCache });
+}
+
+async function persistTempAllows(list) {
+  tempAllowsCache = pruneTempAllows(list, Date.now());
+  var key = typeof TEMP_ALLOW_STORAGE_KEY !== "undefined" ? TEMP_ALLOW_STORAGE_KEY : "tempAllows";
+  try {
+    var payload = {};
+    payload[key] = tempAllowsCache;
+    await extAPI.storage.local.set(payload);
+  } catch (e) {
+    /* ignore */
+  }
+  return tempAllowsCache;
 }
 
 function reportGateAlert(kind, detail) {
@@ -307,58 +354,20 @@ function reportGateAlert(kind, detail) {
 function watchBlockActive() {
   if (!redirectsEnabled) return false;
   if (!gateCache || (!gateCache.ok && !gateCache.degraded)) return false;
-  var browser = (gateCache.browser) || {};
+  var browser = gateCache.browser || {};
+  var mode = String(browser.mode || "").toLowerCase();
+  // Goal met / reward day / FREE → never DNR-redirect YouTube (porn filter stays on).
+  if (typeof isFreeDay === "function" && isFreeDay(gateCache)) return false;
+  if (mode === "free" || gateCache.day_unlimited || gateCache.reward_day || gateCache.unlocked) {
+    return false;
+  }
   if (browser.block_watch_sites) return true;
-  return isStrictDayMode(browser.mode);
+  return isStrictDayMode(mode);
 }
 
-/** MV3: redirect watch hosts to extension locked.html (not SPA — avoids N CALT tabs). */
-async function syncDeclarativeWatchBlock(opts) {
-  opts = opts || {};
-  if (!extAPI.declarativeNetRequest || !extAPI.declarativeNetRequest.updateDynamicRules) {
-    return;
-  }
-  var raw = typeof FORCE_WATCH_HOSTS !== "undefined" ? FORCE_WATCH_HOSTS : ["youtube.com", "youtu.be"];
-  // Cap hosts — never explode dynamic rule count (Edge crash guard).
-  var hosts = raw.slice(0, MAX_DNR_WATCH_HOSTS);
-  var active = watchBlockActive();
-  // Fingerprint only policy state — locked.html URL is stable per install.
-  var fingerprint = (active ? "1" : "0") + "|" + hosts.join(",");
-  if (!opts.force && fingerprint === lastDnrFingerprint) {
-    return;
-  }
-  var removeIds = [];
-  for (var i = 0; i < MAX_DNR_WATCH_HOSTS + 4; i++) removeIds.push(DNR_WATCH_RULE_BASE + i);
-  try {
-    if (!active) {
-      await extAPI.declarativeNetRequest.updateDynamicRules({
-        removeRuleIds: removeIds,
-        addRules: [],
-      });
-      lastDnrFingerprint = fingerprint;
-      return;
-    }
-    var target = lockedPageUrl();
-    var addRules = [];
-    for (var j = 0; j < hosts.length; j++) {
-      addRules.push({
-        id: DNR_WATCH_RULE_BASE + j,
-        priority: 100,
-        action: { type: "redirect", redirect: { url: target } },
-        condition: {
-          requestDomains: [hosts[j]],
-          resourceTypes: ["main_frame"],
-        },
-      });
-    }
-    await extAPI.declarativeNetRequest.updateDynamicRules({
-      removeRuleIds: removeIds,
-      addRules: addRules,
-    });
-    lastDnrFingerprint = fingerprint;
-  } catch (e) {
-    console.warn("SelfTracker: DNR watch block sync failed", e);
-  }
+/** Blocking moved to CALT Gate — keep stub so old call sites are harmless. */
+async function syncDeclarativeWatchBlock() {
+  return;
 }
 
 function caltSpaUrlPattern() {
@@ -491,8 +500,11 @@ async function softLandBlockedTab(tabId, spaUrl) {
     next === "plan" ||
     mode === "bible" ||
     mode === "planning";
+  // Study/armed: use spaUrl when it is locked.html (?host= for temp-allow UI).
   var target = lockedPageUrl();
   if (morningSoft && spaUrl && String(spaUrl).indexOf("locked.html") < 0) {
+    target = spaUrl;
+  } else if (spaUrl && String(spaUrl).indexOf("locked.html") >= 0) {
     target = spaUrl;
   }
   // In-flight / recent same-target: skip (onCommitted + rare enforce).
@@ -536,50 +548,16 @@ async function softLandBlockedTab(tabId, spaUrl) {
   }
 }
 
-async function maybeRedirectTab(tabId, url, title) {
-  if (!redirectsEnabled || redirectsPausedByCircuit()) return false;
-  if (!gateCache || (!gateCache.ok && !gateCache.degraded)) return false;
-  if (!url || isExtensionOrInternalUrl(url)) return false;
-  if (url.indexOf("locked.html") >= 0) return false;
-  if (isCaltSpaUrl(url)) return false;
-  if (!shouldBlockUrl(url, gateCache, title || "")) return false;
-  const kind = blockKindForUrl(url, gateCache, title || "");
-  reportGateAlert(kind, url.slice(0, 120));
-  broadcastJarvisLine(kind);
-  var spa = redirectTargetUrl(gateCache, lockedPageUrl());
-  if (!spa || spa.indexOf("locked.html") >= 0) {
-    spa = (gateCache.browser && gateCache.browser.bible_url) || CALT_BIBLE_URL;
-    var next = (gateCache.morning && gateCache.morning.next) || "";
-    if (next === "plan" || (gateCache.browser && gateCache.browser.mode === "planning")) {
-      spa = (gateCache.browser && gateCache.browser.plan_url) || CALT_PRODUCTIVITY_URL;
-    } else if (next !== "bible") {
-      spa = (gateCache.browser && gateCache.browser.plan_url) || CALT_PRODUCTIVITY_URL;
-    }
-  }
-  return softLandBlockedTab(tabId, spa);
+async function maybeRedirectTab() {
+  // Blocking / softLand owned by CALT Gate (avoids double-hit Edge crashes).
+  return false;
 }
 
 async function enforceDistractionRedirects() {
-  // Rare backup only (alarm / explicit). Primary block = DNR + onCommitted softLand.
-  if (redirectsPausedByCircuit()) return;
-  var now = Date.now();
-  if (lastEnforceAt && now - lastEnforceAt < ENFORCE_MIN_GAP_MS) return;
-  lastEnforceAt = now;
-  try {
-    // Only rewrite blocked tabs in place — never mass-focus or cull CALT here.
-    const tabs = await extAPI.tabs.query({});
-    var updates = 0;
-    for (const tab of tabs) {
-      if (updates >= MAX_ENFORCE_UPDATES) break;
-      if (tab.id == null || !tab.url) continue;
-      if (isExtensionOrInternalUrl(tab.url)) continue;
-      if (String(tab.url).indexOf("locked.html") >= 0) continue;
-      var did = await maybeRedirectTab(tab.id, tab.url, tab.title);
-      if (did) updates++;
-    }
-  } catch (e) {
-    console.warn("SelfTracker: enforce redirects failed", e);
-  }
+  // CRASH FIX: never mass tabs.query + tabs.update (Edge thrash).
+  // Watch = DNR only. Other blocks = onCommitted softLand for that one tab.
+  // Kept as a no-op hook so alarms / messages do not reintroduce the sweep.
+  return;
 }
 
 function broadcastJarvisLine(kind) {
@@ -735,7 +713,10 @@ function flushOutboundQueue() {
 }
 
 function logCurrentSession(reason = "tab_switch") {
-  if (isExtensionOrInternalUrl(activeUrl)) return;
+  // CALT SPA (localhost) → study-presence only; never double-count as extension.
+  if (isExtensionOrInternalUrl(activeUrl) || isCaltSpaUrl(activeUrl)) return;
+  // Active focused window only (blur reason still flushes the previous focused slice).
+  if (!windowFocused && reason !== "window_blur" && reason !== "idle") return;
   const duration = Math.round((Date.now() - sessionStart) / 1000);
   if (duration < 2) return;
   const category = classifyUrl(activeUrl, activeTitle);
@@ -751,6 +732,7 @@ function logCurrentSession(reason = "tab_switch") {
     reason,
     tab_switches_today: tabSwitchCount,
     gate_locked: Boolean(gateCache && gateCache.locked),
+    active_tab_only: true,
   };
   dailyLog.push(entry);
   if (dailyLog.length > 5000) dailyLog = dailyLog.slice(-5000);
@@ -767,7 +749,8 @@ extAPI.tabs.onActivated.addListener(async (info) => {
     activeUrl = tab.url;
     activeTitle = tab.title;
     sessionStart = Date.now();
-    await maybeRedirectTab(info.tabId, tab.url, tab.title);
+    // Do not softLand on every tab focus — Edge crash / redirect storms.
+    // Blocking is DNR + webNavigation.onCommitted only.
   } catch {
     /* tab may be gone */
   }
@@ -784,14 +767,7 @@ extAPI.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   sessionStart = Date.now();
 });
 
-// Primary softLand path — one committed main-frame navigation per tab.
-if (extAPI.webNavigation && extAPI.webNavigation.onCommitted) {
-  extAPI.webNavigation.onCommitted.addListener((details) => {
-    if (details.frameId !== 0) return;
-    if (!details.url || !details.tabId) return;
-    void maybeRedirectTab(details.tabId, details.url, "");
-  });
-}
+// softLand / onCommitted redirects moved to calt-gate-extension.
 
 if (extAPI.tabs.onRemoved) {
   extAPI.tabs.onRemoved.addListener(function (tabId) {
@@ -803,7 +779,9 @@ if (extAPI.tabs.onRemoved) {
 extAPI.windows.onFocusChanged.addListener((windowId) => {
   if (windowId === extAPI.windows.WINDOW_ID_NONE) {
     logCurrentSession("window_blur");
+    windowFocused = false;
   } else {
+    windowFocused = true;
     sessionStart = Date.now();
   }
 });
@@ -831,7 +809,12 @@ extAPI.alarms.onAlarm.addListener((alarm) => {
   }
   if (alarm.name === "flush") {
     flushOutboundQueue();
-    if (activeUrl && !isExtensionOrInternalUrl(activeUrl)) {
+    if (
+      windowFocused &&
+      activeUrl &&
+      !isExtensionOrInternalUrl(activeUrl) &&
+      !isCaltSpaUrl(activeUrl)
+    ) {
       const category = classifyUrl(activeUrl, activeTitle);
       const liveEntry = {
         timestamp: sessionStart,
@@ -845,6 +828,7 @@ extAPI.alarms.onAlarm.addListener((alarm) => {
         reason: "live",
         tab_switches_today: tabSwitchCount,
         gate_locked: Boolean(gateCache && gateCache.locked),
+        active_tab_only: true,
       };
       extAPI.storage.local.set({ liveEntry });
     }
@@ -887,15 +871,14 @@ extAPI.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   }
 
   if (msg.type === "SET_REDIRECTS") {
+    // Informational only — real toggle is in CALT Gate popup.
     redirectsEnabled = Boolean(msg.enabled);
     extAPI.storage.local.set({ redirectsEnabled });
-    sendResponse({ ok: true, redirectsEnabled });
-    // Force DNR sync when user toggles redirects (fingerprint may be stale).
-    lastDnrFingerprint = "";
-    void syncDeclarativeWatchBlock({ force: true });
-    if (redirectsEnabled && gateCache && (gateCache.enforce || gateCache.locked) && !redirectsPausedByCircuit()) {
-      void enforceDistractionRedirects();
-    }
+    sendResponse({
+      ok: true,
+      redirectsEnabled,
+      note: "Site blocking is handled by CALT Gate — toggle redirects there.",
+    });
     return false;
   }
 
@@ -919,6 +902,56 @@ extAPI.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg.type === "GET_JARVIS") {
     sendResponse({ text: lastJarvisLine || "", gateCache: gateCache });
     return false;
+  }
+
+  if (msg.type === "TEMP_ALLOW_STATUS") {
+    var hostS = String(msg.host || "").toLowerCase().replace(/^www\./, "");
+    tempAllowsCache = pruneTempAllows(tempAllowsCache, Date.now());
+    var polS = browserPolicyOrFallback(gateCache && gateCache.browser);
+    var excludedS = !hostS || isTempAllowExcludedHost(hostS, polS);
+    var untilS = tempAllowUntilForHost(hostS, tempAllowsCache, Date.now());
+    sendResponse({
+      ok: true,
+      host: hostS,
+      excluded: excludedS,
+      can_allow: Boolean(hostS) && !excludedS,
+      allowed_until: untilS || 0,
+      temp_allow_ms: typeof TEMP_ALLOW_MS !== "undefined" ? TEMP_ALLOW_MS : 60000,
+      temp_allows: tempAllowsCache,
+    });
+    return false;
+  }
+
+  if (msg.type === "TEMP_ALLOW_REQUEST") {
+    var hostR = String(msg.host || "").toLowerCase().replace(/^www\./, "");
+    var nowR = Date.now();
+    var polR = browserPolicyOrFallback(gateCache && gateCache.browser);
+    var grant = buildTempAllowGrant(hostR, nowR, polR);
+    if (!grant.ok) {
+      sendResponse({
+        ok: false,
+        error: grant.error || "This site can't be temporarily allowed",
+        host: hostR,
+      });
+      return false;
+    }
+    tempAllowsCache = upsertTempAllow(tempAllowsCache, grant.entry, nowR);
+    persistTempAllows(tempAllowsCache).then(function () {
+      sendResponse({
+        ok: true,
+        host: grant.entry.host,
+        until: grant.entry.until,
+        temp_allow_ms: typeof TEMP_ALLOW_MS !== "undefined" ? TEMP_ALLOW_MS : 60000,
+      });
+    }).catch(function () {
+      sendResponse({
+        ok: true,
+        host: grant.entry.host,
+        until: grant.entry.until,
+        temp_allow_ms: typeof TEMP_ALLOW_MS !== "undefined" ? TEMP_ALLOW_MS : 60000,
+      });
+    });
+    return true;
   }
 
   if (msg.type === "EXPORT_CSV") {

@@ -129,11 +129,15 @@ Tracker already owns hub remotes (`/api/hub/shutdown`, `/api/hub/lock`). Risky t
 - Shutdown/sleep never runs without confirm.  
 - One clear tray entry point; no second always-on exe.
 
+### Canned dialogue (shipped)
+
+Routine speech is **not** LLM: `dialogues.py` + `block_dialogues.py` (gate blocks). Morning brief once/day + `/brief`. Free chat / tools still use the brain; system prompt notes rituals are spoken separately.
+
 ## Out of scope follow-ups
 
-- Kokoro TTS swap  
-- Sherpa STT  
-- Wake word  
+- Kokoro TTS swap — see [2026-08-04-calt-voice-gpu-session-design.md](./2026-08-04-calt-voice-gpu-session-design.md) phase 4  
+- Sherpa STT / optional faster-whisper (GPU session phases)  
+- **Wake word — explicitly out of scope** (hotkey/PTT only)  
 - Lights / IoT  
 - Watch Sync as remote mic  
 - Morning-gate / SelfTracker polish (separate)
@@ -141,5 +145,5 @@ Tracker already owns hub remotes (`/api/hub/shutdown`, `/api/hub/lock`). Risky t
 ## Open config (defaults, not blockers)
 
 - Hotkey: `Ctrl+Shift+Space` (user-overridable in `tracker.json`)  
-- Piper voice model path under `data/voice_agent/piper/`  
+- TTS: `edge-tts` neural default `en-GB-RyanNeural` (Jarvis-adjacent); override `VOICE_AGENT_TTS` / `VOICE_AGENT_VOICE`; Piper under `data/voice_agent/piper/` then SAPI  
 - `MORNING_GATE` / hard-block unchanged by agent unless user confirms risky tool  

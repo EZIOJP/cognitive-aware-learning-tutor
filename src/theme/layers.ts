@@ -160,3 +160,44 @@ export const MOTION_LEVELS: {
   { id: "subtle", label: "Subtle", hint: "Hover only" },
   { id: "hero", label: "Hero", hint: "Shine + permeation" },
 ];
+
+/** Top bar page-title chrome (Theme settings — independent of preset packs). */
+export type TopbarTitleStyleId = "plain" | "parchment" | "contour";
+export type TopbarTitleFontId = "cursive" | "serif" | "sans";
+export type TopbarTitleSizeId = "sm" | "md" | "lg";
+
+export const TOPBAR_TITLE_STYLES: {
+  id: TopbarTitleStyleId;
+  label: string;
+  hint?: string;
+}[] = [
+  { id: "parchment", label: "Hairline", hint: "Editorial type with a short primary rule that grows on hover" },
+  { id: "contour", label: "Rule", hint: "Full-width primary rule under the title" },
+  { id: "plain", label: "Bare", hint: "Title and subtitle only — no accent" },
+];
+
+export const TOPBAR_TITLE_FONTS: {
+  id: TopbarTitleFontId;
+  label: string;
+  hint?: string;
+}[] = [
+  { id: "cursive", label: "Cursive", hint: "Caveat script" },
+  { id: "serif", label: "Serif", hint: "Playfair — editorial" },
+  { id: "sans", label: "Sans", hint: "System UI" },
+];
+
+export const TOPBAR_TITLE_SIZES: {
+  id: TopbarTitleSizeId;
+  label: string;
+  hint?: string;
+}[] = [
+  { id: "sm", label: "Small" },
+  { id: "md", label: "Medium" },
+  { id: "lg", label: "Large" },
+];
+
+export const TOPBAR_TITLE_DEFAULTS = {
+  style: "parchment" as TopbarTitleStyleId,
+  font: "cursive" as TopbarTitleFontId,
+  size: "lg" as TopbarTitleSizeId,
+};

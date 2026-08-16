@@ -338,7 +338,7 @@ An index outside the array range raises an `IndexError`.
 
 def test_extractive_quiz_rejects_outline_cloze_junk(monkeypatch):
     monkeypatch.setattr("backend.transcripts.study_intel.ollama_available", lambda *_: False)
-    note = Path("data/notes/lecture_2/numpy_lecture_notes.md").read_text(encoding="utf-8")
+    note = Path("data/notes/data_foundations/lecture_2/numpy_lecture_notes.md").read_text(encoding="utf-8")
     result = generate_quiz_items([note], count=5, topic="NumPy")
     combined = " ".join(
         [q["question"] for q in result["questions"]]
@@ -405,7 +405,7 @@ def test_combined_source_never_drops_notes_when_corpus_hits(monkeypatch):
     assert "textbook" not in text
     assert hits == []
 
-    # Opt-in merge still keeps notes
+    # Opt-in merge still keeps notes (mocked corpus hits; live retrieve is stubbed empty)
     text2, hits2 = _combined_source_material(
         ["## My lecture notes\n- eigenvalues"],
         topic="eigenvalues",

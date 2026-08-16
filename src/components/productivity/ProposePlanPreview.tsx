@@ -1,7 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { CalendarDays, GripVertical, Layers, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
 import { blockColor, type ProposedPlannerBlock } from "../../api/plannerClient";
-import { Calendar } from "../../app/components/ui/calendar";
 import {
   proposedBlocksEqualTimes,
   resolveProposedOverlaps,
@@ -56,13 +55,6 @@ function dayKey(iso: string): string {
 function parseDay(key: string): Date {
   const [y, m, d] = key.split("-").map(Number);
   return new Date(y, m - 1, d);
-}
-
-function formatDayKey(d: Date): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
 }
 
 function minutesSinceMidnight(d: Date): number {
@@ -143,55 +135,6 @@ function blockMinutes(b: ProposedPlannerBlock): number {
   );
 }
 
-function localDayKeyFromDate(d: Date): string {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-}
-
-function addDaysKey(key: string, days: number): string {
-  const d = parseDay(key);
-  d.setDate(d.getDate() + days);
-  return localDayKeyFromDate(d);
-}
-
-function startOfWeekMonday(key: string): string {
-  const d = parseDay(key);
-  const wd = (d.getDay() + 6) % 7; // Mon=0
-  d.setDate(d.getDate() - wd);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-}
-
-function endOfMonth(key: string): string {
-  const d = parseDay(key);
-  const last = new Date(d.getFullYear(), d.getMonth() + 1, 0);
-  return `${last.getFullYear()}-${String(last.getMonth() + 1).padStart(2, "0")}-${String(last.getDate()).padStart(2, "0")}`;
-}
-
-function countApplyableInRange(
-  blocks: ProposedPlannerBlock[],
-  from: string,
-  to: string,
-  days?: string[],
-): number {
-  const daySet = days?.length ? new Set(days) : null;
-  return blocks.filter((b) => {
-    if (b.source === "existing") return false;
-    const k = dayKey(b.start_at);
-    if (daySet) return daySet.has(k);
-    return k >= from && k <= to;
-  }).length;
-}
-
-function enumerateDays(from: string, to: string): string[] {
-  const out: string[] = [];
-  let k = from;
-  while (k <= to) {
-    out.push(k);
-    k = addDaysKey(k, 1);
-    if (out.length > 400) break;
-  }
-  return out;
-}
-
 function assignOverlapLanes(
   items: { index: number; start: number; end: number }[],
 ): Map<number, { lane: number; laneCount: number }> {
@@ -258,8 +201,6 @@ export function ProposePlanPreview({
   const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
   /** Crosshair + click-to-place only while this is true (Add block). */
   const [placing, setPlacing] = useState(false);
-  const [applyOpen, setApplyOpen] = useState(false);
-  const [pickedDays, setPickedDays] = useState<Date[]>(() => [parseDay(todayKeyLocal())]);
 
   // Drop past-day blocks from an older proposal still in memory.
   useEffect(() => {
@@ -600,19 +541,44 @@ export function ProposePlanPreview({
   const applyable = blocks.filter((b) => b.source !== "existing").length;
   const rangeLabel = `${formatHour(Math.floor(axisStart / 60))}–${formatHour(Math.ceil(axisEnd / 60))}`;
   const todayK = todayKeyLocal();
-  const weekStart = startOfWeekMonday(todayK);
-  const weekEnd = addDaysKey(weekStart, 6);
-  const monthEnd = endOfMonth(todayK);
-  const monthStart = `${todayK.slice(0, 8)}01`;
+  const draftDayKeys = useMemo(
+    () =>
+      [
+        ...new Set(
+          blocks
+            .filter((b) => b.source !== "existing")
+            .map((b) => dayKey(b.start_at))
+            .filter((k) => k >= todayK),
+        ),
+      ].sort(),
+    [blocks, todayK],
+  );
 
   const fixOverlaps = () => {
     const next = resolveProposedOverlaps(blocks);
     onChange(next);
   };
 
-  const confirmApply = (range: ApplyPlanRange) => {
-    setApplyOpen(false);
-    onApply(range);
+  const applyAllDrafts = () => {
+    if (!draftDayKeys.length) return;
+    onApply({
+      from: draftDayKeys[0],
+      to: draftDayKeys[draftDayKeys.length - 1],
+      days: draftDayKeys,
+      label:
+        draftDayKeys.length === 1
+          ? draftDayKeys[0]
+          : `${draftDayKeys.length} days (build horizon)`,
+    });
+  };
+
+  const applyTodayOnly = () => {
+    onApply({
+      from: todayK,
+      to: todayK,
+      days: [todayK],
+      label: "Today",
+    });
   };
 
   return (
@@ -621,11 +587,11 @@ export function ProposePlanPreview({
         <div className="min-w-0">
           <h3 className="font-semibold text-sm flex items-center gap-2">
             <CalendarDays size={16} className="text-primary" />
-            Review & edit plan
+            {embedded ? "Ready to apply" : "Review & edit plan"}
           </h3>
           <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
             {embedded
-              ? "Drafts show on the calendar → · edit below · Apply when ready."
+              ? "Check the calendar on the right · Apply saves drafts to your planner."
               : "Drag blocks to reschedule · use Add block then click empty time to place · today onward only."}
             {rationale ? (
               <>
@@ -698,15 +664,28 @@ export function ProposePlanPreview({
           <button
             type="button"
             disabled={proposing || applyable === 0}
-            onClick={() => {
-              setPickedDays([parseDay(todayK)]);
-              setApplyOpen((o) => !o);
-            }}
+            onClick={applyAllDrafts}
             className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+            title={
+              draftDayKeys.length
+                ? `Apply ${applyable} blocks across ${draftDayKeys.length} day${draftDayKeys.length === 1 ? "" : "s"}`
+                : "No drafts to apply"
+            }
           >
             {proposing ? <Loader2 size={12} className="animate-spin" /> : <CalendarDays size={12} />}
-            Apply…
+            Apply plan
+            {draftDayKeys.length > 0 ? ` (${draftDayKeys.length}d)` : ""}
           </button>
+          {draftDayKeys.length > 1 ? (
+            <button
+              type="button"
+              disabled={proposing || applyable === 0}
+              onClick={applyTodayOnly}
+              className="rounded-lg border border-white/10 px-2.5 py-1.5 text-xs text-muted-foreground hover:bg-white/5 hover:text-foreground disabled:opacity-50"
+            >
+              Today only
+            </button>
+          ) : null}
           <button
             type="button"
             onClick={onDismiss}
@@ -714,136 +693,6 @@ export function ProposePlanPreview({
           >
             Dismiss
           </button>
-
-          {applyOpen ? (
-            <div className="absolute right-0 top-full z-30 mt-2 w-[min(100vw-2rem,20rem)] rounded-xl border border-white/15 bg-[#12141a] p-3.5 shadow-xl space-y-3">
-              <div className="space-y-0.5 px-0.5">
-                <p className="text-xs font-medium text-foreground">Apply which days?</p>
-                <p className="text-[10px] leading-snug text-muted-foreground">
-                  Toggle days (gaps ok). Calendar copies are skipped.
-                </p>
-              </div>
-
-              <div className="grid grid-cols-5 gap-1">
-                {(
-                  [
-                    { label: "Today", from: todayK, to: todayK },
-                    { label: "Week", from: weekStart, to: weekEnd },
-                    { label: "7 days", from: todayK, to: addDaysKey(todayK, 6) },
-                    {
-                      label: "Month",
-                      from: monthStart < todayK ? todayK : monthStart,
-                      to: monthEnd,
-                    },
-                    { label: "All", from: todayK, to: "9999-12-31" },
-                  ] as const
-                ).map((opt) => (
-                  <button
-                    key={opt.label}
-                    type="button"
-                    disabled={proposing}
-                    onClick={() => {
-                      if (opt.label === "All") {
-                        const keys = [
-                          ...new Set(
-                            blocks
-                              .filter((b) => b.source !== "existing")
-                              .map((b) => dayKey(b.start_at))
-                              .filter((k) => k >= todayK),
-                          ),
-                        ].sort();
-                        setPickedDays(keys.map(parseDay));
-                        return;
-                      }
-                      setPickedDays(enumerateDays(opt.from, opt.to).map(parseDay));
-                    }}
-                    className="rounded-md border border-white/10 bg-white/[0.04] px-1 py-1.5 text-center text-[10px] leading-none text-muted-foreground hover:bg-white/10 hover:text-foreground disabled:opacity-40"
-                  >
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
-
-              <Calendar
-                mode="multiple"
-                selected={pickedDays}
-                onSelect={(days) => setPickedDays(days ?? [])}
-                disabled={{ before: parseDay(todayK) }}
-                defaultMonth={pickedDays[0] ?? parseDay(todayK)}
-                showOutsideDays
-                className="w-full rounded-lg border border-white/10 bg-black/30 p-2"
-                classNames={{
-                  months: "flex w-full flex-col",
-                  month: "flex w-full flex-col gap-2",
-                  caption: "relative flex h-8 w-full items-center justify-center",
-                  caption_label: "text-xs font-medium",
-                  nav: "absolute inset-x-0 flex items-center justify-between px-0",
-                  nav_button:
-                    "inline-flex size-7 items-center justify-center rounded-md border border-white/10 bg-transparent p-0 opacity-70 hover:bg-white/10 hover:opacity-100",
-                  nav_button_previous: "static",
-                  nav_button_next: "static",
-                  table: "w-full border-collapse",
-                  head_row: "flex w-full",
-                  head_cell:
-                    "flex h-7 flex-1 items-center justify-center text-[0.65rem] font-normal text-muted-foreground",
-                  row: "mt-0.5 flex w-full",
-                  cell: "relative flex h-8 flex-1 items-center justify-center p-0 text-center text-sm",
-                  day: "inline-flex size-7 items-center justify-center rounded-full p-0 text-xs font-normal hover:bg-white/10 aria-selected:opacity-100",
-                  day_selected:
-                    "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
-                  day_today: "ring-1 ring-white/25",
-                  day_outside: "text-muted-foreground/45 aria-selected:text-primary-foreground/80",
-                  day_disabled: "text-muted-foreground/35 opacity-40",
-                  day_hidden: "invisible",
-                }}
-              />
-
-              {(() => {
-                const keys = [...new Set(pickedDays.map(formatDayKey))].sort();
-                const from = keys[0] ?? todayK;
-                const to = keys[keys.length - 1] ?? todayK;
-                const n = countApplyableInRange(blocks, from, to, keys);
-                return (
-                  <div className="space-y-2 pt-0.5">
-                    <p className="px-0.5 text-center text-[10px] tabular-nums text-muted-foreground">
-                      {keys.length === 0
-                        ? "No days selected"
-                        : keys.length === 1
-                          ? keys[0]
-                          : `${keys.length} days · ${keys[0]} → ${keys[keys.length - 1]}`}
-                    </p>
-                    <div className="grid grid-cols-2 gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setApplyOpen(false)}
-                        className="rounded-lg border border-white/10 px-2 py-2 text-xs text-muted-foreground hover:bg-white/5 hover:text-foreground"
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        type="button"
-                        disabled={proposing || keys.length === 0 || n === 0}
-                        onClick={() =>
-                          confirmApply({
-                            from,
-                            to,
-                            days: keys,
-                            label:
-                              keys.length === 1
-                                ? keys[0]
-                                : `${keys.length} days`,
-                          })
-                        }
-                        className="rounded-lg bg-primary px-2 py-2 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-40"
-                      >
-                        Apply ({n})
-                      </button>
-                    </div>
-                  </div>
-                );
-              })()}
-            </div>
-          ) : null}
         </div>
       </div>
 
@@ -906,6 +755,8 @@ export function ProposePlanPreview({
         </div>
       )}
 
+      {!embedded && (
+      <>
       {/* Always-visible agenda wrapper — no hunting in empty morning hours */}
       <div className="rounded-xl border border-white/10 bg-black/30 p-3 space-y-2">
         <div className="flex items-center justify-between gap-2 text-xs">
@@ -1236,6 +1087,8 @@ export function ProposePlanPreview({
           )}
         </div>
       </div>
+      </>
+      )}
     </div>
   );
 }

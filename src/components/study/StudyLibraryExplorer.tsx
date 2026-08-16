@@ -20,6 +20,7 @@ import {
   folderOf,
   getDragPath,
   isLibraryDrag,
+  isOsFileDrag,
   setDragPath,
 } from "./studyLibraryUtils";
 
@@ -37,6 +38,7 @@ type Props = {
   onSelectFile: (path: string) => void;
   onToggleCompare?: (path: string) => void;
   onMoveFile?: (path: string, destFolder: string) => void;
+  onImportFiles?: (files: File[], destFolder: string) => void;
   onDeleteFile?: (path: string) => void;
   onDeleteFolder?: (path: string) => void;
   onSummarizeFolder?: (path: string) => void;
@@ -46,6 +48,7 @@ type Props = {
   onViewModeChange: (mode: "grid" | "list") => void;
   summarizingFolder?: string;
   onCollapse?: () => void;
+  importing?: boolean;
 };
 
 function ExplorerFolderIcon({ open }: { open?: boolean }) {
@@ -78,6 +81,7 @@ export function StudyLibraryExplorer({
   onSelectFile,
   onToggleCompare,
   onMoveFile,
+  onImportFiles,
   onDeleteFile,
   onDeleteFolder,
   onSummarizeFolder,
@@ -87,9 +91,11 @@ export function StudyLibraryExplorer({
   onViewModeChange,
   summarizingFolder,
   onCollapse,
+  importing,
 }: Props) {
   const [selection, setSelection] = useState<Selection>(null);
   const [dropTarget, setDropTarget] = useState<string | null>(null);
+  const [osDropActive, setOsDropActive] = useState(false);
 
   const current = useMemo(() => findNodeAt(tree, browsePath), [tree, browsePath]);
   const crumbs = useMemo(() => breadcrumbParts(browsePath), [browsePath]);
@@ -97,17 +103,48 @@ export function StudyLibraryExplorer({
   const childFolders = current.folders;
   const files = current.files;
 
+  const clearDropState = useCallback(() => {
+    setDropTarget(null);
+    setOsDropActive(false);
+  }, []);
+
   const handleDropOnFolder = useCallback(
     (destFolder: string, e: React.DragEvent) => {
       e.preventDefault();
       e.stopPropagation();
-      setDropTarget(null);
+      const osFiles = isOsFileDrag(e) ? Array.from(e.dataTransfer.files || []) : [];
+      clearDropState();
+      if (osFiles.length && onImportFiles) {
+        onImportFiles(osFiles, destFolder);
+        return;
+      }
       const path = getDragPath(e);
       if (!path || !onMoveFile) return;
       if (folderOf(path) === destFolder) return;
       onMoveFile(path, destFolder);
     },
-    [onMoveFile],
+    [clearDropState, onImportFiles, onMoveFile],
+  );
+
+  const allowDropOver = useCallback(
+    (e: React.DragEvent, destFolder: string) => {
+      if (isOsFileDrag(e) && onImportFiles) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.dataTransfer.dropEffect = "copy";
+        setDropTarget(destFolder);
+        setOsDropActive(true);
+        return;
+      }
+      if (isLibraryDrag(e)) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.dataTransfer.dropEffect = "move";
+        setDropTarget(destFolder);
+        setOsDropActive(false);
+      }
+    },
+    [onImportFiles],
   );
 
   const handleDeleteSelection = () => {
@@ -140,13 +177,8 @@ export function StudyLibraryExplorer({
           onBrowsePath(folder.path);
           setSelection(null);
         }}
-        onDragOver={(e) => {
-          if (!isLibraryDrag(e)) return;
-          e.preventDefault();
-          e.stopPropagation();
-          setDropTarget(folder.path);
-        }}
-        onDragLeave={() => setDropTarget(null)}
+        onDragOver={(e) => allowDropOver(e, folder.path)}
+        onDragLeave={() => clearDropState()}
         onDrop={(e) => handleDropOnFolder(folder.path, e)}
         className={cn(
           inGrid ? "study-library-explorer-tile" : "study-library-explorer-list-row",
@@ -284,22 +316,25 @@ export function StudyLibraryExplorer({
       <div className="study-library-explorer-body flex flex-col flex-1 min-h-0">
         <div
           className={cn(
-            "study-library-explorer-main flex-1 min-h-0 overflow-y-auto study-library-markdown-scroll",
+            "study-library-explorer-main flex-1 min-h-0 overflow-y-auto study-library-markdown-scroll relative",
             gridDropActive && "study-library-drop-active",
           )}
-          onDragOver={(e) => {
-            if (!isLibraryDrag(e)) return;
-            e.preventDefault();
-            setDropTarget(browsePath);
-          }}
-          onDragLeave={() => setDropTarget(null)}
+          onDragOver={(e) => allowDropOver(e, browsePath)}
+          onDragLeave={() => clearDropState()}
           onDrop={(e) => handleDropOnFolder(browsePath, e)}
         >
+          {(osDropActive && gridDropActive) || importing ? (
+            <div className="study-library-explorer-drop-overlay" aria-live="polite">
+              {importing ? "Importing…" : "Drop to import notes"}
+            </div>
+          ) : null}
           {childFolders.length === 0 && files.length === 0 ? (
             <div className="study-library-explorer-empty">
               <FolderOpen className="w-12 h-12 text-emerald-500/40 mb-2" />
               <p className="text-sm text-slate-400">This folder is empty</p>
-              <p className="text-[10px] text-slate-500 mt-1">Drag notes here or create a new file</p>
+              <p className="text-[10px] text-slate-500 mt-1">
+                Drop .md / .txt files here, or create a new file
+              </p>
             </div>
           ) : viewMode === "grid" ? (
             <div className="study-library-explorer-grid">

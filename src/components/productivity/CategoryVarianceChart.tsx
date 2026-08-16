@@ -28,6 +28,17 @@ type Props = {
   defaultPreset?: RangePreset;
 };
 
+const STACK_COLORS = [
+  "#8b5cf6",
+  "#0ea5e9",
+  "#34d399",
+  "#fbbf24",
+  "#f472b6",
+  "#94a3b8",
+  "#fb923c",
+  "#2dd4bf",
+];
+
 function buildTaskMap(timetables: Awaited<ReturnType<typeof fetchTimetables>>): Map<number, string> {
   const map = new Map<number, string>();
   for (const tt of timetables.timetables) {
@@ -74,7 +85,13 @@ function ChartPanel({
           />
           <YAxis
             tick={{ fill: "rgba(255,255,255,0.5)", fontSize: 10 }}
-            label={{ value: "Hours", angle: -90, position: "insideLeft", fill: "rgba(255,255,255,0.4)", fontSize: 10 }}
+            label={{
+              value: "Hours",
+              angle: -90,
+              position: "insideLeft",
+              fill: "rgba(255,255,255,0.4)",
+              fontSize: 10,
+            }}
           />
           <Tooltip
             contentStyle={{
@@ -92,9 +109,72 @@ function ChartPanel({
   );
 }
 
+function StackedSummary({
+  title,
+  data,
+  emptyMessage,
+}: {
+  title: string;
+  data: { name: string; hours: number }[];
+  emptyMessage: string;
+}) {
+  const total = data.reduce((s, d) => s + d.hours, 0);
+  if (data.length === 0 || total <= 0) {
+    return (
+      <div className="space-y-1.5">
+        <h4 className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+          {title}
+        </h4>
+        <p className="text-xs text-muted-foreground">{emptyMessage}</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      <h4 className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+        {title}
+      </h4>
+      <div
+        className="flex h-3 w-full overflow-hidden rounded-full bg-white/5"
+        role="img"
+        aria-label={`${title}: ${total.toFixed(1)} hours`}
+      >
+        {data.map((d, i) => (
+          <div
+            key={d.name}
+            title={`${d.name}: ${d.hours}h`}
+            style={{
+              width: `${(d.hours / total) * 100}%`,
+              backgroundColor: STACK_COLORS[i % STACK_COLORS.length],
+            }}
+            className="h-full min-w-[2px]"
+          />
+        ))}
+      </div>
+      <div className="flex flex-wrap gap-x-3 gap-y-1">
+        {data.slice(0, 6).map((d, i) => (
+          <span key={d.name} className="inline-flex items-center gap-1.5 text-[10px] text-muted-foreground">
+            <span
+              className="inline-block h-2 w-2 rounded-sm"
+              style={{ backgroundColor: STACK_COLORS[i % STACK_COLORS.length] }}
+            />
+            <span className="truncate max-w-[8rem]">{d.name}</span>
+            <span className="tabular-nums text-foreground/80">{d.hours}h</span>
+          </span>
+        ))}
+        {data.length > 6 ? (
+          <span className="text-[10px] text-muted-foreground">+{data.length - 6} more</span>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
 export function CategoryVarianceChart({ from: fromProp, to: toProp, baseDate, defaultPreset = "day" }: Props) {
   const [preset, setPreset] = useState<RangePreset>(defaultPreset);
   const [taskMap, setTaskMap] = useState<Map<number, string>>(new Map());
+  const [showFull, setShowFull] = useState(false);
 
   const { from, to } = useMemo(() => {
     if (fromProp && toProp) return { from: fromProp, to: toProp };
@@ -134,9 +214,11 @@ export function CategoryVarianceChart({ from: fromProp, to: toProp, baseDate, de
   const loading = blocksLoading || sessionsLoading;
 
   return (
-    <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4 space-y-4">
+    <div className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h3 className="font-medium text-sm">Category variance</h3>
+        <h3 className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+          Category variance
+        </h3>
         {!fromProp && (
           <select
             value={preset}
@@ -152,18 +234,33 @@ export function CategoryVarianceChart({ from: fromProp, to: toProp, baseDate, de
         )}
       </div>
 
-      <p className="text-[11px] text-muted-foreground">
-        Planned uses task names; actual uses desktop tracker categories for{" "}
-        {from.toLocaleDateString()} – {to.toLocaleDateString()}.
-      </p>
-
       {loading ? (
-        <div className="grid gap-4 md:grid-cols-2">
-          <div className="h-[260px] rounded-lg bg-white/5 animate-pulse" />
-          <div className="h-[260px] rounded-lg bg-white/5 animate-pulse" />
-        </div>
+        <div className="h-10 rounded-full bg-white/5 animate-pulse" />
       ) : (
-        <div className="grid gap-6 md:grid-cols-2">
+        <div className="grid gap-4 md:grid-cols-2">
+          <StackedSummary
+            title="Planned by task"
+            data={plannedData}
+            emptyMessage="No planned blocks in range"
+          />
+          <StackedSummary
+            title="Actual by category"
+            data={actualData}
+            emptyMessage="No tracked sessions in range"
+          />
+        </div>
+      )}
+
+      <button
+        type="button"
+        onClick={() => setShowFull((v) => !v)}
+        className="text-xs text-violet-300/90 hover:text-violet-200 underline-offset-2 hover:underline"
+      >
+        {showFull ? "Hide full breakdown" : "See full breakdown"}
+      </button>
+
+      {showFull && !loading ? (
+        <div className="grid gap-6 md:grid-cols-2 pt-1 border-t border-white/10">
           <ChartPanel
             title="Planned hours by task"
             data={plannedData}
@@ -177,7 +274,7 @@ export function CategoryVarianceChart({ from: fromProp, to: toProp, baseDate, de
             emptyMessage="No tracked sessions in range"
           />
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

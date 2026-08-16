@@ -594,6 +594,7 @@ def _ollama_native_generate(
     timeout: float,
     json_schema: dict | None,
     system_prompt: str | None = None,
+    keep_alive: int = -1,
 ) -> TransportResult:
     full_prompt = prompt
     if system_prompt:
@@ -602,7 +603,8 @@ def _ollama_native_generate(
         "model": opts.model,
         "prompt": full_prompt,
         "stream": False,
-        "keep_alive": -1,
+        # -1 = pin (default for app tasks); 0 = unload after reply (voice sessions)
+        "keep_alive": keep_alive,
     }
     if json_schema:
         payload["format"] = json_schema
@@ -633,6 +635,7 @@ def ollama_generate_transport(
     timeout: float = 120.0,
     json_schema: dict | None = None,
     system_prompt: str | None = None,
+    keep_alive: int | None = None,
 ) -> TransportResult:
     if opts.provider == "gemini":
         if json_schema:
@@ -653,6 +656,7 @@ def ollama_generate_transport(
         timeout=timeout,
         json_schema=json_schema,
         system_prompt=system_prompt,
+        keep_alive=-1 if keep_alive is None else keep_alive,
     )
 
 

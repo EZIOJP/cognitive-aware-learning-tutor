@@ -8,8 +8,10 @@ from dataclasses import dataclass
 from backend.math.ocr_service import OcrResult, recognize_canvas
 from backend.math.ollama_tutor import generate_tutor_hint
 from backend.math.rule_tutor import rule_based_hint
+from backend.math.structure_verify import STRUCTURAL_SILENCE_THRESHOLD
 
 STUCKNESS_THRESHOLD = 0.50
+OCR_CONFIDENCE_SILENCE_THRESHOLD = 0.45
 
 _ANSWER_PATTERNS = (
     r"x\s*=\s*[-+]?\d",
@@ -33,6 +35,8 @@ class InterventionResult:
     use_llm: bool
     teacher_latex: str = ""
     needs_review: bool = False
+    structural_confidence: float = 1.0
+    tutor_silent: bool = False
 
 
 def compute_stuckness(
@@ -98,6 +102,7 @@ def build_intervention(
     *,
     canvas_image: str,
     paths_json: str | None = None,
+    stroke_metrics_json: str | None = None,
     prompt: str = "",
     topic: str = "",
     gamma: float = 0.0,
@@ -115,6 +120,7 @@ def build_intervention(
     confidence = 0.0
     teacher_latex = ""
     needs_review = False
+    structural_confidence = 1.0
 
     idle = canvas_idle_seconds or idle_seconds
     erasers = eraser_events or eraser_strokes
@@ -124,6 +130,7 @@ def build_intervention(
             ocr = recognize_canvas(
                 canvas_image,
                 paths_json=paths_json,
+                stroke_metrics_json=stroke_metrics_json,
                 ollama_vision_fallback=ollama_vision_fallback,
             )
             latex = ocr.latex
@@ -131,6 +138,7 @@ def build_intervention(
             confidence = ocr.confidence
             teacher_latex = getattr(ocr, "teacher_latex", "") or ""
             needs_review = getattr(ocr, "needs_review", False)
+            structural_confidence = float(getattr(ocr, "structural_confidence", 1.0) or 1.0)
         except (ImportError, ValueError, RuntimeError):
             ocr = None
 
@@ -143,9 +151,15 @@ def build_intervention(
     )
     triggered = stuckness >= STUCKNESS_THRESHOLD
 
+    # Tutor silence rule: low OCR / structural confidence → do not interrupt
+    # with a wrong-guess hint. Soft confirm only when stuckness is high.
+    low_ocr = confidence < OCR_CONFIDENCE_SILENCE_THRESHOLD
+    low_struct = structural_confidence < STRUCTURAL_SILENCE_THRESHOLD
+    tutor_silent = bool(ocr is not None and (low_ocr or low_struct) and not needs_review)
+
     concept = topic or "whiteboard work"
     enriched_prompt = prompt
-    if latex:
+    if latex and not tutor_silent:
         enriched_prompt = (
             f"{prompt}\nStudent is working on: {latex}. "
             f"Step appears incomplete: {incomplete}."
@@ -154,7 +168,7 @@ def build_intervention(
     ruled = _latex_aware_rule_hint(
         prompt=enriched_prompt,
         topic=concept,
-        latex=latex,
+        latex=latex if not tutor_silent else "",
         incomplete=incomplete,
         gamma=gamma,
         attention=attention,
@@ -165,7 +179,18 @@ def build_intervention(
     detected = ruled["detected_concept"]
     use_llm = False
 
-    if triggered:
+    if tutor_silent:
+        # Soft confirm at a natural checkpoint only when stuckness already fires;
+        # otherwise stay completely quiet so handwriting thinking isn't interrupted.
+        if triggered:
+            hint = "I couldn't read your last step clearly — show me that line again?"
+            question = "What did you just write on the board?"
+            use_llm = False
+        else:
+            hint = ""
+            question = ""
+            triggered = False
+    elif triggered:
         llm = generate_tutor_hint(
             prompt=f"{enriched_prompt}\nRecognized LaTeX: {latex or '(none)'}",
             topic=detected,
@@ -179,7 +204,7 @@ def build_intervention(
             detected = llm.get("detected_concept", detected)
             use_llm = True
 
-    if not triggered:
+    if not triggered and not tutor_silent:
         hint = "Keep writing — no strong stuck signal yet. Add one more step to your board."
         question = "What are you trying to isolate or simplify?"
 
@@ -196,4 +221,6 @@ def build_intervention(
         use_llm=use_llm,
         teacher_latex=teacher_latex,
         needs_review=needs_review,
+        structural_confidence=structural_confidence,
+        tutor_silent=tutor_silent,
     )

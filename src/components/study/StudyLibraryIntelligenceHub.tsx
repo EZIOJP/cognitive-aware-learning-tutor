@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { ClipboardPaste, Database, Loader2, PenLine, Sparkles, Trash2 } from "lucide-react";
 import { Link } from "react-router";
-import type { QuizFocus, QuizQuestion, CodeDrill, StudySessionItem } from "./studySessionTypes";
+import type { QuizFocus, QuizQuestion, CodeDrill, StudySessionItem, NoteTopicOption } from "./studySessionTypes";
 import { Button } from "../../app/components/ui/button";
 
 type Props = {
@@ -18,6 +18,10 @@ type Props = {
   quizFocus?: QuizFocus;
   onQuizCountChange?: (n: number) => void;
   onQuizFocusChange?: (f: QuizFocus) => void;
+  noteTopics?: NoteTopicOption[];
+  selectedTopicIds?: string[];
+  onSelectedTopicIdsChange?: (ids: string[]) => void;
+  topicsLoading?: boolean;
   onGenerateQuiz: () => void;
   onGenerateDrills: () => void;
   onGeneratePrimer?: () => void;
@@ -35,31 +39,17 @@ function formatElapsed(sec: number): string {
   return `${m}:${String(s).padStart(2, "0")}`;
 }
 
-function estimateBulkCalls(count: number): number {
-  const sectionCalls = Math.min(8, Math.max(2, Math.ceil(count / 4)));
-  const roleCalls = Math.ceil(count / 6) * 2;
-  return sectionCalls + roleCalls;
-}
-
 function stageForElapsed(focus: QuizFocus, elapsedSec: number, tab: "quiz" | "code"): string {
   if (tab === "code") {
     if (elapsedSec < 15) return "Building drill prompts…";
     if (elapsedSec < 45) return "Waiting on AI for code drills…";
     return "Still working — large models can take a minute…";
   }
-  if (focus === "cover_all") {
-    if (elapsedSec < 20) return "1/6 Reading note sections…";
-    if (elapsedSec < 45) return "2/6 Definition / vocabulary batches…";
-    if (elapsedSec < 75) return "3/6 Concept / why-when batches…";
-    if (elapsedSec < 110) return "4/6 Coding / API batches…";
-    if (elapsedSec < 145) return "5/6 Connection / synthesis questions…";
-    if (elapsedSec < 180) return "6/6 Deduping + saving quiz note…";
-    return "Still generating — bulk mode can take several minutes…";
-  }
-  if (elapsedSec < 12) return "Preparing note material…";
-  if (elapsedSec < 40) return "Calling AI (quiz_gen)…";
-  if (elapsedSec < 80) return "Parsing & filtering MCQs…";
-  return "Almost done — waiting on the model…";
+  if (elapsedSec < 20) return "1/4 Reading note topics…";
+  if (elapsedSec < 60) return "2/4 Generating per-topic MCQs (small context)…";
+  if (elapsedSec < 120) return "3/4 Combining + tagging for review…";
+  if (elapsedSec < 180) return "4/4 Seeding SRS deck…";
+  return "Still generating — topic loop can take a few minutes…";
 }
 
 export function StudyLibraryIntelligenceHub({
@@ -75,6 +65,10 @@ export function StudyLibraryIntelligenceHub({
   quizFocus = "mixed",
   onQuizCountChange,
   onQuizFocusChange,
+  noteTopics = [],
+  selectedTopicIds = [],
+  onSelectedTopicIdsChange,
+  topicsLoading = false,
   onGenerateQuiz,
   onGenerateDrills,
   onGeneratePrimer,
@@ -127,19 +121,19 @@ export function StudyLibraryIntelligenceHub({
   const hubItems = sessionItems.filter((i) => (tab === "quiz" ? i.kind === "quiz" : i.kind === "exercise"));
 
   const planHint =
-    quizFocus === "cover_all"
-      ? "Bulk multi-call: sections + definition/concept/coding/connect · auto-saves"
-      : quizFocus === "concept"
-        ? "Concept batches (auto)"
-        : quizFocus === "coding"
-          ? "Coding/API batches (auto)"
-          : "Mixed concept + coding (auto)";
+    quizFocus === "concept"
+      ? "Question style: concepts / definitions"
+      : quizFocus === "coding"
+        ? "Question style: coding / API"
+        : "Question style: mixed concept + coding";
 
-  const countOptions =
-    quizFocus === "cover_all" ? [20, 30, 40, 50] : [5, 8, 10, 12, 15, 20, 25];
+  const countOptions = noteTopics.length > 0 ? [12, 20, 30, 40, 50] : [5, 8, 10, 12, 15, 20, 25];
 
   const liveStage = generatingDetail?.trim() || stageForElapsed(quizFocus, elapsedSec, tab);
-  const estCalls = quizFocus === "cover_all" ? estimateBulkCalls(quizCount) : null;
+  const estCalls =
+    noteTopics.length > 0
+      ? Math.max(noteTopics.length, Math.ceil(quizCount / 2))
+      : null;
 
   return (
     <section className="study-library-glass w-72 shrink-0 flex flex-col p-3 min-h-0">
@@ -188,26 +182,88 @@ export function StudyLibraryIntelligenceHub({
               </select>
             </label>
             <label className="flex items-center justify-between gap-2 text-[11px] text-muted-foreground">
-              <span>Focus</span>
+              <span>Style</span>
               <select
                 className="h-7 rounded border border-border bg-background px-1.5 text-xs text-foreground"
-                value={quizFocus}
+                value={quizFocus === "cover_all" ? "mixed" : quizFocus}
                 disabled={generating}
                 onChange={(e) => onQuizFocusChange?.(e.target.value as QuizFocus)}
               >
                 <option value="mixed">Mixed</option>
                 <option value="concept">Concepts</option>
                 <option value="coding">Coding / API</option>
-                <option value="cover_all">Cover all ground (bulk)</option>
               </select>
             </label>
             <p className="text-[10px] text-muted-foreground/80">{planHint}</p>
-            {quizFocus === "cover_all" && (
-              <p className="text-[10px] text-amber-700/90">
-                Multiple AI calls (sections + definition/concept/coding/connect) until ~{quizCount}{" "}
-                questions fill. Auto-saves a quiz note. If the model is down you get note-fact
-                fallback — toast will say so.
-              </p>
+            <p className="text-[10px] text-foreground/80 leading-snug">
+              Engine walks each topic with a <span className="font-medium">small context window</span>,
+              then combines into one quiz — richer questions, tagged for spaced review.
+            </p>
+            {noteTopics.length > 0 && onSelectedTopicIdsChange && (
+              <div className="rounded-md border border-border/60 bg-muted/20 p-2 space-y-1.5">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-[10px] font-medium text-foreground">
+                    Topic filter{" "}
+                    {selectedTopicIds.length
+                      ? `(${selectedTopicIds.length} of ${noteTopics.length})`
+                      : `(all ${noteTopics.length})`}
+                  </p>
+                  <div className="flex gap-1">
+                    <button
+                      type="button"
+                      className="text-[10px] text-primary hover:underline"
+                      disabled={generating || topicsLoading}
+                      onClick={() => onSelectedTopicIdsChange(noteTopics.map((t) => t.topic_id))}
+                    >
+                      All
+                    </button>
+                    <span className="text-[10px] text-muted-foreground">·</span>
+                    <button
+                      type="button"
+                      className="text-[10px] text-muted-foreground hover:underline"
+                      disabled={generating || topicsLoading}
+                      onClick={() => onSelectedTopicIdsChange([])}
+                    >
+                      Clear
+                    </button>
+                  </div>
+                </div>
+                <div className="max-h-36 overflow-y-auto space-y-0.5 pr-0.5">
+                  {noteTopics.map((t) => {
+                    const checked = selectedTopicIds.includes(t.topic_id);
+                    return (
+                      <label
+                        key={t.topic_id}
+                        className="flex items-start gap-1.5 text-[10px] leading-snug cursor-pointer rounded px-1 py-0.5 hover:bg-accent/40"
+                      >
+                        <input
+                          type="checkbox"
+                          className="mt-0.5"
+                          checked={checked}
+                          disabled={generating}
+                          onChange={() => {
+                            if (checked) {
+                              onSelectedTopicIdsChange(selectedTopicIds.filter((id) => id !== t.topic_id));
+                            } else {
+                              onSelectedTopicIdsChange([...selectedTopicIds, t.topic_id]);
+                            }
+                          }}
+                        />
+                        <span>
+                          <span className="font-mono text-foreground/90">{t.topic_id}</span>
+                          <span className="text-muted-foreground"> — {t.title}</span>
+                        </span>
+                      </label>
+                    );
+                  })}
+                </div>
+                <p className="text-[10px] text-muted-foreground/80">
+                  Leave clear to loop the whole note topic-by-topic. Filter only if you want a subset.
+                </p>
+              </div>
+            )}
+            {topicsLoading && (
+              <p className="text-[10px] text-muted-foreground">Loading topics…</p>
             )}
           </div>
         )}
@@ -222,8 +278,8 @@ export function StudyLibraryIntelligenceHub({
               <Loader2 className="w-3.5 h-3.5 animate-spin text-primary shrink-0" />
               <span>
                 {tab === "quiz"
-                  ? quizFocus === "cover_all"
-                    ? "Bulk quiz running…"
+                  ? noteTopics.length > 0
+                    ? "Topic-loop quiz…"
                     : "Generating quiz…"
                   : "Generating drills…"}
               </span>
@@ -232,12 +288,12 @@ export function StudyLibraryIntelligenceHub({
               </span>
             </div>
             <p className="text-[11px] text-foreground/90 leading-snug">{liveStage}</p>
-            {tab === "quiz" && quizFocus === "cover_all" && (
+            {tab === "quiz" && noteTopics.length > 0 && (
               <p className="text-[10px] text-muted-foreground">
-                Target ~{quizCount} questions · ~{estCalls} AI calls · keep this tab open
+                Target ~{quizCount} questions · ~{estCalls} topic calls · keep this tab open
               </p>
             )}
-            {tab === "quiz" && quizFocus !== "cover_all" && (
+            {tab === "quiz" && noteTopics.length === 0 && (
               <p className="text-[10px] text-muted-foreground">
                 Target {quizCount} questions · {planHint}
               </p>
@@ -248,7 +304,7 @@ export function StudyLibraryIntelligenceHub({
                 style={{
                   width: `${Math.min(
                     92,
-                    quizFocus === "cover_all" ? 8 + elapsedSec * 0.35 : 12 + elapsedSec * 1.2,
+                    noteTopics.length > 0 ? 8 + elapsedSec * 0.4 : 12 + elapsedSec * 1.2,
                   )}%`,
                 }}
               />
@@ -291,7 +347,9 @@ export function StudyLibraryIntelligenceHub({
               ? "Generating…"
               : "Working…"
             : tab === "quiz"
-              ? "Generate quiz"
+              ? noteTopics.length > 0
+                ? "Generate quiz (topic loop)"
+                : "Generate quiz"
               : "Generate drills"}
         </Button>
         {tab === "quiz" && onPasteQuiz && (

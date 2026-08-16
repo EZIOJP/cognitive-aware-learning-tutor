@@ -4,7 +4,7 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from backend.core.auth import get_current_user, require_admin
@@ -225,11 +225,21 @@ def math_tutor_hint(
     )
 
 
+class MathOcrLineOut(BaseModel):
+    latex: str
+    bbox: dict[str, int]
+    confidence: float
+    structural_confidence: float = 1.0
+    source: str = "texteller"
+
+
 class MathOcrIn(BaseModel):
     canvas_image: str
     paths_json: str | None = None
     stroke_metrics_json: str | None = None
     ollama_vision_fallback: bool = True
+    multiline: bool = True
+    crop_bbox: dict[str, int] | None = None
 
 
 class MathOcrOut(BaseModel):
@@ -240,6 +250,8 @@ class MathOcrOut(BaseModel):
     teacher_latex: str = ""
     needs_review: bool = False
     tier: str = "texteller"
+    lines: list[MathOcrLineOut] = Field(default_factory=list)
+    structural_confidence: float = 1.0
 
 
 class MathEvalIn(BaseModel):
@@ -318,6 +330,8 @@ def math_ocr(
             paths_json=body.paths_json,
             stroke_metrics_json=body.stroke_metrics_json,
             ollama_vision_fallback=body.ollama_vision_fallback,
+            multiline=body.multiline,
+            crop_bbox=body.crop_bbox,
         )
     except ImportError as e:
         raise HTTPException(status_code=503, detail=str(e)) from e
@@ -326,6 +340,16 @@ def math_ocr(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"OCR failed: {e}") from e
 
+    lines_out = [
+        MathOcrLineOut(
+            latex=ln.latex,
+            bbox=ln.bbox,
+            confidence=ln.confidence,
+            structural_confidence=ln.structural_confidence,
+            source=ln.source,
+        )
+        for ln in (result.lines or [])
+    ]
     return MathOcrOut(
         latex=result.latex,
         incomplete_step=result.incomplete_step,
@@ -334,6 +358,8 @@ def math_ocr(
         teacher_latex=result.teacher_latex,
         needs_review=result.needs_review,
         tier=result.tier,
+        lines=lines_out,
+        structural_confidence=result.structural_confidence,
     )
 
 
@@ -362,6 +388,8 @@ class MathInterventionOut(BaseModel):
     question: str
     detected_concept: str
     use_llm: bool = False
+    structural_confidence: float = 1.0
+    tutor_silent: bool = False
 
 
 class InterventionPatchIn(BaseModel):
@@ -384,8 +412,9 @@ class InterventionPatchOut(BaseModel):
 def math_intervention(
     body: MathInterventionIn,
     user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ):
-    """OCR + stuckness score → Socratic hint; logs DSC_interventions CSV + PNG."""
+    """OCR + stuckness score → Socratic hint; logs DSC_interventions CSV + PNG; struggle → SRS."""
     from backend.math.intervention_handler import build_intervention
     from backend.math.intervention_log import log_intervention, new_snapshot_id
 
@@ -399,6 +428,7 @@ def math_intervention(
         result = build_intervention(
             canvas_image=body.canvas_image,
             paths_json=body.paths_json,
+            stroke_metrics_json=body.stroke_metrics_json,
             prompt=body.prompt,
             topic=body.topic,
             gamma=body.gamma,
@@ -434,6 +464,9 @@ def math_intervention(
         needs_review=result.needs_review,
         incomplete_step=result.incomplete_step,
         stuckness=result.stuckness,
+        confidence=result.confidence,
+        structural_confidence=result.structural_confidence,
+        tutor_silent=result.tutor_silent,
         gamma=body.gamma,
         attention=body.attention,
         idle_seconds=idle,
@@ -444,6 +477,23 @@ def math_intervention(
         use_llm=result.use_llm,
         status="spawned" if result.triggered else "low_signal",
     )
+
+    # Struggle → SRS (incorrect) when intervention fired and OCR was reliable enough.
+    if result.triggered and result.latex and not result.tutor_silent:
+        from backend.math.srs_bridge import enqueue_math_review
+
+        enqueue_math_review(
+            db,
+            user_id=user.id,
+            latex=result.latex,
+            topic=body.topic or result.detected_concept,
+            prompt=body.prompt,
+            snapshot_id=result.session_snapshot_id,
+            correct=False,
+            confidence=result.confidence,
+            structural_confidence=result.structural_confidence,
+            tutor_silent=result.tutor_silent,
+        )
 
     return MathInterventionOut(
         session_snapshot_id=result.session_snapshot_id,
@@ -456,6 +506,8 @@ def math_intervention(
         question=result.question,
         detected_concept=result.detected_concept,
         use_llm=result.use_llm,
+        structural_confidence=result.structural_confidence,
+        tutor_silent=result.tutor_silent,
     )
 
 
@@ -463,10 +515,12 @@ def math_intervention(
 def math_intervention_recover(
     snapshot_id: str,
     body: InterventionPatchIn,
-    _user: User = Depends(get_current_user),
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ):
-    """Student dismissed hint or resumed work."""
-    from backend.math.intervention_log import update_intervention_status
+    """Student dismissed hint or resumed work — schedule SRS success when OCR was reliable."""
+    from backend.math.intervention_log import _find_snapshot_row, update_intervention_status
+    from backend.math.srs_bridge import enqueue_math_review
 
     ok = update_intervention_status(
         snapshot_id,
@@ -476,6 +530,32 @@ def math_intervention_recover(
     )
     if not ok:
         raise HTTPException(status_code=404, detail="Intervention snapshot not found")
+
+    row = _find_snapshot_row(snapshot_id) or {}
+    latex = (row.get("latex") or "").strip()
+    topic = (row.get("topic") or "").strip()
+    try:
+        conf = float(row.get("confidence") or 1.0)
+    except (TypeError, ValueError):
+        conf = 1.0
+    try:
+        struct_c = float(row.get("structural_confidence") or 1.0)
+    except (TypeError, ValueError):
+        struct_c = 1.0
+    silent = str(row.get("tutor_silent") or "").lower() in ("true", "1", "yes")
+    if latex and body.learner_recovered:
+        enqueue_math_review(
+            db,
+            user_id=user.id,
+            latex=latex,
+            topic=topic,
+            prompt="",
+            snapshot_id=snapshot_id,
+            correct=True,
+            confidence=conf,
+            structural_confidence=struct_c,
+            tutor_silent=silent,
+        )
     return InterventionPatchOut(session_snapshot_id=snapshot_id, status="recovered")
 
 
@@ -484,9 +564,15 @@ def math_intervention_correct(
     snapshot_id: str,
     body: InterventionCorrectIn,
     user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ):
-    """Admin/human correct LaTeX label → DSC_handwriting_dataset.csv."""
-    from backend.math.intervention_log import log_intervention_correction, update_intervention_status
+    """Admin/human correct LaTeX label → handwriting dataset + SRS success on confirmed latex."""
+    from backend.math.intervention_log import (
+        _find_snapshot_row,
+        log_intervention_correction,
+        update_intervention_status,
+    )
+    from backend.math.srs_bridge import enqueue_math_review
 
     latex = (body.correct_latex or "").strip()
     if not latex:
@@ -498,6 +584,19 @@ def math_intervention_correct(
         snapshot_id=snapshot_id,
         correct_latex=latex,
         user_id=user.id,
+    )
+    row = _find_snapshot_row(snapshot_id) or {}
+    enqueue_math_review(
+        db,
+        user_id=user.id,
+        latex=latex,
+        topic=(row.get("topic") or "").strip(),
+        prompt=row.get("prompt") or "",
+        snapshot_id=snapshot_id,
+        correct=True,
+        confidence=1.0,
+        structural_confidence=1.0,
+        tutor_silent=False,
     )
     return InterventionPatchOut(session_snapshot_id=snapshot_id, status="correct")
 

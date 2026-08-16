@@ -77,30 +77,63 @@ export function repairSplitCodeFences(text: string): string {
     .replace(/```(\w+)\s*\n```\n/g, "```$1\n");
 }
 
+/** Languages where a single `# …` line is usually a comment, not an ATX heading. */
+const HASH_COMMENT_LANGS = new Set([
+  "python",
+  "py",
+  "bash",
+  "sh",
+  "shell",
+  "zsh",
+  "ruby",
+  "rb",
+  "yaml",
+  "yml",
+  "r",
+  "perl",
+  "toml",
+  "dockerfile",
+  "makefile",
+  "cmake",
+]);
+
+function fenceLang(openLine: string): string {
+  const m = /^```(\w+)/.exec(openLine.trim());
+  return (m?.[1] || "").toLowerCase();
+}
+
 /** Close orphaned ``` fences before headings or new fences (any language). */
 export function repairAllFences(text: string): string {
   const lines = text.split("\n");
   const out: string[] = [];
   let inFence = false;
+  let lang = "";
 
   for (const line of lines) {
     const stripped = line.trim();
 
     if (!inFence && stripped.startsWith("```")) {
       inFence = true;
+      lang = fenceLang(stripped);
       out.push(line);
       continue;
     }
 
     if (inFence && stripped === "```") {
       inFence = false;
+      lang = "";
       out.push(line);
       continue;
     }
 
-    if (inFence && (stripped.startsWith("```") || /^#{1,6}\s/.test(line))) {
+    // LLM often forgets ``` before the next fence or a real markdown heading (##+).
+    // Single-hash lines inside Python/shell (`# 3`) are comments — keep them in the fence.
+    const looksLikeHeading = /^#{1,6}\s/.test(line);
+    const singleHashComment = HASH_COMMENT_LANGS.has(lang) && /^#\s/.test(stripped);
+    if (inFence && (stripped.startsWith("```") || (looksLikeHeading && !singleHashComment))) {
       out.push("```");
       inFence = false;
+      lang = "";
     }
 
     out.push(line);

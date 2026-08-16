@@ -200,6 +200,7 @@ def load_context_folder(folder: Path, *, exclude_paths: set[Path] | None = None)
 
 def resolve_source_path(relative_or_name: str) -> Path:
     from backend.paths import NOTES_DIR, TRANSCRIPTS_DIR
+    from backend.transcripts.note_topics import remap_legacy_note_path
 
     rel = relative_or_name.replace("\\", "/").lstrip("/")
     if ".." in rel.split("/"):
@@ -209,8 +210,14 @@ def resolve_source_path(relative_or_name: str) -> Path:
     if transcript.is_file() and transcript.is_relative_to(TRANSCRIPTS_DIR.resolve()):
         return transcript
 
-    note = (NOTES_DIR / rel).resolve()
-    if note.is_file() and note.is_relative_to(NOTES_DIR.resolve()):
-        return note
+    candidates = [rel]
+    remapped = remap_legacy_note_path(rel)
+    if remapped != rel:
+        candidates.append(remapped)
+
+    for candidate in candidates:
+        note = (NOTES_DIR / candidate).resolve()
+        if note.is_file() and note.is_relative_to(NOTES_DIR.resolve()):
+            return note
 
     raise FileNotFoundError(f"Source not found: {relative_or_name}")

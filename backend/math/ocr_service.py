@@ -467,6 +467,15 @@ def _finalize_result(
 
 
 @dataclass
+class OcrLineResult:
+    latex: str
+    bbox: dict[str, int]
+    confidence: float
+    structural_confidence: float = 1.0
+    source: str = "texteller"
+
+
+@dataclass
 class OcrResult:
     latex: str
     incomplete_step: bool
@@ -475,6 +484,221 @@ class OcrResult:
     teacher_latex: str = ""
     needs_review: bool = False
     tier: str = "texteller"
+    lines: list[OcrLineResult] | None = None
+    structural_confidence: float = 1.0
+
+
+def _parse_stroke_metrics(stroke_metrics_json: str | None) -> dict | None:
+    if not (stroke_metrics_json or "").strip():
+        return None
+    try:
+        data = json.loads(stroke_metrics_json)
+    except (json.JSONDecodeError, TypeError):
+        return None
+    return data if isinstance(data, dict) else None
+
+
+def _prepare_canvas_image(
+    canvas_image: str,
+    *,
+    paths_json: str | None = None,
+) -> tuple[Image.Image, bool]:
+    """Decode + flatten + optional path rasterize. Returns (img, preprocess_hint)."""
+    img = flatten_on_white(decode_canvas_image(canvas_image))
+    if not image_has_ink(img) and paths_have_ink(paths_json):
+        synthesized = synthesize_from_paths(paths_json, img.size)
+        if synthesized is not None:
+            img = synthesized
+    if not image_has_ink(img):
+        raise ValueError("Canvas appears empty — draw an equation first.")
+    if paths_have_ink(paths_json):
+        masked = synthesize_from_paths(paths_json, img.size)
+        if masked is not None and image_has_ink(masked):
+            img = masked
+    else:
+        img = mask_from_paths(img, paths_json)
+    return img, True
+
+
+def recognize_multiline(
+    img: Image.Image,
+    *,
+    stroke_metrics: dict | None = None,
+    stroke_metrics_json: str | None = None,
+    paths_json: str | None = None,
+    pad: int = 12,
+) -> OcrResult:
+    """
+    Detect line bands → TexTeller each crop → join with ``\\\\``.
+
+    Stroke-bbox clustering is preferred when metrics are present; projection
+    profile is used for image-only input. MFD ONNX upgrades when both yield
+    &lt;2 bands. Whole-image TexTeller is the final fallback.
+    Low-confidence short glyphs may be rescued by the stroke-symbol classifier.
+    """
+    from backend.math.line_detect import detect_line_bands
+    from backend.math.stroke_symbol import maybe_disambiguate_latex
+    from backend.math.structure_verify import verify_structure
+
+    metrics = stroke_metrics if stroke_metrics is not None else _parse_stroke_metrics(stroke_metrics_json)
+    if not texteller_available():
+        return OcrResult(
+            latex="",
+            incomplete_step=True,
+            confidence=0.0,
+            preprocess_applied=True,
+            tier="unavailable",
+            lines=[],
+            structural_confidence=0.0,
+        )
+
+    bands = detect_line_bands(img, metrics, pad=pad)
+    line_results: list[OcrLineResult] = []
+
+    # Multi-band path: OCR each band separately.
+    if len(bands) >= 2:
+        W, H = img.size
+        for band in bands:
+            crop = img.crop(
+                (
+                    max(0, band.x0),
+                    max(0, band.y0),
+                    min(W, band.x1 if band.x1 else W),
+                    min(H, band.y1),
+                )
+            )
+            if not image_has_ink(crop, min_ink_pixels=20):
+                continue
+            latex = ""
+            try:
+                latex = _run_texteller(prepare_for_texteller(crop))
+            except Exception:
+                latex = ""
+            if latex and _ocr_looks_hallucinated(latex):
+                latex = ""
+            bbox = band.as_bbox()
+            complete = bool(latex) and latex_is_complete(latex)
+            conf = 1.0 if complete else (0.45 if latex else 0.0)
+            latex, conf, src = maybe_disambiguate_latex(
+                latex,
+                confidence=conf,
+                paths_json=paths_json,
+                stroke_metrics=metrics,
+                band_bbox=bbox,
+            )
+            struct = verify_structure(latex, metrics, band_bbox=bbox)
+            line_results.append(
+                OcrLineResult(
+                    latex=latex,
+                    bbox=bbox,
+                    confidence=conf,
+                    structural_confidence=struct.structural_confidence,
+                    source=src if src == "stroke_symbol" else band.source,
+                )
+            )
+
+        joined = " \\\\ ".join(lr.latex for lr in line_results if lr.latex).strip()
+        if joined:
+            confs = [lr.confidence for lr in line_results if lr.latex]
+            structs = [lr.structural_confidence for lr in line_results]
+            avg_conf = sum(confs) / len(confs) if confs else 0.0
+            avg_struct = sum(structs) / len(structs) if structs else 0.5
+            combined = min(avg_conf, 0.5 + 0.5 * avg_struct)
+            complete = latex_is_complete(joined) if "\\\\" not in joined else all(
+                latex_is_complete(lr.latex) for lr in line_results if lr.latex
+            )
+            return OcrResult(
+                latex=joined,
+                incomplete_step=not complete or combined < CONFIDENCE_INCOMPLETE_THRESHOLD,
+                confidence=combined,
+                preprocess_applied=True,
+                tier="multiline",
+                lines=line_results,
+                structural_confidence=avg_struct,
+            )
+
+    # Fallback: whole-image TexTeller (0–1 bands, or multi-band produced no latex).
+    cropped, crop_applied = crop_to_content(img)
+    prepared = prepare_for_texteller(cropped)
+    latex = ""
+    try:
+        latex = _run_texteller(prepared)
+    except Exception:
+        latex = ""
+    if latex and _ocr_looks_hallucinated(latex):
+        cell_latex = _per_cell_ocr(img, stroke_metrics_json)
+        if cell_latex:
+            latex = cell_latex
+            tier = "per_cell"
+        else:
+            latex = ""
+            tier = "texteller_rejected"
+    else:
+        tier = "texteller_whole" if len(bands) < 2 else "texteller_fallback"
+
+    result = _finalize_result(
+        latex,
+        preprocess_applied=crop_applied or True,
+        used_simple=False,
+    )
+    result.tier = tier if latex else "tier3_empty"
+    bbox = {"x": 0, "y": 0, "w": img.size[0], "h": img.size[1]}
+    if bands:
+        bbox = bands[0].as_bbox()
+    latex2, conf2, src = maybe_disambiguate_latex(
+        result.latex,
+        confidence=result.confidence,
+        paths_json=paths_json,
+        stroke_metrics=metrics,
+        band_bbox=bbox,
+    )
+    if src == "stroke_symbol":
+        result.latex = latex2
+        result.confidence = conf2
+        result.tier = "stroke_symbol"
+        result.incomplete_step = not latex_is_complete(latex2)
+    struct = verify_structure(result.latex, metrics, band_bbox=bbox if bands else None)
+    result.structural_confidence = struct.structural_confidence
+    if result.latex:
+        result.confidence = min(result.confidence, 0.5 + 0.5 * struct.structural_confidence)
+    result.lines = [
+        OcrLineResult(
+            latex=result.latex,
+            bbox=bbox,
+            confidence=result.confidence,
+            structural_confidence=struct.structural_confidence,
+            source="stroke_symbol" if src == "stroke_symbol" else "whole_image",
+        )
+    ]
+    return result
+
+
+def apply_crop_bbox(
+    img: Image.Image,
+    crop_bbox: dict | None,
+    *,
+    pad: int = 8,
+) -> Image.Image:
+    """Crop to {x,y,w,h} with padding; no-op if bbox missing/invalid."""
+    if not crop_bbox or not isinstance(crop_bbox, dict):
+        return img
+    try:
+        x = int(crop_bbox["x"])
+        y = int(crop_bbox["y"])
+        w = int(crop_bbox["w"])
+        h = int(crop_bbox["h"])
+    except (KeyError, TypeError, ValueError):
+        return img
+    if w <= 0 or h <= 0:
+        return img
+    W, H = img.size
+    x0 = max(0, x - pad)
+    y0 = max(0, y - pad)
+    x1 = min(W, x + w + pad)
+    y1 = min(H, y + h + pad)
+    if x1 <= x0 or y1 <= y0:
+        return img
+    return img.crop((x0, y0, x1, y1))
 
 
 def recognize_canvas(
@@ -484,90 +708,92 @@ def recognize_canvas(
     stroke_metrics_json: str | None = None,
     ollama_vision_fallback: bool = True,
     use_nim_teacher: bool = True,
+    multiline: bool = True,
+    crop_bbox: dict | None = None,
 ) -> OcrResult:
     """
     Multi-tier pipeline:
     Tier 0 (opt-in NIM): teacher label stored alongside prediction
-    Tier 1: TexTeller ONNX (whole canvas; per-cell crops as rescue)
+    Tier 1: multi-line TexTeller (stroke/projection bands) or whole-canvas
     Tier 2: Ollama vision (if enabled + incomplete)
     Tier 3: empty latex + incomplete_step (never hard-fails)
+
+    Optional crop_bbox focuses OCR on the active region (Phase 2 idle crop).
     """
-    img = flatten_on_white(decode_canvas_image(canvas_image))
-    if not image_has_ink(img) and paths_have_ink(paths_json):
-        synthesized = synthesize_from_paths(paths_json, img.size)
-        if synthesized is not None:
-            img = synthesized
-    if not image_has_ink(img):
-        raise ValueError("Canvas appears empty — draw an equation first.")
+    img, _prep = _prepare_canvas_image(canvas_image, paths_json=paths_json)
+    img = apply_crop_bbox(img, crop_bbox)
 
     teacher_latex = ""
     needs_review = False
     if use_nim_teacher:
         teacher_latex, needs_review = _nim_teacher_latex(canvas_image)
 
-    if paths_have_ink(paths_json):
-        masked = synthesize_from_paths(paths_json, img.size)
-        if masked is not None and image_has_ink(masked):
-            img = masked
+    if not texteller_available():
+        return OcrResult(
+            latex="",
+            incomplete_step=True,
+            confidence=0.0,
+            preprocess_applied=True,
+            teacher_latex=teacher_latex,
+            needs_review=needs_review,
+            tier="unavailable",
+            lines=[],
+            structural_confidence=0.0,
+        )
+
+    if multiline:
+        result = recognize_multiline(
+            img,
+            stroke_metrics_json=stroke_metrics_json,
+            paths_json=paths_json,
+        )
+        result.teacher_latex = teacher_latex
+        result.needs_review = needs_review or result.needs_review
     else:
-        img = mask_from_paths(img, paths_json)
-    cropped, crop_applied = crop_to_content(img)
-    prepared = prepare_for_texteller(cropped)
-    preprocess_applied = crop_applied or True
-    simple_latex = try_contour_digit_latex(cropped)
-
-    latex = ""
-    tier = "none"
-
-    if texteller_available():
+        # Legacy single-pass path (tests / explicit opt-out).
+        cropped, crop_applied = crop_to_content(img)
+        prepared = prepare_for_texteller(cropped)
+        preprocess_applied = crop_applied or True
+        simple_latex = try_contour_digit_latex(cropped)
+        latex = ""
+        tier = "none"
         try:
             latex = _run_texteller(prepared)
             tier = "texteller"
         except Exception:
             latex = ""
-    else:
-        # No OCR engine — Tier 3 immediately with rule-tutor-safe empty latex
-        return OcrResult(
-            latex="",
-            incomplete_step=True,
-            confidence=0.0,
+        if _ocr_looks_hallucinated(latex):
+            cell_latex = _per_cell_ocr(img, stroke_metrics_json)
+            if cell_latex:
+                latex = cell_latex
+                tier = "per_cell"
+            elif simple_latex:
+                latex = simple_latex
+                tier = "contour"
+            else:
+                latex = ""
+                tier = "texteller_rejected"
+        result = _finalize_result(
+            latex,
             preprocess_applied=preprocess_applied,
+            used_simple=bool(simple_latex and latex == simple_latex),
             teacher_latex=teacher_latex,
-            needs_review=needs_review,
-            tier="unavailable",
         )
-
-    if _ocr_looks_hallucinated(latex):
-        # Rescue 1: OCR each training grid cell separately (multi-symbol prompts).
-        cell_latex = _per_cell_ocr(img, stroke_metrics_json)
-        if cell_latex:
-            latex = cell_latex
-            tier = "per_cell"
-        elif simple_latex:
-            latex = simple_latex
-            tier = "contour"
-        else:
-            latex = ""
-            tier = "texteller_rejected"
-
-    result = _finalize_result(
-        latex,
-        preprocess_applied=preprocess_applied,
-        used_simple=bool(simple_latex and latex == simple_latex),
-        teacher_latex=teacher_latex,
-    )
-    result.tier = tier
+        result.tier = tier
+        result.needs_review = needs_review or result.needs_review
 
     if result.incomplete_step and ollama_vision_fallback:
         alt = _ollama_vision_latex(canvas_image)
         if alt:
             alt_result = _finalize_result(
                 alt,
-                preprocess_applied=preprocess_applied,
+                preprocess_applied=True,
                 used_simple=False,
                 teacher_latex=teacher_latex,
             )
             alt_result.tier = "ollama_vision"
+            alt_result.structural_confidence = result.structural_confidence
+            alt_result.lines = result.lines
             if alt_result.confidence >= result.confidence or not result.latex:
                 return alt_result
 

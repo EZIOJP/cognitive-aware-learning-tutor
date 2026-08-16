@@ -39,7 +39,10 @@ transcript-notes-studio\run.bat
 
 Workflow steps in the GUI:
 
-1. **Capture** — Windows Live Captions (Win+Ctrl+L) or Whisper file/live
+1. **Capture** — Windows Live Captions (Win+Ctrl+L) or Whisper file/live  
+   Quality gates (from SaveLiveCaptions ideas): wait until a sentence is **stable** across a few polls, **replace** near-duplicates with a clearer revision, optional `[HH:MM:SS]` timestamps on save. Attach / seed-baseline / idle-stop stay CALT’s.
+
+   If capture sits on “Connecting…” or saves nothing: press **Win+Ctrl+L** so the **Windows** black caption bar is visible (not DeLive / YouTube / browser captions). Advanced → Method must be **uia**. Restart Studio if a previous connect hung, then Start capture again.
 2. **Tune** — pick transcript, aggressive dedup, parse preview
 3. **Generate** — LLM notes with mermaid rules, optional refine/tags/wikilinks
 4. **Done** — open `data/notes/`, launch Study Library in browser

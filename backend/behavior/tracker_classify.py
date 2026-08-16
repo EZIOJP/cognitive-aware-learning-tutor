@@ -19,18 +19,26 @@ _APP_RULES: list[tuple[str, str, int]] = [
      "Office / Docs", 75),
     (r"figma|photoshop|illustrator|inkscape|gimp|blender|canva",
      "Design", 80),
-    (r"slack|teams|discord|zoom|skype|telegram|whatsapp|signal",
+    # Discord is a distraction client for hard-block; keep other chat as Communication.
+    (r"discord",
+     "Social Media", 15),
+    (r"slack|teams|zoom|skype|telegram|whatsapp|signal",
      "Communication", 45),
     (r"chrome|firefox|msedge|brave|opera|arc|zen",
      "Browser", 40),
     (r"explorer\.exe|files\.exe",
      "File Manager", 30),
-    (r"spotify|vlc|mpv|wmplayer|groove|musicbee|foobar",
+    (r"spotify|vlc|mpv|wmplayer|groove|musicbee|foobar|"
+     r"youtube[\s\-]?music|pear[\s\-]?desktop|pear\.exe",
      "Music / Media", 20),
-    (r"netflix|primevideo|hotstar|jiocinema|mxplayer|popcorntime",
+    (r"netflix|primevideo|hotstar|jiocinema|mxplayer|popcorntime|"
+     r"disney\+?|disneyplus|hulu|twitch",
      "Video Streaming", 10),
-    (r"steam|epicgameslauncher|battle\.net|roblox|minecraft|valorant|csgo|dota2|league"
-     r"|start_protected_game|gameoverlayui|steamwebhelper|steamservice",
+    (r"steam|epicgameslauncher|battle\.net|origin|eadesktop|ealauncher|"
+     r"ubisoft|upc\.exe|rockstar|gog|galaxy.?client|itch\.exe|"
+     r"xbox|gamingservices|gamebar|roblox|minecraft|valorant|csgo|dota2|league|"
+     r"start_protected_game|gameoverlayui|steamwebhelper|steamservice|"
+     r"win64-shipping|win32-shipping",
      "Gaming", 10),
     (r"taskmgr|perfmon|processexplorer|resmon|task manager",
      "System Tools", 30),
@@ -44,6 +52,15 @@ _STUDY_TITLE = re.compile(
 
 
 def classify_app(exe: str, title: str) -> tuple[str, int]:
+    # Bible PDF / embedded reader → spiritual (not productive study).
+    try:
+        from backend.behavior.bible_desktop import looks_like_bible_reader
+
+        if looks_like_bible_reader(exe, title):
+            return "Spiritual", 40
+    except Exception:  # noqa: BLE001
+        pass
+
     # Browsers must use title/domain rules — never match IDE patterns like
     # "cursor" inside a page title (e.g. Edge tab "Cursor Agents" → false IDE 95).
     from backend.behavior.session_key import is_browser_exe

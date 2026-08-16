@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "CALT SelfTracker (Edge / Chrome)",
-  "version": "1.5.13",
-  "description": "Tracks browsing; DNR + single-tab softLand; crash-safe (no 4s enforce); Jarvis caption.",
+  "version": "1.5.24",
+  "description": "Active-tab browse tracking / telemetry / Jarvis. Site blocking lives in CALT Gate. Skips localhost (CALT SPA).",
   "permissions": [
     "tabs",
     "activeTab",
@@ -11,8 +11,7 @@
     "alarms",
     "idle",
     "history",
-    "webNavigation",
-    "declarativeNetRequest"
+    "webNavigation"
   ],
   "host_permissions": [
     "<all_urls>",
@@ -20,7 +19,7 @@
     "http://localhost:8000/*"
   ],
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "service_worker.js"
   },
   "minimum_chrome_version": "109",
   "content_scripts": [
@@ -43,11 +42,5 @@
     "16": "icon.png",
     "48": "icon.png",
     "128": "icon.png"
-  },
-  "web_accessible_resources": [
-    {
-      "resources": ["locked.html", "gate_policy.js"],
-      "matches": ["<all_urls>"]
-    }
-  ]
+  }
 }

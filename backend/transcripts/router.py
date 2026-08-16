@@ -123,22 +123,6 @@ class GenerateTodayRequest(BaseModel):
     confirm_heavy_budget: bool = False
 
 
-class StudyFlowRequest(BaseModel):
-    topic: str = Field(..., min_length=1, max_length=160)
-    transcript_file: str = Field(..., min_length=1, max_length=200)
-    folder_path: str = Field(default="", max_length=512)
-    title: str = Field(default="", max_length=120)
-    ingest_corpus: bool = False
-    quiz_count: int = Field(default=8, ge=1, le=20)
-    start_quiz: bool = False
-    llm_provider: str | None = Field(default=None, max_length=32)
-    llm_base_url: str | None = Field(default=None, max_length=200)
-    llm_model: str | None = Field(default=None, max_length=120)
-    llm_tier: str | None = Field(default=None, max_length=16)
-    confirm_heavy_budget: bool = False
-
-
-
 class CreateFolderRequest(BaseModel):
     folder_path: str = Field(..., min_length=1, max_length=512)
 
@@ -148,6 +132,7 @@ class CreateFileRequest(BaseModel):
     folder_path: str = Field(default="", max_length=512)
     kind: str = Field(default="note", max_length=32)
     topic: str | None = Field(default=None, max_length=160)
+    content: str | None = Field(default=None, max_length=500_000)
 
 
 class UpdateFileRequest(BaseModel):
@@ -209,6 +194,10 @@ class GenerateIntelRequest(BaseModel):
     expand_siblings: bool = True
     # Persist quiz markdown into the library (default on for cover_all).
     save: bool | None = None
+    # Prefer specific L{n}-Txx / decimal topic ids; empty = all topics (cover_all) or whole note.
+    topic_ids: list[str] = Field(default_factory=list, max_length=40)
+    # Seed QuizDeck + ReviewCards for SRS (default on when cover_all or topic_ids set).
+    seed_deck: bool | None = None
     llm_provider: str | None = Field(default=None, max_length=32)
     llm_base_url: str | None = Field(default=None, max_length=200)
     llm_model: str | None = Field(default=None, max_length=120)
@@ -319,7 +308,7 @@ class GenerateNotesResponse(BaseModel):
     grounding_reason: str | None = None
 
 
-def _llm_from_request(body: GenerateNotesRequest | GenerateTodayRequest | StudyFlowRequest) -> LlmOptions | None:
+def _llm_from_request(body: GenerateNotesRequest | GenerateTodayRequest) -> LlmOptions | None:
     return llm_override_from_body(body)
 
 
@@ -606,6 +595,7 @@ def post_library_file(
             folder_path=body.folder_path,
             kind=body.kind,
             topic=body.topic,
+            content=body.content,
         )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
@@ -968,6 +958,7 @@ def post_generate_quiz(
 
     boost = weak_concepts_for_retrieval(db, user.id)
     focus = (body.focus.strip() or "mixed").lower()
+    topic_ids = [t.strip() for t in (body.topic_ids or []) if t and t.strip()][:40]
     # Prefer open note file(s) — no corpus RAG. Short notes get sibling files auto-added.
     result = generate_quiz_items(
         texts,
@@ -980,12 +971,16 @@ def post_generate_quiz(
         confirm_heavy_budget=confirm_budget_from_body(body),
         prefer_notes=True,
         source_labels=paths,
+        topic_ids=topic_ids or None,
     )
-    title = body.topic.strip() or ("Cover-all Quiz" if focus == "cover_all" else "Generated Quiz")
+    title = body.topic.strip() or ("Notes quiz" if not topic_ids else f"Quiz · {', '.join(topic_ids[:3])}")
+    if topic_ids and len(topic_ids) <= 3 and not body.topic.strip():
+        title = f"Quiz · {', '.join(topic_ids)}"
     md = quiz_to_markdown(result["questions"], title=title)
 
     saved_path: str | None = None
-    should_save = body.save if body.save is not None else (focus == "cover_all")
+    # Topic-loop quizzes are the main path — save + seed by default for SRS tags.
+    should_save = body.save if body.save is not None else bool(result.get("questions"))
     if should_save and result.get("questions"):
         folder = (body.folder_path or "").replace("\\", "/").strip()
         if not folder and paths:
@@ -999,20 +994,49 @@ def post_generate_quiz(
                 folder_path=folder,
                 kind="quiz",
                 content=md,
-                topic=body.topic.strip() or None,
+                topic=body.topic.strip() or (topic_ids[0] if topic_ids else None),
             )
             saved_path = note_storage_path(row)
         except Exception as exc:  # noqa: BLE001
             log.warning("quiz auto-save failed: %s", exc)
+
+    deck_id: int | None = None
+    cards_seeded = 0
+    should_seed = body.seed_deck if body.seed_deck is not None else bool(result.get("questions"))
+    if should_seed and result.get("questions"):
+        try:
+            from backend.quiz import handler as quiz_handler
+
+            note_path = (paths[0] if paths else "") or result.get("note_path") or ""
+            for q in result["questions"]:
+                if isinstance(q, dict) and note_path and not q.get("note_path"):
+                    q["note_path"] = note_path
+            deck = quiz_handler.save_deck(
+                db,
+                user=user,
+                title=title[:200],
+                items=result["questions"],
+                domain="study",
+                topic=body.topic.strip()
+                or (topic_ids[0] if topic_ids else "")
+                or (note_path.split("/")[-1] if note_path else ""),
+            )
+            deck_id = deck.get("id")
+            cards_seeded = int(deck.get("cards_seeded") or 0)
+        except Exception as exc:  # noqa: BLE001
+            log.warning("quiz deck seed failed: %s", exc)
 
     return {
         **result,
         "markdown": md,
         "saved_path": saved_path,
         "saved": bool(saved_path),
+        "deck_id": deck_id,
+        "cards_seeded": cards_seeded,
         "source_paths_used": paths,
         "source_paths_requested": requested,
         "expanded": paths != requested,
+        "topic_ids": topic_ids,
         "session_item": {
             "id": f"quiz-{int(time.time())}",
             "kind": "quiz",
@@ -1020,9 +1044,37 @@ def post_generate_quiz(
             "content": md,
             "detail": (
                 f"{len(result['questions'])} questions · {len(paths)} file(s)"
+                + (f" · {len(result.get('topics_covered') or topic_ids)} topics" if (result.get('topics_covered') or topic_ids) else "")
+                + (f" · deck #{deck_id}" if deck_id else "")
                 + (f" · saved {saved_path}" if saved_path else "")
             ),
         },
+    }
+
+
+@router.get("/library/note-topics")
+def get_note_topics(
+    path: str,
+    _user: User = Depends(get_current_user),
+):
+    """List quiz-ready topics for a library note (L{n}-Txx preferred)."""
+    from backend.transcripts.note_topics import parse_note_topics, remap_legacy_note_path
+    from backend.transcripts.notes_generator import resolve_notes_path
+
+    rel = remap_legacy_note_path((path or "").strip())
+    if not rel:
+        raise HTTPException(status_code=400, detail="path required")
+    try:
+        disk = resolve_notes_path(rel)
+        text = disk.read_text(encoding="utf-8", errors="replace")
+    except (OSError, ValueError, FileNotFoundError) as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    topics = parse_note_topics(text)
+    return {
+        "path": rel,
+        "requested_path": path,
+        "topics": [t.as_dict() for t in topics],
+        "count": len(topics),
     }
 
 
@@ -1278,37 +1330,6 @@ def generate_notes_from_today(
         grounding_status=grounding_status,
         grounding_reason=grounding_reason,
     )
-
-
-@router.post("/study-flow/start")
-def post_study_flow_start(
-    body: StudyFlowRequest,
-    db: Session = Depends(get_db),
-    user: User = Depends(get_current_user),
-):
-    from backend.transcripts.study_flow import run_topic_study_flow
-
-    guard_heavy_budget(body)
-    try:
-        return run_topic_study_flow(
-            db,
-            user.id,
-            topic=body.topic.strip(),
-            transcript_file=body.transcript_file,
-            folder_path=body.folder_path.strip(),
-            title=body.title.strip(),
-            ingest_corpus=body.ingest_corpus,
-            quiz_count=body.quiz_count,
-            start_quiz=body.start_quiz,
-            llm=_llm_from_request(body),
-            llm_tier=_tier_from_request(body),
-            confirm_heavy_budget=_confirm_budget_from_request(body),
-        )
-    except RuntimeError as exc:
-        raise HTTPException(status_code=503, detail=str(exc)) from exc
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
-
 
 
 @router.post("/snapshots")

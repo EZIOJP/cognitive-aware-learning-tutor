@@ -45,7 +45,7 @@ Cognitive-Aware Learning Tutor/
 ├── data/                     # vocab_app.db, pipeline output, plate images
 ├── data_logs/                # Runtime CSV logs
 ├── refernces/                # Reference copies only
-├── selftracker-extension/    # Chrome extension
+├── selftracker-extension/    # Edge MV3 SelfTracker + gate redirects (Edge-only)
 ├── hardware/                 # Firmware (.ino)
 ├── dist/, node_modules/      # Generated
 └── .cursor/rules/            # Cursor rules
@@ -157,14 +157,20 @@ Copied designs and old stacks — **read for UX ideas, do not wire as dependenci
 
 ---
 
-## `selftracker-extension/`
+## `selftracker-extension/` (Edge only)
 
-Chrome extension loaded unpacked from `chrome://extensions`.
+| Package | Browser | Notes |
+|---------|---------|--------|
+| `selftracker-extension/` | Microsoft Edge (MV3) | Load unpacked; `scripts\launch_selftracker_edge.bat` |
+
+Behavior: track tabs → `ws://localhost:8000/ws/behavior`; poll distraction-gate `browser` + `morning`; allow Colab/Scaler/GitHub; block porn + keywords; block YT/Netflix in bible/planning/study; soft-land via `locked.html` + one CALT tab. Desktop: games hard-block; **Edge only** (other browsers soft-lock + canned voice); optional ~60s CPU NSFW scan when Armed.
 
 | File | Role |
 |------|------|
 | `manifest.json` | Extension config |
-| `background.js` | Service worker |
+| `gate_policy.js` | Distraction domain list + helpers |
+| `background.js` | Tracking + gate poll + redirects |
+| `locked.html` | Interstitial when a distraction site is blocked |
 | `content.js` | Page scrapers (YouTube, Scalar, etc.) |
 | `popup.html`, `dashboard.html` | UI surfaces |
 

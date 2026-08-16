@@ -1,6 +1,8 @@
 import { AlertCircle, X, Lightbulb } from "lucide-react";
+import { useState } from "react";
 import { Button } from "./ui/button";
 import { Card } from "./ui/card";
+import { Input } from "./ui/input";
 import { motion, AnimatePresence } from "motion/react";
 
 interface AITutorInterventionProps {
@@ -12,9 +14,14 @@ interface AITutorInterventionProps {
     latex?: string;
     incompleteStep?: boolean;
     confidence?: number;
+    structuralConfidence?: number;
+    tutorSilent?: boolean;
+    sessionSnapshotId?: string;
   } | null;
   onDismiss: () => void;
   onRespond: (response: string) => void;
+  onConfirmLatex?: () => void;
+  onCorrectLatex?: (latex: string) => void;
 }
 
 export function AITutorIntervention({
@@ -22,8 +29,25 @@ export function AITutorIntervention({
   intervention,
   onDismiss,
   onRespond,
+  onConfirmLatex,
+  onCorrectLatex,
 }: AITutorInterventionProps) {
+  const [editing, setEditing] = useState(false);
+  const [fixLatex, setFixLatex] = useState("");
+
   if (!intervention) return null;
+
+  // Tutor silence: no interrupt mid-flow when backend suppressed the hint.
+  if (intervention.tutorSilent && !(intervention.message || "").trim()) {
+    return null;
+  }
+
+  const lowStruct =
+    typeof intervention.structuralConfidence === "number" &&
+    intervention.structuralConfidence < 0.45;
+  const lowConf =
+    typeof intervention.confidence === "number" && intervention.confidence < 0.45;
+  const showConfirm = Boolean(intervention.latex) && (lowConf || lowStruct || !intervention.tutorSilent);
 
   return (
     <AnimatePresence>
@@ -49,7 +73,10 @@ export function AITutorIntervention({
                       <AlertCircle className="w-4 h-4 text-amber-600" />
                     </h3>
                     <p className="text-sm text-muted-foreground mt-1">
-                      Detected concept: <span className="font-medium text-foreground">{intervention.detectedConcept}</span>
+                      Detected concept:{" "}
+                      <span className="font-medium text-foreground">
+                        {intervention.detectedConcept}
+                      </span>
                     </p>
                   </div>
                   <Button onClick={onDismiss} variant="ghost" size="sm">
@@ -61,19 +88,66 @@ export function AITutorIntervention({
                   {intervention.latex ? (
                     <div className="p-2 rounded-md border bg-background/80">
                       <p className="text-xs text-muted-foreground mb-1">
-                        Recognized from your board
+                        I read this as
                         {intervention.incompleteStep ? " (incomplete step)" : ""}
                         {typeof intervention.confidence === "number"
                           ? ` · ${Math.round(intervention.confidence * 100)}%`
                           : ""}
+                        {typeof intervention.structuralConfidence === "number"
+                          ? ` · structure ${Math.round(intervention.structuralConfidence * 100)}%`
+                          : ""}
                       </p>
                       <code className="text-sm font-mono break-all">{intervention.latex}</code>
+                      {showConfirm && (
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          <Button
+                            size="sm"
+                            variant="default"
+                            onClick={() => onConfirmLatex?.()}
+                          >
+                            Yes, that&apos;s right
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setFixLatex(intervention.latex || "");
+                              setEditing(true);
+                            }}
+                          >
+                            Fix reading…
+                          </Button>
+                        </div>
+                      )}
+                      {editing && (
+                        <div className="flex gap-2 mt-2">
+                          <Input
+                            value={fixLatex}
+                            onChange={(e) => setFixLatex(e.target.value)}
+                            placeholder="Correct LaTeX"
+                            className="font-mono text-sm"
+                          />
+                          <Button
+                            size="sm"
+                            onClick={() => {
+                              if (fixLatex.trim()) onCorrectLatex?.(fixLatex.trim());
+                              setEditing(false);
+                            }}
+                          >
+                            Save
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   ) : null}
-                  <p className="text-sm">{intervention.message}</p>
-                  <div className="p-3 bg-muted rounded-lg">
-                    <p className="text-sm font-medium">{intervention.question}</p>
-                  </div>
+                  {intervention.message ? (
+                    <p className="text-sm">{intervention.message}</p>
+                  ) : null}
+                  {intervention.question ? (
+                    <div className="p-3 bg-muted rounded-lg">
+                      <p className="text-sm font-medium">{intervention.question}</p>
+                    </div>
+                  ) : null}
 
                   <div className="flex gap-2 flex-wrap">
                     <Button
@@ -90,18 +164,10 @@ export function AITutorIntervention({
                     >
                       Negative signs
                     </Button>
-                    <Button
-                      onClick={() => onRespond("setup")}
-                      variant="outline"
-                      size="sm"
-                    >
+                    <Button onClick={() => onRespond("setup")} variant="outline" size="sm">
                       Matrix setup
                     </Button>
-                    <Button
-                      onClick={() => onRespond("other")}
-                      variant="secondary"
-                      size="sm"
-                    >
+                    <Button onClick={() => onRespond("other")} variant="secondary" size="sm">
                       Something else
                     </Button>
                   </div>

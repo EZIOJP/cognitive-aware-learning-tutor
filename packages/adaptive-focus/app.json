@@ -1,0 +1,65 @@
+{
+  "configVersion": "v3",
+  "app": {
+    "appName": "Adaptive Focus",
+    "appId": 1088802,
+    "appType": "app",
+    "version": {
+      "code": 1,
+      "name": "1.0.0"
+    },
+    "icon": "icon.png",
+    "vender": "calt",
+    "description": "Stress/HRV-aware Pomodoro with typing-aware motion — screen-off App Service"
+  },
+  "permissions": [
+    "data:os.device.info",
+    "device:os.local_storage",
+    "device:os.bg_service",
+    "device:os.notification",
+    "device:os.accelerometer",
+    "data:user.hd.heart_rate",
+    "data:user.hd.stress",
+    "data:user.hd.step"
+  ],
+  "runtime": {
+    "apiVersion": {
+      "compatible": "3.0",
+      "target": "3.0",
+      "minVersion": "3.0"
+    }
+  },
+  "targets": {
+    "480x480-t-rex-3": {
+      "module": {
+        "page": {
+          "pages": ["page/home", "page/end"]
+        },
+        "app-service": {
+          "services": ["app-service/focus"]
+        },
+        "setting": {
+          "path": "setting/index"
+        }
+      },
+      "platforms": [
+        { "name": "t-rex-3", "deviceSource": 8716544 },
+        { "name": "t-rex-3-w", "deviceSource": 8716545 },
+        { "name": "t-rex-3-c", "deviceSource": 8716547 },
+        { "name": "t-rex-3-pro-48", "deviceSource": 10551552 },
+        { "name": "t-rex-3-pro-48-w", "deviceSource": 10551553 },
+        { "name": "t-rex-3-pro-48-c", "deviceSource": 10551555 },
+        { "name": "t-rex-3-pro-44", "deviceSource": 10682624 },
+        { "name": "t-rex-3-pro-44-w", "deviceSource": 10682625 },
+        { "name": "t-rex-3-pro-44-c", "deviceSource": 10682627 }
+      ],
+      "designWidth": 480
+    }
+  },
+  "i18n": {
+    "en-US": {
+      "appName": "Adaptive Focus"
+    }
+  },
+  "defaultLanguage": "en-US"
+}

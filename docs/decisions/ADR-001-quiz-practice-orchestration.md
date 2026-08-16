@@ -46,5 +46,34 @@ Additional locked choices for this epic:
 
 - Orchestration stays in `backend/quiz/`; generation stays domain-specific (`math` generators, notes LLM once, vocab bank).
 - Insights coach `next_steps[]` remains separate from quiz `next_step`.
-- Study-flow must resume `?session=` instead of orphaning pre-created sessions.
+- Study-flow / Lecture Notes handoff must resume `?session=` (Review Hub) or embed `GlobalQuizRunner` with `navigateOnComplete={false}` — never orphan a pre-created session.
 - Layer 0 ships with the engine; Layers 1–5 are content expansion on the same checker/generator pattern.
+
+## Implementation map (shipped)
+
+| Piece | Location |
+|-------|----------|
+| SymPy free-text grade | `backend/math/answer_grade.py` → quiz `_submit_study` math + vocab practice submit |
+| Multi-Q math start | `handler.start_session` `domain=math` → `payload.items` (`pick_n_from_bank` or `generate_drill_items`) |
+| Layer 0 catalog + generators | `backend/math/skills.json`, `skills.py`, `generators/layer0.py` |
+| `next_step` brain | `backend/quiz/next_step.py` → `backlog_summary` + `complete_session` |
+| Home practice strip | `StudyLoopWidget` primary Next + Notes · Vocab · Math · Review |
+| Session resume | `ReviewHubPage` `?session=` / `?math_node=`; `GlobalQuizRunner` `sessionId` + `navigateOnComplete` |
+
+## Follow-up: Layers 1–5 (content-only)
+
+Engine is frozen: JSON node → `generator` name → `generate_for_node` → SymPy `expected_answer` → `answers_equivalent` → `MathAttempt` (topic = skill id) → mastery window in `skills.py` → FSRS via existing review enqueue.
+
+**Do not** add a second SRS, a second quiz runner, or `/api/home/summary`. Expand by adding nodes to `skills.json` with `layer: 1..5` and matching generators under `backend/math/generators/` (same `_base` / SymPy pattern as Layer 0).
+
+Suggested content lanes (not blocking this ADR):
+
+| Layer | Theme (examples) |
+|-------|------------------|
+| 1 | Linear equations, inequalities, simple word problems |
+| 2 | Quadratics / factoring fluency |
+| 3 | Exponents & radicals (beyond Layer 0 powers) |
+| 4 | Trig basics (unit-circle values) |
+| 5 | Sequences / series intro |
+
+Mastery gating UI + Alembic `math_skills` / `MathAttempt.skill_id` remain optional when we outgrow JSON + `topic == skill_id`.

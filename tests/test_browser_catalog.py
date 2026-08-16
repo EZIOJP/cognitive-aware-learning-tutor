@@ -37,6 +37,9 @@ def test_installer_detection():
     assert not is_browser_installer("firefox.exe")
     # Edge's own updater is not treated as foreign installer
     assert not is_browser_installer("MicrosoftEdgeUpdate.exe")
+    # Pear / YouTube Music setup is not a browser installer soft-lock target
+    assert not is_browser_installer("YouTube-Music-Web-Setup.exe")
+    assert not is_unauthorized_browser("YouTube Music.exe")
 
 
 def test_gate_section_includes_catalog():

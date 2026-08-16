@@ -14,7 +14,7 @@ This page is the quick command reference.
 | **Node.js** | 20 LTS+ |
 | **OS** | Windows 10/11, Linux, macOS |
 
-Optional: [Ollama](https://ollama.com), ESP32 hardware, webcam (focus mirror), Chrome (SelfTracker extension).
+Optional: [Ollama](https://ollama.com), ESP32 hardware, webcam (focus mirror), SelfTracker on **Microsoft Edge** (`selftracker-extension/`).
 
 ---
 
@@ -98,7 +98,9 @@ Default login: **admin** / **admin123**
 | **Ollama LLM** | [ollama.com](https://ollama.com) + set `OLLAMA_ENABLED=1` in `.env` | `ollama pull llama3.2` |
 | **Huey LLM jobs** | `pip install huey` (in `backend/requirements.txt`) | **Required for “Test all route profiles”.** In a separate terminal: `python -m backend.core.llm_jobs_worker`. Without it, jobs stay `queued`/`pending` forever in `data/llm_jobs/`. Single-tier “Test chain” does **not** need Huey. |
 | **EEG hardware** | `EEG_ENABLED=1` in `.env` | `scripts\run_eeg.bat` (prototype) or main API |
-| **SelfTracker** | Load `selftracker-extension/` in Chrome | API must be on :8000 |
+| **SelfTracker (Edge)** | Load unpacked `selftracker-extension/` (v1.5.3+) — or `scripts\launch_selftracker_edge.bat` | After code updates: **Reload** on `edge://extensions`. Fail-closed watch block; `browser.mode` bible/planning/study force-blocks YouTube. API :8000. Edge-only (Zen/Firefox support removed). |
+| **Desktop tracker persistence** | `scripts\install_tracker_persistence.bat` | Startup shortcut + logon task + keepalive (~5 min) + HKCU Run. Tray **Confirm exit…** and stop/restart/uninstall bats need `TRACKER_EXIT_PIN` or phrase `I AM DONE TRACKING`. Prefer `scripts\admin_only\stop_desktop_tracker.bat` / `restart_desktop_tracker.bat`. Legitimate uninstall: `scripts\uninstall_tracker_persistence.bat` (set `TRACKER_PERSIST_PROTECT=0` first if Protect rewrites Run). Not AppLocker / not Task Manager disable |
+| **Voice agent** | Runs inside desktop tracker | Tray → **Voice agent (chat)** · hotkey `Ctrl+Shift+Space` · TTS: `edge-tts` (`en-GB-RyanNeural`) → Piper → SAPI · `pip install edge-tts` · needs LM Studio/Ollama via AI handler |
 
 See [DEPENDENCIES.md](./DEPENDENCIES.md) for tiers, env vars, and troubleshooting.
 

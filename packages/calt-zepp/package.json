@@ -1,0 +1,12 @@
+{
+  "name": "calt-zepp",
+  "version": "4.0.0",
+  "private": true,
+  "description": "CALT Sync 4.0 — manual health dump only (7-day queue)",
+  "scripts": {
+    "preview": "zeus preview",
+    "dev": "zeus dev",
+    "build": "zeus build",
+    "login": "zeus login"
+  }
+}

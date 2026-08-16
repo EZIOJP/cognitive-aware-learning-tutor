@@ -34,32 +34,254 @@
 }
 
 .gloss-topbar {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent),
-    color-mix(in srgb, var(--gloss-surface) 94%, var(--background, #050505));
-  backdrop-filter: blur(16px) saturate(150%);
-  -webkit-backdrop-filter: blur(16px) saturate(150%);
-  border-bottom: 1px solid color-mix(in srgb, var(--gloss-border) 72%, transparent);
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.035) inset,
-    0 10px 28px rgba(0, 0, 0, 0.18);
+  /* Transparent — page background shows through; title/actions carry their own surfaces */
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-bottom: none;
+  box-shadow: none;
 }
 
 [data-color-scheme="dark"] .gloss-topbar {
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.025) inset,
-    0 10px 28px rgba(0, 0, 0, 0.28);
+  box-shadow: none;
+}
+
+/* ========================================================
+   Top bar title — editorial type. No plate, no sticker, no shadow.
+   Accent hairline lives on the card ::after so heading ellipsis stays intact.
+   ======================================================== */
+.topbar-title-card {
+  --ttc-fill: var(--foreground);
+  --ttc-sub: color-mix(in srgb, var(--muted-foreground) 85%, transparent);
+  display: inline-flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 0.08rem;
+  max-width: min(52vw, 30rem);
+  min-width: 0;
+  padding: 0.15rem 0.1rem 0.2rem;
+  border-radius: 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  overflow: visible;
+}
+
+.topbar-title-card__heading {
+  position: relative;
+  margin: 0;
+  max-width: 100%;
+  padding-bottom: 0.42rem;
+  font-family: "Caveat", "Segoe Script", cursive;
+  font-weight: 700;
+  font-size: clamp(1.55rem, 2.4vw, 1.95rem);
+  line-height: 1.12;
+  letter-spacing: 0.01em;
+  color: var(--ttc-fill);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  z-index: 1;
+  -webkit-text-stroke: 0;
+  text-shadow: none;
+}
+
+.topbar-title-card__heading::before {
+  content: none;
+  display: none;
+}
+
+.topbar-title-card__heading::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--primary);
+  transform: scaleX(0.22);
+  transform-origin: left center;
+  transition: transform 0.28s ease;
+  pointer-events: none;
+}
+
+.topbar-title-card:hover .topbar-title-card__heading::after,
+.topbar-title-card:focus-within .topbar-title-card__heading::after {
+  transform: scaleX(1);
+}
+
+.topbar-title-card__sub {
+  margin: 0;
+  max-width: 100%;
+  font-family: "Literata", Georgia, serif;
+  font-size: 11px;
+  font-weight: 500;
+  font-style: italic;
+  line-height: 1.25;
+  letter-spacing: 0.01em;
+  color: var(--ttc-sub);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-left: 0.05rem;
+  position: relative;
+  z-index: 2;
+  transition: color 0.2s ease;
+}
+
+.topbar-title-card:hover .topbar-title-card__sub,
+.topbar-title-card:focus-within .topbar-title-card__sub {
+  color: var(--muted-foreground);
+}
+
+/* Font pack */
+html[data-topbar-title-font="serif"] .topbar-title-card__heading {
+  font-family: "Playfair Display", "Literata", Georgia, serif;
+  font-weight: 900;
+  font-style: italic;
+  letter-spacing: -0.02em;
+}
+html[data-topbar-title-font="sans"] .topbar-title-card__heading {
+  font-family: inherit;
+  font-weight: 650;
+  font-style: normal;
+  letter-spacing: -0.03em;
+}
+html[data-topbar-title-font="cursive"] .topbar-title-card__heading {
+  font-family: "Caveat", "Segoe Script", cursive;
+  font-weight: 700;
+  font-style: normal;
+  letter-spacing: 0.01em;
+}
+
+/* Size */
+html[data-topbar-title-size="sm"] .topbar-title-card {
+  padding: 0.1rem 0.05rem 0.15rem;
+}
+html[data-topbar-title-size="sm"] .topbar-title-card__heading {
+  font-size: clamp(1.2rem, 1.9vw, 1.4rem);
+}
+html[data-topbar-title-size="md"] .topbar-title-card__heading {
+  font-size: clamp(1.55rem, 2.4vw, 1.95rem);
+}
+html[data-topbar-title-size="lg"] .topbar-title-card {
+  padding: 0.15rem 0.1rem 0.22rem;
+}
+html[data-topbar-title-size="lg"] .topbar-title-card__heading {
+  font-size: clamp(1.85rem, 3vw, 2.35rem);
+}
+
+/* Style: plain — bare type, no hairline */
+html[data-topbar-title-style="plain"] .topbar-title-card__heading::after {
+  content: none;
+  display: none;
+}
+
+html[data-topbar-title-style="plain"] .topbar-title-card__heading {
+  padding-bottom: 0;
+}
+
+/* Style: parchment — editorial hairline (default) */
+
+/* Style: contour — full-width rule, always on */
+html[data-topbar-title-style="contour"] .topbar-title-card__heading::after {
+  transform: scaleX(1);
+  height: 2.5px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .topbar-title-card__heading::after {
+    transition: none;
+    transform: scaleX(1);
+  }
+}
+
+/* Keep dock chips readable on bare background */
+.gloss-topbar .gloss-dock-btn {
+  background: color-mix(in srgb, var(--gloss-surface) 88%, var(--background, #050505));
 }
 
 .gloss-sidebar {
-  background:
-    linear-gradient(90deg, rgba(255, 255, 255, 0.035), transparent),
-    color-mix(in srgb, var(--gloss-surface) 94%, var(--background, #050505));
-  backdrop-filter: blur(12px);
-  border-right: 1px solid color-mix(in srgb, var(--gloss-border) 72%, transparent);
-  box-shadow:
-    1px 0 0 rgba(255, 255, 255, 0.025) inset,
-    10px 0 28px rgba(0, 0, 0, 0.16);
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-right: 1px solid transparent;
+  box-shadow: none;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.gloss-sidebar:hover,
+.gloss-sidebar:focus-within {
+  background: color-mix(in srgb, var(--gloss-surface) 62%, transparent);
+  border-right-color: var(--border, var(--gloss-border));
+}
+
+/* Brand row — wordmark + circular menu, no boxed chip */
+.sidebar-bible-card {
+  --sbc-ink: var(--foreground);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  max-width: 100%;
+  padding: 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+.sidebar-bible-card__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-width: 0;
+  color: var(--sbc-ink);
+  font-family: inherit;
+  font-weight: 600;
+  font-size: 0.8125rem;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.sidebar-bible-card__mark {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 0.15rem;
+  background: var(--primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent);
+  flex-shrink: 0;
+}
+
+.sidebar-bible-card__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  color: var(--sbc-ink);
+  background: transparent;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.sidebar-bible-card__btn:hover {
+  background: color-mix(in srgb, var(--foreground) 8%, transparent);
+}
+
+.sidebar-bible-card__btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--ring, var(--primary));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gloss-sidebar,
+  .sidebar-bible-card__btn {
+    transition: none;
+  }
 }
 
 .gloss-dock-btn {

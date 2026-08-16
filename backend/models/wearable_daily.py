@@ -35,7 +35,34 @@ class WearableDaily(Base):
     stand_target: Mapped[int | None] = mapped_column(Integer, nullable=True)
     battery_pct: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
+    # Replay / dump identity (manual health dumper 4.0)
+    last_captured_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    last_dump_id: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    last_chunk_id: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    last_checksum: Mapped[str | None] = mapped_column(String(40), nullable=True)
+
     payload_json: Mapped[str | None] = mapped_column(Text, nullable=True)
     synced_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC)
+    )
+
+
+class WearableIngestEvent(Base):
+    """Idempotency ledger for dump/chunk POSTs — duplicate event_id is a no-op."""
+
+    __tablename__ = "wearable_ingest_event"
+    __table_args__ = (
+        UniqueConstraint("user_id", "event_id", name="uq_wearable_ingest_user_event"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    event_id: Mapped[str] = mapped_column(String(120), nullable=False)
+    local_date: Mapped[date] = mapped_column(Date, index=True)
+    dump_id: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    chunk_id: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    checksum: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    captured_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    accepted_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(UTC), nullable=False
     )

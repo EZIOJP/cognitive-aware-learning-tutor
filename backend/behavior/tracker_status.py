@@ -45,24 +45,28 @@ def tracker_process_detail() -> dict:
 
 
 def count_tracker_processes() -> int:
-    """Windows: count python processes running desktop_tracker (duplicates cause odd flush behavior)."""
+    """Windows: count root tracker pythons (ignore multiprocessing children)."""
     if os.name != "nt":
         return 0
     try:
-        import subprocess
-
-        out = subprocess.check_output(
-            [
-                "powershell",
-                "-NoProfile",
-                "-Command",
-                "(Get-CimInstance Win32_Process -ErrorAction SilentlyContinue | "
-                "Where-Object { ($_.Name -eq 'python.exe' -or $_.Name -eq 'pythonw.exe') "
-                "-and $_.CommandLine -match 'desktop_tracker' }).Count",
-            ],
-            text=True,
-            timeout=8,
-        )
-        return int(out.strip() or "0")
-    except (OSError, ValueError, subprocess.SubprocessError):
+        import psutil
+    except ImportError:
         return 0
+    procs: list[tuple[int, int]] = []
+    for p in psutil.process_iter(["pid", "ppid", "name", "cmdline"]):
+        try:
+            name = (p.info.get("name") or "").lower()
+            if name not in {"python.exe", "pythonw.exe"}:
+                continue
+            cmd = " ".join(p.info.get("cmdline") or [])
+            if "desktop_tracker" not in cmd:
+                continue
+            procs.append((int(p.info["pid"]), int(p.info.get("ppid") or 0)))
+        except (TypeError, ValueError):
+            continue
+        except Exception:
+            continue
+    if not procs:
+        return 0
+    ids = {pid for pid, _ in procs}
+    return sum(1 for pid, ppid in procs if ppid not in ids)

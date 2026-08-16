@@ -18,6 +18,7 @@ from backend.planner.routines import (
     seed_default_routines,
     serialize_routine,
     slots_to_planner_blocks,
+    upgrade_stock_default_routines,
 )
 from backend.planner.schemas import (
     ApplyProposedBlocksBody,
@@ -221,15 +222,21 @@ def overlay_actual(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
+    """Desktop tracker + Amazfit sleep. PC time inside sleep is clipped away.
+
+    Sleep only from watch timed windows (start_min/end_min + naps). Never invent
+    midnight wedges. Cursor/idle left on overnight is overwritten by Sleep.
+    """
     start = _utc(from_dt)
     end = _utc(to_dt)
+    now = datetime.now(timezone.utc)
     user_ids = tracker_user_ids(db, user)
 
     sessions = (
         db.query(TrackedSession)
         .filter(
             TrackedSession.user_id.in_(user_ids),
-            TrackedSession.source == "desktop_tracker",
+            TrackedSession.source.in_(("desktop_tracker", "extension", "calt_spa")),
             TrackedSession.start_time < end,
             TrackedSession.end_time > start,
         )
@@ -238,12 +245,82 @@ def overlay_actual(
     )
     from backend.behavior.category_scores import load_score_map, serialize_tracked_session
     from backend.behavior.productivity_policy import load_policy_dict
+    from backend.models import WearableDaily
+    from backend.wearables.sleep_window import (
+        clip_session_dicts_against_sleep,
+        parse_sleep_dict,
+        sleep_bouts,
+    )
 
     scores = load_score_map(db)
     policy = load_policy_dict(db, user.id)
-    return {
-        "sessions": [serialize_tracked_session(s, scores, policy) for s in sessions]
-    }
+    out = [serialize_tracked_session(s, scores, policy) for s in sessions]
+
+    sleep_events: list[dict] = []
+    all_bouts: list[tuple] = []
+    day0 = start.astimezone(local_tz()).date()
+    day1 = end.astimezone(local_tz()).date()
+    cursor = day0 - timedelta(days=1)
+    last = day1 + timedelta(days=1)
+    while cursor <= last:
+        wd = (
+            db.query(WearableDaily)
+            .filter(
+                WearableDaily.user_id == user.id,
+                WearableDaily.local_date == cursor,
+            )
+            .first()
+        )
+        if not wd:
+            cursor = cursor + timedelta(days=1)
+            continue
+        sleep = parse_sleep_dict(wd.payload_json)
+        sm, em = sleep.get("start_min"), sleep.get("end_min")
+        naps = sleep.get("naps") or []
+        # Watch timed window only — reject duration-only / empty (naps alone OK)
+        if sm is None and (em is None or em == -1) and not naps:
+            cursor = cursor + timedelta(days=1)
+            continue
+        bouts = sleep_bouts(local_date=wd.local_date, sleep=sleep)
+        hours = float(wd.sleep_hours or 0) or (
+            float(sleep["total_min"]) / 60.0 if sleep.get("total_min") else 0.0
+        )
+        label = f"Sleep · {hours:.1f}h" + (
+            f" · score {wd.sleep_score}" if wd.sleep_score else ""
+        )
+        for i, (s_dt, e_dt) in enumerate(bouts):
+            s_u, e_u = _utc(s_dt), _utc(e_dt)
+            if s_u >= now:
+                continue
+            if e_u > now:
+                e_u = now
+            if s_u >= end or e_u <= start or e_u <= s_u:
+                continue
+            all_bouts.append((s_u, e_u))
+            sleep_events.append(
+                {
+                    "session_id": f"sleep:{wd.local_date.isoformat()}:{i}",
+                    "start_time": iso_utc(s_u),
+                    "end_time": iso_utc(e_u),
+                    "source": "wearable_sleep",
+                    "category": "Sleep",
+                    "productivity_score": 0,
+                    "window_title": label,
+                    "app_name": "Amazfit",
+                    "task_id": None,
+                    "override_productive": False,
+                }
+            )
+        cursor = cursor + timedelta(days=1)
+
+    # Overwrite PC-on-during-sleep: Cursor/idle vanish under sleep wedges
+    out = clip_session_dicts_against_sleep(out, all_bouts)
+    out.extend(sleep_events)
+    out.sort(key=lambda r: r.get("start_time") or "")
+    from backend.planner.hour_slices import compute_hour_slices
+
+    hour_slices = compute_hour_slices(out, tzinfo=local_tz())
+    return {"sessions": out, "hour_slices": hour_slices}
 
 
 @router.get("/adherence", response_model=dict)
@@ -304,7 +381,7 @@ def _adherence_for_day(db: Session, user: User, day: datetime) -> dict:
         db.query(TrackedSession)
         .filter(
             TrackedSession.user_id.in_(tracker_user_ids(db, user)),
-            TrackedSession.source == "desktop_tracker",
+            TrackedSession.source.in_(("desktop_tracker", "extension", "calt_spa")),
             TrackedSession.start_time < end,
             TrackedSession.end_time > start,
         )
@@ -605,6 +682,7 @@ def list_routines(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
+    upgrade_stock_default_routines(db, user.id)
     rows = (
         db.query(PlannerRoutine)
         .filter(PlannerRoutine.user_id == user.id)
@@ -620,10 +698,11 @@ def routines_seed_defaults(
     user: User = Depends(get_current_user),
 ):
     n = seed_default_routines(db, user.id)
+    upgrade_stock_default_routines(db, user.id)
     rows = (
         db.query(PlannerRoutine)
         .filter(PlannerRoutine.user_id == user.id)
-        .order_by(PlannerRoutine.sort_order)
+        .order_by(PlannerRoutine.sort_order, PlannerRoutine.id)
         .all()
     )
     return {"created": n, "routines": [serialize_routine(r) for r in rows]}

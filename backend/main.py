@@ -18,6 +18,7 @@ from sqlalchemy.orm import Session
 
 from backend.account.router import router as account_router
 from backend.behavior.router import router as behavior_router
+from backend.bible.router import router as bible_router
 from backend.config import get_settings
 from backend.core.errors import register_exception_handlers
 from backend.core.auth import ensure_default_admin
@@ -35,7 +36,6 @@ from backend.vocab.repository import seed_words_from_json_if_empty
 from backend.vocab.router import router as vocab_router
 from backend.quiz.router import router as quiz_router
 from backend.transcripts.router import router as transcripts_router
-from backend.corpus.router import router as corpus_router
 from backend.core.system_router import router as system_router
 from backend.core.llm_router import router as llm_router
 from backend.app.router import router as app_router
@@ -210,12 +210,12 @@ app.add_middleware(
 app.include_router(vocab_router)
 app.include_router(quiz_router)
 app.include_router(transcripts_router)
-app.include_router(corpus_router)
 app.include_router(math_router)
 app.include_router(hub_router)
 app.include_router(life_router)
 app.include_router(insights_router)
 app.include_router(behavior_router)
+app.include_router(bible_router)
 app.include_router(account_router)
 app.include_router(system_router)
 app.include_router(llm_router)

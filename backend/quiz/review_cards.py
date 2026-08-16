@@ -259,14 +259,27 @@ def seed_deck_cards(db: Session, *, user_id: int, deck: QuizDeck) -> int:
         )
         if existing:
             continue
+        topic = (
+            str(item.get("topic_id") or item.get("topic") or item.get("concept") or deck.topic or "")
+            .strip()[:160]
+            or None
+        )
+        note_path = str(item.get("note_path") or "").replace("\\", "/").strip() or None
+        tags = item.get("tags")
+        if not isinstance(tags, list):
+            tags = []
+        payload = {**item, "id": item_id, "tags": tags}
+        if topic and "topic_id" not in payload:
+            payload["topic_id"] = topic
         row = ReviewCard(
             user_id=user_id,
             domain=deck.domain,
             item_key=key,
             label=label,
-            topic=deck.topic,
+            topic=topic,
+            note_path=note_path,
             format=fmt,
-            payload_json=json.dumps({**item, "id": item_id}),
+            payload_json=json.dumps(payload),
             srs_json=json.dumps(srs_mod.srs_to_metadata(srs_mod.SrsState())),
             deck_id=deck.id,
         )

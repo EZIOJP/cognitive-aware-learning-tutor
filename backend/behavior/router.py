@@ -11,9 +11,10 @@ from datetime import UTC, date, datetime, timedelta
 from urllib.parse import parse_qs
 
 from fastapi import APIRouter, Depends, HTTPException, Query, WebSocket, WebSocketDisconnect
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from backend.core.auth import decode_user, ensure_demo_user, get_current_user
+from backend.core.auth import decode_user, ensure_default_admin, get_current_user
 from backend.db.base import SessionLocal
 from backend.db.session import get_db
 from backend.hub.services.ingest import insert_reading
@@ -31,16 +32,34 @@ LOG_DIR = DATA_LOGS_DIR
 LOG_DIR.mkdir(exist_ok=True)
 
 
-def _user_from_ws(websocket: WebSocket, db: Session) -> User:
+def _fallback_tracker_user(db: Session) -> User:
+    """Match desktop tracker resolve_user_id: prefer admin, never silent demo."""
+    uid = primary_tracker_user_id(db)
+    user = db.get(User, uid)
+    if user:
+        return user
+    return ensure_default_admin(db)
+
+
+def _ws_token_from_websocket(websocket: WebSocket) -> str | None:
     token = websocket.query_params.get("token")
-    if not token:
-        qs = parse_qs(websocket.scope.get("query_string", b"").decode())
-        token = (qs.get("token") or [None])[0]
+    if token:
+        return token
+    qs = parse_qs(websocket.scope.get("query_string", b"").decode())
+    return (qs.get("token") or [None])[0]
+
+
+def _user_from_ws_token(token: str | None, db: Session) -> User:
+    """Single WS user resolver: valid JWT → that user; else primary tracker (admin)."""
     if token:
         user = decode_user(token, db)
         if user:
             return user
-    return ensure_demo_user(db)
+    return _fallback_tracker_user(db)
+
+
+def _user_from_ws(websocket: WebSocket, db: Session) -> User:
+    return _user_from_ws_token(_ws_token_from_websocket(websocket), db)
 
 
 def _append_csv(row: dict, day_str: str) -> None:
@@ -68,11 +87,15 @@ def _persist_behavior_event(enriched: dict, token: str | None) -> None:
             source_device=device,
             client_event_id=enriched.get("event_id") or enriched.get("received_at"),
         )
-        if enriched.get("type") == "SESSION_END" and source == "desktop_tracker":
-            from backend.timetable.tracker_bridge import ingest_desktop_session
+        if enriched.get("type") == "SESSION_END" and source in (
+            "desktop_tracker",
+            "extension",
+            "calt_spa",
+        ):
+            from backend.timetable.tracker_bridge import ingest_behavior_session
 
-            ingest_desktop_session(db, user_id=user.id, payload=enriched)
-    except (ValueError, Exception) as exc:
+            ingest_behavior_session(db, user_id=user.id, payload=enriched)
+    except Exception as exc:
         log.debug("behavior ws persist skipped: %s", exc)
     finally:
         db.close()
@@ -99,30 +122,27 @@ def _persist_behavior_batch(events: list[dict], token: str | None) -> int:
                     source_device=device,
                     client_event_id=enriched.get("event_id") or enriched.get("received_at"),
                 )
+                if enriched.get("type") == "SESSION_END" and source in (
+                    "desktop_tracker",
+                    "extension",
+                    "calt_spa",
+                ):
+                    from backend.timetable.tracker_bridge import ingest_behavior_session
+
+                    ingest_behavior_session(db, user_id=user.id, payload=enriched)
                 n += 1
-            except (ValueError, Exception) as exc:
+            except Exception as exc:
                 log.debug("batch event skipped: %s", exc)
         return n
     finally:
         db.close()
 
 
-def _user_from_ws_token(token: str | None, db: Session) -> User:
-    if token:
-        user = decode_user(token, db)
-        if user:
-            return user
-    return ensure_demo_user(db)
-
-
 @router.websocket("/ws/behavior")
 async def behavior_websocket(websocket: WebSocket):
     await websocket.accept()
     today_str = datetime.now(UTC).strftime("%Y-%m-%d")
-    token = websocket.query_params.get("token")
-    if not token:
-        qs = parse_qs(websocket.scope.get("query_string", b"").decode())
-        token = (qs.get("token") or [None])[0]
+    token = _ws_token_from_websocket(websocket)
 
     try:
         while True:
@@ -368,7 +388,7 @@ def behavior_stats(
 
 
 def _browser_stats_from_tracked_sessions(db: Session, user_ids: list[int], day: date) -> dict | None:
-    """Browser site breakdown from desktop tracker rows (no Chrome extension needed)."""
+    """Browser site breakdown from desktop tracker + SelfTracker extension rows."""
     from backend.behavior.category_scores import load_score_map
     from backend.behavior.session_merge import merge_tracked_rows
     from backend.behavior.stats_aggregate import aggregate_session_rows, browser_domains_payload
@@ -378,7 +398,7 @@ def _browser_stats_from_tracked_sessions(db: Session, user_ids: list[int], day: 
         db.query(TrackedSession)
         .filter(
             TrackedSession.user_id.in_(user_ids),
-            TrackedSession.source == "desktop_tracker",
+            TrackedSession.source.in_(("desktop_tracker", "extension")),
             TrackedSession.start_time >= start,
             TrackedSession.start_time < end,
         )
@@ -397,7 +417,7 @@ def _browser_stats_from_tracked_sessions(db: Session, user_ids: list[int], day: 
         "events_today": events,
         "domains": domains,
         "categories": categories,
-        "source": "desktop_tracker",
+        "source": "tracked_sessions",
         "date": day.isoformat(),
     }
 
@@ -501,7 +521,7 @@ def _desktop_stats_from_tracked_sessions(
         db.query(TrackedSession)
         .filter(
             TrackedSession.user_id.in_(user_ids),
-            TrackedSession.source == "desktop_tracker",
+            TrackedSession.source.in_(("desktop_tracker", "extension", "calt_spa")),
             TrackedSession.start_time >= start,
             TrackedSession.start_time < end,
         )
@@ -780,7 +800,7 @@ def desktop_timeline(
         db.query(TrackedSession)
         .filter(
             TrackedSession.user_id.in_(user_ids),
-            TrackedSession.source == "desktop_tracker",
+            TrackedSession.source.in_(("desktop_tracker", "extension", "calt_spa")),
             TrackedSession.start_time >= start,
             TrackedSession.start_time < end,
         )
@@ -789,7 +809,7 @@ def desktop_timeline(
     )
     rows = merge_tracked_rows(rows)
 
-    from backend.behavior.session_key import is_browser_exe
+    from backend.behavior.session_key import is_browser_exe, looks_like_domain
     from backend.behavior.tracker_ignore import is_ignored_app
     from backend.behavior.stats_aggregate import site_label
     from backend.behavior.category_scores import load_score_map
@@ -812,7 +832,13 @@ def desktop_timeline(
             continue
         exe = row.app_name or ""
         title = row.window_title
-        site = site_label(exe, title) if is_browser_exe(exe) else None
+        src = row.source or ""
+        if src == "extension" or looks_like_domain(exe):
+            site = exe
+        elif is_browser_exe(exe):
+            site = site_label(exe, title)
+        else:
+            site = None
         cat = resolve_category_with_overrides(
             row.category, app_name=exe, window_title=title, policy=policy
         )
@@ -825,6 +851,7 @@ def desktop_timeline(
             "app_name": row.app_name,
             "window_title": row.window_title,
             "site": site,
+            "source": src,
             "productivity_score": resolve_session_score(row, scores, policy),
             "override_productive": row.override_productive,
         })
@@ -833,6 +860,32 @@ def desktop_timeline(
         "date": d.isoformat(),
         "intervals": intervals,
         "total_seconds": sum(i["duration_seconds"] for i in intervals),
+    }
+
+
+@router.post("/api/behavior/reclassify-today")
+def reclassify_today_endpoint(
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Hard rewrite today's tracked session categories from current domain/title rules."""
+    from backend.behavior.reclassify_today import reclassify_today
+    from backend.timetable.tracker_query import primary_tracker_user_id
+
+    # Prefer the primary tracker user (admin) so standalone tracker rows are fixed;
+    # also rewrite the caller's own rows when distinct.
+    targets = []
+    primary = primary_tracker_user_id(db)
+    for uid in (primary, user.id):
+        if uid not in targets:
+            targets.append(uid)
+
+    results = [reclassify_today(db, uid, commit=True) for uid in targets]
+    return {
+        "ok": True,
+        "results": results,
+        "updated": sum(r["updated"] for r in results),
+        "productive_minutes_after": results[0]["productive_minutes_after"] if results else 0,
     }
 
 
@@ -930,15 +983,352 @@ def get_productivity_policy(
     return serialize_policy(row)
 
 
+class GateAlertIn(BaseModel):
+    kind: str = "default"
+    detail: str = ""
+    message: str | None = None
+
+
+class BrowserTelemetryIn(BaseModel):
+    """Lightweight extension snapshot (tabs / optional history domains)."""
+
+    model_config = {"extra": "allow"}
+
+    source: str = "extension"
+    browser: str | None = None
+    domain_only: bool = False
+    active: dict | None = None
+    tab_count: int | None = None
+    open_tabs: list | None = None
+    recent_history: list | None = None
+    gate_locked: bool | None = None
+    gate_enforce: bool | None = None
+    ts: int | float | None = None
+
+
+class StudyPresenceIn(BaseModel):
+    """Lecture Notes reading only (desktop Edge or iPad Safari)."""
+
+    path: str = "/"
+    focused: bool = True
+    client: str | None = None  # web | ipad | ios | android
+    title: str | None = None
+    notes_loaded: bool = False
+    reading: bool = False
+    document_id: str | None = None
+
+
 @router.get("/api/behavior/distraction-gate")
 def get_distraction_gate(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    """Whether games/custom apps are hard-blocked until today's productive goal."""
+    """Desktop game hard-block status + nested morning SPA gate."""
     from backend.behavior.distraction_gate import compute_distraction_gate
 
     return compute_distraction_gate(db, user.id)
+
+
+@router.get("/api/behavior/demo-clock")
+def get_demo_clock(
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Read-only demo clock status + real days with existing data."""
+    from backend.behavior import demo_clock as dc
+
+    return {
+        **dc.status(),
+        "real_days": dc.list_real_days(db, user_id=user.id),
+    }
+
+
+@router.put("/api/behavior/demo-clock")
+def put_demo_clock(
+    body: dict,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Enable/set demo wall-clock. Does not invent productive minutes or write day data."""
+    _ = db, user
+    from backend.behavior import demo_clock as dc
+
+    try:
+        enabled = bool((body or {}).get("enabled", True))
+        now_iso = (body or {}).get("now_iso")
+        return dc.set_clock(enabled=enabled, now_iso=now_iso if enabled else None)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.delete("/api/behavior/demo-clock")
+def delete_demo_clock(
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Disable demo clock — back to real wall time."""
+    _ = db, user
+    from backend.behavior import demo_clock as dc
+
+    return dc.clear()
+
+
+@router.get("/api/behavior/day-status")
+def get_day_status(
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Mobile/watch aggregate: morning + mode + hard-block + tracker + wearables."""
+    from backend.behavior.day_status import build_day_status
+
+    return build_day_status(db, user.id)
+
+
+@router.get("/api/behavior/mobile-alerts")
+def get_mobile_alerts(
+    drain: bool = Query(True, description="Clear queue after read"),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Pending local-notification payloads for CALT Android (mode / morning changes)."""
+    _ = db, user
+    from backend.behavior.day_status import drain_mobile_alerts, peek_mobile_alerts
+
+    items = drain_mobile_alerts() if drain else peek_mobile_alerts()
+    return {"ok": True, "alerts": items, "count": len(items)}
+
+
+@router.post("/api/behavior/browser-telemetry")
+def post_browser_telemetry(
+    body: BrowserTelemetryIn,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Append light tab/history sample from SelfTracker extensions → data_logs/.
+
+    Local-first: uses solo/demo auth pattern (no extra token required).
+    Cadence is enforced client-side (~45s); this endpoint is intentionally thin.
+    """
+    _ = db, user
+    from backend.behavior.browser_telemetry import append_telemetry_logs, normalize_telemetry_payload
+
+    raw = body.model_dump() if hasattr(body, "model_dump") else dict(body)
+    normalized = normalize_telemetry_payload(raw)
+    path = append_telemetry_logs(normalized)
+    return {
+        "ok": True,
+        "path": str(path.name),
+        "tab_count": normalized.get("tab_count"),
+        "active_domain": normalized.get("active_domain"),
+    }
+
+
+@router.post("/api/behavior/study-presence")
+def post_study_presence(
+    body: StudyPresenceIn,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Credit Lecture Notes reading time only (not generic CALT SPA routes)."""
+    from backend.behavior.study_presence import apply_study_presence
+
+    return apply_study_presence(
+        db,
+        user_id=user.id,
+        path=body.path,
+        focused=bool(body.focused),
+        client=body.client,
+        title=body.title,
+        notes_loaded=bool(body.notes_loaded),
+        reading=bool(body.reading),
+        document_id=body.document_id,
+    )
+
+
+@router.get("/api/behavior/calt-tab-command")
+def get_calt_tab_command(consume: int = 1):
+    """Extension polls: focus/open one CALT tab + last Jarvis line for popup."""
+    from backend.behavior import calt_tab_command as ctc
+
+    cmd = ctc.consume_command() if consume else ctc.peek_command()
+    return {"ok": True, "command": cmd, "jarvis": ctc.last_jarvis_line_payload()}
+
+
+@router.post("/api/behavior/calt-tab-command")
+def post_calt_tab_command(body: dict | None = None):
+    from backend.behavior import calt_tab_command as ctc
+
+    path = str((body or {}).get("path") or "/").strip() or "/"
+    return ctc.request_focus(path, force=bool((body or {}).get("force")))
+
+
+@router.post("/api/behavior/gate-alert")
+def post_gate_alert(
+    body: GateAlertIn,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Extension reports a block — enqueue canned Jarvis line for tracker TTS.
+
+    Default path uses canned pools only (no LLM / no ``call_brain``).
+    """
+    _ = db, user
+    from backend.behavior.gate_alerts import notify_block
+
+    item = notify_block(
+        body.kind,
+        detail=body.detail,
+        message=body.message,
+    )
+    return {"ok": True, "queued": item}
+
+
+class MorningPlanAutoDraftIn(BaseModel):
+    """Optional body for morning auto-draft."""
+
+    add_more: bool = False
+
+
+class MorningPlanConfirmIn(BaseModel):
+    """Goals text from Productivity goals panel (localStorage → confirm)."""
+
+    goals: str | None = None
+
+
+@router.post("/api/behavior/morning-plan/auto-draft")
+def morning_plan_auto_draft(
+    body: MorningPlanAutoDraftIn | None = None,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Manually draft today's plan (routines + study seeds) after Bible.
+
+    Idempotent. Use when Bible was already done and auto-draft did not run,
+    or to refresh the auto_plan payload for Productivity UI.
+    Pass ``add_more: true`` when blocks already exist and the user chose
+    “Add more” (fills gaps; does not delete existing blocks).
+    """
+    from backend.bible import store as bible_store
+    from backend.behavior.distraction_gate import compute_distraction_gate
+    from backend.planner import auto_plan as auto_plan_mod
+    from backend.planner import morning_rewards as morning_rewards_store
+
+    add_more = bool(body.add_more) if body is not None else False
+    bible = bible_store.summary(user.id)
+    chapter_goal = bible.get("chapter_goal") or {}
+    chapters = list(bible.get("chapters_completed_today") or [])
+    bible_done = bool(chapter_goal.get("met")) or len(chapters) >= 1
+    if not bible_done:
+        raise HTTPException(
+            status_code=400,
+            detail="Finish today's Bible chapter before drafting the plan.",
+        )
+    try:
+        morning_rewards_store.maybe_grant_bible(user.id)
+    except Exception:
+        pass
+    rewards = morning_rewards_store.summary(user.id)
+    bible_award = (rewards.get("awards") or {}).get("bible") or {}
+    bible_completed_at = bible_award.get("granted_at") if bible_award.get("granted") else None
+    draft = auto_plan_mod.auto_draft_day_plan(
+        db,
+        user.id,
+        bible_done=True,
+        bible_completed_at=bible_completed_at,
+        speak=True,
+        add_more=add_more,
+    )
+    gate = compute_distraction_gate(db, user.id)
+    morning = gate.get("morning") or {}
+    return {
+        "ok": True,
+        "draft": draft,
+        "auto_plan": draft.get("auto_plan") or morning.get("auto_plan"),
+        "morning": morning,
+        "gate": gate,
+    }
+
+
+@router.post("/api/behavior/morning-plan/confirm")
+def confirm_morning_plan(
+    body: MorningPlanConfirmIn | None = None,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Mark today's plan as reviewed — required after Bible for morning SPA unlock.
+
+    Only accepted inside the local plan window (MORNING_PLAN_START → MORNING_PLAN_EOD).
+    Requires a non-empty goals string (min length 3).
+    """
+    from backend.bible import store as bible_store
+    from backend.behavior.distraction_gate import compute_distraction_gate
+    from backend.planner import morning_plan as morning_store
+    from backend.planner import morning_rewards as morning_rewards_store
+
+    goals = (body.goals if body is not None else None)
+    try:
+        from backend.behavior.demo_clock import is_demo
+
+        if is_demo():
+            raise HTTPException(
+                status_code=400,
+                detail="Demo mode is read-only — disable the demo clock before confirming a plan.",
+            )
+    except HTTPException:
+        raise
+    except Exception:
+        pass
+    bible = bible_store.summary(user.id)
+    chapter_goal = bible.get("chapter_goal") or {}
+    chapters = list(bible.get("chapters_completed_today") or [])
+    bible_done = bool(chapter_goal.get("met")) or len(chapters) >= 1
+    if not bible_done:
+        raise HTTPException(
+            status_code=400,
+            detail="Finish today's Bible chapter before confirming the plan.",
+        )
+    try:
+        morning_rewards_store.maybe_grant_bible(user.id)
+    except Exception:
+        pass
+    rewards = morning_rewards_store.summary(user.id)
+    bible_award = (rewards.get("awards") or {}).get("bible") or {}
+    bible_completed_at = bible_award.get("granted_at") if bible_award.get("granted") else None
+    try:
+        morning_store.confirm_plan_today(
+            user.id,
+            bible_done=True,
+            bible_completed_at=bible_completed_at,
+            goals=goals,
+            require_goals=True,
+        )
+    except morning_store.GoalsRequiredError as exc:
+        raise HTTPException(status_code=400, detail=str(exc) or "Goals required") from exc
+    except morning_store.PlanWindowError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    try:
+        from backend.behavior.voice_agent.dialogues import speak
+
+        speak("plan_done_praise", force=True)
+    except Exception:
+        pass
+    gate = compute_distraction_gate(db, user.id)
+    morning = gate.get("morning") or {}
+    try:
+        from backend.behavior.voice_agent.dialogues import speak
+
+        dp = morning.get("daily_practice") or {}
+        due = int(dp.get("due_count") or 0)
+        if due > 0:
+            speak("daily_practice_nudge", force=False, due=str(due))
+    except Exception:
+        pass
+    return {
+        "ok": True,
+        "morning": morning,
+        "gate": gate,
+        "morning_rewards": morning.get("rewards"),
+    }
 
 
 @router.put("/api/behavior/policy")
@@ -1041,7 +1431,10 @@ def patch_tracked_session(
     if "category" in body and body["category"] is not None:
         cat = str(body["category"]).strip()
         if cat not in ALLOWED_CATEGORIES:
-            raise HTTPException(status_code=400, detail=f"category must be one of allowed list")
+            raise HTTPException(
+                status_code=400,
+                detail=f"category must be one of: {', '.join(sorted(ALLOWED_CATEGORIES))}",
+            )
         row.category = cat
         row.category_source = "user_override"
 

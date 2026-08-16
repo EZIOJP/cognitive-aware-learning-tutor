@@ -4,6 +4,11 @@ from __future__ import annotations
 
 import re
 
+from backend.transcripts.caption_stabilize import (
+    is_better_version,
+    similarity_ratio,
+    strip_caption_timestamp,
+)
 from backend.transcripts.mermaid import (  # noqa: F401
     MERMAID_GENERATION_RULES,
     aggressive_sanitize_mermaid_source,
@@ -45,6 +50,7 @@ CODE_BLOCK_RE = re.compile(r"```[\w]*\n(.*?)```", re.DOTALL)
 
 def normalize_segment(text: str) -> str:
     """Light cleanup for a single captured caption delta."""
+    text = strip_caption_timestamp(text)
     text = WHITESPACE_RE.sub(" ", text.strip())
     text = FILLER_RE.sub(" ", text)
     text = STUTTER_RE.sub(r"\1", text)
@@ -53,7 +59,8 @@ def normalize_segment(text: str) -> str:
 
 def looks_like_live_captions(raw: str) -> bool:
     """Heuristic: Windows Live Captions grow prefixes across many non-consecutive lines."""
-    lines = [ln.strip() for ln in raw.splitlines() if ln.strip()]
+    lines = [strip_caption_timestamp(ln) for ln in raw.splitlines() if ln.strip()]
+    lines = [ln for ln in lines if ln]
     if len(lines) < 20:
         return False
     sample = lines[: min(500, len(lines))]
@@ -90,7 +97,7 @@ def collapse_caption_bursts(lines: list[str], *, min_overlap: float = 0.45) -> l
             burst = []
 
     for raw_line in lines:
-        line = raw_line.strip()
+        line = strip_caption_timestamp(raw_line)
         if not line or PUNCT_ONLY_RE.match(line):
             continue
         if not burst:
@@ -119,13 +126,13 @@ def collapse_live_caption_fragments(lines: list[str], *, lookahead: int = 80) ->
     out: list[str] = []
     n = len(lines)
     for i, raw_line in enumerate(lines):
-        line = raw_line.strip()
+        line = strip_caption_timestamp(raw_line)
         if not line or PUNCT_ONLY_RE.match(line):
             continue
         low = line.lower()
         drop = False
         for j in range(i + 1, min(i + lookahead, n)):
-            other = lines[j].strip()
+            other = strip_caption_timestamp(lines[j])
             if len(other) <= len(line):
                 continue
             other_low = other.lower()
@@ -140,14 +147,39 @@ def collapse_live_caption_fragments(lines: list[str], *, lookahead: int = 80) ->
     return out
 
 
+def merge_similar_caption_lines(lines: list[str], *, threshold: float = 0.92) -> list[str]:
+    """Keep the better of adjacent/near-duplicate sentences (SaveLC cleanup pass)."""
+    if not lines:
+        return []
+    out: list[str] = []
+    for raw in lines:
+        line = strip_caption_timestamp(raw)
+        if not line:
+            continue
+        replaced = False
+        start = max(0, len(out) - 3)
+        for i in range(len(out) - 1, start - 1, -1):
+            if similarity_ratio(line, out[i]) < threshold:
+                continue
+            if is_better_version(line, out[i]):
+                out[i] = line
+            replaced = True
+            break
+        if not replaced:
+            out.append(line)
+    return out
+
+
 def dedupe_live_caption_lines(lines: list[str]) -> list[str]:
     """Full live-caption collapse: burst merge + prefix dedup + orphan fragment removal."""
     if not lines:
         return []
+    lines = [strip_caption_timestamp(ln) for ln in lines]
     lines = collapse_caption_bursts(lines)
     lines = maximal_prefix_dedup(lines)
     lines = aggressive_prefix_dedup(lines)
     lines = collapse_live_caption_fragments(lines)
+    lines = merge_similar_caption_lines(lines)
     return dedupe_lines(lines)
 
 

@@ -16,7 +16,11 @@ router = APIRouter(prefix="/api/life", tags=["life"])
 
 def _resolve_day(day: str) -> date:
     if day in ("today", "now"):
-        return date.today()
+        from datetime import datetime
+
+        from backend.planner.service import local_tz
+
+        return datetime.now(local_tz()).date()
     try:
         return date.fromisoformat(day)
     except ValueError as e:

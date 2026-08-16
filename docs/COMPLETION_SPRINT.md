@@ -1,13 +1,15 @@
-# Agent Completion Sprint
+# Agent Completion Sprint → Cape Time
 
-**For the user:** Paste this at the start of any Cursor session when you want the agent to **finish the product**, not add random features:
+**Status (2026-07-19):** Sprints **1–3 are shipped**. The product is past “build the loop” and into **cape time** — verify, polish, then use it daily.
+
+**For the user:** Paste this at the start of a wrap-up session:
 
 ```text
 @AGENTS.md @docs/COMPLETION_SPRINT.md @docs/TASK_COMPLETION.md
-Finish the product. Work Sprint by Sprint in order. Do not stop for permission between sprints unless blocked. Check off items in TASK_COMPLETION.md as you go. No new DB models except topic_study_runs if needed. No hub duplication.
+Cape time. Do not start new feature lanes. Run Sprint 4 verification, then Sprint 5 polish only. Check off TASK_COMPLETION as you go.
 ```
 
-**For the agent:** Your job is to make the app **daily-usable** per [TASK_COMPLETION.md](./TASK_COMPLETION.md) definition of done. Infrastructure exists — **connect it**.
+**For the agent:** Prefer **proof over invention**. Connect gaps only if Sprint 4 finds a real break. No parallel systems, no new product lanes unless the user asks.
 
 ---
 
@@ -21,62 +23,61 @@ Finish the product. Work Sprint by Sprint in order. Do not stop for permission b
 | `npm run build` + core pytest green | Math Phase 3c OCR vision pipeline |
 | Grounded notes default when corpus ready | WebGazer, full affective computing |
 
-**Estimate:** ~5–8 focused agent sessions if executing sprints in order (not one shot).
+Extra product that **already shipped beyond the original sprint** (productivity policy, LLM propose-plan, wearables bridge, math skills Layer 0, easter eggs) is **bonus** — keep it working; do not expand it in cape time.
 
 ---
 
-## Sprint 1 — Backend orchestrator (blocking everything else)
+## Sprint board
 
-**Goal:** One API chains existing services.
-
-- [ ] Create `backend/transcripts/study_flow.py` with `start_topic_study_flow(...)`
-- [ ] Chain: `hybrid_retrieve` → `generate_grounded_notes` (fallback: existing generate) → `ingest_lecture_handoff` → `generate_quiz_items` → save deck / start global quiz session
-- [ ] Add `POST /api/transcripts/study-flow/start` in `router.py`
-- [ ] Add `tests/test_study_flow.py` (mock LLM like `test_study_intel.py`)
-- [ ] Document in [LLD.md](./LLD.md) §8 when merged
-
-**Done when:** Postman/curl returns note path + quiz deck/session for one real transcript.
+| Sprint | Goal | Status |
+|--------|------|--------|
+| 1 | Backend study-flow orchestrator | **Done** |
+| 2 | `TopicStudyFlowPage` stepper | **Done** |
+| 3 | Unify notes/quiz defaults | **Done** (grounded default + global quiz + `next_step`) |
+| 4 | Verify & fix regressions | **Cape time — do this** |
+| 5 | Polish + docs status | **Cape time — after 4** |
 
 ---
 
-## Sprint 2 — Frontend stepper
+## Sprint 1 — Backend orchestrator ✅
 
-**Goal:** User sees one flow, not five disconnected pages.
-
-- [ ] Create `src/pages/study/TopicStudyFlowPage.tsx` — steps: Topic → Notes → Quiz → Review
-- [ ] Register route `/study-flow` in `src/plugins/core_plugins.tsx`
-- [ ] Add `startStudyFlow()` to `src/api/transcriptsClient.ts`
-- [ ] Add **Study this topic** on `LectureNotesPage.tsx` → navigates to stepper with topic + transcript
-- [ ] After quiz complete, redirect to `/review` or show due count
-
-**Done when:** User clicks one button and reaches quiz without choosing code paths.
+- [x] `backend/transcripts/study_flow.py` + `POST /api/transcripts/study-flow/start`
+- [x] Chain retrieve → notes → handoff → quiz
+- [x] `tests/test_study_flow.py`
+- [x] Documented in LLD / ADR-001
 
 ---
 
-## Sprint 3 — Unify paths (remove confusion)
+## Sprint 2 — Frontend stepper ✅
 
-**Goal:** One obvious default; legacy labeled.
-
-- [ ] When `CORPUS_GROUNDED_NOTES=1` + corpus available: Studio + web generate prefer grounded (or show “RAG mode” badge)
-- [ ] Label legacy summarization “No corpus / legacy” in UI
-- [ ] Lecture quiz always uses `/api/quiz` global path (not vocab adaptive)
-- [ ] `StudyLoopWidget` uses only `/api/quiz/backlog` for recommended action
-
-**Done when:** [TASK_COMPLETION.md](./TASK_COMPLETION.md) Lane B1–B3 checked.
+- [x] `TopicStudyFlowPage.tsx` — Topic → Notes → Quiz → Review
+- [x] Route `/study-flow` in `core_plugins.tsx`
+- [x] `startStudyFlow()` in `transcriptsClient.ts`
+- [x] Study Loop / hub links into the flow
 
 ---
 
-## Sprint 4 — Verify & fix regressions
+## Sprint 3 — Unify paths ✅
 
-**Goal:** Nothing broken that was working.
+- [x] Grounded / hybrid notes path when corpus configured
+- [x] Lecture quiz uses `/api/quiz` global path
+- [x] `StudyLoopWidget` + `next_step` from backlog/complete
+- [x] Math multi-Q + skills Layer 0 (quiz practice loop)
 
-- [ ] Run Lane A5 manual acceptance (one lecture) — document transcript used in SESSION_LOG
+---
+
+## Sprint 4 — Verify & fix regressions (current)
+
+**Goal:** Prove daily-use, don’t invent.
+
+- [ ] Run Lane A5 manual acceptance (one lecture) — note transcript in [SESSION_LOG.md](./SESSION_LOG.md)
 - [ ] Run Lane C GRE regression checklist
 - [ ] `python -m pytest tests/ -q`
 - [ ] `python -m pytest tests/test_corpus.py -m integration` if corpus deps installed
 - [ ] `npm run build`
+- [ ] `GET /health` → `schema_ok: true` (migrations through `0027_wearable_daily` as needed)
 
-**Done when:** Definition of done rows 1–8 in TASK_COMPLETION all pass.
+**Done when:** Definition of done rows 1–8 in [TASK_COMPLETION.md](./TASK_COMPLETION.md) pass.
 
 ---
 
@@ -84,23 +85,23 @@ Finish the product. Work Sprint by Sprint in order. Do not stop for permission b
 
 **Goal:** Feels finished, not prototype.
 
-- [ ] Empty states on Lecture Notes, Review Hub, Knowledge Base
+- [ ] Empty states on Lecture Notes, Review Hub, Knowledge Base (fill gaps only)
 - [ ] Loading states on study-flow + corpus job polling
-- [ ] `.env.example` or SETUP doc lists `CORPUS_GROUNDED_NOTES=1`
-- [ ] Update PROJECT_STATUS.md date + “complete for daily use”
-- [ ] Prune stale items in TASKS.md
+- [ ] Confirm `.env.example` lists `CORPUS_GROUNDED_NOTES=1`
+- [ ] Update [PROJECT_STATUS.md](./PROJECT_STATUS.md) — “complete for daily use”
+- [ ] Prune stale items in [TASKS.md](./TASKS.md)
 
-**Optional:** `topic_study_runs` table + Alembic if resume/history needed.
+**Optional:** `topic_study_runs` resume/history — only if you miss it while using the app.
 
 ---
 
-## Agent rules during completion sprint
+## Agent rules (cape time)
 
-1. **Connect, don’t duplicate** — call existing functions; no EnrichedNote / UserMastery / hub study routes.
-2. **Sensible size changes OK** — orchestrator + stepper + path unification are **encouraged**, not “scope creep.”
-3. **One sprint per session minimum** — finish Sprint N before starting N+1.
-4. **If blocked** (missing transcript, corpus empty, LLM off) — implement graceful fallback + UI message; log in SESSION_LOG.
-5. **Commits** — only when user asks.
+1. **Verify first** — Sprint 4 before any polish or feature.
+2. **Fix breaks only** — if acceptance fails, fix the smallest path; no redesign.
+3. **No new lanes** — wearables, Zepp, hard-block, life-clock skins stay as-is unless broken.
+4. **Commits** — only when user asks.
+5. **Check off** TASK_COMPLETION as proof lands.
 
 ---
 
@@ -108,16 +109,20 @@ Finish the product. Work Sprint by Sprint in order. Do not stop for permission b
 
 | Sprint | Backend | Frontend |
 |--------|---------|----------|
-| 1 | `backend/transcripts/study_flow.py`, `router.py` | — |
-| 2 | — | `TopicStudyFlowPage.tsx`, `transcriptsClient.ts`, `core_plugins.tsx` |
-| 3 | `grounded_notes.py`, `transcripts/router.py` | `LectureNotesPage.tsx`, `StudyLoopWidget.tsx` |
-| 4 | tests | — |
+| 1 ✅ | `study_flow.py`, `router.py` | — |
+| 2 ✅ | — | `TopicStudyFlowPage.tsx`, `transcriptsClient.ts` |
+| 3 ✅ | `quiz/handler.py`, `next_step.py`, skills | `StudyLoopWidget`, `GlobalQuizRunner`, Review Hub |
+| 4 | tests + health | manual walkthrough |
 | 5 | — | empty states, docs |
 
 ---
 
 ## Related docs
 
-- [TASK_COMPLETION.md](./TASK_COMPLETION.md) — full checklist (check off as sprints complete)
-- [HLD.md](./HLD.md) · [LLD.md](./LLD.md) — architecture
-- [AGENTS.md](../AGENTS.md) — agent role
+| Doc | Use |
+|-----|-----|
+| [TASK_COMPLETION.md](./TASK_COMPLETION.md) | Master checklist + definition of done |
+| [SESSION_LOG.md](./SESSION_LOG.md) | Per-session progress |
+| [PROJECT_STATUS.md](./PROJECT_STATUS.md) | What’s working today |
+| [docs/decisions/ADR-001-quiz-practice-orchestration.md](./decisions/ADR-001-quiz-practice-orchestration.md) | Quiz / practice decisions |
+| Superpowers plans under `docs/superpowers/plans/` | **Reference only** — not active build queues |

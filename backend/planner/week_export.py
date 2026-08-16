@@ -66,7 +66,7 @@ def build_productivity_week_export(
         db.query(TrackedSession)
         .filter(
             TrackedSession.user_id.in_(user_ids),
-            TrackedSession.source == "desktop_tracker",
+            TrackedSession.source.in_(("desktop_tracker", "extension", "calt_spa")),
             TrackedSession.start_time < range_end,
             TrackedSession.end_time > range_start,
         )

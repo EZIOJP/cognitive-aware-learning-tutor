@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { NoteConflictError } from "../../api/transcriptsClient";
 import {
   Bookmark,
@@ -57,6 +58,8 @@ type Props = {
   }) => Promise<string>;
   onRepairSyntaxOnly?: () => Promise<unknown>;
   onRepairAllBlocks?: () => Promise<unknown>;
+  /** When set, document title + actions render into this host (page header) instead of the viewer. */
+  chromeHost?: HTMLElement | null;
 };
 
 export function StudyLibraryViewer({
@@ -84,10 +87,11 @@ export function StudyLibraryViewer({
   quizDisabled = false,
   sectionEdit,
   llmReachable = false,
-  llmTier,
+  llmTier: _llmTier,
   onRegenerateSelection,
   onRepairSyntaxOnly,
   onRepairAllBlocks,
+  chromeHost = null,
 }: Props) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const lastRestoreKeyRef = useRef("");
@@ -153,11 +157,9 @@ export function StudyLibraryViewer({
       setEditing(false);
     } catch (e) {
       if (e instanceof NoteConflictError) {
-        // Parent showed confirm; on reload it refreshed primaryContent — exit edit to sync.
         if (e.message === "reloaded") {
           setEditing(false);
         }
-        // On cancel, stay in edit mode so the draft is not lost.
         return;
       }
       console.error(e);
@@ -166,9 +168,7 @@ export function StudyLibraryViewer({
     }
   };
 
-  const runExport = async (
-    kind: "pdf" | "docx" | "folder-pdf" | "folder-docx",
-  ) => {
+  const runExport = async (kind: "pdf" | "docx" | "folder-pdf" | "folder-docx") => {
     if (editing) return;
     setExporting(kind);
     try {
@@ -185,182 +185,225 @@ export function StudyLibraryViewer({
   };
 
   if (loading) {
+    const loadingChrome = chromeHost ? (
+      <div className="study-library-page-chrome flex items-center gap-2 min-w-0 flex-1">
+        <h2 className="text-sm font-semibold text-foreground tracking-wide truncate">
+          {primaryTitle}
+        </h2>
+        {relativePath ? (
+          <span className="hidden sm:inline text-[10px] text-muted-foreground truncate">
+            {relativePath}
+          </span>
+        ) : null}
+        <span className="text-[10px] text-muted-foreground shrink-0">Loading…</span>
+      </div>
+    ) : null;
     return (
-      <section className="study-library-glass flex flex-1 items-center justify-center min-w-0">
-        <Loader2 className="w-6 h-6 animate-spin text-primary" />
-      </section>
+      <>
+        {chromeHost && loadingChrome ? createPortal(loadingChrome, chromeHost) : null}
+        <section className="study-library-glass flex flex-1 items-center justify-center min-w-0">
+          <Loader2 className="w-6 h-6 animate-spin text-primary" />
+        </section>
+      </>
     );
   }
 
   if (mode === "single") {
-    const canExport = relativePath && onExport && !editing && primaryContent;
-    const canExportFolder = onExportFolder && exportFolderPath !== undefined && !editing;
+    const canExport = Boolean(relativePath && onExport && !editing && primaryContent);
+    const canExportFolder = Boolean(onExportFolder && exportFolderPath !== undefined && !editing);
+    const usePageChrome = Boolean(chromeHost);
 
-    return (
-      <section className="study-library-glass flex flex-col flex-1 min-w-0 overflow-hidden">
-        <div className="study-library-viewer-header">
-          <div className="min-w-0 flex-1">
-            <h2 className="study-library-viewer-title truncate">{primaryTitle}</h2>
-            {relativePath && (
-              <p className="study-library-viewer-path truncate">{relativePath}</p>
-            )}
-            <p className="text-[10px] mt-0.5">
+    const chrome: ReactNode = (
+      <div
+        className={
+          usePageChrome
+            ? "study-library-page-chrome flex items-center gap-3 min-w-0 flex-1"
+            : "study-library-viewer-header"
+        }
+      >
+        <div className="min-w-0 flex-1">
+          {usePageChrome ? (
+            <div className="flex items-center gap-2 min-w-0">
+              <h2 className="text-sm font-semibold text-foreground tracking-wide truncate">
+                {primaryTitle}
+              </h2>
               <span
                 className={
-                  llmReachable ? "text-primary/80" : "text-amber-400/90"
+                  llmReachable
+                    ? "shrink-0 text-[10px] text-primary/80"
+                    : "shrink-0 text-[10px] text-amber-400/90"
                 }
+                title={llmReachable ? "LLM online" : "LLM offline"}
               >
-                {llmReachable ? "● LLM online" : "● LLM offline"}
-                {llmTier ? ` · tier ${llmTier}` : ""}
+                ●
+                <span className="sr-only">{llmReachable ? "Online" : "Offline"}</span>
               </span>
-            </p>
-          </div>
-
-          {!editing && (
-            <div className="flex items-center gap-1 shrink-0">
-              {onTakeQuiz && relativePath && primaryContent && (
-                <Button
-                  type="button"
-                  size="sm"
-                  variant={quizReady ? "default" : "outline"}
-                  className="h-8 text-xs gap-1.5"
-                  disabled={quizDisabled || quizLoading}
-                  title={
-                    quizReady
-                      ? "Take the generated quiz for this note"
-                      : "Generate a quiz draft from this note (does not start the quiz)"
-                  }
-                  onClick={onTakeQuiz}
+              {relativePath ? (
+                <span
+                  className="hidden sm:inline text-[10px] text-muted-foreground truncate min-w-0"
+                  title={relativePath}
                 >
-                  {quizLoading ? (
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  ) : (
-                    <Play className="w-3.5 h-3.5" />
-                  )}
-                  {quizReady ? "Take quiz" : "Generate quiz"}
-                </Button>
-              )}
+                  {relativePath}
+                </span>
+              ) : null}
+            </div>
+          ) : (
+            <>
+              <h2 className="study-library-viewer-title truncate">{primaryTitle}</h2>
+              {relativePath ? (
+                <p className="study-library-viewer-path truncate">{relativePath}</p>
+              ) : null}
+              <p className="text-[10px] mt-0.5">
+                <span className={llmReachable ? "text-primary/80" : "text-amber-400/90"}>
+                  {llmReachable ? "● LLM online" : "● LLM offline"}
+                </span>
+              </p>
+            </>
+          )}
+        </div>
 
-              {onRepairSyntaxOnly && relativePath && primaryContent && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="h-8 text-xs gap-1 border-amber-800/40"
-                  disabled={repairingSyntax || repairingAll}
-                  title="Repair broken markdown fences (no AI)"
-                  onClick={() => {
-                    setRepairingSyntax(true);
-                    void onRepairSyntaxOnly()
-                      .catch(() => undefined)
-                      .finally(() => setRepairingSyntax(false));
-                  }}
-                >
-                  {repairingSyntax ? (
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  ) : (
-                    <Wrench className="w-3.5 h-3.5" />
-                  )}
-                  Repair fences
-                </Button>
-              )}
-              {onRepairAllBlocks && relativePath && primaryContent && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="h-8 text-xs gap-1 border-border"
-                  disabled={repairingAll || repairingSyntax || !llmReachable}
-                  title={
-                    llmReachable
-                      ? "Fix all broken mermaid/code blocks with AI"
-                      : "Set LLM_API_KEY for Gemini or start LM Studio (OLLAMA_ENABLED=1)"
-                  }
-                  onClick={() => {
-                    setRepairingAll(true);
-                    void onRepairAllBlocks()
-                      .catch(() => undefined)
-                      .finally(() => setRepairingAll(false));
-                  }}
-                >
-                  {repairingAll ? (
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  ) : (
-                    <Sparkles className="w-3.5 h-3.5" />
-                  )}
-                  Fix all (AI)
-                </Button>
-              )}
+        {!editing && (
+          <div className="flex items-center gap-1.5 shrink-0">
+            {onTakeQuiz && relativePath && primaryContent && (
+              <Button
+                type="button"
+                size="sm"
+                variant={quizReady ? "default" : "outline"}
+                className="h-8 text-xs gap-1.5"
+                disabled={quizDisabled || quizLoading}
+                title={
+                  quizReady
+                    ? "Take the generated quiz for this note"
+                    : "Generate a quiz draft from this note (does not start the quiz)"
+                }
+                onClick={onTakeQuiz}
+              >
+                {quizLoading ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Play className="w-3.5 h-3.5" />
+                )}
+                <span className="hidden lg:inline">{quizReady ? "Take quiz" : "Quiz"}</span>
+              </Button>
+            )}
 
-              {editable && relativePath && onSaveContent && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="h-8 text-xs"
-                  onClick={() => {
-                    setDraft(primaryContent);
-                    setEditing(true);
-                  }}
-                >
-                  <Pencil className="w-3.5 h-3.5 mr-1" />
-                  Edit
-                </Button>
-              )}
+            {editable && relativePath && onSaveContent && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-8 text-xs"
+                onClick={() => {
+                  setDraft(primaryContent);
+                  setEditing(true);
+                }}
+              >
+                <Pencil className="w-3.5 h-3.5 mr-1" />
+                Edit
+              </Button>
+            )}
 
-              {(canExport || canExportFolder) && (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="h-8 text-xs gap-1"
-                      disabled={!!exporting}
-                    >
-                      {exporting ? (
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      ) : (
-                        <FileText className="w-3.5 h-3.5" />
-                      )}
-                      Export
-                      <ChevronDown className="w-3 h-3 opacity-60" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="min-w-[10rem]">
-                    {canExport && (
-                      <>
-                        <DropdownMenuItem onClick={() => void runExport("pdf")}>
-                          This note as PDF
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => void runExport("docx")}>
-                          This note as Word
-                        </DropdownMenuItem>
-                      </>
+            {(canExport || canExportFolder) && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-8 text-xs gap-1"
+                    disabled={!!exporting}
+                  >
+                    {exporting ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <FileText className="w-3.5 h-3.5" />
                     )}
-                    {canExport && canExportFolder && <DropdownMenuSeparator />}
-                    {canExportFolder && (
-                      <>
-                        <DropdownMenuItem onClick={() => void runExport("folder-pdf")}>
-                          Folder as PDF
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => void runExport("folder-docx")}>
-                          Folder as Word
-                        </DropdownMenuItem>
-                      </>
-                    )}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              )}
+                    <span className="hidden sm:inline">Export</span>
+                    <ChevronDown className="w-3 h-3 opacity-60" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="min-w-[10rem]">
+                  {canExport && (
+                    <>
+                      <DropdownMenuItem onClick={() => void runExport("pdf")}>
+                        This note as PDF
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => void runExport("docx")}>
+                        This note as Word
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                  {canExport && canExportFolder && <DropdownMenuSeparator />}
+                  {canExportFolder && (
+                    <>
+                      <DropdownMenuItem onClick={() => void runExport("folder-pdf")}>
+                        Folder as PDF
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => void runExport("folder-docx")}>
+                        Folder as Word
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
 
-              {relativePath && onSetBookmark && (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button type="button" variant="ghost" size="icon" className="h-8 w-8">
+            {(relativePath && primaryContent && (onRepairSyntaxOnly || onRepairAllBlocks || onSetBookmark)) && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    title="More note actions"
+                    aria-label="More note actions"
+                  >
+                    {(repairingSyntax || repairingAll) ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
                       <MoreHorizontal className="w-4 h-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
+                    )}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="min-w-[12rem]">
+                  {onRepairSyntaxOnly && primaryContent && (
+                    <DropdownMenuItem
+                      disabled={repairingSyntax || repairingAll}
+                      onClick={() => {
+                        setRepairingSyntax(true);
+                        void onRepairSyntaxOnly()
+                          .catch(() => undefined)
+                          .finally(() => setRepairingSyntax(false));
+                      }}
+                    >
+                      <Wrench className="w-4 h-4 mr-2" />
+                      Repair fences
+                    </DropdownMenuItem>
+                  )}
+                  {onRepairAllBlocks && primaryContent && (
+                    <DropdownMenuItem
+                      disabled={repairingAll || repairingSyntax || !llmReachable}
+                      title={
+                        llmReachable
+                          ? undefined
+                          : "Set LLM_API_KEY or start LM Studio"
+                      }
+                      onClick={() => {
+                        setRepairingAll(true);
+                        void onRepairAllBlocks()
+                          .catch(() => undefined)
+                          .finally(() => setRepairingAll(false));
+                      }}
+                    >
+                      <Sparkles className="w-4 h-4 mr-2" />
+                      Fix all (AI)
+                    </DropdownMenuItem>
+                  )}
+                  {(onRepairSyntaxOnly || onRepairAllBlocks) && onSetBookmark && (
+                    <DropdownMenuSeparator />
+                  )}
+                  {onSetBookmark && (
                     <DropdownMenuItem
                       onClick={() => {
                         const top = scrollRef.current?.scrollTop ?? 0;
@@ -370,56 +413,64 @@ export function StudyLibraryViewer({
                       <Bookmark className="w-4 h-4 mr-2" />
                       Save bookmark here
                     </DropdownMenuItem>
-                    {bookmarkScrollTop != null && (
-                      <DropdownMenuItem onClick={jumpToBookmark}>
-                        <MapPin className="w-4 h-4 mr-2" />
-                        Jump to bookmark
-                      </DropdownMenuItem>
-                    )}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              )}
-            </div>
-          )}
-        </div>
-
-        {editing ? (
-          <div className="flex-1 min-h-0 flex flex-col">
-            <NoteDocumentEditor
-              content={draft}
-              onChange={setDraft}
-              onSave={handleSave}
-              onCancel={() => {
-                setDraft(primaryContent);
-                setEditing(false);
-              }}
-              saving={saving}
-              dirty={dirty}
-              snapshotTranscript={snapshotTranscript}
-              llmReachable={llmReachable}
-              onRegenerateSelection={onRegenerateSelection ? onRegenerateSelection : undefined}
-            />
-          </div>
-        ) : (
-          <div
-            ref={setScrollContainer}
-            className="flex-1 overflow-y-auto study-library-markdown-scroll study-library-viewer-body"
-          >
-            {primaryContent ? (
-              <NoteDocumentView content={primaryContent} sectionEdit={sectionEdit} />
-            ) : (
-              <div className="study-library-viewer-empty">
-                <FileText className="w-10 h-10 text-muted-foreground/40 mb-3" />
-                <p className="text-sm font-medium text-foreground/90">No note selected</p>
-                <p className="text-xs text-muted-foreground mt-1 max-w-xs text-center">
-                  Choose a note from the library, or create one from live captions.
-                </p>
-              </div>
+                  )}
+                  {onSetBookmark && bookmarkScrollTop != null && (
+                    <DropdownMenuItem onClick={jumpToBookmark}>
+                      <MapPin className="w-4 h-4 mr-2" />
+                      Jump to bookmark
+                    </DropdownMenuItem>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
           </div>
         )}
+      </div>
+    );
 
-      </section>
+    return (
+      <>
+        {usePageChrome && chromeHost ? createPortal(chrome, chromeHost) : null}
+        <section className="study-library-glass flex flex-col flex-1 min-w-0 overflow-hidden">
+          {!usePageChrome ? chrome : null}
+
+          {editing ? (
+            <div className="flex-1 min-h-0 flex flex-col">
+              <NoteDocumentEditor
+                content={draft}
+                onChange={setDraft}
+                onSave={handleSave}
+                onCancel={() => {
+                  setDraft(primaryContent);
+                  setEditing(false);
+                }}
+                saving={saving}
+                dirty={dirty}
+                snapshotTranscript={snapshotTranscript}
+                llmReachable={llmReachable}
+                onRegenerateSelection={onRegenerateSelection ? onRegenerateSelection : undefined}
+              />
+            </div>
+          ) : (
+            <div
+              ref={setScrollContainer}
+              className="flex-1 overflow-y-auto study-library-markdown-scroll study-library-viewer-body"
+            >
+              {primaryContent ? (
+                <NoteDocumentView content={primaryContent} sectionEdit={sectionEdit} />
+              ) : (
+                <div className="study-library-viewer-empty">
+                  <FileText className="w-10 h-10 text-muted-foreground/40 mb-3" />
+                  <p className="text-sm font-medium text-foreground/90">No note selected</p>
+                  <p className="text-xs text-muted-foreground mt-1 max-w-xs text-center">
+                    Choose a note from the library, or create one from live captions.
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+        </section>
+      </>
     );
   }
 

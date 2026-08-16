@@ -95,9 +95,9 @@ export function HubChatPanel({ className = "" }: HubChatPanelProps) {
               {m.role === "user" ? "You" : "Hub"}
             </p>
             <p className="leading-relaxed whitespace-pre-wrap">{m.content}</p>
-            {m.role === "assistant" && m.content.includes("/study-flow") ? (
-              <Link to="/study-flow" className="text-xs text-primary hover:underline mt-2 inline-block">
-                Open Study Flow →
+            {m.role === "assistant" && m.content.includes("/lecture-notes") ? (
+              <Link to="/lecture-notes" className="text-xs text-primary hover:underline mt-2 inline-block">
+                Open Lecture Notes →
               </Link>
             ) : null}
           </div>

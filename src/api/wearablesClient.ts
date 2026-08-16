@@ -54,6 +54,14 @@ export type WearableDay = {
   stand_hours?: number | null;
   stand_target?: number | null;
   battery_pct?: number | null;
+  sitting_min?: number | null;
+  last_captured_at?: string | null;
+  last_dump_id?: string | null;
+  last_chunk_id?: string | null;
+  last_checksum?: string | null;
+  capabilities?: Record<string, unknown> | null;
+  /** Full nested snapshot as posted by the watch mini program */
+  payload?: Record<string, unknown> | null;
 };
 
 export type WearableSyncStatus = {
@@ -76,12 +84,18 @@ export type WearableSyncStatus = {
     last_stress?: number | null;
     last_pai?: number | null;
     last_stand?: number | null;
+    last_sitting_min?: number | null;
     last_battery?: number | null;
     last_source?: string;
     last_is_watch?: boolean;
     last_wrote_life?: boolean;
     last_event?: string;
     last_local_date?: string;
+    last_dump_id?: string | null;
+    last_chunk_id?: string | null;
+    last_event_id?: string | null;
+    last_duplicate?: boolean;
+    last_manual_dump?: boolean;
   } | null;
   applied_to_life?: {
     date?: string;
@@ -157,6 +171,20 @@ export async function fetchWearableStatus(): Promise<WearableSyncStatus> {
     throw new Error(text || `HTTP ${res.status}`);
   }
   return (await res.json()) as WearableSyncStatus;
+}
+
+export async function fetchWearableDay(localDate: string): Promise<WearableDay | null> {
+  const base = resolveApiUrl().replace(/\/$/, "");
+  const day = localDate.slice(0, 10);
+  const res = await fetch(`${base}/api/wearables/zepp/day/${encodeURIComponent(day)}`, {
+    headers: authHeaders(),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(text || `HTTP ${res.status}`);
+  }
+  const data = (await res.json()) as { ok?: boolean; day?: WearableDay | null };
+  return data.day ?? null;
 }
 
 /** Manual test from the web UI (same contract as the watch Side Service). */

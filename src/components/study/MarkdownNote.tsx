@@ -1,7 +1,7 @@
 import { Suspense, lazy, useMemo, useRef } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { prepareNoteMarkdown } from "../../features/study-notes";
+import { prepareNoteMarkdown, listFencedBlocks, normalizeFenceBody } from "../../features/study-notes";
 import { extractMarkdownCode } from "./noteBlockUtils";
 import { CodeBlock } from "./CodeBlock";
 import { StudyMarkdownImage } from "./StudySnapshotImage";
@@ -18,7 +18,12 @@ export type MarkdownNoteSectionProps = {
   allowSectionEdit?: boolean;
   llmReachable?: boolean;
   regeneratingBlock?: number | null;
-  onBlockSave?: (blockIndex: number, language: string, content: string) => Promise<void>;
+  onBlockSave?: (
+    blockIndex: number,
+    language: string,
+    content: string,
+    opts?: { previousContent?: string },
+  ) => Promise<void>;
   onBlockRegenerate?: (
     blockIndex: number,
     language: string,
@@ -64,8 +69,29 @@ function sectionHandlersFor(
 
 export function MarkdownNote({ content, sectionEdit, previewMode = "full" }: MarkdownNoteProps) {
   const prepared = useMemo(() => prepareNoteMarkdown(content), [content]);
-  const fenceOrdinal = useRef(0);
-  fenceOrdinal.current = 0;
+  const fences = useMemo(() => listFencedBlocks(prepared), [prepared]);
+  const fenceCursor = useRef(0);
+  fenceCursor.current = 0;
+
+  const takeFenceIndex = (lang: string | undefined, code: string): number | undefined => {
+    const want = normalizeFenceBody(code);
+    const langKey = (lang || "text").toLowerCase();
+    const tryFrom = (start: number): number | undefined => {
+      for (let i = start; i < fences.length; i++) {
+        const fb = fences[i];
+        const langOk =
+          !lang ||
+          fb.lang === langKey ||
+          ((langKey === "python" || langKey === "py") && (fb.lang === "python" || fb.lang === "py"));
+        if (!langOk) continue;
+        if (normalizeFenceBody(fb.content) !== want) continue;
+        fenceCursor.current = i + 1;
+        return fb.index;
+      }
+      return undefined;
+    };
+    return tryFrom(fenceCursor.current) ?? tryFrom(0);
+  };
 
   return (
     <div className="lecture-notes-markdown space-y-3 text-sm leading-relaxed">
@@ -123,7 +149,12 @@ export function MarkdownNote({ content, sectionEdit, previewMode = "full" }: Mar
             }
 
             const code = extractMarkdownCode(children);
-            const blockIndex = fenceOrdinal.current++;
+            // Only real ``` fences get indices — indented/extra code nodes must not inflate ordinals.
+            const blockIndex = takeFenceIndex(lang, code);
+            const handlers =
+              blockIndex != null
+                ? sectionHandlersFor(blockIndex, lang || "text", sectionEdit)
+                : undefined;
 
             if (lang === "mermaid") {
               if (previewMode === "lite") {
@@ -135,10 +166,7 @@ export function MarkdownNote({ content, sectionEdit, previewMode = "full" }: Mar
               }
               return (
                 <Suspense fallback={<BlockFallback />}>
-                  <MermaidBlockShell
-                    code={code}
-                    sectionHandlers={sectionHandlersFor(blockIndex, "mermaid", sectionEdit)}
-                  />
+                  <MermaidBlockShell code={code} sectionHandlers={handlers} />
                 </Suspense>
               );
             }
@@ -153,19 +181,12 @@ export function MarkdownNote({ content, sectionEdit, previewMode = "full" }: Mar
                 }
                 return (
                   <Suspense fallback={<BlockFallback />}>
-                    <PythonCodeBlock
-                      code={code}
-                      sectionHandlers={sectionHandlersFor(blockIndex, "python", sectionEdit)}
-                    />
+                    <PythonCodeBlock code={code} sectionHandlers={handlers} />
                   </Suspense>
                 );
               }
               return (
-                <CodeBlock
-                  code={code}
-                  language={lang}
-                  sectionHandlers={sectionHandlersFor(blockIndex, lang, sectionEdit)}
-                />
+                <CodeBlock code={code} language={lang} sectionHandlers={handlers} />
               );
             }
             return (

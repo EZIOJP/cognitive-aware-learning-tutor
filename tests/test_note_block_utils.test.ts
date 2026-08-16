@@ -115,6 +115,30 @@ describe("repairAllFences", () => {
     expect(blocks.length).toBe(1);
     expect(blocks[0].lang).toBe("python");
   });
+
+  it("keeps python # comment lines inside the fence (print output examples)", () => {
+    const raw = `\`\`\`python
+print(type(l))
+for elements in l:
+    e = func(elements)
+    print(e)
+# 3
+# 4
+# 5
+# 6
+# 7
+\`\`\`
+
+**Method 3**
+`;
+    const fixed = repairAllFences(raw);
+    expect(fixed).toContain("print(e)\n# 3\n# 4\n# 5\n# 6\n# 7\n```");
+    expect(fixed).not.toMatch(/```\n# 3/);
+    const blocks = listFencedBlocks(fixed);
+    expect(blocks).toHaveLength(1);
+    expect(blocks[0].content).toContain("# 3");
+    expect(blocks[0].content).toContain("# 7");
+  });
 });
 
 describe("repairNoteMarkdown", () => {

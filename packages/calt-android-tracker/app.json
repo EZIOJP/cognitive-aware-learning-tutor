@@ -1,0 +1,27 @@
+{
+  "expo": {
+    "name": "CALT Tracker",
+    "slug": "calt-android-tracker",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "calt-tracker",
+    "userInterfaceStyle": "automatic",
+    "android": {
+      "package": "com.calt.tracker",
+      "versionCode": 1,
+      "permissions": ["RECEIVE_BOOT_COMPLETED", "VIBRATE", "POST_NOTIFICATIONS"]
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-notifications",
+        {
+          "color": "#1a9b8e"
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

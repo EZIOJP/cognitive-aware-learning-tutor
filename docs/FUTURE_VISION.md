@@ -104,3 +104,11 @@ Finish (1) before buying hardware. See [HARDWARE_AND_AI_LATER.md](./HARDWARE_AND
 - Nougat full-document OCR (wrong tool for whiteboard crops)
 - Character-by-character CNN OCR (fails on connected handwriting; use LaTeX OCR or VLM fallback)
 - Continuous LLaVA on every frame
+
+---
+
+## Study loop — tagged Daily Practice (deferred)
+
+**Separate note (revisit anytime):** [FUTURE_TAGGED_DAILY_PRACTICE.md](./FUTURE_TAGGED_DAILY_PRACTICE.md)
+
+Full tagged quota engine (vocab + math + numpy/pandas lanes, learn-until-right). Soft nudge ships first; this is the loved long-term design.

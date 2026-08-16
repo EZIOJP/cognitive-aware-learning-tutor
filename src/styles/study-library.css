@@ -109,6 +109,10 @@
   background: color-mix(in srgb, var(--muted) 40%, transparent);
 }
 
+.study-library-page-chrome {
+  min-width: 0;
+}
+
 .study-library-viewer-title {
   font-size: 0.9375rem;
   font-weight: 600;
@@ -387,6 +391,23 @@
 
 .study-library-explorer-main {
   padding: 0.65rem;
+}
+
+.study-library-explorer-drop-overlay {
+  pointer-events: none;
+  position: absolute;
+  inset: 0.35rem;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.55rem;
+  border: 1px dashed color-mix(in srgb, var(--primary) 55%, var(--border));
+  background: color-mix(in srgb, var(--primary) 14%, transparent);
+  color: color-mix(in srgb, var(--primary) 85%, white);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
 }
 
 .study-library-explorer-grid {

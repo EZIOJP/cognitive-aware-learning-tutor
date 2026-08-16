@@ -25,6 +25,45 @@ export function parseApiDate(iso: string | null | undefined): Date {
   return new Date(s);
 }
 
+function normBlockTitle(title: string): string {
+  return title.trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+function sameLocalDay(a: Date, b: Date): boolean {
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  );
+}
+
+/**
+ * True when a propose draft already exists as a saved planner block
+ * (same title that day, or ≥60% time overlap). Prevents routine+study
+ * duplicates in the Plan agenda after Build / Apply routines.
+ */
+export function draftCoveredBySavedBlocks(
+  draft: { title: string; start_at: string; end_at: string },
+  blocks: PlannerBlock[],
+): boolean {
+  const ds = parseApiDate(draft.start_at);
+  const de = parseApiDate(draft.end_at);
+  if (Number.isNaN(ds.getTime()) || Number.isNaN(de.getTime())) return false;
+  const nt = normBlockTitle(draft.title);
+  const draftMs = Math.max(1, de.getTime() - ds.getTime());
+
+  return blocks.some((b) => {
+    if (b.status === "rolled") return false;
+    const bs = parseApiDate(b.start_at);
+    const be = parseApiDate(b.end_at);
+    if (Number.isNaN(bs.getTime()) || Number.isNaN(be.getTime())) return false;
+    if (!sameLocalDay(ds, bs)) return false;
+    if (normBlockTitle(b.title) === nt) return true;
+    const overlapMs = Math.min(de.getTime(), be.getTime()) - Math.max(ds.getTime(), bs.getTime());
+    return overlapMs > 0 && overlapMs / draftMs >= 0.6;
+  });
+}
+
 export function startOfDay(d: Date): Date {
   const out = new Date(d);
   out.setHours(0, 0, 0, 0);
@@ -233,6 +272,7 @@ export type MergedInterval = {
   category: string | null;
   window_title: string | null;
   site?: string | null;
+  source?: string | null;
   productivity_score: number | null;
   duration_seconds: number;
   merged_count: number;
@@ -247,6 +287,7 @@ export type MergedIntervalChild = {
   category?: string | null;
   window_title?: string | null;
   site?: string | null;
+  source?: string | null;
   productivity_score?: number | null;
   duration_seconds: number;
 };
@@ -259,37 +300,125 @@ type Mergeable = {
   category?: string | null;
   window_title?: string | null;
   site?: string | null;
+  source?: string | null;
   productivity_score?: number | null;
   duration_seconds?: number;
 };
 
-function mergeKey(item: Mergeable): string {
-  const app = (item.app_name ?? "").trim().toLowerCase();
-  if (app) return `app:${app}`;
-  return `cat:${(item.category ?? "Other").trim().toLowerCase()}`;
-}
 
 function durationSec(start: string, end: string): number {
   return Math.max(0, Math.round((new Date(end).getTime() - new Date(start).getTime()) / 1000));
 }
 
+/** Browser apps often appear as a suffix on the window title (“… — Zen Browser”). */
+const TITLE_BROWSER_HINTS: { re: RegExp; app: string }[] = [
+  // Match end of title; don't require a specific dash (titles use -, –, —, or |)
+  { re: /Zen\s*Browser\s*$/i, app: "zen" },
+  { re: /Microsoft\s*Edge\s*$/i, app: "msedge" },
+  { re: /Google\s*Chrome\s*$/i, app: "chrome" },
+  { re: /\bBrave\s*$/i, app: "brave" },
+  { re: /\bFirefox\s*$/i, app: "firefox" },
+  { re: /\bOpera\s*$/i, app: "opera" },
+  { re: /\bArc\s*$/i, app: "arc" },
+  { re: /\bSafari\s*$/i, app: "safari" },
+];
+
+/** If the title clearly names a browser, return that app id; else null. */
+export function appImpliedByWindowTitle(title: string | null | undefined): string | null {
+  const t = (title || "").trim();
+  if (!t) return null;
+  for (const h of TITLE_BROWSER_HINTS) {
+    if (h.re.test(t)) return h.app;
+  }
+  return null;
+}
+
+function appsLookSame(a: string, b: string): boolean {
+  const x = shortAppName(a).toLowerCase();
+  const y = shortAppName(b).toLowerCase();
+  if (!x || !y) return false;
+  return x === y || x.includes(y) || y.includes(x);
+}
+
+const VIDEO_TITLE_RE = /netflix|youtube|hulu|disney|prime\s*video|\bwatch\b|rookie|twitch|hotstar/i;
+
+/** Normalize exe using window-title browser hint BEFORE merge (fixes Cursor+Zen title). */
+export function effectiveAppName(item: {
+  app_name?: string | null;
+  window_title?: string | null;
+}): string {
+  const raw = (item.app_name ?? "").trim();
+  const implied = appImpliedByWindowTitle(item.window_title);
+  if (!implied) return raw;
+  if (!raw) return implied;
+  if (appsLookSame(raw, implied)) return raw;
+  return implied;
+}
+
+function categoryForCorrectedBrowser(
+  title: string | null | undefined,
+  previous: string | null | undefined,
+): string {
+  if (VIDEO_TITLE_RE.test(title || "")) return "Video Streaming";
+  const prev = (previous || "").toLowerCase();
+  if (prev.includes("ide") || prev.includes("code") || prev.includes("study")) {
+    return "Other (Browser)";
+  }
+  return previous?.trim() || "Other (Browser)";
+}
+
+/**
+ * Tracker sometimes pairs the wrong exe with a browser window title
+ * (e.g. app=Cursor + title=“… — Zen Browser”). Prefer the title’s browser.
+ */
+export function reconcileMergedInterval(m: MergedInterval): MergedInterval {
+  const implied = appImpliedByWindowTitle(m.window_title);
+  if (!implied) return m;
+  if (appsLookSame(m.app_name || "", implied)) return m;
+  return {
+    ...m,
+    app_name: implied,
+    category: categoryForCorrectedBrowser(m.window_title, m.category),
+    productivity_score:
+      m.productivity_score != null && m.productivity_score >= 60 ? 35 : m.productivity_score,
+  };
+}
+
+function mergeKey(item: Mergeable): string {
+  // MUST use title-corrected app so Cursor+“…Zen Browser” does not merge with real Cursor
+  const app = effectiveAppName(item).trim().toLowerCase();
+  if (app) return `app:${app}`;
+  return `cat:${(item.category ?? "Other").trim().toLowerCase()}`;
+}
+
 function childFrom(item: Mergeable): MergedIntervalChild {
+  const app = effectiveAppName(item) || item.app_name || null;
+  const implied = appImpliedByWindowTitle(item.window_title);
+  const corrected =
+    implied && item.app_name && !appsLookSame(item.app_name, implied);
   return {
     session_id: item.session_id ?? null,
     start_time: item.start_time,
     end_time: item.end_time,
-    app_name: item.app_name ?? null,
-    category: item.category ?? null,
+    app_name: app,
+    category: corrected
+      ? categoryForCorrectedBrowser(item.window_title, item.category)
+      : item.category ?? null,
     window_title: item.window_title ?? null,
     site: item.site ?? null,
-    productivity_score: item.productivity_score ?? null,
+    source: item.source ?? null,
+    productivity_score: corrected
+      ? item.productivity_score != null && item.productivity_score >= 60
+        ? 35
+        : item.productivity_score ?? null
+      : item.productivity_score ?? null,
     duration_seconds: item.duration_seconds ?? durationSec(item.start_time, item.end_time),
   };
 }
 
 /**
  * Stitch adjacent tracker rows for visualization only — raw DB rows stay unchanged.
- * Merges when same app (or category) and gap <= maxGapSec.
+ * Same app merges across small gaps only when no other app sits between them.
  */
 export function mergeAdjacentIntervals<T extends Mergeable>(
   items: T[],
@@ -300,6 +429,7 @@ export function mergeAdjacentIntervals<T extends Mergeable>(
     .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
 
   const out: MergedInterval[] = [];
+  const lastByKey = new Map<string, MergedInterval>();
 
   for (const item of sorted) {
     const startMs = new Date(item.start_time).getTime();
@@ -307,37 +437,65 @@ export function mergeAdjacentIntervals<T extends Mergeable>(
     if (endMs <= startMs) continue;
 
     const key = mergeKey(item);
-    const prev = out[out.length - 1];
+    const prev = lastByKey.get(key);
     const prevEndMs = prev ? new Date(prev.end_time).getTime() : 0;
     const gapSec = prev ? (startMs - prevEndMs) / 1000 : Infinity;
 
-    if (prev && mergeKey(prev) === key && gapSec <= maxGapSec) {
-      prev.end_time = item.end_time;
-      prev.duration_seconds = durationSec(prev.start_time, prev.end_time);
-      prev.merged_count += 1;
-      prev.children.push(childFrom(item));
-      if (item.window_title && !prev.window_title) prev.window_title = item.window_title;
-      if (item.site && !prev.site) prev.site = item.site;
-      const score = item.productivity_score ?? 0;
-      if (score && (!prev.productivity_score || score > prev.productivity_score)) {
-        prev.productivity_score = score;
+    if (prev && (gapSec <= maxGapSec || startMs <= prevEndMs)) {
+      let intervening = false;
+      for (const other of out) {
+        if (mergeKey(other) === key) continue;
+        const oStart = new Date(other.start_time).getTime();
+        const oEnd = new Date(other.end_time).getTime();
+        if (oStart < startMs && oEnd > prevEndMs) {
+          intervening = true;
+          break;
+        }
       }
-      continue;
+      if (!intervening) {
+        const nextEnd = endMs >= prevEndMs ? item.end_time : prev.end_time;
+        prev.end_time = nextEnd;
+        const child = childFrom(item);
+        // Active time = sum of children, not wall-clock span across gaps
+        prev.children.push(child);
+        prev.merged_count = prev.children.length;
+        prev.duration_seconds = prev.children.reduce((n, c) => n + c.duration_seconds, 0);
+        if (child.window_title && !prev.window_title) prev.window_title = child.window_title;
+        if (child.site && !prev.site) prev.site = child.site;
+        if (child.source && !prev.source) prev.source = child.source;
+        const score = child.productivity_score ?? 0;
+        if (score && (!prev.productivity_score || score > prev.productivity_score)) {
+          prev.productivity_score = score;
+        }
+        // Keep category / title from the longest child (more representative than first)
+        let best = prev.children[0];
+        for (const c of prev.children) {
+          if (c.duration_seconds > (best?.duration_seconds ?? 0)) best = c;
+        }
+        if (best?.category) prev.category = best.category;
+        if (best?.window_title) prev.window_title = best.window_title;
+        if (best?.app_name) prev.app_name = best.app_name;
+        continue;
+      }
     }
 
-    out.push({
-      session_id: item.session_id ?? null,
-      start_time: item.start_time,
-      end_time: item.end_time,
-      app_name: item.app_name ?? null,
-      category: item.category ?? null,
-      window_title: item.window_title ?? null,
-      site: item.site ?? null,
-      productivity_score: item.productivity_score ?? null,
-      duration_seconds: item.duration_seconds ?? durationSec(item.start_time, item.end_time),
+    const child = childFrom(item);
+    const row: MergedInterval = {
+      session_id: child.session_id,
+      start_time: child.start_time,
+      end_time: child.end_time,
+      app_name: child.app_name,
+      category: child.category,
+      window_title: child.window_title,
+      site: child.site,
+      source: child.source ?? null,
+      productivity_score: child.productivity_score,
+      duration_seconds: child.duration_seconds,
       merged_count: 1,
-      children: [childFrom(item)],
-    });
+      children: [child],
+    };
+    out.push(row);
+    lastByKey.set(key, row);
   }
 
   return out;
@@ -352,24 +510,114 @@ export function mergeActualSessions(sessions: ActualSession[], maxGapSec = TRACK
         session_id: s.session_id,
         start_time: s.start_time!,
         end_time: s.end_time!,
-        app_name: (s as ActualSession & { app_name?: string }).app_name ?? null,
+        app_name: s.app_name ?? null,
         category: s.category ?? null,
-        window_title: (s as ActualSession & { window_title?: string }).window_title ?? null,
+        window_title: s.window_title ?? null,
+        site: s.site ?? null,
+        source: s.source ?? null,
         productivity_score: s.productivity_score ?? null,
       })),
     maxGapSec,
+  ).map(reconcileMergedInterval);
+}
+
+/** Force-grouper for planner calendar — filters noise apps + merges long gaps.
+ * Sleep (Amazfit) wins over desktop: Cursor/idle inside sleep windows is dropped. */
+export function mergeForCalendar(sessions: ActualSession[]): MergedInterval[] {
+  const sleep = sessions.filter(
+    (s) =>
+      (s.category || "").toLowerCase() === "sleep" ||
+      (s.source || "").toLowerCase() === "wearable_sleep" ||
+      (s.app_name || "").toLowerCase() === "amazfit",
+  );
+  const rest = sessions.filter((s) => !sleep.includes(s));
+  const clippedRest = clipSessionsAgainstSleep(rest, sleep);
+  const mergedRest = mergeActualSessions(clippedRest, CALENDAR_MERGE_GAP_SEC).filter(
+    (m) => m.duration_seconds >= CALENDAR_MIN_DISPLAY_SEC,
+  );
+  const mergedSleep = mergeActualSessions(sleep, CALENDAR_MERGE_GAP_SEC);
+  return [...mergedRest, ...mergedSleep].sort(
+    (a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime(),
   );
 }
 
-/** Force-grouper for planner calendar — filters noise apps + merges long gaps. */
-export function mergeForCalendar(sessions: ActualSession[]): MergedInterval[] {
-  return mergeActualSessions(sessions, CALENDAR_MERGE_GAP_SEC).filter(
-    (m) => m.duration_seconds >= CALENDAR_MIN_DISPLAY_SEC,
-  );
+/** Remove awake tracker pieces that sit inside sleep intervals. */
+export function clipSessionsAgainstSleep(
+  sessions: ActualSession[],
+  sleepSessions: ActualSession[],
+): ActualSession[] {
+  if (!sessions.length || !sleepSessions.length) return sessions;
+  const sleeps = sleepSessions
+    .map((s) => {
+      const a = s.start_time ? new Date(s.start_time).getTime() : NaN;
+      const b = s.end_time ? new Date(s.end_time).getTime() : NaN;
+      return Number.isFinite(a) && Number.isFinite(b) && b > a ? ([a, b] as const) : null;
+    })
+    .filter((x): x is readonly [number, number] => x != null);
+  if (!sleeps.length) return sessions;
+
+  const out: ActualSession[] = [];
+  for (const s of sessions) {
+    const a = s.start_time ? new Date(s.start_time).getTime() : NaN;
+    const b = s.end_time ? new Date(s.end_time).getTime() : NaN;
+    if (!Number.isFinite(a) || !Number.isFinite(b) || b <= a) {
+      out.push(s);
+      continue;
+    }
+    let pieces: Array<[number, number]> = [[a, b]];
+    for (const [ss, se] of sleeps) {
+      const next: Array<[number, number]> = [];
+      for (const [x, y] of pieces) {
+        if (y <= ss || x >= se) {
+          next.push([x, y]);
+          continue;
+        }
+        if (x < ss) next.push([x, ss]);
+        if (y > se) next.push([se, y]);
+      }
+      pieces = next.filter(([x, y]) => y - x >= 45_000);
+    }
+    pieces.forEach(([x, y], i) => {
+      out.push({
+        ...s,
+        session_id: i === 0 && pieces.length === 1 ? s.session_id : `${s.session_id}:awake${i}`,
+        start_time: new Date(x).toISOString(),
+        end_time: new Date(y).toISOString(),
+      });
+    });
+  }
+  return out;
+}
+
+export function shortAppName(name: string | null | undefined): string {
+  if (!name) return "Activity";
+  return name.replace(/\.exe$/i, "").replace(/\.app$/i, "");
+}
+
+/** Human label for a merged tracker/sleep interval (Sleep, not Amazfit). */
+export function intervalDisplayName(m: {
+  app_name?: string | null;
+  category?: string | null;
+  window_title?: string | null;
+  site?: string | null;
+}): string {
+  const cat = (m.category || "").toLowerCase();
+  const app = (m.app_name || "").toLowerCase();
+  if (cat === "sleep" || app === "amazfit") return "Sleep";
+  const site = (m.site || "").trim();
+  if (site && /\./.test(site) && !/\s/.test(site)) return site;
+  if (app.includes(".") && !app.endsWith(".exe") && !app.startsWith("calt_spa")) {
+    return shortAppName(m.app_name);
+  }
+  const implied = appImpliedByWindowTitle(m.window_title);
+  if (implied && m.app_name && !appsLookSame(m.app_name, implied)) {
+    return shortAppName(implied);
+  }
+  return shortAppName(m.app_name || m.category);
 }
 
 export function mergedIntervalLabel(m: MergedInterval): string {
-  const name = m.app_name || m.category || "Activity";
+  const name = intervalDisplayName(m);
   const mins = Math.round(m.duration_seconds / 60);
   const suffix = m.merged_count > 1 ? ` · ${m.merged_count} sessions` : "";
   return `${name} · ${fmtDurationMinutes(mins)}${suffix}`;
@@ -468,9 +716,30 @@ export function actualStackTimeSpan(items: MergedInterval[]): { start: Date; end
   };
 }
 
-export function shortAppName(name: string | null | undefined): string {
-  if (!name) return "Activity";
-  return name.replace(/\.exe$/i, "").replace(/\.app$/i, "");
+/** Clip merged intervals to a local hour window; duration = overlap only. */
+export function intervalsInHour(
+  intervals: MergedInterval[],
+  hourStart: Date,
+): MergedInterval[] {
+  const hs = hourStart.getTime();
+  const he = hs + 60 * 60 * 1000;
+  const out: MergedInterval[] = [];
+  for (const iv of intervals) {
+    const a = parseApiDate(iv.start_time).getTime();
+    const b = parseApiDate(iv.end_time).getTime();
+    const start = Math.max(a, hs);
+    const end = Math.min(b, he);
+    if (end - start < 1000) continue;
+    out.push({
+      ...iv,
+      start_time: new Date(start).toISOString(),
+      end_time: new Date(end).toISOString(),
+      duration_seconds: Math.round((end - start) / 1000),
+      children: iv.children,
+    });
+  }
+  out.sort((x, y) => y.duration_seconds - x.duration_seconds);
+  return out;
 }
 
 export const PRODUCTIVE_THRESHOLD = 60;

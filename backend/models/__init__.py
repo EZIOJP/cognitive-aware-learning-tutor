@@ -23,7 +23,7 @@ from backend.models.app_classification import AppClassificationCache, AppClassif
 from backend.models.category_score import CategoryScore
 from backend.models.coach_memory import CoachMemory
 from backend.models.productivity_policy import ProductivityPolicy
-from backend.models.wearable_daily import WearableDaily
+from backend.models.wearable_daily import WearableDaily, WearableIngestEvent
 
 __all__ = [
     "User",
@@ -60,4 +60,5 @@ __all__ = [
     "CoachMemory",
     "ProductivityPolicy",
     "WearableDaily",
+    "WearableIngestEvent",
 ]

@@ -384,11 +384,11 @@ class TranscriptStudioApp(_AppBase):
         help = ttk.LabelFrame(parent, text="Features", padding=6)
         help.pack(fill=tk.BOTH, expand=True, pady=(12, 0))
         help_text = (
-            "Live Captions — Win+Ctrl+L → data/transcripts/\n"
+            "Live Captions — Win+Ctrl+L, new text only\n"
+            "Whisper — Auto Hindi+English when captions unavailable\n"
             "Parse — collapse caption prefix growth\n"
             "Generate — text chunks; diagrams/code added in final pass\n"
             "Context — PDF/ipynb/md references\n"
-            "Whisper — when captions unavailable\n"
             "Quality preset — slow CPU OK\n"
             "Docs: docs/LOCAL_LLM_NOTES_GUIDE.md\n\n"
             f"Logs: {repo_root() / 'data' / 'logs'}\n"
@@ -421,13 +421,14 @@ class TranscriptStudioApp(_AppBase):
     def _build_capture_step(self, parent: ttk.Frame) -> None:
         intro = ttk.Label(
             parent,
-            text="Capture lecture audio or Windows Live Captions. Saved transcripts go to data/transcripts/.",
+            text="Live Captions = instant (Win+Ctrl+L). Whisper = when captions unavailable or mixed Hindi/English speech. "
+                 "Only new text is saved. Watch the live feed below while you leave it running.",
             wraplength=760,
         )
-        intro.pack(anchor=tk.W, pady=(0, 8))
+        intro.pack(anchor=tk.W, pady=(0, 6))
 
         self.capture_notebook = ttk.Notebook(parent)
-        self.capture_notebook.pack(fill=tk.BOTH, expand=True)
+        self.capture_notebook.pack(fill=tk.BOTH, expand=False)
 
         self.captions_tab = ttk.Frame(self.capture_notebook, padding=4)
         self.transcribe_tab = ttk.Frame(self.capture_notebook, padding=4)
@@ -436,6 +437,17 @@ class TranscriptStudioApp(_AppBase):
 
         self._build_captions_tab()
         self._build_transcribe_tab()
+
+        feed_box = ttk.LabelFrame(parent, text="Live capture feed", padding=6)
+        feed_box.pack(fill=tk.BOTH, expand=True, pady=(8, 0))
+        self.capture_feed_status_var = tk.StringVar(value="Idle — Start Captions or Whisper to see new text here")
+        ttk.Label(feed_box, textvariable=self.capture_feed_status_var, foreground=_UI_MUTED).pack(anchor=tk.W)
+        self.capture_feed = scrolledtext.ScrolledText(
+            feed_box, wrap=tk.WORD, height=10, font=("Consolas", 10), state=tk.DISABLED
+        )
+        self.capture_feed.pack(fill=tk.BOTH, expand=True, pady=(4, 0))
+        self._capture_feed_segment_count = 0
+        self._capture_feed_last_update: float | None = None
 
         nav = ttk.Frame(parent)
         nav.pack(fill=tk.X, pady=(8, 0))
@@ -1351,30 +1363,11 @@ class TranscriptStudioApp(_AppBase):
 
         intro = ttk.Label(
             tab,
-            text="Capture Windows 11 Live Captions (Win+Ctrl+L) while you watch a lecture. "
-                 "Press Start, then Stop when done — the .txt is saved to data/transcripts/. "
-                 "Use Aggressive dedup on the Summarize tab for best results.",
+            text="Instant capture from Windows Live Captions (Win+Ctrl+L). "
+                 "Starts from now — existing panel text is ignored so you avoid duplicates.",
             wraplength=900,
         )
         intro.pack(anchor=tk.W, pady=(0, 8))
-
-        opts = ttk.LabelFrame(tab, text="Capture settings", padding=8)
-        opts.pack(fill=tk.X, pady=(0, 6))
-
-        r1 = ttk.Frame(opts)
-        r1.pack(fill=tk.X)
-        ttk.Label(r1, text="Method").pack(side=tk.LEFT)
-        self.captions_method_var = tk.StringVar(value=self.cfg.captions_method)
-        ttk.Combobox(
-            r1, textvariable=self.captions_method_var,
-            values=["uia", "ocr"], width=8, state="readonly",
-        ).pack(side=tk.LEFT, padx=(6, 16))
-        ttk.Label(r1, text="Poll (sec)").pack(side=tk.LEFT)
-        self.captions_poll_var = tk.StringVar(value=str(self.cfg.captions_poll_interval))
-        ttk.Entry(r1, textvariable=self.captions_poll_var, width=8).pack(side=tk.LEFT, padx=(6, 16))
-        ttk.Label(r1, text="Max duration (sec, 0=until Stop)").pack(side=tk.LEFT)
-        self.captions_duration_var = tk.StringVar(value=str(self.cfg.captions_duration_sec))
-        ttk.Entry(r1, textvariable=self.captions_duration_var, width=8).pack(side=tk.LEFT, padx=6)
 
         actions = ttk.Frame(tab)
         actions.pack(fill=tk.X, pady=(0, 6))
@@ -1393,12 +1386,36 @@ class TranscriptStudioApp(_AppBase):
         )
         self.captions_send_btn.pack(side=tk.LEFT, padx=(16, 0))
 
+        self.captions_advanced_var = tk.BooleanVar(value=False)
+        ttk.Checkbutton(
+            tab,
+            text="Show advanced",
+            variable=self.captions_advanced_var,
+            command=self._toggle_captions_advanced,
+        ).pack(anchor=tk.W, pady=(4, 0))
+
+        self.captions_advanced_frame = ttk.LabelFrame(tab, text="Advanced", padding=8)
+        r1 = ttk.Frame(self.captions_advanced_frame)
+        r1.pack(fill=tk.X)
+        ttk.Label(r1, text="Method").pack(side=tk.LEFT)
+        self.captions_method_var = tk.StringVar(value=self.cfg.captions_method)
+        ttk.Combobox(
+            r1, textvariable=self.captions_method_var,
+            values=["uia", "ocr"], width=8, state="readonly",
+        ).pack(side=tk.LEFT, padx=(6, 16))
+        ttk.Label(r1, text="Poll (sec)").pack(side=tk.LEFT)
+        self.captions_poll_var = tk.StringVar(value=str(self.cfg.captions_poll_interval))
+        ttk.Entry(r1, textvariable=self.captions_poll_var, width=8).pack(side=tk.LEFT, padx=(6, 16))
+        ttk.Label(r1, text="Max duration (sec, 0=until Stop)").pack(side=tk.LEFT)
+        self.captions_duration_var = tk.StringVar(value=str(self.cfg.captions_duration_sec))
+        ttk.Entry(r1, textvariable=self.captions_duration_var, width=8).pack(side=tk.LEFT, padx=6)
+
         auto_frame = ttk.LabelFrame(tab, text="Lecture Auto (unattended)", padding=8)
         auto_frame.pack(fill=tk.X, pady=(8, 0))
+        self._captions_auto_frame = auto_frame
         ttk.Label(
             auto_frame,
-            text="One button: capture live captions (~2h) → auto-stop when silent → parse → "
-                 "textbook-grounded RAG notes → save → quit Studio (LM Studio keeps running).",
+            text="One button: capture live captions → auto-stop when silent → parse → RAG notes → save.",
             wraplength=900,
             foreground=_UI_MUTED,
         ).pack(anchor=tk.W, pady=(0, 6))
@@ -1434,28 +1451,89 @@ class TranscriptStudioApp(_AppBase):
             anchor=tk.W, pady=(6, 0)
         )
 
+    def _toggle_captions_advanced(self) -> None:
+        if self.captions_advanced_var.get():
+            self.captions_advanced_frame.pack(
+                fill=tk.X, pady=(4, 6), before=self._captions_auto_frame
+            )
+        else:
+            self.captions_advanced_frame.pack_forget()
+
     def _build_transcribe_tab(self) -> None:
         tab = self.transcribe_tab
 
         intro = ttk.Label(
             tab,
-            text="Whisper turns speech into text. File mode transcribes a recording; Live mic mode listens "
-                 "and transcribes in chunks (uses faster-whisper, ~10s delay — not instant like Win+Ctrl+L). "
-                 "For instant on-screen captions while watching video, use the Live Captions tab.",
+            text="Whisper alternative when Live Captions is unavailable. "
+                 "One multilingual model with Auto language handles Hindi + English (Hinglish) lectures.",
             wraplength=900,
         )
         intro.pack(anchor=tk.W, pady=(0, 8))
 
-        whisper_frame = ttk.LabelFrame(tab, text="From audio file", padding=8)
-        whisper_frame.pack(fill=tk.X, pady=(0, 6))
+        live_frame = ttk.LabelFrame(tab, text="Live Whisper", padding=8)
+        live_frame.pack(fill=tk.X, pady=(0, 6))
+        l1 = ttk.Frame(live_frame)
+        l1.pack(fill=tk.X)
+        ttk.Label(l1, text="Audio source").pack(side=tk.LEFT)
+        self.live_source_var = tk.StringVar(value=self._live_source_label(self.cfg.whisper_live_source))
+        self.live_source_combo = ttk.Combobox(
+            l1,
+            textvariable=self.live_source_var,
+            values=["System audio (speakers)", "Microphone"],
+            width=24,
+            state="readonly",
+        )
+        self.live_source_combo.pack(side=tk.LEFT, padx=(6, 16))
+        ttk.Label(l1, text="Language").pack(side=tk.LEFT)
+        self.whisper_lang_var = tk.StringVar()
+        self.whisper_lang_combo = ttk.Combobox(
+            l1,
+            textvariable=self.whisper_lang_var,
+            values=["Auto (Hindi + English)", "English (en)", "Hindi (hi)"],
+            width=22,
+            state="readonly",
+        )
+        self.whisper_lang_combo.pack(side=tk.LEFT, padx=(6, 16))
+        self.live_start_btn = ttk.Button(l1, text="Start live", command=self._run_live_whisper_start)
+        self.live_start_btn.pack(side=tk.LEFT)
+        self.live_stop_btn = ttk.Button(
+            l1, text="Stop & save", command=self._run_live_whisper_stop, state=tk.DISABLED
+        )
+        self.live_stop_btn.pack(side=tk.LEFT, padx=(8, 0))
+        ttk.Button(l1, text="Check live deps", command=self._check_live_whisper).pack(side=tk.LEFT, padx=(8, 0))
+        ttk.Label(
+            live_frame,
+            text="System audio = what you hear (YouTube/Zoom). ~10s chunk delay. Live Captions is instant.",
+            font=("Segoe UI", 8),
+            foreground="#888",
+            wraplength=880,
+        ).pack(anchor=tk.W, pady=(4, 0))
 
-        w1 = ttk.Frame(whisper_frame)
+        file_actions = ttk.Frame(tab)
+        file_actions.pack(fill=tk.X, pady=(0, 6))
+        self.audio_var = tk.StringVar()
+        ttk.Entry(file_actions, textvariable=self.audio_var).pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 6))
+        ttk.Button(file_actions, text="Browse audio…", command=self._browse_audio).pack(side=tk.LEFT)
+        self.transcribe_btn = ttk.Button(file_actions, text="Transcribe → .txt", command=self._run_transcribe)
+        self.transcribe_btn.pack(side=tk.LEFT, padx=(8, 0))
+        ttk.Button(file_actions, text="Check Whisper", command=self._check_whisper).pack(side=tk.LEFT, padx=(6, 0))
+
+        self.whisper_advanced_var = tk.BooleanVar(value=False)
+        ttk.Checkbutton(
+            tab,
+            text="Show advanced",
+            variable=self.whisper_advanced_var,
+            command=self._toggle_whisper_advanced,
+        ).pack(anchor=tk.W, pady=(4, 0))
+
+        self.whisper_advanced_frame = ttk.LabelFrame(tab, text="Advanced", padding=8)
+        w1 = ttk.Frame(self.whisper_advanced_frame)
         w1.pack(fill=tk.X)
         ttk.Label(w1, text="Engine").pack(side=tk.LEFT)
         self.whisper_engine_var = tk.StringVar()
         ttk.Combobox(
             w1, textvariable=self.whisper_engine_var,
-            values=["transformers", "faster-whisper"], width=14, state="readonly",
+            values=["faster-whisper", "transformers"], width=14, state="readonly",
         ).pack(side=tk.LEFT, padx=(6, 12))
         ttk.Label(w1, text="Device").pack(side=tk.LEFT)
         self.whisper_device_var = tk.StringVar()
@@ -1469,8 +1547,11 @@ class TranscriptStudioApp(_AppBase):
             w1, textvariable=self.whisper_task_var,
             values=["transcribe", "translate"], width=10, state="readonly",
         ).pack(side=tk.LEFT, padx=6)
+        ttk.Label(w1, text="Chunk (sec)").pack(side=tk.LEFT, padx=(12, 0))
+        self.live_chunk_var = tk.StringVar(value=str(self.cfg.whisper_live_chunk_sec))
+        ttk.Entry(w1, textvariable=self.live_chunk_var, width=8).pack(side=tk.LEFT, padx=(6, 0))
 
-        w2 = ttk.Frame(whisper_frame)
+        w2 = ttk.Frame(self.whisper_advanced_frame)
         w2.pack(fill=tk.X, pady=(6, 0))
         ttk.Label(w2, text="Model").pack(side=tk.LEFT)
         self.whisper_preset_var = tk.StringVar()
@@ -1482,73 +1563,25 @@ class TranscriptStudioApp(_AppBase):
         self.whisper_preset_combo.pack(side=tk.LEFT, padx=(6, 0), fill=tk.X, expand=True)
         self.whisper_preset_combo.bind("<<ComboboxSelected>>", self._on_whisper_preset)
 
-        w3 = ttk.Frame(whisper_frame)
+        w3 = ttk.Frame(self.whisper_advanced_frame)
         w3.pack(fill=tk.X, pady=(6, 0))
         ttk.Label(w3, text="Model ID").pack(side=tk.LEFT)
         self.whisper_model_var = tk.StringVar()
         ttk.Entry(w3, textvariable=self.whisper_model_var).pack(side=tk.LEFT, padx=6, fill=tk.X, expand=True)
-        ttk.Label(w3, text="Lang").pack(side=tk.LEFT, padx=(8, 0))
-        self.whisper_lang_var = tk.StringVar()
-        ttk.Entry(w3, textvariable=self.whisper_lang_var, width=10).pack(side=tk.LEFT, padx=4)
 
-        w4 = ttk.Frame(whisper_frame)
-        w4.pack(fill=tk.X, pady=(6, 0))
-        self.audio_var = tk.StringVar()
-        ttk.Entry(w4, textvariable=self.audio_var).pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 6))
-        ttk.Button(w4, text="Browse audio…", command=self._browse_audio).pack(side=tk.LEFT)
-        self.transcribe_btn = ttk.Button(w4, text="Transcribe → .txt", command=self._run_transcribe)
-        self.transcribe_btn.pack(side=tk.LEFT, padx=(8, 0))
-        ttk.Button(w4, text="Check Whisper", command=self._check_whisper).pack(side=tk.LEFT, padx=(6, 0))
-
-        live_frame = ttk.LabelFrame(tab, text="Live Whisper (chunks)", padding=8)
-        live_frame.pack(fill=tk.X, pady=(0, 6))
-
-        l1 = ttk.Frame(live_frame)
-        l1.pack(fill=tk.X)
-        ttk.Label(l1, text="Audio source").pack(side=tk.LEFT)
-        self.live_source_var = tk.StringVar(value=self._live_source_label(self.cfg.whisper_live_source))
-        self.live_source_combo = ttk.Combobox(
-            l1,
-            textvariable=self.live_source_var,
-            values=["System audio (speakers)", "Microphone"],
-            width=24,
-            state="readonly",
-        )
-        self.live_source_combo.pack(side=tk.LEFT, padx=(6, 16))
-        ttk.Label(l1, text="Chunk (sec)").pack(side=tk.LEFT)
-        self.live_chunk_var = tk.StringVar(value=str(self.cfg.whisper_live_chunk_sec))
-        ttk.Entry(l1, textvariable=self.live_chunk_var, width=8).pack(side=tk.LEFT, padx=(6, 16))
-        self.live_start_btn = ttk.Button(l1, text="Start live", command=self._run_live_whisper_start)
-        self.live_start_btn.pack(side=tk.LEFT)
-        self.live_stop_btn = ttk.Button(
-            l1, text="Stop & save", command=self._run_live_whisper_stop, state=tk.DISABLED
-        )
-        self.live_stop_btn.pack(side=tk.LEFT, padx=(8, 0))
-        ttk.Button(l1, text="Check live deps", command=self._check_live_whisper).pack(side=tk.LEFT, padx=(8, 0))
-        ttk.Label(
-            live_frame,
-            text="System audio captures what you hear (YouTube, Zoom, etc.) via Windows WASAPI loopback — "
-                 "no mic or Stereo Mix needed. Still ~10s chunk delay; for instant captions use Live Captions tab.",
-            font=("Segoe UI", 8),
-            foreground="#888",
-            wraplength=880,
-        ).pack(anchor=tk.W, pady=(4, 0))
-
-        snap_frame = ttk.LabelFrame(tab, text="Slide capture (optional, during file or live transcribe)", padding=8)
-        snap_frame.pack(fill=tk.X, pady=(0, 6))
-
-        s1 = ttk.Frame(snap_frame)
-        s1.pack(fill=tk.X)
+        snap_frame = ttk.Frame(self.whisper_advanced_frame)
+        snap_frame.pack(fill=tk.X, pady=(8, 0))
         self.capture_var = tk.BooleanVar(value=self.cfg.capture_enabled)
-        ttk.Checkbutton(s1, text="Capture screenshots", variable=self.capture_var).pack(side=tk.LEFT)
-        ttk.Label(s1, text="Auto every (sec)").pack(side=tk.LEFT, padx=(16, 0))
+        ttk.Checkbutton(snap_frame, text="Capture screenshots", variable=self.capture_var).pack(side=tk.LEFT)
+        ttk.Label(snap_frame, text="Auto every (sec)").pack(side=tk.LEFT, padx=(16, 0))
         self.capture_interval_var = tk.StringVar(value=str(self.cfg.capture_auto_interval_sec))
-        ttk.Entry(s1, textvariable=self.capture_interval_var, width=8).pack(side=tk.LEFT, padx=4)
-        self.snap_now_btn = ttk.Button(s1, text="Snap now", command=self._snap_now, state=tk.DISABLED)
+        ttk.Entry(snap_frame, textvariable=self.capture_interval_var, width=8).pack(side=tk.LEFT, padx=4)
+        self.snap_now_btn = ttk.Button(snap_frame, text="Snap now", command=self._snap_now, state=tk.DISABLED)
         self.snap_now_btn.pack(side=tk.LEFT, padx=(12, 0))
 
         post = ttk.Frame(tab)
         post.pack(fill=tk.X, pady=(6, 0))
+        self._whisper_post_frame = post
         self.send_summarize_btn = ttk.Button(
             post,
             text="Send last transcript → Summarize tab",
@@ -1556,6 +1589,77 @@ class TranscriptStudioApp(_AppBase):
             state=tk.DISABLED,
         )
         self.send_summarize_btn.pack(side=tk.LEFT)
+
+    def _toggle_whisper_advanced(self) -> None:
+        if self.whisper_advanced_var.get():
+            self.whisper_advanced_frame.pack(
+                fill=tk.X, pady=(4, 6), before=self._whisper_post_frame
+            )
+        else:
+            self.whisper_advanced_frame.pack_forget()
+
+    def _whisper_lang_label(self, code: str) -> str:
+        c = (code or "").strip().lower()
+        if c in ("en", "english"):
+            return "English (en)"
+        if c in ("hi", "hindi"):
+            return "Hindi (hi)"
+        return "Auto (Hindi + English)"
+
+    def _whisper_lang_code(self, label: str) -> str:
+        text = (label or "").strip().lower()
+        if text.startswith("english") or text == "en":
+            return "en"
+        if text.startswith("hindi") or text == "hi":
+            return "hi"
+        return ""
+
+    def _clear_capture_feed(self) -> None:
+        if not hasattr(self, "capture_feed"):
+            return
+        self._capture_feed_segment_count = 0
+        self._capture_feed_last_update = None
+        self.capture_feed.configure(state=tk.NORMAL)
+        self.capture_feed.delete("1.0", tk.END)
+        self.capture_feed.configure(state=tk.DISABLED)
+        self.capture_feed_status_var.set("Listening… waiting for new speech")
+
+    def _append_capture_feed(self, text: str) -> None:
+        if not hasattr(self, "capture_feed") or not text.strip():
+            return
+        import time as _time
+
+        self._capture_feed_segment_count = getattr(self, "_capture_feed_segment_count", 0) + 1
+        self._capture_feed_last_update = _time.time()
+        self.capture_feed.configure(state=tk.NORMAL)
+        self.capture_feed.insert(tk.END, text.strip() + "\n")
+        self.capture_feed.see(tk.END)
+        self.capture_feed.configure(state=tk.DISABLED)
+        self._refresh_capture_feed_status()
+
+    def _refresh_capture_feed_status(self, quiet_sec: float | None = None) -> None:
+        if not hasattr(self, "capture_feed_status_var"):
+            return
+        from datetime import datetime as _dt
+
+        n = getattr(self, "_capture_feed_segment_count", 0)
+        if quiet_sec is not None:
+            self.capture_feed_status_var.set(
+                f"Capturing · {n} segments · quiet {quiet_sec:.0f}s (still listening)"
+            )
+            return
+        last = getattr(self, "_capture_feed_last_update", None)
+        if last:
+            stamp = _dt.fromtimestamp(last).strftime("%H:%M:%S")
+            self.capture_feed_status_var.set(f"Capturing · {n} segments · last update {stamp}")
+        else:
+            self.capture_feed_status_var.set(f"Capturing · {n} segments · waiting for speech")
+
+    def _captions_heartbeat(self, count: int, idle_sec: float) -> None:
+        self._capture_feed_segment_count = count
+        self._refresh_capture_feed_status(quiet_sec=idle_sec)
+        self.progress_status_var.set(f"Capturing… {count} segments · quiet {idle_sec:.0f}s")
+
 
     # ------------------------------------------------------------------ Config
 
@@ -1590,7 +1694,7 @@ class TranscriptStudioApp(_AppBase):
         self.whisper_engine_var.set(self.cfg.whisper_engine)
         self.whisper_device_var.set(self.cfg.whisper_device)
         self.whisper_task_var.set(self.cfg.whisper_task)
-        self.whisper_lang_var.set(self.cfg.whisper_language)
+        self.whisper_lang_var.set(self._whisper_lang_label(self.cfg.whisper_language))
         self.whisper_model_var.set(self.cfg.whisper_model)
         self._sync_whisper_preset_from_model()
         if self.cfg.last_audio_file and Path(self.cfg.last_audio_file).is_file():
@@ -1653,7 +1757,7 @@ class TranscriptStudioApp(_AppBase):
         self.cfg.whisper_engine = self.whisper_engine_var.get()
         self.cfg.whisper_model = self.whisper_model_var.get().strip()
         self.cfg.whisper_device = self.whisper_device_var.get()
-        self.cfg.whisper_language = self.whisper_lang_var.get().strip()
+        self.cfg.whisper_language = self._whisper_lang_code(self.whisper_lang_var.get())
         self.cfg.whisper_task = self.whisper_task_var.get()
         self.cfg.last_audio_file = self.audio_var.get().strip()
         self.cfg.captions_method = self.captions_method_var.get()
@@ -2146,18 +2250,24 @@ class TranscriptStudioApp(_AppBase):
 
         self._captions_stop.clear()
         self._caption_segment_count = 0
+        self._clear_capture_feed()
         self._captions_scraper = LiveCaptionsScraper(
             poll_interval=poll,
             method=self.captions_method_var.get(),
             on_segment=lambda text: self.after(0, lambda t=text: self._captions_segment(t)),
+            on_heartbeat=lambda n, idle: self.after(
+                0, lambda c=n, q=idle: self._captions_heartbeat(c, q)
+            ),
+            on_ready=lambda n: self.after(0, lambda c=n: self._captions_ready(c)),
         )
         self._captions_running = True
         self.captions_start_btn.configure(state=tk.DISABLED)
         self.captions_stop_btn.configure(state=tk.NORMAL)
         self._progress_begin("Capturing Live Captions…", indeterminate=True)
-        self._cllog("Connecting to LiveCaptions.exe…")
-        self._cllog("Enable captions with Win+Ctrl+L if needed.")
+        self._cllog("Connecting to Windows Live Captions (LiveCaptions.exe)…")
+        self._cllog("If the black caption bar is missing, press Win+Ctrl+L. DeLive/YouTube captions are ignored.")
         self.status_var.set("Capturing Live Captions…")
+        self.capture_feed_status_var.set("Connecting to Windows Live Captions (Win+Ctrl+L)…")
 
         def work() -> None:
             try:
@@ -2168,16 +2278,63 @@ class TranscriptStudioApp(_AppBase):
                 )
             except Exception as exc:
                 err = f"{type(exc).__name__}: {exc}"
-                self.after(0, lambda msg=err: self._cllog(f"Error: {msg}"))
+                self.after(0, lambda msg=err: self._on_captions_error(msg))
             finally:
                 self.after(0, self._finish_captions)
 
-        threading.Thread(target=work, daemon=True).start()
+        threading.Thread(target=work, daemon=True, name="live-captions").start()
+
+    def _captions_ready(self, seeded_chars: int) -> None:
+        self.capture_feed_status_var.set(
+            f"Listening · ignored {seeded_chars:,} chars already on screen · "
+            "feed stays empty until NEW speech appears"
+        )
+        self.progress_status_var.set("Listening for new captions…")
+        self._cllog(
+            f"Connected — baseline seeded ({seeded_chars:,} chars ignored). "
+            "New speech will appear in the live feed."
+        )
+        # Show a clear placeholder line so the box is not "blank and confusing"
+        if hasattr(self, "capture_feed"):
+            self.capture_feed.configure(state=tk.NORMAL)
+            self.capture_feed.delete("1.0", tk.END)
+            self.capture_feed.insert(
+                tk.END,
+                "(Waiting for new speech… existing Live Captions text was ignored on purpose.)\n",
+            )
+            self.capture_feed.configure(state=tk.DISABLED)
+
+    def _on_captions_error(self, msg: str) -> None:
+        self._cllog(f"Error: {msg}")
+        if hasattr(self, "capture_feed_status_var"):
+            self.capture_feed_status_var.set(f"Failed to connect — {msg}")
+        tip = (
+            "Tip: press Win+Ctrl+L to open Windows Live Captions (black bar), "
+            "then Start capture again.\n"
+            "Studio does not read DeLive, YouTube, or browser captions."
+        )
+        if "pytesseract" in msg.lower() or "OCR" in msg:
+            tip = (
+                "Tip: Advanced → Method should be **uia** (default), not ocr.\n"
+                "OCR needs Tesseract + Pillow and is optional. Use Win+Ctrl+L + uia."
+            )
+        messagebox.showerror(
+            "Live Captions",
+            f"Could not capture.\n\n{msg}\n\n{tip}",
+        )
 
     def _captions_segment(self, text: str) -> None:
         self._caption_segment_count = getattr(self, "_caption_segment_count", 0) + 1
         n = self._caption_segment_count
         self.progress_status_var.set(f"Capturing… {n} segments")
+        # Clear the waiting placeholder on first real segment
+        if n == 1 and hasattr(self, "capture_feed"):
+            self.capture_feed.configure(state=tk.NORMAL)
+            body = self.capture_feed.get("1.0", tk.END)
+            if "Waiting for new speech" in body:
+                self.capture_feed.delete("1.0", tk.END)
+            self.capture_feed.configure(state=tk.DISABLED)
+        self._append_capture_feed(text)
         if n <= 15 or n % 30 == 0:
             snippet = text if len(text) <= 120 else text[:117] + "…"
             self._log(f"+ {snippet}")
@@ -2199,6 +2356,8 @@ class TranscriptStudioApp(_AppBase):
         if not scraper or not scraper.segments:
             self._cllog("No captions captured.")
             self.status_var.set("Live Captions stopped — no text")
+            if hasattr(self, "capture_feed_status_var"):
+                self.capture_feed_status_var.set("Stopped — no new text captured")
             return
 
         out_path = scraper.save(output_dir=self.cfg.transcripts_path())
@@ -2207,6 +2366,10 @@ class TranscriptStudioApp(_AppBase):
         self._enable_send_buttons(True)
         self._cllog(f"Saved {len(scraper.segments)} segments → {out_path}")
         self.status_var.set(f"Live Captions saved — {out_path.name}")
+        if hasattr(self, "capture_feed_status_var"):
+            self.capture_feed_status_var.set(
+                f"Saved {len(scraper.segments)} segments → {out_path.name}"
+            )
 
         self._maybe_open_summarize(
             from_captions=True,
@@ -2404,10 +2567,12 @@ class TranscriptStudioApp(_AppBase):
                 ))
 
         self._live_whisper_stop.clear()
+        self._clear_capture_feed()
+        lang_code = self._whisper_lang_code(self.whisper_lang_var.get())
         self._live_whisper_session = LiveWhisperSession(
             model_id=self.whisper_model_var.get().strip() or "large-v3-turbo",
             device=self.whisper_device_var.get(),
-            language=self.whisper_lang_var.get().strip() or None,
+            language=lang_code or None,
             task=self.whisper_task_var.get(),
             chunk_seconds=chunk,
             audio_source=audio_src,
@@ -2420,12 +2585,14 @@ class TranscriptStudioApp(_AppBase):
         if use_capture:
             self.snap_now_btn.configure(state=tk.NORMAL)
         src_label = "system audio" if audio_src == "system" else "microphone"
+        lang_label = self.whisper_lang_var.get().strip() or "Auto (Hindi + English)"
         self._progress_begin(f"Live Whisper ({src_label})…", indeterminate=True)
-        self._tlog(f"Live Whisper started ({src_label}) — chunk every {chunk:.0f}s")
+        self._tlog(f"Live Whisper started ({src_label}, {lang_label}) — chunk every {chunk:.0f}s")
         self.status_var.set("Live Whisper listening…")
+        self.capture_feed_status_var.set(f"Live Whisper · {lang_label} · listening…")
 
         def on_text(text: str) -> None:
-            self.after(0, lambda t=text: self._tlog(f"» {t}"))
+            self.after(0, lambda t=text: self._live_whisper_segment(t))
 
         def on_progress(msg: str) -> None:
             self.after(0, lambda m=msg: self._on_operation_progress(m))
@@ -2444,6 +2611,10 @@ class TranscriptStudioApp(_AppBase):
                 self.after(0, lambda: self._finish_live_whisper(session))
 
         threading.Thread(target=work, daemon=True).start()
+
+    def _live_whisper_segment(self, text: str) -> None:
+        self._append_capture_feed(text)
+        self._tlog(f"» {text}")
 
     def _run_live_whisper_stop(self) -> None:
         if not self._live_whisper_running:
@@ -2561,7 +2732,7 @@ class TranscriptStudioApp(_AppBase):
                     engine=self.whisper_engine_var.get(),
                     model_id=self.whisper_model_var.get().strip(),
                     device=self.whisper_device_var.get(),
-                    language=self.whisper_lang_var.get().strip() or None,
+                    language=self._whisper_lang_code(self.whisper_lang_var.get()) or None,
                     task=self.whisper_task_var.get(),
                     on_progress=on_progress,
                 )

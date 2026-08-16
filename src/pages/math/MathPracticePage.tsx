@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router";
 import { ArrowLeft, CheckCircle2, RefreshCw, XCircle } from "lucide-react";
-import { MathGridCanvas, type MathCanvasHandle } from "../../components/math-canvas";
+import { MathGridCanvas, useIdleMathOcr, type MathCanvasHandle } from "../../components/math-canvas";
 import { AITutorIntervention } from "../../app/components/AITutorIntervention";
 import { PostSessionDiagnostics } from "../../app/components/PostSessionDiagnostics";
 import { Button } from "../../app/components/ui/button";
@@ -39,7 +39,7 @@ function normalizeAnswer(v: string) {
 export function MathPracticePage() {
   const { topicId = "algebra" } = useParams();
   const topic = getMathTopic(topicId);
-  const { token } = useAuth();
+  const { token, isAuthenticated } = useAuth();
   const { burst } = useEaster();
   const {
     handleCanvasChange,
@@ -50,6 +50,8 @@ export function MathPracticePage() {
     intervention,
     handleInterventionDismiss,
     handleInterventionResponse,
+    handleInterventionConfirmLatex,
+    handleInterventionCorrectLatex,
     showDiagnostics,
     setShowDiagnostics,
     diagnosticsSummary,
@@ -61,6 +63,12 @@ export function MathPracticePage() {
   const [tutorUsesLlm, setTutorUsesLlm] = useState(false);
   const [tutorLoading, setTutorLoading] = useState(false);
   const canvasRef = useRef<MathCanvasHandle>(null);
+  const [canvasStamp, setCanvasStamp] = useState("");
+  const idle = useIdleMathOcr(canvasRef, {
+    enabled: true,
+    canvasStamp,
+    authenticated: isAuthenticated,
+  });
 
   const localSet = LOCAL_QUESTION_SETS[topicId];
   const useLocal = Boolean(localSet?.length);
@@ -148,6 +156,7 @@ export function MathPracticePage() {
     const bridge = {
       exportPng: () => canvasRef.current?.exportPng() ?? Promise.resolve(null),
       exportPaths: () => canvasRef.current?.exportPaths() ?? Promise.resolve(null),
+      exportStrokeMetrics: () => canvasRef.current?.exportStrokeMetrics?.() ?? null,
       getEraserEventCount: () => canvasRef.current?.getEraserEventCount() ?? 0,
       resetEraserCount: () => canvasRef.current?.resetEraserCount(),
     };
@@ -158,6 +167,14 @@ export function MathPracticePage() {
       registerCanvasBridge(null);
     };
   }, [registerCanvasExporter, registerCanvasBridge]);
+
+  const onCanvasStamp = useCallback(
+    (stamp: string) => {
+      setCanvasStamp(stamp || `t-${Date.now()}`);
+      handleCanvasChange(stamp);
+    },
+    [handleCanvasChange]
+  );
 
   const submitLocal = () => {
     if (!currentLocal || !answer.trim()) return;
@@ -445,10 +462,28 @@ export function MathPracticePage() {
         </div>
 
         {/* Right: fixed-grid math canvas */}
-        <div className="flex-1 min-h-[280px] min-w-0">
+        <div className="flex-1 min-h-[280px] min-w-0 flex flex-col gap-2">
+          {(idle.ocr?.latex || idle.busy) && (
+            <div className="shrink-0 text-xs rounded-lg border px-3 py-2 bg-muted/40 flex flex-wrap items-center gap-2">
+              {idle.busy && <span className="text-muted-foreground">Reading last line…</span>}
+              {idle.ocr?.latex && (
+                <>
+                  <span className="text-muted-foreground">Board:</span>
+                  <code className="font-mono break-all">{idle.ocr.latex}</code>
+                  <Badge variant="outline">{Math.round((idle.ocr.confidence || 0) * 100)}%</Badge>
+                  {idle.ocr.lines && idle.ocr.lines.length > 1 && (
+                    <Badge variant="secondary">{idle.ocr.lines.length} lines</Badge>
+                  )}
+                  {idle.needsConfirm && (
+                    <span className="text-amber-700 dark:text-amber-400">Confirm reading if unsure</span>
+                  )}
+                </>
+              )}
+            </div>
+          )}
           <MathGridCanvas
             ref={canvasRef}
-            onCanvasChange={handleCanvasChange}
+            onCanvasChange={onCanvasStamp}
             onEraserStroke={notifyEraserStroke}
           />
         </div>
@@ -457,7 +492,7 @@ export function MathPracticePage() {
       <AITutorIntervention
         isVisible={showIntervention}
         intervention={
-          intervention.message
+          intervention.message || intervention.latex
             ? {
                 message: intervention.message,
                 question: intervention.question,
@@ -465,11 +500,16 @@ export function MathPracticePage() {
                 latex: intervention.latex,
                 incompleteStep: intervention.incompleteStep,
                 confidence: intervention.confidence,
+                structuralConfidence: intervention.structuralConfidence,
+                tutorSilent: intervention.tutorSilent,
+                sessionSnapshotId: intervention.sessionSnapshotId,
               }
             : null
         }
         onDismiss={handleInterventionDismiss}
         onRespond={handleInterventionResponse}
+        onConfirmLatex={handleInterventionConfirmLatex}
+        onCorrectLatex={handleInterventionCorrectLatex}
       />
 
       {showDiagnostics && (

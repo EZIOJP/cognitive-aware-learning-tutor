@@ -13,7 +13,7 @@ Related: [SETUP_AND_COMMANDS.md](./SETUP_AND_COMMANDS.md) · [TROUBLESHOOTING.md
 | **Git** | any recent | Clone the repo |
 | **Python** | **3.10 – 3.12** (3.11 ideal) | 3.13+ may break `pix2tex` / some wheels on Windows |
 | **Node.js** | **20 LTS+** | Includes `npm` |
-| **Chrome or Edge** | recent | SelfTracker extension (optional) |
+| **Microsoft Edge** | recent | SelfTracker: load unpacked `selftracker-extension/` (Edge-only) |
 | **Webcam** | optional | Python focus mirror only |
 
 ### OS-specific system packages (usually auto via pip)
@@ -101,6 +101,8 @@ cp .env.example .env
 | `mediapipe` | Python focus mirror (`face_tracker.py`) |
 | `httpx`, `requests` | Ollama HTTP |
 | `pytest` | Tests |
+
+**Voice agent (optional):** `pip install edge-tts` for Microsoft neural TTS (default `en-GB-RyanNeural`). Without it, tracker still runs — TTS falls back to Piper then Windows SAPI. Env: `VOICE_AGENT_TTS`, `VOICE_AGENT_VOICE`.
 
 Install:
 
@@ -264,14 +266,21 @@ Revisions through **`0006_user_features`**. See [MIGRATIONS.md](./MIGRATIONS.md)
 
 ---
 
-## 8. Chrome extension (optional)
+## 8. SelfTracker extension (Edge only)
 
-1. Start API (`run.bat` or `./scripts/run_all.sh`).
-2. Chrome → `chrome://extensions` → Developer mode → **Load unpacked**.
-3. Select folder: `selftracker-extension/`.
-4. Sign in to the app; Life Tracker widget reads `GET /api/behavior/stats`.
+1. Start API (`run.bat`). Arm **Hard-block** in Productivity Policy when you want locks.
+2. **Edge:** `edge://extensions` → Load unpacked → `selftracker-extension/`  
+   or `scripts\launch_selftracker_edge.bat`
+3. Policy comes from `GET /api/behavior/distraction-gate` → `browser` (+ `morning`):
+   - **Allow:** Colab, Scaler, GitHub, localhost, docs, Stack Overflow, …
+   - **Block porn** + **keyword filters** (URL/title) + **YouTube/Netflix** while bible/planning/study
+   - Morning `next=bible` → soft-land on `/bible`; `next=plan` → `/productivity`
+   - Desktop: **Edge only** while enforcing; other browsers soft-lock + canned voice (no kill)
+4. After pulling extension updates: **Reload** on `edge://extensions` (v1.5.3+). Restart the API + desktop tracker so keywords / NSFW / voice alerts are live.
 
-Extension connects to `ws://localhost:8000/ws/behavior`.
+**Intervals (keep light):** extension gate ~4s while browsing (1 min idle backup); keyword = string match only; NSFW screen ~60s CPU when Armed; speak alerts ~1/45s canned lines (`block_dialogues.py`). Disable NSFW: `NSFW_SCREEN_SCAN=0`. Gaming silence: `VOICE_AGENT_ENABLED=0`.
+
+**Not implemented:** keylogging, continuous webcam, GPU frame-by-frame NSFW, LLM narrations for blocks.
 
 ---
 

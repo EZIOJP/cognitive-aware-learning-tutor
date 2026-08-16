@@ -1,15 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
 import { Loader2, RefreshCw, Watch } from "lucide-react";
 import {
-  fetchWearablePlans,
   fetchWearableStatus,
   getWearableToken,
-  pingWearableWithPlans,
   postWearableIngest,
   setWearableToken,
-  type WearablePlan,
-  type WearableSyncStatus,
 } from "../../api/wearablesClient";
+import { WatchDayDumpCard } from "../life/WatchDayDumpCard";
 import { resolveApiUrl } from "../../utils/resolveBackendUrl";
 
 function fmtWhen(iso?: string | null): string {
@@ -27,15 +24,31 @@ function fmtWhen(iso?: string | null): string {
   }
 }
 
+async function pingWearableHealth(): Promise<boolean> {
+  const base = resolveApiUrl().replace(/\/$/, "");
+  const token = getWearableToken();
+  const res = await fetch(`${base}/api/wearables/zepp/health`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "X-CALT-Wearable-Key": token,
+    },
+  });
+  if (!res.ok) return false;
+  const data = (await res.json()) as { ok?: boolean };
+  return !!data.ok;
+}
+
 export function WearablesSyncPanel() {
   const [token, setToken] = useState(() => getWearableToken());
-  const [status, setStatus] = useState<WearableSyncStatus | null>(null);
-  const [plans, setPlans] = useState<WearablePlan[]>([]);
+  const [status, setStatus] = useState<Awaited<
+    ReturnType<typeof fetchWearableStatus>
+  > | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [watching, setWatching] = useState(true);
   const [flash, setFlash] = useState(false);
   const [lastSeenAt, setLastSeenAt] = useState<string | null>(null);
+  const [showRaw, setShowRaw] = useState(true);
 
   const base = resolveApiUrl().replace(/\/$/, "");
 
@@ -47,11 +60,16 @@ export function WearablesSyncPanel() {
       const stamp =
         s.last_sync?.updated_at ||
         s.last_sync?.last_ingest_at ||
-        s.last_sync?.last_plans_at ||
         null;
       if (stamp && stamp !== lastSeenAt) {
         if (lastSeenAt) setFlash(true);
         setLastSeenAt(stamp);
+        try {
+          const { notifyPipeline } = await import("../../utils/dataPipelineBus");
+          notifyPipeline("wearables", { stamp });
+        } catch {
+          window.dispatchEvent(new CustomEvent("hub:refresh"));
+        }
       }
     } catch (e) {
       setStatus(null);
@@ -80,28 +98,13 @@ export function WearablesSyncPanel() {
     void refresh();
   };
 
-  const pullPlans = async () => {
+  const pingHealth = async () => {
     setBusy(true);
     setError(null);
     try {
-      const rows = await fetchWearablePlans(24, "web_test");
-      setPlans(rows);
+      const ok = await pingWearableHealth();
       await refresh();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const pingPlusPlans = async () => {
-    setBusy(true);
-    setError(null);
-    try {
-      const r = await pingWearableWithPlans(24);
-      setPlans(r.plans);
-      await refresh();
-      if (!r.healthOk) setError("Health ping failed — is the backend running?");
+      if (!ok) setError("Health ping failed — is the backend / tracker hub running?");
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -119,8 +122,6 @@ export function WearablesSyncPanel() {
         activity: { steps: 6543, target: 8000 },
         heart: { last: 72 },
       });
-      const r = await pingWearableWithPlans(24);
-      setPlans(r.plans);
       await refresh();
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -133,7 +134,7 @@ export function WearablesSyncPanel() {
   const wd = status?.wearable_day;
   const authentic = status?.authentic;
   const isAuthenticWatch = authentic?.verdict === "authentic_watch";
-  const plansFromWatch = !!authentic?.plans_from_watch;
+  const caps = wd?.capabilities;
 
   return (
     <div className="space-y-4">
@@ -141,11 +142,12 @@ export function WearablesSyncPanel() {
         <div>
           <h3 className="font-semibold flex items-center gap-2 text-sm">
             <Watch size={16} className="text-primary" />
-            Amazfit / Zepp sync
+            Amazfit health dump
           </h3>
           <p className="mt-1 text-xs text-muted-foreground">
-            PC tests never count as watch. Authentic ={" "}
-            <code className="text-[10px]">source=mini_program</code> + Life write. Install via QR:{" "}
+            CALT Sync 4.0 is a <span className="text-foreground">manual health dumper</span> — Dump
+            on the watch, then Send. Queue holds up to 7 days you previously captured (sensors do not
+            invent history). Install:{" "}
             <code className="text-[10px]">packages\calt-zepp\sideload.bat</code>
           </p>
         </div>
@@ -169,6 +171,13 @@ export function WearablesSyncPanel() {
               : "border-rose-500/30 bg-rose-500/10 text-rose-200"
         }`}
       >
+        <p className="text-[11px] text-amber-200/90 leading-relaxed">
+          Watch dump needs the <span className="text-foreground">desktop tracker hub</span> on{" "}
+          <code className="text-foreground">http://&lt;PC-LAN-IP&gt;:8765</code>. In Zepp → CALT Sync
+          settings set that Base URL + token{" "}
+          <code className="text-foreground">calt-local-wearables</code>. Replays are idempotent —
+          sending the same chunk twice will not duplicate Life Tracker / hub rows.
+        </p>
         <div className="flex flex-wrap gap-x-4 gap-y-1 items-center">
           <span>
             API:{" "}
@@ -180,18 +189,14 @@ export function WearablesSyncPanel() {
             className={`rounded px-1.5 py-0.5 text-[10px] uppercase tracking-wide ${
               isAuthenticWatch
                 ? "bg-emerald-500/25 text-emerald-200"
-                : plansFromWatch
-                  ? "bg-sky-500/20 text-sky-200"
-                  : "bg-amber-500/20 text-amber-200"
+                : "bg-amber-500/20 text-amber-200"
             }`}
           >
             {isAuthenticWatch
-              ? "Authentic watch sync"
-              : plansFromWatch
-                ? "Watch plans pull (no ingest yet)"
-                : authentic?.verdict === "web_or_test"
-                  ? "PC / test only"
-                  : "Waiting for watch"}
+              ? "Authentic watch dump"
+              : authentic?.verdict === "web_or_test"
+                ? "PC / test only"
+                : "Waiting for watch dump"}
           </span>
           <span className="truncate" title={base}>
             {base}/api/wearables/zepp
@@ -201,59 +206,67 @@ export function WearablesSyncPanel() {
           Last event:{" "}
           <span className="text-foreground">{ls?.last_event ?? "none yet"}</span>
           {ls?.last_source ? ` · ${ls.last_source}` : ""}
-          {ls?.last_source === "web_test" || ls?.last_wrote_life === false ? (
-            <span className="ml-2 text-amber-300">
-              (test — does NOT write Life Tracker)
-            </span>
+          {ls?.last_duplicate ? (
+            <span className="ml-2 text-sky-300">(replay / duplicate ACK)</span>
+          ) : ls?.last_source === "web_test" || ls?.last_wrote_life === false ? (
+            <span className="ml-2 text-amber-300">(test — does NOT write Life Tracker)</span>
           ) : ls?.last_is_watch || ls?.last_source === "mini_program" ? (
             <span className="ml-2 text-emerald-300">(watch → Life Tracker)</span>
           ) : null}
         </div>
-        <div className="text-foreground font-medium tabular-nums grid grid-cols-2 gap-x-3 gap-y-1">
-          <span>
-            Steps:{" "}
-            {wd?.steps != null
-              ? `${wd.steps.toLocaleString()}${wd.step_target != null ? ` / ${wd.step_target.toLocaleString()}` : ""}`
-              : ls?.last_steps != null
-                ? ls.last_steps.toLocaleString()
-                : "—"}
-          </span>
-          <span>
-            Sleep:{" "}
-            {wd?.sleep_hours != null
-              ? `${wd.sleep_hours}h (score ${wd.sleep_score ?? "—"})`
-              : ls?.last_sleep_hours != null
-                ? `${ls.last_sleep_hours}h`
-                : "—"}
-          </span>
-          <span>kcal: {wd?.calories ?? ls?.last_calories ?? "—"}</span>
-          <span>
-            Dist:{" "}
-            {wd?.distance_m != null
-              ? `${(wd.distance_m / 1000).toFixed(2)} km`
-              : ls?.last_distance_m != null
-                ? `${(ls.last_distance_m / 1000).toFixed(2)} km`
-                : "—"}
-          </span>
-          <span>HR: {wd?.hr_last ?? ls?.last_hr ?? "—"}{wd?.hr_resting != null ? ` / rest ${wd.hr_resting}` : ""}</span>
-          <span>SpO₂: {wd?.spo2 ?? ls?.last_spo2 ?? "—"}%</span>
-          <span>Stress: {wd?.stress ?? ls?.last_stress ?? "—"}</span>
-          <span>PAI: {wd?.pai_today ?? ls?.last_pai ?? "—"}</span>
-          <span>
-            Stand:{" "}
-            {wd?.stand_hours != null
-              ? `${wd.stand_hours}${wd.stand_target != null ? ` / ${wd.stand_target}` : ""}h`
-              : ls?.last_stand ?? "—"}
-          </span>
-          <span>Battery: {wd?.battery_pct ?? ls?.last_battery ?? "—"}%</span>
+        <div className="text-[11px]">
+          Dump id:{" "}
+          <span className="text-foreground">{wd?.last_dump_id || ls?.last_dump_id || "—"}</span>
+          {wd?.last_chunk_id || ls?.last_chunk_id ? (
+            <>
+              {" "}
+              · chunk{" "}
+              <span className="text-foreground">{wd?.last_chunk_id || ls?.last_chunk_id}</span>
+            </>
+          ) : null}
         </div>
-        <div>Ingest: {fmtWhen(ls?.last_ingest_at)}</div>
+        {caps && typeof caps === "object" ? (
+          <div className="text-[11px]">
+            Sensors:{" "}
+            {Object.entries(caps)
+              .slice(0, 12)
+              .map(([k, v]) => `${k}:${v ? "ok" : "n/a"}`)
+              .join(" · ") || "—"}
+          </div>
+        ) : null}
+        <WatchDayDumpCard
+          day={wd}
+          includeRaw={false}
+          fallback={{
+            last_steps: ls?.last_steps,
+            last_sleep_hours: ls?.last_sleep_hours,
+            last_calories: ls?.last_calories,
+            last_distance_m: ls?.last_distance_m,
+            last_hr: ls?.last_hr,
+            last_spo2: ls?.last_spo2,
+            last_stress: ls?.last_stress,
+            last_pai: ls?.last_pai,
+            last_stand: ls?.last_stand,
+            last_sitting_min: ls?.last_sitting_min,
+            last_battery: ls?.last_battery,
+          }}
+        />
         <div>
-          Plans pull: {fmtWhen(ls?.last_plans_at)}
-          {ls?.last_plan_count != null ? ` · ${ls.last_plan_count} blocks` : ""}
+          Ingest: {fmtWhen(ls?.last_ingest_at)}
+          {ls?.last_ingest_at ? (
+            <span className="text-muted-foreground">
+              {" "}
+              (
+              {Math.max(
+                0,
+                Math.round((Date.now() - new Date(ls.last_ingest_at).getTime()) / 60000),
+              )}
+              m ago)
+            </span>
+          ) : null}
         </div>
         {flash && (
-          <p className="text-emerald-200 font-medium pt-1">Sync activity detected just now</p>
+          <p className="text-emerald-200 font-medium pt-1">Dump activity detected just now</p>
         )}
       </div>
 
@@ -282,31 +295,53 @@ export function WearablesSyncPanel() {
                 , life score{" "}
                 <span className="text-foreground">{status.applied_to_life.life_score ?? "—"}</span>
               </li>
-              <li>
-                Estimate:{" "}
-                <span className="text-foreground">
-                  {status.estimates?.exercise_from_last_steps != null
-                    ? `${ls?.last_steps?.toLocaleString() ?? "?"} steps → ~${status.estimates.exercise_from_last_steps}m exercise`
-                    : "no steps yet"}
-                </span>{" "}
-                <span className="text-muted-foreground">(steps ÷ 100, max 180)</span>
-              </li>
               <li className="text-[11px]">
                 Stored in SQLite <code className="text-foreground">life_daily_log</code> + hub{" "}
-                <code className="text-foreground">readings</code> (sleep_hours / steps). Mirror:{" "}
-                <code className="text-foreground">data/wearables_last_sync.json</code>
-              </li>
-              <li className="text-[11px] text-amber-200/80">
-                Not wired yet: HR beyond this panel; sleep → softer planner load (P5).
+                <code className="text-foreground">readings</code>. Replay ledger:{" "}
+                <code className="text-foreground">wearable_ingest_event</code>
               </li>
             </ul>
           ) : (
             <p className="text-muted-foreground">
-              No Life Tracker row yet — run Send test payload or Sync on the watch.
+              No Life Tracker row yet — Dump + Send on the watch (or Send test payload).
             </p>
           )}
         </div>
       )}
+
+      <div className="rounded-xl border border-white/10 bg-black/25 px-3 py-3 text-xs space-y-2">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="font-medium text-foreground">Raw watch payload</p>
+          <button
+            type="button"
+            onClick={() => setShowRaw((v) => !v)}
+            className="rounded border border-white/10 px-2 py-0.5 text-[10px] hover:bg-white/5"
+          >
+            {showRaw ? "Hide" : "Show"}
+          </button>
+        </div>
+        <p className="text-[11px] text-muted-foreground leading-relaxed">
+          Nested JSON from CALT Sync Dump → Send. Missing sensors stay absent (never fabricated
+          zeroes). Unsupported temperature stays unavailable.
+          {wd?.local_date ? (
+            <>
+              {" "}
+              Day: <span className="text-foreground">{wd.local_date}</span>
+            </>
+          ) : null}
+        </p>
+        {showRaw ? (
+          wd?.payload ? (
+            <pre className="max-h-80 overflow-auto rounded-lg border border-white/10 bg-black/40 p-2 text-[10px] leading-relaxed text-emerald-100/90 whitespace-pre-wrap break-all">
+              {JSON.stringify(wd.payload, null, 2)}
+            </pre>
+          ) : (
+            <p className="text-amber-200/90">
+              No stored payload yet — Dump + Send from the watch.
+            </p>
+          )
+        ) : null}
+      </div>
 
       <div className="flex flex-wrap gap-2 items-end">
         <label className="text-xs text-muted-foreground space-y-1 min-w-[200px] flex-1">
@@ -336,29 +371,20 @@ export function WearablesSyncPanel() {
         <button
           type="button"
           disabled={busy}
-          onClick={() => void pingPlusPlans()}
+          onClick={() => void pingHealth()}
           className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 px-3 py-1.5 text-xs hover:bg-white/5 disabled:opacity-50"
         >
           {busy ? <Loader2 size={12} className="animate-spin" /> : null}
-          Ping + plans
+          Ping health
         </button>
         <button
           type="button"
           disabled={busy}
           onClick={() => void sendTestPayload()}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 px-3 py-1.5 text-xs hover:bg-white/5 disabled:opacity-50"
-        >
-          {busy ? <Loader2 size={12} className="animate-spin" /> : null}
-          Send test payload
-        </button>
-        <button
-          type="button"
-          disabled={busy}
-          onClick={() => void pullPlans()}
           className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
         >
           {busy ? <Loader2 size={12} className="animate-spin" /> : <Watch size={12} />}
-          Pull plans (PC)
+          Send test payload
         </button>
       </div>
 
@@ -368,19 +394,6 @@ export function WearablesSyncPanel() {
             ? "404 — restart the backend so /api/wearables/zepp is mounted."
             : error}
         </p>
-      )}
-
-      {plans.length > 0 && (
-        <ul className="max-h-36 overflow-y-auto space-y-1 text-[11px] border border-white/10 rounded-lg p-2 bg-black/20">
-          {plans.slice(0, 8).map((p) => (
-            <li key={p.id} className="flex justify-between gap-2">
-              <span className="truncate text-foreground">{p.title}</span>
-              <span className="shrink-0 text-muted-foreground tabular-nums">
-                {new Date(p.start_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-              </span>
-            </li>
-          ))}
-        </ul>
       )}
     </div>
   );

@@ -20,13 +20,13 @@ MODEL_ALIASES: dict[str, str] = {
 }
 
 WHISPER_PRESETS: list[tuple[str, WhisperEngine, str]] = [
+    ("faster-whisper · large-v3-turbo (Hindi+English)", "faster-whisper", "large-v3-turbo"),
+    ("faster-whisper · large-v3", "faster-whisper", "large-v3"),
+    ("faster-whisper · medium", "faster-whisper", "medium"),
     ("openai/whisper-large-v3-turbo (Hugging Face)", "transformers", "openai/whisper-large-v3-turbo"),
     ("openai/whisper-large-v3", "transformers", "openai/whisper-large-v3"),
     ("openai/whisper-medium", "transformers", "openai/whisper-medium"),
     ("openai/whisper-small", "transformers", "openai/whisper-small"),
-    ("faster-whisper · large-v3-turbo (lighter)", "faster-whisper", "large-v3-turbo"),
-    ("faster-whisper · large-v3", "faster-whisper", "large-v3"),
-    ("faster-whisper · medium", "faster-whisper", "medium"),
     ("Custom model ID…", "transformers", ""),
 ]
 

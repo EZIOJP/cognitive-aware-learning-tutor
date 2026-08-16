@@ -319,6 +319,15 @@
   // ── Build and send snapshot ──────────────────────────────
   function sendSnapshot() {
     if (trackingStopped) return;
+    // Active tab only: background tabs / hidden documents do not emit telemetry.
+    if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
+    // Local CALT SPA is owned by study-presence heartbeats, not extension telemetry.
+    try {
+      var h = (location.hostname || "").toLowerCase();
+      if (h === "localhost" || h === "127.0.0.1") return;
+    } catch (e) {
+      /* ignore */
+    }
     const basePayload = {
       interaction_mode: getInteractionMode(),
       scroll_depth_percent: state.scrollDepthMax,

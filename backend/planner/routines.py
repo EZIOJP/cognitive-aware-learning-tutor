@@ -189,6 +189,14 @@ DEFAULT_ROUTINES = [
         "color": "#a78bfa",
     },
     {
+        "title": "Bath / self-care",
+        "category": "personal",
+        "start_time": "07:00",
+        "end_time": "07:30",
+        "days": list(_DAY_NAMES),
+        "color": "#06b6d4",
+    },
+    {
         "title": "Breakfast",
         "category": "food",
         "start_time": "08:00",
@@ -213,12 +221,12 @@ DEFAULT_ROUTINES = [
         "color": "#f59e0b",
     },
     {
-        "title": "Bath / self-care",
+        "title": "Get ready to sleep",
         "category": "personal",
-        "start_time": "21:30",
-        "end_time": "22:00",
+        "start_time": "20:15",
+        "end_time": "20:45",
         "days": list(_DAY_NAMES),
-        "color": "#06b6d4",
+        "color": "#6366f1",
     },
 ]
 
@@ -244,6 +252,66 @@ def seed_default_routines(db: Session, user_id: int) -> int:
         )
     db.commit()
     return len(DEFAULT_ROUTINES)
+
+
+def upgrade_stock_default_routines(db: Session, user_id: int) -> int:
+    """Idempotent layout fix: bath after Bible; add get-ready-to-sleep after dinner."""
+    existing = db.query(PlannerRoutine).filter(PlannerRoutine.user_id == user_id).count()
+    if existing == 0:
+        return 0
+
+    by_title = {s["title"]: i for i, s in enumerate(DEFAULT_ROUTINES)}
+    changed = 0
+    baths = (
+        db.query(PlannerRoutine)
+        .filter(
+            PlannerRoutine.user_id == user_id,
+            PlannerRoutine.title == "Bath / self-care",
+        )
+        .all()
+    )
+    for row in baths:
+        if row.start_time == "21:30" and row.end_time == "22:00":
+            row.start_time = "07:00"
+            row.end_time = "07:30"
+            changed += 1
+
+    has_sleep = (
+        db.query(PlannerRoutine)
+        .filter(
+            PlannerRoutine.user_id == user_id,
+            PlannerRoutine.title == "Get ready to sleep",
+        )
+        .count()
+    )
+    if has_sleep == 0:
+        sleep_spec = next(s for s in DEFAULT_ROUTINES if s["title"] == "Get ready to sleep")
+        db.add(
+            PlannerRoutine(
+                user_id=user_id,
+                title=sleep_spec["title"],
+                category=sleep_spec["category"],
+                start_time=sleep_spec["start_time"],
+                end_time=sleep_spec["end_time"],
+                days_json=json.dumps(sleep_spec["days"]),
+                color=sleep_spec.get("color"),
+                sort_order=by_title["Get ready to sleep"],
+                enabled=True,
+            )
+        )
+        changed += 1
+
+    db.flush()
+    rows = db.query(PlannerRoutine).filter(PlannerRoutine.user_id == user_id).all()
+    for row in rows:
+        want = by_title.get(row.title)
+        if want is not None and row.sort_order != want:
+            row.sort_order = want
+            changed += 1
+
+    if changed:
+        db.commit()
+    return changed
 
 
 AUTO_APPLY_STATE_PATH = ROOT / "data" / "planner_routine_auto_apply.json"

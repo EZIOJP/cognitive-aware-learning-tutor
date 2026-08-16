@@ -22,6 +22,7 @@ import {
   type PlannerRoutine,
 } from "../../api/plannerClient";
 import { cn } from "../../app/components/ui/utils";
+import { setRoutineDragData, clearRoutineDragActive } from "./routineDrag";
 
 const DAY_OPTS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as const;
 const DAY_LABELS = ["M", "T", "W", "T", "F", "S", "S"] as const;
@@ -458,7 +459,8 @@ export function RoutinesPanel({
       </div>
 
       <p className="text-xs text-muted-foreground">
-        Edit times, duration, and days — then Apply to today. Enabled routines also auto-apply once on sign-in.
+        Drag a routine onto an empty hour on the calendar, or use Apply to today. Enabled routines also
+        auto-apply once on sign-in.
       </p>
 
       {error && (
@@ -489,7 +491,36 @@ export function RoutinesPanel({
           {sortedRoutines.map((r) => (
             <div
               key={r.id}
-              className="rounded-lg bg-white/[0.03] border border-white/5 px-3 py-2"
+              draggable={editingId !== r.id}
+              onDragStart={(e) => {
+                if (editingId === r.id) {
+                  e.preventDefault();
+                  return;
+                }
+                const target = e.target as HTMLElement | null;
+                if (target?.closest?.("button")) {
+                  e.preventDefault();
+                  return;
+                }
+                setRoutineDragData(e.dataTransfer, {
+                  title: r.title,
+                  category: r.category || "personal",
+                  duration_minutes:
+                    r.duration_minutes ||
+                    minutesBetween(r.start_time || "07:00", r.end_time || "07:30"),
+                  color: r.color,
+                });
+                e.currentTarget.classList.add("opacity-50");
+              }}
+              onDragEnd={(e) => {
+                e.currentTarget.classList.remove("opacity-50");
+                clearRoutineDragActive();
+              }}
+              className={cn(
+                "rounded-lg bg-white/[0.03] border border-white/5 px-3 py-2",
+                editingId !== r.id && "cursor-grab active:cursor-grabbing",
+              )}
+              title={editingId === r.id ? undefined : "Drag onto a calendar hour to place"}
             >
               <div className="flex items-center gap-3">
                 <button

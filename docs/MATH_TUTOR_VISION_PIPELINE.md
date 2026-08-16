@@ -21,11 +21,13 @@ draw on whiteboard → stuckness score → cropped snapshot
 | Python focus mirror (not browser) | Shipped | `backend/face_tracker.py` |
 | Auto intervention UI | Shipped | `AITutorIntervention.tsx` on `MathPracticePage`; `config.intervention.autoTrigger` |
 | `POST /api/math/intervention` + DSC CSV | Shipped | `backend/math/intervention_handler.py`, `intervention_log.py` |
-| `POST /api/math/ocr` | Shipped | TexTeller ONNX (Python 3.14); multi-tier fallback |
-| Eraser + idle stuckness loop | Shipped | `StudySessionContext`, `MathSplitWhiteboard` handle |
+| `POST /api/math/ocr` | Shipped | TexTeller ONNX multi-line (`lines[]`, `crop_bbox`, structural_confidence); MFD fallback; stroke-symbol disambiguator |
+| Eraser + idle stuckness loop | Shipped | `StudySessionContext`, idle crop OCR via `useIdleMathOcr` |
+| Tutor silence + checkpoint confirm | Shipped | `intervention_handler` + `AITutorIntervention` Yes/Fix → recover/correct |
+| Math → quiz SRS bridge | Shipped | `srs_bridge.py` on struggle / recover / correct |
 | NIM teacher (opt-in) | Shipped | `NIM_API_KEY` → Tier 0 in `ocr_service.py` |
 | WebGazer gaze | Not implemented | Research only |
-| Pix2Text | Not implemented | TexTeller ONNX used instead of pix2tex on 3.14 |
+| Pix2Text full package | Not used | Direct MFD ONNX only (`mfd_onnx.py`); TexTeller for recognition |
 
 ## Recommended stack (8 GB VRAM)
 
@@ -50,9 +52,9 @@ draw on whiteboard → stuckness score → cropped snapshot
 |----------|------|
 | `POST /api/math/tutor/hint` | Manual + rules; fallback |
 | `POST /api/math/intervention` | Stuckness-triggered OCR → hint → DSC log |
-| `POST /api/math/ocr` | Image → LaTeX + `incomplete_step` + tiers |
-| `PATCH /api/math/intervention/{id}/recover` | Learner recovered / dismissed |
-| `PATCH /api/math/intervention/{id}/correct` | Human correct LaTeX → `DSC_handwriting_dataset.csv` |
+| `POST /api/math/ocr` | Image → LaTeX + `lines[]` + `incomplete_step` + optional `crop_bbox` |
+| `PATCH /api/math/intervention/{id}/recover` | Learner recovered (`learner_recovered=true`) or dismissed (`false` — no SRS success) |
+| `PATCH /api/math/intervention/{id}/correct` | Human correct LaTeX → handwriting dataset + SRS success |
 
 Store snapshots under `data_logs/interventions/{session_snapshot_id}.png`; index in `DSC_interventions_{date}.csv`.
 
@@ -83,6 +85,7 @@ fire when stuckness > 0.5 and idle ≥ 45s and cooldown ≥ 120s
 - [x] OpenCV segmentation + paths masking in `ocr_service.py`
 - [x] TexTeller ONNX (replaces pix2tex on Python 3.14)
 - [x] SymPy validate LaTeX → `incomplete_step` + confidence gate
+- [x] Multi-line bands (stroke/projection/MFD) + idle crop OCR + tutor silence + SRS bridge
 
 ### 3d — Multimodal (Phase 2 hardware + optional WebGazer)
 

@@ -2,8 +2,18 @@
 
 from __future__ import annotations
 
+import pytest
+
 from backend.planner import morning_plan as mp
 from backend.planner import morning_rewards as mr
+
+
+@pytest.fixture(autouse=True)
+def _silence_bible_tts(monkeypatch):
+    monkeypatch.setattr(
+        "backend.behavior.voice_agent.dialogues.speak",
+        lambda *a, **k: "",
+    )
 
 
 def test_bible_and_plan_rewards_idempotent(tmp_path, monkeypatch):

@@ -53,10 +53,103 @@ export interface DesktopStats {
   sessions: AppSession[];
   total_seconds: number;
   avg_productivity_score: number;
+  /** RescueTime-style pulse (level-weighted 0–100) */
+  pulse?: number;
+  pulse_label?: string;
+  productive_seconds?: number;
+  distracting_seconds?: number;
   source: string;
   date: string;
   tracker_running: boolean;
   last_event_at?: string | null;
+}
+
+export interface ActivityRow {
+  key: string;
+  label: string;
+  kind: "app" | "site";
+  parent: string | null;
+  seconds: number;
+  category: string;
+  productivity_score: number;
+  uncategorized: boolean;
+}
+
+export interface ActivitiesResponse {
+  date: string;
+  total_seconds: number;
+  activities: ActivityRow[];
+  uncategorized_count: number;
+}
+
+export interface GoalStatusItem {
+  id: string;
+  label: string;
+  current_seconds: number;
+  target_seconds: number;
+  pct: number;
+  met: boolean;
+  fired: boolean;
+}
+
+export interface AlertStatusItem {
+  id: string;
+  label: string;
+  kind: string;
+  current_seconds: number;
+  max_seconds: number;
+  triggered: boolean;
+  fired: boolean;
+}
+
+export interface GoalsStatusResponse {
+  date: string;
+  goals: GoalStatusItem[];
+  alerts: AlertStatusItem[];
+  productive_seconds: number;
+  total_seconds: number;
+}
+
+export interface GateScheduleWindow {
+  id: string;
+  label: string;
+  days: number[];
+  start: string;
+  end: string;
+  mode: "study" | "free" | "planning" | "bible";
+}
+
+export interface GateSchedulesResponse {
+  enabled: boolean;
+  windows: GateScheduleWindow[];
+}
+
+export interface WeeklyDigestDay {
+  date: string;
+  pulse: number;
+  total_seconds: number;
+  productive_seconds: number;
+  goal_met: boolean;
+  goal_pct: number;
+}
+
+export interface WeeklyDigestResponse {
+  from: string;
+  to: string;
+  days: WeeklyDigestDay[];
+  avg_pulse: number;
+  goal_met_days: number;
+  tracked_days: number;
+  top_drains: Array<{ label: string; seconds: number }>;
+}
+
+export interface FocusQualityResponse {
+  date: string;
+  score: number;
+  switches: number;
+  on_plan_minutes: number;
+  low_score_minutes: number;
+  label: string;
 }
 
 export interface TrackerHealth {
@@ -116,6 +209,72 @@ export async function fetchDesktopStats(day?: string): Promise<DesktopStats> {
     headers: authHeaders(),
   });
   if (!res.ok) throw new Error(`behavior/desktop-stats: ${res.status}`);
+  return res.json();
+}
+
+export async function fetchActivities(
+  day?: string,
+  uncategorizedOnly = false,
+): Promise<ActivitiesResponse> {
+  const params = new URLSearchParams();
+  if (day) params.set("day", day);
+  if (uncategorizedOnly) params.set("uncategorized_only", "true");
+  const qs = params.toString() ? `?${params}` : "";
+  const res = await fetch(resolveApiUrl(`/api/behavior/activities${qs}`), {
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error(`behavior/activities: ${res.status}`);
+  return res.json();
+}
+
+export async function fetchGoalsStatus(day?: string): Promise<GoalsStatusResponse> {
+  const qs = day ? `?day=${day}` : "";
+  const res = await fetch(resolveApiUrl(`/api/behavior/goals-status${qs}`), {
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error(`behavior/goals-status: ${res.status}`);
+  return res.json();
+}
+
+export async function fetchGateSchedules(): Promise<GateSchedulesResponse> {
+  const res = await fetch(resolveApiUrl("/api/behavior/gate-schedules"), {
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error(`behavior/gate-schedules: ${res.status}`);
+  return res.json();
+}
+
+export async function saveGateSchedules(
+  body: GateSchedulesResponse,
+): Promise<GateSchedulesResponse> {
+  const res = await fetch(resolveApiUrl("/api/behavior/gate-schedules"), {
+    method: "PUT",
+    headers: authHeaders(),
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error(`behavior/gate-schedules: ${res.status}`);
+  return res.json();
+}
+
+export async function fetchWeeklyDigest(
+  days = 7,
+  endDay?: string,
+): Promise<WeeklyDigestResponse> {
+  const params = new URLSearchParams({ days: String(days) });
+  if (endDay) params.set("day", endDay);
+  const res = await fetch(resolveApiUrl(`/api/behavior/weekly-digest?${params}`), {
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error(`behavior/weekly-digest: ${res.status}`);
+  return res.json();
+}
+
+export async function fetchFocusQuality(day?: string): Promise<FocusQualityResponse> {
+  const qs = day ? `?day=${day}` : "";
+  const res = await fetch(resolveApiUrl(`/api/behavior/focus-quality${qs}`), {
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error(`behavior/focus-quality: ${res.status}`);
   return res.json();
 }
 
@@ -407,17 +566,22 @@ export interface DistractionGate {
   locked: boolean;
   unlocked: boolean;
   productive_minutes: number;
+  productive_label?: string;
   daily_goal_minutes: number;
+  daily_goal_label?: string;
   remaining_minutes: number;
+  remaining_label?: string;
   hard_block_gaming: boolean;
   hard_block_exes: string[];
   day: string;
   bible_minutes?: number;
+  bible_label?: string;
   chapters_completed_today?: string[];
   chapter_goal?: { done?: number; target?: number; met?: boolean };
   chapter_goal_met?: boolean;
   game_bank_remaining_minutes?: number;
   game_bank_remaining_seconds?: number;
+  game_bank_remaining_label?: string;
   day_unlimited?: boolean;
   day_pass?: boolean;
   day_pass_status?: {

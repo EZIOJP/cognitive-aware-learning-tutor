@@ -9,16 +9,17 @@ def _is_broken_code(content: str) -> bool:
 
 
 def test_mermaid_edge_label_sanitize():
-    raw = "B -- No (Blank) --> D(Default to Array Index 0)"
+    raw = "flowchart TD\nB -- No (Blank) --> D(Default to Array Index 0)"
     fixed = sanitize_mermaid_source(raw)
-    assert "-->|No (Blank)|" in fixed
-    assert 'D["Default to Array Index 0"]' in fixed
-    assert 'No["Blank"]' not in fixed
+    assert "No (Blank)" in fixed
+    assert "Default to Array Index 0" in fixed
+    assert fixed.startswith("flowchart TD")
 
 
 def test_mermaid_still_broken_detects_legacy_edges():
+    # Missing diagram header is the only hard lint; Mermaid.js accepts `-- label -->`.
     assert is_mermaid_likely_broken("A -- Yes --> B") is True
-    assert mermaid_still_broken("A -- Yes --> B") is False
+    assert mermaid_still_broken("flowchart TD\nA -- Yes --> B") is False
     assert mermaid_still_broken("flowchart TD\nA -->|Yes| B") is False
 
 
@@ -44,5 +45,6 @@ undefined
         lambda llm=None: False,
     )
     fixed, details = repair_all_blocks(md, use_llm=False)
-    assert "-->|No (Blank)|" in fixed
-    assert any(d["lang"] == "mermaid" for d in details)
+    assert "No (Blank)" in fixed
+    assert "flowchart TD" in fixed
+    assert any(d["lang"] == "python" for d in details)

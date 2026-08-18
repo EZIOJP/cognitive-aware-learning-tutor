@@ -15,9 +15,9 @@ Therefore students should understand indexing before advanced operations.
 
 @patch("backend.transcripts.notes_generator.finalize_full_note", side_effect=lambda body, **kw: body)
 @patch("backend.transcripts.notes_generator._select_chunks", return_value=["chunk one"])
-@patch("backend.transcripts.notes_generator.ollama_available", return_value="http://127.0.0.1:1234")
+@patch("backend.transcripts.notes_generator.require_gateway_chain")
 @patch("backend.transcripts.notes_generator.summarize_chunk", return_value=MOCK_NARRATIVE)
-def test_phase2_acceptance_smoke(mock_summarize, mock_available, mock_chunks, mock_finalize, tmp_path, monkeypatch):
+def test_phase2_acceptance_smoke(mock_summarize, mock_gateway, mock_chunks, mock_finalize, tmp_path, monkeypatch):
     from backend.transcripts.notes_generator import generate_notes_from_file
 
     monkeypatch.setattr("backend.transcripts.notes_generator.NOTES_DIR", tmp_path)

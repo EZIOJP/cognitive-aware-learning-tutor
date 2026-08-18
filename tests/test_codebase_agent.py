@@ -26,7 +26,8 @@ def test_search_codebase_finds_lecture_files():
 
 def test_read_project_file_safe():
     data = read_project_file("run.bat")
-    assert "run" in data["content"].lower()
+    text = data["content"].lower()
+    assert "server_lifecycle" in text or "ensure-fast" in text
 
 
 def test_read_project_file_rejects_traversal():

@@ -33,7 +33,7 @@ from backend.hub.services.features import (
 )
 from backend.hub.services.ingest import insert_reading, insert_readings_batch
 from backend.hub.services.rollup import daily_payload, rebuild_daily_rollup
-from backend.models import ActivitySession, DailyRollup, LifeDailyLog, Reading, ReadingDefinition, User, UserPlugin
+from backend.models import ActivitySession, DailyRollup, LifeDailyLog, Reading, ReadingDefinition, User, UserPlugin, WearableDaily
 
 router = APIRouter(prefix="/api/hub", tags=["hub"])
 
@@ -153,7 +153,26 @@ def get_daily(
     life = db.query(LifeDailyLog).filter(LifeDailyLog.user_id == user.id, LifeDailyLog.date == d).first()
     # Always rebuild so calendars / life-clock pick up wearable_daily + tracker from central DB
     rollup = rebuild_daily_rollup(db, user.id, d)
-    return daily_payload(rollup, life)
+    payload = daily_payload(rollup, life)
+    wd = (
+        db.query(WearableDaily)
+        .filter(WearableDaily.user_id == user.id, WearableDaily.local_date == d)
+        .first()
+    )
+    payload["sleep_score"] = int(wd.sleep_score) if wd and wd.sleep_score else None
+    from backend.behavior.productivity_policy import load_policy_dict
+    from backend.behavior.recovery_hint import compute_recovery_hint
+
+    policy = load_policy_dict(db, user.id)
+    base_focus = (int(policy.get("daily_goal_minutes") or 240)) / 60.0
+    sleep_min = payload.get("sleep_minutes") or 0
+    sleep_h = sleep_min / 60.0 if sleep_min else None
+    payload["recovery_hint"] = compute_recovery_hint(
+        sleep_score=payload["sleep_score"],
+        sleep_hours=sleep_h,
+        base_focus_hours=base_focus,
+    )
+    return payload
 
 
 @router.post("/daily/rebuild")
@@ -165,7 +184,26 @@ def rebuild_daily(
     d = date.fromisoformat(day) if day else date.today()
     rollup = rebuild_daily_rollup(db, user.id, d)
     life = db.query(LifeDailyLog).filter(LifeDailyLog.user_id == user.id, LifeDailyLog.date == d).first()
-    return daily_payload(rollup, life)
+    payload = daily_payload(rollup, life)
+    wd = (
+        db.query(WearableDaily)
+        .filter(WearableDaily.user_id == user.id, WearableDaily.local_date == d)
+        .first()
+    )
+    payload["sleep_score"] = int(wd.sleep_score) if wd and wd.sleep_score else None
+    from backend.behavior.productivity_policy import load_policy_dict
+    from backend.behavior.recovery_hint import compute_recovery_hint
+
+    policy = load_policy_dict(db, user.id)
+    base_focus = (int(policy.get("daily_goal_minutes") or 240)) / 60.0
+    sleep_min = payload.get("sleep_minutes") or 0
+    sleep_h = sleep_min / 60.0 if sleep_min else None
+    payload["recovery_hint"] = compute_recovery_hint(
+        sleep_score=payload["sleep_score"],
+        sleep_hours=sleep_h,
+        base_focus_hours=base_focus,
+    )
+    return payload
 
 
 @router.get("/export")
@@ -437,3 +475,14 @@ def hub_bible_verse(
         "source_chapters": keys,
         "fallback": False,
     }
+
+
+@router.get("/day-status")
+def hub_day_status(
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Same payload as GET /api/behavior/day-status (Android / watch alias)."""
+    from backend.behavior.day_status import build_day_status
+
+    return build_day_status(db, user.id)

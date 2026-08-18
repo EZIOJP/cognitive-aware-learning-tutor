@@ -2,57 +2,66 @@
 
 You are finishing a **local-first study platform** for daily personal use.
 
-**Mandate (2026-07-19 — cape time):** Most build work is done. Run [docs/COMPLETION_SPRINT.md](docs/COMPLETION_SPRINT.md) **Sprint 4 verification**, then **Sprint 5 polish**. Do **not** open new feature lanes. Fix only what acceptance proves broken.
+**Mandate (2026-08-17 — unattended completion):** While the owner is away, execute the approved design [docs/superpowers/specs/2026-08-17-unified-quiz-completion-design.md](docs/superpowers/specs/2026-08-17-unified-quiz-completion-design.md). Prefer proof + smallest wiring. Owner will review and tweak on return.
 
 ---
 
-## What “complete” means
+## What “complete” means (this mandate)
 
 ```text
-One button: Study topic → grounded notes → quiz → SRS → dashboard "Review N due"
-PLUS: GRE cycle still works, npm run build passes, core tests green
+ONE quiz engine (/api/quiz) with modes: study (lecture notes) · math · vocab
+ALL graded lasting knowledge → ReviewCard FSRS → /review + dashboard "Review N due"
+Notes + quiz generation follow Cursor rules (grounded, linted, prefer_notes)
+Productivity Calendar tracking visuals finished (empty states, adherence, plan-vs-actual)
+PLUS: npm run build passes, core pytest green, GRE cycle still works
 ```
 
-**Not required for complete:** hardware, BKT, Neo4j, microservices, math OCR Phase 3c, PostgreSQL.
+**Not required:** restoring Study Flow / corpus RAG KB, hardware, BKT, Neo4j, math OCR Phase 3c, PostgreSQL, wearables/hard-block expansion.
 
-**Already shipped beyond the original loop (keep working, don’t expand in cape time):** productivity policy + LLM propose-plan, distraction gate, wearables/Zepp ingest, math skills Layer 0, Google Calendar sync, per-page easter eggs.
+**Already shipped (keep working):** distraction gate, wearables ingest, planner/calendar, morning bible+plan confirm, productivity export (incl. watch metrics), math Layer 0 + SymPy path.
 
 ---
 
 ## Current focus
 
-See [docs/SESSION_LOG.md](docs/SESSION_LOG.md). Default: **Sprint 4 (verify)** → **Sprint 5 (polish)**.
+| Phase | Deliverable | Status |
+|-------|-------------|--------|
+| 0 | Spec + AGENTS + notes/quiz Cursor rules | **Done** |
+| 1 | Vocab adaptive → ReviewCard + unified CTAs | **Done** |
+| 2 | Notes/quiz generation guardrails + tests | **Done** |
+| 3 | Mixed daily practice / StudyLoop | **Done** (due → Review Hub; Cycle stays adaptive + SRS bridge) |
+| 4 | Productivity infographic polish | **Done** (sleep-clip ribbon, watch sleep score, heatmap labels) |
+| 5 | Verify (pytest + build + A5 notes) | **pytest + build green** — A5 lecture walkthrough on owner return |
 
-| Sprint | Deliverable | Status |
-|--------|-------------|--------|
-| 1 | `POST /api/transcripts/study-flow/start` | ✅ |
-| 2 | `TopicStudyFlowPage.tsx` | ✅ |
-| 3 | Unified note/quiz paths + `next_step` | ✅ |
-| 4 | GRE + pytest + build + one-lecture acceptance | **Do now** |
-| 5 | Empty states, docs, PROJECT_STATUS | After 4 |
+See [docs/SESSION_LOG.md](docs/SESSION_LOG.md) and [docs/PROJECT_STATUS.md](docs/PROJECT_STATUS.md).
 
 ---
 
 ## How to work
 
-1. **Anchor:** `@AGENTS.md` `@docs/COMPLETION_SPRINT.md` `@docs/TASK_COMPLETION.md`
-2. **Superpowers:** Prefer `verification-before-completion` and `systematic-debugging`. Plans under `docs/superpowers/plans/` are **archives** unless the user reopens one.
-3. **Wire, don’t migrate** — no duplicate models.
-4. **Correct layer:** `backend/transcripts/`, `backend/corpus/`, `backend/quiz/` for study loop.
-5. **Do not extend:** `UniversalReadMode.jsx`, `vocab_backend.py` shim, `backend_example.py`.
-6. **Backend:** `backend.main` · Alembic — [docs/MIGRATIONS.md](docs/MIGRATIONS.md).
-7. **Check off** TASK_COMPLETION when verified (not when code merely exists).
+1. **Anchor:** `@AGENTS.md` `@docs/superpowers/specs/2026-08-17-unified-quiz-completion-design.md` `@docs/decisions/ADR-001-quiz-practice-orchestration.md`
+2. **Superpowers:** `verification-before-completion`, `systematic-debugging`, `executing-plans` / `subagent-driven-development`
+3. **Wire, don’t migrate** — no second SRS, no second quiz runner, no `/api/home/summary`
+4. **Correct layers:**
+   - Study notes/quiz gen: `backend/transcripts/`
+   - Quiz/SRS/backlog: `backend/quiz/`
+   - Math drills: `backend/math/` → enqueue via quiz ReviewCards
+   - GRE bank still in `backend/vocab/` but **sessions should prefer `/api/quiz` domain=vocab**; adaptive routes may remain as shims that also write ReviewCards
+5. **Do not extend:** `UniversalReadMode.jsx`, `vocab_backend.py` shim, `backend_example.py`
+6. **Do not resurrect** live corpus RAG / Study Flow unless the owner reopens that lane
+7. **Backend:** `backend.main` · Alembic — [docs/MIGRATIONS.md](docs/MIGRATIONS.md)
+8. **Commits / push:** only when the user asks (or when continuing an explicit push request)
+9. **Check off** [docs/TASK_COMPLETION.md](docs/TASK_COMPLETION.md) only when verified
 
 ---
 
 ## Stack (short)
 
 ```text
-React (Vite) → FastAPI → SQLite + corpus (Qdrant/BM25)
-APIs: /api/transcripts · /api/corpus · /api/quiz · /api/vocab · /api/hub · /api/planner · /api/behavior
+React (Vite) → FastAPI → SQLite
+APIs: /api/transcripts · /api/quiz · /api/vocab · /api/math · /api/hub · /api/planner · /api/behavior
+Daily study path: Lecture Notes → quiz → Review Hub
 ```
-
-`CORPUS_GROUNDED_NOTES=1` + built corpus for RAG notes.
 
 ---
 
@@ -68,9 +77,7 @@ Frontend: `http://localhost:5173` · API: `http://localhost:8000` · Health: `GE
 
 ## Touch only when user asks
 
-New wearables features, hard-block UX redesign, life-clock skins expansion, hardware, platform rewrite.
-
-GRE Phase 1 is **complete** — regression-test in Sprint 4 only.
+New wearables product features, hard-block UX redesign, life-clock skins expansion, hardware, platform rewrite, restoring Knowledge Base / Study Flow.
 
 ---
 
@@ -78,9 +85,11 @@ GRE Phase 1 is **complete** — regression-test in Sprint 4 only.
 
 | Doc | Use |
 |-----|-----|
-| [docs/COMPLETION_SPRINT.md](docs/COMPLETION_SPRINT.md) | **Cape-time board** — verify then polish |
-| [docs/TASK_COMPLETION.md](docs/TASK_COMPLETION.md) | Master checklist + definition of done |
-| [docs/HLD.md](docs/HLD.md) · [docs/LLD.md](docs/LLD.md) | Architecture |
-| [docs/SESSION_LOG.md](docs/SESSION_LOG.md) | Per-session progress |
+| [docs/superpowers/specs/2026-08-17-unified-quiz-completion-design.md](docs/superpowers/specs/2026-08-17-unified-quiz-completion-design.md) | **Active mandate** |
+| [docs/decisions/ADR-001-quiz-practice-orchestration.md](docs/decisions/ADR-001-quiz-practice-orchestration.md) | Quiz architecture lock |
+| [docs/TASK_COMPLETION.md](docs/TASK_COMPLETION.md) | Master checklist |
 | [docs/PROJECT_STATUS.md](docs/PROJECT_STATUS.md) | What’s working today |
-| `.cursor/skills/study-completion-workflow/SKILL.md` | Agent workflow for this repo |
+| [docs/SESSION_LOG.md](docs/SESSION_LOG.md) | Per-session progress |
+| `.cursor/rules/notes-generation.mdc` | Notes gen policy |
+| `.cursor/rules/quiz-generation.mdc` | Quiz gen / SRS policy |
+| `.cursor/skills/study-completion-workflow/SKILL.md` | Repo workflow |

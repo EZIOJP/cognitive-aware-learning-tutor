@@ -157,6 +157,9 @@ class TrackerService:
         self._last_browser_mode: str | None = None
         self._last_checkpoint_at: float = 0.0
         self._last_bulk_tick_at: float = time.time()
+        self._last_goals_check_at: float = 0.0
+        self._was_idle: bool = False
+        self._idle_since_at: float | None = None
         self._last_block_kill_at: float = 0.0
         self._last_soft_lock_at: float = 0.0
         self._last_keyword_hit: str = ""
@@ -657,10 +660,23 @@ class TrackerService:
         for item in pending:
             kind = str(item.get("kind") or "default")
             msg = str(item.get("message") or "")
+            detail = str(item.get("detail") or kind)
+            if kind == "extension_tab_redirect":
+                try:
+                    from backend.behavior.tracker_block_gui import show_extension_redirect_notice
+
+                    show_extension_redirect_notice(detail=detail)
+                except Exception as exc:  # noqa: BLE001
+                    log.debug("extension redirect notice: %s", exc)
+                continue
             # API only enqueues now — tracker is the sole speaker for gate alerts.
             if msg:
                 speak_alert(msg, force=False)
-            detail = str(item.get("detail") or kind)
+            if kind in (
+                "goal_met",
+                "threshold_alert",
+            ):
+                continue
             if kind in (
                 "unauthorized_browser",
                 "nsfw_screen",
@@ -689,6 +705,72 @@ class TrackerService:
                     )
                 except Exception as exc:  # noqa: BLE001
                     log.debug("alert soft-lock: %s", exc)
+
+    def _maybe_goals_alerts_if_due(self) -> None:
+        """Check daily goal / threshold alerts (~once per minute)."""
+        now = time.time()
+        if (now - self._last_goals_check_at) < 60.0:
+            return
+        self._last_goals_check_at = now
+        if not self._user_id:
+            return
+        try:
+            from datetime import date
+
+            from backend.behavior.goals_alerts import evaluate_and_fire
+            from backend.db.base import SessionLocal
+            from backend.models import User
+            from backend.timetable.tracker_query import tracker_user_ids
+
+            db = SessionLocal()
+            try:
+                user = db.query(User).filter(User.id == self._user_id).first()
+                if not user:
+                    return
+                user_ids = tracker_user_ids(db, user)
+                evaluate_and_fire(
+                    db, user_ids, date.today(), user_id=self._user_id
+                )
+            finally:
+                db.close()
+        except Exception as exc:  # noqa: BLE001
+            log.debug("goals alerts: %s", exc)
+
+    def _maybe_away_prompt(self, idle_seconds: float) -> None:
+        if not self._user_id or idle_seconds < 600.0:
+            return
+        try:
+            from datetime import date
+
+            from backend.behavior.goals_alerts import build_goals_status
+            from backend.behavior.tracker_away_prompt import log_away_response, show_away_prompt
+            from backend.db.base import SessionLocal
+            from backend.models import User
+            from backend.timetable.tracker_query import tracker_user_ids
+
+            db = SessionLocal()
+            try:
+                user = db.query(User).filter(User.id == self._user_id).first()
+                if not user:
+                    return
+                status = build_goals_status(
+                    db, tracker_user_ids(db, user), date.today(), user_id=self._user_id
+                )
+                if status.get("goals") and status["goals"][0].get("met"):
+                    return
+            finally:
+                db.close()
+
+            def on_choice(choice: str) -> None:
+                log_away_response(
+                    choice=choice,
+                    idle_seconds=idle_seconds,
+                    user_id=self._user_id,
+                )
+
+            show_away_prompt(idle_seconds, on_choice=on_choice)
+        except Exception as exc:  # noqa: BLE001
+            log.debug("away prompt: %s", exc)
 
     def _poll_interval(self) -> float:
         """Poll faster while hard-block is locked so Steam games die quickly."""
@@ -776,6 +858,7 @@ class TrackerService:
         self._refresh_stack_health_if_due()
         self._maybe_bulk_flush()
         self._drain_extension_alerts()
+        self._maybe_goals_alerts_if_due()
         self._maybe_nsfw_screen_scan()
 
         now = time.time()
@@ -785,11 +868,20 @@ class TrackerService:
 
         idle_s = get_idle_seconds()
         if idle_s >= self.config.idle_threshold_s:
+            if not self._was_idle:
+                self._was_idle = True
+                self._idle_since_at = now - idle_s
             if self._current:
                 self.flush_current("idle", end_at=now - idle_s)
             self._last_poll_at = now
             self._save_checkpoint()
             return
+
+        if self._was_idle:
+            away_dur = now - (self._idle_since_at or now)
+            self._was_idle = False
+            self._idle_since_at = None
+            self._maybe_away_prompt(away_dur)
 
         if self._paused.is_set():
             # Still enforce hard-block while "paused"

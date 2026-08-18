@@ -7,13 +7,14 @@ import { onGesture, offGesture, GESTURE_RIGHT } from '@zos/interaction'
 import { localStorage } from '@zos/storage'
 import { screen } from './layout'
 import { queuedDays, loadChunkResume } from './queue'
+import { formatHoursMins } from '../shared/timeFmt'
 
 function payloadSummary() {
   try {
     const raw = JSON.parse(localStorage.getItem('calt_last_payload') || 'null')
     if (!raw) return 'No payload yet'
     const parts = []
-    if (raw.sleep_min != null) parts.push(`${raw.sleep_min}m sleep`)
+    if (raw.sleep_min != null) parts.push(`${formatHoursMins(raw.sleep_min)} sleep`)
     if (raw.steps != null) parts.push(`${raw.steps} st`)
     if (raw.hr != null) parts.push(`HR ${raw.hr}`)
     if (raw.stand != null) parts.push(`stand ${raw.stand}h`)

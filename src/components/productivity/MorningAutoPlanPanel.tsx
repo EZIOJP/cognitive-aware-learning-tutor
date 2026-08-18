@@ -6,6 +6,7 @@ import {
   confirmMorningPlan,
   draftMorningAutoPlan,
   fetchDistractionGate,
+  fetchProductivityPolicy,
   type BrowserGateSection,
   type MorningGate,
 } from "../../api/behaviorClient";
@@ -16,8 +17,17 @@ import {
 } from "./morningPlanUi";
 import {
   formatGoalsForPrompt,
+  GOALS_UPDATED_EVENT,
   loadProductivityGoals,
 } from "./ProductivityGoalsPanel";
+import {
+  carriedTitlesForMorning,
+  formatShutdownDayLabel,
+  loadLastShutdown,
+  SHUTDOWN_UPDATED_EVENT,
+} from "./shutdownPrefs";
+import { checkPlanOvercommit } from "./planCapacityUtils";
+import { loadProductivityGoals } from "./ProductivityGoalsPanel";
 
 function startOfDay(d: Date): Date {
   const x = new Date(d);
@@ -63,6 +73,8 @@ export function MorningAutoPlanPanel({
   const [drafting, setDrafting] = useState(false);
   const [draftError, setDraftError] = useState<string | null>(null);
   const [goalsText, setGoalsText] = useState(() => currentGoalsText());
+  const [dailyGoalMinutes, setDailyGoalMinutes] = useState(240);
+  const [overcommitAck, setOvercommitAck] = useState(false);
   const isToday = startOfDay(day).getTime() === startOfDay(new Date()).getTime();
 
   const loadBlocks = useCallback(async () => {
@@ -84,6 +96,18 @@ export function MorningAutoPlanPanel({
   }, [refreshKey, isToday]);
 
   useEffect(() => {
+    void fetchProductivityPolicy()
+      .then((p) => setDailyGoalMinutes(p.daily_goal_minutes ?? 240))
+      .catch(() => setDailyGoalMinutes(240));
+  }, [refreshKey]);
+
+  useEffect(() => {
+    const onGoals = () => setGoalsText(currentGoalsText());
+    window.addEventListener(GOALS_UPDATED_EVENT, onGoals);
+    return () => window.removeEventListener(GOALS_UPDATED_EVENT, onGoals);
+  }, []);
+
+  useEffect(() => {
     if (!isToday) return;
     let cancelled = false;
     fetchDistractionGate()
@@ -103,7 +127,28 @@ export function MorningAutoPlanPanel({
     };
   }, [isToday, refreshKey, blocks.length]);
 
+  const todayBlocks = useMemo(
+    () =>
+      blocks
+        .filter((b) => {
+          const start = new Date(b.start_at);
+          return start >= startOfDay(day) && start <= endOfDay(day) && b.status !== "rolled";
+        })
+        .sort((a, b) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime()),
+    [blocks, day.getTime()],
+  );
+
   const goalsOk = goalsText.trim().length >= 3;
+
+  const overcommit = useMemo(
+    () =>
+      checkPlanOvercommit({
+        blocks: todayBlocks,
+        dailyGoalMinutes,
+        suggestedFocusHours: loadProductivityGoals().focusHoursPerDay,
+      }),
+    [todayBlocks, dailyGoalMinutes],
+  );
 
   const confirmPlan = async () => {
     setConfirming(true);
@@ -112,6 +157,11 @@ export function MorningAutoPlanPanel({
     setGoalsText(goals);
     if (goals.trim().length < 3) {
       setConfirmError("Goals required");
+      setConfirming(false);
+      return;
+    }
+    if (overcommit.level === "over" && !overcommitAck) {
+      setConfirmError(overcommit.message);
       setConfirming(false);
       return;
     }
@@ -141,17 +191,6 @@ export function MorningAutoPlanPanel({
     }
   };
 
-  const todayBlocks = useMemo(
-    () =>
-      blocks
-        .filter((b) => {
-          const start = new Date(b.start_at);
-          return start >= startOfDay(day) && start <= endOfDay(day) && b.status !== "rolled";
-        })
-        .sort((a, b) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime()),
-    [blocks, day.getTime()],
-  );
-
   const autoPlanTitles = useMemo(() => {
     const fromGate = (morning?.auto_plan?.titles || []).filter(Boolean);
     if (fromGate.length > 0) return fromGate;
@@ -159,6 +198,18 @@ export function MorningAutoPlanPanel({
   }, [morning?.auto_plan?.titles, todayBlocks]);
 
   const planExists = morning?.auto_plan?.reason === "plan_exists";
+
+  const [carriedFromShutdown, setCarriedFromShutdown] = useState<string[]>(() =>
+    carriedTitlesForMorning(),
+  );
+  useEffect(() => {
+    const refresh = () => setCarriedFromShutdown(carriedTitlesForMorning());
+    refresh();
+    window.addEventListener(SHUTDOWN_UPDATED_EVENT, refresh);
+    return () => window.removeEventListener(SHUTDOWN_UPDATED_EVENT, refresh);
+  }, [refreshKey]);
+
+  const lastShutdown = loadLastShutdown();
 
   const mode = useMemo(
     () =>
@@ -207,6 +258,17 @@ export function MorningAutoPlanPanel({
 
   return (
     <div className="space-y-3">
+      {carriedFromShutdown.length > 0 && lastShutdown ? (
+        <div className="rounded-xl border border-indigo-500/30 bg-indigo-500/10 px-3 py-2 text-[11px] text-indigo-100">
+          <p className="font-medium">Carried from {formatShutdownDayLabel(lastShutdown.date)} shutdown</p>
+          <ul className="mt-1 list-disc list-inside text-muted-foreground">
+            {carriedFromShutdown.map((t) => (
+              <li key={t}>{t}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
       {mode && (
         <div
           className={`rounded-xl border px-3 py-2 text-[11px] ${
@@ -447,6 +509,27 @@ export function MorningAutoPlanPanel({
                 >
                   Goals required — set a main goal in step 2 (Goals), then confirm.
                 </p>
+              )}
+              {overcommit.level !== "ok" && (
+                <div
+                  className={`text-[11px] rounded-md px-2 py-1.5 border ${
+                    overcommit.level === "over"
+                      ? "border-rose-400/35 bg-rose-500/15 text-rose-100"
+                      : "border-amber-400/35 bg-amber-500/10 text-amber-100"
+                  }`}
+                >
+                  <p>{overcommit.message}</p>
+                  {overcommit.level === "over" && (
+                    <label className="mt-2 flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={overcommitAck}
+                        onChange={(e) => setOvercommitAck(e.target.checked)}
+                      />
+                      Confirm anyway (over capacity)
+                    </label>
+                  )}
+                </div>
               )}
               {confirmError && <p className="text-[11px] text-rose-300">{confirmError}</p>}
               <button

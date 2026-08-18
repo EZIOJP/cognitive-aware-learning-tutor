@@ -7,6 +7,8 @@ import threading
 import webbrowser
 from typing import TYPE_CHECKING
 
+from backend.behavior.time_fmt import format_hours_mins
+
 log = logging.getLogger("desktop_tracker")
 DASHBOARD_URL = "http://localhost:5173/productivity?tab=plan"
 LOGIN_URL = "http://localhost:5173/login"
@@ -24,7 +26,7 @@ def _fmt_plan_now(service: "TrackerService") -> str:
     if ctx is None or ctx.current is None:
         return "Plan now: — none —"
     b = ctx.current
-    return f"Plan now: {_truncate(b.title)} ({b.minutes_left}m left)"
+    return f"Plan now: {_truncate(b.title)} ({format_hours_mins(b.minutes_left)} left)"
 
 
 def _fmt_plan_next(service: "TrackerService") -> str:
@@ -153,11 +155,7 @@ def run_tray(service: "TrackerService") -> None:
 
     def fmt_today() -> str:
         secs = service.today_seconds()
-        m = secs // 60
-        if m < 60:
-            return f"Today: {m}m"
-        h, rem = divmod(m, 60)
-        return f"Today: {h}h {rem}m" if rem else f"Today: {h}h"
+        return f"Today: {format_hours_mins(secs // 60)}"
 
     def make_icon() -> Image.Image:
         img = Image.new("RGB", (64, 64), color=(30, 41, 59))

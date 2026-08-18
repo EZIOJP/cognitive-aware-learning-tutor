@@ -1,28 +1,24 @@
-# CALT Sync 4.0 — manual health dumper
+# CALT Sync 4.1 — manual health dumper (Zepp OS 6)
 
 Watch app that **dumps body metrics** to the desktop tracker hub. No plans, calendar, notifications, or PC remote.
+
+Watch stamps **calendar day + timezone offset** before BLE. Phone must not replace that with its own clock.
 
 ## What it does
 
 | Action | Behavior |
 |--------|----------|
 | **Dump today** | Capture full body snapshot into a 7-day local queue |
-| **Send queue** | POST queued days oldest-first (chunked), delete day after ACK |
+| **Send queue** | POST queued days oldest-first (chunked), with live progress + red errors |
 | **Preview** | Shows sleep / steps / HR / SpO₂ / stress / temp (or n/a) |
 
-**7-day queue** = days you previously dumped on this watch. Sensors are mostly today-only; the app does not invent historical HR/sleep.
-
-## Removed in 4.0
-
-Notifications, background hourly capture, plans pull, calendar, day-status, Focus, Lock/Shutdown PC.
-
 ## Install
+
+Uninstall old CALT Sync first, then sideload **4.1.0**.
 
 ```bat
 packages\calt-zepp\sideload.bat
 ```
-
-Uninstall old CALT Sync first, then install **4.0.0**.
 
 ## Phone settings
 

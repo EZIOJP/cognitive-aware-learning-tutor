@@ -10,6 +10,13 @@ import {
   type ProductivityPolicy,
 } from "../../api/behaviorClient";
 import { requestBibleDayPass, requestRewardDay } from "../../api/bibleClient";
+import {
+  GOALS_UPDATED_EVENT,
+  goalMinutesToFocusHours,
+  loadProductivityGoals,
+  persistProductivityGoals,
+} from "./ProductivityGoalsPanel";
+import { formatHoursMins, formatHoursMinsPair } from "../../utils/formatDuration";
 
 const COMMON_CATEGORIES = [
   "IDE / Code Editor",
@@ -37,11 +44,7 @@ const COMMON_CATEGORIES = [
 ];
 
 function fmtRemainMinutes(m: number): string {
-  const n = Math.max(0, Math.round(m));
-  if (n < 60) return `${n} min`;
-  const h = Math.floor(n / 60);
-  const rem = n % 60;
-  return rem ? `${h}h ${rem}m` : `${h}h`;
+  return formatHoursMins(m);
 }
 
 type Props = {
@@ -89,6 +92,12 @@ export function ProductivityPolicyPanel({ onSaved }: Props) {
     void load();
   }, [load]);
 
+  useEffect(() => {
+    const onGoals = () => void load();
+    window.addEventListener(GOALS_UPDATED_EVENT, onGoals);
+    return () => window.removeEventListener(GOALS_UPDATED_EVENT, onGoals);
+  }, [load]);
+
   const toggleList = (list: "productive_categories" | "blocked_categories", cat: string) => {
     if (!policy) return;
     const cur = new Set(policy[list]);
@@ -114,9 +123,16 @@ export function ProductivityPolicyPanel({ onSaved }: Props) {
       const saved = await saveProductivityPolicy(policy);
       setPolicy(saved);
       await saveCategoryScores(scores);
+      const hours = goalMinutesToFocusHours(saved.daily_goal_minutes ?? 240);
+      const local = loadProductivityGoals();
+      if (local.focusHoursPerDay !== hours) {
+        persistProductivityGoals({ ...local, focusHoursPerDay: hours });
+      }
       const g = await fetchDistractionGate().catch(() => null);
       setGate(g);
-      setHint("Policy saved — tracker picks up hard-block within ~30s.");
+      setHint(
+        `Policy saved — daily goal is now ${saved.daily_goal_minutes} min (${hours}h). Tracker picks up within ~30s.`,
+      );
       onSaved?.();
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Save failed");
@@ -362,11 +378,11 @@ export function ProductivityPolicyPanel({ onSaved }: Props) {
                     ? "Unlimited games today (study + Bible done)"
                     : gate.locked
                       ? "Games locked — Bible bank or finish study+Bible"
-                      : `Game bank open · ${Math.round(gate.game_bank_remaining_minutes ?? 0)}m left`}
+                      : `Game bank open · ${formatHoursMins(gate.game_bank_remaining_minutes ?? 0)} left`}
               </p>
               <p className="text-[11px] text-muted-foreground">
-                Study {gate.productive_minutes}/{gate.daily_goal_minutes}m · Bible{" "}
-                {Math.round(gate.bible_minutes ?? 0)}/30m
+                Study {formatHoursMinsPair(gate.productive_minutes, gate.daily_goal_minutes)} · Bible{" "}
+                {formatHoursMinsPair(gate.bible_minutes ?? 0, 30)}
                 {gate.locked && gate.remaining_minutes
                   ? ` · ${fmtRemainMinutes(gate.remaining_minutes)} study left`
                   : ""}
@@ -425,7 +441,7 @@ export function ProductivityPolicyPanel({ onSaved }: Props) {
         )}
         <div className="flex flex-wrap items-center gap-3 text-xs">
           <label className="flex items-center gap-2">
-            Daily goal (min)
+            Daily goal
             <input
               type="number"
               min={15}
@@ -436,6 +452,9 @@ export function ProductivityPolicyPanel({ onSaved }: Props) {
               }
               className="w-20 rounded border border-white/10 bg-black/30 px-2 py-1"
             />
+            <span className="text-muted-foreground">
+              min · {formatHoursMins(policy.daily_goal_minutes ?? 240)}
+            </span>
           </label>
           <label className="flex items-center gap-2">
             <input

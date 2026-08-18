@@ -18,7 +18,9 @@ export interface PlannerBlock {
   start_at: string;
   end_at: string;
   planned_minutes: number;
+  planned_label?: string;
   remaining_minutes: number;
+  remaining_label?: string;
   status: PlannerBlockStatus;
   rolled_from_id: number | null;
   roll_count: number;
@@ -52,12 +54,19 @@ export type ActualOverlayPayload = {
 export interface AdherenceSummary {
   day: string;
   planned_minutes: number;
+  planned_label?: string;
   actual_minutes: number;
+  actual_label?: string;
   productive_minutes: number;
+  productive_label?: string;
   effective_focus_minutes: number;
+  effective_focus_label?: string;
   on_plan_focus_minutes?: number;
+  on_plan_focus_label?: string;
   off_plan_productive_minutes?: number;
+  off_plan_productive_label?: string;
   distraction_on_plan_minutes?: number;
+  distraction_on_plan_label?: string;
   adherence_pct: number | null;
   block_count: number;
   session_count: number;

@@ -308,7 +308,7 @@ export function ActivityDetailCardBody({
       {plannedBlock ? (
         <div className="rounded-lg border border-violet-500/25 bg-violet-500/10 px-3 py-3 space-y-1">
           <p className="text-sm text-violet-100">{plannedBlock.category}</p>
-          <p className="text-xs text-violet-200/70">{plannedBlock.minutes}m planned</p>
+          <p className="text-xs text-violet-200/70">{fmtDurationMinutes(plannedBlock.minutes)} planned</p>
         </div>
       ) : (
         <>

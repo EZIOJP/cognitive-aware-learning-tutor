@@ -134,7 +134,7 @@ function EventChip(props: EventProps<CalendarEvent>) {
 function eventTitle(block: PlannerBlock): string {
   if (block.status === "done") return `${block.title} (done)`;
   if (block.status === "rolled") return `${block.title} (rolled)`;
-  return `${block.title} (${block.remaining_minutes}m left)`;
+  return `${block.title} (${fmtDurationMinutes(block.remaining_minutes)} left)`;
 }
 
 /** Parse RBC gutter labels like "7:00 AM" / "19:00" into a Date on `day`. */
@@ -553,7 +553,7 @@ export function PlannerCalendar({
       const stacks = stackActualByHour(merged);
       actualEvents = stacks.map((stack, i) => ({
         id: -2000 - i,
-        title: `${stack.items.length} apps · ${Math.round(stack.totalSeconds / 60)}m`,
+        title: `${stack.items.length} apps · ${fmtDurationMinutes(Math.round(stack.totalSeconds / 60))}`,
         start: stack.hourStart,
         end: stack.hourEnd,
         resource: emptyActualResource(

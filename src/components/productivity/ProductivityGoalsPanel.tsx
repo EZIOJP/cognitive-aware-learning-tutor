@@ -1,9 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
 import { Check, ChevronDown, ChevronUp, Gift, Plus, Save, Target, Trash2 } from "lucide-react";
 import type { AdherenceSummary } from "../../api/plannerClient";
+import {
+  fetchProductivityPolicy,
+  fetchGoalsStatus,
+  saveProductivityPolicy,
+  type GoalsStatusResponse,
+} from "../../api/behaviorClient";
 import { cn } from "../../app/components/ui/utils";
 
 const LS_KEY = "productivity:goals:v1";
+export const GOALS_UPDATED_EVENT = "productivity:goals-updated";
 
 export type ExtraGoal = {
   id: string;
@@ -87,10 +94,25 @@ type Props = {
   lockedHours?: number;
   /** Assumed waking window for capacity hint (default 16h) */
   wakingHours?: number;
+  /** Watch sleep score 0–100 for recovery-based capacity hint */
+  sleepScore?: number | null;
   onGoalsTextChange?: (text: string) => void;
   /** Fired when the user explicitly Saves — marks the Plan stepper Goals step complete */
   onConfirmed?: () => void;
 };
+
+export function focusHoursToGoalMinutes(hours: number): number {
+  return Math.min(960, Math.max(15, Math.round(Number(hours) * 60)));
+}
+
+export function goalMinutesToFocusHours(mins: number): number {
+  return Math.round((Math.max(15, Number(mins) || 240) / 60) * 10) / 10;
+}
+
+export function persistProductivityGoals(goals: ProductivityGoals): void {
+  localStorage.setItem(LS_KEY, JSON.stringify(goals));
+  window.dispatchEvent(new CustomEvent(GOALS_UPDATED_EVENT, { detail: goals }));
+}
 
 export function loadProductivityGoals(): ProductivityGoals {
   try {
@@ -135,12 +157,16 @@ export function ProductivityGoalsPanel({
   adherence,
   lockedHours = 0,
   wakingHours = 16,
+  sleepScore = null,
   onGoalsTextChange,
   onConfirmed,
 }: Props) {
   const [goals, setGoals] = useState<ProductivityGoals>(() => loadProductivityGoals());
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [draftExtra, setDraftExtra] = useState("");
+  const [goalsStatus, setGoalsStatus] = useState<GoalsStatusResponse | null>(null);
 
   const effectiveHours = (adherence?.effective_focus_minutes ?? 0) / 60;
   const dayPct =
@@ -159,18 +185,92 @@ export function ProductivityGoalsPanel({
           ? "ok"
           : "tight";
 
+  const recoveryFactor =
+    sleepScore != null && sleepScore > 0
+      ? sleepScore >= 85
+        ? 1.0
+        : sleepScore >= 70
+          ? 0.9
+          : sleepScore >= 55
+            ? 0.75
+            : 0.6
+      : null;
+  const suggestedFocusHours =
+    recoveryFactor != null
+      ? Math.round(goals.focusHoursPerDay * recoveryFactor * 10) / 10
+      : null;
+  const recoveryLabel =
+    sleepScore != null && sleepScore > 0
+      ? sleepScore >= 85
+        ? "Full capacity"
+        : sleepScore >= 70
+          ? "Good recovery"
+          : sleepScore >= 55
+            ? "Moderate — trim deep work"
+            : "Low recovery — lighter day"
+      : null;
+
+  useEffect(() => {
+    let cancelled = false;
+    void fetchGoalsStatus()
+      .then((s) => {
+        if (!cancelled) setGoalsStatus(s);
+      })
+      .catch(() => {
+        if (!cancelled) setGoalsStatus(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [saved, goals.focusHoursPerDay]);
+
   const goalsText = useMemo(() => formatGoalsForPrompt(goals), [goals]);
 
   useEffect(() => {
     onGoalsTextChange?.(goalsText);
   }, [goalsText, onGoalsTextChange]);
 
-  const save = () => {
+  useEffect(() => {
+    const onUpdated = () => setGoals(loadProductivityGoals());
+    window.addEventListener(GOALS_UPDATED_EVENT, onUpdated);
+    return () => window.removeEventListener(GOALS_UPDATED_EVENT, onUpdated);
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    void fetchProductivityPolicy()
+      .then((p) => {
+        if (cancelled) return;
+        const hours = goalMinutesToFocusHours(p.daily_goal_minutes ?? 240);
+        setGoals((prev) =>
+          prev.focusHoursPerDay === hours ? prev : { ...prev, focusHoursPerDay: hours },
+        );
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const save = async () => {
+    setSaving(true);
+    setSaveError(null);
     localStorage.setItem(LS_KEY, JSON.stringify(goals));
-    setSaved(true);
-    window.setTimeout(() => setSaved(false), 1800);
     onGoalsTextChange?.(goalsText);
-    onConfirmed?.();
+    try {
+      await saveProductivityPolicy({
+        daily_goal_minutes: focusHoursToGoalMinutes(goals.focusHoursPerDay),
+      });
+      persistProductivityGoals(goals);
+      setSaved(true);
+      window.setTimeout(() => setSaved(false), 1800);
+      onConfirmed?.();
+    } catch (e: unknown) {
+      persistProductivityGoals(goals);
+      setSaveError(e instanceof Error ? e.message : "Could not update the daily gate goal");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const addExtra = () => {
@@ -192,15 +292,17 @@ export function ProductivityGoalsPanel({
             Goals & motivation
           </h3>
           <p className="text-xs text-muted-foreground mt-1">
-            Routines already locked fixed times. Set focus hours to match free gaps — propose fills the rest.
+            Routines already locked fixed times. Set focus hours to match free gaps — Save also updates the study gate (unlock / YouTube).
           </p>
+          {saveError ? <p className="text-[11px] text-rose-300 mt-1">{saveError}</p> : null}
         </div>
         <button
           type="button"
-          onClick={save}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600/70 hover:bg-emerald-600 text-xs shrink-0"
+          onClick={() => void save()}
+          disabled={saving}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600/70 hover:bg-emerald-600 text-xs shrink-0 disabled:opacity-50"
         >
-          <Save size={12} /> {saved ? "Saved" : "Save"}
+          <Save size={12} /> {saving ? "Saving…" : saved ? "Saved" : "Save"}
         </button>
       </div>
 
@@ -231,6 +333,13 @@ export function ProductivityGoalsPanel({
               ? "Comfortable fit — propose can fill study blocks up to your focus target."
               : "Tight but workable — propose will pack free gaps near your focus target."}
         </p>
+        {recoveryLabel && suggestedFocusHours != null ? (
+          <p className="text-[11px] pt-1 border-t border-white/10 mt-2">
+            Watch recovery ({sleepScore}): {recoveryLabel}. Suggested focus today:{" "}
+            <span className="tabular-nums font-medium text-foreground">{suggestedFocusHours}h</span>
+            {" "}(your target {goals.focusHoursPerDay}h).
+          </p>
+        ) : null}
       </div>
 
       <div className="space-y-3">
@@ -363,6 +472,27 @@ export function ProductivityGoalsPanel({
           </button>
         </div>
       </div>
+
+      {goalsStatus && (goalsStatus.alerts.length > 0 || goalsStatus.goals.length > 0) ? (
+        <div className="rounded-xl border border-white/10 bg-black/20 p-3 space-y-2 text-xs">
+          <p className="font-medium text-foreground/90">Today&apos;s alerts & goal</p>
+          {goalsStatus.goals.map((g) => (
+            <p key={g.id} className="text-muted-foreground">
+              {g.label}: {Math.round(g.current_seconds / 60)} / {Math.round(g.target_seconds / 60)} min
+              {g.met ? " · met" : ` · ${g.pct}%`}
+            </p>
+          ))}
+          {goalsStatus.alerts.map((a) => (
+            <p
+              key={a.id}
+              className={a.triggered ? "text-amber-200" : "text-muted-foreground"}
+            >
+              {a.label}: {Math.round(a.current_seconds / 60)} / {Math.round(a.max_seconds / 60)} min
+              {a.fired ? " · notified" : a.triggered ? " · triggered" : ""}
+            </p>
+          ))}
+        </div>
+      ) : null}
 
       <div
         className={cn(

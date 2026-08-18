@@ -44,21 +44,21 @@ graph TD
     C --> D[Feature Engineering];
 ```"""
     fixed = sanitize_mermaid_blocks(raw)
-    assert "(EDA)" not in fixed or '["Exploratory Data Analysis - EDA"]' in fixed
-    assert "{Exploratory" not in fixed
+    assert "Exploratory Data Analysis (EDA)" in fixed
+    assert "Feature Engineering" in fixed
 
 
 def test_sanitize_mermaid_array_index_in_label():
-    raw = "B --> C[Process: arr[i]]"
+    raw = "flowchart TD\nB --> C[Process: arr[i]]"
     fixed = sanitize_mermaid_source(raw)
-    assert 'C["Process: arr[i]"]' in fixed
+    assert "Process: arr[i]" in fixed
 
 
 def test_sanitize_mermaid_stadium_with_range_call():
-    raw = "A --> B(Use Python range() / np.arange())"
+    raw = "flowchart TD\nA --> B(Use Python range() / np.arange())"
     fixed = sanitize_mermaid_source(raw)
-    assert 'B["Use Python range() / np.arange()"]' in fixed
-    assert "B(Use Python" not in fixed
+    assert "Use Python range() / np.arange()" in fixed
+    assert fixed == raw
 
 
 def test_postprocess_dedupes_repeated_sections():

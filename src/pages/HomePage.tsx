@@ -18,6 +18,7 @@ import {
   type InsightsDailyPayload,
   type HubDailyPayload,
 } from "../api/hubClient";
+import { formatHoursMins } from "../utils/formatDuration";
 import { AiReviewWidget } from "../components/dashboard/AiReviewWidget";
 import { StudyLoopWidget } from "../components/dashboard/StudyLoopWidget";
 import { useTheme } from "../context/ThemeContext";
@@ -132,7 +133,7 @@ function buildCoreWidgets(
         <LemillionAssistant
           message={
             insights
-              ? `Life score ${insights.life_score} · ${insights.study_minutes}m studied today. Stay on phase.`
+              ? `Life score ${insights.life_score} · ${formatHoursMins(insights.study_minutes)} studied today. Stay on phase.`
               : "Stay on phase — small wins compound into mastery."
           }
         />
@@ -425,10 +426,10 @@ export function HomePage() {
       const vocab = insights?.vocab_events ?? 0;
       return {
         ...w,
-        content: `${mins}m today`,
+        content: `${formatHoursMins(mins)} today`,
         description:
           vocab > 0
-            ? `${vocab} vocab events logged · ${insights?.productive_minutes ?? 0}m productive`
+            ? `${vocab} vocab events logged · ${formatHoursMins(insights?.productive_minutes ?? 0)} productive`
             : "Log study time in Life Tracker for live stats",
       };
     }

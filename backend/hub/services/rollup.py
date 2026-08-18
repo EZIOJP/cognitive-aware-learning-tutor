@@ -600,6 +600,7 @@ def rebuild_daily_rollup(db: Session, user_id: int, day: date) -> DailyRollup:
 
 
 def daily_payload(rollup: DailyRollup, life: LifeDailyLog | None) -> dict:
+    from backend.behavior.time_fmt import optional_minutes_label
     from backend.planner.service import local_tz
 
     now = datetime.now(local_tz())
@@ -610,7 +611,9 @@ def daily_payload(rollup: DailyRollup, life: LifeDailyLog | None) -> dict:
         "date": rollup.date.isoformat(),
         "segments": segments,
         "productive_minutes": rollup.productive_minutes,
+        "productive_label": optional_minutes_label(rollup.productive_minutes),
         "sleep_minutes": rollup.sleep_minutes,
+        "sleep_label": optional_minutes_label(rollup.sleep_minutes),
         "vocab_events": rollup.vocab_events,
         "math_attempts": rollup.math_attempts,
         "stats": json.loads(rollup.stats_json or "{}"),

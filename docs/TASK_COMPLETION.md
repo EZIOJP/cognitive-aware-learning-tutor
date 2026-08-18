@@ -13,7 +13,7 @@ Use this as the master “what’s left” doc. Check items off as you **verify*
 
 | Area | Status |
 |------|--------|
-| Study Flow orchestrator + stepper UI | **Shipped** — still run A5 once |
+| Study Flow / corpus RAG | **Removed 2026-08-04** — do not restore |
 | Quiz `next_step` + math Layer 0 | **Shipped** |
 | Productivity policy + propose-plan | **Shipped** (bonus lane) |
 | Wearables ingest | **Shipped** (bonus; don’t expand) |

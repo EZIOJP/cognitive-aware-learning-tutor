@@ -713,11 +713,19 @@ def serialize_wearable_daily(row: WearableDaily | None) -> dict[str, Any] | None
             payload = json.loads(row.payload_json)
         except Exception:
             payload = None
+    from backend.behavior.time_fmt import optional_hours_label, optional_minutes_label
+    from backend.wearables.day_stamp import clock_fields_from_payload
     from backend.wearables.sitting import extract_sitting_minutes
 
     caps = None
     if isinstance(payload, dict):
         caps = payload.get("capabilities")
+
+    sitting = extract_sitting_minutes(payload) if isinstance(payload, dict) else None
+    clock = clock_fields_from_payload(payload if isinstance(payload, dict) else None)
+    captured = clock.get("captured_at") or (
+        row.last_captured_at.isoformat() if row.last_captured_at else None
+    )
 
     return {
         "local_date": row.local_date.isoformat(),
@@ -726,6 +734,8 @@ def serialize_wearable_daily(row: WearableDaily | None) -> dict[str, Any] | None
         "sleep_hours": row.sleep_hours,
         "sleep_score": row.sleep_score,
         "sleep_deep_min": row.sleep_deep_min,
+        "sleep_label": optional_hours_label(row.sleep_hours),
+        "sleep_deep_label": optional_minutes_label(row.sleep_deep_min),
         "steps": row.steps,
         "step_target": row.step_target,
         "calories": row.calories,
@@ -739,8 +749,13 @@ def serialize_wearable_daily(row: WearableDaily | None) -> dict[str, Any] | None
         "pai_total": row.pai_total,
         "stand_hours": row.stand_hours,
         "stand_target": row.stand_target,
+        "stand_label": optional_hours_label(row.stand_hours),
         "battery_pct": row.battery_pct,
-        "sitting_min": extract_sitting_minutes(payload) if isinstance(payload, dict) else None,
+        "sitting_min": sitting,
+        "sitting_label": optional_minutes_label(sitting),
+        "tz_offset_min": clock.get("tz_offset_min"),
+        "watch_local_date": clock.get("watch_local_date"),
+        "captured_at": captured,
         "last_captured_at": row.last_captured_at.isoformat() if row.last_captured_at else None,
         "last_dump_id": row.last_dump_id,
         "last_chunk_id": row.last_chunk_id,

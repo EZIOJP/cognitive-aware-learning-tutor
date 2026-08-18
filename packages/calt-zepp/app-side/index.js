@@ -5,7 +5,7 @@ import { MessageBuilder } from '../shared/message-side'
 
 const messageBuilder = new MessageBuilder()
 const MAX_LOG = 20
-const APP_VER = '4.0.0'
+const APP_VER = '4.1.0'
 
 function settingsGet(key, fallback = '') {
   try {
@@ -156,16 +156,23 @@ async function doFetch(label, opts) {
   }
 }
 
+function sleepMs(ms) {
+  return new Promise((resolve) => {
+    if (typeof setTimeout === 'function') {
+      setTimeout(resolve, ms)
+      return
+    }
+    resolve()
+  })
+}
+
 async function doFetchRetry(label, opts, attempts) {
   const n = attempts || 2
   let last = null
   for (let i = 0; i < n; i++) {
     last = await doFetch(label, opts)
     if (last.ok) return last
-    const until = Date.now() + 350 * (i + 1)
-    while (Date.now() < until) {
-      /* spin */
-    }
+    await sleepMs(400 * (i + 1))
   }
   return last
 }
@@ -257,14 +264,19 @@ async function syncAll(health, opts) {
   const token = String(settingsGet('ingest_token', 'calt-local-wearables'))
   const now = new Date()
   const at = now.toISOString()
-  const y = now.getFullYear()
-  const m = String(now.getMonth() + 1).padStart(2, '0')
-  const d = String(now.getDate()).padStart(2, '0')
-  const todayDate = `${y}-${m}-${d}`
-  const requestedDate = String((opts && opts.localDate) || '')
-  const isQueued =
-    !!(opts && opts.queuedSleepSnapshot) && /^\d{4}-\d{2}-\d{2}$/.test(requestedDate)
-  const localDate = isQueued ? requestedDate : todayDate
+  const watchDate = String((health && health.local_date) || (opts && opts.localDate) || '')
+  const resolvedDate = /^\d{4}-\d{2}-\d{2}$/.test(watchDate)
+    ? watchDate
+    : `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(
+        now.getDate(),
+      ).padStart(2, '0')}`
+  const tzOffset =
+    health && health.tz_offset_min != null
+      ? Number(health.tz_offset_min)
+      : opts && opts.tz_offset_min != null
+        ? Number(opts.tz_offset_min)
+        : null
+  const isQueued = !!(opts && opts.queuedSleepSnapshot)
   const softErrors = []
   let healthOk = false
   let wroteLife = false
@@ -313,12 +325,6 @@ async function syncAll(health, opts) {
 
   const headers = authHeaders(token, true)
 
-  await doFetch('warmup', {
-    url: `${norm.base}/api/wearables/zepp/health`,
-    method: 'GET',
-    headers: authHeaders(token, false),
-  })
-
   const sleepPayload =
     health && health.sleep
       ? {
@@ -337,7 +343,7 @@ async function syncAll(health, opts) {
   const dumpId =
     (health && health.dump_id) ||
     (chunk && chunk.dump_id) ||
-    `dump_${localDate}_${Date.now()}`
+    `dump_${resolvedDate}_${Date.now()}`
   const chunkId =
     (chunk && chunk.chunk_id) || `${dumpId}_${(chunk && chunk.part) || 1}`
   const checksum = (health && health.checksum) || (chunk && chunk.checksum) || null
@@ -347,7 +353,8 @@ async function syncAll(health, opts) {
     source: 'mini_program',
     dump: (health && health.dump) || 'processed_v1',
     captured_at: (health && health.captured_at) || at,
-    local_date: localDate,
+    local_date: resolvedDate,
+    tz_offset_min: tzOffset,
     sleep: sleepPayload,
     heart: health && health.heart ? health.heart : undefined,
     activity: health && health.activity ? health.activity : undefined,
@@ -364,20 +371,23 @@ async function syncAll(health, opts) {
     weather: health && health.weather ? health.weather : undefined,
     meta_device: health && health.meta_device ? health.meta_device : undefined,
     capabilities: health && health.capabilities ? health.capabilities : undefined,
-    device: { model: 'zepp', os: '5' },
+    device: { model: 'zepp', os: '6' },
     meta: {
       app: 'calt-zepp',
       host: norm.host,
       ver: APP_VER,
+      os: 6,
       dump: (health && health.dump) || 'processed_v1',
       dump_id: dumpId,
       chunk_id: chunkId,
       checksum,
+      watch_local_date: resolvedDate,
+      tz_offset_min: tzOffset,
       queued_sleep_snapshot: isQueued,
       manual_dump: true,
       chunk: chunk
         ? {
-            day: chunk.day || localDate,
+            day: chunk.day || resolvedDate,
             part: chunk.part,
             total: chunk.total,
             label: chunk.label,
@@ -464,7 +474,7 @@ async function syncAll(health, opts) {
     host: norm.host,
     diag,
     logs,
-    localDate,
+    localDate: resolvedDate,
     progress: chunk
       ? { part: chunk.part, total: chunk.total, label: chunk.label || '' }
       : null,
@@ -492,6 +502,7 @@ AppSideService({
       if (method === 'SYNC_ALL' || method === 'SYNC') {
         syncAll(params && params.health, {
           localDate: params && params.localDate,
+          tz_offset_min: params && params.tz_offset_min,
           queuedSleepSnapshot: !!(params && params.queuedSleepSnapshot),
           skipFollowup: true,
           chunk: params && params.chunk,

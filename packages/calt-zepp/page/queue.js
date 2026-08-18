@@ -74,6 +74,12 @@ export function queueSnapshot(health, opts) {
 
     const stamped = Object.assign({}, health)
     if (!stamped.captured_at) stamped.captured_at = new Date().toISOString()
+    if (!stamped.local_date) stamped.local_date = day
+    if (stamped.tz_offset_min == null) {
+      try {
+        stamped.tz_offset_min = -new Date().getTimezoneOffset()
+      } catch (_) {}
+    }
     if (!stamped.dump_id) stamped.dump_id = makeDumpId(day, stamped.captured_at)
     stamped.checksum = payloadChecksum({
       sleep: stamped.sleep,
@@ -159,15 +165,20 @@ export function clearChunkResume() {
 export function splitHealthChunks(health) {
   const h = health || {}
   const dump = h.dump || 'processed_v1'
-  const dumpId = h.dump_id || makeDumpId(localDateKey(), h.captured_at)
+  const dumpId = h.dump_id || makeDumpId(h.local_date || localDateKey(), h.captured_at)
+  const clock = {
+    captured_at: h.captured_at,
+    local_date: h.local_date,
+    tz_offset_min: h.tz_offset_min,
+  }
   const parts = [
-    { label: 'Sleep', health: { dump, dump_id: dumpId, captured_at: h.captured_at, sleep: h.sleep, capabilities: h.capabilities } },
+    { label: 'Sleep', health: { dump, dump_id: dumpId, ...clock, sleep: h.sleep, capabilities: h.capabilities } },
     {
       label: 'Activity',
       health: {
         dump,
         dump_id: dumpId,
-        captured_at: h.captured_at,
+        ...clock,
         activity: h.activity,
         calorie: h.calorie,
         distance: h.distance,
@@ -177,13 +188,13 @@ export function splitHealthChunks(health) {
         capabilities: h.capabilities,
       },
     },
-    { label: 'Heart', health: { dump, dump_id: dumpId, captured_at: h.captured_at, heart: h.heart } },
+    { label: 'Heart', health: { dump, dump_id: dumpId, ...clock, heart: h.heart } },
     {
       label: 'Extras',
       health: {
         dump,
         dump_id: dumpId,
-        captured_at: h.captured_at,
+        ...clock,
         stress: h.stress,
         spo2: h.spo2,
         pai: h.pai,

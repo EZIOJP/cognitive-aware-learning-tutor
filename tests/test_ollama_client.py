@@ -138,4 +138,5 @@ def test_gemini_generate_uses_generate_content(mock_settings):
     assert out == "flowchart TD\n    A --> B"
     args, kwargs = mock_client.post.call_args
     assert "gemini-2.0-flash:generateContent" in args[0]
-    assert kwargs["params"]["key"] == "test-gemini-key"
+    headers = kwargs.get("headers") or {}
+    assert headers.get("x-goog-api-key") == "test-gemini-key"

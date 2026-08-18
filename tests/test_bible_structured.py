@@ -5,6 +5,15 @@ import pytest
 from backend.bible import store, structured
 
 
+@pytest.fixture(autouse=True)
+def _silence_bible_tts(monkeypatch):
+    """Ticking a chapter praises via TTS — keep unit tests from starting the gate worker."""
+    monkeypatch.setattr(
+        "backend.behavior.voice_agent.dialogues.speak",
+        lambda *a, **k: "",
+    )
+
+
 def test_web_read_genesis_1():
     ch = structured.read_chapter("web", "Genesis", 1)
     assert ch["name"] == "Genesis"

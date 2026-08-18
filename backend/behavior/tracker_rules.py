@@ -5,6 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+from backend.behavior.time_fmt import format_hours_mins
+
 
 _NEXT_LABELS = {
     "bible": "Bible",
@@ -197,9 +199,9 @@ def format_rules_lines(snap: RulesSnapshot) -> list[str]:
 
     extras: list[str] = []
     if snap.focus_min is not None:
-        extras.append(f"Focus {snap.focus_min}m")
+        extras.append(f"Focus {format_hours_mins(snap.focus_min)}")
     if snap.distracted_min is not None:
-        extras.append(f"Distracted {snap.distracted_min}m")
+        extras.append(f"Distracted {format_hours_mins(snap.distracted_min)}")
     extras.append("Recording: alive" if snap.tracker_alive else "Recording: ?")
     lines.append(" · ".join(extras))
 

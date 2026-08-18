@@ -66,8 +66,9 @@ def test_off_plan_productive_does_not_raise_adherence():
     )
     m = compute_day_metrics(day, [block], [drift], lambda s: 90)
     assert m["productive_minutes"] == 120
-    assert m["on_plan_focus_minutes"] == 0
+    assert m["productive_label"] == "2 hours"
     assert m["off_plan_productive_minutes"] == 120
+    assert m["off_plan_productive_label"] == "2 hours"
     assert m["adherence_pct"] == 0.0
 
 

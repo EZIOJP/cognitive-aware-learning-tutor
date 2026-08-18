@@ -113,6 +113,9 @@ def test_build_day_status_aggregates(tmp_path, monkeypatch):
     assert out["tracker_alive"] is True
     assert out["wearables"]["steps"] == 100
     assert out["wearables"]["sitting_min"] == 30
+    assert out["wearables"]["sitting_label"] == "0 hours 30 mins"
+    assert out["hard_block"]["productive_label"] == "0 hours 40 mins"
+    assert out["hard_block"]["daily_goal_label"] == "4 hours"
     assert out["morning"]["suggested_wake"]["writable_alarm"] is False
     assert out["alert_enqueued"] is True
     assert "limits" in out

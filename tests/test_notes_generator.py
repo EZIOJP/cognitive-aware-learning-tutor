@@ -15,9 +15,9 @@ flowchart LR
 
 
 @patch("backend.transcripts.notes_generator._select_chunks", return_value=["chunk one"])
-@patch("backend.transcripts.notes_generator.ollama_available", return_value="http://127.0.0.1:11434")
+@patch("backend.transcripts.notes_generator.require_gateway_chain")
 @patch("backend.transcripts.notes_generator.summarize_chunk", return_value=MOCK_SECTION)
-def test_generate_notes_from_text(mock_summarize, mock_available, mock_chunks, tmp_path, monkeypatch):
+def test_generate_notes_from_text(mock_summarize, mock_gateway, mock_chunks, tmp_path, monkeypatch):
     from backend.transcripts.notes_generator import generate_notes_from_text
 
     monkeypatch.setattr("backend.transcripts.notes_generator.NOTES_DIR", tmp_path)
@@ -28,18 +28,19 @@ def test_generate_notes_from_text(mock_summarize, mock_available, mock_chunks, t
     mock_summarize.assert_called_once()
 
 
-@patch("backend.transcripts.notes_generator.ollama_available", return_value=None)
-def test_generate_notes_requires_ollama(_mock_available):
+@patch("backend.transcripts.notes_generator.require_gateway_chain")
+def test_generate_notes_requires_usable_gateway(mock_gateway):
     from backend.transcripts.notes_generator import generate_notes_from_text
 
-    with pytest.raises(RuntimeError, match="Local LLM is not enabled"):
+    mock_gateway.side_effect = RuntimeError("No reachable LLM")
+    with pytest.raises(RuntimeError, match="No reachable LLM"):
         generate_notes_from_text("some transcript text")
 
 
 def test_generate_notes_empty_after_cleanup():
     from backend.transcripts.notes_generator import generate_notes_from_text
 
-    with patch("backend.transcripts.notes_generator.ollama_available", return_value="http://127.0.0.1:11434"):
+    with patch("backend.transcripts.notes_generator.require_gateway_chain"):
         with pytest.raises(ValueError, match="empty after cleanup"):
             generate_notes_from_text("   \n\n  ")
 
@@ -139,9 +140,9 @@ def test_placeholder_for_failed_chunk_includes_excerpt():
 
 
 @patch("backend.transcripts.notes_generator._select_chunks", return_value=["chunk one", "chunk two"])
-@patch("backend.transcripts.notes_generator.ollama_available", return_value="http://127.0.0.1:11434")
+@patch("backend.transcripts.notes_generator.require_gateway_chain")
 @patch("backend.transcripts.notes_generator.summarize_chunk", side_effect=[MOCK_SECTION, None])
-def test_generate_continues_when_chunk_empty(mock_summarize, mock_available, mock_chunks, tmp_path, monkeypatch):
+def test_generate_continues_when_chunk_empty(mock_summarize, mock_gateway, mock_chunks, tmp_path, monkeypatch):
     from backend.transcripts.notes_generator import generate_notes_from_text
 
     monkeypatch.setattr("backend.transcripts.notes_generator.NOTES_DIR", tmp_path)

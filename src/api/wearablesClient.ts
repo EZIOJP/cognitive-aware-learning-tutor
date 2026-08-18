@@ -40,6 +40,8 @@ export type WearableDay = {
   sleep_hours?: number | null;
   sleep_score?: number | null;
   sleep_deep_min?: number | null;
+  sleep_label?: string | null;
+  sleep_deep_label?: string | null;
   steps?: number | null;
   step_target?: number | null;
   calories?: number | null;
@@ -53,8 +55,13 @@ export type WearableDay = {
   pai_total?: number | null;
   stand_hours?: number | null;
   stand_target?: number | null;
+  stand_label?: string | null;
   battery_pct?: number | null;
   sitting_min?: number | null;
+  sitting_label?: string | null;
+  tz_offset_min?: number | null;
+  watch_local_date?: string | null;
+  captured_at?: string | null;
   last_captured_at?: string | null;
   last_dump_id?: string | null;
   last_chunk_id?: string | null;
@@ -85,6 +92,16 @@ export type WearableSyncStatus = {
     last_pai?: number | null;
     last_stand?: number | null;
     last_sitting_min?: number | null;
+    last_sitting_label?: string | null;
+    last_sleep_label?: string | null;
+    last_tz_offset_min?: number | null;
+    last_watch_local_date?: string | null;
+    last_captured_at?: string | null;
+    last_exercise_label?: string | null;
+    last_outdoor_minutes?: number | null;
+    last_outdoor_label?: string | null;
+    last_chunk_part?: number | null;
+    last_chunk_total?: number | null;
     last_battery?: number | null;
     last_source?: string;
     last_is_watch?: boolean;
@@ -100,9 +117,12 @@ export type WearableSyncStatus = {
   applied_to_life?: {
     date?: string;
     sleep_hours?: number;
+    sleep_label?: string | null;
     sleep_quality?: number;
     exercise_minutes?: number;
+    exercise_label?: string | null;
     outdoor_minutes?: number;
+    outdoor_label?: string | null;
     stress_level?: number;
     life_score?: number;
   } | null;
@@ -200,9 +220,11 @@ export async function postWearableIngest(payload: {
     method: "POST",
     headers: authHeaders(),
     body: JSON.stringify({
-      schema: 1,
+      schema: 2,
       source: payload.source || "web_test",
       local_date: payload.localDate || new Date().toISOString().slice(0, 10),
+      tz_offset_min: -new Date().getTimezoneOffset(),
+      captured_at: new Date().toISOString(),
       sleep: payload.sleep,
       activity: payload.activity,
       heart: payload.heart,

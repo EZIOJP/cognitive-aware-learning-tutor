@@ -5,12 +5,12 @@
     "appId": 1088801,
     "appType": "app",
     "version": {
-      "code": 14,
-      "name": "4.0.0"
+      "code": 16,
+      "name": "4.1.1"
     },
     "icon": "icon.png",
     "vender": "calt",
-    "description": "CALT Sync 4.0 — manual health dump only"
+    "description": "CALT Sync 4.1 — Zepp OS 6 manual dump, watch clock stamps"
   },
   "permissions": [
     "data:os.device.info",
@@ -30,8 +30,8 @@
   "runtime": {
     "apiVersion": {
       "compatible": "3.0",
-      "target": "3.0",
-      "minVersion": "2.0"
+      "target": "4.0",
+      "minVersion": "3.0"
     }
   },
   "targets": {

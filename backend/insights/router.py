@@ -54,12 +54,18 @@ def insights_daily(db: Session = Depends(get_db), user: User = Depends(get_curre
     elif life and life.life_score >= 55:
         performance = "good"
 
+    from backend.behavior.time_fmt import optional_minutes_label
+
+    study_minutes = life.study_minutes if life else 0
     return {
         "date": d.isoformat(),
         "life_score": life.life_score if life else 0,
-        "study_minutes": life.study_minutes if life else 0,
+        "study_minutes": study_minutes,
+        "study_label": optional_minutes_label(study_minutes),
         "productive_minutes": rollup.productive_minutes,
+        "productive_label": optional_minutes_label(rollup.productive_minutes),
         "sleep_minutes": rollup.sleep_minutes,
+        "sleep_label": optional_minutes_label(rollup.sleep_minutes),
         "vocab_events": rollup.vocab_events,
         "math_attempts": rollup.math_attempts,
         "overall_performance": performance,

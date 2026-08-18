@@ -194,17 +194,19 @@ export function LifeTrackerPage() {
 
   const { lifeScore, breakdown } = useMemo(() => computeScores(entry), [entry]);
 
-  const loadDay = useCallback(async (day: string) => {
-    setLoadError(null);
+  const loadDay = useCallback(async (day: string, opts?: { silent?: boolean }) => {
+    if (!opts?.silent) setLoadError(null);
     const apiDay = day === todayKey ? "today" : day;
     const [remote, watch] = await Promise.all([
       fetchLifeDaily(apiDay),
       fetchWearableDay(day).catch(() => null),
     ]);
-    setWearableDay(watch);
+    if (watch) setWearableDay(watch);
     if (!remote) {
-      setLoadError("Could not load that day from the API");
-      setEntry(emptyEntry(day));
+      if (!opts?.silent) {
+        setLoadError("Could not load that day from the API");
+        setEntry(emptyEntry(day));
+      }
       return;
     }
     setEntry(apiToEntry(remote, day));
@@ -227,6 +229,18 @@ export function LifeTrackerPage() {
   useEffect(() => {
     void loadDay(selectedDay);
   }, [selectedDay, loadDay]);
+
+  useEffect(() => {
+    const onHub = () => void loadDay(selectedDay, { silent: true });
+    window.addEventListener("hub:refresh", onHub);
+    return () => window.removeEventListener("hub:refresh", onHub);
+  }, [selectedDay, loadDay]);
+
+  useEffect(() => {
+    if (!isToday) return;
+    const id = window.setInterval(() => void loadDay(selectedDay, { silent: true }), 10_000);
+    return () => window.clearInterval(id);
+  }, [isToday, selectedDay, loadDay]);
 
   useEffect(() => {
     void loadHistory();

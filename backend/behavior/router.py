@@ -534,6 +534,7 @@ def _desktop_stats_from_tracked_sessions(
         aggregate_session_rows,
         desktop_sessions_payload,
     )
+    from backend.behavior.productivity_pulse import attach_pulse
 
     buckets, total = aggregate_session_rows(rows, scores=scores, policy=policy)
     sessions = desktop_sessions_payload(buckets)
@@ -555,7 +556,7 @@ def _desktop_stats_from_tracked_sessions(
     if last_end:
         tracker_alive = (_as_utc(datetime.now(UTC)) - _as_utc(last_end)).total_seconds() < TRACKER_ALIVE_SECONDS
 
-    return {
+    return attach_pulse({
         "sessions": sessions,
         "total_seconds": total,
         "avg_productivity_score": avg_score,
@@ -563,7 +564,7 @@ def _desktop_stats_from_tracked_sessions(
         "date": day.isoformat(),
         "tracker_running": tracker_alive or total > 0,
         "last_event_at": iso_utc(last_end),
-    }
+    })
 
 
 def _desktop_stats_from_readings(db: Session, user_id: int, day: date) -> dict:
@@ -718,6 +719,171 @@ def desktop_stats(
             return csv_stats
 
     return payload
+
+
+@router.get("/api/behavior/activities")
+def behavior_activities(
+    day: str | None = Query(None, description="YYYY-MM-DD or today"),
+    uncategorized_only: bool = Query(False),
+    limit: int = Query(50, ge=1, le=200),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Ranked apps/sites for Activities inbox (RescueTime-style)."""
+    if day in (None, "today", "now"):
+        d = date.today()
+    else:
+        d = date.fromisoformat(day)
+
+    user_ids = tracker_user_ids(db, user)
+    _ensure_tracker_backfill(db, user_ids, d)
+    from backend.behavior.category_scores import load_score_map
+    from backend.behavior.productivity_policy import load_policy_dict
+    from backend.behavior.session_merge import merge_tracked_rows
+    from backend.behavior.stats_aggregate import activities_payload, aggregate_session_rows
+
+    scores = load_score_map(db)
+    policy = load_policy_dict(db, user.id)
+    start, end = _day_bounds(d)
+    rows = (
+        db.query(TrackedSession)
+        .filter(
+            TrackedSession.user_id.in_(user_ids),
+            TrackedSession.source.in_(("desktop_tracker", "extension", "calt_spa")),
+            TrackedSession.start_time >= start,
+            TrackedSession.start_time < end,
+        )
+        .order_by(TrackedSession.start_time)
+        .all()
+    )
+    rows = merge_tracked_rows(rows)
+    buckets, total = aggregate_session_rows(rows, scores=scores, policy=policy)
+    activities = activities_payload(
+        buckets, limit=limit, uncategorized_only=uncategorized_only
+    )
+    uncategorized_count = sum(1 for a in activities_payload(buckets, limit=500) if a["uncategorized"])
+    return {
+        "date": d.isoformat(),
+        "total_seconds": total,
+        "activities": activities,
+        "uncategorized_count": uncategorized_count,
+    }
+
+
+@router.get("/api/behavior/goals-status")
+def goals_status(
+    day: str | None = Query(None, description="YYYY-MM-DD or today"),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Daily goal progress + threshold alert state."""
+    if day in (None, "today", "now"):
+        d = date.today()
+    else:
+        d = date.fromisoformat(day)
+
+    user_ids = tracker_user_ids(db, user)
+    _ensure_tracker_backfill(db, user_ids, d)
+    from backend.behavior.goals_alerts import build_goals_status
+
+    return build_goals_status(db, user_ids, d, user_id=user.id)
+
+
+class AwayResponseBody(BaseModel):
+    choice: str = "ignore"
+    idle_seconds: float = 0.0
+
+
+@router.post("/api/behavior/away-response")
+def away_response(
+    body: AwayResponseBody,
+    user: User = Depends(get_current_user),
+):
+    """Log away-from-desk prompt choice (tracker may also log locally)."""
+    from backend.behavior.tracker_away_prompt import log_away_response
+
+    return log_away_response(
+        choice=body.choice,
+        idle_seconds=body.idle_seconds,
+        user_id=user.id,
+    )
+
+
+@router.get("/api/behavior/gate-schedules")
+def get_gate_schedules(user: User = Depends(get_current_user)):
+    from backend.behavior.gate_schedules import load_gate_schedules
+
+    _ = user
+    return load_gate_schedules()
+
+
+@router.put("/api/behavior/gate-schedules")
+def put_gate_schedules(body: dict, user: User = Depends(get_current_user)):
+    from backend.behavior.gate_schedules import save_gate_schedules
+
+    _ = user
+    return save_gate_schedules(body if isinstance(body, dict) else {})
+
+
+@router.get("/api/behavior/weekly-digest")
+def weekly_digest(
+    days: int = Query(7, ge=1, le=31),
+    day: str | None = Query(None, description="End date YYYY-MM-DD"),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    from backend.behavior.weekly_digest import build_weekly_digest
+
+    end = date.today() if day in (None, "today") else date.fromisoformat(day)
+    user_ids = tracker_user_ids(db, user)
+    return build_weekly_digest(db, user_ids, user_id=user.id, end_day=end, days=days)
+
+
+@router.get("/api/behavior/focus-quality")
+def focus_quality(
+    day: str | None = Query(None),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Context-switch focus quality for one calendar day."""
+    from backend.behavior.focus_quality import compute_focus_quality
+    from backend.behavior.session_merge import merge_tracked_rows
+    from backend.models.planner import PlannerBlock
+
+    d = date.today() if day in (None, "today") else date.fromisoformat(day)
+    user_ids = tracker_user_ids(db, user)
+    start, end = _day_bounds(d)
+    blocks = (
+        db.query(PlannerBlock)
+        .filter(
+            PlannerBlock.user_id == user.id,
+            PlannerBlock.start_at >= start,
+            PlannerBlock.start_at < end,
+            PlannerBlock.status.notin_(("cancelled", "rolled")),
+        )
+        .all()
+    )
+    intervals = [(b.start_at, b.end_at) for b in blocks if b.start_at and b.end_at]
+    rows = (
+        db.query(TrackedSession)
+        .filter(
+            TrackedSession.user_id.in_(user_ids),
+            TrackedSession.source.in_(("desktop_tracker", "extension", "calt_spa")),
+            TrackedSession.start_time >= start,
+            TrackedSession.start_time < end,
+        )
+        .all()
+    )
+    rows = merge_tracked_rows(rows)
+    from backend.behavior.category_scores import load_score_map, serialize_tracked_session
+    from backend.behavior.productivity_policy import load_policy_dict
+
+    scores = load_score_map(db)
+    policy = load_policy_dict(db, user.id)
+    serialized = [serialize_tracked_session(r, scores, policy) for r in rows]
+    result = compute_focus_quality(serialized, planned_intervals=intervals)
+    result["date"] = d.isoformat()
+    return result
 
 
 @router.get("/api/behavior/tracker-health")
@@ -989,6 +1155,21 @@ class GateAlertIn(BaseModel):
     message: str | None = None
 
 
+class GateExtensionLogIn(BaseModel):
+    """CALT Gate extension redirect / block diagnostics."""
+
+    model_config = {"extra": "allow"}
+
+    event: str = "unknown"
+    source: str = "calt-gate"
+    kind: str = ""
+    detail: str = ""
+    url: str = ""
+    target: str = ""
+    tab_id: int | None = None
+    notify: bool = False
+
+
 class BrowserTelemetryIn(BaseModel):
     """Lightweight extension snapshot (tabs / optional history domains)."""
 
@@ -1181,6 +1362,21 @@ def post_gate_alert(
         message=body.message,
     )
     return {"ok": True, "queued": item}
+
+
+@router.post("/api/behavior/gate-extension-log")
+def post_gate_extension_log(
+    body: GateExtensionLogIn,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Append CALT Gate redirect events to data/logs/gate_extension.log."""
+    _ = db, user
+    from backend.behavior.gate_extension_log import append_gate_extension_event
+
+    raw = body.model_dump() if hasattr(body, "model_dump") else dict(body)
+    path = append_gate_extension_event(raw)
+    return {"ok": True, "path": str(path.name)}
 
 
 class MorningPlanAutoDraftIn(BaseModel):

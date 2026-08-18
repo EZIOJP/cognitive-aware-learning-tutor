@@ -1,15 +1,48 @@
-# Agent Completion Sprint → Cape Time
+# Agent Completion Sprint → Active Mandate
 
-**Status (2026-07-19):** Sprints **1–3 are shipped**. The product is past “build the loop” and into **cape time** — verify, polish, then use it daily.
+**Status (2026-08-17):** Cape-time Study Flow checklist is **archived**. Active work is **unified quiz completion** — see [superpowers/specs/2026-08-17-unified-quiz-completion-design.md](./superpowers/specs/2026-08-17-unified-quiz-completion-design.md) and [AGENTS.md](../AGENTS.md).
 
-**For the user:** Paste this at the start of a wrap-up session:
+**For the user / agent:**
 
 ```text
-@AGENTS.md @docs/COMPLETION_SPRINT.md @docs/TASK_COMPLETION.md
-Cape time. Do not start new feature lanes. Run Sprint 4 verification, then Sprint 5 polish only. Check off TASK_COMPLETION as you go.
+@AGENTS.md @docs/superpowers/specs/2026-08-17-unified-quiz-completion-design.md
+Unify study + math + vocab into /api/quiz → Review Hub. Enforce notes/quiz rules. Polish productivity tracking visuals. No Study Flow / RAG resurrection.
 ```
 
-**For the agent:** Prefer **proof over invention**. Connect gaps only if Sprint 4 finds a real break. No parallel systems, no new product lanes unless the user asks.
+---
+
+## What “complete” means (current)
+
+| In scope | Out of scope |
+|----------|--------------|
+| One quiz engine, three modes → shared FSRS | Restoring Study Flow / corpus KB |
+| Notes + quiz generation rules | Hardware / OCR 3c / PostgreSQL |
+| Productivity Calendar tracking polish | Wearables / hard-block expansion |
+| `npm run build` + core pytest green | Second SRS or home summary brain |
+
+---
+
+## Sprint board (historical 1–3 kept for archive)
+
+| Sprint | Goal | Status |
+|--------|------|--------|
+| 1–3 | Study-flow / notes / quiz wiring | **Removed 2026-08-04** — live loop is Lecture Notes → `/api/quiz` → Review Hub |
+| Unified quiz | Vocab+math+study → ReviewCards | **Active** |
+| Productivity polish | Infographics / empty states | **Active** |
+| Verify | pytest + build + walkthrough notes | After above |
+
+Historical Sprint 1–2 checkboxes below refer to **deleted** files (`study_flow.py`, `/study-flow`). Do not restore them. Canonical loop: Lecture Notes → GlobalQuizRunner → Review Hub.
+
+Historical Sprint 4/5 verify items still useful as a regression checklist in [TASK_COMPLETION.md](./TASK_COMPLETION.md).
+
+---
+
+## Agent rules
+
+1. Prefer ADR-001 + 2026-08-17 unified quiz spec over this file’s older “cape only” language.
+2. Wire, don’t migrate — no duplicate quiz/SRS systems.
+3. Commits only when user asks.
+4. Check off TASK_COMPLETION only when verified.
 
 ---
 

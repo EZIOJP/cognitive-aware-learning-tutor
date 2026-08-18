@@ -20,6 +20,7 @@ import {
 } from '@zos/sensor'
 import { getDeviceInfo } from '@zos/device'
 import { getProfile } from '@zos/user'
+import { formatHoursMins } from '../shared/timeFmt'
 
 function safe(fn, fallback) {
   try {
@@ -33,6 +34,30 @@ function asInt(v, fallback) {
   if (v === undefined || v === null || v === '') return fallback
   const n = Number(v)
   return Number.isFinite(n) ? Math.round(n) : fallback
+}
+
+/** Watch wall clock — never use the phone's Date for the calendar day. */
+export function watchClock() {
+  const d = new Date()
+  const y = d.getFullYear()
+  const mo = `${d.getMonth() + 1}`.padStart(2, '0')
+  const day = `${d.getDate()}`.padStart(2, '0')
+  let tz = 0
+  try {
+    tz = -d.getTimezoneOffset()
+  } catch (_) {
+    try {
+      tz = new Time().getTimezoneOffset ? -new Time().getTimezoneOffset() : 0
+    } catch (__) {
+      tz = 0
+    }
+  }
+  return {
+    local_date: `${y}-${mo}-${day}`,
+    tz_offset_min: tz,
+    captured_at: d.toISOString(),
+    os: 6,
+  }
 }
 
 /** Keep every Nth sample so POST stays small (HR today can be 1440). */
@@ -366,10 +391,12 @@ export function buildHealthSnapshot(mode) {
     capabilities.fat_burn = fat_burn.minutes != null
   } catch (_) {}
 
-  const capturedAt = new Date().toISOString()
+  const clock = watchClock()
   const out = {
     dump: full ? 'processed_v1' : 'lean_v1',
-    captured_at: capturedAt,
+    captured_at: clock.captured_at,
+    local_date: clock.local_date,
+    tz_offset_min: clock.tz_offset_min,
     sleep,
     heart,
     activity,
@@ -414,5 +441,5 @@ export function snapshotSummary(h) {
       : h.capabilities && h.capabilities.temperature === false
         ? 'n/a'
         : '—'
-  return `${steps}st · ${sleep}m · HR ${hr}\nSpO₂ ${spo2} · stress ${stress} · T ${temp}`
+  return `${steps}st · ${formatHoursMins(sleep)} · HR ${hr}\nSpO₂ ${spo2} · stress ${stress} · T ${temp}`
 }

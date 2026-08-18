@@ -63,12 +63,16 @@ export function usePlannerBlocks(from: Date, to: Date): FetchState<PlannerBlock[
   );
 }
 
-export function useActualOverlay(from: Date, to: Date): FetchState<ActualSession[]> {
+export function useActualOverlay(
+  from: Date,
+  to: Date,
+  refreshKey = 0,
+): FetchState<ActualSession[]> {
   const fromMs = from.getTime();
   const toMs = to.getTime();
   return useFetch(
     () => fetchActualOverlay(new Date(fromMs), new Date(toMs)),
-    [fromMs, toMs],
+    [fromMs, toMs, refreshKey],
     [],
   );
 }

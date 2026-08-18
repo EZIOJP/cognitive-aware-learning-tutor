@@ -10,6 +10,7 @@ from datetime import date, datetime
 from typing import Any
 
 from backend.behavior.category_scores import PRODUCTIVE_THRESHOLD
+from backend.behavior.time_fmt import optional_minutes_label
 from backend.planner.effective_focus import ScoreFn, _score, plan_adherence_pct
 from backend.planner.service import _utc, local_day_bounds_utc
 
@@ -143,12 +144,19 @@ def compute_day_metrics(
     return {
         "day": day.isoformat(),
         "planned_minutes": planned_minutes,
+        "planned_label": optional_minutes_label(planned_minutes),
         "actual_minutes": int(actual_seconds // 60),
+        "actual_label": optional_minutes_label(int(actual_seconds // 60)),
         "productive_minutes": productive_minutes,
+        "productive_label": optional_minutes_label(productive_minutes),
         "effective_focus_minutes": on_plan_focus,
+        "effective_focus_label": optional_minutes_label(on_plan_focus),
         "on_plan_focus_minutes": on_plan_focus,
+        "on_plan_focus_label": optional_minutes_label(on_plan_focus),
         "off_plan_productive_minutes": off_plan_productive,
+        "off_plan_productive_label": optional_minutes_label(off_plan_productive),
         "distraction_on_plan_minutes": distraction_on_plan,
+        "distraction_on_plan_label": optional_minutes_label(distraction_on_plan),
         "adherence_pct": plan_adherence_pct(on_plan_focus, planned_minutes),
         "block_count": len(active_blocks),
         "session_count": session_count,

@@ -84,8 +84,7 @@ def _label(hours: int | None, target: int | None, sitting: int | None) -> str | 
         else:
             parts.append(f"Stand {hours}h")
     if sitting is not None:
-        if sitting >= 60:
-            parts.append(f"Sitting {sitting // 60}h {sitting % 60}m")
-        else:
-            parts.append(f"Sitting {sitting}m")
+        from backend.behavior.time_fmt import format_hours_mins
+
+        parts.append(f"Sitting {format_hours_mins(sitting)}")
     return " · ".join(parts) if parts else None

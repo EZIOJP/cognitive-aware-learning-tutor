@@ -80,6 +80,43 @@ def test_study_mode_scaler_never_restricted():
     assert blocked["action"] == "block"
 
 
+def test_capture_workflow_keeps_scaler_available_in_every_mode():
+    """Lecture capture may continue during bible/planning without a tab redirect."""
+    for mode in ("bible", "planning", "study", "free"):
+        section = build_browser_gate_section(
+            enabled=True, locked=False, morning_next="open", mode=mode
+        )
+        out = classify_browser_url(
+            "https://app.scaler.com/academy/mentee-dashboard/class/504262/session",
+            mode=mode,
+            enforce=section["enforce"],
+            block_watch_sites=section["block_watch_sites"],
+            block_porn=section["block_porn"],
+            block_social=section["block_social"],
+            block_keywords=section["block_keywords"],
+            block_other=section["block_other"],
+            strict_allowlist=section["strict_allowlist"],
+            allow_domains=section["allow_domains"],
+            watch_domains=section["watch_domains"],
+        )
+        assert out["action"] == "allow", (mode, out)
+        notes = classify_browser_url(
+            "http://localhost:5173/lecture-notes",
+            mode=mode,
+            enforce=section["enforce"],
+            block_watch_sites=section["block_watch_sites"],
+            block_porn=section["block_porn"],
+            block_social=section["block_social"],
+            block_keywords=section["block_keywords"],
+            block_other=section["block_other"],
+            strict_allowlist=section["strict_allowlist"],
+            allow_domains=section["allow_domains"],
+            watch_domains=section["watch_domains"],
+            localhost_path_prefixes=section.get("localhost_path_prefixes") or None,
+        )
+        assert notes["action"] == "allow", (mode, notes)
+
+
 def test_google_drive_and_gemini_on_allowlist():
     """Drive + Gemini stay allowed in study (block_other) so work isn't bounced."""
     for host in (

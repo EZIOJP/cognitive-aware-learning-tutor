@@ -12,6 +12,8 @@ import threading
 import tkinter as tk
 from typing import TYPE_CHECKING, Any, Callable
 
+from backend.behavior.time_fmt import format_hours_mins
+
 log = logging.getLogger("desktop_tracker")
 
 if TYPE_CHECKING:
@@ -58,12 +60,7 @@ def _collect(service: "TrackerService") -> dict[str, Any]:
         health = "API: ? · Web: ?"
 
     secs = int(service.today_seconds() or 0)
-    m = secs // 60
-    if m < 60:
-        today = f"{m}m"
-    else:
-        h, rem = divmod(m, 60)
-        today = f"{h}h {rem}m" if rem else f"{h}h"
+    today = format_hours_mins(secs // 60)
 
     return {
         "user": getattr(service, "username", None) or str(service.user_id),

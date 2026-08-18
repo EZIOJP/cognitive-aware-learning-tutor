@@ -1,14 +1,15 @@
 {
   "manifest_version": 3,
   "name": "CALT Gate (blocker)",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "Light site gate: DNR watch + distraction block, content-score soft warn, locked page. Pair with CALT SelfTracker (v1.5.23+).",
   "permissions": [
     "storage",
     "alarms",
     "tabs",
     "webNavigation",
-    "declarativeNetRequest"
+    "declarativeNetRequest",
+    "notifications"
   ],
   "host_permissions": [
     "<all_urls>",

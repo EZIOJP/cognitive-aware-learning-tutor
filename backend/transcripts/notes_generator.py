@@ -11,7 +11,7 @@ import time
 
 from backend.core.llm_job_context import llm_job
 from backend.core.llm_gateway import require_gateway_chain
-from backend.core.ollama_client import LlmOptions, ollama_generate
+from backend.core.ollama_client import LlmOptions, ollama_available, ollama_generate
 from backend.paths import NOTES_DIR, TRANSCRIPTS_DIR
 from backend.transcripts.asr_restore import maybe_restore_asr
 from backend.transcripts.chunk_polish import finalize_full_note, polish_chunk_text_only

@@ -15,6 +15,7 @@ import {
   type ProposedPlannerBlock,
 } from "../../api/plannerClient";
 import { draftCoveredBySavedBlocks, parseApiDate } from "./planVsActualUtils";
+import { formatHoursMins } from "../../utils/formatDuration";
 import {
   hasRoutineDrag,
   readRoutineDragData,
@@ -632,7 +633,7 @@ export function PlanningDayAgenda({
                             }`}
                           >
                             {format(previewLabelStart, "h:mm a")}–{format(previewLabelEnd, "h:mm a")}
-                            {!compact || open ? ` · ${mins}m` : ""}
+                            {!compact || open ? ` · ${formatHoursMins(mins)}` : ""}
                             {ev.isDraft
                               ? " · draft"
                               : ev.status === "in_progress"

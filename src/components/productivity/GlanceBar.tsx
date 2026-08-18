@@ -1,12 +1,6 @@
-import { BookOpen, Clock, Moon, Zap } from "lucide-react";
-import type { DesktopStats } from "../../api/behaviorClient";
-
-function fmtMinutes(m: number): string {
-  if (m < 60) return `${m}m`;
-  const h = Math.floor(m / 60);
-  const rem = m % 60;
-  return rem > 0 ? `${h}h ${rem}m` : `${h}h`;
-}
+import { BookOpen, Clock, Moon, Target, Zap } from "lucide-react";
+import type { DesktopStats, GoalsStatusResponse } from "../../api/behaviorClient";
+import { formatHoursMins } from "../../utils/formatDuration";
 
 export function scoreColor(score: number): string {
   if (score >= 80) return "text-emerald-400";
@@ -60,6 +54,7 @@ type Props = {
   /** Last-night / selected-day sleep from wearables (hours) */
   sleepHours?: number | null;
   sleepScore?: number | null;
+  goalsStatus?: GoalsStatusResponse | null;
 };
 
 /**
@@ -73,30 +68,42 @@ export function GlanceBar({
   rangeLabel = "today",
   sleepHours = null,
   sleepScore = null,
+  goalsStatus = null,
 }: Props) {
   const avgScore = desktop?.avg_productivity_score ?? 0;
+  const pulse = desktop?.pulse ?? avgScore;
+  const pulseLabel = desktop?.pulse_label ?? "Productivity";
+  const showPulse = desktop?.pulse != null;
+  const displayScore = showPulse ? pulse : avgScore;
+  const scoreCaption = showPulse ? `Pulse · ${rangeLabel}` : `Score · ${rangeLabel}`;
   const sleepLabel =
     sleepHours != null && sleepHours > 0 ? `${sleepHours.toFixed(1)}h` : "—";
-  const trackedLabel = desktop ? fmtMinutes(Math.round(desktop.total_seconds / 60)) : "—";
+  const trackedLabel = desktop ? formatHoursMins(Math.round(desktop.total_seconds / 60)) : "—";
+  const dailyGoal = goalsStatus?.goals?.[0];
+  const goalPct = dailyGoal?.pct ?? 0;
+  const goalMet = dailyGoal?.met ?? false;
 
   return (
     <div className="border-b border-white/10 pb-4">
       <div className="flex flex-wrap items-end gap-x-8 gap-y-4 sm:gap-x-10">
         <div className="flex items-center gap-3 min-w-[7rem]">
           <div className="relative flex items-center justify-center">
-            <MiniScoreRing score={avgScore} />
+            <MiniScoreRing score={displayScore} />
             <span
-              className={`absolute text-xs font-bold tabular-nums ${scoreColor(avgScore)}`}
+              className={`absolute text-xs font-bold tabular-nums ${scoreColor(displayScore)}`}
             >
-              {avgScore}
+              {displayScore}
             </span>
           </div>
           <div>
-            <div className={`text-2xl font-bold tabular-nums leading-none ${scoreColor(avgScore)}`}>
-              {avgScore}
+            <div className={`text-2xl font-bold tabular-nums leading-none ${scoreColor(displayScore)}`}>
+              {displayScore}
             </div>
-            <div className="mt-1 text-[10px] uppercase tracking-wider text-muted-foreground">
-              Score · {rangeLabel}
+            <div
+              className="mt-1 text-[10px] uppercase tracking-wider text-muted-foreground"
+              title={showPulse ? pulseLabel : undefined}
+            >
+              {scoreCaption}
             </div>
           </div>
         </div>
@@ -149,6 +156,18 @@ export function GlanceBar({
             ) : null}
           </div>
         </div>
+
+        {dailyGoal ? (
+          <div className="min-w-[5.5rem]">
+            <div className="flex items-center gap-1.5 text-teal-300/90">
+              <Target size={14} aria-hidden />
+              <span className="text-2xl font-bold tabular-nums leading-none">{goalPct}%</span>
+            </div>
+            <div className="mt-1 text-[10px] uppercase tracking-wider text-muted-foreground">
+              {goalMet ? "Goal met" : "Daily goal"}
+            </div>
+          </div>
+        ) : null}
 
         <div className="hidden md:flex items-center gap-1.5 text-[10px] text-muted-foreground ml-auto pb-1">
           <Zap size={12} className="text-yellow-400/80" aria-hidden />

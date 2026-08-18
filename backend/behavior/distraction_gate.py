@@ -9,6 +9,8 @@ from typing import Any
 
 from sqlalchemy.orm import Session
 
+from backend.behavior.time_fmt import format_hours_mins
+
 log = logging.getLogger("calt.distraction_gate")
 
 # Seed list — common launchers / clients / desktop distractions
@@ -839,17 +841,22 @@ def compute_distraction_gate(db: Session, user_id: int) -> dict[str, Any]:
         "locked": locked_flag,
         "unlocked": unlocked,
         "productive_minutes": productive,
+        "productive_label": format_hours_mins(productive),
         "daily_goal_minutes": goal,
+        "daily_goal_label": format_hours_mins(goal),
         "remaining_minutes": remaining,
+        "remaining_label": format_hours_mins(remaining),
         "hard_block_gaming": bool(policy.get("hard_block_gaming", True)),
         "hard_block_exes": list(policy.get("hard_block_exes") or []),
         "day": day_date.isoformat(),
         "bible_minutes": bible_minutes,
+        "bible_label": format_hours_mins(bible_minutes),
         "chapters_completed_today": chapters_today,
         "chapter_goal": chapter_goal,
         "chapter_goal_met": chapter_met,
         "game_bank_remaining_minutes": bank_remaining_m,
         "game_bank_remaining_seconds": bank_remaining_s,
+        "game_bank_remaining_label": format_hours_mins(bank_remaining_m),
         "game_bank_earned_minutes": float(bible.get("game_bank_earned_minutes") or 0),
         "game_bank_consumed_minutes": float(bible.get("game_bank_consumed_minutes") or 0),
         "day_unlimited": day_unlimited,

@@ -8,6 +8,7 @@ import tkinter as tk
 from tkinter import ttk
 from typing import TYPE_CHECKING
 
+from backend.behavior.time_fmt import format_hours_mins
 from backend.behavior.tracker_plan import DayBlockRow, fetch_today_schedule
 
 log = logging.getLogger("desktop_tracker")
@@ -25,7 +26,7 @@ def _fmt_time(dt) -> str:
 
 def _status_label(row: DayBlockRow) -> str:
     if row.is_current:
-        return f"now · {row.minutes_left}m left"
+        return f"now · {format_hours_mins(row.minutes_left)} left"
     if row.status == "in_progress":
         return "in progress"
     if row.status == "done":

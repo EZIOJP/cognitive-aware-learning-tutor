@@ -218,6 +218,8 @@ def test_compute_gate_unlocks_when_goal_met(monkeypatch, tmp_path):
     out = mod.compute_distraction_gate(FakeDb(), 1)
     assert out["enabled"] is True
     assert out["productive_minutes"] == 120
+    assert out["productive_label"] == "2 hours"
+    assert out["daily_goal_label"]
     assert out["unlocked"] is True
     assert out["locked"] is False
     assert out["remaining_minutes"] == 0

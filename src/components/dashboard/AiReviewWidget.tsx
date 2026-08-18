@@ -9,6 +9,7 @@ import {
   type CoachContextPayload,
   type InsightsDailyPayload,
 } from "../../api/hubClient";
+import { formatHoursMins } from "../../utils/formatDuration";
 import { Button } from "../../app/components/ui/button";
 import {
   Sheet,
@@ -107,7 +108,7 @@ export function AiReviewWidget() {
       </p>
       {daily && (
         <p className="text-xs text-muted-foreground">
-          Life {daily.life_score} · Study {daily.study_minutes}m · Vocab {daily.vocab_events} · Math{" "}
+          Life {daily.life_score} · Study {formatHoursMins(daily.study_minutes)} · Vocab {daily.vocab_events} · Math{" "}
           {daily.math_attempts}
         </p>
       )}

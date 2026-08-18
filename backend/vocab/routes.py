@@ -563,6 +563,27 @@ def quiz_answer(
     })
     sess["index"] += 1
     save_quiz_session(db, sess)
+    try:
+        from backend.quiz.review_cards import upsert_review_card
+
+        upsert_review_card(
+            db,
+            user_id=user.id,
+            domain="vocab",
+            item_id=str(body.word_id),
+            label=str(w.get("word") or body.word_id),
+            payload={
+                "word_id": body.word_id,
+                "word": w.get("word"),
+                "meaning": w.get("meaning"),
+            },
+            correct=is_correct,
+            elapsed_ms=int(body.time_taken or 0) * 1000,
+            fmt="mcq",
+        )
+    except Exception:
+        # WordProgress path remains authoritative if ReviewCard write fails.
+        pass
     return {
         "is_correct": is_correct,
         "correct_answer": w["meaning"],

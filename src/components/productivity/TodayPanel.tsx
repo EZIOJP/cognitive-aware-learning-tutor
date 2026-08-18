@@ -11,6 +11,7 @@ import {
 } from "../../api/plannerClient";
 import { fetchDistractionGate, type MorningGate } from "../../api/behaviorClient";
 import { PlannerBlockForm } from "./PlannerBlockForm";
+import { formatHoursMins } from "../../utils/formatDuration";
 
 function startOfDay(d: Date): Date {
   const x = new Date(d);
@@ -329,7 +330,7 @@ export function TodayPanel({
             <div className="text-[10px] uppercase tracking-wide text-emerald-400">Now</div>
             <div className="font-medium truncate">{active.title}</div>
             <div className="text-xs text-muted-foreground">
-              {fmtTime(active.start_at)} · {active.remaining_minutes}m left
+              {fmtTime(active.start_at)} · {formatHoursMins(active.remaining_minutes)} left
             </div>
           </div>
           <button

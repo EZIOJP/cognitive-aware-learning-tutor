@@ -6,7 +6,9 @@ type Props = {
   selectedDay: Date;
   onSelectDay: (d: Date) => void;
   loading?: boolean;
-  /** Adherence % threshold for streak (0–1). Default 0.7 */
+  /** Heatmap window length — "Weekly" only when the window is a week */
+  windowLabel?: string;
+  /** Adherence % threshold for streak (0–1). Default 0.75 to match green cells */
   streakThreshold?: number;
 };
 
@@ -37,16 +39,20 @@ export function WeeklyAdherenceHeatmap({
   selectedDay,
   onSelectDay,
   loading,
-  streakThreshold = 0.7,
+  windowLabel,
+  streakThreshold = 0.75,
 }: Props) {
   const streak = computeStreak(days, streakThreshold);
   const pctLabel = Math.round(streakThreshold * 100);
+  const title =
+    windowLabel ||
+    (days.length > 7 ? "Adherence" : "Weekly adherence");
 
   return (
     <div className="space-y-2 min-w-0 flex-1">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h3 className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-          Weekly adherence
+          {title}
         </h3>
         <span
           className="inline-flex items-center gap-1.5 rounded-full border border-orange-500/30 bg-orange-500/10 px-2.5 py-0.5 text-xs tabular-nums text-orange-200"
@@ -69,6 +75,10 @@ export function WeeklyAdherenceHeatmap({
             <div key={i} className="h-12 rounded-lg bg-white/5 animate-pulse" />
           ))}
         </div>
+      ) : days.length === 0 ? (
+        <p className="rounded-lg border border-dashed border-white/15 bg-white/[0.03] px-3 py-4 text-center text-xs text-muted-foreground">
+          No adherence data for this window yet — plan blocks and track a day to fill the strip.
+        </p>
       ) : (
         <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
           {days.map((d) => {

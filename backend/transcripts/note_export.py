@@ -164,13 +164,30 @@ def _split_blocks(content: str) -> list[tuple[str, str]]:
 
 def _markdown_tables_and_lists_to_html(text: str) -> str:
     """Light GFM: paragraphs, lists, blockquotes, inline code/bold."""
-    import markdown as md_lib
+    try:
+        import markdown as md_lib
+    except ImportError:
+        return _plain_markdown_fallback(text)
 
     return md_lib.markdown(
         text,
         extensions=["tables", "nl2br", "sane_lists"],
         output_format="html5",
     )
+
+
+def _plain_markdown_fallback(text: str) -> str:
+    """Export still works if the optional `markdown` package is missing."""
+    chunks = [p.strip() for p in re.split(r"\n\s*\n", text or "") if p.strip()]
+    if not chunks:
+        return ""
+    parts: list[str] = []
+    for chunk in chunks:
+        escaped = escape(chunk).replace("\n", "<br/>")
+        escaped = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", escaped)
+        escaped = re.sub(r"`([^`]+)`", r"<code>\1</code>", escaped)
+        parts.append(f"<p>{escaped}</p>")
+    return "".join(parts)
 
 
 def build_export_html(content: str, *, title: str, note_relative: str) -> str:

@@ -12,6 +12,7 @@ import {
   setNotifyMode,
   loadPlan,
 } from '../lib/store'
+import { ensureNotifyRunning, sendTestVerseNow, stopBibleService } from '../lib/bgNotify'
 
 Page({
   onInit() {
@@ -127,8 +128,21 @@ Page({
           prop.TEXT,
           updated.notify_mode === 'off' ? 'Notify off' : 'Notify hourly 8-21',
         )
+        if (updated.notify_mode === 'off') stopBibleService()
+        else ensureNotifyRunning()
       },
     )
+    addBtn('Send verse now', 0x2a4a6a, 0x1e364d, () => {
+      const r = sendTestVerseNow()
+      try {
+        const ui = require('@zos/interaction')
+        if (ui && ui.showToast) {
+          ui.showToast({
+            text: r.ok ? `Sent ${r.ref}` : r.reason || 'Notify failed',
+          })
+        }
+      } catch (_) {}
+    })
     addBtn('Browse Bible', 0x333333, 0x222222, () =>
       push({ url: 'page/books', params: 'browse|0' }),
     )

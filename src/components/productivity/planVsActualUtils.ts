@@ -1,5 +1,5 @@
 import type { ActualSession, PlannerBlock } from "../../api/plannerClient";
-import type { TimelineInterval } from "../../api/behaviorClient";
+import { formatHoursMins } from "../../utils/formatDuration";
 
 export type AdherenceDay = {
   date: string;
@@ -80,20 +80,64 @@ export function minutesSinceMidnight(d: Date): number {
   return d.getHours() * 60 + d.getMinutes() + d.getSeconds() / 60;
 }
 
+/** Clip an interval to a local calendar day, as minutes from that day's midnight. */
+export function minutesClippedToDay(
+  startIso: string | null | undefined,
+  endIso: string | null | undefined,
+  day: Date,
+): { startMin: number; endMin: number } | null {
+  const start = startIso ? parseApiDate(startIso) : new Date(NaN);
+  const end = endIso ? parseApiDate(endIso) : new Date(NaN);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return null;
+  const from = startOfDay(day).getTime();
+  const to = endOfDay(day).getTime();
+  const a = Math.max(start.getTime(), from);
+  const b = Math.min(end.getTime(), to);
+  if (b <= a) return null;
+  return { startMin: (a - from) / 60_000, endMin: (b - from) / 60_000 };
+}
+
+export function isSleepSession(s: {
+  category?: string | null;
+  source?: string | null;
+  app_name?: string | null;
+}): boolean {
+  return (
+    (s.category || "").toLowerCase() === "sleep" ||
+    (s.source || "").toLowerCase() === "wearable_sleep" ||
+    (s.app_name || "").toLowerCase() === "amazfit"
+  );
+}
+
 export function computeAxisWindow(
   blocks: PlannerBlock[],
-  intervals: TimelineInterval[],
+  intervals: Array<{ start_time?: string | null; end_time?: string | null }>,
+  day?: Date,
 ): { axisStart: number; axisEnd: number } {
   const FULL = { axisStart: 0, axisEnd: 24 * 60 };
   const points: number[] = [];
 
   for (const b of blocks) {
-    if (b.start_at) points.push(minutesSinceMidnight(new Date(b.start_at)));
-    if (b.end_at) points.push(minutesSinceMidnight(new Date(b.end_at)));
+    if (day) {
+      const clipped = minutesClippedToDay(b.start_at, b.end_at, day);
+      if (clipped) {
+        points.push(clipped.startMin, clipped.endMin);
+      }
+    } else {
+      if (b.start_at) points.push(minutesSinceMidnight(new Date(b.start_at)));
+      if (b.end_at) points.push(minutesSinceMidnight(new Date(b.end_at)));
+    }
   }
   for (const iv of intervals) {
-    if (iv.start_time) points.push(minutesSinceMidnight(new Date(iv.start_time)));
-    if (iv.end_time) points.push(minutesSinceMidnight(new Date(iv.end_time)));
+    if (day) {
+      const clipped = minutesClippedToDay(iv.start_time, iv.end_time, day);
+      if (clipped) {
+        points.push(clipped.startMin, clipped.endMin);
+      }
+    } else {
+      if (iv.start_time) points.push(minutesSinceMidnight(new Date(iv.start_time)));
+      if (iv.end_time) points.push(minutesSinceMidnight(new Date(iv.end_time)));
+    }
   }
 
   if (points.length === 0) return FULL;
@@ -140,7 +184,7 @@ export function actualOverlapsPlanned(
   return false;
 }
 
-export function computeStreak(days: AdherenceDay[], threshold = 0.7): number {
+export function computeStreak(days: AdherenceDay[], threshold = 0.75): number {
   const thresholdPct = threshold * 100;
   const sorted = [...days].sort((a, b) => b.date.localeCompare(a.date));
   let streak = 0;
@@ -190,10 +234,7 @@ export function aggregateActualByCategory(sessions: ActualSession[]): { name: st
 }
 
 export function fmtDurationMinutes(m: number): string {
-  if (m < 60) return `${Math.round(m)}m`;
-  const h = Math.floor(m / 60);
-  const rem = Math.round(m % 60);
-  return rem > 0 ? `${h}h ${rem}m` : `${h}h`;
+  return formatHoursMins(m);
 }
 
 export function lastNDays(n: number): string[] {
@@ -592,6 +633,177 @@ export function clipSessionsAgainstSleep(
 export function shortAppName(name: string | null | undefined): string {
   if (!name) return "Activity";
   return name.replace(/\.exe$/i, "").replace(/\.app$/i, "");
+}
+
+export type FocusRhythmView = "day" | "week" | "month";
+
+export type FocusRhythmBucket = {
+  key: string;
+  label: string;
+  zoneMinutes: number;
+  pulledAwayMinutes: number;
+  focusedElsewhereMinutes: number;
+};
+
+export type FocusRhythm = {
+  buckets: FocusRhythmBucket[];
+  totals: Pick<FocusRhythmBucket, "zoneMinutes" | "pulledAwayMinutes" | "focusedElsewhereMinutes">;
+  topDistractions: Array<{ name: string; minutes: number }>;
+  strongestZone: FocusRhythmBucket | null;
+  strongestPulledAway: FocusRhythmBucket | null;
+};
+
+function isSleepActualSession(session: ActualSession): boolean {
+  return (
+    (session.category || "").toLowerCase() === "sleep" ||
+    (session.source || "").toLowerCase() === "wearable_sleep" ||
+    (session.app_name || "").toLowerCase() === "amazfit"
+  );
+}
+
+function focusBucketStart(at: Date, view: FocusRhythmView): Date {
+  const out = new Date(at);
+  if (view === "day") {
+    out.setMinutes(0, 0, 0);
+  } else {
+    out.setHours(0, 0, 0, 0);
+  }
+  return out;
+}
+
+function focusBucketLabel(at: Date, view: FocusRhythmView): string {
+  if (view === "day") {
+    return at.toLocaleTimeString(undefined, { hour: "numeric", hour12: true }).replace(" ", "").toLowerCase();
+  }
+  if (view === "week") {
+    return at.toLocaleDateString(undefined, { weekday: "short" });
+  }
+  return at.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
+function addFocusBoundaryPoints(
+  points: Set<number>,
+  start: number,
+  end: number,
+  view: FocusRhythmView,
+): void {
+  const cursor = focusBucketStart(new Date(start), view);
+  if (view === "day") cursor.setHours(cursor.getHours() + 1);
+  else cursor.setDate(cursor.getDate() + 1);
+  while (cursor.getTime() < end) {
+    if (cursor.getTime() > start) points.add(cursor.getTime());
+    if (view === "day") cursor.setHours(cursor.getHours() + 1);
+    else cursor.setDate(cursor.getDate() + 1);
+  }
+}
+
+/**
+ * Builds the plain-language focus story used by Calendar analytics.
+ * It uses only existing planned blocks and scored tracker sessions.
+ */
+export function buildFocusRhythm(
+  blocks: PlannerBlock[],
+  sessions: ActualSession[],
+  from: Date,
+  to: Date,
+  view: FocusRhythmView,
+  productiveThreshold = PRODUCTIVE_THRESHOLD,
+): FocusRhythm {
+  const rangeStart = from.getTime();
+  const rangeEnd = to.getTime();
+  const buckets = new Map<string, FocusRhythmBucket>();
+  const distractionSources = new Map<string, number>();
+
+  const add = (
+    at: Date,
+    kind: "zoneMinutes" | "pulledAwayMinutes" | "focusedElsewhereMinutes",
+    minutes: number,
+  ) => {
+    const bucketStart = focusBucketStart(at, view);
+    const key = bucketStart.toISOString();
+    const existing = buckets.get(key) ?? {
+      key,
+      label: focusBucketLabel(bucketStart, view),
+      zoneMinutes: 0,
+      pulledAwayMinutes: 0,
+      focusedElsewhereMinutes: 0,
+    };
+    existing[kind] += minutes;
+    buckets.set(key, existing);
+  };
+
+  for (const session of sessions) {
+    if (
+      isSleepActualSession(session) ||
+      isIgnoredTrackerApp(session.app_name, session.window_title) ||
+      !session.start_time ||
+      !session.end_time
+    ) {
+      continue;
+    }
+    const sourceStart = parseApiDate(session.start_time).getTime();
+    const sourceEnd = parseApiDate(session.end_time).getTime();
+    const start = Math.max(rangeStart, sourceStart);
+    const end = Math.min(rangeEnd, sourceEnd);
+    if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) continue;
+
+    const points = new Set<number>([start, end]);
+    addFocusBoundaryPoints(points, start, end, view);
+    for (const block of blocks) {
+      const blockStart = parseApiDate(block.start_at).getTime();
+      const blockEnd = parseApiDate(block.end_at).getTime();
+      if (!Number.isFinite(blockStart) || !Number.isFinite(blockEnd) || blockEnd <= start || blockStart >= end) {
+        continue;
+      }
+      points.add(Math.max(start, blockStart), Math.min(end, blockEnd));
+    }
+
+    const sorted = [...points].sort((a, b) => a - b);
+    for (let i = 0; i < sorted.length - 1; i += 1) {
+      const partStart = sorted[i];
+      const partEnd = sorted[i + 1];
+      const minutes = (partEnd - partStart) / 60_000;
+      if (minutes <= 0) continue;
+      const isOnPlan = blocks.some((block) => {
+        const blockStart = parseApiDate(block.start_at).getTime();
+        const blockEnd = parseApiDate(block.end_at).getTime();
+        return Number.isFinite(blockStart) && Number.isFinite(blockEnd) && blockStart < partEnd && blockEnd > partStart;
+      });
+      const productive = (session.productivity_score ?? 0) >= productiveThreshold;
+      if (isOnPlan && productive) {
+        add(new Date(partStart), "zoneMinutes", minutes);
+      } else if (isOnPlan) {
+        add(new Date(partStart), "pulledAwayMinutes", minutes);
+        const name = session.site?.trim() || shortAppName(session.app_name) || session.category?.trim() || "Activity";
+        distractionSources.set(name, (distractionSources.get(name) ?? 0) + minutes);
+      } else if (productive) {
+        add(new Date(partStart), "focusedElsewhereMinutes", minutes);
+      }
+    }
+  }
+
+  const rows = [...buckets.values()].sort((a, b) => a.key.localeCompare(b.key));
+  const totals = rows.reduce(
+    (total, row) => ({
+      zoneMinutes: total.zoneMinutes + row.zoneMinutes,
+      pulledAwayMinutes: total.pulledAwayMinutes + row.pulledAwayMinutes,
+      focusedElsewhereMinutes: total.focusedElsewhereMinutes + row.focusedElsewhereMinutes,
+    }),
+    { zoneMinutes: 0, pulledAwayMinutes: 0, focusedElsewhereMinutes: 0 },
+  );
+  const largest = (key: "zoneMinutes" | "pulledAwayMinutes") =>
+    rows.reduce<FocusRhythmBucket | null>((best, row) => (!best || row[key] > best[key] ? row : best), null);
+
+  return {
+    buckets: rows,
+    totals,
+    topDistractions: [...distractionSources.entries()]
+      .map(([name, minutes]) => ({ name, minutes }))
+      .sort((a, b) => b.minutes - a.minutes)
+      .slice(0, 3),
+    strongestZone: largest("zoneMinutes"),
+    strongestPulledAway: largest("pulledAwayMinutes"),
+  };
 }
 
 /** Human label for a merged tracker/sleep interval (Sleep, not Amazfit). */

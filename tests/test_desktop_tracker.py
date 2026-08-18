@@ -222,8 +222,8 @@ def test_desktop_stats_browser_site_split(db_session):
             end_time=now - timedelta(minutes=10),
             source="desktop_tracker",
             category="Browser",
-            app_name="msedge.exe",
-            window_title="Funny clip - YouTube - Microsoft Edge",
+            app_name="chrome.exe",
+            window_title="Funny clip - YouTube - Google Chrome",
         )
     )
     db_session.add(
@@ -234,8 +234,8 @@ def test_desktop_stats_browser_site_split(db_session):
             end_time=now,
             source="desktop_tracker",
             category="Coursework (Browser)",
-            app_name="msedge.exe",
-            window_title="Pull requests - GitHub - Microsoft Edge",
+            app_name="chrome.exe",
+            window_title="Pull requests - GitHub - Google Chrome",
         )
     )
     db_session.commit()
@@ -243,7 +243,7 @@ def test_desktop_stats_browser_site_split(db_session):
     stats = _desktop_stats_from_tracked_sessions(db_session, [1], now.date())
     browser = next((s for s in stats["sessions"] if s.get("kind") == "browser"), None)
     assert browser is not None
-    assert browser["exe"] == "msedge.exe"
+    assert browser["exe"] == "chrome.exe"
     assert len(browser["sites"]) >= 2
     site_names = {s["site"] for s in browser["sites"]}
     assert "youtube.com" in site_names or any("youtube" in n for n in site_names)

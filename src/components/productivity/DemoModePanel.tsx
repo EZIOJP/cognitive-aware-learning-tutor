@@ -9,6 +9,7 @@ import {
   type DemoClockPayload,
   type DemoRealDay,
 } from "../../api/behaviorClient";
+import { formatHoursMins } from "../../utils/formatDuration";
 
 type Props = {
   onChanged?: () => void;
@@ -71,7 +72,7 @@ export function DemoModePanel({ onChanged, onJumpToDay }: Props) {
       const mode = g.browser?.mode_label || g.browser_mode || "?";
       const next = g.morning?.next || "?";
       setGateHint(
-        `Gate day ${g.day} · morning.next=${next} · browser=${mode} · productive=${g.productive_minutes}/${g.daily_goal_minutes}m (real)`,
+        `Gate day ${g.day} · morning.next=${next} · browser=${mode} · productive=${formatHoursMins(g.productive_minutes)} / ${formatHoursMins(g.daily_goal_minutes)} (real)`,
       );
     } catch {
       setGateHint(null);

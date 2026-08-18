@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import type { WearableDay } from "../../api/wearablesClient";
+import { formatHoursMins } from "../../utils/formatDuration";
 
 type Fallback = {
   last_steps?: number | null;
@@ -59,15 +60,11 @@ function fmtMinutesClock(minOfDay: number): string {
 }
 
 function fmtDuration(totalMin: number): string {
-  const h = Math.floor(totalMin / 60);
-  const m = Math.round(totalMin % 60);
-  if (h <= 0) return `${m}m`;
-  if (m === 0) return `${h}h`;
-  return `${h}h ${m}m`;
+  return formatHoursMins(totalMin);
 }
 
 function fmtSitting(min: number): string {
-  return min >= 60 ? `${Math.floor(min / 60)}h ${min % 60}m` : `${min}m`;
+  return formatHoursMins(min);
 }
 
 function normalizeLabel(raw: string | undefined): string {
@@ -135,7 +132,7 @@ function SleepHypnogram({ stages }: { stages: SleepStage[] }) {
           return (
             <div
               key={`${s.start}-${s.stop}-${i}`}
-              title={`${s.label} · ${fmtMinutesClock(s.start)}–${fmtMinutesClock(s.stop)} (${s.stop - s.start}m)`}
+              title={`${s.label} · ${fmtMinutesClock(s.start)}–${fmtMinutesClock(s.stop)} (${formatHoursMins(s.stop - s.start)})`}
               style={{ width: `${w}%`, background: color }}
               className="h-full min-w-[1px]"
             />

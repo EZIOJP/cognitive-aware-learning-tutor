@@ -30,8 +30,11 @@ export type DayStatus = {
     locked?: boolean;
     unlocked?: boolean;
     productive_minutes?: number;
+    productive_label?: string;
     daily_goal_minutes?: number;
+    daily_goal_label?: string;
     remaining_minutes?: number;
+    remaining_label?: string;
   };
   tracker?: {
     alive?: boolean;
@@ -42,9 +45,14 @@ export type DayStatus = {
   wearables?: {
     last_ingest_at?: string;
     sleep_hours?: number;
+    sleep_label?: string | null;
     steps?: number;
     stand_hours?: number;
     sitting_min?: number | null;
+    sitting_label?: string | null;
+    tz_offset_min?: number | null;
+    watch_local_date?: string | null;
+    captured_at?: string | null;
   };
   notify?: { title?: string; body?: string };
   limits?: Record<string, string>;

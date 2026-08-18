@@ -1,5 +1,6 @@
 import { resolveApiUrl } from "../utils/resolveBackendUrl";
 import { llmBodyFieldsForTask, loadLlmPrefs, type LlmOverrides } from "./transcriptsClient";
+import { formatHoursMins } from "../utils/formatDuration";
 
 const TOKEN_KEY = "vocab:auth-token";
 
@@ -24,7 +25,10 @@ export type HubDailyPayload = {
   date: string;
   segments: HubSegment[];
   productive_minutes: number;
+  productive_label?: string;
   sleep_minutes: number;
+  sleep_label?: string;
+  sleep_score?: number | null;
   life_score: number;
   time_left_hours: number;
   percent_elapsed: number;
@@ -38,8 +42,11 @@ export type InsightsDailyPayload = {
   date: string;
   life_score: number;
   study_minutes: number;
+  study_label?: string;
   productive_minutes: number;
+  productive_label?: string;
   sleep_minutes: number;
+  sleep_label?: string;
   vocab_events: number;
   math_attempts: number;
   overall_performance: "excellent" | "good" | "needs-improvement";
@@ -336,9 +343,7 @@ export async function putLifeDaily(
 }
 
 export function formatMinutesAsHours(minutes: number): string {
-  const h = Math.floor(Math.max(0, minutes) / 60);
-  const m = Math.round(Math.max(0, minutes) % 60);
-  return h > 0 ? `${h}h ${m}m` : `${m}m`;
+  return formatHoursMins(minutes);
 }
 
 /** Maps backend plugin_id → frontend PluginDef.id (math-tutor → core). */

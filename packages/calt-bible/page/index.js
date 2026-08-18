@@ -7,9 +7,11 @@ import { onGesture, offGesture, GESTURE_LEFT } from '@zos/interaction'
 import { screen, typeSize } from './layout'
 import { ensurePlanDay, chapterLabel, nextChapterLabel } from '../lib/store'
 import { readChapter, assetsOk } from '../lib/bible'
+import { ensureNotifyRunning } from '../lib/bgNotify'
 
 Page({
   onInit() {
+    ensureNotifyRunning()
     onGesture((event) => {
       if (event === GESTURE_LEFT) {
         push({ url: 'page/settings' })

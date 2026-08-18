@@ -15,6 +15,7 @@ from backend.behavior.voice_agent.brain import (
 from backend.behavior.voice_agent.chunker import SentenceStreamChunker
 from backend.behavior.voice_agent.confirm import ConfirmGate
 from backend.behavior.voice_agent.io_speech import speak
+from backend.behavior.time_fmt import format_hours_mins
 from backend.behavior.voice_agent.tools import confirm_prompt, execute_tool, is_risky
 
 log = logging.getLogger("desktop_tracker.voice_agent")
@@ -126,7 +127,7 @@ class VoiceAgent:
             m = g.get("morning") or {}
             return (
                 f"locked={g.get('locked')} morning={m.get('next')} "
-                f"productive={g.get('productive_minutes')}/{g.get('daily_goal_minutes')}"
+                f"productive={format_hours_mins(g.get('productive_minutes'))}/{format_hours_mins(g.get('daily_goal_minutes'))}"
             )
         except Exception:  # noqa: BLE001
             return "gate=unknown"

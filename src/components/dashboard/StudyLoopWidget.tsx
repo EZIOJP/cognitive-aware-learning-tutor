@@ -96,7 +96,7 @@ export function StudyLoopWidget() {
             </div>
           </div>
 
-          {domains.length > 0 && (
+          {domains.length > 0 ? (
             <div className="flex flex-wrap gap-1.5">
               {domains.map(([d, n]) => (
                 <span
@@ -107,6 +107,12 @@ export function StudyLoopWidget() {
                 </span>
               ))}
             </div>
+          ) : (
+            !loading && (
+              <p className="text-[11px] text-muted-foreground">
+                No review cards yet — quiz lecture notes, math, or GRE vocab to fill the shared queue.
+              </p>
+            )
           )}
 
           <p className="text-xs text-muted-foreground leading-relaxed">{hint}</p>
@@ -126,8 +132,8 @@ export function StudyLoopWidget() {
               </Link>
             </Button>
             <Button size="sm" variant="outline" className="h-7 text-[10px] gap-1" asChild>
-              <Link to="/gre-vocab/read">
-                <Sparkles className="h-3 w-3" /> Vocab
+              <Link to="/review?tab=start">
+                <Sparkles className="h-3 w-3" /> Vocab quiz
               </Link>
             </Button>
             <Button size="sm" variant="outline" className="h-7 text-[10px] gap-1" asChild>

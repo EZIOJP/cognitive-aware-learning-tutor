@@ -6,8 +6,8 @@ import {
   ChevronDown, ChevronRight, Download, Loader2,
 } from "lucide-react";
 import { Views, type View } from "react-big-calendar";
-import { fetchDesktopStats, fetchBrowserStats, fetchTrackerHealth, fetchDesktopTimeline, forceTrackerSync, clearDemoClock, fetchDemoClock } from "../api/behaviorClient";
-import type { DesktopStats, BrowserStats, AppSession, BrowserSite, BrowserDomain, TrackerHealth, DesktopTimeline, DemoClockStatus } from "../api/behaviorClient";
+import { fetchDesktopStats, fetchBrowserStats, fetchTrackerHealth, fetchDesktopTimeline, forceTrackerSync, clearDemoClock, fetchDemoClock, fetchGoalsStatus } from "../api/behaviorClient";
+import type { DesktopStats, BrowserStats, AppSession, BrowserSite, BrowserDomain, TrackerHealth, DesktopTimeline, DemoClockStatus, GoalsStatusResponse } from "../api/behaviorClient";
 import { PlannerCalendar } from "../components/productivity/PlannerCalendar";
 import { GlanceBar } from "../components/productivity/GlanceBar";
 import { PlanVsActualDashboard } from "../components/productivity/PlanVsActualDashboard";
@@ -36,9 +36,14 @@ import {
 import { fetchDueReview } from "../api/globalQuizClient";
 import { fetchHubDaily } from "../api/hubClient";
 import ClassificationReview from "../components/productivity/ClassificationReview";
+import ActivitiesPanel from "../components/productivity/ActivitiesPanel";
+import ShutdownRitualPanel from "../components/productivity/ShutdownRitualPanel";
+import WeeklyDigestPanel from "../components/productivity/WeeklyDigestPanel";
+import GateSchedulesPanel from "../components/productivity/GateSchedulesPanel";
 import ProductivityPolicyPanel from "../components/productivity/ProductivityPolicyPanel";
 import ProductivityGoalsPanel, {
   formatGoalsForPrompt,
+  GOALS_UPDATED_EVENT,
   loadProductivityGoals,
 } from "../components/productivity/ProductivityGoalsPanel";
 import SessionOverridePanel from "../components/productivity/SessionOverridePanel";
@@ -51,16 +56,12 @@ import {
   type CalendarStatsView,
 } from "../components/productivity/planVsActualUtils";
 import { endOfDay, startOfDay } from "date-fns";
+import { formatHoursMinsFromSeconds } from "../utils/formatDuration";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 function fmtSeconds(s: number): string {
-  if (s < 60) return `${s}s`;
-  const m = Math.floor(s / 60);
-  if (m < 60) return `${m}m`;
-  const h = Math.floor(m / 60);
-  const rem = m % 60;
-  return rem > 0 ? `${h}h ${rem}m` : `${h}h`;
+  return formatHoursMinsFromSeconds(s);
 }
 
 function scoreColor(score: number): string {
@@ -441,6 +442,8 @@ export function ProductivityPage() {
   const [adherence, setAdherence] = useState<AdherenceSummary | null>(null);
   const [dueReviews, setDueReviews] = useState(0);
   const [sleepHours, setSleepHours] = useState<number | null>(null);
+  const [sleepScore, setSleepScore] = useState<number | null>(null);
+  const [goalsStatus, setGoalsStatus] = useState<GoalsStatusResponse | null>(null);
   const [plannerDay, setPlannerDay] = useState(() => {
     const raw = new URLSearchParams(window.location.search).get("day");
     if (raw && /^\d{4}-\d{2}-\d{2}$/.test(raw)) {
@@ -532,6 +535,12 @@ export function ProductivityPage() {
   }, [planStep]);
 
   useEffect(() => {
+    const onGoals = () => setProposeGoals(formatGoalsForPrompt(loadProductivityGoals()));
+    window.addEventListener(GOALS_UPDATED_EVENT, onGoals);
+    return () => window.removeEventListener(GOALS_UPDATED_EVENT, onGoals);
+  }, []);
+
+  useEffect(() => {
     let cancelled = false;
     void fetchDemoClock()
       .then((d) => {
@@ -602,7 +611,6 @@ export function ProductivityPage() {
   );
   const adherenceWindow = statsView === "day" ? 7 : statsRange.dayCount;
   const adherenceEnd = statsRange.to;
-  const variancePreset = statsView === "day" ? "day" : statsView === "month" ? "month" : "week";
 
   const loadAdherence = useCallback(async (day: Date) => {
     try {
@@ -634,8 +642,19 @@ export function ProductivityPage() {
       .then((h) => {
         if (h && (h.sleep_minutes || 0) > 0) setSleepHours(h.sleep_minutes / 60);
         else setSleepHours(null);
+        setSleepScore(h?.sleep_score && h.sleep_score > 0 ? h.sleep_score : null);
       })
-      .catch(() => setSleepHours(null));
+      .catch(() => {
+        setSleepHours(null);
+        setSleepScore(null);
+      });
+  }, [plannerDay, plannerRefresh]);
+
+  useEffect(() => {
+    const day = toApiDay(plannerDay);
+    void fetchGoalsStatus(day)
+      .then(setGoalsStatus)
+      .catch(() => setGoalsStatus(null));
   }, [plannerDay, plannerRefresh]);
 
   /** Header + GlanceBar — follow selected month/week/day. */
@@ -1154,6 +1173,8 @@ export function ProductivityPage() {
           dueReviews={dueReviews}
           rangeLabel={statsRange.label}
           sleepHours={sleepHours}
+          sleepScore={sleepScore}
+          goalsStatus={goalsStatus}
           onScheduleReview={() => {
             const start = new Date(plannerDay);
             if (toApiDay(plannerDay) === toApiDay(new Date())) {
@@ -1168,6 +1189,15 @@ export function ProductivityPage() {
               duration_minutes: Math.min(30, 15 + dueReviews * 2),
             }).then(() => bumpPlanner());
           }}
+        />
+
+        <ShutdownRitualPanel
+          day={plannerDay}
+          desktop={desktop}
+          adherence={adherence}
+          goalsStatus={goalsStatus}
+          refreshKey={plannerRefresh}
+          onComplete={() => bumpPlanner()}
         />
 
         <div className="w-full bg-white/[0.03] border border-white/10 rounded-2xl p-5 sm:p-6">
@@ -1208,9 +1238,21 @@ export function ProductivityPage() {
             trackerHealth={trackerHealth}
             adherenceDays={adherenceWindow}
             adherenceEnd={adherenceEnd}
-            variancePreset={variancePreset}
+            analyticsFrom={statsRange.from}
+            analyticsTo={statsRange.to}
+            analyticsView={statsView}
           />
         </div>
+
+        <details className="group rounded-2xl border border-white/10 bg-white/[0.03] open:pb-4">
+          <summary className="cursor-pointer list-none flex items-center gap-2 px-5 py-3.5 text-sm font-medium text-muted-foreground hover:text-foreground">
+            <ChevronRight size={14} className="transition-transform group-open:rotate-90 text-primary" />
+            Weekly digest
+          </summary>
+          <div className="px-5 pb-2">
+            <WeeklyDigestPanel endDay={toApiDay(plannerDay)} refreshKey={plannerRefresh} />
+          </div>
+        </details>
 
         <details className="group rounded-2xl border border-white/10 bg-white/[0.03] open:pb-4">
           <summary className="cursor-pointer list-none flex items-center gap-2 px-5 py-3.5 text-sm font-medium text-muted-foreground hover:text-foreground">
@@ -1465,6 +1507,7 @@ export function ProductivityPage() {
               <ProductivityGoalsPanel
                 adherence={adherence}
                 lockedHours={dayLockedHours}
+                sleepScore={sleepScore}
                 onGoalsTextChange={(text) => setProposeGoals(text)}
                 onConfirmed={() => setGoalsConfirmed(true)}
               />
@@ -1796,12 +1839,22 @@ export function ProductivityPage() {
             <ProductivityPolicyPanel onSaved={() => void load()} />
           </div>
           <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6">
+            <GateSchedulesPanel />
+          </div>
+          <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6">
             <SessionOverridePanel
               timeline={timeline}
               onSaved={() => {
                 void load();
                 setPlannerRefresh((k) => k + 1);
               }}
+            />
+          </div>
+          <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6">
+            <ActivitiesPanel
+              day={toApiDay(plannerDay)}
+              trackerNoData={trackerStatus === "no_data"}
+              refreshKey={plannerRefresh}
             />
           </div>
           <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6">

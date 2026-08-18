@@ -14,6 +14,7 @@
 
 var GATE_API_URL = "http://127.0.0.1:8000/api/behavior/distraction-gate";
 var GATE_ALERT_URL = "http://127.0.0.1:8000/api/behavior/gate-alert";
+var GATE_EXT_LOG_URL = "http://127.0.0.1:8000/api/behavior/gate-extension-log";
 var CALT_TAB_CMD_URL = "http://127.0.0.1:8000/api/behavior/calt-tab-command";
 var CALT_BIBLE_URL = "http://localhost:5173/bible";
 var CALT_PRODUCTIVITY_URL = "http://localhost:5173/productivity?tab=plan";
@@ -482,7 +483,7 @@ function browserPolicyOrFallback(browser) {
     localhost_path_prefixes:
       b.localhost_path_prefixes && b.localhost_path_prefixes.length
         ? b.localhost_path_prefixes
-        : ["/bible", "/productivity", "/login"],
+        : ["/bible", "/productivity", "/login", "/lecture-notes"],
     // Strict day modes always block watch (YouTube etc.) — never trust a stale false flag.
     block_watch_sites: b.block_watch_sites === true || strict,
     block_porn: b.block_porn !== false,

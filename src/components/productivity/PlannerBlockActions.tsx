@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Button } from "../../app/components/ui/button";
 import type { PlannerBlock } from "../../api/plannerClient";
+import { formatHoursMins } from "../../utils/formatDuration";
 
 type Props = {
   block: PlannerBlock;
@@ -60,7 +61,8 @@ export function PlannerBlockActions({
           </p>
           <h3 className="text-sm font-semibold text-foreground">{block.title}</h3>
           <p className="text-xs text-muted-foreground mt-0.5">
-            {block.category} · {statusLabel} · {block.remaining_minutes}m left of {block.planned_minutes}m
+            {block.category} · {statusLabel} · {formatHoursMins(block.remaining_minutes)} left of{" "}
+            {formatHoursMins(block.planned_minutes)}
           </p>
           {mode === "plan" ? (
             <p className="text-[11px] text-muted-foreground mt-1.5">
@@ -122,7 +124,7 @@ export function PlannerBlockActions({
             disabled={busy}
             onClick={() => void run(onRollForward)}
           >
-            Roll forward ({block.remaining_minutes}m)
+            Roll forward ({formatHoursMins(block.remaining_minutes)})
           </Button>
         </div>
       )}

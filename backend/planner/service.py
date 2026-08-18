@@ -7,6 +7,7 @@ from datetime import date, datetime, timedelta, timezone
 from sqlalchemy.orm import Session
 
 from backend.models.planner import PlannerBlock
+from backend.behavior.time_fmt import optional_minutes_label
 
 _DAY_MAP = {
     "mon": 0,
@@ -67,7 +68,9 @@ def serialize_block(block: PlannerBlock) -> dict:
         "start_at": iso_utc(block.start_at),
         "end_at": iso_utc(block.end_at),
         "planned_minutes": block.planned_minutes,
+        "planned_label": optional_minutes_label(block.planned_minutes),
         "remaining_minutes": block.remaining_minutes,
+        "remaining_label": optional_minutes_label(block.remaining_minutes),
         "status": block.status,
         "rolled_from_id": block.rolled_from_id,
         "roll_count": block.roll_count,

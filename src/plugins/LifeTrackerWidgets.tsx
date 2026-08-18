@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { AppWindow, Link2Off, TrendingUp } from "lucide-react";
 import { useGoalTracker } from "../context/GoalTrackerContext";
 import { resolveApiUrl } from "../utils/resolveBackendUrl";
+import { formatHoursMinsFromSeconds } from "../utils/formatDuration";
 
 const TOKEN_KEY = "vocab:auth-token";
 
@@ -16,13 +17,7 @@ interface BehaviorStats {
 }
 
 function fmtDuration(seconds: number): string {
-  if (seconds >= 3600) {
-    const h = Math.floor(seconds / 3600);
-    const m = Math.floor((seconds % 3600) / 60);
-    return m > 0 ? `${h}h ${m}m` : `${h}h`;
-  }
-  if (seconds >= 60) return `${Math.floor(seconds / 60)}m`;
-  return `${seconds}s`;
+  return formatHoursMinsFromSeconds(seconds);
 }
 
 function scoreTone(score: number): string {

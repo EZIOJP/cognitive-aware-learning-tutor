@@ -169,6 +169,53 @@ def desktop_sessions_payload(buckets: dict[str, AppBucket], *, limit: int = 20) 
     return entries[:limit]
 
 
+_UNCATEGORIZED_CATEGORIES = frozenset({"Other", "Other (Browser)", "Browser"})
+
+
+def activities_payload(
+    buckets: dict[str, AppBucket],
+    *,
+    limit: int = 50,
+    uncategorized_only: bool = False,
+) -> list[dict[str, Any]]:
+    """Flat ranked activities — apps and browser sites for inbox UI."""
+    items: list[dict[str, Any]] = []
+
+    for exe, bucket in buckets.items():
+        if bucket.sites:
+            for site, data in bucket.sites.items():
+                uncategorized = data.category in _UNCATEGORIZED_CATEGORIES
+                if uncategorized_only and not uncategorized:
+                    continue
+                items.append({
+                    "key": f"site:{site}",
+                    "label": site,
+                    "kind": "site",
+                    "parent": exe,
+                    "seconds": data.seconds,
+                    "category": data.category,
+                    "productivity_score": data.productivity_score,
+                    "uncategorized": uncategorized,
+                })
+        else:
+            uncategorized = bucket.category in _UNCATEGORIZED_CATEGORIES
+            if uncategorized_only and not uncategorized:
+                continue
+            items.append({
+                "key": f"app:{exe}",
+                "label": exe,
+                "kind": "app",
+                "parent": None,
+                "seconds": bucket.seconds,
+                "category": bucket.category,
+                "productivity_score": bucket.productivity_score,
+                "uncategorized": uncategorized,
+            })
+
+    items.sort(key=lambda x: x["seconds"], reverse=True)
+    return items[:limit]
+
+
 def browser_domains_payload(buckets: dict[str, AppBucket], *, limit: int = 15) -> list[dict]:
     """Flatten browser site buckets for /api/behavior/stats."""
     site_seconds: Counter[str] = Counter()

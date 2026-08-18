@@ -26,6 +26,7 @@ from backend.wearables.ingest_service import (
     serialize_wearable_daily,
     upsert_wearable_daily,
 )
+from backend.wearables.day_stamp import resolve_ingest_day, tz_from_payload
 
 router = APIRouter(prefix="/api/wearables/zepp", tags=["wearables"])
 
@@ -176,7 +177,11 @@ class WeatherIn(BaseModel):
 class DeviceIn(BaseModel):
     model_config = {"extra": "allow"}
     model: str | None = None
-    os: str | None = None
+    os: str | None = Field(
+        default=None,
+        description="Zepp OS major version as sent by the watch (current: 6).",
+        examples=["6"],
+    )
 
 
 class SleepIn(BaseModel):
@@ -184,8 +189,14 @@ class SleepIn(BaseModel):
     score: int | None = None
     total_min: int | None = None
     deep_min: int | None = None
-    start_min: int | None = None
-    end_min: int | None = None
+    start_min: int | None = Field(
+        default=None,
+        description="Sleep onset as minutes from that calendar day's 00:00 (watch tz). May be used with end_min > 1440.",
+    )
+    end_min: int | None = Field(
+        default=None,
+        description="Sleep wake as minutes from onset-day 00:00 (watch tz). Overnight sleep can exceed 1440.",
+    )
     stages: list[dict[str, Any]] = Field(default_factory=list)
     naps: list[dict[str, Any]] = Field(default_factory=list)
     nap_min: int | None = None
@@ -200,11 +211,27 @@ class TemperatureIn(BaseModel):
 
 
 class WearableIngestBody(BaseModel):
-    schema_version: int = Field(default=1, alias="schema")
+    schema_version: int = Field(
+        default=1,
+        alias="schema",
+        description="Payload schema. 2 = watch clock stamps (local_date, tz_offset_min, captured_at) + chunk meta.",
+    )
     source: str = "mini_program"
     device: DeviceIn | None = None
-    captured_at: str | None = None
-    local_date: str | None = None
+    captured_at: str | None = Field(
+        default=None,
+        description="ISO-8601 instant from the watch clock, not the phone.",
+    )
+    local_date: str | None = Field(
+        default=None,
+        description="Watch calendar day YYYY-MM-DD. Phone/PC must not overwrite this.",
+        examples=["2026-08-18"],
+    )
+    tz_offset_min: int | None = Field(
+        default=None,
+        description="Watch offset east of UTC in minutes (JS: -Date.getTimezoneOffset()). IST = 330.",
+        examples=[330],
+    )
     sleep: SleepIn | None = None
     heart: HeartIn | None = None
     activity: ActivityIn | None = None
@@ -255,6 +282,7 @@ def wearable_sync_status(
     db: Session = Depends(get_db),
     _: None = Depends(require_wearable_key),
 ):
+    from backend.behavior.time_fmt import optional_hours_label, optional_minutes_label
     from backend.planner.service import local_tz
 
     state = _read_sync_state()
@@ -289,9 +317,12 @@ def wearable_sync_status(
         applied = {
             "date": day.isoformat(),
             "sleep_hours": life.sleep_hours,
+            "sleep_label": optional_hours_label(life.sleep_hours),
             "sleep_quality": life.sleep_quality,
             "exercise_minutes": life.exercise_minutes,
+            "exercise_label": optional_minutes_label(life.exercise_minutes),
             "outdoor_minutes": life.outdoor_minutes,
+            "outdoor_label": optional_minutes_label(life.outdoor_minutes),
             "stress_level": life.stress_level,
             "life_score": life.life_score,
         }
@@ -299,9 +330,12 @@ def wearable_sync_status(
         applied = {
             "date": wrow.local_date.isoformat(),
             "sleep_hours": wrow.sleep_hours,
+            "sleep_label": optional_hours_label(wrow.sleep_hours),
             "sleep_quality": None,
             "exercise_minutes": None,
+            "exercise_label": None,
             "outdoor_minutes": None,
+            "outdoor_label": None,
             "stress_level": None,
             "life_score": None,
         }
@@ -393,30 +427,25 @@ def ingest_zepp(
     from backend.planner.service import local_tz
 
     user = _owner(db)
-    # Host-local calendar day is source of truth for central DB keys
-    day = datetime.now(local_tz()).date()
-    if body.local_date:
-        try:
-            day = date.fromisoformat(body.local_date[:10])
-        except ValueError as e:
-            raise HTTPException(status_code=400, detail="Invalid local_date") from e
-    # If client sent UTC-midnight-skewed date (common with toISOString), prefer host-local today
-    # when the provided date is more than 1 day off from local now (defensive).
-    #
-    # A CALT watch can retain a failed morning sleep snapshot and replay it after
-    # reconnecting. Those authenticated, explicitly-marked snapshots may be up to
-    # seven days old; ordinary clients remain limited to the one-day skew guard.
-    local_today = datetime.now(local_tz()).date()
-    queued_snapshot = bool((body.meta or {}).get("queued_sleep_snapshot")) or bool(
-        (body.meta or {}).get("chunk")
+    host_today = datetime.now(local_tz()).date()
+    day = resolve_ingest_day(
+        {
+            "local_date": body.local_date,
+            "source": body.source,
+            "meta": body.meta or {},
+        },
+        host_today=host_today,
     )
-    trusted_watch_source = (body.source or "").strip().lower() in ("mini_program", "zepp", "amazfit")
-    allowed_skew_days = 7 if queued_snapshot and trusted_watch_source else 1
-    if abs((day - local_today).days) > allowed_skew_days:
-        day = local_today
 
     apply_to_life = (body.source or "").strip().lower() in ("mini_program", "zepp", "amazfit")
     meta = dict(body.meta or {})
+    tz_off = meta.get("tz_offset_min")
+    if tz_off is None:
+        tz_off = body.tz_offset_min
+    if tz_off is not None:
+        meta["tz_offset_min"] = tz_off
+    if body.local_date and not meta.get("watch_local_date"):
+        meta["watch_local_date"] = body.local_date[:10]
     if body.dump_id and not meta.get("dump_id"):
         meta["dump_id"] = body.dump_id
     if body.checksum and not meta.get("checksum"):
@@ -457,6 +486,7 @@ def ingest_zepp(
         "meta": meta,
         "captured_at": body.captured_at,
         "local_date": day.isoformat(),
+        "tz_offset_min": tz_off,
         "source": body.source,
     }
     # drop Nones for cleaner JSON
@@ -469,12 +499,32 @@ def ingest_zepp(
         except PayloadTooLarge as e:
             raise HTTPException(status_code=413, detail=str(e)) from e
 
+    from backend.behavior.time_fmt import optional_hours_label, optional_minutes_label
+    from backend.wearables.sitting import extract_sitting_minutes
+
     sleep_hours = (applied or {}).get("sleep_hours")
     if sleep_hours is None and body.sleep:
         sleep_hours = normalize_sleep_hours(body.sleep.total_min)
     steps_val = (applied or {}).get("steps")
     if steps_val is None and body.activity:
         steps_val = body.activity.steps
+    sitting_min = (applied or {}).get("sitting_min")
+    if sitting_min is None:
+        sitting_min = extract_sitting_minutes(payload)
+    exercise_min = (applied or {}).get("exercise_minutes")
+    outdoor_min = (applied or {}).get("outdoor_minutes")
+    try:
+        tz_echo = int(tz_off) if tz_off is not None else None
+    except (TypeError, ValueError):
+        tz_echo = None
+    watch_local = meta.get("watch_local_date") or (body.local_date[:10] if body.local_date else None)
+    progress = None
+    if chunk:
+        progress = {
+            "part": chunk.get("part"),
+            "total": chunk.get("total"),
+            "name": chunk.get("name") or chunk.get("id"),
+        }
 
     duplicate = bool((applied or {}).get("duplicate") or (applied or {}).get("replayed"))
     _write_sync_state(
@@ -484,7 +534,14 @@ def ingest_zepp(
             "last_is_watch": apply_to_life,
             "last_wrote_life": bool(apply_to_life and applied and not duplicate),
             "last_local_date": day.isoformat(),
+            "last_watch_local_date": watch_local,
+            "last_tz_offset_min": tz_echo,
+            "last_captured_at": body.captured_at,
             "last_sleep_hours": sleep_hours,
+            "last_sleep_label": optional_hours_label(sleep_hours),
+            "last_sleep_score": int(body.sleep.score)
+            if body.sleep and body.sleep.score is not None
+            else None,
             "last_sleep_quality": (applied or {}).get("sleep_quality")
             or (score_to_quality(body.sleep.score) if body.sleep else None),
             "last_steps": steps_val,
@@ -501,12 +558,18 @@ def ingest_zepp(
             or (body.pai.today if body.pai else None),
             "last_stand": (applied or {}).get("stand_hours")
             or (body.stand.hours if body.stand else None),
-            "last_sitting_min": (applied or {}).get("sitting_min"),
+            "last_sitting_min": sitting_min,
+            "last_sitting_label": optional_minutes_label(sitting_min),
             "last_battery": (applied or {}).get("battery_pct")
             or (body.battery.pct if body.battery else None),
-            "last_exercise_minutes": (applied or {}).get("exercise_minutes"),
+            "last_exercise_minutes": exercise_min,
+            "last_exercise_label": optional_minutes_label(exercise_min),
+            "last_outdoor_minutes": outdoor_min,
+            "last_outdoor_label": optional_minutes_label(outdoor_min),
             "last_dump_id": (applied or {}).get("dump_id") or meta.get("dump_id"),
             "last_chunk_id": (applied or {}).get("chunk_id") or meta.get("chunk_id"),
+            "last_chunk_part": chunk.get("part") if chunk else None,
+            "last_chunk_total": chunk.get("total") if chunk else None,
             "last_event_id": (applied or {}).get("event_id"),
             "last_duplicate": duplicate,
             "last_manual_dump": bool(meta.get("manual_dump")),
@@ -519,6 +582,14 @@ def ingest_zepp(
         "schema": body.schema_version,
         "source": body.source,
         "local_date": day.isoformat(),
+        "watch_local_date": watch_local,
+        "tz_offset_min": tz_echo,
+        "captured_at": body.captured_at,
+        "progress": progress,
+        "sleep_hours": sleep_hours,
+        "sleep_label": optional_hours_label(sleep_hours),
+        "sitting_min": sitting_min,
+        "sitting_label": optional_minutes_label(sitting_min),
         "wrote_life_tracker": bool(apply_to_life and applied),
         "duplicate": duplicate,
         "replayed": duplicate,
@@ -678,6 +749,7 @@ def wearable_calendar(
                 local_date=wd.local_date,
                 sleep=sleep
                 or {"total_min": int(float(wd.sleep_hours) * 60)},
+                tz=tz_from_payload(wd.payload_json),
             )
             if not window:
                 continue

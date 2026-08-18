@@ -153,9 +153,64 @@
       color: #5a5a70;
       line-height: 1.4;
     }
+    .redirect-dialog {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 0, 0, 0.72);
+      z-index: 50;
+      padding: 20px;
+    }
+    .redirect-dialog.hidden { display: none; }
+    .redirect-dialog .panel {
+      max-width: 420px;
+      width: 100%;
+      border-radius: 14px;
+      border: 1px solid rgba(251, 191, 36, 0.35);
+      background: #12121c;
+      padding: 22px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+    }
+    .redirect-dialog h2 {
+      font-size: 1.05rem;
+      color: #fbbf24;
+      margin-bottom: 10px;
+    }
+    .redirect-dialog p {
+      font-size: 0.88rem;
+      color: #c7c7d8;
+      margin-bottom: 10px;
+    }
+    .redirect-dialog .host {
+      font-family: Consolas, monospace;
+      font-size: 0.82rem;
+      color: #93c5fd;
+      word-break: break-all;
+      margin-bottom: 14px;
+    }
+    .redirect-dialog button {
+      border: none;
+      border-radius: 10px;
+      padding: 10px 16px;
+      background: #fbbf24;
+      color: #111;
+      font-weight: 650;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
+  <div id="redirectDialog" class="redirect-dialog hidden" role="dialog" aria-modal="true">
+    <div class="panel">
+      <h2>CALT Gate redirected this tab</h2>
+      <p>Microsoft Edge was <strong>not</strong> closed. Only this tab changed.</p>
+      <p class="host" id="redirectHost">—</p>
+      <p id="redirectDetail" class="meta"></p>
+      <button type="button" id="redirectDismiss">OK — got it</button>
+    </div>
+  </div>
   <div class="card">
     <div class="eyebrow">This tab only</div>
     <h1 id="title">Distraction site blocked</h1>

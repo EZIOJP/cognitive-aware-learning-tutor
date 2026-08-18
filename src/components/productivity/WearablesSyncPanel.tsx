@@ -8,6 +8,7 @@ import {
 } from "../../api/wearablesClient";
 import { WatchDayDumpCard } from "../life/WatchDayDumpCard";
 import { resolveApiUrl } from "../../utils/resolveBackendUrl";
+import { formatHoursMins } from "../../utils/formatDuration";
 
 function fmtWhen(iso?: string | null): string {
   if (!iso) return "—";
@@ -282,11 +283,11 @@ export function WearablesSyncPanel() {
                 </span>
                 , exercise{" "}
                 <span className="text-foreground">
-                  {status.applied_to_life.exercise_minutes ?? 0}m
+                  {formatHoursMins(status.applied_to_life.exercise_minutes ?? 0)}
                 </span>
                 , outdoor{" "}
                 <span className="text-foreground">
-                  {status.applied_to_life.outdoor_minutes ?? 0}m
+                  {formatHoursMins(status.applied_to_life.outdoor_minutes ?? 0)}
                 </span>
                 , stress{" "}
                 <span className="text-foreground">

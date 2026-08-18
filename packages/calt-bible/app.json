@@ -5,8 +5,8 @@
     "appId": 1088804,
     "appType": "app",
     "version": {
-      "code": 7,
-      "name": "1.0.6"
+      "code": 9,
+      "name": "1.0.8"
     },
     "icon": "icon.png",
     "vender": "calt",
@@ -16,13 +16,14 @@
     "data:os.device.info",
     "device:os.local_storage",
     "device:os.bg_service",
-    "device:os.notification"
+    "device:os.notification",
+    "device:os.alarm"
   ],
   "runtime": {
     "apiVersion": {
       "compatible": "3.0",
-      "target": "3.0",
-      "minVersion": "2.0"
+      "target": "4.0",
+      "minVersion": "3.0"
     }
   },
   "targets": {

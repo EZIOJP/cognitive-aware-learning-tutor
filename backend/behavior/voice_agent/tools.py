@@ -173,7 +173,7 @@ def _calendar_add(user_id: int, args: dict[str, Any]) -> str:
         db.add(block)
         db.commit()
         db.refresh(block)
-        return f"Added '{title}' for {duration}m starting {start.isoformat()}"
+        return f"Added '{title}' for {format_hours_mins(duration)} starting {start.isoformat()}"
     finally:
         db.close()
 
@@ -191,9 +191,11 @@ def _gate_status(user_id: int) -> str:
     except Exception as exc:  # noqa: BLE001
         return f"Gate unavailable ({exc}). Tracker voice/TTS still works locally."
     m = g.get("morning") or {}
+    from backend.behavior.time_fmt import format_hours_mins
+
     return (
         f"hard_block enabled={g.get('enabled')} locked={g.get('locked')} "
-        f"productive={g.get('productive_minutes')}/{g.get('daily_goal_minutes')} "
+        f"productive={format_hours_mins(g.get('productive_minutes'))}/{format_hours_mins(g.get('daily_goal_minutes'))} "
         f"bible={g.get('chapter_goal_met')} morning_next={m.get('next')}"
     )
 

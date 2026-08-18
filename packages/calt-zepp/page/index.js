@@ -22,6 +22,61 @@ import {
 } from './queue'
 
 const logger = log.getLogger('calt-dump')
+const COLOR_OK = 0x88c0bb
+const COLOR_BUSY = 0xf0c674
+const COLOR_ERR = 0xff6666
+const COLOR_MUTED = 0xaaaaaa
+
+function bar(done, total) {
+  const n = Math.max(1, Number(total) || 1)
+  const d = Math.max(0, Math.min(n, Number(done) || 0))
+  let s = ''
+  for (let i = 0; i < n; i++) s += i < d ? '#' : '-'
+  return `[${s}] ${d}/${n}`
+}
+
+function fmtSyncError(err, result) {
+  const pieces = []
+  if (result && result.errors && result.errors.length) {
+    for (let i = 0; i < result.errors.length; i++) pieces.push(String(result.errors[i]))
+  }
+  if (err) pieces.push(String(err && err.message ? err.message : err))
+  if (result && result.summary) pieces.push(String(result.summary))
+  if (result && result.diag) pieces.push(String(result.diag))
+  const raw = pieces.join(' · ')
+  const d = raw.toLowerCase()
+  if (d.includes('timed out') || d.includes('timeout')) {
+    return 'BLE timeout · keep watch + phone awake, tap Send again'
+  }
+  if (d.includes('localhost') || d.includes('127.0.0.1')) {
+    return 'Use PC LAN IP in phone settings, not localhost'
+  }
+  if (d.includes('base url') || d.includes('no base')) {
+    return 'Set Base URL in phone Zepp → CALT Sync'
+  }
+  if (d.includes('401') || d.includes('unauthorized')) {
+    return 'Token rejected · calt-local-wearables'
+  }
+  if (d.includes('413')) return 'Dump too large · retry Send (resumes chunk)'
+  if (d.includes('network') || d.includes('-2') || (d.includes('fail') && d.includes('fetch'))) {
+    return 'Phone cannot reach PC · same Wi-Fi, hub :8765'
+  }
+  const short = raw.replace(/\s+/g, ' ').trim()
+  return (short || 'Send failed · swipe to log').slice(0, 96)
+}
+
+function persistProgress(text) {
+  try {
+    localStorage.setItem('calt_last_progress', text || '')
+  } catch (_) {}
+}
+
+function persistError(text) {
+  try {
+    if (text) localStorage.setItem('calt_last_error', text)
+    else localStorage.removeItem('calt_last_error')
+  } catch (_) {}
+}
 
 function saveWatchLog(result, health) {
   let logs = []
@@ -102,9 +157,9 @@ Page({
     const btnH = Math.round(height * 0.14)
     const gap = Math.round(pad * 0.35)
 
-    // Preview only — do NOT auto-queue or auto-send
-    const health0 = buildHealthSnapshot('full')
-    this._preview = health0
+    // Do not hit every sensor just to paint the home screen.
+    const queuedToday = snapshotForDay(localDateKey())
+    this._preview = queuedToday || null
 
     createWidget(widget.TEXT, {
       x: pad,
@@ -126,34 +181,46 @@ Page({
       text_size: Math.round(width * 0.036),
       align_h: align.CENTER_H,
       text_style: text_style.WRAP,
-      text: snapshotSummary(health0),
+      text: queuedToday ? snapshotSummary(queuedToday) : 'Tap Dump today',
     })
 
     this.queueW = createWidget(widget.TEXT, {
       x: pad,
-      y: Math.round(height * 0.31),
+      y: Math.round(height * 0.30),
       w: contentW,
-      h: Math.round(height * 0.07),
+      h: Math.round(height * 0.06),
       color: 0xf0c674,
-      text_size: Math.round(width * 0.032),
+      text_size: Math.round(width * 0.03),
       align_h: align.CENTER_H,
       text_style: text_style.WRAP,
       text: `Queue ${queueDepth()}/7 days`,
     })
 
-    this.statusW = createWidget(widget.TEXT, {
+    this.progressW = createWidget(widget.TEXT, {
       x: pad,
-      y: Math.round(height * 0.39),
+      y: Math.round(height * 0.36),
       w: contentW,
-      h: Math.round(height * 0.08),
-      color: 0xaaaaaa,
-      text_size: Math.round(width * 0.032),
+      h: Math.round(height * 0.06),
+      color: COLOR_MUTED,
+      text_size: Math.round(width * 0.03),
       align_h: align.CENTER_H,
       text_style: text_style.WRAP,
-      text: 'Manual only · Dump then Send',
+      text: 'Idle',
     })
 
-    let y = Math.round(height * 0.5)
+    this.statusW = createWidget(widget.TEXT, {
+      x: pad,
+      y: Math.round(height * 0.42),
+      w: contentW,
+      h: Math.round(height * 0.08),
+      color: COLOR_MUTED,
+      text_size: Math.round(width * 0.028),
+      align_h: align.CENTER_H,
+      text_style: text_style.WRAP,
+      text: 'Dump then Send',
+    })
+
+    let y = Math.round(height * 0.52)
     createWidget(widget.BUTTON, {
       x: pad,
       y,
@@ -195,12 +262,40 @@ Page({
 
     try {
       const last = localStorage.getItem('calt_last_summary')
-      if (last) this.statusW.setProperty(prop.TEXT, last)
+      const err = localStorage.getItem('calt_last_error')
+      const prog = localStorage.getItem('calt_last_progress')
+      if (prog) this.setProgress(prog, COLOR_MUTED)
+      if (err) this.setError(err)
+      else if (last) this.setStatus(last, COLOR_MUTED)
     } catch (_) {}
   },
 
-  setStatus(text) {
-    if (this.statusW) this.statusW.setProperty(prop.TEXT, text)
+  setProgress(text, color) {
+    persistProgress(text)
+    if (!this.progressW) return
+    this.progressW.setProperty(prop.TEXT, text || 'Idle')
+    try {
+      this.progressW.setProperty(prop.COLOR, color == null ? COLOR_BUSY : color)
+    } catch (_) {}
+  },
+
+  setStatus(text, color) {
+    if (this.statusW) {
+      this.statusW.setProperty(prop.TEXT, text)
+      try {
+        this.statusW.setProperty(prop.COLOR, color == null ? COLOR_MUTED : color)
+      } catch (_) {}
+    }
+  },
+
+  setError(text) {
+    persistError(text)
+    this.setProgress('Failed · tap Send to retry', COLOR_ERR)
+    this.setStatus(text, COLOR_ERR)
+  },
+
+  clearError() {
+    persistError('')
   },
 
   refreshQueueLabel() {
@@ -214,19 +309,27 @@ Page({
   },
 
   doDump() {
-    this.setStatus('Capturing…')
+    this.clearError()
+    this.setProgress('Capturing sensors…', COLOR_BUSY)
+    this.setStatus('Please wait', COLOR_BUSY)
     const health = buildHealthSnapshot('full')
     this._preview = health
     queueSnapshot(health, { force: true })
     if (this.snapW) this.snapW.setProperty(prop.TEXT, snapshotSummary(health))
     this.refreshQueueLabel()
-    this.setStatus('Queued today · press Send')
+    this.setProgress('Queued today', COLOR_OK)
+    this.setStatus('Press Send queue', COLOR_OK)
   },
 
   doSend(messageBuilder) {
-    if (this._syncing) return
+    if (this._syncing) {
+      this.setStatus('Already sending…', COLOR_BUSY)
+      return
+    }
     this._syncing = true
-    this.setStatus('Sending…')
+    this.clearError()
+    this.setProgress('Starting…', COLOR_BUSY)
+    this.setStatus('Sending to phone', COLOR_BUSY)
 
     const today = localDateKey()
     // Ensure today exists if user forgot Dump
@@ -244,7 +347,8 @@ Page({
     }
     if (!days.length) {
       this._syncing = false
-      this.setStatus('Nothing to send')
+      this.setProgress('Idle', COLOR_MUTED)
+      this.setStatus('Nothing to send · Dump today first', COLOR_ERR)
       return
     }
 
@@ -257,7 +361,9 @@ Page({
         clearChunkResume()
         self._syncing = false
         self.refreshQueueLabel()
-        self.setStatus('Done')
+        self.setProgress(bar(days.length * 4, days.length * 4), COLOR_OK)
+        self.setStatus('Done · all chunks ACK', COLOR_OK)
+        persistError('')
         return
       }
       const day = days[dayIndex]
@@ -283,13 +389,20 @@ Page({
           return
         }
         const chunk = chunks[partIndex]
-        self.setStatus(`${day} ${chunk.label} ${partIndex + 1}/${chunks.length}`)
+        const overall = dayIndex * chunks.length + partIndex + 1
+        const overallTotal = days.length * chunks.length
+        self.setProgress(
+          `Day ${dayIndex + 1}/${days.length} · ${chunk.label}\n${bar(partIndex + 1, chunks.length)}  all ${overall}/${overallTotal}`,
+          COLOR_BUSY,
+        )
+        self.setStatus(`${day} sending…`, COLOR_BUSY)
         messageBuilder
           .request({
             method: 'SYNC',
             params: {
               health: chunk.health,
-              localDate: day,
+              localDate: dayHealth.local_date || day,
+              tz_offset_min: dayHealth.tz_offset_min,
               queuedSleepSnapshot: day !== today,
               skipFollowup: true,
               chunk: {
@@ -311,16 +424,24 @@ Page({
             if (!result.healthOk) {
               saveChunkResume(day, partIndex)
               self._syncing = false
-              self.setStatus(result.summary || 'Retry queued')
+              self.setError(
+                `${day} ${chunk.label} ${partIndex + 1}/${chunks.length} · ${fmtSyncError(null, result)}`,
+              )
               return
             }
             saveChunkResume(day, partIndex + 1)
+            self.setProgress(
+              `Day ${dayIndex + 1}/${days.length} · ${chunk.label} OK\n${bar(partIndex + 1, chunks.length)}`,
+              COLOR_OK,
+            )
             runPart(partIndex + 1)
           })
           .catch((e) => {
             saveChunkResume(day, partIndex)
             self._syncing = false
-            self.setStatus(`Retry · ${e}`)
+            self.setError(
+              `${day} ${chunk.label} ${partIndex + 1}/${chunks.length} · ${fmtSyncError(e, null)}`,
+            )
             logger.log(`send ${e}`)
           })
       }

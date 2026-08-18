@@ -10,6 +10,7 @@ from typing import Any
 from sqlalchemy.orm import Session
 
 from backend.paths import ROOT
+from backend.behavior.time_fmt import optional_hours_label, optional_minutes_label
 
 _NOTIFY_STATE_PATH = ROOT / "data" / "behavior" / "day_status_notify.json"
 _PENDING_MOBILE_PATH = ROOT / "data" / "behavior" / "pending_mobile_alerts.json"
@@ -52,6 +53,16 @@ def _wearables_snapshot() -> dict[str, Any]:
     state = _read_json(path)
     if not state:
         return {"ok": False, "last_sync": None}
+    sitting = state.get("last_sitting_min")
+    sleep_h = state.get("last_sleep_hours")
+    sleep_score = state.get("last_sleep_score")
+    from backend.behavior.recovery_hint import compute_recovery_hint
+
+    recovery_hint = compute_recovery_hint(
+        sleep_score=sleep_score,
+        sleep_hours=sleep_h,
+        base_focus_hours=4.0,
+    )
     return {
         "ok": True,
         "last_ingest_at": state.get("last_ingest_at"),
@@ -59,13 +70,20 @@ def _wearables_snapshot() -> dict[str, Any]:
         "last_is_watch": bool(state.get("last_is_watch")),
         "last_wrote_life": bool(state.get("last_wrote_life")),
         "last_local_date": state.get("last_local_date"),
-        "sleep_hours": state.get("last_sleep_hours"),
+        "watch_local_date": state.get("last_watch_local_date"),
+        "tz_offset_min": state.get("last_tz_offset_min"),
+        "captured_at": state.get("last_captured_at"),
+        "sleep_hours": sleep_h,
+        "sleep_score": sleep_score,
+        "sleep_label": state.get("last_sleep_label") or optional_hours_label(sleep_h),
         "steps": state.get("last_steps"),
         "stand_hours": state.get("last_stand"),
-        "sitting_min": state.get("last_sitting_min"),
+        "sitting_min": sitting,
+        "sitting_label": state.get("last_sitting_label") or optional_minutes_label(sitting),
         "stress": state.get("last_stress"),
         "hr": state.get("last_hr"),
         "last_event": state.get("last_event"),
+        "recovery_hint": recovery_hint,
     }
 
 
@@ -283,7 +301,7 @@ def build_day_status(db: Session, user_id: int, *, enqueue_notify: bool = True) 
 
     return {
         "ok": True,
-        "schema": 1,
+        "schema": 2,
         "day": gate.get("day") or morning.get("day"),
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "morning": {
@@ -308,8 +326,14 @@ def build_day_status(db: Session, user_id: int, *, enqueue_notify: bool = True) 
             "locked": locked,
             "unlocked": bool(gate.get("unlocked")),
             "productive_minutes": gate.get("productive_minutes"),
+            "productive_label": gate.get("productive_label")
+            or optional_minutes_label(gate.get("productive_minutes")),
             "daily_goal_minutes": gate.get("daily_goal_minutes"),
+            "daily_goal_label": gate.get("daily_goal_label")
+            or optional_minutes_label(gate.get("daily_goal_minutes")),
             "remaining_minutes": gate.get("remaining_minutes"),
+            "remaining_label": gate.get("remaining_label")
+            or optional_minutes_label(gate.get("remaining_minutes")),
             "day_unlimited": bool(gate.get("day_unlimited")),
         },
         "tracker": tracker,

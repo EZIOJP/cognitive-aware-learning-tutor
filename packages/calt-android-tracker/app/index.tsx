@@ -18,6 +18,7 @@ import {
 } from "../lib/api";
 import { notifyOnce, relayAlerts } from "../lib/notify";
 import { loadSettings } from "../lib/settings";
+import { formatHoursMins, formatHoursMinsPair } from "../lib/formatDuration";
 
 export default function TrackerScreen() {
   const [status, setStatus] = useState<DayStatus | null>(null);
@@ -139,8 +140,8 @@ export default function TrackerScreen() {
               {hb?.locked ? " · Locked" : hb?.unlocked ? " · Unlocked" : ""}
             </Text>
             <Text style={styles.muted}>
-              Focus {hb?.productive_minutes ?? "—"} / {hb?.daily_goal_minutes ?? "—"} min
-              {hb?.remaining_minutes != null ? ` · ${hb.remaining_minutes}m left` : ""}
+              Focus {formatHoursMinsPair(hb?.productive_minutes, hb?.daily_goal_minutes)}
+              {hb?.remaining_minutes != null ? ` · ${formatHoursMins(hb.remaining_minutes)} left` : ""}
             </Text>
             <View style={styles.row}>
               <Pressable style={[styles.btn, styles.btnHalf]} onPress={() => onArm(true)}>
@@ -162,7 +163,7 @@ export default function TrackerScreen() {
             </Text>
             <Text style={styles.muted}>
               Stand {w?.stand_hours ?? "—"}h
-              {w?.sitting_min != null ? ` · Sitting ${w.sitting_min}m` : ""}
+              {w?.sitting_min != null ? ` · Sitting ${formatHoursMins(w.sitting_min)}` : ""}
             </Text>
             <Text style={styles.muted}>Last ingest {w?.last_ingest_at || "—"}</Text>
           </View>

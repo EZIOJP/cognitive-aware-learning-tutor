@@ -35,13 +35,9 @@ def _target_plan_url() -> str:
 
 
 def _fmt_minutes(m: float | int) -> str:
-    m = max(0, int(m))
-    if m < 60:
-        return f"{m} min"
-    h, rem = divmod(m, 60)
-    if rem == 0:
-        return f"{h}h"
-    return f"{h}h {rem}m"
+    from backend.behavior.time_fmt import format_hours_mins
+
+    return format_hours_mins(m)
 
 
 def _draw_ring(canvas: tk.Canvas, done: int, goal: int) -> None:
@@ -403,6 +399,47 @@ def show_hard_block_notice(
                 log.warning("hard-block notice failed: %s", exc)
 
     threading.Thread(target=runner, name="hard-block-gui", daemon=True).start()
+
+
+_last_ext_redirect_at = 0.0
+_EXT_REDIRECT_GAP_S = 12.0
+
+
+def show_extension_redirect_notice(*, detail: str = "") -> None:
+    """Simple Windows dialog when CALT Gate redirects a tab (Edge is not closed)."""
+    global _last_ext_redirect_at
+    import time
+
+    now = time.time()
+    if now - _last_ext_redirect_at < _EXT_REDIRECT_GAP_S:
+        return
+    _last_ext_redirect_at = now
+    label = (detail or "a site").strip()[:120]
+
+    def runner() -> None:
+        try:
+            import tkinter as tk
+            from tkinter import messagebox
+
+            root = tk.Tk()
+            root.withdraw()
+            try:
+                root.attributes("-topmost", True)
+            except tk.TclError:
+                pass
+            messagebox.showinfo(
+                "CALT Gate — tab redirected",
+                "CALT Gate redirected one Edge tab to the lock page.\n\n"
+                "Microsoft Edge was NOT closed.\n\n"
+                f"Blocked: {label}\n\n"
+                "Log: data/logs/gate_extension.log",
+                parent=root,
+            )
+            root.destroy()
+        except Exception as exc:  # noqa: BLE001
+            log.warning("extension redirect notice failed: %s", exc)
+
+    threading.Thread(target=runner, name="gate-ext-notice", daemon=True).start()
 
 
 def show_nsfw_screen_notice(

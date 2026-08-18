@@ -1,5 +1,11 @@
+import { ensureNotifyRunning } from './lib/bgNotify'
+
 App({
   globalData: {},
-  onCreate() {},
+  onCreate() {
+    try {
+      ensureNotifyRunning()
+    } catch (_) {}
+  },
   onDestroy() {},
 })

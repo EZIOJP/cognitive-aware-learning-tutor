@@ -19,12 +19,13 @@ function extRuntime() {
 function fmtMin(n) {
   if (n == null || Number.isNaN(Number(n))) return "—";
   const m = Math.max(0, Math.round(Number(n)));
-  if (m >= 60) {
-    const h = Math.floor(m / 60);
-    const r = m % 60;
-    return r ? h + "h " + r + "m" : h + "h";
-  }
-  return m + "m";
+  const h = Math.floor(m / 60);
+  const r = m % 60;
+  const hours = h === 1 ? "1 hour" : h + " hours";
+  const mins = r === 1 ? "1 min" : r + " mins";
+  if (h === 0) return hours + " " + mins;
+  if (r === 0) return hours;
+  return hours + " " + mins;
 }
 
 function renderStats(g) {
@@ -177,6 +178,55 @@ function parseBlockedHost() {
     return { host: host, from: from };
   } catch (e) {
     return { host: "", from: "" };
+  }
+}
+
+function showRedirectDialog(parsed) {
+  const dlg = document.getElementById("redirectDialog");
+  const hostEl = document.getElementById("redirectHost");
+  const detailEl = document.getElementById("redirectDetail");
+  const btn = document.getElementById("redirectDismiss");
+  if (!dlg || !hostEl || !detailEl || !btn) return;
+  const host = parsed.host || "unknown site";
+  const from = parsed.from || "";
+  hostEl.textContent = host;
+  detailEl.textContent = from
+    ? "Blocked URL logged to data/logs/gate_extension.log"
+    : "Redirect logged to data/logs/gate_extension.log";
+  dlg.classList.remove("hidden");
+  btn.onclick = function () {
+    dlg.classList.add("hidden");
+  };
+}
+
+function reportLockedPageLoad() {
+  const parsed = parseBlockedHost();
+  showRedirectDialog(parsed);
+  const logUrl = typeof GATE_EXT_LOG_URL !== "undefined" ? GATE_EXT_LOG_URL : "";
+  if (!logUrl) return;
+  const key = "calt_gate_logged_" + (parsed.host || "page");
+  try {
+    if (sessionStorage.getItem(key)) return;
+    sessionStorage.setItem(key, String(Date.now()));
+  } catch (e) {
+    /* ignore */
+  }
+  try {
+    fetch(logUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        event: "locked_page",
+        source: "calt-gate",
+        kind: "dnr_or_soft_land",
+        detail: parsed.host || "",
+        url: parsed.from || "",
+        notify: true,
+      }),
+      cache: "no-store",
+    }).catch(function () {});
+  } catch (e) {
+    /* ignore */
   }
 }
 
@@ -359,3 +409,4 @@ async function refresh() {
 refresh();
 setInterval(refresh, 5000);
 initTempAllowUi();
+reportLockedPageLoad();

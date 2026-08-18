@@ -416,12 +416,20 @@ def classify_browser_host(
 # Day browser modes (source of truth for SelfTracker + gate UI).
 DAY_MODES: tuple[str, ...] = ("bible", "planning", "study", "free")
 
-# Strict morning / planning — localhost SPA paths only (plus allowlist hosts).
+# Strict morning / planning — localhost SPA paths plus the approved live
+# lecture-capture destination. Transcript Studio is a local application and is
+# never browser-redirected or process-killed by the tracker.
 STRICT_ALLOW_DOMAINS: tuple[str, ...] = ("localhost", "127.0.0.1")
+CAPTURE_WORKFLOW_ALLOW_DOMAINS: tuple[str, ...] = (
+    "scaler.com",
+    "interviewbit.com",
+    "scaleracademy.com",
+)
 STRICT_LOCALHOST_PATH_PREFIXES: tuple[str, ...] = (
     "/bible",
     "/productivity",
     "/login",
+    "/lecture-notes",
 )
 
 # Planner category / title hints → study or planning blocks.
@@ -750,6 +758,24 @@ def resolve_day_mode(
     if day_unlimited:
         return "free"
 
+    sched = None
+    try:
+        from backend.behavior.gate_schedules import scheduled_mode
+
+        sched = scheduled_mode(dt)
+    except Exception:
+        sched = None
+    if sched:
+        return sched
+
+    try:
+        from backend.behavior.study_mode_nudge import study_nudge_active
+
+        if study_nudge_active():
+            return "study"
+    except Exception:
+        pass
+
     if is_planning_block(planner_category, planner_title):
         return "planning"
     if is_free_block(planner_category, planner_title):
@@ -797,7 +823,7 @@ def mode_policy_flags(mode: str) -> dict[str, bool]:
 def allow_domains_for_mode(mode: str) -> list[str]:
     m = (mode or "free").strip().lower()
     if m in ("bible", "planning"):
-        return list(STRICT_ALLOW_DOMAINS)
+        return list((*STRICT_ALLOW_DOMAINS, *CAPTURE_WORKFLOW_ALLOW_DOMAINS))
     if m == "free":
         # Free merges shopping/house domains into the effective allow list.
         return list(dict.fromkeys([*DEFAULT_ALLOW_DOMAINS, *FREE_LIFE_ALLOW_DOMAINS]))

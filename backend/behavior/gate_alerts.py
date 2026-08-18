@@ -119,6 +119,20 @@ def _cross_process_busy() -> bool:
             except OSError:
                 pass
             return False
+        try:
+            raw = _TTS_BUSY_PATH.read_text(encoding="utf-8").splitlines()
+            pid = int((raw[0] if raw else "0").strip() or "0")
+        except (OSError, ValueError):
+            pid = 0
+        if pid and pid != os.getpid():
+            try:
+                import psutil
+
+                if not psutil.pid_exists(pid):
+                    _TTS_BUSY_PATH.unlink(missing_ok=True)
+                    return False
+            except Exception:  # noqa: BLE001
+                pass
         return True
     except OSError:
         return False
@@ -306,6 +320,10 @@ def reset_speak_state_for_tests() -> None:
         while True:
             _speak_q.get_nowait()
     except queue.Empty:
+        pass
+    try:
+        _TTS_BUSY_PATH.unlink(missing_ok=True)
+    except OSError:
         pass
     with _lock:
         try:

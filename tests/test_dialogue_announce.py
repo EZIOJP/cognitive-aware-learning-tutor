@@ -28,7 +28,6 @@ def test_speak_alert_surfaces_once(monkeypatch, tmp_path):
     monkeypatch.setattr(announce, "_FEED_PATH", tmp_path / "dialogue_feed.json")
     announce.reset_for_tests()
     monkeypatch.setattr(announce, "_FEED_PATH", tmp_path / "dialogue_feed.json")
-    gate_alerts.reset_speak_state_for_tests()
 
     spoken: list[str] = []
     shown: list[str] = []
@@ -40,6 +39,13 @@ def test_speak_alert_surfaces_once(monkeypatch, tmp_path):
         "backend.behavior.voice_agent.voice_agent_enabled",
         lambda: True,
     )
+    gate_alerts.reset_speak_state_for_tests()
+    # In-flight worker (e.g. bible_done_praise from a prior test) must finish first.
+    deadline = time.time() + 3.0
+    while time.time() < deadline and (gate_alerts.is_speaking() or gate_alerts._speak_q.qsize()):
+        time.sleep(0.02)
+    spoken.clear()
+    shown.clear()
     announce.register_ui_callback(lambda t: shown.append(t))
 
     assert gate_alerts.speak_alert("Bible done — well played.", force=True)

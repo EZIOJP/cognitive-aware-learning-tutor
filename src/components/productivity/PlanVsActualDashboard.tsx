@@ -3,10 +3,14 @@ import { Target } from "lucide-react";
 import { fetchTrackerHealth } from "../../api/behaviorClient";
 import type { TrackerHealth } from "../../api/behaviorClient";
 import { resolveApiUrl } from "../../utils/resolveBackendUrl";
-import { useAdherenceRange } from "../../hooks/usePlanVsActual";
+import { useActualOverlay, useAdherenceRange, usePlannerBlocks } from "../../hooks/usePlanVsActual";
 import { CategoryVarianceChart } from "./CategoryVarianceChart";
 import { DayRibbon } from "./DayRibbon";
+import { FocusRhythmPanel } from "./FocusRhythmPanel";
+import { FocusQualityBadge } from "./FocusQualityBadge";
 import { WeeklyAdherenceHeatmap } from "./WeeklyAdherenceHeatmap";
+import type { FocusRhythmView } from "./planVsActualUtils";
+import { toDayString } from "./planVsActualUtils";
 
 type Props = {
   selectedDay: Date;
@@ -19,7 +23,10 @@ type Props = {
   adherenceDays?: number;
   /** Inclusive end of adherence window */
   adherenceEnd?: Date;
-  variancePreset?: "day" | "week" | "month" | "last7";
+  /** Calendar range used for focus rhythm and existing category variance. */
+  analyticsFrom?: Date;
+  analyticsTo?: Date;
+  analyticsView?: FocusRhythmView;
 };
 
 function TrackerDot({ health }: { health: TrackerHealth | null }) {
@@ -52,12 +59,22 @@ export function PlanVsActualDashboard({
   trackerHealth: trackerHealthProp,
   adherenceDays: adherenceWindow = 7,
   adherenceEnd,
-  variancePreset = "week",
+  analyticsFrom,
+  analyticsTo,
+  analyticsView = "day",
 }: Props) {
   const ribbonRef = useRef<HTMLDivElement>(null);
   const { data: adherenceDays, loading: adherenceLoading } = useAdherenceRange(
     adherenceWindow,
     adherenceEnd ?? selectedDay,
+  );
+  const rhythmFrom = analyticsFrom ?? selectedDay;
+  const rhythmTo = analyticsTo ?? selectedDay;
+  const { data: rhythmBlocks, loading: rhythmBlocksLoading } = usePlannerBlocks(rhythmFrom, rhythmTo);
+  const { data: rhythmSessions, loading: rhythmSessionsLoading } = useActualOverlay(
+    rhythmFrom,
+    rhythmTo,
+    refreshKey,
   );
   const [trackerHealthLocal, setTrackerHealthLocal] = useState<TrackerHealth | null>(null);
   const [apiStale, setApiStale] = useState(false);
@@ -128,7 +145,19 @@ export function PlanVsActualDashboard({
         selectedDay={selectedDay}
         onSelectDay={handleSelectDay}
         loading={adherenceLoading}
+        windowLabel={adherenceWindow > 7 ? "Adherence" : "Weekly adherence"}
       />
+
+      <FocusRhythmPanel
+        blocks={rhythmBlocks}
+        sessions={rhythmSessions}
+        from={rhythmFrom}
+        to={rhythmTo}
+        view={analyticsView}
+        loading={rhythmBlocksLoading || rhythmSessionsLoading}
+      />
+
+      <FocusQualityBadge day={toDayString(selectedDay)} refreshKey={refreshKey} />
 
       <DayRibbon ref={ribbonRef} day={selectedDay} refreshKey={refreshKey} />
 
@@ -139,9 +168,8 @@ export function PlanVsActualDashboard({
       )}
 
       <CategoryVarianceChart
-        key={variancePreset}
-        baseDate={selectedDay}
-        defaultPreset={variancePreset}
+        from={rhythmFrom}
+        to={rhythmTo}
       />
     </div>
   );

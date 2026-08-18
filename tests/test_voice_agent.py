@@ -139,6 +139,20 @@ def test_system_prompt_jarvis_light():
     assert "sparingly" in prompt.lower()
 
 
+def _isolate_tts_lock(monkeypatch, tmp_path):
+    """Speak() shares a mutex + lock file with a live tracker / gate worker."""
+    from backend.behavior import gate_alerts
+    from backend.behavior.voice_agent import io_speech as io
+
+    gate_alerts.reset_speak_state_for_tests()
+    monkeypatch.setattr(gate_alerts, "_TTS_BUSY_PATH", tmp_path / "tts.busy")
+    monkeypatch.setattr(gate_alerts, "_speaking", False)
+    monkeypatch.setattr(gate_alerts, "_acquire_cross_process", lambda **_kw: True)
+    monkeypatch.setattr(gate_alerts, "_release_cross_process", lambda: None)
+    if io._speak_mutex.locked():
+        io._speak_mutex.release()
+
+
 def test_tts_preference_env(monkeypatch):
     from backend.behavior.voice_agent import io_speech as io
 
@@ -152,10 +166,11 @@ def test_tts_preference_env(monkeypatch):
     assert io.tts_preference() == "edge"
 
 
-def test_speak_sapi_pref_skips_edge(monkeypatch):
+def test_speak_sapi_pref_skips_edge(monkeypatch, tmp_path):
     """VOICE_AGENT_TTS=sapi must not call edge or piper."""
     from backend.behavior.voice_agent import io_speech as io
 
+    _isolate_tts_lock(monkeypatch, tmp_path)
     monkeypatch.setenv("VOICE_AGENT_TTS", "sapi")
     calls: list[str] = []
 
@@ -167,10 +182,11 @@ def test_speak_sapi_pref_skips_edge(monkeypatch):
     assert calls == ["sapi"]
 
 
-def test_speak_edge_fallback_order(monkeypatch):
+def test_speak_edge_fallback_order(monkeypatch, tmp_path):
     """Default path: try edge, then piper, then sapi — no network."""
     from backend.behavior.voice_agent import io_speech as io
 
+    _isolate_tts_lock(monkeypatch, tmp_path)
     monkeypatch.setenv("VOICE_AGENT_TTS", "edge")
     calls: list[str] = []
 
@@ -254,6 +270,7 @@ def test_jarvis_filter_on_sine(tmp_path):
 def test_speak_edge_jarvis_calls_filter(monkeypatch, tmp_path):
     from backend.behavior.voice_agent import io_speech as io
 
+    _isolate_tts_lock(monkeypatch, tmp_path)
     monkeypatch.setattr(io, "_TTS_MODE_PATH", tmp_path / "tts_mode.json")
     monkeypatch.setattr(io, "_runtime_mode", None)
     monkeypatch.delenv("VOICE_AGENT_TTS_MODE", raising=False)

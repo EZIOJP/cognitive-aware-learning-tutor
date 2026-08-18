@@ -2,7 +2,40 @@
 
 Running checklist for Cursor sessions.
 
-**Current focus (2026-08-15):** CALT Sync 4.0 manual health dumper.
+**Current focus (2026-08-18):** Competitive productivity features (RescueTime/Sunsama borrow) — pulse, goals/alerts, activities, shutdown, digest. Prior mandate (unified quiz) verified green.
+
+---
+
+## 2026-08-18 — Competitive productivity features (complete)
+
+**Done:**
+- [x] Productivity Pulse + GlanceBar goal %
+- [x] Activities inbox + Goals/alerts (YouTube cap → study mode nudge)
+- [x] Recovery capacity hint + Shutdown ritual + Away prompt
+- [x] Overcommit check at plan confirm
+- [x] Weekly digest, Focus quality badge, Recurring gate schedules
+- [x] `757 passed` pytest · `npm run build` green
+
+**Try:** Productivity → Calendar (digest, shutdown) · Plan (overcommit confirm) · Settings (schedules, activities).
+
+---
+
+## 2026-08-17 — Unattended unified quiz mandate
+
+**Done:**
+- [x] User chose shared quiz engine (option 1) + full autonomy while away
+- [x] Design spec + implementation plan
+- [x] AGENTS.md mandate refresh (retired stale cape-only Study Flow focus)
+- [x] Cursor rules: `notes-generation.mdc`, `quiz-generation.mdc`
+- [x] Vocab adaptive → ReviewCard bridge
+- [x] StudyLoopWidget empty-state + Review Start CTAs
+- [x] Weekly adherence empty state
+- [x] Bible today-chapter assignment no longer skips from `assigned_key`
+- [x] Day ribbon uses calendar overlay (sleep clips overnight PC time)
+- [x] Focus Rhythm: Calendar day/week/month zone, pulled-away, and distraction-source story
+- [x] Verify full pytest + build
+
+**Try on return:** GRE Cycle quiz → open `/review` for vocab cards · Lecture Notes quiz · Math Start · Calendar empty states.
 
 ---
 

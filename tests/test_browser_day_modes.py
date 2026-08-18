@@ -303,6 +303,8 @@ def test_hard_force_youtube_even_if_watch_flag_off():
 def test_matrix_planning_blocks_all_except_calt():
     assert _act("http://localhost:5173/bible", "planning") == "allow"
     assert _act("http://localhost:5173/productivity", "planning") == "allow"
+    assert _act("http://localhost:5173/lecture-notes", "planning") == "allow"
+    assert _act("https://www.scaler.com/", "planning") == "allow"
     assert _act("http://localhost:5173/vocab", "planning") == "block"
     assert _act("https://github.com/", "planning") == "block"
     assert _act("https://www.youtube.com/", "planning") == "block"

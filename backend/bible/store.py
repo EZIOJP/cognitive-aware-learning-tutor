@@ -197,9 +197,8 @@ def recover_lifetime_from_day_logs(user_id: int) -> list[str]:
             continue
         for c in raw.get("chapters_completed") or []:
             found.add(str(c))
-        ak = raw.get("assigned_key")
-        if ak:
-            found.add(str(ak))
+        # assigned_key is today's reading, not a completed chapter. Treating it as
+        # lifetime progress made resolve_today_chapter skip Genesis 1 on a fresh day.
     if not found:
         return []
     plan = bible_text.sequential_plan("web")
@@ -667,10 +666,11 @@ def get_completed_chapters(user_id: int) -> list[str]:
     if not isinstance(raw, list):
         raw = []
     keys = {str(x) for x in raw if str(x)}
-    # Heal wipe/race: day logs still hold history
-    if len(keys) < 2:
+    # Heal wipe: empty lifetime can be rebuilt from day logs. One completed chapter
+    # is valid progress — do not treat it as a wipe.
+    if not keys:
         recovered = recover_lifetime_from_day_logs(user_id)
-        if len(recovered) > len(keys):
+        if recovered:
             keys |= set(recovered)
             plan = bible_text.sequential_plan("web")
             _patch_reader(

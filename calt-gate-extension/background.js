@@ -4,7 +4,7 @@
 // Watch hosts = DNR only. Other blocks = one-tab softLand.
 // ============================================================
 
-/* global GATE_API_URL, GATE_ALERT_URL, GATE_ALERT_GAP_MS, FORCE_WATCH_HOSTS,
+/* global GATE_API_URL, GATE_ALERT_URL, GATE_EXT_LOG_URL, GATE_ALERT_GAP_MS, FORCE_WATCH_HOSTS,
    FORCE_PORN_HOSTS, isStrictDayMode, TEMP_ALLOW_STORAGE_KEY, TEMP_ALLOW_MS, pruneTempAllows,
    buildTempAllowGrant, upsertTempAllow, isTempAllowExcludedHost,
    tempAllowUntilForHost, browserPolicyOrFallback, shouldBlockUrl,
@@ -34,6 +34,14 @@ var lastAlertAt = 0;
 var softLandDone = Object.create(null);
 var softLandInFlight = Object.create(null);
 var tempAllowsCache = [];
+var lastGateModeKey = "";
+var softLandRecentAt = [];
+var SOFTLAND_STORM_WINDOW_MS = 8000;
+var SOFTLAND_STORM_MAX = 6;
+var REDIRECT_COOLDOWN_MS = 30000;
+var redirectCooldownUntil = 0;
+var lastNotifyAt = 0;
+var NOTIFY_GAP_MS = 8000;
 
 extAPI.storage.local.get(["gateCache", "redirectsEnabled", "tempAllows"], function (result) {
   if (result.gateCache) gateCache = result.gateCache;
@@ -84,6 +92,64 @@ function reportGateAlert(kind, detail) {
       body: JSON.stringify({ kind: kind || "generic_rule_break", detail: detail || "" }),
       cache: "no-store",
     }).catch(function () {});
+  } catch (e) {
+    /* ignore */
+  }
+}
+
+function logExtensionEvent(event, payload) {
+  var url = typeof GATE_EXT_LOG_URL !== "undefined" ? GATE_EXT_LOG_URL : "";
+  if (!url) return;
+  try {
+    fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(
+        Object.assign({ event: event || "unknown", source: "calt-gate" }, payload || {})
+      ),
+      cache: "no-store",
+    }).catch(function () {});
+  } catch (e) {
+    /* ignore */
+  }
+}
+
+function redirectsPausedByCircuit() {
+  return redirectCooldownUntil && Date.now() < redirectCooldownUntil;
+}
+
+function noteSoftLandAttempt() {
+  var now = Date.now();
+  softLandRecentAt.push(now);
+  while (softLandRecentAt.length && now - softLandRecentAt[0] > SOFTLAND_STORM_WINDOW_MS) {
+    softLandRecentAt.shift();
+  }
+  if (softLandRecentAt.length >= SOFTLAND_STORM_MAX) {
+    redirectCooldownUntil = now + REDIRECT_COOLDOWN_MS;
+    softLandRecentAt = [];
+    logExtensionEvent("circuit_breaker", {
+      detail: "softLand storm — redirects paused " + Math.round(REDIRECT_COOLDOWN_MS / 1000) + "s",
+      notify: false,
+    });
+    console.warn("CALT Gate: softLand circuit breaker — redirects paused");
+    return true;
+  }
+  return false;
+}
+
+function showBlockNotification(title, message) {
+  var now = Date.now();
+  if (now - lastNotifyAt < NOTIFY_GAP_MS) return;
+  lastNotifyAt = now;
+  if (!extAPI.notifications || !extAPI.notifications.create) return;
+  try {
+    extAPI.notifications.create("calt-gate-" + now, {
+      type: "basic",
+      iconUrl: "icon.png",
+      title: title || "CALT Gate",
+      message: message || "One tab redirected — Edge was not closed.",
+      priority: 1,
+    });
   } catch (e) {
     /* ignore */
   }
@@ -242,10 +308,18 @@ async function pollGate() {
     var modeNow = String(browser.mode || "").toLowerCase();
     var freeNow =
       Boolean(g.day_unlimited) || Boolean(g.reward_day) || modeNow === "free";
-    await syncDeclarativeWatchBlock({
-      force: freeNow || modeNow === "study",
-    });
-    await syncDeclarativePornBlock({ force: true });
+    var modeKey =
+      modeNow +
+      "|" +
+      (freeNow ? "1" : "0") +
+      "|" +
+      Boolean(browser.block_watch_sites) +
+      "|" +
+      Boolean(g.locked);
+    var forceDnr = modeKey !== lastGateModeKey;
+    if (forceDnr) lastGateModeKey = modeKey;
+    await syncDeclarativeWatchBlock({ force: forceDnr });
+    await syncDeclarativePornBlock({ force: forceDnr });
   } catch (e) {
     var err = String(e && e.message ? e.message : e);
     var prev = gateCache && typeof gateCache === "object" ? gateCache : null;
@@ -328,8 +402,9 @@ extAPI.runtime.onStartup.addListener(function () {
 startPoll();
 void pollGate();
 
-async function softLandBlockedTab(tabId, spaUrl) {
-  if (tabId == null || !redirectsEnabled) return false;
+async function softLandBlockedTab(tabId, spaUrl, meta) {
+  if (tabId == null || !redirectsEnabled || redirectsPausedByCircuit()) return false;
+  meta = meta || {};
   var mode = "";
   var next = "";
   try {
@@ -363,7 +438,21 @@ async function softLandBlockedTab(tabId, spaUrl) {
       softLandDone[tabId] = { target: target, at: Date.now() };
       return false;
     }
+    if (noteSoftLandAttempt()) return false;
     softLandInFlight[tabId] = target;
+    var blockedUrl = meta.fromUrl || eu || "";
+    logExtensionEvent("soft_land", {
+      kind: meta.kind || "blocked",
+      detail: blockedUrl.slice(0, 200),
+      url: blockedUrl.slice(0, 400),
+      target: target.slice(0, 400),
+      tab_id: tabId,
+      notify: true,
+    });
+    showBlockNotification(
+      "CALT Gate redirected this tab",
+      "Edge was not closed. Blocked: " + (meta.host || blockedUrl.slice(0, 80) || "site")
+    );
     await extAPI.tabs.update(tabId, { url: target });
     softLandDone[tabId] = { target: target, at: Date.now() };
     return true;
@@ -419,7 +508,7 @@ async function maybeRedirectTab(tabId, url, title) {
   } else if (!spa) {
     spa = lockedPageUrlForBlocked(url);
   }
-  return softLandBlockedTab(tabId, spa);
+  return softLandBlockedTab(tabId, spa, { fromUrl: url, kind: kind, host: host });
 }
 
 if (extAPI.webNavigation && extAPI.webNavigation.onCommitted) {
@@ -462,7 +551,10 @@ extAPI.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
       "content_score:" + String(msg.score || 0) + " " + lockUrl.slice(0, 100)
     );
     if (typeof tabId === "number") {
-      void softLand(tabId, lockedPageUrlForBlocked(lockUrl));
+      void softLandBlockedTab(tabId, lockedPageUrlForBlocked(lockUrl), {
+        fromUrl: lockUrl,
+        kind: "content_score",
+      });
     }
     sendResponse({ ok: true });
     return false;

@@ -2,6 +2,7 @@
  * Plan state for daily chapter + verse notifications.
  */
 import { localStorage } from '@zos/storage'
+import { Time } from '@zos/sensor'
 import { nextPlanEntry, bookName, chapterVerseCount } from './bible'
 
 const KEY = 'calt_bible_plan'
@@ -11,6 +12,24 @@ export function todayKey() {
   const m = `${d.getMonth() + 1}`.padStart(2, '0')
   const day = `${d.getDate()}`.padStart(2, '0')
   return `${d.getFullYear()}-${m}-${day}`
+}
+
+export function hourStamp(hour) {
+  const d = new Date()
+  let h = hour
+  if (h == null || Number.isNaN(Number(h))) {
+    try {
+      h = new Time().getHours()
+    } catch (_) {
+      try {
+        h = d.getHours()
+      } catch (__) {
+        h = 0
+      }
+    }
+  }
+  h = Math.max(0, Math.min(23, Number(h) || 0))
+  return `${todayKey()}T${h < 10 ? '0' : ''}${h}`
 }
 
 function addDays(key, n) {
@@ -131,7 +150,7 @@ export function ensurePlanDay() {
 
 export function takeNotifyVerse() {
   const plan = ensurePlanDay()
-  if (plan.notify_mode !== 'hourly' || plan.plan_complete) return null
+  if (plan.notify_mode !== 'hourly') return null
   const verses = chapterVerseCount(plan.current_book, plan.current_chapter)
   if (!verses || !verses.length) return null
   let i = Number(plan.verse_cursor) || 0

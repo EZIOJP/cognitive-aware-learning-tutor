@@ -423,8 +423,8 @@ def sleep_bouts_for_user_day(
 ) -> list[tuple[datetime, datetime]]:
     """Load merged sleep bouts from WearableDaily rows near ``day``."""
     from backend.models.wearable_daily import WearableDaily
+    from backend.wearables.day_stamp import tz_from_payload
 
-    tz = local_tz()
     bouts: list[tuple[datetime, datetime]] = []
     try:
         for offset in range(-pad_days, pad_days + 1):
@@ -442,7 +442,13 @@ def sleep_bouts_for_user_day(
             if sm is None and (em is None or em == -1) and not naps:
                 continue
             local_d = getattr(wd, "local_date", None) or d
-            bouts.extend(sleep_bouts(local_date=local_d, sleep=sleep, tz=tz))
+            bouts.extend(
+                sleep_bouts(
+                    local_date=local_d,
+                    sleep=sleep,
+                    tz=tz_from_payload(getattr(wd, "payload_json", None)),
+                )
+            )
     except Exception:  # noqa: BLE001 — FakeDb / incomplete row in unit tests
         return []
     if not bouts:

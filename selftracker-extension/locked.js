@@ -19,12 +19,13 @@ function extRuntime() {
 function fmtMin(n) {
   if (n == null || Number.isNaN(Number(n))) return "—";
   const m = Math.max(0, Math.round(Number(n)));
-  if (m >= 60) {
-    const h = Math.floor(m / 60);
-    const r = m % 60;
-    return r ? h + "h " + r + "m" : h + "h";
-  }
-  return m + "m";
+  const h = Math.floor(m / 60);
+  const r = m % 60;
+  const hours = h === 1 ? "1 hour" : h + " hours";
+  const mins = r === 1 ? "1 min" : r + " mins";
+  if (h === 0) return hours + " " + mins;
+  if (r === 0) return hours;
+  return hours + " " + mins;
 }
 
 function renderStats(g) {

@@ -9,6 +9,7 @@ import {
   type BibleState,
   type TodayChapter,
 } from "../../api/bibleClient";
+import { formatHoursMinsPair } from "../../utils/formatDuration";
 
 export function BibleReaderPage() {
   const [payload, setPayload] = useState<BibleChapter | null>(null);
@@ -117,7 +118,7 @@ export function BibleReaderPage() {
           <span className="rounded-md bg-black/30 px-3 py-1.5">
             Study:{" "}
             <strong>
-              {Math.round(gate?.productive_minutes ?? 0)}/{Math.round(gate?.daily_goal_minutes ?? 0)}m
+              {formatHoursMinsPair(gate?.productive_minutes, gate?.daily_goal_minutes)}
             </strong>
           </span>
           <span className="rounded-md bg-black/30 px-3 py-1.5">

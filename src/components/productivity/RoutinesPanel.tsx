@@ -23,6 +23,7 @@ import {
 } from "../../api/plannerClient";
 import { cn } from "../../app/components/ui/utils";
 import { setRoutineDragData, clearRoutineDragActive } from "./routineDrag";
+import { formatHoursMins } from "../../utils/formatDuration";
 
 const DAY_OPTS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as const;
 const DAY_LABELS = ["M", "T", "W", "T", "F", "S", "S"] as const;
@@ -534,7 +535,7 @@ export function RoutinesPanel({
                   <div className="text-sm font-medium truncate">{r.title}</div>
                   <div className="text-xs text-muted-foreground tabular-nums">
                     {r.start_time}–{r.end_time || "—"}
-                    {r.duration_minutes ? ` · ${r.duration_minutes}m` : ""} · {r.category}
+                    {r.duration_minutes ? ` · ${formatHoursMins(r.duration_minutes)}` : ""} · {r.category}
                   </div>
                 </div>
                 <span className="text-[10px] text-muted-foreground hidden sm:inline">

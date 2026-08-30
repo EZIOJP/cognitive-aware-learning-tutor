@@ -1,0 +1,236 @@
+{
+  "version": 2,
+  "mastery_rule": {
+    "window": 20,
+    "min_accuracy": 0.85,
+    "max_median_ms": 8000
+  },
+  "nodes": [
+    {
+      "id": "times_1_20",
+      "layer": 0,
+      "title": "Core times (3–20)",
+      "topic": "Arithmetic",
+      "prereqs": [],
+      "generator": "times_tables",
+      "params": {
+        "a_min": 3,
+        "a_max": 20,
+        "b_min": 3,
+        "b_max": 20,
+        "exclude_factors": [1, 2, 10]
+      },
+      "require_speed": true
+    },
+    {
+      "id": "times_21_50",
+      "layer": 0,
+      "title": "Stretch times (21–50)",
+      "topic": "Arithmetic",
+      "prereqs": ["times_1_20"],
+      "generator": "times_tables",
+      "params": {
+        "a_min": 21,
+        "a_max": 50,
+        "b_min": 3,
+        "b_max": 12,
+        "exclude_factors": [1, 2, 10]
+      },
+      "require_speed": true
+    },
+    {
+      "id": "mental_shortcuts",
+      "layer": 0,
+      "title": "Mental shortcuts (near 10 / split)",
+      "topic": "Arithmetic",
+      "prereqs": ["times_1_20"],
+      "generator": "mental_shortcuts",
+      "params": { "exclude_factors": [1, 2, 10] },
+      "require_speed": false
+    },
+    {
+      "id": "squares_upto_50",
+      "layer": 0,
+      "title": "Squares up to 50²",
+      "topic": "Arithmetic",
+      "prereqs": ["times_1_20"],
+      "generator": "powers",
+      "params": {
+        "exponent": 2,
+        "base_min": 2,
+        "base_max": 50,
+        "exclude_factors": [1]
+      },
+      "require_speed": true
+    },
+    {
+      "id": "cubes_upto_20",
+      "layer": 0,
+      "title": "Cubes up to 20³",
+      "topic": "Arithmetic",
+      "prereqs": ["squares_upto_50"],
+      "generator": "powers",
+      "params": {
+        "exponent": 3,
+        "base_min": 2,
+        "base_max": 20,
+        "exclude_factors": [1]
+      },
+      "require_speed": true
+    },
+    {
+      "id": "powers_4_upto_10",
+      "layer": 0,
+      "title": "4th powers (n ≤ 10)",
+      "topic": "Arithmetic",
+      "prereqs": ["cubes_upto_20"],
+      "generator": "powers",
+      "params": {
+        "exponent": 4,
+        "base_min": 2,
+        "base_max": 10,
+        "exclude_factors": [1]
+      },
+      "require_speed": true
+    },
+    {
+      "id": "powers_5_upto_5",
+      "layer": 0,
+      "title": "5th powers (n ≤ 5)",
+      "topic": "Arithmetic",
+      "prereqs": ["powers_4_upto_10"],
+      "generator": "powers",
+      "params": {
+        "exponent": 5,
+        "base_min": 2,
+        "base_max": 5,
+        "exclude_factors": [1]
+      },
+      "require_speed": true
+    },
+    {
+      "id": "powers_mixed",
+      "layer": 0,
+      "title": "Mixed powers (base < 10, exp 2–6)",
+      "topic": "Arithmetic",
+      "prereqs": ["powers_5_upto_5"],
+      "generator": "powers_mixed",
+      "params": {
+        "base_min": 2,
+        "base_max": 9,
+        "exp_min": 2,
+        "exp_max": 6,
+        "exclude_factors": [1]
+      },
+      "require_speed": true
+    },
+    {
+      "id": "powers_8_important",
+      "layer": 0,
+      "title": "8th powers (2, 3, 5, 10)",
+      "topic": "Arithmetic",
+      "prereqs": ["powers_mixed"],
+      "generator": "powers",
+      "params": {
+        "exponent": 8,
+        "important_bases": [2, 3, 5, 10]
+      },
+      "require_speed": false
+    },
+    {
+      "id": "times_estimation",
+      "layer": 0,
+      "title": "Estimation (closest product)",
+      "topic": "Arithmetic",
+      "prereqs": ["times_1_20"],
+      "generator": "times_estimation",
+      "params": { "exclude_factors": [1, 2, 10] },
+      "require_speed": false
+    },
+    {
+      "id": "times_reverse",
+      "layer": 0,
+      "title": "Reverse facts (missing factor)",
+      "topic": "Arithmetic",
+      "prereqs": ["times_1_20"],
+      "generator": "times_reverse",
+      "params": {
+        "a_min": 3,
+        "a_max": 20,
+        "b_min": 3,
+        "b_max": 12,
+        "exclude_factors": [1, 2, 10]
+      },
+      "require_speed": true
+    },
+    {
+      "id": "times_fact_family",
+      "layer": 0,
+      "title": "Fact families (× and ÷)",
+      "topic": "Arithmetic",
+      "prereqs": ["times_1_20"],
+      "generator": "times_fact_family",
+      "params": { "exclude_factors": [1, 2, 10] },
+      "require_speed": false
+    },
+    {
+      "id": "daily_mixed_5",
+      "layer": 0,
+      "title": "Daily mixed (5 min)",
+      "topic": "Arithmetic",
+      "prereqs": ["times_1_20"],
+      "generator": "daily_mixed",
+      "params": {},
+      "require_speed": false
+    },
+    {
+      "id": "division_facts",
+      "layer": 0,
+      "title": "Division facts",
+      "topic": "Arithmetic",
+      "prereqs": ["times_1_20"],
+      "generator": "division_facts",
+      "params": {
+        "max_divisor": 12,
+        "max_quotient": 20,
+        "exclude_factors": [1, 10]
+      }
+    },
+    {
+      "id": "divisibility_rules",
+      "layer": 0,
+      "title": "Divisibility rules",
+      "topic": "Arithmetic",
+      "prereqs": ["times_1_20"],
+      "generator": "divisibility_rules",
+      "params": {}
+    },
+    {
+      "id": "lcm_gcd",
+      "layer": 0,
+      "title": "LCM / GCD",
+      "topic": "Arithmetic",
+      "prereqs": ["division_facts"],
+      "generator": "lcm_gcd",
+      "params": { "max_n": 60 }
+    },
+    {
+      "id": "fractions_ops",
+      "layer": 0,
+      "title": "Fraction operations",
+      "topic": "Arithmetic",
+      "prereqs": ["division_facts"],
+      "generator": "fractions_ops",
+      "params": { "max_den": 12 }
+    },
+    {
+      "id": "decimal_fraction_percent",
+      "layer": 0,
+      "title": "Decimals ↔ fractions ↔ percent",
+      "topic": "Arithmetic",
+      "prereqs": ["fractions_ops"],
+      "generator": "decimal_fraction_percent",
+      "params": {}
+    }
+  ]
+}

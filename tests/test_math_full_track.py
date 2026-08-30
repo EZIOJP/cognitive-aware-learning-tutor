@@ -64,7 +64,7 @@ def test_stroke_symbol_train_and_predict(tmp_path, monkeypatch):
 
 
 def test_maybe_disambiguate_leaves_long_latex():
-    latex, conf, src = maybe_disambiguate_latex(
+    latex, conf, src, _needs_review = maybe_disambiguate_latex(
         r"x^2+3x+1",
         confidence=0.2,
         paths_json=None,

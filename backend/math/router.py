@@ -3,7 +3,7 @@ import json
 from typing import Any
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
-from fastapi.responses import StreamingResponse
+from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
@@ -288,9 +288,15 @@ def math_eval(
 
 class MathOcrStatusOut(BaseModel):
     texteller_available: bool
+    unimernet_available: bool = False
     nim_teacher: bool
     ollama_vision: bool
     tier: str
+    execution_provider: str | None = None
+    active_model_id: str | None = None
+    finetuned_model: bool = False
+    primary_engine: str = "auto"
+    engines: list[str] = []
 
 
 @router.get("/ocr/status", response_model=MathOcrStatusOut)
@@ -301,18 +307,37 @@ def math_ocr_status(
     import os
 
     from backend.integrations.nim_client import nim_available
+    from backend.math.onnx_providers import active_execution_provider, primary_onnx_provider
     from backend.math.ocr_service import texteller_available
     from backend.math.ollama_tutor import ollama_available
+    from backend.math.unimernet_onnx import unimernet_available as uni_avail
+
+    from backend.math.texteller_onnx import active_model_id
 
     tex = texteller_available()
+    uni = uni_avail()
     nim = nim_available()
     ollama_vis = bool(ollama_available() and os.getenv("OLLAMA_VISION_MODEL", "").strip())
-    tier = "texteller" if tex else ("ollama_vision" if ollama_vis else "unavailable")
+    primary = os.getenv("OCR_PRIMARY_ENGINE", "auto").strip().lower()
+    engines: list[str] = []
+    if tex:
+        engines.append("texteller")
+    if uni:
+        engines.append("unimernet")
+    tier = "dual" if len(engines) > 1 else (engines[0] if engines else ("ollama_vision" if ollama_vis else "unavailable"))
+    provider = active_execution_provider() or (primary_onnx_provider() if tex or uni else None)
+    mid = active_model_id()
     return MathOcrStatusOut(
         texteller_available=tex,
+        unimernet_available=uni,
         nim_teacher=nim,
         ollama_vision=ollama_vis,
         tier=tier,
+        execution_provider=provider,
+        active_model_id=mid if tex else None,
+        finetuned_model=bool(os.getenv("TEXTELLER_FINETUNED_MODEL", "").strip()),
+        primary_engine=primary,
+        engines=engines,
     )
 
 
@@ -621,6 +646,75 @@ class TrainSampleOut(BaseModel):
     agree: str
 
 
+class TrainSampleItem(BaseModel):
+    sample_id: str
+    timestamp: str = ""
+    tier: str = ""
+    prompt_id: str = ""
+    prompt_text: str = ""
+    predicted_latex: str = ""
+    confirmed_latex: str = ""
+    teacher_latex: str = ""
+    agree: str = ""
+    png_path: str = ""
+    has_paths_json: bool = False
+    has_png: bool = False
+    action: str = ""
+    target_latex: str = ""
+    user_id: str = ""
+
+
+class TrainSampleListOut(BaseModel):
+    total: int
+    limit: int
+    offset: int
+    items: list[TrainSampleItem]
+
+
+class TrainSampleUpdateIn(BaseModel):
+    confirmed_latex: str | None = None
+    prompt_text: str | None = None
+    tier: str | None = None
+    prompt_id: str | None = None
+
+
+class TrainSampleDeleteOut(BaseModel):
+    ok: bool
+    reason: str = ""
+    sample_id: str = ""
+
+
+class TrainImportIn(BaseModel):
+    max_samples: int = 100
+    skip_duplicates: bool = True
+    data_dir: str | None = None
+
+
+class TrainImportOut(BaseModel):
+    imported: int
+    skipped: int
+    skip_reasons: dict[str, int] = {}
+    sample_ids: list[str] = []
+    source: str = ""
+
+
+class TrainDuplicatesOut(BaseModel):
+    total_groups: int
+    groups: list[dict] = []
+
+
+class TrainDuplicateCleanupOut(BaseModel):
+    ok: bool
+    deleted: int = 0
+    groups_cleaned: int = 0
+    sample_ids: list[str] = []
+
+
+class TrainReloadModelOut(BaseModel):
+    model_id: str
+    finetuned: bool
+
+
 @router.get("/train/curriculum")
 def train_curriculum(user: User = Depends(get_current_user)):
     from backend.math.training_service import curriculum_with_progress
@@ -685,17 +779,200 @@ async def train_sample(body: TrainSampleIn, user: User = Depends(get_current_use
 
 
 @router.post("/train/retrain")
-def train_retrain_stub(
+def train_retrain(
+    mode: str = Query("export", pattern="^(export|train)$"),
+    min_samples: int | None = Query(None, ge=1, le=10_000),
     _user: User = Depends(get_current_user),
     _admin: User = Depends(require_admin),
 ):
-    """v1 stub — logs sample count; wire scripts/retrain_texteller.py in v2."""
-    from backend.math.training_log import _read_rows
+    """Export confirmed handwriting samples → TexTeller train layout; optional GPU fine-tune."""
+    from backend.math.retrain_service import run_retrain_job
 
-    total = len(_read_rows())
-    return {
-        "status": "stub",
-        "message": "Fine-tune job not wired yet. Dataset ready for export.",
-        "total_samples": total,
-        "retrain_at": 50,
-    }
+    return run_retrain_job(mode=mode, min_samples=min_samples)
+
+
+@router.post("/train/retrain-stroke-symbol")
+def train_retrain_stroke_symbol(
+    min_samples: int = Query(3, ge=1, le=500),
+    synth_per_class: int = Query(15, ge=0, le=200),
+    include_synthetic: bool = Query(True),
+    _user: User = Depends(get_current_user),
+):
+    """Retrain stroke-symbol disambiguator from confirmed paths_json in handwriting CSV."""
+    from backend.math.stroke_symbol import train_from_handwriting_dataset
+
+    return train_from_handwriting_dataset(
+        min_real_samples=min_samples,
+        include_synthetic=include_synthetic,
+        synth_per_class=synth_per_class,
+    )
+
+
+@router.post("/train/recalibrate-structure")
+def train_recalibrate_structure(
+    min_samples: int = Query(5, ge=1, le=500),
+    min_real_samples: int | None = Query(None, ge=0, le=500),
+    include_synthetic: bool = Query(True),
+    exclude_holdout: bool = Query(True),
+    _user: User = Depends(get_current_user),
+):
+    """Tune structure_verify geometry thresholds from handwriting CSV + fixtures."""
+    from backend.math.structure_calibrate import calibrate_structure_thresholds
+
+    result = calibrate_structure_thresholds(
+        min_samples=min_samples,
+        min_real_samples=min_real_samples,
+        include_synthetic=include_synthetic,
+        exclude_holdout=exclude_holdout,
+    )
+    return result.to_dict()
+
+
+@router.get("/train/holdout")
+def train_holdout_status(user: User = Depends(get_current_user)):
+    """Size of the frozen evaluation split that retrains must never see."""
+    from backend.math.holdout import holdout_status
+
+    return holdout_status(user_id=user.id)
+
+
+@router.post("/train/holdout/freeze")
+def train_holdout_freeze(
+    fraction: float | None = Query(None, gt=0.0, lt=1.0),
+    _user: User = Depends(get_current_user),
+    _admin: User = Depends(require_admin),
+):
+    """
+    Write the holdout manifest for auditing.
+
+    Membership is already stable — it is derived from sample_id — so this records the
+    split rather than creating it. Changing ``fraction`` reassigns samples and
+    invalidates any baseline measured under the old value.
+    """
+    from backend.math.holdout import freeze_holdout
+
+    return freeze_holdout(fraction=fraction)
+
+
+def _user_is_admin(user: User) -> bool:
+    return bool(getattr(user, "is_admin", False) or getattr(user, "role", "") == "admin")
+
+
+@router.get("/train/samples", response_model=TrainSampleListOut)
+def train_list_samples(
+    user: User = Depends(get_current_user),
+    limit: int = Query(50, ge=1, le=500),
+    offset: int = Query(0, ge=0),
+    tier: str | None = Query(None),
+    all_users: bool = Query(False),
+    has_paths_json: bool | None = Query(None),
+):
+    """List handwriting training samples (editable dataset). Admin may set all_users=true."""
+    from backend.math.training_log import list_samples
+
+    uid = None if (all_users and _user_is_admin(user)) else user.id
+    return list_samples(uid, limit=limit, offset=offset, tier=tier, has_paths_json=has_paths_json)
+
+
+@router.get("/train/samples/{sample_id}", response_model=TrainSampleItem)
+def train_get_sample(sample_id: str, user: User = Depends(get_current_user)):
+    from backend.math.training_log import get_sample_row, sample_to_dict
+
+    row = get_sample_row(sample_id)
+    if not row:
+        raise HTTPException(status_code=404, detail="sample not found")
+    if not _user_is_admin(user) and str(row.get("user_id")) != str(user.id):
+        raise HTTPException(status_code=403, detail="forbidden")
+    return sample_to_dict(row)
+
+
+@router.get("/train/samples/{sample_id}/image")
+def train_sample_image(sample_id: str, user: User = Depends(get_current_user)):
+    from backend.math.training_log import sample_png_path
+
+    path = sample_png_path(sample_id, user_id=user.id, is_admin=_user_is_admin(user))
+    if not path:
+        raise HTTPException(status_code=404, detail="image not found")
+    return FileResponse(path, media_type="image/png")
+
+
+@router.patch("/train/samples/{sample_id}", response_model=TrainSampleItem)
+def train_update_sample(
+    sample_id: str,
+    body: TrainSampleUpdateIn,
+    user: User = Depends(get_current_user),
+):
+    from backend.math.training_log import update_sample
+
+    updated = update_sample(
+        sample_id,
+        user_id=user.id,
+        is_admin=_user_is_admin(user),
+        confirmed_latex=body.confirmed_latex,
+        prompt_text=body.prompt_text,
+        tier=body.tier,
+        prompt_id=body.prompt_id,
+    )
+    if updated is None:
+        raise HTTPException(status_code=404, detail="sample not found or forbidden")
+    return updated
+
+
+@router.delete("/train/samples/{sample_id}", response_model=TrainSampleDeleteOut)
+def train_delete_sample(sample_id: str, user: User = Depends(get_current_user)):
+    from backend.math.training_log import delete_sample
+
+    result = delete_sample(sample_id, user_id=user.id, is_admin=_user_is_admin(user))
+    if not result.get("ok"):
+        code = 403 if result.get("reason") == "forbidden" else 404
+        raise HTTPException(status_code=code, detail=result.get("reason", "failed"))
+    return result
+
+
+@router.post("/train/import", response_model=TrainImportOut)
+def train_import_mathwriting(
+    body: TrainImportIn,
+    user: User = Depends(get_current_user),
+):
+    """Bulk import MathWriting InkML excerpt into training CSV."""
+    from pathlib import Path
+
+    from backend.math.mathwriting_import import import_mathwriting_samples
+
+    data_dir = Path(body.data_dir) if body.data_dir else None
+    result = import_mathwriting_samples(
+        user_id=user.id,
+        data_dir=data_dir,
+        max_samples=body.max_samples,
+        skip_duplicates=body.skip_duplicates,
+    )
+    return TrainImportOut(**result.to_dict())
+
+
+@router.get("/train/duplicates", response_model=TrainDuplicatesOut)
+def train_list_duplicates(user: User = Depends(get_current_user)):
+    from backend.math.training_log import find_duplicates
+
+    data = find_duplicates(user.id)
+    return TrainDuplicatesOut(**data)
+
+
+@router.post("/train/duplicates/cleanup", response_model=TrainDuplicateCleanupOut)
+def train_cleanup_duplicates(user: User = Depends(get_current_user)):
+    from backend.math.training_log import cleanup_duplicates
+
+    result = cleanup_duplicates(user_id=user.id, is_admin=_user_is_admin(user))
+    return TrainDuplicateCleanupOut(**result)
+
+
+@router.post("/train/reload-model", response_model=TrainReloadModelOut)
+def train_reload_model(
+    _user: User = Depends(get_current_user),
+    _admin: User = Depends(require_admin),
+):
+    """Hot-reload TexTeller ONNX after setting TEXTELLER_FINETUNED_MODEL."""
+    from backend.math.texteller_onnx import reload_texteller_stack
+
+    info = reload_texteller_stack()
+    finetuned = bool(info.get("finetuned"))
+    return TrainReloadModelOut(model_id=str(info["model_id"]), finetuned=finetuned)

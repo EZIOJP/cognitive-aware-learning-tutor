@@ -75,6 +75,13 @@ def test_texteller_stack_import():
     _ = texteller_available()
 
 
+def test_onnx_execution_providers_cpu_forced(monkeypatch):
+    monkeypatch.setenv("OCR_ONNX_DEVICE", "cpu")
+    from backend.math.onnx_providers import onnx_execution_providers
+
+    assert onnx_execution_providers() == ["CPUExecutionProvider"]
+
+
 def test_crop_to_content():
     url = _png_data_url(lambda d: d.rectangle((50, 40, 150, 80), outline="black", width=2))
     img = decode_canvas_image(url)
@@ -139,6 +146,7 @@ def test_recognize_canvas_blank_png_with_paths():
         "texteller",
         "texteller_whole",
         "texteller_fallback",
+        "unimernet",
         "multiline",
         "contour",
         "per_cell",
@@ -185,6 +193,7 @@ def test_recognize_canvas_never_returns_table_noise():
         "texteller",
         "texteller_whole",
         "texteller_fallback",
+        "unimernet",
         "multiline",
         "contour",
         "per_cell",

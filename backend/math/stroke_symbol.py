@@ -4,13 +4,18 @@ Stroke-sequence isolated-symbol classifier (Track B disambiguator).
 Trains / loads a tiny numpy softmax over resampled (dx, dy, pen_up) features.
 Used only when TexTeller confidence is low on a simple single-glyph-looking
 crop — never replaces the main OCR path.
+
+Retrain on confirmed ink: ``train_from_handwriting_dataset()`` or
+``POST /api/math/train/retrain-stroke-symbol``.
 """
 
 from __future__ import annotations
 
 import json
+import logging
 import math
 import random
+import re
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
@@ -19,12 +24,30 @@ import numpy as np
 
 from backend.paths import ROOT
 
+logger = logging.getLogger(__name__)
+
 SEQ_LEN = 64
 FEAT_DIM = 3
 HIDDEN = 64
 SEED = 42
 MODEL_PATH = ROOT / "data" / "math" / "stroke_symbol_model.npz"
 LABELS_DEFAULT = ["0", "1", "2", "3", "+", "-", "x", "="]
+
+# LaTeX / unicode → classifier label (short OCR disambiguation output).
+_GLYPH_CANONICAL: dict[str, str] = {
+    "+": "+",
+    "-": "-",
+    "=": "=",
+    "x": "x",
+    "X": "x",
+    "−": "-",
+    "·": ".",
+    "÷": "/",
+}
+
+_MULTI_GLYPH_RE = re.compile(
+    r"\\frac|\\sqrt|\\begin|\\sum|\\int|\\times|\\div|\\neq|\\leq|\\geq|\^|_|\{|\}"
+)
 
 
 def _jitter(pts, rng, s=0.04):
@@ -103,6 +126,78 @@ def _synth_glyphs(n_per: int = 40) -> list[tuple[str, list[list[tuple[float, flo
         for _ in range(n_per):
             out.append((label, gen()))
     return out
+
+
+def normalize_glyph_label(latex: str) -> str | None:
+    """
+    Map a confirmed LaTeX string to a single disambiguator class, or None.
+
+    Accepts one digit (0–9) or a single operator/variable glyph.
+    """
+    text = (latex or "").strip()
+    text = re.sub(r"^\$+|\$+$", "", text).strip()
+    if not text or len(text) > 3:
+        return None
+    if _MULTI_GLYPH_RE.search(text):
+        return None
+    if len(text) == 1 and text.isdigit():
+        return text
+    if text in _GLYPH_CANONICAL:
+        return _GLYPH_CANONICAL[text]
+    # Single letter variable (curriculum: x, y, n, …)
+    if len(text) == 1 and text.isalpha():
+        return text.lower()
+    return None
+
+
+def read_paths_json_for_row(row: dict) -> str | None:
+    rel = (row.get("paths_json_path") or "").strip()
+    if not rel:
+        return None
+    path = Path(rel)
+    if not path.is_absolute():
+        path = ROOT / path
+    if not path.is_file():
+        return None
+    return path.read_text(encoding="utf-8")
+
+
+def collect_dataset_glyph_samples(
+    rows: list[dict] | None = None,
+    *,
+    user_id: int | None = None,
+) -> tuple[list[tuple[str, list[list[tuple[float, float]]]]], dict[str, int]]:
+    """Load (label, strokes) from DSC_handwriting_dataset rows with paths_json."""
+    if rows is None:
+        from backend.math.training_log import _read_rows
+
+        rows = _read_rows(user_id)
+
+    from backend.math.retrain_service import ground_truth_latex
+
+    out: list[tuple[str, list[list[tuple[float, float]]]]] = []
+    skip: dict[str, int] = {}
+
+    def _skip(reason: str) -> None:
+        skip[reason] = skip.get(reason, 0) + 1
+
+    for row in rows:
+        label = normalize_glyph_label(ground_truth_latex(row))
+        if not label:
+            _skip("not_single_glyph")
+            continue
+        raw = read_paths_json_for_row(row)
+        if not raw:
+            _skip("missing_paths_json")
+            continue
+        strokes = paths_json_to_strokes(raw)
+        points = sum(len(s) for s in strokes)
+        if len(strokes) < 1 or points < 2:
+            _skip("too_few_stroke_points")
+            continue
+        out.append((label, strokes))
+
+    return out, skip
 
 
 def strokes_to_sequence(strokes: list[list[tuple[float, float]]], seq_len: int = SEQ_LEN) -> np.ndarray:
@@ -209,10 +304,17 @@ def _featurize(X: np.ndarray, proj: np.ndarray | None = None) -> tuple[np.ndarra
     return np.concatenate([stats, flat @ proj], axis=1), proj
 
 
-def train_and_save(path: Path | None = None, n_per_class: int = 40) -> dict[str, Any]:
-    path = path or MODEL_PATH
+def _fit_and_save(
+    path: Path,
+    samples: list[tuple[str, list[list[tuple[float, float]]]]],
+) -> dict[str, Any]:
+    if not samples:
+        raise ValueError("no training samples")
+
+    from backend.math.artifacts import snapshot_artifact
+
     path.parent.mkdir(parents=True, exist_ok=True)
-    samples = _synth_glyphs(n_per_class)
+    snapshot_artifact(path)
     labels = sorted({lbl for lbl, _ in samples})
     label_to_i = {lbl: i for i, lbl in enumerate(labels)}
     X = np.stack([strokes_to_sequence(st) for _, st in samples])
@@ -236,7 +338,6 @@ def train_and_save(path: Path | None = None, n_per_class: int = 40) -> dict[str,
         W -= lr * (Z.T @ grad)
         b -= lr * grad.sum(axis=0)
         lr *= 0.995
-    # quick holdout
     rng = np.random.default_rng(SEED)
     idx = rng.permutation(len(y))
     te = idx[int(0.8 * len(y)) :]
@@ -250,7 +351,81 @@ def train_and_save(path: Path | None = None, n_per_class: int = 40) -> dict[str,
         labels=np.array(labels, dtype=object),
         accuracy=np.array([acc]),
     )
-    return {"path": str(path), "accuracy": round(acc, 4), "classes": labels}
+    _load_model.cache_clear()
+    return {
+        "path": str(path),
+        "accuracy": round(acc, 4),
+        "classes": labels,
+        "total_samples": len(samples),
+    }
+
+
+def train_and_save(
+    path: Path | None = None,
+    n_per_class: int = 40,
+    *,
+    extra_samples: list[tuple[str, list[list[tuple[float, float]]]]] | None = None,
+    include_synthetic: bool = True,
+    synth_per_class: int | None = None,
+) -> dict[str, Any]:
+    """Train softmax classifier; default augments with synthetic doodles."""
+    path = path or MODEL_PATH
+    samples: list[tuple[str, list[list[tuple[float, float]]]]] = []
+    if include_synthetic:
+        n = synth_per_class if synth_per_class is not None else n_per_class
+        if n > 0:
+            samples.extend(_synth_glyphs(n))
+    if extra_samples:
+        samples.extend(extra_samples)
+    result = _fit_and_save(path, samples)
+    result["real_samples"] = len(extra_samples or [])
+    result["synthetic_augmented"] = include_synthetic and (synth_per_class or n_per_class) > 0
+    return result
+
+
+def train_from_handwriting_dataset(
+    *,
+    min_real_samples: int = 3,
+    include_synthetic: bool = True,
+    synth_per_class: int = 15,
+    user_id: int | None = None,
+    path: Path | None = None,
+    rows: list[dict] | None = None,
+) -> dict[str, Any]:
+    """
+    Retrain stroke-symbol model from DSC_handwriting_dataset paths_json + labels.
+
+    Blends confirmed real ink with synthetic augments for classes that need coverage.
+    """
+    real, skip = collect_dataset_glyph_samples(rows=rows, user_id=user_id)
+    if len(real) < min_real_samples:
+        return {
+            "status": "insufficient_samples",
+            "message": f"Need at least {min_real_samples} real glyph samples with paths_json; have {len(real)}.",
+            "real_samples": len(real),
+            "skip_reasons": skip,
+            "min_real_samples": min_real_samples,
+        }
+
+    by_label: dict[str, int] = {}
+    for lbl, _ in real:
+        by_label[lbl] = by_label.get(lbl, 0) + 1
+
+    info = train_and_save(
+        path=path,
+        n_per_class=0,
+        extra_samples=real,
+        include_synthetic=include_synthetic,
+        synth_per_class=synth_per_class,
+    )
+    return {
+        "status": "trained",
+        "message": f"Retrained on {len(real)} real samples (+ synthetic aug).",
+        "real_samples": len(real),
+        "samples_by_label": by_label,
+        "skip_reasons": skip,
+        **info,
+    }
 
 
 @lru_cache(maxsize=1)
@@ -258,7 +433,7 @@ def _load_model() -> tuple[np.ndarray, np.ndarray, np.ndarray, list[str]] | None
     path = MODEL_PATH
     if not path.exists():
         try:
-            train_and_save(path)
+            train_and_save(path, n_per_class=40, include_synthetic=True)
         except Exception:
             return None
     try:
@@ -294,6 +469,10 @@ def predict_symbol(
     return labels[i], conf
 
 
+def _norm_glyph(s: str) -> str:
+    return (s or "").replace(" ", "").replace(r"\left", "").replace(r"\right", "").lower()
+
+
 def maybe_disambiguate_latex(
     latex: str,
     *,
@@ -302,25 +481,82 @@ def maybe_disambiguate_latex(
     stroke_metrics: dict | None = None,
     band_bbox: dict | None = None,
     conf_threshold: float = 0.5,
-) -> tuple[str, float, str]:
+    teacher_latex: str = "",
+) -> tuple[str, float, str, bool]:
     """
-    If OCR confidence is low and strokes look like an isolated symbol,
-    optionally replace latex with stroke-classifier prediction.
+    Ensemble vote: TexTeller + stroke_symbol (+ optional NIM teacher agree).
 
-    Returns (latex, confidence, source) where source is 'ocr' or 'stroke_symbol'.
+    Returns (latex, confidence, source, needs_review).
     """
-    if confidence >= conf_threshold and (latex or "").strip():
-        return latex, confidence, "ocr"
+    return _ensemble_vote(
+        latex,
+        confidence=confidence,
+        paths_json=paths_json,
+        stroke_metrics=stroke_metrics,
+        band_bbox=band_bbox,
+        conf_threshold=conf_threshold,
+        teacher_latex=teacher_latex,
+    )
+
+
+def ensemble_needs_review(
+    latex: str,
+    *,
+    confidence: float,
+    paths_json: str | None = None,
+    stroke_metrics: dict | None = None,
+    band_bbox: dict | None = None,
+    teacher_latex: str = "",
+) -> bool:
+    _l, _c, _s, needs = _ensemble_vote(
+        latex,
+        confidence=confidence,
+        paths_json=paths_json,
+        stroke_metrics=stroke_metrics,
+        band_bbox=band_bbox,
+        teacher_latex=teacher_latex,
+    )
+    return needs
+
+
+def _ensemble_vote(
+    latex: str,
+    *,
+    confidence: float,
+    paths_json: str | None = None,
+    stroke_metrics: dict | None = None,
+    band_bbox: dict | None = None,
+    conf_threshold: float = 0.5,
+    teacher_latex: str = "",
+) -> tuple[str, float, str, bool]:
+    teacher = (teacher_latex or "").strip()
+    ocr = (latex or "").strip()
+
+    # NIM teacher auto-confirm when agree + high confidence
+    if teacher and ocr and _norm_glyph(teacher) == _norm_glyph(ocr) and confidence >= 0.55:
+        return ocr, min(1.0, confidence + 0.2), "nim_agree", False
+
+    if confidence >= conf_threshold and ocr:
+        if not teacher or _norm_glyph(teacher) == _norm_glyph(ocr):
+            return ocr, confidence, "ocr", False
+        return ocr, confidence * 0.85, "ocr", True
+
     strokes = paths_json_to_strokes(paths_json)
     if not strokes:
         strokes = strokes_from_metrics_band(stroke_metrics, band_bbox)
-    # Only for short / empty OCR — avoid overriding multi-token expressions.
-    if latex and len(latex.replace(" ", "")) > 4:
-        return latex, confidence, "ocr"
+    if ocr and len(ocr.replace(" ", "")) > 4:
+        return ocr, confidence, "ocr", bool(teacher and _norm_glyph(teacher) != _norm_glyph(ocr))
+
     pred = predict_symbol(strokes)
     if not pred:
-        return latex, confidence, "ocr"
-    label, conf = pred
-    if conf > confidence:
-        return label, conf, "stroke_symbol"
-    return latex, confidence, "ocr"
+        return ocr, confidence, "ocr", bool(teacher and teacher != ocr)
+
+    label, stroke_conf = pred
+    if ocr and _norm_glyph(label) == _norm_glyph(ocr):
+        return ocr, min(1.0, max(confidence, stroke_conf) + 0.12), "ensemble_agree", False
+    if stroke_conf > confidence and stroke_conf >= 0.55:
+        disagree = bool(ocr and _norm_glyph(label) != _norm_glyph(ocr))
+        return label, stroke_conf, "stroke_symbol", disagree
+    if ocr and label and _norm_glyph(label) != _norm_glyph(ocr) and stroke_conf > 0.6 and confidence > 0.5:
+        return ocr, confidence * 0.75, "ensemble_disagree", True
+    return ocr or label, max(confidence, stroke_conf), "stroke_symbol" if not ocr else "ocr", False

@@ -1,0 +1,1 @@
+"""CALT Desktop tab widgets."""

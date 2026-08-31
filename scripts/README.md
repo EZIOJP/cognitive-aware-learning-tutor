@@ -18,6 +18,7 @@ Launch helpers for Windows (`.bat`) and Linux/macOS (`.sh`). All scripts run fro
 | `run_frontend.bat` | Windows | Vite dev server |
 | `device_block_apply.bat` | Windows (admin) | Device-wide porn/YouTube block via hosts file (all apps) |
 | `device_block_remove.bat` | Windows (admin) | Remove CALT hosts block |
+| `desktop_tracker\run_calt_desktop.bat` | Windows | **CALT Desktop** (PySide6) — tracker + hub + productivity UI |
 
 ### Linux/macOS first-time setup
 

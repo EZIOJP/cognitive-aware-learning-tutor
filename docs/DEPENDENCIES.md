@@ -101,8 +101,12 @@ cp .env.example .env
 | `mediapipe` | Python focus mirror (`face_tracker.py`) |
 | `httpx`, `requests` | Ollama HTTP |
 | `pytest` | Tests |
+| `psutil`, `pystray` | Desktop tracker process + legacy tray |
+| `PySide6` | CALT Desktop productivity UI (tray + rules shell) |
 
 **Voice agent (optional):** `pip install edge-tts` for Microsoft neural TTS (default `en-GB-RyanNeural`). Without it, tracker still runs — TTS falls back to Piper then Windows SAPI. Env: `VOICE_AGENT_TTS`, `VOICE_AGENT_VOICE`.
+
+**CALT Desktop:** `pythonw -m backend.behavior.calt_desktop` or `scripts\desktop_tracker\run_calt_desktop.bat` (requires PySide6).
 
 Install:
 

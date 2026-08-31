@@ -55,11 +55,12 @@ class DeviceTab(QWidget):
         self._porn.setChecked(bool(settings.get("block_porn", True)))
         self._watch.setChecked(bool(settings.get("block_watch", True)))
         self._social.setChecked(bool(settings.get("block_social", False)))
-        active = st.get("hosts_active") or st.get("section_active")
-        count = st.get("managed_domain_count") or st.get("domain_count") or "?"
+        active = st.get("active")
+        count = st.get("managed_host_entries") or st.get("configured_domain_count") or "?"
         self._status.setText(
-            f"Hosts section active: {active}\nManaged domains: {count}\n"
-            f"Settings enabled flag: {settings.get('enabled')}"
+            f"Hosts section active: {active}\nManaged entries: {count}\n"
+            f"Settings enabled flag: {settings.get('enabled')}\n"
+            f"Needs sync: {st.get('needs_sync')}"
         )
 
     def save_settings(self) -> None:

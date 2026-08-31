@@ -22,24 +22,13 @@ from backend.behavior.calt_desktop.tabs.device import DeviceTab
 from backend.behavior.calt_desktop.tabs.plan import PlanTab
 from backend.behavior.calt_desktop.tabs.rules import RulesTab
 from backend.behavior.calt_desktop.tabs.schedules import SchedulesTab
+from backend.behavior.calt_desktop.tabs.settings import SettingsTab
 from backend.behavior.calt_desktop.tabs.today import TodayTab
+from backend.behavior.calt_desktop.tabs.voice import VoiceTab
+from backend.behavior.calt_desktop.tabs.watch import WatchTab
 
 if TYPE_CHECKING:
     from backend.behavior.tracker_service import TrackerService
-
-
-def _placeholder(title: str, body: str) -> QWidget:
-    w = QWidget()
-    lay = QVBoxLayout(w)
-    heading = QLabel(title)
-    heading.setStyleSheet("font-size: 18px; font-weight: 600;")
-    note = QLabel(body)
-    note.setWordWrap(True)
-    note.setStyleSheet("color: #94a3b8;")
-    lay.addWidget(heading)
-    lay.addWidget(note)
-    lay.addStretch(1)
-    return w
 
 
 class MainWindow(QMainWindow):
@@ -73,18 +62,9 @@ class MainWindow(QMainWindow):
         tabs.addTab(RulesTab(service), "Rules")
         tabs.addTab(SchedulesTab(), "Schedules")
         tabs.addTab(DeviceTab(), "Device")
-        tabs.addTab(
-            _placeholder("Watch", "CALT Sync hub status + setup — Phase 2."),
-            "Watch",
-        )
-        tabs.addTab(
-            _placeholder("Voice", "Voice notes list / play / download — Phase 2."),
-            "Voice",
-        )
-        tabs.addTab(
-            _placeholder("Settings", "Stack health, Jarvis, planning prefs — Phase 2."),
-            "Settings",
-        )
+        tabs.addTab(WatchTab(), "Watch")
+        tabs.addTab(VoiceTab(), "Voice")
+        tabs.addTab(SettingsTab(), "Settings")
         layout.addWidget(tabs)
 
         foot = QLabel(

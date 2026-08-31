@@ -2,7 +2,22 @@
 
 Running checklist for Cursor sessions.
 
-**Current focus (2026-08-30):** Math OCR close-out (GPU ONNX, retrain export, stroke_symbol, structure calibrate). Device Gate remains docs-only.
+**Current focus (2026-08-31):** CALT Desktop (PySide6) — productivity home. OCR parked.
+
+---
+
+## 2026-08-31 — CALT Desktop (PySide6) Phases 0–3
+
+**Done:**
+- [x] Restore tag `restore/pre-calt-desktop-pyside6` @ `5297c83`
+- [x] Spec + plan: `docs/superpowers/specs/2026-08-31-calt-desktop-pyside6-design.md`, `docs/superpowers/plans/2026-08-31-calt-desktop-pyside6.md`
+- [x] Phase 0: `backend/behavior/calt_desktop/` shell + tray + TrackerService + hub
+- [x] Phase 1: Today, Bible, Plan, Rules, Schedules, Device + free-time PIN
+- [x] Phase 2: Watch, Voice, Settings tabs
+- [x] Phase 3: Website `/productivity` calendar-centric; DesktopManagedBanner for rules/watch/voice
+- [x] Launch: `scripts\desktop_tracker\run_calt_desktop.bat`
+
+**Try:** Stop legacy tray → `run_calt_desktop.bat` → teal tray icon → Rules / Watch / Voice. Calendar still at `/productivity`.
 
 ---
 

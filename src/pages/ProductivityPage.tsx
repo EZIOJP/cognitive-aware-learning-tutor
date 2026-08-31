@@ -40,17 +40,13 @@ import ClassificationReview from "../components/productivity/ClassificationRevie
 import ActivitiesPanel from "../components/productivity/ActivitiesPanel";
 import ShutdownRitualPanel from "../components/productivity/ShutdownRitualPanel";
 import WeeklyDigestPanel from "../components/productivity/WeeklyDigestPanel";
-import GateSchedulesPanel from "../components/productivity/GateSchedulesPanel";
-import ProductivityPolicyPanel from "../components/productivity/ProductivityPolicyPanel";
+import SessionOverridePanel from "../components/productivity/SessionOverridePanel";
+import DesktopManagedBanner from "../components/productivity/DesktopManagedBanner";
 import ProductivityGoalsPanel, {
   formatGoalsForPrompt,
   GOALS_UPDATED_EVENT,
   loadProductivityGoals,
 } from "../components/productivity/ProductivityGoalsPanel";
-import SessionOverridePanel from "../components/productivity/SessionOverridePanel";
-import WearablesSyncPanel from "../components/productivity/WearablesSyncPanel";
-import VoiceNotesPanel from "../components/productivity/VoiceNotesPanel";
-import WatchPcHubBanner from "../components/productivity/WatchPcHubBanner";
 import GoogleCalendarSyncPanel from "../components/productivity/GoogleCalendarSyncPanel";
 import PlannerRemindersPanel from "../components/productivity/PlannerRemindersPanel";
 import {
@@ -1824,13 +1820,7 @@ export function ProductivityPage() {
           <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Watch ↔ PC
           </h2>
-          <WatchPcHubBanner />
-          <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6">
-            <WearablesSyncPanel />
-          </div>
-          <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6">
-            <VoiceNotesPanel />
-          </div>
+          <DesktopManagedBanner feature="Watch sync and voice notes" />
         </section>
 
         <section className="space-y-3">
@@ -1846,12 +1836,7 @@ export function ProductivityPage() {
           <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Scoring & classification
           </h2>
-          <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6">
-            <ProductivityPolicyPanel onSaved={() => void load()} />
-          </div>
-          <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6">
-            <GateSchedulesPanel />
-          </div>
+          <DesktopManagedBanner feature="Rules, hard block, gate schedules, and device block" />
           <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6">
             <SessionOverridePanel
               timeline={timeline}

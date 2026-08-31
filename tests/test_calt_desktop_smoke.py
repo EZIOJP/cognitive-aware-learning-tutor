@@ -72,6 +72,32 @@ def test_main_window_builds_offscreen() -> None:
 
     win = MainWindow(_FakeService())  # type: ignore[arg-type]
     assert win.windowTitle() == "CALT Desktop"
+    from PySide6.QtWidgets import QTabWidget
+
+    tabs = win.findChild(QTabWidget)
+    assert tabs is not None
+    assert tabs.count() == 9
     win.close()
     del win
     assert app is not None
+
+
+def test_watch_probe_and_lan_hint() -> None:
+    from backend.behavior.calt_desktop.tabs import watch as watch_mod
+
+    hint = watch_mod.lan_base_hint()
+    assert "8765" in hint
+    # Probe may be down in CI — shape only
+    result = watch_mod.probe_hub_health(timeout=0.3)
+    assert "ok" in result
+
+
+def test_voice_list_notes_shape(tmp_path, monkeypatch: pytest.MonkeyPatch) -> None:
+    from backend.behavior import voice_notes as vn
+
+    monkeypatch.setattr(vn, "NOTES_DIR", tmp_path)
+    (tmp_path / "voice_20260831_120000.opus").write_bytes(b"abc")
+    rows = vn.list_notes()
+    assert len(rows) == 1
+    assert rows[0]["name"].endswith(".opus")
+    assert rows[0]["size"] == 3

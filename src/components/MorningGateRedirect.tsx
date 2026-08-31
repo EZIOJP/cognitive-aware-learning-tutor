@@ -122,8 +122,8 @@ export function MorningGateRedirect() {
         <p className="text-[12px] text-amber-100/80 mt-0.5 leading-snug">
           {morning.hint ||
             (morning.next === "bible"
-              ? "Finish today’s chapter in the Bible reader (web or desktop tracker) to continue."
-              : `Edit goals & blocks anytime, then tap Confirm (${morning.blocks_today} block${morning.blocks_today === 1 ? "" : "s"} today).`)}
+              ? "Finish today’s chapter in the Bible reader (web or CALT Desktop → Bible) to continue."
+              : `Edit goals & blocks anytime, then tap Confirm (${morning.blocks_today} block${morning.blocks_today === 1 ? "" : "s"} today) — or confirm in CALT Desktop → Plan.`)}
         </p>
         {rewards && (
           <p className="text-[11px] text-emerald-200/90 mt-1.5 flex items-center gap-1">

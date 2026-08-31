@@ -3,7 +3,10 @@ setlocal
 call "%~dp0..\_common.bat" env-only
 if errorlevel 1 exit /b 1
 
-cd /d "%ROOT%"
+echo === Desktop Activity Tracker (legacy tray) ===
+echo Prefer CALT Desktop: scripts\desktop_tracker\run_calt_desktop.bat
+echo Legacy pystray tray kept as fallback.
+echo.
 call "%~dp0_log_tracker_launch.bat" tray "launch requested"
 
 rem Detect an already-running tracker (CommandLine match).

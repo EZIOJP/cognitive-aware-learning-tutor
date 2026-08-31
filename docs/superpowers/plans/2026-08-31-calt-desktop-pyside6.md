@@ -96,10 +96,10 @@
 - Create: `backend/behavior/calt_desktop/tabs/watch.py`
 - Create: `backend/behavior/calt_desktop/tabs/voice.py`
 
-- [ ] **Step 1:** Watch tab — hub health (`:8765/health`), LAN IP hint, token, sync instructions
-- [ ] **Step 2:** Voice tab — `voice_notes.list_notes()`, play/open folder/download path
-- [ ] **Step 3:** Settings tab — stack health, open Study, Jarvis pause hints
-- [ ] **Step 4:** Tests for voice list helper; commit Phase 2
+- [x] **Step 1:** Watch tab — hub health (`:8765/health`), LAN IP hint, token, sync instructions
+- [x] **Step 2:** Voice tab — `voice_notes.list_notes()`, play/open folder/download path
+- [x] **Step 3:** Settings tab — stack health, open Study, Jarvis pause hints
+- [x] **Step 4:** Tests for voice list helper; commit Phase 2
 
 **Done when:** Watch setup and voice clips usable entirely from desktop app.
 
@@ -112,11 +112,11 @@
 - Modify: related panels or wrap with “Managed in CALT Desktop” notice
 - Modify: `docs/SETUP_AND_COMMANDS.md`, SESSION_LOG
 
-- [ ] **Step 1:** Keep calendar + plan-vs-actual calendar flows on `/productivity`
-- [ ] **Step 2:** Hide or stub policy / schedules / device / wearables / voice editors with CTA to launch desktop
-- [ ] **Step 3:** Prefer desktop for morning gate when flag present (optional soft detection)
-- [ ] **Step 4:** Point `run_desktop_tracker.bat` docs to prefer `run_calt_desktop.bat` (keep old as fallback)
-- [ ] **Step 5:** Commit Phase 3
+- [x] **Step 1:** Keep calendar + plan-vs-actual calendar flows on `/productivity`
+- [x] **Step 2:** Hide or stub policy / schedules / device / wearables / voice editors with CTA to launch desktop
+- [x] **Step 3:** Prefer desktop for morning gate when flag present (optional soft detection)
+- [x] **Step 4:** Point `run_desktop_tracker.bat` docs to prefer `run_calt_desktop.bat` (keep old as fallback)
+- [x] **Step 5:** Commit Phase 3
 
 **Done when:** Website productivity page is calendar-centric; rules live in desktop.
 
@@ -124,9 +124,9 @@
 
 ### Task 5: Verification
 
-- [ ] Focused pytest: calt_desktop smoke + gate/voice/device existing tests
+- [x] Focused pytest: calt_desktop smoke + gate/voice/device existing tests
 - [ ] Manual: launch desktop, hub health, open Rules, free-time PIN
-- [ ] Confirm restore tag still exists: `git tag -l restore/pre-calt-desktop-pyside6`
+- [x] Confirm restore tag still exists: `git tag -l restore/pre-calt-desktop-pyside6`
 
 ---
 

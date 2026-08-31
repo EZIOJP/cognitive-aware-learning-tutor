@@ -125,8 +125,10 @@
 ### Task 5: Verification
 
 - [x] Focused pytest: calt_desktop smoke + gate/voice/device existing tests
-- [ ] Manual: launch desktop, hub health, open Rules, free-time PIN
+- [x] Autostart / keepalive / restart launch CALT Desktop (VBS + process match)
+- [x] Qt hard-block progress dialog + Bible mark-done in Desktop
 - [x] Confirm restore tag still exists: `git tag -l restore/pre-calt-desktop-pyside6`
+- [ ] Manual: launch desktop, hub health, open Rules, free-time PIN
 
 ---
 

@@ -107,7 +107,6 @@ class DesktopTray:
             from backend.behavior.tracker_restart import flush_before_restart, spawn_restart_detached
 
             flush_before_restart(self._service)
-            # spawn_restart_detached uses legacy tray launcher for now;
             # Phase 3 points it at calt_desktop.
             if not spawn_restart_detached():
                 QMessageBox.warning(self._window, "Restart", "Could not spawn restart.")

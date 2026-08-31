@@ -17,7 +17,7 @@ Running checklist for Cursor sessions.
 - [x] Phase 3: Website `/productivity` calendar-centric; DesktopManagedBanner for rules/watch/voice
 - [x] Launch: `scripts\desktop_tracker\run_calt_desktop.bat`
 
-**Try:** Stop legacy tray → `run_calt_desktop.bat` → teal tray icon → Rules / Watch / Voice. Calendar still at `/productivity`.
+**Try:** Stop legacy tray → `run_calt_desktop.bat` (or `run_desktop_tracker.bat`) → teal tray icon → Rules / Watch / Voice / Bible mark-done. Calendar still at `/productivity`. Autostart/keepalive now launch CALT Desktop.
 
 ---
 

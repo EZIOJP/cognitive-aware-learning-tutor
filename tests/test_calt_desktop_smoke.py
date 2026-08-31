@@ -101,3 +101,24 @@ def test_voice_list_notes_shape(tmp_path, monkeypatch: pytest.MonkeyPatch) -> No
     assert len(rows) == 1
     assert rows[0]["name"].endswith(".opus")
     assert rows[0]["size"] == 3
+
+
+def test_hard_block_dialog_builds_offscreen() -> None:
+    os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+    from PySide6.QtWidgets import QApplication
+
+    from backend.behavior.calt_desktop.dialogs import (
+        hard_block_bridge,
+        show_hard_block_dialog,
+    )
+
+    app = QApplication.instance() or QApplication([])
+    show_hard_block_dialog(
+        None,
+        exe="steam.exe",
+        gate={"productive_minutes": 40, "daily_goal_minutes": 240, "remaining_minutes": 200},
+    )
+    br = hard_block_bridge()
+    br.set_parent(None)
+    br.request(exe="game.exe", gate={"productive_minutes": 10, "daily_goal_minutes": 240})
+    assert app is not None

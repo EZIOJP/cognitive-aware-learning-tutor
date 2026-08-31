@@ -21,11 +21,11 @@ VBS = ROOT / "scripts" / "desktop_tracker" / "tracker_tray_launch.vbs"
 LAUNCH_LOCK = ROOT / "data" / "logs" / "tracker_restart.launch.lock"
 
 # Shared confirm text (tray subprocess + optional direct use)
-CONFIRM_TITLE = "CALT Tracker — Restart"
+CONFIRM_TITLE = "CALT Desktop — Restart"
 CONFIRM_TEXT = (
-    "Restart the desktop tracker?\n\n"
+    "Restart CALT Desktop?\n\n"
     "Reloads Python code from disk. Your activity history (SQLite/CSV) is kept.\n"
-    "Tracking pauses briefly while a fresh tray instance starts."
+    "Tracking pauses briefly while a fresh instance starts."
 )
 
 
@@ -53,7 +53,9 @@ def _tracker_processes() -> list[tuple[int, int]]:
             if name not in {"python.exe", "pythonw.exe"}:
                 continue
             cmd = " ".join(proc.info.get("cmdline") or [])
-            if "desktop_tracker" not in cmd:
+            if "desktop_tracker" not in cmd and "calt_desktop" not in cmd:
+                continue
+            if "tracker_keepalive" in cmd or "tracker_restart" in cmd:
                 continue
             out.append((int(proc.info["pid"]), int(proc.info.get("ppid") or 0)))
         except (psutil.Error, TypeError, ValueError):
@@ -161,7 +163,7 @@ def launch_tray_tracker(*, force: bool = False) -> bool:
             cwd=str(ROOT),
             creationflags=creation,
         )
-        log.info("Launched desktop tracker (fresh Python process) via %s", VBS.name)
+        log.info("Launched CALT Desktop (fresh Python process) via %s", VBS.name)
         return True
     except OSError as exc:
         log.error("Could not launch tracker: %s", exc)

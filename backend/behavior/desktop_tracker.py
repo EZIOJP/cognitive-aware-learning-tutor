@@ -55,6 +55,18 @@ def main() -> None:
         print("[desktop_tracker] Windows only.")
         sys.exit(1)
 
+    # Prefer CALT Desktop unless explicitly opted into legacy pystray tray.
+    legacy = os.environ.get("CALT_USE_LEGACY_TRAY", "").strip().lower() in ("1", "true", "yes")
+    if not legacy and "--legacy-tray" not in sys.argv:
+        try:
+            import PySide6  # noqa: F401
+
+            from backend.behavior.calt_desktop.app import run as run_desktop
+
+            raise SystemExit(run_desktop())
+        except ImportError:
+            print("[desktop_tracker] PySide6 missing — falling back to legacy tray tracker")
+
     # Spawned children inherit this and must not start a second tracker.
     if os.environ.get("CALT_TRACKER_PRIMARY") == "1":
         sys.exit(0)

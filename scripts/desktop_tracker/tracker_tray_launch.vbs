@@ -1,8 +1,9 @@
-' Launch desktop tracker with system tray — no visible cmd window.
+' Launch CALT Desktop (PySide6) — tracker + hub + productivity UI, no cmd window.
 ' Usage: wscript //B tracker_tray_launch.vbs [path\to\python.exe|pythonw.exe]
+' Legacy: set CALT_USE_LEGACY_TRAY=1 to launch backend.behavior.desktop_tracker instead.
 Option Explicit
 
-Dim sh, fso, root, scriptDir, py, pyw, cmdLine
+Dim sh, fso, root, scriptDir, py, pyw, cmdLine, legacy
 
 Set sh = CreateObject("WScript.Shell")
 Set fso = CreateObject("Scripting.FileSystemObject")
@@ -22,7 +23,6 @@ If Len(py) = 0 Then
   End If
 End If
 
-' Prefer pythonw so no console host appears
 If LCase(Right(py, 10)) = "python.exe" Then
   pyw = Left(py, Len(py) - 10) & "pythonw.exe"
   If fso.FileExists(pyw) Then py = pyw
@@ -30,9 +30,17 @@ End If
 
 sh.CurrentDirectory = root
 On Error Resume Next
-sh.Environment("PROCESS")("TRACKER_NO_TRAY") = ""
+legacy = LCase(Trim(sh.Environment("PROCESS")("CALT_USE_LEGACY_TRAY")))
 On Error GoTo 0
 
-cmdLine = """" & py & """ -m backend.behavior.desktop_tracker"
+If legacy = "1" Or legacy = "true" Or legacy = "yes" Then
+  On Error Resume Next
+  sh.Environment("PROCESS")("TRACKER_NO_TRAY") = ""
+  On Error GoTo 0
+  cmdLine = """" & py & """ -m backend.behavior.desktop_tracker"
+Else
+  cmdLine = """" & py & """ -m backend.behavior.calt_desktop"
+End If
+
 ' 0 = hidden window — never flash a console
 sh.Run cmdLine, 0, False

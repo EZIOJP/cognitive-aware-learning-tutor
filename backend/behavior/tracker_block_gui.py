@@ -349,10 +349,7 @@ def show_hard_block_notice(
         try:
             from backend.behavior.calt_desktop.dialogs import show_hard_block_notice as qt_notice
 
-            g0 = gate or {}
-            rem = g0.get("remaining_minutes")
-            detail = f"Focus remaining: {rem} min" if rem is not None else ""
-            qt_notice(None, exe=str(blocked_app or ""), detail=detail)
+            qt_notice(None, exe=str(blocked_app or ""), gate=gate or {})
             return
         except Exception as exc:  # noqa: BLE001
             log.debug("qt hard-block notice failed, falling back to Tk: %s", exc)

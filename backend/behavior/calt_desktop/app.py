@@ -81,6 +81,9 @@ def run() -> int:
     log.info("Web login: %s · calendar: %s", LOGIN_URL, CALENDAR_URL)
 
     window = MainWindow(service)
+    from backend.behavior.calt_desktop.dialogs import hard_block_bridge
+
+    hard_block_bridge().set_parent(window)
     tray = DesktopTray(service, window, qt_app)
     tray.show()
     window.show()

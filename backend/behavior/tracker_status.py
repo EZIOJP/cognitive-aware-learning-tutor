@@ -59,7 +59,9 @@ def count_tracker_processes() -> int:
             if name not in {"python.exe", "pythonw.exe"}:
                 continue
             cmd = " ".join(p.info.get("cmdline") or [])
-            if "desktop_tracker" not in cmd:
+            if "desktop_tracker" not in cmd and "calt_desktop" not in cmd:
+                continue
+            if "tracker_keepalive" in cmd or "tracker_restart" in cmd:
                 continue
             procs.append((int(p.info["pid"]), int(p.info.get("ppid") or 0)))
         except (TypeError, ValueError):

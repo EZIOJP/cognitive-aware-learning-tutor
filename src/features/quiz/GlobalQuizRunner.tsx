@@ -60,6 +60,7 @@ export function GlobalQuizRunner({
   const [now, setNow] = useState(Date.now());
   const [sessionDeadline, setSessionDeadline] = useState<number | undefined>(undefined);
   const [ocrMeta, setOcrMeta] = useState<MathQuizOcrMeta | null>(null);
+  const [ocrSubmitOk, setOcrSubmitOk] = useState(true);
   const [holdAdvance, setHoldAdvance] = useState(false);
   const pendingNextRef = useRef<GlobalQuizQuestion | null | undefined>(undefined);
   const timedOutRef = useRef(false);
@@ -137,6 +138,7 @@ export function GlobalQuizRunner({
     setLastCorrect(null);
     setShowHint(false);
     setOcrMeta(null);
+    setOcrSubmitOk(true);
     setHoldAdvance(false);
     pendingNextRef.current = undefined;
     setStartedAt(Date.now());
@@ -207,6 +209,10 @@ export function GlobalQuizRunner({
           ? freeText || "(timed out)"
           : freeText;
     if (!timedOut && !response.trim()) return;
+    if (!timedOut && isMathHandwrite && ocrMeta && !ocrSubmitOk) {
+      setError("Confirm or edit the OCR reading before submitting.");
+      return;
+    }
     setBusy(true);
     try {
       if (isMathHandwrite && ocrMeta && !timedOut) {
@@ -397,6 +403,7 @@ export function GlobalQuizRunner({
           value={freeText}
           onChange={setFreeText}
           onOcrMetaChange={setOcrMeta}
+          onOcrConfirmChange={setOcrSubmitOk}
           resetKey={question.item_id}
         />
       )}
@@ -473,7 +480,7 @@ export function GlobalQuizRunner({
 
       <div className="flex gap-2">
         {!feedback && (
-          <Button onClick={() => void submit()} disabled={busy}>
+          <Button onClick={() => void submit()} disabled={busy || (isMathHandwrite && !!ocrMeta && !ocrSubmitOk)}>
             {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Submit"}
           </Button>
         )}

@@ -9,6 +9,8 @@ from backend.behavior.browser_catalog import (
     unauthorized_kind,
 )
 from backend.behavior.distraction_gate import (
+    close_edge_if_extension_dead,
+    edge_browser_running,
     is_protected_exe,
     should_hard_block,
     terminate_blocked_process,
@@ -57,8 +59,9 @@ def test_terminate_never_targets_edge_or_pear():
     assert "youtube music.exe" in protected or "youtube-music.exe" in protected
 
 
-def test_watch_leak_skips_music_players():
+def test_watch_leak_skips_music_and_flags_youtube(monkeypatch):
     """Title 'YouTube Music' must not soft-lock / storm Edge when Pear is foreground."""
+    monkeypatch.setattr("backend.behavior.comms_health.extension_is_alive", lambda: False)
     from backend.behavior.tracker_service import TrackerService
     from backend.behavior.tracker_storage import TrackerConfig
 
@@ -78,8 +81,9 @@ def test_watch_leak_skips_music_players():
     assert svc._maybe_watch_title_leak("msedge.exe", "Rick Roll - YouTube") is True
 
 
-def test_watch_leak_skips_scaler_and_study_titles():
+def test_watch_leak_skips_scaler_and_study_titles(monkeypatch):
     """Scaler Edge titles must never soft-lock as YouTube watch-leak."""
+    monkeypatch.setattr("backend.behavior.comms_health.extension_is_alive", lambda: False)
     from backend.behavior.tracker_service import TrackerService
     from backend.behavior.tracker_storage import TrackerConfig
 
@@ -125,3 +129,33 @@ def test_title_keyword_skips_scaler_titles():
         )
         is False
     )
+
+
+def test_watch_leak_skips_edge_when_extension_alive(monkeypatch):
+    monkeypatch.setattr("backend.behavior.comms_health.extension_is_alive", lambda: True)
+    from backend.behavior.tracker_service import TrackerService
+    from backend.behavior.tracker_storage import TrackerConfig
+
+    svc = TrackerService(TrackerConfig())
+    svc._user_id = 1
+    svc._gate = {
+        "browser": {"mode": "study", "block_watch_sites": True, "enforce": True},
+    }
+    svc._gate_policy = {"hard_block_enabled": True}
+    assert svc._maybe_watch_title_leak("msedge.exe", "Rick Roll - YouTube") is False
+
+
+def test_edge_browser_running_uses_injected_names():
+    assert edge_browser_running(names=["Cursor.exe", "explorer.exe"]) is False
+    assert edge_browser_running(names=["msedge.exe", "msedgewebview2.exe"]) is True
+    assert edge_browser_running(names=["msedgewebview2.exe"]) is False
+
+
+def test_close_edge_does_not_enumerate_when_extensions_alive(tmp_path, monkeypatch):
+    """Alive (or stale MV3) must never walk or kill Edge processes."""
+    monkeypatch.setattr("backend.behavior.comms_health._STATE_PATH", tmp_path / "comms.json")
+    from backend.behavior.comms_health import note_extension_heartbeat
+
+    note_extension_heartbeat(source="selftracker")
+    note_extension_heartbeat(source="calt-gate")
+    assert close_edge_if_extension_dead(api_up=True, browser_mode="study") is False

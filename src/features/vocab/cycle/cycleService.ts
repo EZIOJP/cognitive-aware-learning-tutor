@@ -40,7 +40,7 @@ export async function getGroupsDetailed(): Promise<GroupSummary[]> {
   if (hasVocabApi()) {
     const remote = await fetchGroupsDetailedApi();
     if (remote) return remote;
-    throw new Error("Could not load groups from the server. Sign in and ensure the API is running.");
+    throw new Error("Could not load groups from the server. Start the API (`run.bat`) and retry.");
   }
 
   const words = await ensureWordsLoaded();

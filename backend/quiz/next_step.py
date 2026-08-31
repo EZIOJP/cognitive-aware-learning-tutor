@@ -20,7 +20,7 @@ def compute_next_step(db: Session, *, user_id: int | None) -> dict[str, Any]:
         return {
             "action": "sign_in",
             "label": "Sign in",
-            "to": "/login",
+            "to": "/profile",
             "reason": "Sync quizzes and spaced repetition.",
             "due_count": 0,
         }

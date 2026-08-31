@@ -53,7 +53,7 @@ const EMPTY_MCQ = () => ({
 });
 
 export function ReviewHubPage() {
-  const { user } = useAuth();
+  const { user, sessionReady } = useAuth();
   const [searchParams] = useSearchParams();
   const initialTab = (searchParams.get("tab") as Tab) || "due";
   const fromLectureNotes = searchParams.get("source") === "lecture_notes";
@@ -211,12 +211,20 @@ export function ReviewHubPage() {
     }
   };
 
+  if (!sessionReady) {
+    return (
+      <div className="p-8 text-center text-muted-foreground">
+        Loading review queue…
+      </div>
+    );
+  }
+
   if (!user) {
     return (
       <div className="p-8 text-center text-muted-foreground space-y-3">
-        <p>Sign in to use the global quiz handler and FSRS review queue.</p>
+        <p>Start the local API with run.bat, then refresh to use Review Hub.</p>
         <Button asChild>
-          <Link to="/login">Sign in</Link>
+          <Link to="/">Dashboard</Link>
         </Button>
       </div>
     );

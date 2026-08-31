@@ -214,6 +214,26 @@ def paint_rules_section(
             anchor=tk.W,
         ).pack(anchor=tk.W, pady=(0, 2))
 
+    try:
+        from backend.behavior.comms_health import snapshot
+        from backend.behavior.comms_incidents import format_comms_lines
+
+        extra = format_comms_lines(snapshot())
+    except Exception:  # noqa: BLE001
+        extra = []
+    for line in extra:
+        is_why = line.startswith("Why:") or line.startswith("Last Edge close:")
+        tk.Label(
+            body,
+            text=line,
+            bg=_PANEL,
+            fg="#fbbf24" if is_why else _MUTED,
+            font=("Segoe UI", 9),
+            justify=tk.LEFT,
+            wraplength=400,
+            anchor=tk.W,
+        ).pack(anchor=tk.W, pady=(0, 2))
+
     return frame
 
 

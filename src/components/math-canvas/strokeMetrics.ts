@@ -152,6 +152,32 @@ export function computeStrokeMetrics(
   };
 }
 
+/** Merge coalesced pointer events into fewer sketch paths (Phase E). */
+export function coalescePointerStrokes(
+  paths: SketchPath[],
+  minGapMs: number = 8,
+): SketchPath[] {
+  if (paths.length <= 1) return paths;
+  const out: SketchPath[] = [];
+  let cur = { ...paths[0], paths: [...(paths[0].paths ?? [])] };
+  for (let i = 1; i < paths.length; i++) {
+    const p = paths[i];
+    const gap = (p.startTimestamp ?? 0) - (cur.endTimestamp ?? 0);
+    const sameTool = p.drawMode === cur.drawMode;
+    const sameColor = p.strokeColor === cur.strokeColor;
+    const sameWidth = p.strokeWidth === cur.strokeWidth;
+    if (sameTool && sameColor && sameWidth && gap >= 0 && gap < minGapMs) {
+      cur.paths = [...cur.paths, ...(p.paths ?? [])];
+      cur.endTimestamp = p.endTimestamp ?? cur.endTimestamp;
+    } else {
+      out.push(cur);
+      cur = { ...p, paths: [...(p.paths ?? [])] };
+    }
+  }
+  out.push(cur);
+  return out;
+}
+
 export function computeSnapshot(
   paths: SketchPath[],
   opts: { cellPx: number; gridCells: number; eraserEvents: number }

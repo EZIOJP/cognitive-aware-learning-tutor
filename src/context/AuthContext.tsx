@@ -6,6 +6,8 @@ import { resolveApiUrl, resolveVocabApiUrl } from "../utils/resolveBackendUrl";
 interface AuthUser {
   id: number;
   username: string;
+  display_name?: string | null;
+  is_admin?: boolean;
 }
 
 interface AuthContextValue {
@@ -13,10 +15,12 @@ interface AuthContextValue {
   user: AuthUser | null;
   isAdmin: boolean;
   isAuthenticated: boolean;
+  sessionReady: boolean;
   login: (username: string, password: string) => Promise<void>;
   register: (username: string, password: string) => Promise<void>;
   logout: () => void;
   setTokenFromFace: (token: string, user: AuthUser) => void;
+  updateProfile: (patch: { display_name: string | null }) => Promise<AuthUser>;
 }
 
 const TOKEN_KEY = "vocab:auth-token";
@@ -50,23 +54,54 @@ async function apiFetch(path: string, init?: RequestInit, token?: string) {
   return data;
 }
 
+function persistSession(token: string, user: AuthUser) {
+  localStorage.setItem(TOKEN_KEY, token);
+  return { token, user };
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(() => localStorage.getItem(TOKEN_KEY));
   const [user, setUser] = useState<AuthUser | null>(null);
+  const [sessionReady, setSessionReady] = useState(false);
 
   useEffect(() => {
-    if (!token) {
-      setUser(null);
-      return;
-    }
-    apiFetch("/auth/me", { method: "GET" }, token)
-      .then((u) => setUser(u))
-      .catch(() => {
-        localStorage.removeItem(TOKEN_KEY);
-        setToken(null);
-        setUser(null);
-      });
-  }, [token]);
+    let cancelled = false;
+
+    const boot = async () => {
+      const existing = localStorage.getItem(TOKEN_KEY);
+      if (existing) {
+        try {
+          const u = await apiFetch("/auth/me", { method: "GET" }, existing);
+          if (cancelled) return;
+          setToken(existing);
+          setUser(u);
+          setSessionReady(true);
+          return;
+        } catch {
+          localStorage.removeItem(TOKEN_KEY);
+        }
+      }
+      try {
+        const data = await apiFetch("/auth/local-session", { method: "GET" });
+        if (cancelled) return;
+        localStorage.setItem(TOKEN_KEY, data.token);
+        setToken(data.token);
+        setUser(data.user);
+      } catch {
+        if (!cancelled) {
+          setToken(null);
+          setUser(null);
+        }
+      } finally {
+        if (!cancelled) setSessionReady(true);
+      }
+    };
+
+    void boot();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     if (!token || !user) return;
@@ -81,9 +116,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       method: "POST",
       body: JSON.stringify({ username, password }),
     });
-    localStorage.setItem(TOKEN_KEY, data.token);
-    setToken(data.token);
-    setUser(data.user);
+    const next = persistSession(data.token, data.user);
+    setToken(next.token);
+    setUser(next.user);
   };
 
   const register = async (username: string, password: string) => {
@@ -91,9 +126,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       method: "POST",
       body: JSON.stringify({ username, password }),
     });
-    localStorage.setItem(TOKEN_KEY, data.token);
-    setToken(data.token);
-    setUser(data.user);
+    const next = persistSession(data.token, data.user);
+    setToken(next.token);
+    setUser(next.user);
   };
 
   const logout = () => {
@@ -103,23 +138,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const setTokenFromFace = (newToken: string, authUser: AuthUser) => {
-    localStorage.setItem(TOKEN_KEY, newToken);
-    setToken(newToken);
-    setUser(authUser);
+    const next = persistSession(newToken, authUser);
+    setToken(next.token);
+    setUser(next.user);
+  };
+
+  const updateProfile = async (patch: { display_name: string | null }) => {
+    const u = await apiFetch("/auth/me", {
+      method: "PATCH",
+      body: JSON.stringify(patch),
+    }, token ?? undefined);
+    setUser(u);
+    return u as AuthUser;
   };
 
   const value = useMemo<AuthContextValue>(
     () => ({
       token,
       user,
-      isAdmin: user?.username?.toLowerCase() === "admin",
+      isAdmin: Boolean(user?.is_admin) || user?.username?.toLowerCase() === "admin",
       isAuthenticated: !!token && !!user,
+      sessionReady,
       login,
       register,
       logout,
       setTokenFromFace,
+      updateProfile,
     }),
-    [token, user]
+    [token, user, sessionReady]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
@@ -134,4 +180,3 @@ export function useAuth() {
   if (!ctx) throw new Error("useAuth must be used within AuthProvider");
   return ctx;
 }
-

@@ -331,7 +331,7 @@ OPEN_DEBOUNCE_S = float(os.environ.get("CALT_OPEN_DEBOUNCE_S", "15") or "15")
 def start_calt_stack(*, force: bool = False) -> bool:
     """Launch run.bat only when Web is down (unless *force*).
 
-    Returns True if a launch was attempted, False if skipped (already up).
+    Returns True if a launch was attempted, False if skipped (already up / debounced).
     """
     from backend.behavior.tracker_launchers import launch_calt_stack
 
@@ -340,8 +340,7 @@ def start_calt_stack(*, force: bool = False) -> bool:
         if snap.web_up:
             log.info("start_calt_stack skipped — Web already up")
             return False
-    launch_calt_stack()
-    return True
+    return launch_calt_stack(force=force)
 
 
 def open_or_focus_calt(path_or_url: str, *, force: bool = False) -> bool:
@@ -373,7 +372,17 @@ def open_or_focus_calt(path_or_url: str, *, force: bool = False) -> bool:
     except Exception as exc:  # noqa: BLE001
         log.debug("calt tab command queue failed: %s", exc)
 
-    # Still open once via preferred browser (extension will consolidate tabs)
+    # Extension is polling → FOCUS command is enough. A second msedge.exe launch
+    # looks like Edge "closing/reopening" and fights the gate worker.
+    try:
+        from backend.behavior.comms_health import extension_is_alive
+
+        if extension_is_alive() and not force:
+            log.info("open_or_focus_calt: extension alive — skip new Edge window (%s)", target)
+            return True
+    except Exception as exc:  # noqa: BLE001
+        log.debug("extension alive check failed: %s", exc)
+
     return open_url_preferred(target)
 
 

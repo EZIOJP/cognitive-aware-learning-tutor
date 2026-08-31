@@ -16,7 +16,7 @@ const FALLBACK_LINKS: Record<
   QuizBacklog["recommended_action"],
   { label: string; to: string; hint: string }
 > = {
-  sign_in: { label: "Sign in", to: "/login", hint: "Sync quizzes and spaced repetition." },
+  sign_in: { label: "Lecture Notes", to: "/lecture-notes", hint: "Generate notes → quiz → auto-review loop." },
   review_due: { label: "Review due cards", to: "/review", hint: "Cards waiting in your FSRS queue." },
   start_vocab: { label: "Start GRE vocab", to: "/gre-vocab/read", hint: "Build your first review deck." },
   lecture_notes: {
@@ -27,23 +27,24 @@ const FALLBACK_LINKS: Record<
 };
 
 export function StudyLoopWidget() {
-  const { user } = useAuth();
+  const { user, sessionReady } = useAuth();
   const [backlog, setBacklog] = useState<QuizBacklog | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    if (!sessionReady) return;
     if (!user) {
       setBacklog({
         total_cards: 0,
         due_count: 0,
         by_domain: {},
         deck_count: 0,
-        recommended_action: "sign_in",
+        recommended_action: "lecture_notes",
         next_step: {
-          action: "sign_in",
-          label: "Sign in",
-          to: "/login",
-          reason: "Sync quizzes and spaced repetition.",
+          action: "lecture_notes",
+          label: "Lecture Notes",
+          to: "/lecture-notes",
+          reason: "Start the local API to sync your review queue.",
         },
       });
       return;
@@ -61,7 +62,7 @@ export function StudyLoopWidget() {
         })
       )
       .finally(() => setLoading(false));
-  }, [user]);
+  }, [user, sessionReady]);
 
   if (!backlog) return null;
 

@@ -4,10 +4,11 @@ Last updated: 2026-08-18
 
 ## Current focus
 
-**Competitive productivity lane complete** — Pulse, goals/alerts, activities inbox, shutdown ritual, away prompt, weekly digest, focus quality, gate schedules. Unified quiz mandate remains verified (`757` pytest green).
+**Tracker API unified board** — `day-status` schema 3 embeds pulse, goals, focus quality, weekly snippet; Android + Life Tracker consume same payload. ActivityWatch export at `/api/behavior/export/activitywatch`. Competitive productivity lane complete.
 
 Spec (quiz): [docs/superpowers/specs/2026-08-17-unified-quiz-completion-design.md](./superpowers/specs/2026-08-17-unified-quiz-completion-design.md)  
-Plan (productivity): [docs/superpowers/plans/2026-08-18-competitive-features-priority.md](./superpowers/plans/2026-08-18-competitive-features-priority.md)
+Plan (productivity): [docs/superpowers/plans/2026-08-18-competitive-features-priority.md](./superpowers/plans/2026-08-18-competitive-features-priority.md)  
+Plan (tracker board): [docs/superpowers/plans/2026-08-18-tracker-api-unified-board.md](./superpowers/plans/2026-08-18-tracker-api-unified-board.md)
 
 ## Working now (daily-use product)
 
@@ -27,9 +28,10 @@ Plan (productivity): [docs/superpowers/plans/2026-08-18-competitive-features-pri
 - Policy + propose plan + routines + week export (**wearables included**)
 - Distraction gate (bible → confirm plan → study mode)
 - **Productivity Pulse**, goals/alerts, activities inbox, shutdown ritual, weekly digest, focus quality, recurring gate schedules
+- **Unified day-status (schema 3)** — mobile/watch/web board; ActivityWatch export API
 
 ### Life / hub / extras
-- Life Tracker, Hub / AI Coach, wearables ingest, NutriNode, theme meteor
+- Life Tracker (+ **TrackerDayBoard** today snapshot), Hub / AI Coach, wearables ingest, NutriNode, theme meteor
 
 ### Platform
 - FastAPI `backend.main`, Alembic through `0028_wearable_ingest_replay`

@@ -5,6 +5,7 @@ import { createWidget, widget, align, text_style, prop } from '@zos/ui'
 import { back } from '@zos/router'
 import { localStorage } from '@zos/storage'
 import { screen, yFrac } from './layout'
+import { sidePayload } from '../shared/sidePayload'
 
 function loadLocalLogs() {
   try {
@@ -81,8 +82,8 @@ Page({
 
     messageBuilder
       .request({ method: 'GET_SETTINGS' })
-      .then((data) => {
-        const s = data || {}
+      .then((res) => {
+        const s = sidePayload(res)
         const issues = (s.url_issues || []).join('; ')
         // Show full host on its own lines — avoid crop looking like "+2.168…"
         const host = s.host || '(not set)'
@@ -104,13 +105,11 @@ Page({
 
     messageBuilder
       .request({ method: 'GET_LOGS' })
-      .then((data) => {
+      .then((res) => {
+        const data = sidePayload(res)
         const logs = (data && data.logs) || []
         if (logs.length) {
           bodyW.setProperty(prop.TEXT, logs.slice(0, 5).map(formatEntry).join('\n\n'))
-        }
-        if (data && data.diag) {
-          // keep meta if settings already set
         }
       })
       .catch(() => {})

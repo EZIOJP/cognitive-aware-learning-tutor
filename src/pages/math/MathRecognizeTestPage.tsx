@@ -139,6 +139,9 @@ export function MathRecognizeTestPage() {
               {ocrStatus.texteller_available ? "OCR ready" : "OCR not installed"}
             </Badge>
           )}
+          {ocrStatus?.execution_provider && (
+            <Badge variant="outline">{ocrStatus.execution_provider}</Badge>
+          )}
           {idle.busy && (
             <Badge variant="outline" className="gap-1">
               <Loader2 className="w-3 h-3 animate-spin" />

@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router";
 import { BookOpen, CalendarCheck, Sparkles } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { fetchDistractionGate, type MorningGate } from "../api/behaviorClient";
+import { ConfirmPlanButton, MORNING_UPDATED_EVENT } from "./productivity/ConfirmPlanButton";
 
 /** Soft-landing for morning.next=plan — Productivity Plan tab. */
 export const MORNING_PLAN_PATH = "/productivity?tab=plan";
@@ -35,14 +36,14 @@ function rewardLine(morning: MorningGate): string | null {
  * Separate from desktop game hard-block (same API, nested `morning`).
  */
 export function MorningGateRedirect() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, sessionReady } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [morning, setMorning] = useState<MorningGate | null>(null);
   const lastNav = useRef<string>("");
 
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (!sessionReady || !isAuthenticated) {
       setMorning(null);
       return;
     }
@@ -60,13 +61,16 @@ export function MorningGateRedirect() {
     const onVis = () => {
       if (document.visibilityState === "visible") void poll();
     };
+    const onMorning = () => void poll();
     document.addEventListener("visibilitychange", onVis);
+    window.addEventListener(MORNING_UPDATED_EVENT, onMorning);
     return () => {
       cancelled = true;
       window.clearInterval(id);
       document.removeEventListener("visibilitychange", onVis);
+      window.removeEventListener(MORNING_UPDATED_EVENT, onMorning);
     };
-  }, [isAuthenticated]);
+  }, [isAuthenticated, sessionReady]);
 
   useEffect(() => {
     if (!isAuthenticated || !morning?.enabled) return;
@@ -81,11 +85,11 @@ export function MorningGateRedirect() {
       return;
     }
 
-    // morning.next === "plan" — land on Plan tab; Bible/login still allowed.
+    // morning.next === "plan" — land on Plan tab; Bible/profile still allowed.
     if (
       location.pathname === "/bible" ||
       location.pathname.startsWith("/bible/") ||
-      location.pathname === "/login"
+      location.pathname === "/profile"
     ) {
       return;
     }
@@ -130,6 +134,16 @@ export function MorningGateRedirect() {
               : ""}
           </p>
         )}
+        {morning.next === "plan" && !morning.plan_done ? (
+          <div className="mt-2">
+            <ConfirmPlanButton
+              size="banner"
+              onDone={() =>
+                void fetchDistractionGate().then((g) => setMorning(g.morning ?? null))
+              }
+            />
+          </div>
+        ) : null}
       </div>
     </div>
   );

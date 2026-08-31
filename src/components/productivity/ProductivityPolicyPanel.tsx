@@ -17,6 +17,7 @@ import {
   persistProductivityGoals,
 } from "./ProductivityGoalsPanel";
 import { formatHoursMins, formatHoursMinsPair } from "../../utils/formatDuration";
+import { DeviceBlockPanel } from "./DeviceBlockPanel";
 
 const COMMON_CATEGORIES = [
   "IDE / Code Editor",
@@ -640,6 +641,8 @@ export function ProductivityPolicyPanel({ onSaved }: Props) {
           )}
         </ul>
       </div>
+
+      <DeviceBlockPanel />
     </div>
   );
 }

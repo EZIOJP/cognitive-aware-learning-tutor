@@ -111,7 +111,7 @@ export function AddWordsJson() {
       </p>
       {!isAdmin && (
         <p className="text-sm text-amber-700 dark:text-amber-300 mb-3">
-          Sign in as admin to submit. Preview still works.
+          Admin session required to submit. Preview still works.
         </p>
       )}
       <Textarea

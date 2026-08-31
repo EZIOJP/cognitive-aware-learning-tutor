@@ -11,6 +11,7 @@ import {
 } from "../../api/plannerClient";
 import { fetchDistractionGate, type MorningGate } from "../../api/behaviorClient";
 import { PlannerBlockForm } from "./PlannerBlockForm";
+import { ConfirmPlanButton } from "./ConfirmPlanButton";
 import { formatHoursMins } from "../../utils/formatDuration";
 
 function startOfDay(d: Date): Date {
@@ -203,17 +204,21 @@ export function TodayPanel({
   return (
     <div className={`rounded-2xl border border-white/10 bg-white/[0.03] ${compact ? "p-4 space-y-3" : "p-5 space-y-4"}`}>
       {isToday && morning?.enabled && morning.next === "plan" && (
-        <p className="text-[11px] text-amber-200/85">
-          Confirm today’s plan on the{" "}
-          <Link to="/productivity?tab=plan" className="underline underline-offset-2 text-amber-100 hover:text-white">
-            Plan
-          </Link>{" "}
-          tab
-          {morning.auto_plan?.titles && morning.auto_plan.titles.length > 0
-            ? ` · ${morning.auto_plan.titles.slice(0, 2).join(" · ")}`
-            : ""}
-          .
-        </p>
+        <div className="space-y-2">
+          <p className="text-[11px] text-amber-200/85">
+            Confirm today’s plan to leave morning planning
+            {morning.auto_plan?.titles && morning.auto_plan.titles.length > 0
+              ? ` · ${morning.auto_plan.titles.slice(0, 2).join(" · ")}`
+              : ""}
+            .
+          </p>
+          <ConfirmPlanButton
+            size="block"
+            onDone={() => {
+              void fetchDistractionGate().then((g) => setMorning(g.morning ?? null));
+            }}
+          />
+        </div>
       )}
       {isToday && morning?.enabled && morning.plan_done && (
         <p className="text-[11px] text-emerald-300/90">

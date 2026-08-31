@@ -11,6 +11,7 @@ import type { DesktopStats, BrowserStats, AppSession, BrowserSite, BrowserDomain
 import { PlannerCalendar } from "../components/productivity/PlannerCalendar";
 import { GlanceBar } from "../components/productivity/GlanceBar";
 import { PlanVsActualDashboard } from "../components/productivity/PlanVsActualDashboard";
+import { ConfirmPlanButton } from "../components/productivity/ConfirmPlanButton";
 import { TimetablePanel } from "../components/productivity/TimetablePanel";
 import { PlanningSettingsPanel } from "../components/productivity/PlanningSettingsPanel";
 import { DemoModePanel } from "../components/productivity/DemoModePanel";
@@ -48,6 +49,8 @@ import ProductivityGoalsPanel, {
 } from "../components/productivity/ProductivityGoalsPanel";
 import SessionOverridePanel from "../components/productivity/SessionOverridePanel";
 import WearablesSyncPanel from "../components/productivity/WearablesSyncPanel";
+import VoiceNotesPanel from "../components/productivity/VoiceNotesPanel";
+import WatchPcHubBanner from "../components/productivity/WatchPcHubBanner";
 import GoogleCalendarSyncPanel from "../components/productivity/GoogleCalendarSyncPanel";
 import PlannerRemindersPanel from "../components/productivity/PlannerRemindersPanel";
 import {
@@ -1402,12 +1405,13 @@ export function ProductivityPage() {
       <div className="grid gap-5 xl:grid-cols-2 items-start">
         {/* Left: planning steps */}
         <div className="flex min-w-0 flex-col gap-3 xl:sticky xl:top-3 xl:h-[calc(100vh-5.5rem)] xl:max-h-[calc(100vh-5.5rem)]">
-          <div className="shrink-0 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2.5 space-y-1">
+          <div className="shrink-0 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2.5 space-y-2">
             <h2 className="text-sm font-semibold text-foreground">Today’s plan</h2>
             <p className="text-[11px] text-muted-foreground">
-              Work the steps below · confirm morning plan when ready · browser stays STUDY until free
-              time / break blocks.
+              Work the steps below, then tap <strong className="text-foreground">Confirm plan</strong> to
+              leave planning mode.
             </p>
+            <ConfirmPlanButton size="block" />
           </div>
           <nav aria-label="Plan steps" className="shrink-0 px-1 pt-0.5 pb-0.5">
             <ol className="relative grid grid-cols-5">
@@ -1619,7 +1623,9 @@ export function ProductivityPage() {
           </div>
 
           {/* Sticky step footer — always visible in the left column */}
-          <div className="shrink-0 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-white/10 bg-background/90 backdrop-blur-sm px-3 py-2.5">
+          <div className="shrink-0 space-y-2 rounded-xl border border-white/10 bg-background/90 backdrop-blur-sm px-3 py-2.5">
+            <ConfirmPlanButton size="block" />
+            <div className="flex flex-wrap items-center justify-between gap-2">
             {planStep === "routines" ? (
               <>
                 <span className="text-[11px] text-muted-foreground">Lock times, then set focus hours</span>
@@ -1725,6 +1731,7 @@ export function ProductivityPage() {
                 </button>
               </>
             )}
+            </div>
           </div>
         </div>
 
@@ -1815,10 +1822,14 @@ export function ProductivityPage() {
 
         <section className="space-y-3">
           <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Wearables
+            Watch ↔ PC
           </h2>
+          <WatchPcHubBanner />
           <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6">
             <WearablesSyncPanel />
+          </div>
+          <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6">
+            <VoiceNotesPanel />
           </div>
         </section>
 

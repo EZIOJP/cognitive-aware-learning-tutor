@@ -8,6 +8,7 @@ import { localStorage } from '@zos/storage'
 import { log } from '@zos/utils'
 import { buildHealthSnapshot, snapshotSummary, sleepDisplayMinutes } from './sensors'
 import { screen } from './layout'
+import { sidePayload } from '../shared/sidePayload'
 import {
   queueSnapshot,
   snapshotForDay,
@@ -19,6 +20,10 @@ import {
   clearChunkResume,
   queuedDays,
   queueDepth,
+  pendingDays,
+  markDaySynced,
+  lastSyncedDay,
+  gapDays,
 } from './queue'
 
 const logger = log.getLogger('calt-dump')
@@ -299,13 +304,14 @@ Page({
   },
 
   refreshQueueLabel() {
-    if (this.queueW) {
-      const days = queuedDays()
-      this.queueW.setProperty(
-        prop.TEXT,
-        days.length ? `Queue ${days.length}/7 · ${days.join(',')}` : 'Queue empty',
-      )
-    }
+    if (!this.queueW) return
+    const pending = pendingDays()
+    const mark = lastSyncedDay()
+    const tail = mark ? `thru ${mark}` : 'never synced'
+    this.queueW.setProperty(
+      prop.TEXT,
+      pending.length ? `Pending ${pending.length} · ${tail}` : `Up to date · ${tail}`,
+    )
   },
 
   doDump() {
@@ -340,7 +346,8 @@ Page({
       if (this.snapW) this.snapW.setProperty(prop.TEXT, snapshotSummary(health))
     }
 
-    const days = queuedDays()
+    // Oldest first, so a run always fills forward from the watermark to today.
+    const days = pendingDays()
     const resume = loadChunkResume()
     if (resume && resume.day && days.indexOf(resume.day) < 0) {
       days.unshift(resume.day)
@@ -362,7 +369,16 @@ Page({
         self._syncing = false
         self.refreshQueueLabel()
         self.setProgress(bar(days.length * 4, days.length * 4), COLOR_OK)
-        self.setStatus('Done · all chunks ACK', COLOR_OK)
+        // Gaps are days the watch never captured. Sensors only report the
+        // current day, so no later run can recover them — say so instead of
+        // reporting a clean fill.
+        const gaps = gapDays(today)
+        self.setStatus(
+          gaps.length
+            ? `Sent ${days.length}d · ${gaps.length}d never captured`
+            : `Done · filled thru ${today}`,
+          gaps.length ? COLOR_BUSY : COLOR_OK,
+        )
         persistError('')
         return
       }
@@ -382,6 +398,8 @@ Page({
 
       const runPart = (partIndex) => {
         if (partIndex >= chunks.length) {
+          // Watermark advances only after every chunk of the day was ACKed.
+          markDaySynced(day)
           removeQueuedSnapshot(day)
           saveChunkResume(days[dayIndex + 1] || '', 0)
           self.refreshQueueLabel()
@@ -418,7 +436,7 @@ Page({
             },
           })
           .then((res) => {
-            const result = res || {}
+            const result = sidePayload(res)
             cacheSyncResult(result)
             saveWatchLog(result, dayHealth)
             if (!result.healthOk) {

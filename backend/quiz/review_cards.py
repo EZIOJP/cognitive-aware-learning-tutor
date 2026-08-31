@@ -242,9 +242,97 @@ def card_to_due_item(card: ReviewCard) -> dict[str, Any]:
     }
 
 
+def group_items_into_topic_packs(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Index lecture MCQs by topic_id (lecture order) for SRS topic cards."""
+    from collections import OrderedDict
+
+    groups: OrderedDict[str, dict[str, Any]] = OrderedDict()
+    for item in items:
+        if not isinstance(item, dict):
+            continue
+        tid = str(item.get("topic_id") or "").strip()
+        if not tid:
+            continue
+        if tid not in groups:
+            title = str(item.get("concept") or item.get("topic") or tid)[:160]
+            groups[tid] = {
+                "kind": "topic_pack",
+                "topic_id": tid,
+                "title": title,
+                "note_path": str(item.get("note_path") or "").replace("\\", "/").strip() or None,
+                "questions": [],
+            }
+        groups[tid]["questions"].append(item)
+    return list(groups.values())
+
+
+def expand_cards_to_quiz_items(cards: list[ReviewCard]) -> list[dict[str, Any]]:
+    """Topic-pack cards expand into their MCQs; other cards stay one item."""
+    items: list[dict[str, Any]] = []
+    for card in cards:
+        payload = json.loads(card.payload_json or "{}")
+        if payload.get("kind") == "topic_pack":
+            qs = payload.get("questions") or []
+            n = len(qs)
+            for i, q in enumerate(qs):
+                if not isinstance(q, dict):
+                    continue
+                item = dict(q)
+                item["review_card_id"] = card.id
+                item["topic_id"] = payload.get("topic_id") or card.topic
+                item["topic"] = card.topic or payload.get("topic_id")
+                item["note_path"] = card.note_path or payload.get("note_path")
+                item["pack_index"] = i
+                item["pack_size"] = n
+                item["schedule_topic_pack"] = True
+                item["id"] = str(q.get("id") or f"{card.id}-q{i + 1}")
+                items.append(item)
+        else:
+            items.append(card_to_quiz_item(card))
+    return items
+
+
 def seed_deck_cards(db: Session, *, user_id: int, deck: QuizDeck) -> int:
     items = json.loads(deck.items_json or "[]")
+    packs = group_items_into_topic_packs(items)
     count = 0
+    if packs:
+        for pack in packs:
+            tid = str(pack["topic_id"])
+            note_path = pack.get("note_path") or None
+            key = _item_key(deck.domain, f"topic-{tid}", note_path or "")[:200]
+            existing = (
+                db.query(ReviewCard)
+                .filter(ReviewCard.user_id == user_id, ReviewCard.item_key == key)
+                .first()
+            )
+            label = f"{tid} — {pack.get('title') or tid}"[:300]
+            payload = {**pack, "id": f"topic-{tid}"}
+            if existing:
+                existing.label = label
+                existing.payload_json = json.dumps(payload)
+                existing.topic = tid[:160]
+                existing.note_path = note_path
+                existing.deck_id = deck.id
+                count += 1
+                continue
+            row = ReviewCard(
+                user_id=user_id,
+                domain=deck.domain,
+                item_key=key,
+                label=label,
+                topic=tid[:160],
+                note_path=note_path,
+                format="mcq",
+                payload_json=json.dumps(payload),
+                srs_json=json.dumps(srs_mod.srs_to_metadata(srs_mod.SrsState())),
+                deck_id=deck.id,
+            )
+            db.add(row)
+            count += 1
+        db.commit()
+        return count
+
     for i, item in enumerate(items):
         if not isinstance(item, dict):
             continue

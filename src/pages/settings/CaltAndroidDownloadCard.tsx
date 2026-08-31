@@ -89,7 +89,7 @@ export function CaltAndroidDownloadCard() {
         </div>
       ) : (
         <p className="text-sm text-muted-foreground">
-          Sign in to show a pairing QR for the phone app.
+          Pairing QR appears after the local session binds. Start the API if this stays empty.
         </p>
       )}
 

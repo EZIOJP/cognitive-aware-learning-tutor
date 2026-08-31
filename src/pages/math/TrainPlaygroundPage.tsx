@@ -30,6 +30,7 @@ import {
   type TrainPrompt,
   type TrainTier,
 } from "../../api/mathClient";
+import { OcrExecutionBadge } from "../../components/math-canvas/OcrReviewPanel";
 
 /** Loose LaTeX normalization for prompt-target comparison (not full CAS equality). */
 function normalizeLatex(s: string): string {
@@ -41,7 +42,7 @@ function normalizeLatex(s: string): string {
 }
 
 export function TrainPlaygroundPage() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, sessionReady } = useAuth();
   const canvasRef = useRef<MathCanvasHandle>(null);
   const [curriculum, setCurriculum] = useState<TrainCurriculum | null>(null);
   const [ocrStatus, setOcrStatus] = useState<MathOcrStatus | null>(null);
@@ -54,6 +55,7 @@ export function TrainPlaygroundPage() {
   const [correctLatex, setCorrectLatex] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [lastAgree, setLastAgree] = useState<string | null>(null);
+  const [lastSavedSampleId, setLastSavedSampleId] = useState<string | null>(null);
   const [lastOcr, setLastOcr] = useState<MathOcrResult | null>(null);
   const [metrics, setMetrics] = useState<StrokeMetricsSnapshot | null>(null);
 
@@ -165,6 +167,7 @@ export function TrainPlaygroundPage() {
         return;
       }
       setLastAgree(out.agree);
+      setLastSavedSampleId(out.sample_id);
       setPredicted("");
       setCorrectLatex("");
       setLastOcr(null);
@@ -182,14 +185,19 @@ export function TrainPlaygroundPage() {
     }
   };
 
+  if (!sessionReady) {
+    return (
+      <div className="p-6 text-sm text-muted-foreground">Loading training…</div>
+    );
+  }
+
   if (!isAuthenticated) {
     return (
       <div className="p-6 space-y-3">
         <Link to="/math-tutor" className="text-sm text-primary hover:underline inline-flex items-center gap-1">
           <ArrowLeft className="w-4 h-4" /> Math Tutor
         </Link>
-        <p className="text-muted-foreground">Sign in to log handwriting training samples.</p>
-        <Link to="/login" className="text-primary text-sm hover:underline">Sign in →</Link>
+        <p className="text-muted-foreground">Start the local API with run.bat, then refresh.</p>
       </div>
     );
   }
@@ -209,14 +217,17 @@ export function TrainPlaygroundPage() {
             <ArrowLeft className="w-4 h-4" />
             Math Tutor
           </Link>
+          <Link
+            to="/math-tutor/training-data"
+            className="text-sm text-muted-foreground hover:text-primary hover:underline"
+          >
+            Manage training data →
+          </Link>
           {ocrStatus && (
-            <Badge variant={ocrStatus.texteller_available ? "default" : "destructive"}>
-              {ocrStatus.texteller_available
-                ? "OCR ready"
-                : ocrStatus.tier === "ollama_vision"
-                  ? "OCR: Ollama fallback"
-                  : "OCR not installed"}
-            </Badge>
+            <OcrExecutionBadge status={ocrStatus} />
+          )}
+          {!ocrStatus && (
+            <Badge variant="outline">Loading OCR…</Badge>
           )}
         </div>
         <div className="flex items-center gap-2 flex-wrap">
@@ -334,9 +345,19 @@ export function TrainPlaygroundPage() {
           </div>
 
           {lastAgree && (
-            <Badge variant={lastAgree === "true" || lastAgree === "teacher_match" ? "default" : "secondary"}>
-              Saved · {lastAgree}
-            </Badge>
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant={lastAgree === "true" || lastAgree === "teacher_match" ? "default" : "secondary"}>
+                Saved · {lastAgree}
+              </Badge>
+              {lastSavedSampleId && (
+                <Link
+                  to={`/math-tutor/training-data?highlight=${lastSavedSampleId}`}
+                  className="text-xs text-primary hover:underline"
+                >
+                  View in training data →
+                </Link>
+              )}
+            </div>
           )}
           {error && <p className="text-xs text-destructive">{error}</p>}
 

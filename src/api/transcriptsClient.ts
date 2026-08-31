@@ -932,6 +932,7 @@ export async function generateLibraryQuiz(
   call_plan?: { role: string; count: number }[];
   sections_covered?: string[];
   topics_covered?: string[];
+  topic_index?: { topic_id: string; title: string; question_count: number }[];
   saved?: boolean;
   saved_path?: string | null;
   deck_id?: number | null;

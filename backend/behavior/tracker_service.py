@@ -38,6 +38,7 @@ log = logging.getLogger("desktop_tracker")
 
 PLAN_REFRESH_S = 60.0
 GATE_REFRESH_S = 30.0
+COMMS_TICK_S = 15.0
 
 ForegroundFn = Callable[[], tuple[str, str, int]]
 
@@ -165,6 +166,7 @@ class TrackerService:
         self._last_keyword_hit: str = ""
         self._last_keyword_hit_at: float = 0.0
         self._last_watch_leak_at: float = 0.0
+        self._last_comms_tick: float = 0.0
         self._nsfw_inactive_spoken: bool = False
         self._nsfw_status_line: str | None = None
 
@@ -236,6 +238,12 @@ class TrackerService:
             )
 
             health = get_stack_health()
+            try:
+                from backend.behavior.comms_health import note_api_up_transition
+
+                note_api_up_transition(api_up=bool(health.api_up))
+            except Exception:  # noqa: BLE001
+                pass
             line = maybe_jarvis_stack_down_line()
             if line:
                 log.info("[stack_health] %s", health.status_line())
@@ -340,6 +348,13 @@ class TrackerService:
                 maybe_protect_startup(armed=bool(g.get("enabled")))
             except Exception as exc:  # noqa: BLE001
                 log.debug("persist protect skipped: %s", exc)
+
+            try:
+                from backend.behavior.tracker_porn_block import tracker_sync_porn_hosts
+
+                tracker_sync_porn_hosts()
+            except Exception as exc:  # noqa: BLE001
+                log.debug("porn hosts sync skipped: %s", exc)
 
     def _maybe_hard_block(self, exe: str, title: str, pid: int) -> bool:
         """Kill blocked apps while gate is locked. Returns True if killed."""
@@ -536,6 +551,23 @@ class TrackerService:
             return False
         from backend.behavior.browser_catalog import is_music_player_exe
         from backend.behavior.session_key import is_browser_exe
+
+        try:
+            from backend.behavior.comms_health import extension_is_alive
+            from backend.behavior.browser_catalog import is_allowed_browser, normalize_exe
+
+            if is_allowed_browser(exe) or normalize_exe(exe) in {
+                "msedge.exe",
+                "msedgewebview2.exe",
+            }:
+                if extension_is_alive():
+                    log.info(
+                        "[gate] watch-leak skip Edge — extension alive (owns YouTube block) title=%r",
+                        (title or "")[:80],
+                    )
+                    return False
+        except Exception:
+            pass
 
         if is_music_player_exe(exe):
             log.info(
@@ -860,6 +892,22 @@ class TrackerService:
         self._drain_extension_alerts()
         self._maybe_goals_alerts_if_due()
         self._maybe_nsfw_screen_scan()
+        now_comms = time.time()
+        if now_comms - self._last_comms_tick >= COMMS_TICK_S:
+            self._last_comms_tick = now_comms
+            try:
+                from backend.behavior.comms_health import note_tracker_tick
+
+                note_tracker_tick(alive=True)
+            except Exception:
+                pass
+            try:
+                from backend.behavior.comms_incidents import maybe_announce_edge_gone
+                from backend.behavior.distraction_gate import edge_browser_running
+
+                maybe_announce_edge_gone(running=edge_browser_running())
+            except Exception:
+                pass
 
         now = time.time()
         gap = now - self._last_poll_at
@@ -992,6 +1040,12 @@ class TrackerService:
         self._thread = threading.Thread(target=self._poll_loop, name="tracker-poll", daemon=True)
         self._thread.start()
         self._start_ws_mirror()
+        try:
+            from backend.behavior.tracker_porn_block import tracker_sync_porn_hosts
+
+            tracker_sync_porn_hosts(force_list_refresh=True)
+        except Exception as exc:  # noqa: BLE001
+            log.debug("startup porn block sync skipped: %s", exc)
         try:
             from backend.behavior.tracker_hub import start_tracker_hub
 

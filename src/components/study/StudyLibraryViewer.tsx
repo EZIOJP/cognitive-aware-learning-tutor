@@ -7,6 +7,8 @@ import {
   FileText,
   Loader2,
   MapPin,
+  Maximize2,
+  Minimize2,
   MoreHorizontal,
   Pencil,
   Play,
@@ -60,6 +62,11 @@ type Props = {
   onRepairAllBlocks?: () => Promise<unknown>;
   /** When set, document title + actions render into this host (page header) instead of the viewer. */
   chromeHost?: HTMLElement | null;
+  fullscreen?: boolean;
+  onToggleFullscreen?: () => void;
+  noteFontStep?: number;
+  noteFontMax?: number;
+  onNoteFontStep?: (delta: -1 | 1) => void;
 };
 
 export function StudyLibraryViewer({
@@ -92,6 +99,11 @@ export function StudyLibraryViewer({
   onRepairSyntaxOnly,
   onRepairAllBlocks,
   chromeHost = null,
+  fullscreen = false,
+  onToggleFullscreen,
+  noteFontStep = 3,
+  noteFontMax = 6,
+  onNoteFontStep,
 }: Props) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const lastRestoreKeyRef = useRef("");
@@ -196,6 +208,20 @@ export function StudyLibraryViewer({
           </span>
         ) : null}
         <span className="text-[10px] text-muted-foreground shrink-0">Loading…</span>
+        {onToggleFullscreen ? (
+          <Button
+            type="button"
+            variant={fullscreen ? "secondary" : "outline"}
+            size="sm"
+            className="h-8 text-xs gap-1.5 ml-auto shrink-0"
+            onClick={onToggleFullscreen}
+            title={fullscreen ? "Exit fullscreen (Esc)" : "Fullscreen reading"}
+            aria-label={fullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+          >
+            {fullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
+            <span className="hidden lg:inline">{fullscreen ? "Exit" : "Full screen"}</span>
+          </Button>
+        ) : null}
       </div>
     ) : null;
     return (
@@ -262,30 +288,80 @@ export function StudyLibraryViewer({
           )}
         </div>
 
-        {!editing && (
-          <div className="flex items-center gap-1.5 shrink-0">
-            {onTakeQuiz && relativePath && primaryContent && (
+        <div className="flex items-center gap-1.5 shrink-0">
+          {onToggleFullscreen ? (
+            <Button
+              type="button"
+              variant={fullscreen ? "secondary" : "outline"}
+              size="sm"
+              className="h-8 text-xs gap-1.5"
+              onClick={onToggleFullscreen}
+              title={fullscreen ? "Exit fullscreen (Esc)" : "Fullscreen reading"}
+              aria-label={fullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+              aria-pressed={fullscreen}
+            >
+              {fullscreen ? (
+                <Minimize2 className="w-3.5 h-3.5" />
+              ) : (
+                <Maximize2 className="w-3.5 h-3.5" />
+              )}
+              <span className="hidden lg:inline">{fullscreen ? "Exit" : "Full screen"}</span>
+            </Button>
+          ) : null}
+          {onNoteFontStep ? (
+            <div className="flex items-center rounded-md border border-border overflow-hidden">
               <Button
                 type="button"
+                variant="ghost"
                 size="sm"
-                variant={quizReady ? "default" : "outline"}
-                className="h-8 text-xs gap-1.5"
-                disabled={quizDisabled || quizLoading}
-                title={
-                  quizReady
-                    ? "Take the generated quiz for this note"
-                    : "Generate a quiz draft from this note (does not start the quiz)"
-                }
-                onClick={onTakeQuiz}
+                className="h-8 min-w-9 rounded-none px-2 text-xs"
+                disabled={noteFontStep <= 0}
+                onClick={() => onNoteFontStep(-1)}
+                title="Smaller text"
+                aria-label="Smaller text"
               >
-                {quizLoading ? (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                ) : (
-                  <Play className="w-3.5 h-3.5" />
-                )}
-                <span className="hidden lg:inline">{quizReady ? "Take quiz" : "Quiz"}</span>
+                A−
               </Button>
-            )}
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-8 min-w-9 rounded-none px-2 text-sm font-semibold"
+                disabled={noteFontStep >= noteFontMax}
+                onClick={() => onNoteFontStep(1)}
+                title="Larger text"
+                aria-label="Larger text"
+              >
+                A+
+              </Button>
+            </div>
+          ) : null}
+
+          {!editing && onTakeQuiz && relativePath && primaryContent ? (
+            <Button
+              type="button"
+              size="sm"
+              variant={quizReady ? "default" : "outline"}
+              className="h-8 text-xs gap-1.5"
+              disabled={quizDisabled || quizLoading}
+              title={
+                quizReady
+                  ? "Take the generated quiz for this note"
+                  : "Generate a quiz draft from this note (does not start the quiz)"
+              }
+              onClick={onTakeQuiz}
+            >
+              {quizLoading ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Play className="w-3.5 h-3.5" />
+              )}
+              <span className="hidden lg:inline">{quizReady ? "Take quiz" : "Quiz"}</span>
+            </Button>
+          ) : null}
+
+          {!editing && (
+            <>
 
             {editable && relativePath && onSaveContent && (
               <Button
@@ -423,8 +499,9 @@ export function StudyLibraryViewer({
                 </DropdownMenuContent>
               </DropdownMenu>
             )}
-          </div>
-        )}
+            </>
+          )}
+        </div>
       </div>
     );
 

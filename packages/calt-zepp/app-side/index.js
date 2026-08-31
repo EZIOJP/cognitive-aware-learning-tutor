@@ -5,7 +5,7 @@ import { MessageBuilder } from '../shared/message-side'
 
 const messageBuilder = new MessageBuilder()
 const MAX_LOG = 20
-const APP_VER = '4.1.0'
+const APP_VER = '4.1.3'
 
 function settingsGet(key, fallback = '') {
   try {

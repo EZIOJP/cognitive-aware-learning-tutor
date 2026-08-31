@@ -14,6 +14,15 @@ def _iso(dt: datetime | None) -> str | None:
     return dt.isoformat()
 
 
+def user_public_payload(user: User) -> dict:
+    return {
+        "id": user.id,
+        "username": user.username,
+        "display_name": user.display_name,
+        "is_admin": bool(user.is_admin),
+    }
+
+
 def password_field_for_admin(user: User) -> str:
     settings = get_settings()
     if not settings.expose_password_plain:

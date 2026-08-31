@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "CALT SelfTracker (Edge / Chrome)",
-  "version": "1.5.24",
+  "version": "1.5.25",
   "description": "Active-tab browse tracking / telemetry / Jarvis. Site blocking lives in CALT Gate. Skips localhost (CALT SPA).",
   "permissions": [
     "tabs",

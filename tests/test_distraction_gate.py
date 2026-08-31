@@ -289,7 +289,7 @@ def test_morning_gate_bible_then_plan(monkeypatch, tmp_path):
     )
     out = mod.compute_distraction_gate(FakeDb(), 1)
     assert out["morning"]["next"] == "bible"
-    assert out["morning"]["allow_paths"] == ["/bible", "/login"]
+    assert out["morning"]["allow_paths"] == ["/bible", "/profile"]
 
     monkeypatch.setattr(
         "backend.bible.store.summary",

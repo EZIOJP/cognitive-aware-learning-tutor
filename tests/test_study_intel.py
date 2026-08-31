@@ -201,6 +201,64 @@ def test_quiz_call_plan_caps_batches():
     assert any(r == "coding" for r, _ in plan)
 
 
+def test_sequential_topic_quota_covers_every_topic():
+    from backend.transcripts.study_intel import sequential_topic_quota
+
+    per, target = sequential_topic_quota(12, 20)
+    assert per == 2
+    assert target == 40
+    per2, target2 = sequential_topic_quota(30, 3)
+    assert per2 == 4
+    assert target2 == 30
+
+
+def test_generate_quiz_walks_every_topic_before_quota(monkeypatch):
+    monkeypatch.setattr("backend.transcripts.study_intel.ollama_available", lambda *_: True)
+    seen: list[str] = []
+
+    def fake_generate(prompt, **kwargs):
+        if "L5-T01" in prompt:
+            seen.append("L5-T01")
+            return (
+                '{"questions":[{"question":"Why is T01 contiguous memory faster?",'
+                '"options":["A","B","C","D"],"answer_index":0,'
+                '"explanation":"e","hint":"h","concept":"T01"}]}'
+            )
+        if "L5-T02" in prompt:
+            seen.append("L5-T02")
+            return (
+                '{"questions":[{"question":"When does T02 fancy indexing copy?",'
+                '"options":["A","B","C","D"],"answer_index":1,'
+                '"explanation":"e","hint":"h","concept":"T02"}]}'
+            )
+        if "L5-T03" in prompt:
+            seen.append("L5-T03")
+            return (
+                '{"questions":[{"question":"What breaks if T03 bounds are ignored?",'
+                '"options":["A","B","C","D"],"answer_index":2,'
+                '"explanation":"e","hint":"h","concept":"T03"}]}'
+            )
+        return '{"questions":[]}'
+
+    monkeypatch.setattr("backend.transcripts.study_intel.ollama_generate", fake_generate)
+    note = (
+        "## Topic Index\n| ID | Title |\n| `L5-T01` | Memory |\n| `L5-T02` | Indexing |\n| `L5-T03` | Errors |\n"
+        "## `L5-T01` — Memory layout\n"
+        + ("Contiguous homogeneous memory enables vectorized NumPy ops. " * 20)
+        + "\n## `L5-T02` — Fancy indexing\n"
+        + ("Fancy indexing always returns a copy, not a view. " * 20)
+        + "\n## `L5-T03` — Bounds errors\n"
+        + ("Out of range indexing raises IndexError. " * 20)
+    )
+    result = generate_quiz_items([note], count=2, topic="Lecture 5", focus="mixed")
+    assert result["engine"] == "topic_loop"
+    assert result["topics_covered"] == ["L5-T01", "L5-T02", "L5-T03"]
+    assert {q.get("topic_id") for q in result["questions"]} >= {"L5-T01", "L5-T02", "L5-T03"}
+    assert seen[:3] == ["L5-T01", "L5-T02", "L5-T03"] or set(seen) >= {"L5-T01", "L5-T02", "L5-T03"}
+    assert result["topic_index"]
+    assert [t["topic_id"] for t in result["topic_index"]] == ["L5-T01", "L5-T02", "L5-T03"]
+
+
 def test_quiz_call_plan_cover_all_has_connect():
     from backend.transcripts.study_intel import _quiz_call_plan, _split_note_sections
 

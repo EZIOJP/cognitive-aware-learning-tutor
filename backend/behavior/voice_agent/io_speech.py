@@ -143,13 +143,20 @@ def edge_pitch() -> str:
     return DEFAULT_EDGE_PITCH
 
 
+def reset_speak_mutex_for_tests() -> None:
+    """Replace in-process TTS mutex (tests / gate_alerts reset). Never release cross-thread."""
+    global _speak_mutex
+    _speak_mutex = threading.Lock()
+
+
 def speak(text: str) -> None:
     """Speak text with one audio stream at a time (skip if already speaking)."""
     text = (text or "").strip()
     if not text:
         return
     # Non-blocking: if another utterance holds the lock, drop (gate_alerts queues).
-    if not _speak_mutex.acquire(blocking=False):
+    acquired = _speak_mutex.acquire(blocking=False)
+    if not acquired:
         log.debug("speak skipped — already speaking")
         return
     held_cross = False
@@ -187,7 +194,11 @@ def speak(text: str) -> None:
                 ga._release_cross_process()
             except Exception:  # noqa: BLE001
                 pass
-        _speak_mutex.release()
+        if acquired:
+            try:
+                _speak_mutex.release()
+            except RuntimeError:
+                log.debug("speak mutex release skipped — not held by this thread")
 
 
 def _speak_sapi(text: str) -> None:

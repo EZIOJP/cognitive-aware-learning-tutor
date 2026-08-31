@@ -411,3 +411,44 @@ def test_append_launcher_log(tmp_path, monkeypatch):
     text = p.read_text(encoding="utf-8")
     assert "[test]" in text
     assert "hello" in text
+
+
+def test_poll_throttles_comms_and_skips_auto_edge_kill(monkeypatch):
+    from backend.behavior.tracker_service import TrackerService
+    from backend.behavior.tracker_storage import TrackerConfig
+
+    ticks = {"tracker": 0, "edge_gone": 0, "edge_kill": 0}
+
+    monkeypatch.setattr(
+        "backend.behavior.comms_health.note_tracker_tick",
+        lambda **_k: ticks.__setitem__("tracker", ticks["tracker"] + 1),
+    )
+    monkeypatch.setattr(
+        "backend.behavior.comms_incidents.maybe_announce_edge_gone",
+        lambda **_k: ticks.__setitem__("edge_gone", ticks["edge_gone"] + 1),
+    )
+    monkeypatch.setattr("backend.behavior.distraction_gate.edge_browser_running", lambda: False)
+    monkeypatch.setattr(
+        "backend.behavior.distraction_gate.close_edge_if_extension_dead",
+        lambda **_k: ticks.__setitem__("edge_kill", ticks["edge_kill"] + 1),
+    )
+    monkeypatch.setattr("backend.behavior.tracker_service.get_idle_seconds", lambda: 0)
+
+    svc = TrackerService(
+        config=TrackerConfig(idle_threshold_s=9999, bulk_flush_s=9999),
+        foreground_fn=lambda: ("notepad.exe", "Untitled", 1),
+    )
+    svc._refresh_stack_health_if_due = lambda: None  # noqa: SLF001
+    svc._drain_extension_alerts = lambda: None  # noqa: SLF001
+    svc._maybe_goals_alerts_if_due = lambda: None  # noqa: SLF001
+    svc._maybe_nsfw_screen_scan = lambda: None  # noqa: SLF001
+    svc._save_checkpoint = lambda: None  # noqa: SLF001
+
+    svc._last_comms_tick = 0.0  # noqa: SLF001
+    svc._poll_once()  # noqa: SLF001
+    assert ticks["tracker"] == 1
+    assert ticks["edge_gone"] == 1
+    svc._poll_once()  # noqa: SLF001
+    assert ticks["tracker"] == 1
+    assert ticks["edge_gone"] == 1
+    assert ticks["edge_kill"] == 0

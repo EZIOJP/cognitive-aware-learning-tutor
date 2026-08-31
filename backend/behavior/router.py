@@ -10,7 +10,8 @@ from collections import Counter
 from datetime import UTC, date, datetime, timedelta
 from urllib.parse import parse_qs
 
-from fastapi import APIRouter, Depends, HTTPException, Query, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, WebSocket, WebSocketDisconnect
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -1201,13 +1202,85 @@ class StudyPresenceIn(BaseModel):
 
 @router.get("/api/behavior/distraction-gate")
 def get_distraction_gate(
+    request: Request,
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
     """Desktop game hard-block status + nested morning SPA gate."""
+    from backend.behavior.comms_health import note_extension_from_request
     from backend.behavior.distraction_gate import compute_distraction_gate
 
-    return compute_distraction_gate(db, user.id)
+    payload = compute_distraction_gate(db, user.id)
+    browser = payload.get("browser") or {}
+    note_extension_from_request(
+        request,
+        server_mode=str(payload.get("browser_mode") or browser.get("mode") or ""),
+    )
+    return payload
+
+
+class DeviceBlockSettingsIn(BaseModel):
+    enabled: bool | None = None
+    block_porn: bool | None = None
+    block_watch: bool | None = None
+    block_social: bool | None = None
+    extra_domains: list[str] | None = None
+    apply_now: bool = True
+
+
+@router.get("/api/behavior/device-block")
+def get_device_block(user: User = Depends(get_current_user)):
+    """Device-wide hosts block status (all browsers / apps on this PC)."""
+    from backend.behavior import device_block as db_store
+
+    return db_store.status()
+
+
+@router.put("/api/behavior/device-block")
+def put_device_block(
+    body: DeviceBlockSettingsIn,
+    user: User = Depends(get_current_user),
+):
+    """Enable/disable CALT hosts block and optionally apply immediately."""
+    from backend.behavior import device_block as db_store
+
+    cur = db_store.load_settings()
+    patch = body.model_dump(exclude_unset=True, exclude={"apply_now"})
+    cur.update(patch)
+    db_store.save_settings(cur)
+    out = {"settings": cur, **db_store.status()}
+    if body.apply_now:
+        applied = db_store.apply_from_settings()
+        out["apply"] = applied
+        if not applied.get("ok"):
+            out["needs_admin"] = bool(applied.get("needs_admin"))
+            out["apply_script"] = applied.get("apply_script") or "scripts\\device_block_apply.bat"
+    return out
+
+
+@router.post("/api/behavior/device-block/apply")
+def post_device_block_apply(user: User = Depends(get_current_user)):
+    from backend.behavior import device_block as db_store
+
+    return db_store.apply_from_settings()
+
+
+@router.post("/api/behavior/device-block/refresh-list")
+def post_device_block_refresh_list(user: User = Depends(get_current_user)):
+    """Scrape theporndude.com index and refresh cached porn domain list."""
+    from backend.behavior import device_block as db_store
+    from backend.behavior import porn_blocklist as tpd
+
+    listed = tpd.refresh_if_stale(force=True)
+    applied = db_store.apply_from_settings()
+    return {"list": listed, "apply": applied, **db_store.status()}
+
+
+@router.post("/api/behavior/device-block/remove")
+def post_device_block_remove(user: User = Depends(get_current_user)):
+    from backend.behavior import device_block as db_store
+
+    return db_store.remove_all()
 
 
 @router.get("/api/behavior/demo-clock")
@@ -1259,10 +1332,50 @@ def get_day_status(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    """Mobile/watch aggregate: morning + mode + hard-block + tracker + wearables."""
+    """Mobile/watch aggregate: morning + mode + hard-block + tracker + wearables + productivity."""
     from backend.behavior.day_status import build_day_status
 
     return build_day_status(db, user.id)
+
+
+@router.get("/api/behavior/comms-health")
+def get_comms_health(
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Extension / tracker / API / watch heartbeat + why rules look idle."""
+    _ = db, user
+    from backend.behavior.comms_health import snapshot
+
+    return {"ok": True, **snapshot()}
+
+
+@router.get("/api/behavior/comms-incidents")
+def get_comms_incidents(
+    limit: int = Query(15, ge=1, le=40),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Edge-close / comms error log with why + how to fix."""
+    _ = db, user
+    from backend.behavior.comms_incidents import log_path, recent_incidents
+
+    rows = recent_incidents(limit=limit)
+    return {"ok": True, "incidents": rows, "count": len(rows), "log": str(log_path())}
+
+
+@router.get("/api/behavior/export/activitywatch")
+def export_activitywatch(
+    day: str | None = Query(None, description="YYYY-MM-DD or today"),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """ActivityWatch-compatible window events for one calendar day."""
+    from backend.behavior.activitywatch_export import export_activitywatch_payload
+
+    d = date.today() if day in (None, "today") else date.fromisoformat(day)
+    user_ids = tracker_user_ids(db, user)
+    return export_activitywatch_payload(db, user_ids, d)
 
 
 @router.get("/api/behavior/mobile-alerts")
@@ -1296,6 +1409,14 @@ def post_browser_telemetry(
     raw = body.model_dump() if hasattr(body, "model_dump") else dict(body)
     normalized = normalize_telemetry_payload(raw)
     path = append_telemetry_logs(normalized)
+    from backend.behavior.comms_health import note_extension_heartbeat
+
+    note_extension_heartbeat(
+        source="selftracker",
+        server_mode=None,
+        cached_mode=None,
+        circuit_breaker=False,
+    )
     return {
         "ok": True,
         "path": str(path.name),
@@ -1376,6 +1497,13 @@ def post_gate_extension_log(
 
     raw = body.model_dump() if hasattr(body, "model_dump") else dict(body)
     path = append_gate_extension_event(raw)
+    from backend.behavior.comms_health import note_extension_heartbeat
+
+    note_extension_heartbeat(
+        source=str(raw.get("source") or "calt-gate"),
+        circuit_breaker=str(raw.get("event") or "") == "circuit_breaker",
+        extra={"last_event": str(raw.get("event") or "")[:40]},
+    )
     return {"ok": True, "path": str(path.name)}
 
 
@@ -1648,4 +1776,25 @@ def patch_tracked_session(
     scores = load_score_map(db)
     policy = load_policy_dict(db, user.id)
     return {"session": serialize_tracked_session(row, scores, policy)}
+
+
+@router.get("/api/behavior/voice-notes")
+def list_voice_notes(_user: User = Depends(get_current_user)):
+    """Watch voice clips stored on this PC (data/voice_notes/)."""
+    from backend.behavior import voice_notes
+
+    return {"ok": True, "notes": voice_notes.list_notes()}
+
+
+@router.get("/api/behavior/voice-notes/{name}")
+def download_voice_note(name: str, _user: User = Depends(get_current_user)):
+    from backend.behavior import voice_notes
+
+    try:
+        path = voice_notes.resolve_note_path(name)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=404, detail="not found") from e
+    return FileResponse(path, media_type="audio/opus", filename=path.name)
 

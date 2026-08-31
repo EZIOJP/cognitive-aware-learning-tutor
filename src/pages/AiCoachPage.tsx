@@ -8,7 +8,7 @@ import { Button } from "../app/components/ui/button";
 import { Card } from "../app/components/ui/card";
 
 export function AiCoachPage() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, sessionReady } = useAuth();
   const [intro, setIntro] = useState<string | undefined>();
   const [loading, setLoading] = useState(true);
   const [priorities, setPriorities] = useState<string[]>([]);
@@ -48,12 +48,20 @@ export function AiCoachPage() {
     void load();
   }, [load]);
 
+  if (!sessionReady) {
+    return (
+      <div className="p-8 max-w-lg mx-auto text-center text-muted-foreground">
+        Loading coach…
+      </div>
+    );
+  }
+
   if (!isAuthenticated) {
     return (
       <div className="p-8 max-w-lg mx-auto text-center space-y-4">
-        <p className="text-muted-foreground">Sign in to chat with your AI study coach.</p>
+        <p className="text-muted-foreground">Start the local API with run.bat, then refresh.</p>
         <Button asChild>
-          <Link to="/login">Sign in</Link>
+          <Link to="/">Dashboard</Link>
         </Button>
       </div>
     );

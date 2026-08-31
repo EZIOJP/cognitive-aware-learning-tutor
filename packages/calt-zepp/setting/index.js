@@ -83,6 +83,23 @@ AppSettingsPage({
           value: get('base_url', 'http://192.168.0.110:8765'),
           onChange: (val) => storage.setItem('base_url', String(val || '').trim()),
         }),
+        Text(
+          {
+            style: {
+              fontSize: '12px',
+              color: '#7f1d1d',
+              background: '#fef2f2',
+              padding: '10px',
+              borderRadius: '8px',
+              marginTop: '8px',
+              lineHeight: '1.45',
+            },
+          },
+          [
+            'Use your PC LAN IP — localhost / 127.0.0.1 will NOT work from the phone. ' +
+              'Verify: open http://<IP>:8765/health in the phone browser while the desktop tracker runs.',
+          ],
+        ),
         TextInput({
           label: 'Ingest token',
           value: get('ingest_token', 'calt-local-wearables'),

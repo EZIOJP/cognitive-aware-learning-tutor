@@ -478,6 +478,87 @@ def terminate_blocked_process(pid: int, *, exe: str = "") -> bool:
         return False
 
 
+def edge_browser_running(*, names: list[str] | None = None) -> bool:
+    """True when a real Edge browser process exists (not WebView2 helpers)."""
+    if names is None:
+        try:
+            import psutil
+        except ImportError:
+            return False
+        found: list[str] = []
+        try:
+            for proc in psutil.process_iter(["name"]):
+                try:
+                    found.append(str(proc.info.get("name") or ""))
+                except (TypeError, ValueError):
+                    continue
+        except Exception:
+            return False
+        names = found
+    return any(normalize_exe(n) == "msedge.exe" for n in names)
+
+
+def close_edge_if_extension_dead(*, api_up: bool, browser_mode: str | None = None) -> bool:
+    """Last-resort: quit Edge only when SelfTracker/CALT Gate is confirmed absent.
+
+    Never runs while the extension is alive, stale, in startup grace, or free mode.
+    Requires two consecutive dead observations (two-strike).
+    """
+    from backend.behavior.comms_health import (
+        DEAD_STRIKES_NEEDED,
+        edge_close_cooldown_ok,
+        mark_edge_closed,
+        may_close_edge,
+        record_dead_strike,
+    )
+
+    if not api_up:
+        record_dead_strike(is_dead_candidate=False)
+        return False
+    candidate = may_close_edge(api_up=True, browser_mode=browser_mode)
+    strikes = record_dead_strike(is_dead_candidate=candidate)
+    if not candidate or strikes < DEAD_STRIKES_NEEDED or not edge_close_cooldown_ok():
+        return False
+    try:
+        import psutil
+    except ImportError:
+        return False
+    killed = 0
+    for proc in psutil.process_iter(["pid", "name"]):
+        try:
+            name = normalize_exe(proc.info.get("name") or "")
+        except (TypeError, ValueError):
+            continue
+        if name != "msedge.exe":
+            continue
+        pid = int(proc.info.get("pid") or 0)
+        if pid <= 0:
+            continue
+        try:
+            psutil.Process(pid).terminate()
+            killed += 1
+        except (psutil.Error, OSError):
+            pass
+    if killed:
+        mark_edge_closed()
+        log.warning("Closed %s Edge process(es) — extension heartbeat dead while API up", killed)
+        try:
+            from backend.behavior.comms_health import snapshot
+            from backend.behavior.comms_incidents import announce_edge_close, append_incident, build_incident
+
+            snap = snapshot(api_up=True, web_up=True)
+            row = build_incident(
+                kind="edge_closed",
+                snap=snap,
+                extra={"killed_processes": killed, "browser_mode": browser_mode},
+            )
+            append_incident(row)
+            announce_edge_close(row)
+        except Exception as exc:  # noqa: BLE001
+            log.warning("edge-close incident log failed: %s", exc)
+    return killed > 0
+
+
 def _suggested_wake_note(
     db: Session,
     user_id: int,
@@ -709,9 +790,9 @@ def compute_distraction_gate(db: Session, user_id: int) -> dict[str, Any]:
     if demo_on:
         allow_paths = ["*"]
     elif next_step == "bible":
-        allow_paths = ["/bible", "/login"]
+        allow_paths = ["/bible", "/profile"]
     elif next_step == "plan":
-        allow_paths = ["/bible", "/productivity", "/login"]
+        allow_paths = ["/bible", "/productivity", "/profile"]
     else:
         allow_paths = ["*"]
 

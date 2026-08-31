@@ -149,8 +149,7 @@ def _isolate_tts_lock(monkeypatch, tmp_path):
     monkeypatch.setattr(gate_alerts, "_speaking", False)
     monkeypatch.setattr(gate_alerts, "_acquire_cross_process", lambda **_kw: True)
     monkeypatch.setattr(gate_alerts, "_release_cross_process", lambda: None)
-    if io._speak_mutex.locked():
-        io._speak_mutex.release()
+    io.reset_speak_mutex_for_tests()
 
 
 def test_tts_preference_env(monkeypatch):

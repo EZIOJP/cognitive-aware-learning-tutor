@@ -147,7 +147,7 @@ export function MathDashboardPage() {
               </Badge>
               {!token ? (
                 <Badge variant="secondary" className="rounded-full border border-amber-500/25 bg-amber-500/10 text-amber-300">
-                  Sign in to save progress
+                  Start the API to save progress
                 </Badge>
               ) : null}
             </div>
@@ -209,7 +209,10 @@ export function MathDashboardPage() {
                   Handwriting recognition test →
                 </Link>
                 <Link to="/math-tutor/train" className="block text-primary hover:underline">
-                  Train my OCR →
+                  Train my OCR (collect samples) →
+                </Link>
+                <Link to="/math-tutor/training-data" className="block text-primary hover:underline">
+                  OCR training data (edit / delete) →
                 </Link>
                 <Link to="/study-room" className="block text-primary hover:underline">
                   Study Room (tldraw + OCR) →

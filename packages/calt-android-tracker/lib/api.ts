@@ -43,8 +43,10 @@ export type DayStatus = {
   };
   tracker_alive?: boolean;
   wearables?: {
+    ok?: boolean;
     last_ingest_at?: string;
     sleep_hours?: number;
+    sleep_score?: number | null;
     sleep_label?: string | null;
     steps?: number;
     stand_hours?: number;
@@ -53,7 +55,64 @@ export type DayStatus = {
     tz_offset_min?: number | null;
     watch_local_date?: string | null;
     captured_at?: string | null;
+    recovery_hint?: {
+      label?: string;
+      suggested_focus_hours?: number;
+      factor?: number;
+    };
   };
+  productivity?: {
+    pulse?: number;
+    pulse_label?: string;
+    goal_pct?: number;
+    goal_met?: boolean;
+    productive_label?: string;
+    distracting_label?: string;
+    focus_quality?: {
+      score?: number;
+      label?: string;
+      switches?: number;
+      on_plan_minutes?: number;
+    };
+    weekly?: {
+      avg_pulse?: number;
+      goal_met_days?: number;
+      top_drain?: string | null;
+    };
+    alerts?: Array<{
+      id?: string;
+      label?: string;
+      triggered?: boolean;
+      current_seconds?: number;
+      max_seconds?: number;
+    }>;
+    study_mode_nudge?: { active?: boolean; until?: string | null };
+  };
+  comms?: {
+    api_up?: boolean;
+    web_up?: boolean;
+    startup_grace?: boolean;
+    extension?: {
+      status?: string;
+      age_s?: number | null;
+      source?: string | null;
+      selftracker_status?: string;
+      calt_gate_status?: string;
+      selftracker_age_s?: number | null;
+      calt_gate_age_s?: number | null;
+      false_positives?: string[];
+      false_negatives?: string[];
+    };
+    why_rules_idle?: string[];
+    current_issue?: { why?: string; how_to_fix?: string; cases?: string[] };
+    last_incident?: { ts?: string; kind?: string; why?: string; how_to_fix?: string };
+    edge_policy?: {
+      may_close_edge?: boolean;
+      may_close_candidate?: boolean;
+      may_open_new_window?: boolean;
+    };
+  };
+  schema?: number;
   notify?: { title?: string; body?: string };
   limits?: Record<string, string>;
 };

@@ -10,7 +10,8 @@ import { Input } from "../../app/components/ui/input";
 import { Badge } from "../../app/components/ui/badge";
 import { useAuth } from "../../context/AuthContext";
 import { useStudySession } from "../../context/StudySessionContext";
-import { postMathTutorHint } from "../../api/mathClient";
+import { postMathTutorHint, submitTrainSample, fetchOcrStatus, type MathOcrStatus } from "../../api/mathClient";
+import { OcrExecutionBadge } from "../../components/math-canvas/OcrReviewPanel";
 import { getMathTopic, LOCAL_QUESTION_SETS } from "../../features/math/data/topics";
 import { useEaster } from "../../easter";
 
@@ -85,7 +86,32 @@ export function MathPracticePage() {
   >([]);
   const [questionStart, setQuestionStart] = useState(() => Date.now());
 
-  const [apiProblem, setApiProblem] = useState<MathProblem | null>(null);
+  const [practiceOcrSaved, setPracticeOcrSaved] = useState(false);
+  const [ocrStatus, setOcrStatus] = useState<MathOcrStatus | null>(null);
+
+  useEffect(() => {
+    void fetchOcrStatus().then(setOcrStatus);
+  }, []);
+
+  const savePracticeOcrToTraining = async () => {
+    if (!idle.ocr?.latex || !token) return;
+    const png = await canvasRef.current?.exportPng();
+    if (!png) return;
+    const paths = await canvasRef.current?.exportPaths();
+    const metrics = canvasRef.current?.exportStrokeMetrics?.() ?? null;
+    await submitTrainSample({
+      tier: "practice",
+      prompt_id: topicId,
+      prompt_text: (apiProblem?.prompt ?? currentLocal?.question ?? topicId).slice(0, 200),
+      canvas_image: png,
+      predicted_latex: idle.ocr.latex,
+      confirmed_latex: idle.ocr.latex,
+      action: "confirm",
+      paths_json: paths?.length ? JSON.stringify(paths) : undefined,
+      stroke_metrics_json: metrics ? JSON.stringify(metrics) : undefined,
+    });
+    setPracticeOcrSaved(true);
+  };
   const [feedback, setFeedback] = useState<{ ok: boolean; message: string } | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -418,7 +444,7 @@ export function MathPracticePage() {
               )}
               {error && <p className="text-sm text-destructive">{error}</p>}
               {!token && (
-                <p className="text-sm text-muted-foreground">Log in for API-backed {topic?.label} drills.</p>
+                <p className="text-sm text-muted-foreground">Start the local API for {topic?.label} drills.</p>
               )}
               {apiProblem && (
                 <>
@@ -463,6 +489,9 @@ export function MathPracticePage() {
 
         {/* Right: fixed-grid math canvas */}
         <div className="flex-1 min-h-[280px] min-w-0 flex flex-col gap-2">
+          <div className="shrink-0 flex flex-wrap items-center justify-between gap-2">
+            <OcrExecutionBadge status={ocrStatus} />
+          </div>
           {(idle.ocr?.latex || idle.busy) && (
             <div className="shrink-0 text-xs rounded-lg border px-3 py-2 bg-muted/40 flex flex-wrap items-center gap-2">
               {idle.busy && <span className="text-muted-foreground">Reading last line…</span>}
@@ -477,6 +506,15 @@ export function MathPracticePage() {
                   {idle.needsConfirm && (
                     <span className="text-amber-700 dark:text-amber-400">Confirm reading if unsure</span>
                   )}
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="h-6 text-[10px] ml-auto"
+                    onClick={() => void savePracticeOcrToTraining()}
+                  >
+                    {practiceOcrSaved ? "Saved" : "Save to training"}
+                  </Button>
                 </>
               )}
             </div>

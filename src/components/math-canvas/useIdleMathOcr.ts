@@ -22,6 +22,7 @@ export function useIdleMathOcr(
   const [ocr, setOcr] = useState<MathOcrResult | null>(null);
   const [busy, setBusy] = useState(false);
   const [needsConfirm, setNeedsConfirm] = useState(false);
+  const [cropBbox, setCropBbox] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inFlight = useRef(false);
 
@@ -37,6 +38,7 @@ export function useIdleMathOcr(
       const paths = await bridge.exportPaths();
       const metrics = bridge.exportStrokeMetrics?.() ?? null;
       const crop = lastBandBboxFromMetrics(metrics);
+      setCropBbox(crop);
       const result = await postMathOcr(png, {
         paths_json: paths ? JSON.stringify(paths) : undefined,
         stroke_metrics_json: metrics ? JSON.stringify(metrics) : undefined,
@@ -69,7 +71,8 @@ export function useIdleMathOcr(
   const clear = useCallback(() => {
     setOcr(null);
     setNeedsConfirm(false);
+    setCropBbox(null);
   }, []);
 
-  return { ocr, busy, needsConfirm, setNeedsConfirm, clear, runNow: run };
+  return { ocr, busy, needsConfirm, setNeedsConfirm, clear, runNow: run, cropBbox };
 }

@@ -143,7 +143,7 @@ export function CycleDashboard({ onStartCycle }: CycleDashboardProps) {
         <Card className="gloss-panel p-8 text-center space-y-3">
           <p className="text-muted-foreground">No vocabulary groups loaded.</p>
           <p className="text-xs text-muted-foreground max-w-md mx-auto">
-            Sign in, start the API (`run.bat`), or import words in Admin → Import CSV/JSON.
+            Start the API (`run.bat`), then import words in Admin → Import CSV/JSON.
           </p>
           <div className="flex flex-wrap justify-center gap-2">
             <Button variant="outline" onClick={load}>

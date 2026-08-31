@@ -2,7 +2,100 @@
 
 Running checklist for Cursor sessions.
 
-**Current focus (2026-08-18):** Competitive productivity features (RescueTime/Sunsama borrow) — pulse, goals/alerts, activities, shutdown, digest. Prior mandate (unified quiz) verified green.
+**Current focus (2026-08-30):** Math OCR close-out (GPU ONNX, retrain export, stroke_symbol, structure calibrate). Device Gate remains docs-only.
+
+---
+
+## 2026-08-30 — Math OCR close-out
+
+**Done:**
+- [x] CUDA ONNX providers (`onnx_providers.py`, `OCR_ONNX_DEVICE`)
+- [x] TexTeller retrain export: `retrain_service.py`, `POST /api/math/train/retrain`, `scripts/retrain_texteller.*`
+- [x] Stroke-symbol real ink: `train_from_handwriting_dataset`, `POST /api/math/train/retrain-stroke-symbol`
+- [x] Structure verify calibration: `structure_calibrate.py`, `POST /api/math/train/recalibrate-structure`
+- [x] Export doc: `docs/exports/math-ocr/OCR_CLOSEOUT_2026-08-30.md`
+- [x] Build/run guide: `docs/exports/math-ocr/MATH_OCR_BUILD_AND_CHANGES.md`
+
+**Try:** `pip install onnxruntime-gpu` · Train Playground confirm samples · `scripts\retrain_stroke_symbol.bat` · `scripts\recalibrate_structure.bat` · `GET /api/math/ocr/status` · read `docs/exports/math-ocr/MATH_OCR_BUILD_AND_CHANGES.md`
+
+---
+
+## 2026-08-19 — Device Gate docs (Flutter + native)
+
+**Done:**
+- [x] Spec: `docs/superpowers/specs/2026-08-19-mobile-device-gate-design.md`
+- [x] Plan: `docs/superpowers/plans/2026-08-19-mobile-device-gate.md`
+
+**Not started:** Flutter package, Accessibility overlay, iOS Family Controls.
+
+**Try:** Read spec; reopen lane only when Android lock is the next product.
+
+---
+
+
+## 2026-08-18 — Local owner profile (drop login)
+
+**Done:**
+- [x] Spec: `docs/superpowers/specs/2026-08-18-local-owner-profile-design.md`
+- [x] `GET /api/vocab/auth/local-session` + `PATCH /api/vocab/auth/me` (`display_name`)
+- [x] Web app auto-binds solo owner on boot; `/login` → `/profile`
+- [x] Profile: display name + this-machine API/wearables URLs; no logout onboarding
+- [x] README / SETUP: first-run is `run.bat` → `:5173`, not admin password
+
+**Try:** empty localStorage → home loads · Profile save name · `/login` lands on Profile · ranks stay **off** until Profile toggle
+
+---
+
+## 2026-08-18 — Reward-day leftover + heavy poll + notes 500
+
+**Done:**
+- [x] Cleared leftover `browser_free_override.json` (12h PIN free until ~21:13) — not a claimed reward day
+- [x] Tray **End free time** (no PIN) → `clear_free_override()`
+- [x] Tracker poll: no auto Edge kill; comms tick / edge-gone at most every 15s
+- [x] Lecture library: skip remaps that collide on `lecture_notes.filename`; tree rolls back IntegrityError
+
+**Try:** Reload http://localhost:5173/lecture-notes · tray End free time if free mode stuck · tracker PIN restart for live lighter poll
+
+---
+
+## 2026-08-18 — Edge close why + comms incident log
+
+**Done:**
+- [x] Every real Edge close: Jarvis + Tk popup (why + how to fix) + `data/logs/comms_incidents.jsonl`
+- [x] Crash/quit watch: if `msedge.exe` disappears without a tracker kill, still log `edge_quit` + Jarvis/Tk (MessageBox fallback)
+- [x] Tray: live ST/Gate ages, current why, last close, “View Edge-close / comms log”
+- [x] Life Tracker + Android Comms: authentic ages, current issue, last Edge close
+- [x] `GET /api/behavior/comms-incidents`
+
+**Try:** Restart tracker · Reload extensions · tray Comms lines · close Edge only if both extensions really off · if Edge vanishes, expect a why/how window even when the tracker did not kill it
+
+---
+
+## 2026-08-18 — Tracker / extension / watch comms
+
+**Done:**
+- [x] `comms_health.py` — alive / stale / dead hysteresis; FP/FN reasons
+- [x] Gate poll requires `X-CALT-Extension` (SPA cannot fake extension alive)
+- [x] Skip new Edge window when extension is polling; close Edge only if dead + API up
+- [x] Android + Life Tracker board show comms / why-rules-idle
+- [x] Rebuild SelfTracker + CALT Gate service workers
+- [x] `770` pytest · `npm run build`
+
+**Try:** Reload both Edge extensions unpacked · Life Tracker comms strip · Android Comms card
+
+---
+
+## 2026-08-18 — Tracker API unified board
+
+**Done:**
+- [x] `build_productivity_snapshot()` — pulse, goals, focus quality, weekly snippet, study nudge
+- [x] `GET /api/behavior/day-status` schema 3 (+ hub alias unchanged path)
+- [x] `GET /api/behavior/export/activitywatch` (P2 export)
+- [x] Android tracker pulse/goal/focus cards + recovery hint
+- [x] Web `TrackerDayBoard` on Life Tracker (today)
+- [x] `758+` pytest · `npm run build` green
+
+**Try:** Life Tracker (tracker board) · CALT Android refresh · `GET /api/behavior/export/activitywatch?day=today`
 
 ---
 

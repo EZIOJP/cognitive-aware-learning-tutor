@@ -43,7 +43,7 @@ const EMPTY_MATH_TEMPLATE: Omit<MathTemplate, "id"> = {
 
 export default function AdminPanelPage() {
   const nav = useNavigate();
-  const { token, isAdmin } = useAuth();
+  const { token, isAdmin, sessionReady } = useAuth();
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [words, setWords] = useState<any[]>([]);
   const [mathTemplates, setMathTemplates] = useState<MathTemplate[]>([]);
@@ -80,12 +80,13 @@ export default function AdminPanelPage() {
   };
 
   useEffect(() => {
+    if (!sessionReady) return;
     if (!isAdmin) {
-      nav("/login");
+      nav("/profile");
       return;
     }
     load();
-  }, [isAdmin]);
+  }, [isAdmin, sessionReady]);
 
   const resetUser = async (id: number) => {
     if (!token) return;

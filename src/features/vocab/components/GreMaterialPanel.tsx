@@ -137,7 +137,7 @@ export function GreMaterialPanel() {
         high-priority words first. Quiz only uses words that already have meanings.
       </p>
       {!isAdmin && (
-        <p className="text-sm text-amber-700 dark:text-amber-300 mb-3">Admin login required.</p>
+        <p className="text-sm text-amber-700 dark:text-amber-300 mb-3">Admin session required.</p>
       )}
       <div className="flex flex-wrap gap-2 mb-3">
         <Badge variant="outline">unique {preview?.unique_words ?? "—"}</Badge>

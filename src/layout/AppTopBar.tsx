@@ -1,6 +1,6 @@
 import { useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { useLocation, useNavigate } from "react-router";
-import { CircleUserRound, LogOut, Shield, LogIn } from "lucide-react";
+import { CircleUserRound, Shield } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { ThemeToggle } from "../components/theme/ThemeToggle";
 import { useAuth } from "../context/AuthContext";
@@ -47,7 +47,6 @@ function FlatRocket({ color, className }: { color: string; className?: string })
 /** Exact + nested route titles. Longest prefix wins for child paths. */
 const PAGE_TITLES: Record<string, string> = {
   "/": "Study Hub",
-  "/login": "Sign in",
   "/admin": "Admin",
   "/profile": "Profile",
   "/settings": "Settings",
@@ -148,7 +147,7 @@ function resolvePageTitle(
 export function AppTopBar() {
   const nav = useNavigate();
   const { pathname } = useLocation();
-  const { user, isAuthenticated, isAdmin, logout } = useAuth();
+  const { user, isAuthenticated, isAdmin } = useAuth();
   const plugins = usePluginsOptional();
   const focusMirrorOn =
     Boolean(plugins?.isLoaded) && (plugins?.enabledIds.includes("focus-mirror") ?? false);
@@ -269,46 +268,28 @@ export function AppTopBar() {
                 type="button"
                 className="gloss-dock-btn rounded-full p-2 hover:scale-105 transition-transform"
                 aria-label="Account menu"
-                title={isAuthenticated ? user?.username : "Login"}
+                title={isAuthenticated ? (user?.display_name || user?.username) : "Profile"}
               >
                 <CircleUserRound className="w-5 h-5" />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-52">
               <DropdownMenuLabel>
-                {isAuthenticated ? `Signed in: ${user?.username}` : "Account"}
+                {isAuthenticated
+                  ? user?.display_name || user?.username || "Owner"
+                  : "This machine"}
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              {!isAuthenticated ? (
-                <DropdownMenuItem onClick={() => nav("/login")}>
-                  <LogIn className="w-4 h-4 mr-2" />
-                  Login / Register
+              <DropdownMenuItem onClick={() => nav("/profile")}>
+                <CircleUserRound className="w-4 h-4 mr-2" />
+                Profile
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => nav("/settings/plugins")}>Plugins & features</DropdownMenuItem>
+              {isAdmin && (
+                <DropdownMenuItem onClick={() => nav("/admin")}>
+                  <Shield className="w-4 h-4 mr-2" />
+                  Admin Panel
                 </DropdownMenuItem>
-              ) : (
-                <>
-                  <DropdownMenuItem onClick={() => nav("/profile")}>
-                    <CircleUserRound className="w-4 h-4 mr-2" />
-                    Profile
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => nav("/settings/plugins")}>Plugins & features</DropdownMenuItem>
-                  {isAdmin && (
-                    <DropdownMenuItem onClick={() => nav("/admin")}>
-                      <Shield className="w-4 h-4 mr-2" />
-                      Admin Panel
-                    </DropdownMenuItem>
-                  )}
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    variant="destructive"
-                    onClick={() => {
-                      logout();
-                      nav("/");
-                    }}
-                  >
-                    <LogOut className="w-4 h-4 mr-2" />
-                    Logout
-                  </DropdownMenuItem>
-                </>
               )}
             </DropdownMenuContent>
           </DropdownMenu>

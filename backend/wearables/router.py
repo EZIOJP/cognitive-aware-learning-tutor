@@ -527,6 +527,12 @@ def ingest_zepp(
         }
 
     duplicate = bool((applied or {}).get("duplicate") or (applied or {}).get("replayed"))
+    try:
+        from backend.behavior.comms_health import note_watch_ingest
+
+        note_watch_ingest(source=str(body.source or "mini_program"))
+    except Exception:
+        pass
     _write_sync_state(
         {
             "last_ingest_at": datetime.now(timezone.utc).isoformat(),

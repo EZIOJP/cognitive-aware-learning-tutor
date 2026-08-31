@@ -29,14 +29,8 @@ type Review = {
   source?: "gemma" | "template";
 };
 
-const OFFLINE_TIPS = [
-  "Sign in to sync plugins and get a daily review from your hub.",
-  "Enable Life Tracker and log sleep + study minutes.",
-  "Turn on the browser extension to feed productivity data.",
-];
-
 export function AiReviewWidget() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, sessionReady } = useAuth();
   const [daily, setDaily] = useState<InsightsDailyPayload | null>(null);
   const [review, setReview] = useState<Review | null>(null);
   const [loading, setLoading] = useState(true);
@@ -67,13 +61,14 @@ export function AiReviewWidget() {
     void loadReview();
   }, [loadReview]);
 
+  if (!sessionReady) {
+    return <p className="text-sm text-muted-foreground animate-pulse">Loading review…</p>;
+  }
+
   if (!isAuthenticated) {
     return (
       <div className="space-y-2 text-sm">
-        <p className="text-muted-foreground">{OFFLINE_TIPS[0]}</p>
-        <Link to="/login" className="text-primary text-xs hover:underline">
-          Sign in →
-        </Link>
+        <p className="text-muted-foreground">Start the local API to load today&apos;s review.</p>
       </div>
     );
   }

@@ -43,6 +43,7 @@ from backend.timetable.router import router as timetable_router
 from backend.planner.router import router as planner_router
 from backend.wearables.router import router as wearables_router
 from backend.journal.router import router as journal_router
+from backend.community.router import router as community_router
 from backend.behavior.classification_router import router as classification_router
 
 settings = get_settings()
@@ -223,6 +224,7 @@ app.include_router(timetable_router)
 app.include_router(planner_router)
 app.include_router(wearables_router)
 app.include_router(journal_router)
+app.include_router(community_router)
 app.include_router(classification_router)
 app.include_router(app_router)
 

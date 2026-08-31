@@ -296,7 +296,7 @@ Revisions through **`0006_user_features`**. See [MIGRATIONS.md](./MIGRATIONS.md)
 | Behavior WebSocket | ws://localhost:8000/ws/behavior |
 | EEG UDP (hardware) | UDP :5005 |
 
-Default login (dev): **admin** / **admin123**
+This PC is the owner (no sign-in). Optional admin password for lock/import: **admin** / **admin123**
 
 ---
 

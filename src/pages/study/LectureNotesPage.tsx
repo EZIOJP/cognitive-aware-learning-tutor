@@ -1,11 +1,12 @@
 import { Link, useSearchParams } from "react-router";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import { buildStudyQuizConfig } from "../../api/globalQuizClient";
 import { GlobalQuizRunner } from "../../features/quiz/GlobalQuizRunner";
 import {
   BookOpen,
   ClipboardList,
   Loader2,
+  Minimize2,
   MoreHorizontal,
   PanelLeftClose,
   PanelLeftOpen,
@@ -94,6 +95,19 @@ const NOTE_KINDS = [
 
 const LS_FILE_MANAGER_COLLAPSED = "lecture-notes:file-manager-collapsed";
 const LS_LAST_OPEN_NOTE = "lecture-notes:last-open-path";
+const LS_NOTE_FONT_STEP = "lecture-notes:font-step";
+const NOTE_FONT_STEPS = [1.05, 1.2, 1.35, 1.5, 1.7, 1.9, 2.2];
+const DEFAULT_NOTE_FONT_STEP = 3;
+
+function readNoteFontStep(): number {
+  try {
+    const n = Number(localStorage.getItem(LS_NOTE_FONT_STEP));
+    if (Number.isInteger(n) && n >= 0 && n < NOTE_FONT_STEPS.length) return n;
+  } catch {
+    /* ignore */
+  }
+  return DEFAULT_NOTE_FONT_STEP;
+}
 
 function folderOf(relativePath: string): string {
   const parts = relativePath.split("/");
@@ -159,6 +173,10 @@ export function LectureNotesPage() {
       return false;
     }
   });
+  const [notesFullscreen, setNotesFullscreen] = useState(false);
+  const [noteFontStep, setNoteFontStep] = useState(readNoteFontStep);
+  const fullscreenRootRef = useRef<HTMLDivElement | null>(null);
+  const fileManagerBeforeFsRef = useRef(false);
   const [readingOverrides, setReadingOverrides] = useState<
     Record<string, { read_scroll_top?: number; bookmark_scroll_top?: number | null }>
   >({});
@@ -251,12 +269,65 @@ export function LectureNotesPage() {
   }, [llmTier]);
 
   useEffect(() => {
+    if (notesFullscreen) return;
     try {
       localStorage.setItem(LS_FILE_MANAGER_COLLAPSED, fileManagerCollapsed ? "1" : "0");
     } catch {
       /* ignore */
     }
-  }, [fileManagerCollapsed]);
+  }, [fileManagerCollapsed, notesFullscreen]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(LS_NOTE_FONT_STEP, String(noteFontStep));
+    } catch {
+      /* ignore */
+    }
+  }, [noteFontStep]);
+
+  const bumpNoteFont = useCallback((delta: -1 | 1) => {
+    setNoteFontStep((prev) => Math.min(NOTE_FONT_STEPS.length - 1, Math.max(0, prev + delta)));
+  }, []);
+
+  const exitNotesFullscreen = useCallback(() => {
+    if (document.fullscreenElement) {
+      void document.exitFullscreen().catch(() => undefined);
+    }
+    setNotesFullscreen(false);
+    setFileManagerCollapsed(fileManagerBeforeFsRef.current);
+  }, []);
+
+  const toggleNotesFullscreen = useCallback(() => {
+    if (notesFullscreen) {
+      exitNotesFullscreen();
+      return;
+    }
+    fileManagerBeforeFsRef.current = fileManagerCollapsed;
+    setFileManagerCollapsed(true);
+    setStudyToolsOpen(false);
+    setNotesFullscreen(true);
+    const el = fullscreenRootRef.current;
+    void el?.requestFullscreen?.().catch(() => undefined);
+  }, [exitNotesFullscreen, fileManagerCollapsed, notesFullscreen]);
+
+  useEffect(() => {
+    if (!notesFullscreen) return;
+    const onFs = () => {
+      if (!document.fullscreenElement) {
+        setNotesFullscreen(false);
+        setFileManagerCollapsed(fileManagerBeforeFsRef.current);
+      }
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") exitNotesFullscreen();
+    };
+    document.addEventListener("fullscreenchange", onFs);
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("fullscreenchange", onFs);
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [notesFullscreen, exitNotesFullscreen]);
 
   useEffect(() => {
     const path = remapLegacyNotePath(selectedNote || "");
@@ -1047,7 +1118,7 @@ export function LectureNotesPage() {
     setIntelGenerating(true);
     setIntelStatus(
       noteTopics.length > 0
-        ? "Looping topics with small context → combining tagged quiz…"
+        ? "Walking each lecture topic in order (small context) then combining…"
         : "Starting quiz generation…",
     );
     setError(null);
@@ -1067,7 +1138,9 @@ export function LectureNotesPage() {
       }
       const result = await runWithBudgetConfirm((llm) =>
         generateLibraryQuiz(sourcePaths, {
-          count: noteTopics.length > 0 ? Math.max(quizCount, Math.min(40, noteTopics.length * 2)) : quizCount,
+          count: noteTopics.length > 0
+            ? Math.max(quizCount, noteTopics.length * 2)
+            : quizCount,
           focus: quizFocus === "cover_all" ? "mixed" : quizFocus,
           topic: noteTitle.trim() || primaryMeta?.title,
           llm,
@@ -1240,10 +1313,19 @@ export function LectureNotesPage() {
     .join(", ");
 
   return (
-    <div className="study-library-page flex flex-col min-h-0">
+    <div
+      ref={fullscreenRootRef}
+      className={
+        notesFullscreen
+          ? "study-library-page study-library-page--fullscreen flex flex-col min-h-0"
+          : "study-library-page flex flex-col min-h-0"
+      }
+      style={{ "--lecture-note-size": `${NOTE_FONT_STEPS[noteFontStep]}rem` } as CSSProperties}
+    >
       <div className="relative z-10 flex flex-col h-full min-h-0 p-4 gap-3">
         <header className="study-library-glass flex flex-col gap-2 px-3 py-2 shrink-0">
           <div className="flex items-center gap-2 min-w-0">
+            {!notesFullscreen ? (
             <Button
               type="button"
               size="icon"
@@ -1260,6 +1342,19 @@ export function LectureNotesPage() {
                 <PanelLeftClose className="w-4 h-4" />
               )}
             </Button>
+            ) : (
+            <Button
+              type="button"
+              size="icon"
+              variant="secondary"
+              className="h-8 w-8 shrink-0"
+              onClick={exitNotesFullscreen}
+              title="Exit fullscreen (Esc)"
+              aria-label="Exit fullscreen"
+            >
+              <Minimize2 className="w-4 h-4" />
+            </Button>
+            )}
 
             <div
               ref={setDocChromeHost}
@@ -1270,6 +1365,8 @@ export function LectureNotesPage() {
             <div className="hidden md:block h-6 w-px shrink-0 bg-border/70" aria-hidden />
 
             <div className="flex items-center gap-1 shrink-0">
+              {!notesFullscreen ? (
+                <>
               <select
                 value={llmTier}
                 onChange={(e) => setLlmTier(e.target.value)}
@@ -1330,10 +1427,12 @@ export function LectureNotesPage() {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
+                </>
+              ) : null}
             </div>
           </div>
 
-          {navItems.length > 1 && (
+          {navItems.length > 1 && !notesFullscreen && (
             <nav className="flex items-center gap-4 text-sm font-medium w-full sm:w-auto border-t sm:border-t-0 border-border pt-2 sm:pt-0">
               {navItems.map(({ id, label, icon: Icon }) => (
                 <button
@@ -1375,7 +1474,7 @@ export function LectureNotesPage() {
         )}
 
         <main className="flex flex-1 gap-3 min-h-0 overflow-hidden">
-          {!fileManagerCollapsed && (
+          {!fileManagerCollapsed && !notesFullscreen && (
             <aside className="study-library-glass study-library-sidebar study-library-sidebar--expanded shrink-0 flex flex-col min-h-0 overflow-hidden">
               <div className="flex-1 min-h-0 overflow-hidden">
                 {loading ? (
@@ -1452,6 +1551,11 @@ export function LectureNotesPage() {
               showSyncHeader={showCompare}
               loading={contentLoading}
               chromeHost={!showCompare ? docChromeHost : null}
+              fullscreen={notesFullscreen}
+              onToggleFullscreen={toggleNotesFullscreen}
+              noteFontStep={noteFontStep}
+              noteFontMax={NOTE_FONT_STEPS.length - 1}
+              onNoteFontStep={bumpNoteFont}
               primaryTitle={primaryMeta?.title ?? "Lecture notes"}
               secondaryTitle={secondaryMeta?.title ?? "Reference"}
               primaryContent={showCompare ? compareContents[0] : content}
@@ -1507,7 +1611,7 @@ export function LectureNotesPage() {
               }
               onFinalize={() => void handleFinalizeSync()}
             />
-          ) : studyToolsOpen ? (
+          ) : studyToolsOpen && !notesFullscreen ? (
             <StudyLibraryIntelligenceHub
               comparePaths={comparePaths}
               selectedNotePath={selectedNote}

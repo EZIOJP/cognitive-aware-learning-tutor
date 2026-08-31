@@ -192,6 +192,8 @@ var FORCE_PORN_HOSTS = [
   "rule34.xxx",
   "hentaihaven.xxx",
   "erome.com",
+  "v3.erome.com",
+  "eromecdn.com",
   "eporner.com",
   "hqporner.com",
   "porntrex.com",
@@ -483,7 +485,7 @@ function browserPolicyOrFallback(browser) {
     localhost_path_prefixes:
       b.localhost_path_prefixes && b.localhost_path_prefixes.length
         ? b.localhost_path_prefixes
-        : ["/bible", "/productivity", "/login", "/lecture-notes"],
+        : ["/bible", "/productivity", "/profile", "/lecture-notes"],
     // Strict day modes always block watch (YouTube etc.) — never trust a stale false flag.
     block_watch_sites: b.block_watch_sites === true || strict,
     block_porn: b.block_porn !== false,
@@ -1112,6 +1114,27 @@ function connectWebSocket() {
   }
 }
 
+function caltExtensionHeaders() {
+  var mode = "";
+  try {
+    mode = String((gateCache && gateCache.browser && gateCache.browser.mode) || "");
+  } catch (e) {
+    mode = "";
+  }
+  var paused = false;
+  try {
+    paused = typeof redirectsPausedByCircuit === "function" && redirectsPausedByCircuit();
+  } catch (e2) {
+    paused = false;
+  }
+  return {
+    "X-CALT-Extension": "selftracker",
+    "X-CALT-Ext-Mode": mode,
+    "X-CALT-Ext-Circuit": paused ? "1" : "0",
+    "X-CALT-Ext-Paused": redirectsEnabled === false ? "1" : "0",
+  };
+}
+
 async function pollDistractionGate(opts) {
   opts = opts || {};
   // Default: light poll refreshes cache/DNR only. Full tab sweep only when enforce:true
@@ -1122,7 +1145,7 @@ async function pollDistractionGate(opts) {
     return;
   }
   try {
-    const r = await fetch(GATE_API_URL, { cache: "no-store" });
+    const r = await fetch(GATE_API_URL, { cache: "no-store", headers: caltExtensionHeaders() });
     if (!r.ok) throw new Error("HTTP " + r.status);
     const g = await r.json();
     lastGateFetchAt = Date.now();

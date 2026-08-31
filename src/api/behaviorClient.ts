@@ -152,6 +152,124 @@ export interface FocusQualityResponse {
   label: string;
 }
 
+export interface DayStatusProductivity {
+  pulse?: number;
+  pulse_label?: string;
+  goal_pct?: number;
+  goal_met?: boolean;
+  productive_label?: string;
+  distracting_label?: string;
+  focus_quality?: {
+    score?: number;
+    label?: string;
+    switches?: number;
+    on_plan_minutes?: number;
+  };
+  weekly?: {
+    avg_pulse?: number;
+    goal_met_days?: number;
+    top_drain?: string | null;
+  };
+  alerts?: Array<{
+    id?: string;
+    label?: string;
+    triggered?: boolean;
+    current_seconds?: number;
+    max_seconds?: number;
+  }>;
+  study_mode_nudge?: { active?: boolean; until?: string | null };
+}
+
+export interface DayStatusResponse {
+  ok: boolean;
+  schema?: number;
+  day?: string;
+  browser_mode?: string;
+  browser_mode_label?: string;
+  tracker_alive?: boolean;
+  morning?: {
+    next?: string;
+    hint?: string;
+    bible_done?: boolean;
+    plan_done?: boolean;
+  };
+  hard_block?: {
+    armed?: boolean;
+    locked?: boolean;
+    productive_label?: string;
+    daily_goal_label?: string;
+    remaining_label?: string;
+  };
+  wearables?: {
+    sleep_hours?: number | null;
+    sleep_score?: number | null;
+    sleep_label?: string | null;
+    steps?: number | null;
+    recovery_hint?: {
+      label?: string;
+      suggested_focus_hours?: number;
+      factor?: number;
+    };
+  };
+  productivity?: DayStatusProductivity;
+  comms?: {
+    api_up?: boolean;
+    web_up?: boolean;
+    startup_grace?: boolean;
+    dead_strikes?: number;
+    last_edge_close_at?: string | null;
+    extension?: {
+      status?: string;
+      age_s?: number | null;
+      source?: string | null;
+      selftracker_status?: string;
+      calt_gate_status?: string;
+      selftracker_age_s?: number | null;
+      calt_gate_age_s?: number | null;
+      false_positives?: string[];
+      false_negatives?: string[];
+      cases?: string[];
+    };
+    why_rules_idle?: string[];
+    current_issue?: { why?: string; how_to_fix?: string; cases?: string[] };
+    last_incident?: {
+      ts?: string;
+      kind?: string;
+      why?: string;
+      how_to_fix?: string;
+      facts?: {
+        api_up?: boolean;
+        web_up?: boolean;
+        extension_status?: string;
+        selftracker_status?: string;
+        calt_gate_status?: string;
+        selftracker_age_s?: number | null;
+        calt_gate_age_s?: number | null;
+        cases?: string[];
+        dead_strikes?: number;
+      };
+    };
+    edge_policy?: {
+      may_close_edge?: boolean;
+      may_close_candidate?: boolean;
+      may_open_new_window?: boolean;
+    };
+  };
+}
+
+export interface ActivityWatchExportResponse {
+  ok: boolean;
+  format: string;
+  day: string;
+  event_count: number;
+  events: Array<{
+    id: string;
+    timestamp: string;
+    duration: number;
+    data: Record<string, string>;
+  }>;
+}
+
 export interface TrackerHealth {
   tracker_alive: boolean;
   status: "running" | "stale" | "no_data";
@@ -275,6 +393,23 @@ export async function fetchFocusQuality(day?: string): Promise<FocusQualityRespo
     headers: authHeaders(),
   });
   if (!res.ok) throw new Error(`behavior/focus-quality: ${res.status}`);
+  return res.json();
+}
+
+export async function fetchDayStatus(): Promise<DayStatusResponse> {
+  const res = await fetch(resolveApiUrl("/api/behavior/day-status"), {
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error(`behavior/day-status: ${res.status}`);
+  return res.json();
+}
+
+export async function fetchActivityWatchExport(day?: string): Promise<ActivityWatchExportResponse> {
+  const qs = day ? `?day=${day}` : "";
+  const res = await fetch(resolveApiUrl(`/api/behavior/export/activitywatch${qs}`), {
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error(`behavior/export/activitywatch: ${res.status}`);
   return res.json();
 }
 
@@ -670,6 +805,72 @@ export async function fetchDistractionGate(): Promise<DistractionGate> {
   return res.json();
 }
 
+export interface DeviceBlockSettings {
+  enabled: boolean;
+  block_porn: boolean;
+  block_watch: boolean;
+  block_social: boolean;
+  extra_domains?: string[];
+}
+
+export interface DeviceBlockStatus {
+  platform: string;
+  hosts_path: string;
+  settings: DeviceBlockSettings;
+  active: boolean;
+  configured_domain_count: number;
+  managed_host_entries: number;
+  needs_sync: boolean;
+  verify_sample?: { hostname: string; ips: string[]; blocked: boolean } | null;
+  updated_at?: string;
+}
+
+export async function refreshDeviceBlockList(): Promise<
+  DeviceBlockStatus & {
+    list?: { ok?: boolean; refreshed?: boolean; count?: number; error?: string };
+    apply?: { ok: boolean; needs_admin?: boolean; domain_count?: number; error?: string };
+  }
+> {
+  const res = await fetch(resolveApiUrl("/api/behavior/device-block/refresh-list"), {
+    method: "POST",
+    headers: authHeaders(),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.detail || `device-block/refresh-list: ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function fetchDeviceBlock(): Promise<DeviceBlockStatus> {
+  const res = await fetch(resolveApiUrl("/api/behavior/device-block"), {
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error(`behavior/device-block: ${res.status}`);
+  return res.json();
+}
+
+export async function saveDeviceBlock(
+  body: Partial<DeviceBlockSettings> & { apply_now?: boolean },
+): Promise<
+  DeviceBlockStatus & {
+    apply?: { ok: boolean; needs_admin?: boolean; domain_count?: number; error?: string };
+    needs_admin?: boolean;
+    apply_script?: string;
+  }
+> {
+  const res = await fetch(resolveApiUrl("/api/behavior/device-block"), {
+    method: "PUT",
+    headers: authHeaders(),
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.detail || `behavior/device-block: ${res.status}`);
+  }
+  return res.json();
+}
+
 export async function confirmMorningPlan(opts?: {
   goals?: string;
 }): Promise<{
@@ -776,4 +977,43 @@ export async function postStudyPresence(body: {
   });
   if (!res.ok) throw new Error(await res.text());
   return res.json();
+}
+
+// ── Watch voice notes (CALT Voice → data/voice_notes/) ─────────────────────
+
+export interface VoiceNoteRow {
+  name: string;
+  size: number;
+  mtime: number;
+}
+
+export async function fetchVoiceNotes(): Promise<VoiceNoteRow[]> {
+  const res = await fetch(resolveApiUrl("/api/behavior/voice-notes"), {
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error(await res.text());
+  const data = (await res.json()) as { notes?: VoiceNoteRow[] };
+  return Array.isArray(data.notes) ? data.notes : [];
+}
+
+export async function downloadVoiceNote(name: string): Promise<void> {
+  const token = localStorage.getItem(TOKEN_KEY);
+  const headers: Record<string, string> = {};
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  const res = await fetch(
+    resolveApiUrl(`/api/behavior/voice-notes/${encodeURIComponent(name)}`),
+    { headers },
+  );
+  if (!res.ok) throw new Error(await res.text());
+
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
 }

@@ -22,13 +22,14 @@ from pydantic import BaseModel, ConfigDict
 from sqlalchemy.orm import Session
 
 from backend.core.auth import (
+    ensure_solo_owner,
     get_current_user,
     hash_password,
     require_admin,
     token_for,
     verify_password,
 )
-from backend.core.serializers import user_admin_payload
+from backend.core.serializers import user_admin_payload, user_public_payload
 from backend.config import get_settings
 from backend.hub.services.sessions import get_or_open_activity_session, start_activity_session
 from backend.db.session import get_db
@@ -118,6 +119,10 @@ class RegisterBody(BaseModel):
 class LoginBody(BaseModel):
     username: str
     password: str
+
+
+class ProfilePatchBody(BaseModel):
+    display_name: str | None = None
 
 
 class QuizStartBody(BaseModel):
@@ -368,7 +373,7 @@ def register(body: RegisterBody, db: Session = Depends(get_db)):
     from backend.hub.services.seed import seed_user_plugins
 
     seed_user_plugins(db, user.id)
-    return {"token": token_for(user), "user": {"id": user.id, "username": user.username}}
+    return {"token": token_for(user), "user": user_public_payload(user)}
 
 
 @router.post("/auth/login")
@@ -377,12 +382,41 @@ def login(body: LoginBody, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.username == username).first()
     if not user or not verify_password(body.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Invalid credentials")
-    return {"token": token_for(user), "user": {"id": user.id, "username": user.username}}
+    return {"token": token_for(user), "user": user_public_payload(user)}
+
+
+@router.get("/auth/local-session")
+def local_session(db: Session = Depends(get_db)):
+    """Mint a JWT for the solo owner — no password. Used by the web app on boot."""
+    cfg = get_settings()
+    if not cfg.solo_local_user:
+        raise HTTPException(status_code=403, detail="Local session only in solo owner mode")
+    user = ensure_solo_owner(db)
+    return {"token": token_for(user), "user": user_public_payload(user)}
+
+
+def _apply_display_name(user: User, display_name: str | None) -> None:
+    if display_name is None:
+        return
+    cleaned = display_name.strip()[:80]
+    user.display_name = cleaned or None
 
 
 @router.get("/auth/me")
 def me(user: User = Depends(get_current_user)):
-    return {"id": user.id, "username": user.username}
+    return user_public_payload(user)
+
+
+@router.patch("/auth/me")
+def patch_me(
+    body: ProfilePatchBody,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    _apply_display_name(user, body.display_name)
+    db.commit()
+    db.refresh(user)
+    return user_public_payload(user)
 
 
 def _progress_map_for_user(db: Session, user_id: int) -> dict[int, WordProgress]:
@@ -1311,7 +1345,7 @@ def face_login(body: FaceLoginBody, db: Session = Depends(get_db)):
     score = cosine_similarity(body.embedding, stored)
     if score < 0.85:
         raise HTTPException(status_code=401, detail="Face match failed.")
-    return {"token": token_for(user), "user": {"id": user.id, "username": user.username}}
+    return {"token": token_for(user), "user": user_public_payload(user)}
 
 
 @router.post("/focus/events/start")

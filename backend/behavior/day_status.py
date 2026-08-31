@@ -299,9 +299,15 @@ def build_day_status(db: Session, user_id: int, *, enqueue_notify: bool = True) 
     wearables = _wearables_snapshot()
     suggested = morning.get("suggested_wake")
 
+    from backend.behavior.comms_health import snapshot as comms_snapshot
+    from backend.behavior.day_productivity import build_productivity_snapshot
+
+    productivity = build_productivity_snapshot(db, user_id)
+    comms = comms_snapshot()
+
     return {
         "ok": True,
-        "schema": 2,
+        "schema": 3,
         "day": gate.get("day") or morning.get("day"),
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "morning": {
@@ -339,6 +345,8 @@ def build_day_status(db: Session, user_id: int, *, enqueue_notify: bool = True) 
         "tracker": tracker,
         "tracker_alive": bool(tracker.get("alive")),
         "wearables": wearables,
+        "productivity": productivity,
+        "comms": comms,
         "notify": notify,
         "alert_enqueued": bool(enqueued),
         "limits": {

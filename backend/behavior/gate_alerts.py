@@ -314,6 +314,10 @@ def reset_speak_state_for_tests() -> None:
     global _last_speak_at, _last_text_norm, _speaking
     _last_speak_at = 0.0
     _last_text_norm = ""
+    # Let an in-flight worker utterance finish before swapping the mutex.
+    deadline = time.time() + 2.5
+    while time.time() < deadline and (_speaking or _speak_q.qsize() > 0):
+        time.sleep(0.02)
     _speaking = False
     # Drain pending queue without speaking
     try:
@@ -332,3 +336,9 @@ def reset_speak_state_for_tests() -> None:
         except Exception:  # noqa: BLE001
             pass
     _release_cross_process()
+    try:
+        from backend.behavior.voice_agent.io_speech import reset_speak_mutex_for_tests
+
+        reset_speak_mutex_for_tests()
+    except Exception:  # noqa: BLE001
+        pass

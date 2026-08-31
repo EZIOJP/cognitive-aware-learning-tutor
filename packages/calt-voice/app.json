@@ -5,12 +5,12 @@
     "appId": 1088803,
     "appType": "app",
     "version": {
-      "code": 2,
-      "name": "1.0.1"
+      "code": 5,
+      "name": "1.1.2"
     },
     "icon": "icon.png",
     "vender": "calt",
-    "description": "Black-screen voice notes — auto-record on open, 5 min max, 1GB free required"
+    "description": "Black-screen voice notes — auto-record on open, recording indicator, send clips to PC"
   },
   "permissions": [
     "data:os.device.info",
@@ -32,7 +32,13 @@
     "480x480-t-rex-3": {
       "module": {
         "page": {
-          "pages": ["page/index"]
+          "pages": ["page/index", "page/files"]
+        },
+        "app-side": {
+          "path": "app-side/index"
+        },
+        "setting": {
+          "path": "setting/index"
         },
         "app-widget": {
           "widgets": [

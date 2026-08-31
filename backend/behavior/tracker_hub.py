@@ -192,6 +192,83 @@ def _build_app():
             "fallback": False,
         }
 
+    # --- CALT Voice notes (chunked Opus upload from the watch) ---------------
+
+    def _voice_note_error(exc: Exception, status: int):
+        return JSONResponse({"ok": False, "error": str(exc)}, status_code=status)
+
+    @app.post("/api/hub/voice-note/begin")
+    def hub_voice_note_begin(
+        body: dict | None = None,
+        _: None = Depends(require_wearable_key),
+    ):
+        from backend.behavior import voice_notes
+
+        b = body or {}
+        try:
+            return voice_notes.begin_upload(
+                name=b.get("name"),
+                size=b.get("size"),
+                chunk_size=b.get("chunk_size"),
+                total_chunks=b.get("total_chunks"),
+                sha=b.get("sha"),
+            )
+        except (ValueError, TypeError, KeyError) as e:
+            return _voice_note_error(e, 400)
+        except OSError as e:
+            return _voice_note_error(e, 500)
+
+    @app.post("/api/hub/voice-note/chunk")
+    def hub_voice_note_chunk(
+        body: dict | None = None,
+        _: None = Depends(require_wearable_key),
+    ):
+        from backend.behavior import voice_notes
+
+        b = body or {}
+        try:
+            return voice_notes.accept_chunk(
+                upload_id=b.get("upload_id"),
+                index=b.get("index"),
+                data_b64=b.get("data"),
+                checksum=b.get("checksum"),
+            )
+        except LookupError as e:
+            return _voice_note_error(e, 404)
+        except (ValueError, TypeError, KeyError) as e:
+            return _voice_note_error(e, 400)
+        except OSError as e:
+            return _voice_note_error(e, 500)
+
+    @app.post("/api/hub/voice-note/finish")
+    def hub_voice_note_finish(
+        body: dict | None = None,
+        _: None = Depends(require_wearable_key),
+    ):
+        from backend.behavior import voice_notes
+
+        try:
+            return voice_notes.finish_upload(upload_id=(body or {}).get("upload_id"))
+        except LookupError as e:
+            return _voice_note_error(e, 404)
+        except OSError as e:
+            return _voice_note_error(e, 500)
+
+    @app.get("/api/hub/voice-note/status")
+    def hub_voice_note_status(
+        upload_id: str,
+        _: None = Depends(require_wearable_key),
+    ):
+        from backend.behavior import voice_notes
+
+        return voice_notes.upload_status(upload_id=upload_id)
+
+    @app.get("/api/hub/voice-note/list")
+    def hub_voice_note_list(_: None = Depends(require_wearable_key)):
+        from backend.behavior import voice_notes
+
+        return {"ok": True, "notes": voice_notes.list_notes()}
+
     return app
 
 

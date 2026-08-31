@@ -71,6 +71,7 @@ Windows: use `npm.cmd` if PowerShell blocks `npm`.
 | What | Windows | Linux/macOS |
 |------|---------|-------------|
 | **Full stack** | `run.bat` | `./scripts/run_all.sh` |
+| **Update / restart after edits** | `scripts\update_and_restart.bat` (menu: tracker / stack / API / extensions / full) | — |
 | **API only** | `scripts\run_backend.bat` | `python -m uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload` |
 | **Frontend only** | `scripts\run_frontend.bat` | `npm run dev` |
 | **Migrations** | `scripts\migrate.bat` | `./scripts/migrate.sh` |
@@ -85,7 +86,9 @@ Windows: use `npm.cmd` if PowerShell blocks `npm`.
 | Vocab API | http://localhost:8000/api/vocab |
 | OpenAPI | http://localhost:8000/openapi.json |
 
-Default login: **admin** / **admin123**
+This PC is the owner: open the frontend and use **Profile** for display name. Optional admin password (`admin` / `admin123`) remains for lock/import only — not first-run.
+
+**Tailscale (phone / other PC):** same tailnet, stack running. Whole site: `http://<tailscale-100.x>:5173` (Profile shows the live link). API for Android/watch: `:8000`. Allow Windows Firewall for 5173 + 8000 if the page does not load.
 
 ---
 

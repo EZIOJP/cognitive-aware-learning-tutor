@@ -8,7 +8,17 @@ from typing import Any
 PRODUCTIVE_THRESHOLD = 60
 
 
-def _as_utc(dt: datetime) -> datetime:
+def _as_utc(dt: Any) -> datetime | None:
+    """Normalize datetime or ISO string to timezone-aware datetime; skip invalid."""
+    if dt is None or dt == "":
+        return None
+    if isinstance(dt, str):
+        try:
+            dt = datetime.fromisoformat(dt.replace("Z", "+00:00"))
+        except (TypeError, ValueError):
+            return None
+    if not isinstance(dt, datetime):
+        return None
     if dt.tzinfo is None:
         return dt.replace(tzinfo=datetime.now().astimezone().tzinfo)
     return dt
@@ -17,7 +27,7 @@ def _as_utc(dt: datetime) -> datetime:
 def compute_focus_quality(
     rows: list[Any],
     *,
-    planned_intervals: list[tuple[datetime, datetime]],
+    planned_intervals: list[tuple[Any, Any]],
     productive_threshold: int = PRODUCTIVE_THRESHOLD,
 ) -> dict[str, Any]:
     """Score 0–100 from context switches inside planned blocks."""
@@ -37,7 +47,7 @@ def compute_focus_quality(
         if not start or not end:
             continue
         start, end = _as_utc(start), _as_utc(end)
-        if end <= start:
+        if not start or not end or end <= start:
             continue
         if isinstance(row, dict):
             app = row.get("app_name") or row.get("exe") or "unknown"
@@ -49,6 +59,9 @@ def compute_focus_quality(
             score = int(getattr(row, "productivity_score", None) or 35)
         key = (str(site).strip() if site else str(app).strip()) or "unknown"
         for ps, pe in planned_intervals:
+            ps, pe = _as_utc(ps), _as_utc(pe)
+            if not ps or not pe:
+                continue
             seg_start = max(start, ps)
             seg_end = min(end, pe)
             if seg_end > seg_start:

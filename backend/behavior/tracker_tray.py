@@ -68,8 +68,53 @@ def _fmt_stack_health(_service: "TrackerService" | None = None) -> str:
         return "API: ? · Web: ?"
 
 
+def _fmt_comms(_service: "TrackerService" | None = None) -> str:
+    try:
+        from backend.behavior.comms_health import snapshot
+
+        snap = snapshot()
+        ext = snap.get("extension") or {}
+        st = ext.get("status") or "?"
+        st_age = ext.get("selftracker_age_s")
+        gt_age = ext.get("calt_gate_age_s")
+        st_s = "never" if st_age is None else f"{int(st_age)}s"
+        gt_s = "never" if gt_age is None else f"{int(gt_age)}s"
+        return (
+            f"Ext {st} · ST {ext.get('selftracker_status') or '—'} ({st_s}) · "
+            f"Gate {ext.get('calt_gate_status') or '—'} ({gt_s})"
+        )
+    except Exception:  # noqa: BLE001
+        return "Ext: ?"
+
+
+def _fmt_current_fix(_service: "TrackerService" | None = None) -> str:
+    try:
+        from backend.behavior.comms_health import snapshot
+
+        issue = (snapshot() or {}).get("current_issue") or {}
+        why = str(issue.get("why") or "").strip()
+        if not why:
+            return "Why: —"
+        return f"Why: {why[:72]}"
+    except Exception:  # noqa: BLE001
+        return "Why: ?"
+
+
+def _fmt_last_edge_close(_service: "TrackerService" | None = None) -> str:
+    try:
+        from backend.behavior.comms_incidents import last_incident
+
+        row = last_incident()
+        if not row or row.get("kind") not in ("edge_closed", "edge_quit"):
+            return "Last Edge close: none"
+        why = str(row.get("why") or "")[:56]
+        return f"Last Edge close: {why}"
+    except Exception:  # noqa: BLE001
+        return "Last Edge close: ?"
+
+
 def _prompt_free_time() -> bool:
-    """PIN/phrase then grant temporary free browsing (YouTube etc.)."""
+    """PIN (if configured) then grant temporary free browsing (YouTube etc.)."""
     try:
         import tkinter as tk
         from tkinter import messagebox, simpledialog
@@ -78,7 +123,11 @@ def _prompt_free_time() -> bool:
             browser_free_after_hm,
             set_free_override,
         )
-        from backend.behavior.tracker_exit import exit_prompt_hint, exit_secret_accepted
+        from backend.behavior.tracker_exit import (
+            exit_confirmation_required,
+            exit_prompt_hint,
+            exit_secret_accepted,
+        )
     except ImportError:
         return False
 
@@ -86,15 +135,23 @@ def _prompt_free_time() -> bool:
     root.withdraw()
     root.attributes("-topmost", True)
     try:
-        typed = simpledialog.askstring(
+        if exit_confirmation_required():
+            typed = simpledialog.askstring(
+                "CALT Tracker — Free time",
+                exit_prompt_hint()
+                + "\n\nGrants temporary free browsing (porn still blocked).\n"
+                f"Evening free also starts at {browser_free_after_hm()} without PIN.",
+                parent=root,
+                show="*",
+            )
+            if not exit_secret_accepted(typed):
+                return False
+        elif not messagebox.askyesno(
             "CALT Tracker — Free time",
-            exit_prompt_hint()
-            + "\n\nGrants temporary free browsing (porn still blocked).\n"
-            f"Evening free also starts at {browser_free_after_hm()} without PIN.",
+            "Grant temporary free browsing (porn still blocked)?\n\n"
+            f"Evening free also starts at {browser_free_after_hm()} automatically.",
             parent=root,
-            show="*",
-        )
-        if not exit_secret_accepted(typed):
+        ):
             return False
         until = set_free_override()
         messagebox.showinfo(
@@ -129,7 +186,18 @@ def _tray_tooltip(service: "TrackerService") -> str:
         from backend.behavior.tracker_rules import format_tray_tooltip
         from backend.behavior.tracker_rules_gui import build_snapshot_from_service
 
-        return format_tray_tooltip(build_snapshot_from_service(service))
+        bit = format_tray_tooltip(build_snapshot_from_service(service))
+        try:
+            from backend.behavior.comms_health import snapshot
+
+            ext = (snapshot() or {}).get("extension") or {}
+            st = str(ext.get("status") or "?")
+            extra = f" · Ext:{st}"
+            if len(bit) + len(extra) <= 128:
+                bit += extra
+        except Exception:  # noqa: BLE001
+            pass
+        return bit
     except Exception:  # noqa: BLE001
         return "CALT Tracker — right-click for menu"
 
@@ -149,6 +217,7 @@ def run_tray(service: "TrackerService") -> None:
         open_login_page,
         open_tracker_log,
     )
+    from backend.behavior.tracker_restart import request_tray_restart
     from backend.behavior.tracker_reward_gui import show_reward_day_panel
     from backend.behavior.tracker_rules_gui import show_todays_rules_for_service
     from backend.behavior.tracker_schedule_gui import show_today_schedule_for_service
@@ -196,6 +265,18 @@ def run_tray(service: "TrackerService") -> None:
     def on_open_log(_icon: pystray.Icon, _item: pystray.MenuItem) -> None:
         open_tracker_log()
 
+    def on_open_comms_log(_icon: pystray.Icon, _item: pystray.MenuItem) -> None:
+        try:
+            from backend.behavior.comms_incidents import open_incident_log
+
+            open_incident_log()
+        except Exception as exc:  # noqa: BLE001
+            log.warning("Open comms log failed: %s", exc)
+
+    def on_restart(_icon: pystray.Icon, _item: pystray.MenuItem) -> None:
+        log.info("Restart tracker — reload code (no storage wipe)")
+        request_tray_restart(service)
+
     def on_free_time(_icon: pystray.Icon, _item: pystray.MenuItem) -> None:
         if _prompt_free_time():
             log.info("Free-time override granted via tray")
@@ -206,6 +287,19 @@ def run_tray(service: "TrackerService") -> None:
                 pass
         else:
             log.info("Free time cancelled — wrong PIN/phrase or dismissed")
+
+    def on_end_free_time(_icon: pystray.Icon, _item: pystray.MenuItem) -> None:
+        try:
+            from backend.behavior.browser_gate_policy import clear_free_override
+
+            clear_free_override()
+            log.info("Free-time override cleared via tray")
+            try:
+                service._gate_updated_at = 0  # noqa: SLF001
+            except Exception:  # noqa: BLE001
+                pass
+        except Exception as exc:  # noqa: BLE001
+            log.warning("End free time failed: %s", exc)
 
     def on_reward_day(_icon: pystray.Icon, _item: pystray.MenuItem) -> None:
         def _bump_gate() -> None:
@@ -266,21 +360,27 @@ def run_tray(service: "TrackerService") -> None:
             pystray.MenuItem(lambda _i: _fmt_reward_day(service), None, enabled=False),
             pystray.MenuItem(lambda _i: _fmt_morning_next(service), None, enabled=False),
             pystray.MenuItem(lambda _i: _fmt_stack_health(), None, enabled=False),
+            pystray.MenuItem(lambda _i: _fmt_comms(), None, enabled=False),
+            pystray.MenuItem(lambda _i: _fmt_current_fix(), None, enabled=False),
+            pystray.MenuItem(lambda _i: _fmt_last_edge_close(), None, enabled=False),
             pystray.MenuItem(lambda _i: _fmt_plan_now(service), None, enabled=False),
             pystray.MenuItem(lambda _i: _fmt_plan_next(service), None, enabled=False),
             pystray.Menu.SEPARATOR,
             pystray.MenuItem("Today's rules", on_show_rules),
             pystray.MenuItem("Show today's plan", on_show_plan, default=True),
             pystray.MenuItem("Free time…", on_free_time),
+            pystray.MenuItem("End free time", on_end_free_time),
             pystray.MenuItem("Reward day…", on_reward_day),
             pystray.MenuItem("Voice agent (chat)", on_voice_agent),
             pystray.MenuItem(_voice_hotkey_label, on_toggle_voice_hotkey),
             pystray.Menu.SEPARATOR,
             pystray.MenuItem("Start CALT stack", on_start_app),
             pystray.MenuItem("Transcript Notes Studio", on_start_studio),
-            pystray.MenuItem("Open login (web app)", on_login),
+            pystray.MenuItem("Open profile (web app)", on_login),
             pystray.MenuItem("Open full calendar", on_open_dashboard),
             pystray.MenuItem("View tracker log", on_open_log),
+            pystray.MenuItem("View Edge-close / comms log", on_open_comms_log),
+            pystray.MenuItem("Restart tracker…", on_restart),
         )
 
     # Ensure pause cannot stick from an older build

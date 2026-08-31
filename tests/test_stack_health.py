@@ -4,7 +4,14 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock, patch
 
+import pytest
+
 from backend.behavior import stack_health as sh
+
+
+@pytest.fixture(autouse=True)
+def _extension_dead_by_default(monkeypatch):
+    monkeypatch.setattr("backend.behavior.comms_health.extension_is_alive", lambda: False)
 
 
 def test_default_urls():
@@ -391,6 +398,10 @@ def test_open_or_focus_calt_debounces(monkeypatch):
     monkeypatch.setattr(sh, "OPEN_DEBOUNCE_S", 15.0)
     monkeypatch.setattr(sh, "open_url_preferred", lambda u: opens.append(u) or True)
     monkeypatch.setattr(
+        "backend.behavior.comms_health.extension_is_alive",
+        lambda: False,
+    )
+    monkeypatch.setattr(
         "backend.behavior.calt_tab_command.request_focus",
         lambda path, force=False: focuses.append(path) or {"ok": True},
     )
@@ -407,6 +418,21 @@ def test_open_or_focus_calt_debounces(monkeypatch):
     assert len(opens) == 2
 
 
+def test_open_or_focus_skips_new_edge_when_extension_alive(monkeypatch):
+    sh.reset_cache_for_tests()
+    opens: list[str] = []
+    monkeypatch.setattr(sh, "open_url_preferred", lambda u: opens.append(u) or True)
+    monkeypatch.setattr(
+        "backend.behavior.calt_tab_command.request_focus",
+        lambda path, force=False: {"ok": True},
+    )
+    monkeypatch.setattr("backend.behavior.comms_health.extension_is_alive", lambda: True)
+    t = {"now": 5000.0}
+    monkeypatch.setattr(sh.time, "monotonic", lambda: t["now"])
+    assert sh.open_or_focus_calt("/bible") is True
+    assert opens == []
+
+
 def test_start_calt_stack_skips_when_web_up(monkeypatch):
     starts = {"n": 0}
     monkeypatch.setattr(
@@ -416,10 +442,34 @@ def test_start_calt_stack_skips_when_web_up(monkeypatch):
     )
     monkeypatch.setattr(
         "backend.behavior.tracker_launchers.launch_calt_stack",
-        lambda: starts.__setitem__("n", starts["n"] + 1),
+        lambda force=False: starts.__setitem__("n", starts["n"] + 1) or True,
     )
     assert sh.start_calt_stack() is False
     assert starts["n"] == 0
     assert sh.start_calt_stack(force=True) is True
     assert starts["n"] == 1
+
+
+def test_launch_calt_stack_debounces(monkeypatch):
+    from backend.behavior import tracker_launchers as tl
+
+    tl._last_stack_launch_at = 0.0
+    monkeypatch.setattr(tl, "_STACK_LAUNCH_DEBOUNCE_S", 60.0)
+    monkeypatch.setattr(
+        "backend.behavior.stack_health.get_stack_health",
+        lambda force=False: sh.StackHealth(api_up=False, web_up=False),
+    )
+    launched: list[bool] = []
+    monkeypatch.setattr(tl, "launch_app_fe_be", lambda: launched.append(True))
+    t = {"now": 1000.0}
+    monkeypatch.setattr(tl.time, "monotonic", lambda: t["now"])
+
+    assert tl.launch_calt_stack() is True
+    assert len(launched) == 1
+    t["now"] = 1010.0
+    assert tl.launch_calt_stack() is False
+    assert len(launched) == 1
+    t["now"] = 1070.0
+    assert tl.launch_calt_stack() is True
+    assert len(launched) == 2
 

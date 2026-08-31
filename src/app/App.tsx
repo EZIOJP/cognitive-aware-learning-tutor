@@ -6,7 +6,6 @@ import { PomodoroProvider } from "../context/PomodoroContext";
 import { AuthProvider } from "../context/AuthContext";
 import { AppShell } from "../layout/AppShell";
 import { HomePage } from "../pages/HomePage";
-import LoginPage from "../pages/auth/LoginPage";
 import AdminPanelPage from "../pages/admin/AdminPanelPage";
 import { ProfilePage } from "../pages/ProfilePage";
 import ThemeSettingsPage from "../pages/settings/ThemeSettingsPage";
@@ -37,7 +36,7 @@ function AppRoutes() {
     <Routes>
       <Route element={<AppShell />}>
         <Route index element={<HomePage />} />
-        <Route path="login" element={<LoginPage />} />
+        <Route path="login" element={<Navigate to="/profile" replace />} />
         <Route path="admin" element={<AdminPanelPage />} />
         <Route path="profile" element={<ProfilePage />} />
         <Route path="settings" element={<SettingsHubPage />} />

@@ -9,6 +9,7 @@ import { usePlugins } from "../plugins/registry";
 import { fetchLifeDaily, type LifeDailyApi } from "../api/hubClient";
 import { fetchWearableDay, type WearableDay } from "../api/wearablesClient";
 import { WatchDayDumpCard } from "../components/life/WatchDayDumpCard";
+import { TrackerDayBoard } from "../components/life/TrackerDayBoard";
 import {
   Moon,
   Dumbbell,
@@ -333,6 +334,8 @@ export function LifeTrackerPage() {
         {loadError && (
           <p className="text-sm text-rose-300">{loadError}</p>
         )}
+
+        {isToday ? <TrackerDayBoard /> : null}
 
         <div className="life-tracker-source">
           <Watch className="w-4 h-4 shrink-0" />

@@ -247,7 +247,7 @@ export function CycleQuizStep({
         {initError ? (
           <>
             <p className="text-sm text-muted-foreground text-center">
-              Could not start server quiz. Sign in and ensure the API is running.
+              Could not start server quiz. Start the API (`run.bat`) and retry.
             </p>
             <Button variant="outline" onClick={onBack}>
               Back

@@ -8,12 +8,20 @@ import { create, id, codec } from '@zos/media'
 import { queryPermission, requestPermission } from '@zos/app'
 import { Vibrator, VIBRATOR_SCENE_SHORT_MIDDLE, VIBRATOR_SCENE_SHORT_LIGHT } from '@zos/sensor'
 import { log } from '@zos/utils'
-import { back } from '@zos/router'
+import { back, push } from '@zos/router'
+import { onGesture, offGesture, GESTURE_LEFT } from '@zos/interaction'
+import { rememberNote } from './notes'
 
 const logger = log.getLogger('calt-voice')
 const MAX_SEC = 5 * 60
 const MIN_FREE = 1024 * 1024 * 1024 // 1 GB
 const MIC_PERMS = ['device:os.mic']
+const TICK_MS = 250
+
+// Dim red steps: readable at arm's length in a dark room, but too dim to
+// light up a lecture hall. One full cycle is PULSE.length * TICK_MS = 2s.
+const PULSE = [0x1c0000, 0x330000, 0x5c0000, 0x8c0000, 0xb31111, 0x8c0000, 0x5c0000, 0x330000]
+const DOT_OFF = 0x000000
 
 function vibe(kind) {
   try {
@@ -27,6 +35,10 @@ function vibe(kind) {
 
 function pad2(n) {
   return n < 10 ? `0${n}` : `${n}`
+}
+
+function fmtElapsed(sec) {
+  return `${pad2(Math.floor(sec / 60))}:${pad2(sec % 60)}`
 }
 
 function stampName() {
@@ -89,9 +101,23 @@ Page({
     recorder: null,
     timer: null,
     elapsed: 0,
+    startedAt: 0,
+    frame: 0,
     recording: false,
     stopped: false,
     file: '',
+  },
+
+  onInit() {
+    onGesture((event) => {
+      if (event === GESTURE_LEFT) {
+        // Swallowed mid-recording: navigating away would stop the take, and
+        // an accidental swipe should never end a recording.
+        if (!this.state.recording) push({ url: 'page/files' })
+        return true
+      }
+      return false
+    })
   },
 
   build() {
@@ -132,6 +158,26 @@ Page({
       text_size: Math.round(width * 0.04),
       align_h: align.CENTER_H,
       text: ' ',
+    })
+
+    // Recording indicator. Created up front so the error paths below can
+    // return without it ever being drawn (black dot on black screen).
+    this.dotGeom = {
+      center_x: Math.round(width / 2),
+      center_y: Math.round(height * 0.66),
+      radius: Math.round(width * 0.022),
+    }
+    this.dotW = createWidget(widget.CIRCLE, { ...this.dotGeom, color: DOT_OFF })
+
+    this.timeW = createWidget(widget.TEXT, {
+      x: 0,
+      y: Math.round(height * 0.72),
+      w: width,
+      h: Math.round(height * 0.08),
+      color: 0x3a3a3a,
+      text_size: Math.round(width * 0.05),
+      align_h: align.CENTER_H,
+      text: '',
     })
 
     try {
@@ -202,22 +248,45 @@ Page({
       this.state.recorder = recorder
       this.state.recording = true
       this.state.elapsed = 0
+      this.state.startedAt = Date.now()
+      this.state.frame = 0
       vibe('start')
       showMsg(this, ' ')
 
-      this.state.timer = setInterval(() => {
-        if (!this.state.recording) return
-        this.state.elapsed += 1
-        if (this.state.elapsed >= MAX_SEC) {
-          this.finish('max')
-        }
-      }, 1000)
+      this.state.timer = setInterval(() => this.tick(), TICK_MS)
+      this.tick()
     } catch (e) {
       const msg = errText(e)
       logger.log(`start fail: ${msg}`)
       showMsg(this, `Mic: ${msg}`)
       this.state.stopped = true
     }
+  },
+
+  /**
+   * Elapsed comes from the wall clock, not a tick count, so a throttled or
+   * delayed timer cannot let the recording run past MAX_SEC.
+   */
+  tick() {
+    if (!this.state.recording) return
+
+    const sec = Math.floor((Date.now() - this.state.startedAt) / 1000)
+    if (sec !== this.state.elapsed) {
+      this.state.elapsed = sec
+      try {
+        this.timeW.setProperty(prop.TEXT, fmtElapsed(sec))
+      } catch (_) {}
+    }
+
+    this.state.frame = (this.state.frame + 1) % PULSE.length
+    try {
+      this.dotW.setProperty(prop.MORE, {
+        ...this.dotGeom,
+        color: PULSE[this.state.frame],
+      })
+    } catch (_) {}
+
+    if (sec >= MAX_SEC) this.finish('max')
   },
 
   finish(reason) {
@@ -229,12 +298,23 @@ Page({
       this.state.timer = null
     }
     try {
+      this.dotW.setProperty(prop.MORE, { ...this.dotGeom, color: DOT_OFF })
+    } catch (_) {}
+    try {
       if (this.state.recorder) this.state.recorder.stop()
     } catch (e) {
       logger.log(`stop ${e}`)
     }
     this.state.recorder = null
     vibe('end')
+
+    // Index it before anything else can fail, so the clip is always listed on
+    // the Files page even if this page is torn down straight after.
+    rememberNote(this.state.file)
+
+    try {
+      this.timeW.setProperty(prop.TEXT, `Saved ${fmtElapsed(this.state.elapsed)} · swipe ←`)
+    } catch (_) {}
     showMsg(this, ' ')
     logger.log(`saved ${this.state.file} reason=${reason} sec=${this.state.elapsed}`)
   },
@@ -245,5 +325,8 @@ Page({
     } else if (this.state.timer) {
       clearInterval(this.state.timer)
     }
+    try {
+      offGesture()
+    } catch (_) {}
   },
 })

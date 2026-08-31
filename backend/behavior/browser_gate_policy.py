@@ -174,6 +174,8 @@ DEFAULT_PORN_DOMAINS: tuple[str, ...] = (
     "rule34.xxx",
     # Common hosts that used to slip through (not on mega-lists)
     "erome.com",
+    "v3.erome.com",
+    "eromecdn.com",
     "eporner.com",
     "hqporner.com",
     "porntrex.com",
@@ -428,7 +430,7 @@ CAPTURE_WORKFLOW_ALLOW_DOMAINS: tuple[str, ...] = (
 STRICT_LOCALHOST_PATH_PREFIXES: tuple[str, ...] = (
     "/bible",
     "/productivity",
-    "/login",
+    "/profile",
     "/lecture-notes",
 )
 

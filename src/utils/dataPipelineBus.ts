@@ -89,6 +89,17 @@ async function fingerprint(): Promise<string> {
     /* ignore */
   }
 
+  try {
+    const vnRes = await fetch(`${base}/api/behavior/voice-notes`, { headers: authHeaders() });
+    if (vnRes.ok) {
+      const vn = (await vnRes.json()) as { notes?: { name: string; mtime: number }[] };
+      const top = vn.notes?.[0];
+      parts.push(`vn:${vn.notes?.length ?? 0}:${top?.name || ""}:${top?.mtime ?? 0}`);
+    }
+  } catch {
+    /* ignore */
+  }
+
   return parts.join("|");
 }
 

@@ -27,15 +27,14 @@ from backend.models import User
 from backend.paths import TRANSCRIPTS_DIR
 from backend.transcripts.kb import list_note_records, list_topics, row_to_item, save_note_record
 from backend.transcripts.library import (
-    build_library_tree,
     create_folder,
     create_note_file,
     delete_folder,
     delete_note,
+    library_tree_for_user,
     list_notes_in_folder,
     move_note,
     note_storage_path,
-    sync_disk_notes_for_user,
     save_note_content,
     update_note_meta,
     update_reading_state,
@@ -568,8 +567,7 @@ def get_note_topics(db: Session = Depends(get_db), user: User = Depends(get_curr
 
 @router.get("/library/tree")
 def get_library_tree(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    sync_disk_notes_for_user(db, user.id)
-    return build_library_tree(db, user.id)
+    return library_tree_for_user(db, user.id)
 
 
 @router.post("/library/folders")

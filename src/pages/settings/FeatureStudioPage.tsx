@@ -22,7 +22,7 @@ type MetricDraft = { label: string; slug: string; unit: string };
 const emptyMetric = (): MetricDraft => ({ label: "", slug: "", unit: "count" });
 
 export function FeatureStudioPage() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, sessionReady } = useAuth();
   const { refreshFromServer } = usePluginRegistry();
   const [catalog, setCatalog] = useState<HubCatalogFeature[]>([]);
   const [custom, setCustom] = useState<HubCustomFeature[]>([]);
@@ -115,12 +115,20 @@ export function FeatureStudioPage() {
     }
   };
 
+  if (!sessionReady) {
+    return (
+      <div className="p-8 max-w-lg mx-auto text-center text-muted-foreground">
+        Loading Feature Studio…
+      </div>
+    );
+  }
+
   if (!isAuthenticated) {
     return (
       <div className="p-8 max-w-lg mx-auto text-center space-y-4">
-        <p className="text-muted-foreground">Sign in to create custom features and sync them across devices.</p>
-        <Link to="/login" className="text-primary underline">
-          Go to login
+        <p className="text-muted-foreground">Start the local API with run.bat, then refresh.</p>
+        <Link to="/" className="text-primary underline">
+          Dashboard
         </Link>
       </div>
     );

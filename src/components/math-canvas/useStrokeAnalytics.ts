@@ -1,5 +1,6 @@
 import { useCallback, useRef } from "react";
 import {
+  coalescePointerStrokes,
   computeSnapshot,
   type SketchPath,
   type StrokeMetricsSnapshot,
@@ -32,7 +33,7 @@ export function useStrokeAnalytics(opts: {
 
   const onPathsChange = useCallback(
     (paths: SketchPath[]) => {
-      pathsRef.current = paths;
+      pathsRef.current = coalescePointerStrokes(paths);
       onMetricsChangeRef.current?.(snapshot());
     },
     [snapshot]

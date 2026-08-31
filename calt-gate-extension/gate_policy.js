@@ -188,6 +188,8 @@ var FORCE_PORN_HOSTS = [
   "rule34.xxx",
   "hentaihaven.xxx",
   "erome.com",
+  "v3.erome.com",
+  "eromecdn.com",
   "eporner.com",
   "hqporner.com",
   "porntrex.com",
@@ -584,7 +586,7 @@ function browserPolicyOrFallback(browser) {
     localhost_path_prefixes:
       b.localhost_path_prefixes && b.localhost_path_prefixes.length
         ? b.localhost_path_prefixes
-        : ["/bible", "/productivity", "/login", "/lecture-notes"],
+        : ["/bible", "/productivity", "/profile", "/lecture-notes"],
     // Strict day modes always block watch (YouTube etc.) — never trust a stale false flag.
     block_watch_sites: b.block_watch_sites === true || strict,
     block_porn: b.block_porn !== false,

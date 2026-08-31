@@ -8,8 +8,9 @@ This package is the **in-repo Tracker screen** that talks to:
 
 | Endpoint | Auth | Purpose |
 |----------|------|---------|
-| `GET /api/behavior/day-status` | JWT | Aggregate morning + mode + hard-block + tracker + wearables |
+| `GET /api/behavior/day-status` | JWT | Schema 3: morning + mode + hard-block + productivity + **comms** |
 | `GET /api/hub/day-status` | Wearable key | Same aggregate via desktop tracker hub `:8765` |
+| `GET /api/behavior/comms-health` | JWT | Extension/tracker/API/watch heartbeat + why rules look idle |
 | `GET /api/behavior/mobile-alerts` | JWT | Drain local-notification queue (mirrors to Amazfit if phone→watch notify is on) |
 | `PUT /api/behavior/policy` | JWT | Arm / disarm hard-block |
 | `POST /api/behavior/morning-plan/confirm` | JWT | Confirm plan CTA |

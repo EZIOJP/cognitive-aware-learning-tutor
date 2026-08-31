@@ -127,12 +127,12 @@ export function StudyLibraryIntelligenceHub({
         ? "Question style: coding / API"
         : "Question style: mixed concept + coding";
 
-  const countOptions = noteTopics.length > 0 ? [12, 20, 30, 40, 50] : [5, 8, 10, 12, 15, 20, 25];
+  const countOptions = noteTopics.length > 0 ? [12, 20, 30, 40, 50, 80] : [5, 8, 10, 12, 15, 20, 25];
 
   const liveStage = generatingDetail?.trim() || stageForElapsed(quizFocus, elapsedSec, tab);
   const estCalls =
     noteTopics.length > 0
-      ? Math.max(noteTopics.length, Math.ceil(quizCount / 2))
+      ? Math.max(noteTopics.length * 2, Math.ceil(quizCount / 2))
       : null;
 
   return (
@@ -196,8 +196,8 @@ export function StudyLibraryIntelligenceHub({
             </label>
             <p className="text-[10px] text-muted-foreground/80">{planHint}</p>
             <p className="text-[10px] text-foreground/80 leading-snug">
-              Engine walks each topic with a <span className="font-medium">small context window</span>,
-              then combines into one quiz — richer questions, tagged for spaced review.
+              Walks topics in lecture order (one at a time), writes a few questions each, then
+              indexes every topic as an FSRS review card.
             </p>
             {noteTopics.length > 0 && onSelectedTopicIdsChange && (
               <div className="rounded-md border border-border/60 bg-muted/20 p-2 space-y-1.5">
@@ -290,7 +290,7 @@ export function StudyLibraryIntelligenceHub({
             <p className="text-[11px] text-foreground/90 leading-snug">{liveStage}</p>
             {tab === "quiz" && noteTopics.length > 0 && (
               <p className="text-[10px] text-muted-foreground">
-                Target ~{quizCount} questions · ~{estCalls} topic calls · keep this tab open
+                Target ~{Math.max(quizCount, noteTopics.length * 2)} questions · walks {noteTopics.length} topics in order · keep this tab open
               </p>
             )}
             {tab === "quiz" && noteTopics.length === 0 && (

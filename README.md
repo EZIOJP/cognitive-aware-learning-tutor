@@ -83,7 +83,7 @@ The future roadmap for the Cognitive-Aware Learning Tutor includes:
 run.bat
 ```
 
-First run installs Python + npm deps, runs migrations, and starts API (8000) + frontend (5173). Sign in with **admin / admin123**.
+First run installs Python + npm deps, runs migrations, and starts API (8000) + frontend (5173). Open **http://localhost:5173** — this PC is the owner (no sign-in). Set a display name on **Profile**.
 
 After `git pull` or dependency changes:
 

@@ -28,6 +28,16 @@
 | 10 | Focus quality metric | **Done** |
 | 11 | Alert → auto study mode nudge | **Done** |
 
+### P2 — tracker alignment (this session)
+| # | Feature | Status |
+|---|---------|--------|
+| 12 | Unified day-status productivity block | **Done** |
+| 13 | Android tracker pulse/goals UI | **Done** |
+| 14 | Life Tracker board + AW export API | **Done** |
+| 15 | ActivityWatch-compatible export | **Done** (API) |
+
+Future backlog: Health Connect reader, auto roll-forward blocks, Reclaim focus defense, Rize auto-detect.
+
 ---
 
 ## CALT constraints

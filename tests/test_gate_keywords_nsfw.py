@@ -140,6 +140,8 @@ def test_porn_host_blocked_in_study_and_free():
             "https://xvideos.com/",
             "https://nhentai.net/g/1",
             "https://www.erome.com/",
+            "https://v3.erome.com/",
+            "https://video-pool-g.eromecdn.com/",
             "https://eporner.com/",
             "https://foo.xxx/",
         ):

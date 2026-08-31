@@ -87,7 +87,12 @@ export default function TrackerScreen() {
   const hb = status?.hard_block;
   const tr = status?.tracker;
   const w = status?.wearables;
+  const p = status?.productivity;
   const wake = m?.suggested_wake;
+  const recovery = w?.recovery_hint;
+  const focus = p?.focus_quality;
+  const alertTriggered = (p?.alerts || []).find((a) => a.triggered);
+  const c = status?.comms;
 
   return (
     <ScrollView
@@ -134,6 +139,38 @@ export default function TrackerScreen() {
           </View>
 
           <View style={styles.card}>
+            <Text style={styles.cardTitle}>Productivity pulse</Text>
+            <Text style={styles.body}>
+              {p?.pulse ?? "—"} · {p?.pulse_label || "No data"}
+            </Text>
+            <Text style={styles.muted}>
+              Goal {p?.goal_pct ?? 0}%
+              {p?.goal_met ? " · met" : ""}
+              {p?.productive_label ? ` · ${p.productive_label} productive` : ""}
+            </Text>
+            {focus?.score != null ? (
+              <Text style={styles.muted}>
+                Focus {focus.score} · {focus.label}
+                {focus.switches != null ? ` · ${focus.switches} switches` : ""}
+              </Text>
+            ) : null}
+            {alertTriggered ? (
+              <Text style={styles.hint}>Alert: {alertTriggered.label}</Text>
+            ) : null}
+            {p?.study_mode_nudge?.active ? (
+              <Text style={styles.hint}>Study mode nudge active</Text>
+            ) : null}
+            {recovery?.label ? (
+              <Text style={styles.muted}>
+                Recovery: {recovery.label}
+                {recovery.suggested_focus_hours != null
+                  ? ` · ~${recovery.suggested_focus_hours}h focus`
+                  : ""}
+              </Text>
+            ) : null}
+          </View>
+
+          <View style={styles.card}>
             <Text style={styles.cardTitle}>Hard-block</Text>
             <Text style={styles.body}>
               {hb?.armed ? "Armed" : "Disarmed"}
@@ -157,9 +194,49 @@ export default function TrackerScreen() {
           </View>
 
           <View style={styles.card}>
+            <Text style={styles.cardTitle}>Comms</Text>
+            <Text style={styles.body}>
+              Extension {c?.extension?.status || "unknown"}
+              {c?.api_up ? " · API up" : " · API down"}
+              {c?.startup_grace ? " · grace" : ""}
+            </Text>
+            <Text style={styles.muted}>
+              SelfTracker {c?.extension?.selftracker_status || "—"}
+              {c?.extension?.selftracker_age_s != null
+                ? ` (${Math.round(c.extension.selftracker_age_s)}s)`
+                : " (never)"}
+              {" · "}Gate {c?.extension?.calt_gate_status || "—"}
+              {c?.extension?.calt_gate_age_s != null
+                ? ` (${Math.round(c.extension.calt_gate_age_s)}s)`
+                : " (never)"}
+            </Text>
+            {c?.current_issue?.why ? (
+              <Text style={styles.hint}>Why: {c.current_issue.why}</Text>
+            ) : null}
+            {c?.current_issue?.how_to_fix ? (
+              <Text style={styles.muted}>Fix: {c.current_issue.how_to_fix}</Text>
+            ) : null}
+            {(c?.why_rules_idle || []).slice(0, 2).map((line) => (
+              <Text key={line} style={styles.muted}>
+                {line}
+              </Text>
+            ))}
+            {c?.last_incident?.kind === "edge_closed" ? (
+              <Text style={styles.hint}>Last Edge close: {c.last_incident.why}</Text>
+            ) : null}
+            <Text style={styles.muted}>
+              {c?.edge_policy?.may_close_edge
+                ? "Edge close allowed (extension absent)"
+                : "Edge stays open while extension is active"}
+            </Text>
+          </View>
+
+          <View style={styles.card}>
             <Text style={styles.cardTitle}>Wearables</Text>
             <Text style={styles.body}>
-              Sleep {w?.sleep_hours ?? "—"}h · Steps {w?.steps ?? "—"}
+              Sleep {w?.sleep_label || (w?.sleep_hours != null ? `${w.sleep_hours}h` : "—")}
+              {w?.sleep_score != null ? ` · score ${w.sleep_score}` : ""}
+              {" · "}Steps {w?.steps ?? "—"}
             </Text>
             <Text style={styles.muted}>
               Stand {w?.stand_hours ?? "—"}h

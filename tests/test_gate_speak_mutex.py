@@ -67,7 +67,11 @@ def test_speak_alert_sync_waits(monkeypatch):
     assert order.index("end:a") < order.index("start:b")
 
 
-def test_notify_block_does_not_speak(monkeypatch):
+def test_notify_block_does_not_speak(monkeypatch, tmp_path):
+    # Without this the test shares data/behavior/pending_gate_alerts.json with a
+    # running desktop tracker, which drains the alert before the assert below
+    # (and speaks it out loud). Matches the isolation in the other gate tests.
+    monkeypatch.setattr(gate_alerts, "_QUEUE_PATH", tmp_path / "pending.json")
     gate_alerts.reset_speak_state_for_tests()
     spoken: list[str] = []
     monkeypatch.setattr(

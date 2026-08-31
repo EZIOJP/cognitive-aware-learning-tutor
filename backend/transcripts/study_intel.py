@@ -784,6 +784,42 @@ def _is_low_quality_mcq(question: dict[str, Any]) -> bool:
     return False
 
 
+def sequential_topic_quota(requested: int, n_topics: int) -> tuple[int, int]:
+    """Questions per topic + total target for a sequential walk.
+
+    Always covers every topic (at least 2 questions each) even when ``requested``
+    is smaller. Caps total at 160 so a huge note cannot hang forever.
+    """
+    n = max(1, int(requested or 12))
+    if n_topics <= 0:
+        return 0, n
+    per = max(2, min(4, (n + n_topics - 1) // n_topics))
+    target = max(n, per * n_topics)
+    return per, min(target, 160)
+
+
+def _trim_keeping_topics(questions: list[dict[str, Any]], cap: int) -> list[dict[str, Any]]:
+    """Keep at least one question per topic_id, then fill remaining slots."""
+    if len(questions) <= cap:
+        return questions
+    keep: list[dict[str, Any]] = []
+    extras: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for q in questions:
+        tid = str(q.get("topic_id") or "").strip()
+        if tid and tid not in seen:
+            keep.append(q)
+            seen.add(tid)
+        else:
+            extras.append(q)
+    out = list(keep)
+    for q in extras:
+        if len(out) >= cap:
+            break
+        out.append(q)
+    return out[:cap]
+
+
 def _quiz_call_plan(count: int, focus: str) -> list[tuple[str, int]]:
     """Auto batch plan — specialized roles, max 6 items per call."""
     focus_s = (focus or "mixed").strip().lower()
@@ -866,7 +902,11 @@ def _quiz_role_prompt(
 - Set "explanation" to teach why the correct option wins.
 - Do NOT ask about classroom logistics or the speaker.
 """
-    section_line = f'\nSection focus: "{section_title}" — prefer questions from this section.\n' if section_title else ""
+    section_line = (
+        f'\nTHIS TOPIC ONLY ({section_title}) — do not quiz other lecture sections.\n'
+        if section_title
+        else ""
+    )
     if role == "coding":
         focus_block = f"""Create exactly {n} CODING / API practice MCQs from the libraries and examples in the notes
 (NumPy, Pandas, Matplotlib, etc. — only what appears in the material).
@@ -883,7 +923,7 @@ Prefer:
 - "Which definition matches …?" / "In this lecture, X means …"
 - Distinguishing near-synonyms that students confuse
 - One correct definition grounded in the notes; distractors are plausible wrong definitions
-- Cover DIFFERENT terms across the material — do not repeat one heading
+- Cover DIFFERENT terms in this topic — do not repeat one heading
 """
     elif role == "connect":
         focus_block = f"""Create exactly {n} CONNECTION / synthesis MCQs that link DIFFERENT ideas in the material
@@ -894,12 +934,16 @@ Prefer:
 - Apply / compare / debug scenarios grounded in the notes
 """
     else:
+        stay = (
+            "Stay inside this topic — do not quiz other lecture headings.\n"
+            if section_title
+            else "- Cover DIFFERENT sections — do not cluster on one heading\n"
+        )
         focus_block = f"""Create exactly {n} CONCEPT / initiative MCQs from the lecture notes.
 
 Prefer:
 - Why / when / what breaks if / how X connects to Y
-- Cover DIFFERENT sections — do not cluster on one heading
-- Scenario questions answerable from the notes (not trivia about the filename)
+{stay}- Scenario questions answerable from the notes (not trivia about the filename)
 """
     return f"""You are a demanding tutor writing a practice quiz from the student's lecture notes.
 
@@ -1049,20 +1093,19 @@ def generate_quiz_items(
     """
     Generate MCQs from study notes via role-based AI handler calls (task=quiz_gen).
 
-    Default engine (when the note has topics): walk each topic with a *small*
-    context window (~3.5k chars), tag every question with topic_id + note_path,
-    then combine into one deck. Optional topic_ids only narrows the walk —
-    it is not a separate "partial page" mode.
-
-    focus: mixed | concept | coding | cover_all (cover_all ≈ mixed style + topic walk)
+    Default engine (when the note has topics): walk each topic **in lecture order**
+    with a small context window, generate a few MCQs per topic, tag every item
+    with topic_id + note_path, then combine. Does not stop after the first N
+    topics — covering the outline is the point (can take several LLM calls).
+    Optional topic_ids only narrows which topics to walk.
     """
     focus_s = (focus or "mixed").strip().lower()
     if focus_s not in {"mixed", "concept", "coding", "cover_all"}:
         focus_s = "mixed"
     # cover_all is an alias for "walk every topic" — question style stays mixed
     style_focus = "mixed" if focus_s == "cover_all" else focus_s
-    max_n = 50
-    n = max(1, min(int(count or 12), max_n))
+    requested_n = max(1, min(int(count or 12), 160))
+    n = requested_n
     if prefer_notes is None:
         prefer_notes = bool(any((t or "").strip() for t in source_texts))
 
@@ -1090,6 +1133,7 @@ def generate_quiz_items(
         "call_plan": [],
         "sections_covered": [],
         "topics_covered": [],
+        "topic_index": [],
         "concepts": [],
         "llm_calls": 0,
         "questions_from_llm": 0,
@@ -1145,7 +1189,12 @@ def generate_quiz_items(
         topic_ids=topic_ids,
     )
     use_topic_loop = bool(sections)
-    max_calls = 64 if use_topic_loop else max(12, len(plan) * 3)
+    if use_topic_loop:
+        per_topic, n = sequential_topic_quota(requested_n, len(sections))
+    else:
+        per_topic = 0
+        n = requested_n
+    max_calls = max(64, len(sections) * 6 + 16) if use_topic_loop else max(12, len(plan) * 3)
     empty_streak = 0
     TOPIC_BODY_CAP = 3500
 
@@ -1184,6 +1233,8 @@ def generate_quiz_items(
             out["hint"] = f"Review topic: {tid or concept}"
         return out
 
+    HARD_CAP = 160
+
     def _run_batch(
         *,
         role: str,
@@ -1193,7 +1244,7 @@ def generate_quiz_items(
         label: str = "",
     ) -> int:
         nonlocal empty_streak
-        need = max(0, min(int(need), n - len(questions), 4))
+        need = max(0, min(int(need), HARD_CAP - len(questions), 4))
         if need <= 0 or len(call_log) >= max_calls:
             return 0
         material_s = (material or "")[:TOPIC_BODY_CAP]
@@ -1251,9 +1302,9 @@ def generate_quiz_items(
         label: str = "",
     ) -> None:
         """Retry until this job's quota is met (or empty streak / budget)."""
-        remaining = max(0, min(int(quota), n - len(questions)))
+        remaining = max(0, min(int(quota), HARD_CAP - len(questions)))
         attempts = 0
-        while remaining > 0 and len(questions) < n and len(call_log) < max_calls:
+        while remaining > 0 and len(questions) < HARD_CAP and len(call_log) < max_calls:
             if empty_streak >= 4:
                 break
             got = _run_batch(
@@ -1277,22 +1328,40 @@ def generate_quiz_items(
             return ["concept", "definition"]
         return ["concept", "coding"]
 
-    # Primary engine: walk each topic with a small context window, then combine.
+    def _topic_jobs(quota: int) -> list[tuple[str, int]]:
+        quota = max(1, int(quota))
+        if style_focus == "coding":
+            return [("coding", quota)]
+        if style_focus == "concept":
+            defn = max(1, quota // 2) if quota >= 2 else 0
+            concept_n = quota - defn
+            jobs = [("concept", concept_n)]
+            if defn:
+                jobs.append(("definition", defn))
+            return jobs
+        concept_n = (quota + 1) // 2
+        coding_n = quota - concept_n
+        jobs = [("concept", concept_n)]
+        if coding_n:
+            jobs.append(("coding", coding_n))
+        return jobs
+
+    # Primary engine: sequential topic walk (small context), then optional fill.
     if use_topic_loop:
         empty_streak = 0
-        roles = _topic_roles()
-        per_topic = max(1, min(3, (n + len(sections) - 1) // max(1, len(sections))))
-        for idx, (heading, body) in enumerate(sections):
-            if len(questions) >= n or empty_streak >= 4:
+        for heading, body in sections:
+            if len(call_log) >= max_calls or len(questions) >= HARD_CAP:
                 break
-            role = roles[idx % len(roles)]
-            _fill_job(
-                role=role,
-                quota=min(per_topic, n - len(questions)),
-                material=body,
-                section_title=heading,
-                label=f"topic:{heading[:48]}",
-            )
+            for role, quota in _topic_jobs(per_topic):
+                if len(call_log) >= max_calls or len(questions) >= HARD_CAP:
+                    break
+                _fill_job(
+                    role=role,
+                    quota=min(quota, HARD_CAP - len(questions)),
+                    material=body,
+                    section_title=heading,
+                    label=f"topic:{heading[:48]}",
+                )
         if len(questions) < n and empty_streak < 4 and len(sections) >= 2:
             digest = "\n".join(
                 f"- {h}\n  {(b[:280]).strip()}" for h, b in sections[:12]
@@ -1351,8 +1420,8 @@ def generate_quiz_items(
                 break
 
     llm_count = len(questions)
-    if len(questions) < n:
-        fallback = _extractive_quiz_from_notes(source_texts or [combined], n, topic)
+    if len(questions) < requested_n and llm_count == 0:
+        fallback = _extractive_quiz_from_notes(source_texts or [combined], requested_n, topic)
         for item in fallback.get("questions") or []:
             quality_key = _mcq_quality_key(item)
             if not quality_key or quality_key in question_keys or _is_low_quality_mcq(item):
@@ -1361,12 +1430,16 @@ def generate_quiz_items(
             item["id"] = f"q{len(questions) + 1}"
             questions.append(_tag_item(item, ""))
             question_keys.add(quality_key)
-            if len(questions) >= n:
+            if len(questions) >= requested_n:
                 break
 
     extracted = max(0, len(questions) - llm_count)
-    final = [_tag_item(q) if "tags" not in q else q for q in questions[:n]]
-    if llm_count >= n:
+    tagged = [_tag_item(q) if "tags" not in q else q for q in questions]
+    if llm_count == 0:
+        final = tagged[:requested_n]
+    else:
+        final = _trim_keeping_topics(tagged, max(n, 160))
+    if llm_count >= min(n, len(final)) and llm_count > 0:
         source = "llm"
     elif llm_count > 0:
         source = "mixed"
@@ -1381,13 +1454,25 @@ def generate_quiz_items(
         pass
 
     topics_covered = []
-    for h, _ in sections:
+    topic_index: list[dict[str, Any]] = []
+    for h, body in sections:
         m = re.match(r"^(L\d+-T\d+)", h, re.I)
         if m:
-            topics_covered.append(m.group(1).upper())
+            tid = m.group(1).upper()
+            title = h.split("—", 1)[-1].strip() if "—" in h else h
+            topics_covered.append(tid)
+            qn = sum(1 for q in final if str(q.get("topic_id") or "") == tid)
+            topic_index.append(
+                {"topic_id": tid, "title": title[:120], "question_count": qn, "char_count": len(body)}
+            )
             continue
         m2 = re.match(r"^(\d+(?:\.\d+)*)\b", h)
-        topics_covered.append(m2.group(1) if m2 else h[:80])
+        tid = m2.group(1) if m2 else h[:80]
+        topics_covered.append(tid)
+        qn = sum(1 for q in final if str(q.get("topic_id") or q.get("topic") or "") == tid)
+        topic_index.append(
+            {"topic_id": tid, "title": h[:120], "question_count": qn, "char_count": len(body)}
+        )
 
     return {
         "questions": final,
@@ -1397,6 +1482,7 @@ def generate_quiz_items(
         "call_plan": [{"role": r, "count": c} for r, c in plan],
         "sections_covered": [h for h, _ in sections] if sections else [],
         "topics_covered": topics_covered,
+        "topic_index": topic_index,
         "concepts": [q.get("concept") for q in final if q.get("concept")],
         "llm_calls": len(call_log),
         "questions_from_llm": min(llm_count, len(final)),

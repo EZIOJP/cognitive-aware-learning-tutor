@@ -8,7 +8,7 @@ import { Button } from "../app/components/ui/button";
 import { Card } from "../app/components/ui/card";
 
 export function ProjectAgentPage() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, sessionReady } = useAuth();
   const [snapshot, setSnapshot] = useState<AgentSnapshot | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -23,12 +23,20 @@ export function ProjectAgentPage() {
     void load();
   }, [load]);
 
+  if (!sessionReady) {
+    return (
+      <div className="p-8 max-w-lg mx-auto text-center text-muted-foreground">
+        Loading project agent…
+      </div>
+    );
+  }
+
   if (!isAuthenticated) {
     return (
       <div className="p-8 max-w-lg mx-auto text-center space-y-4">
-        <p className="text-muted-foreground">Sign in to use the Project Agent with codebase access.</p>
+        <p className="text-muted-foreground">Start the local API with run.bat, then refresh.</p>
         <Button asChild>
-          <Link to="/login">Sign in</Link>
+          <Link to="/">Dashboard</Link>
         </Button>
       </div>
     );

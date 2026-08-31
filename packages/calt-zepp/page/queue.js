@@ -6,6 +6,18 @@ import { localStorage } from '@zos/storage'
 export const PENDING_QUEUE_KEY = 'calt_pending_sync_queue'
 export const PENDING_QUEUE_DAYS = 7
 export const CHUNK_RESUME_KEY = 'calt_chunk_resume'
+export const SYNCED_DAYS_KEY = 'calt_synced_days'
+export const LAST_SYNCED_DAY_KEY = 'calt_last_synced_day'
+
+/**
+ * How long a day that the server has NOT accepted stays on the watch.
+ * Accepted days are dropped after PENDING_QUEUE_DAYS since the server owns
+ * them; unsent days get much longer so a few weeks away from the PC cannot
+ * silently delete health data that was never delivered.
+ */
+export const UNSENT_KEEP_DAYS = 30
+const SYNCED_HISTORY_MAX = 60
+const DAY_MS = 24 * 60 * 60 * 1000
 
 export function localDateKey() {
   const d = new Date()
@@ -30,13 +42,102 @@ function writeQueue(queue) {
   } catch (_) {}
 }
 
+function readSynced() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(SYNCED_DAYS_KEY) || '{}') || {}
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {}
+    return raw
+  } catch (_) {
+    return {}
+  }
+}
+
+function writeSynced(map) {
+  try {
+    localStorage.setItem(SYNCED_DAYS_KEY, JSON.stringify(map))
+  } catch (_) {}
+}
+
+function dayKeyFrom(ms) {
+  const d = new Date(ms)
+  const m = `${d.getMonth() + 1}`.padStart(2, '0')
+  const day = `${d.getDate()}`.padStart(2, '0')
+  return `${d.getFullYear()}-${m}-${day}`
+}
+
 function pruneQueue(queue) {
-  const cutoff = Date.now() - PENDING_QUEUE_DAYS * 24 * 60 * 60 * 1000
+  const synced = readSynced()
+  const now = Date.now()
   Object.keys(queue).forEach((key) => {
     const stamp = Date.parse(`${key}T00:00:00`)
-    if (!Number.isFinite(stamp) || stamp < cutoff) delete queue[key]
+    if (!Number.isFinite(stamp)) {
+      delete queue[key]
+      return
+    }
+    const ageDays = (now - stamp) / DAY_MS
+    const keep = synced[key] ? PENDING_QUEUE_DAYS : UNSENT_KEEP_DAYS
+    if (ageDays > keep) delete queue[key]
   })
   return queue
+}
+
+/** Record that every chunk of `day` was accepted, and advance the watermark. */
+export function markDaySynced(day) {
+  if (!day) return
+  const map = readSynced()
+  map[day] = new Date().toISOString()
+  const keys = Object.keys(map).sort()
+  while (keys.length > SYNCED_HISTORY_MAX) {
+    delete map[keys.shift()]
+  }
+  writeSynced(map)
+  const prev = lastSyncedDay()
+  if (!prev || day > prev) {
+    try {
+      localStorage.setItem(LAST_SYNCED_DAY_KEY, day)
+    } catch (_) {}
+  }
+}
+
+export function lastSyncedDay() {
+  try {
+    const v = String(localStorage.getItem(LAST_SYNCED_DAY_KEY) || '')
+    return /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : ''
+  } catch (_) {
+    return ''
+  }
+}
+
+/**
+ * Days still awaiting delivery, oldest first.
+ *
+ * The queue itself is the source of truth: a day is removed only once every
+ * chunk is ACKed, and a re-dump puts it back. Deliberately NOT filtered by the
+ * synced map, or re-dumping a day already sent today would never resend.
+ */
+export function pendingDays() {
+  return queuedDays()
+}
+
+/**
+ * Days between the watermark and today that hold no snapshot and were never
+ * synced. The watch sensors only report the current day, so these can never be
+ * reconstructed — they are surfaced instead of being silently skipped.
+ */
+export function gapDays(today) {
+  const from = lastSyncedDay()
+  const end = Date.parse(`${today}T00:00:00`)
+  let cur = Date.parse(`${from}T00:00:00`)
+  if (!from || !Number.isFinite(cur) || !Number.isFinite(end)) return []
+
+  const queue = readQueue()
+  const synced = readSynced()
+  const out = []
+  for (cur += DAY_MS; cur < end; cur += DAY_MS) {
+    const key = dayKeyFrom(cur)
+    if (!queue[key] && !synced[key]) out.push(key)
+  }
+  return out
 }
 
 function hasSleep(health) {

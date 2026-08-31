@@ -234,7 +234,7 @@ def start_review_session(
     cards = rc_mod.list_due_cards(db, user_id=user.id, limit=limit, domains=domains)
     if not cards:
         raise ValueError("No cards due for review right now.")
-    items = [rc_mod.card_to_quiz_item(c) for c in cards]
+    items = rc_mod.expand_cards_to_quiz_items(cards)
     config: dict[str, Any] = {"time_limit_sec": time_limit_sec, "per_question_sec": per_question_sec}
     payload = _build_session_payload(config, items=items, extra={"review_mode": True})
     session_id = create_global_session(db, user_id=user.id, domain="mixed", payload=payload)
@@ -899,7 +899,36 @@ def _submit_study(
         )
 
     mastery = 0
-    if eligible_for_review:
+    if item.get("schedule_topic_pack"):
+        pack_id = str(item.get("review_card_id") or "")
+        scores = sess["payload"].setdefault("topic_pack_scores", {})
+        if pack_id:
+            scores.setdefault(pack_id, []).append(bool(correct))
+        pack_size = int(item.get("pack_size") or 1)
+        pack_index = int(item.get("pack_index") or 0)
+        if pack_id and pack_index + 1 >= pack_size:
+            pack_results = scores.get(pack_id) or []
+            pack_ok = sum(1 for x in pack_results if x) * 2 >= max(1, len(pack_results))
+            topic_id = str(item.get("topic_id") or topic or "topic")
+            mastery = _record_review_card(
+                db,
+                user=user,
+                domain=domain,
+                item_id=f"topic-{topic_id}",
+                label=str(item.get("topic") or topic_id)[:300],
+                payload={
+                    "kind": "topic_pack",
+                    "topic_id": topic_id,
+                    "questions": [it for it in items if str(it.get("review_card_id")) == pack_id],
+                },
+                correct=pack_ok,
+                time_taken_ms=time_taken_ms,
+                topic=topic_id[:160],
+                note_path=note_path or None,
+                fmt="mcq",
+                deck_id=int(deck_id) if deck_id else None,
+            )
+    elif eligible_for_review:
         mastery = _record_review_card(
             db,
             user=user,
@@ -929,6 +958,7 @@ def _submit_study(
     if (
         not correct
         and eligible_for_review
+        and not item.get("schedule_topic_pack")
         and not item.get("_requeued")
         and (
             (fmt == "mcq" and kind not in ("vocab", "math", "code"))

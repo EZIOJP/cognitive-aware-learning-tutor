@@ -4,11 +4,16 @@ import {
   MathGridCanvas,
   type MathCanvasHandle,
 } from "../../components/math-canvas";
+import {
+  OcrReviewPanel,
+  canSubmitWithOcr,
+  needsOcrConfirm,
+} from "../../components/math-canvas/OcrReviewPanel";
+import { lastBandBboxFromMetrics } from "../../components/math-canvas/lastBandBbox";
 import { Button } from "../../app/components/ui/button";
 import {
-  fetchOcrStatus,
   postMathOcr,
-  type MathOcrStatus,
+  type MathOcrResult,
 } from "../../api/mathClient";
 
 export type MathQuizOcrMeta = {
@@ -18,6 +23,7 @@ export type MathQuizOcrMeta = {
   strokeMetricsJson?: string;
   confidence: number;
   needsReview: boolean;
+  ocrResult?: MathOcrResult;
 };
 
 type Props = {
@@ -25,7 +31,7 @@ type Props = {
   value: string;
   onChange: (value: string) => void;
   onOcrMetaChange?: (meta: MathQuizOcrMeta | null) => void;
-  /** Reset canvas when the question id changes. */
+  onOcrConfirmChange?: (confirmed: boolean) => void;
   resetKey?: string;
 };
 
@@ -44,37 +50,38 @@ export function latexToGradeable(latex: string): string {
   return s;
 }
 
-/**
- * Handwriting answer pad for math free-text quiz items.
- * Draw → Recognize → edit → parent submits the text string.
- */
 export function MathQuizAnswerPanel({
   disabled = false,
   value,
   onChange,
   onOcrMetaChange,
+  onOcrConfirmChange,
   resetKey,
 }: Props) {
   const canvasRef = useRef<MathCanvasHandle>(null);
   const [ocrBusy, setOcrBusy] = useState(false);
   const [ocrError, setOcrError] = useState<string | null>(null);
-  const [ocrStatus, setOcrStatus] = useState<MathOcrStatus | null>(null);
-  const [lastConfidence, setLastConfidence] = useState<number | null>(null);
-
-  useEffect(() => {
-    void fetchOcrStatus().then(setOcrStatus);
-  }, []);
+  const [ocrResult, setOcrResult] = useState<MathOcrResult | null>(null);
+  const [ocrConfirmed, setOcrConfirmed] = useState(false);
+  const [cropBbox, setCropBbox] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
+  const [hasInk, setHasInk] = useState(false);
 
   useEffect(() => {
     canvasRef.current?.clearAll();
     setOcrError(null);
-    setLastConfidence(null);
+    setOcrResult(null);
+    setOcrConfirmed(false);
+    setCropBbox(null);
+    setHasInk(false);
     onOcrMetaChange?.(null);
+    onOcrConfirmChange?.(true);
   }, [resetKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleRecognize = useCallback(async () => {
     setOcrBusy(true);
     setOcrError(null);
+    setOcrConfirmed(false);
+    onOcrConfirmChange?.(!needsOcrConfirm(null));
     try {
       if (!canvasRef.current?.hasContent()) {
         setOcrError("Draw your answer on the grid first.");
@@ -87,13 +94,20 @@ export function MathQuizAnswerPanel({
       }
       const paths = await canvasRef.current.exportPaths();
       const metrics = canvasRef.current.exportStrokeMetrics?.() ?? null;
+      const crop = lastBandBboxFromMetrics(metrics);
+      setCropBbox(crop);
+      setHasInk(true);
       const data = await postMathOcr(png, {
         paths_json: paths?.length ? JSON.stringify(paths) : undefined,
         stroke_metrics_json: metrics ? JSON.stringify(metrics) : undefined,
+        crop_bbox: crop ?? undefined,
       });
+      setOcrResult(data);
       const gradeable = latexToGradeable(data.latex) || data.latex.trim();
       onChange(gradeable);
-      setLastConfidence(data.confidence);
+      const needsGate = needsOcrConfirm(data);
+      setOcrConfirmed(!needsGate);
+      onOcrConfirmChange?.(!needsGate);
       onOcrMetaChange?.({
         predictedLatex: data.latex,
         canvasImage: png,
@@ -101,16 +115,14 @@ export function MathQuizAnswerPanel({
         strokeMetricsJson: metrics ? JSON.stringify(metrics) : undefined,
         confidence: data.confidence,
         needsReview: data.needs_review,
+        ocrResult: data,
       });
-      if (data.needs_review || data.confidence < 0.55) {
-        setOcrError("Low confidence — edit the answer below before Submit.");
-      }
     } catch (e) {
       setOcrError(e instanceof Error ? e.message : "Recognition failed");
     } finally {
       setOcrBusy(false);
     }
-  }, [onChange, onOcrMetaChange]);
+  }, [onChange, onOcrMetaChange, onOcrConfirmChange]);
 
   return (
     <div className="flex flex-col gap-2">
@@ -119,15 +131,6 @@ export function MathQuizAnswerPanel({
           Write your answer, then Recognize. Edit if OCR is wrong — that trains it.
         </p>
         <div className="flex items-center gap-2">
-          {ocrStatus && (
-            <span
-              className={`text-[10px] uppercase tracking-wide ${
-                ocrStatus.texteller_available ? "text-emerald-600" : "text-amber-600"
-              }`}
-            >
-              {ocrStatus.texteller_available ? "OCR ready" : "OCR offline — type below"}
-            </span>
-          )}
           <Button
             type="button"
             size="sm"
@@ -160,27 +163,47 @@ export function MathQuizAnswerPanel({
         <MathGridCanvas
           ref={canvasRef}
           roughPane={false}
-          onCanvasChange={() => setOcrError(null)}
+          onCanvasChange={() => {
+            setOcrError(null);
+            setHasInk(canvasRef.current?.hasContent() ?? false);
+          }}
         />
       </div>
 
       {ocrError && <p className="text-xs text-amber-600">{ocrError}</p>}
 
-      <label className="text-xs text-muted-foreground">
-        Answer (from OCR or typed)
-        {lastConfidence != null && (
-          <span className="ml-2 text-[10px]">confidence {(lastConfidence * 100).toFixed(0)}%</span>
-        )}
-      </label>
-      <input
-        type="text"
-        className="w-full rounded-lg border bg-background px-3 py-2 font-mono text-sm"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder="e.g. 20 or 1/2"
-        disabled={disabled}
-        autoComplete="off"
-      />
+      {(ocrResult || ocrBusy) && (
+        <OcrReviewPanel
+          result={ocrResult}
+          busy={ocrBusy}
+          value={value}
+          onChange={onChange}
+          cropBbox={cropBbox}
+          canvasWidth={400}
+          canvasHeight={240}
+          onConfirmChange={(ok) => {
+            setOcrConfirmed(ok);
+            onOcrConfirmChange?.(canSubmitWithOcr(ocrResult, ok, hasInk));
+          }}
+        />
+      )}
+
+      {!ocrResult && !ocrBusy && (
+        <label className="text-xs text-muted-foreground">
+          Answer (typed or use Recognize)
+          <input
+            type="text"
+            className="mt-1 w-full rounded-lg border bg-background px-3 py-2 font-mono text-sm"
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder="e.g. 20 or 1/2"
+            disabled={disabled}
+            autoComplete="off"
+          />
+        </label>
+      )}
     </div>
   );
 }
+
+export { canSubmitWithOcr, needsOcrConfirm };

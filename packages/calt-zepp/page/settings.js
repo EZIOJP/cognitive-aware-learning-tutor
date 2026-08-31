@@ -8,6 +8,7 @@ import { localStorage } from '@zos/storage'
 import { screen } from './layout'
 import { queuedDays, loadChunkResume } from './queue'
 import { formatHoursMins } from '../shared/timeFmt'
+import { sidePayload } from '../shared/sidePayload'
 
 function payloadSummary() {
   try {
@@ -143,6 +144,29 @@ Page({
       y += btnH + gap
     }
 
+    addBtn('Test PC', 0x2a4a6a, 0x1e364d, () => {
+      if (!messageBuilder) return
+      if (this.hostW) this.hostW.setProperty(prop.TEXT, 'Testing…')
+      messageBuilder
+        .request({ method: 'PING' })
+        .then((res) => {
+          const p = sidePayload(res)
+          const ok = !!(p.ok || p.healthOk)
+          const host = p.host || '—'
+          if (this.hostW) {
+            this.hostW.setProperty(
+              prop.TEXT,
+              ok ? `PC OK · ${host}` : `PC fail · ${(p.errors && p.errors[0]) || p.diag || 'offline'}`,
+            )
+            try {
+              this.hostW.setProperty(prop.COLOR, ok ? 0x88c0bb : 0xff6666)
+            } catch (_) {}
+          }
+        })
+        .catch(() => {
+          if (this.hostW) this.hostW.setProperty(prop.TEXT, 'Test failed · phone link?')
+        })
+    })
     addBtn('Sync log', 0x333333, 0x222222, () => push({ url: 'page/log' }))
     addBtn('Back', 0x1a9b8e, 0x147a70, () => back())
 
@@ -159,9 +183,14 @@ Page({
     if (messageBuilder) {
       messageBuilder
         .request({ method: 'GET_SETTINGS' })
-        .then((s) => {
-          const host = (s && (s.host || s.last_good_host || s.base_url)) || '—'
-          this.hostW.setProperty(prop.TEXT, `Host ${host}`)
+        .then((res) => {
+          const s = sidePayload(res)
+          const host = (s.host || s.last_good_host || s.base_url) || '—'
+          const warn =
+            s.url_issues && s.url_issues.length
+              ? `\n⚠ ${String(s.url_issues[0]).slice(0, 48)}`
+              : ''
+          this.hostW.setProperty(prop.TEXT, `Host ${host}${warn}`)
         })
         .catch(() => {})
     }

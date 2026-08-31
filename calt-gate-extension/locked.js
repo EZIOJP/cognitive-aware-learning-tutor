@@ -384,7 +384,10 @@ async function refresh() {
   const api = extRuntime();
   // Prefer live gate; fall back to background gateCache (includes stats + links).
   try {
-    const r = await fetch(GATE_API_URL, { cache: "no-store" });
+    const r = await fetch(GATE_API_URL, {
+      cache: "no-store",
+      headers: { "X-CALT-Extension": "calt-gate-locked" },
+    });
     if (!r.ok) throw new Error("HTTP " + r.status);
     const g = await r.json();
     applyGate(g, false);

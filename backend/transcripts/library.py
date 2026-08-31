@@ -8,6 +8,7 @@ import time
 from pathlib import Path
 from typing import Any, Literal
 
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from backend.models.study import LectureNote
@@ -78,14 +79,28 @@ def sync_disk_notes_for_user(db: Session, user_id: int) -> int:
     """Index unowned on-disk markdown into the current user's library."""
     from backend.transcripts.note_topics import remap_legacy_note_path
 
-    # Remap old lecture_N / lecture5 paths after the data_foundations move
+    # Remap old lecture_N / lecture5 paths after the data_foundations move.
+    # LectureNote.filename is globally unique — skip if another row already
+    # owns the canonical path (legacy + remapped duplicates).
+    occupied: set[str] = set()
+    for r in db.query(LectureNote).all():
+        if r.filename:
+            occupied.add(r.filename.replace("\\", "/"))
+        if r.relative_path:
+            occupied.add(r.relative_path.replace("\\", "/"))
+
     for row in db.query(LectureNote).filter(LectureNote.user_id == user_id).all():
         old = (row.relative_path or row.filename or "").replace("\\", "/")
         new = remap_legacy_note_path(old)
-        if new != old and (NOTES_DIR / new).is_file():
-            row.relative_path = new
-            row.filename = new
-            row.folder_path = _folder_from_relative(new)
+        if new == old or not (NOTES_DIR / new).is_file():
+            continue
+        if new in occupied:
+            continue
+        occupied.discard(old)
+        occupied.add(new)
+        row.relative_path = new
+        row.filename = new
+        row.folder_path = _folder_from_relative(new)
     db.commit()
 
     indexed_global = {
@@ -123,6 +138,15 @@ def sync_disk_notes_for_user(db: Session, user_id: int) -> int:
     if added:
         db.commit()
     return added
+
+
+def library_tree_for_user(db: Session, user_id: int) -> dict[str, Any]:
+    """Sync disk notes then return the tree; never fail the library UI on remap collisions."""
+    try:
+        sync_disk_notes_for_user(db, user_id)
+    except IntegrityError:
+        db.rollback()
+    return build_library_tree(db, user_id)
 
 
 def build_library_tree(db: Session, user_id: int) -> dict[str, Any]:

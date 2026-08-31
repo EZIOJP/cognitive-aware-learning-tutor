@@ -11,10 +11,13 @@ Launch helpers for Windows (`.bat`) and Linux/macOS (`.sh`). All scripts run fro
 | Script | Platform | Purpose |
 |--------|----------|---------|
 | **`run.bat`** (repo root) | Windows | Install deps if missing, migrate, start API + frontend |
+| **`update_and_restart.bat`** | Windows | After code changes: tracker only / stack only / API / extensions / full |
 | `run_all.bat` | Windows | Same (called by `run.bat`) |
 | `run_all.sh` | Linux/macOS | Migrate + API + frontend |
 | `run_backend.bat` | Windows | API only (`backend.main:app`) |
 | `run_frontend.bat` | Windows | Vite dev server |
+| `device_block_apply.bat` | Windows (admin) | Device-wide porn/YouTube block via hosts file (all apps) |
+| `device_block_remove.bat` | Windows (admin) | Remove CALT hosts block |
 
 ### Linux/macOS first-time setup
 

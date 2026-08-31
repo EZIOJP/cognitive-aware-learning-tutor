@@ -96,11 +96,25 @@ def test_build_day_status_aggregates(tmp_path, monkeypatch):
     }
 
     db = MagicMock()
+    productivity_stub = {
+        "date": "2026-08-04",
+        "pulse": 55,
+        "pulse_label": "Neutral",
+        "goal_pct": 17,
+        "goal_met": False,
+        "focus_quality": {"score": 80, "label": "Deep focus", "switches": 2},
+        "weekly": {"avg_pulse": 60, "goal_met_days": 3},
+        "study_mode_nudge": {"active": False, "until": None},
+    }
     with (
         patch("backend.behavior.distraction_gate.compute_distraction_gate", return_value=gate),
         patch(
             "backend.behavior.day_status._tracker_compact",
             return_value={"alive": True, "status": "running", "sessions_today": 2},
+        ),
+        patch(
+            "backend.behavior.day_productivity.build_productivity_snapshot",
+            return_value=productivity_stub,
         ),
     ):
         out = build_day_status(db, user_id=1, enqueue_notify=True)
@@ -116,6 +130,11 @@ def test_build_day_status_aggregates(tmp_path, monkeypatch):
     assert out["wearables"]["sitting_label"] == "0 hours 30 mins"
     assert out["hard_block"]["productive_label"] == "0 hours 40 mins"
     assert out["hard_block"]["daily_goal_label"] == "4 hours"
+    assert out["schema"] == 3
+    assert "productivity" in out
+    assert "comms" in out
+    assert "pulse" in out["productivity"]
+    assert "goal_pct" in out["productivity"]
     assert out["morning"]["suggested_wake"]["writable_alarm"] is False
     assert out["alert_enqueued"] is True
     assert "limits" in out
@@ -126,6 +145,10 @@ def test_build_day_status_aggregates(tmp_path, monkeypatch):
         patch(
             "backend.behavior.day_status._tracker_compact",
             return_value={"alive": True, "status": "running"},
+        ),
+        patch(
+            "backend.behavior.day_productivity.build_productivity_snapshot",
+            return_value=productivity_stub,
         ),
     ):
         out2 = build_day_status(db, user_id=1, enqueue_notify=True)

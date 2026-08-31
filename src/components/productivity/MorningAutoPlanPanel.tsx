@@ -27,7 +27,6 @@ import {
   SHUTDOWN_UPDATED_EVENT,
 } from "./shutdownPrefs";
 import { checkPlanOvercommit } from "./planCapacityUtils";
-import { loadProductivityGoals } from "./ProductivityGoalsPanel";
 
 function startOfDay(d: Date): Date {
   const x = new Date(d);

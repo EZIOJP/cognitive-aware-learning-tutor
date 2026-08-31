@@ -143,13 +143,13 @@ export function WearablesSyncPanel() {
         <div>
           <h3 className="font-semibold flex items-center gap-2 text-sm">
             <Watch size={16} className="text-primary" />
-            Amazfit health dump
+            CALT Sync health dump
           </h3>
           <p className="mt-1 text-xs text-muted-foreground">
-            CALT Sync 4.0 is a <span className="text-foreground">manual health dumper</span> — Dump
-            on the watch, then Send. Queue holds up to 7 days you previously captured (sensors do not
-            invent history). Install:{" "}
-            <code className="text-[10px]">packages\calt-zepp\sideload.bat</code>
+            On the watch: <strong>Dump today</strong> → <strong>Send queue</strong> (Settings →{" "}
+            <strong>Test PC</strong> first). Send fills forward from the last synced day; the
+            watermark advances only after all four chunks of a day are ACKed. Dump daily — sensors
+            do not backfill days the app never ran.
           </p>
         </div>
         <label className="inline-flex items-center gap-2 text-xs text-muted-foreground">
@@ -173,11 +173,10 @@ export function WearablesSyncPanel() {
         }`}
       >
         <p className="text-[11px] text-amber-200/90 leading-relaxed">
-          Watch dump needs the <span className="text-foreground">desktop tracker hub</span> on{" "}
-          <code className="text-foreground">http://&lt;PC-LAN-IP&gt;:8765</code>. In Zepp → CALT Sync
-          settings set that Base URL + token{" "}
-          <code className="text-foreground">calt-local-wearables</code>. Replays are idempotent —
-          sending the same chunk twice will not duplicate Life Tracker / hub rows.
+          Replays are idempotent — sending the same chunk twice will not duplicate Life Tracker /
+          hub rows. Status on this page updates when ingest hits the main API (
+          <code className="text-foreground">:8000</code>); the watch sends to the tracker hub (
+          <code className="text-foreground">:8765</code>).
         </p>
         <div className="flex flex-wrap gap-x-4 gap-y-1 items-center">
           <span>

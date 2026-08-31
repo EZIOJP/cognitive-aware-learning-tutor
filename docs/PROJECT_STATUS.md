@@ -24,10 +24,11 @@ Plan (tracker board): [docs/superpowers/plans/2026-08-18-tracker-api-unified-boa
 - Live corpus RAG Knowledge Base UI
 
 ### Productivity
-- Desktop tracker → plan vs actual, day ribbon (sleep-clipped overlay), calendar (day view default; no Today panel)
-- Policy + propose plan + routines + week export (**wearables included**)
+- **CALT Desktop (PySide6)** — primary home for rules, bible/plan confirm, schedules, device block, watch hub, voice notes (`scripts\desktop_tracker\run_calt_desktop.bat`)
+- Website `/productivity` — **calendar** + plan-vs-actual (rules/watch/voice moved to desktop)
+- Desktop tracker engine (in-process with CALT Desktop) → plan vs actual, day ribbon, hub `:8765`
 - Distraction gate (bible → confirm plan → study mode)
-- **Productivity Pulse**, goals/alerts, activities inbox, shutdown ritual, weekly digest, focus quality, recurring gate schedules
+- **Productivity Pulse**, goals/alerts, activities inbox, shutdown ritual, weekly digest, focus quality
 - **Unified day-status (schema 3)** — mobile/watch/web board; ActivityWatch export API
 
 ### Life / hub / extras

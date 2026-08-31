@@ -78,13 +78,13 @@
 
 - [x] **Step 1:** Today tab — live gate snapshot (mode, focus min, morning next) via `TrackerService.latest_gate()` / day_status helpers; refresh timer
 - [x] **Step 2:** Rules tab — load/save productivity policy + category scores (reuse `productivity_policy` / `category_scores` modules) *(core fields: hard block, goal, exes; scores next)*
-- [ ] **Step 3:** Schedules tab — load/save `gate_schedules.json`
-- [ ] **Step 4:** Device tab — device_block status + apply/remove guidance (call `device_block` module)
-- [ ] **Step 5:** Bible tab — open PDF/reader or link; mark bible done via existing morning APIs/modules
-- [ ] **Step 6:** Plan tab — confirm plan CTA + “Edit calendar in browser” button to `http://localhost:5173/productivity`
-- [ ] **Step 7:** Qt free-time PIN dialog + hard-block notice dialog; wire tray / TrackerService hooks to prefer Qt when calt_desktop is running
+- [x] **Step 3:** Schedules tab — load/save `gate_schedules.json`
+- [x] **Step 4:** Device tab — device_block status + apply/remove guidance (call `device_block` module)
+- [x] **Step 5:** Bible tab — open PDF/reader or link; mark bible done via existing morning APIs/modules
+- [x] **Step 6:** Plan tab — confirm plan CTA + “Edit calendar in browser” button to `http://localhost:5173/productivity`
+- [x] **Step 7:** Qt free-time PIN dialog + hard-block notice dialog; wire tray / TrackerService hooks to prefer Qt when calt_desktop is running
 - [x] **Step 8:** Tests for policy load/save helpers (pure functions where possible)
-- [ ] **Step 9:** Commit Phase 1
+- [x] **Step 9:** Commit Phase 1
 
 **Done when:** Can arm hard-block, edit schedules, see today status, confirm morning steps without opening Tk or web policy panels.
 

@@ -17,7 +17,11 @@ from PySide6.QtWidgets import (
 )
 
 from backend.behavior.calt_desktop.constants import CALENDAR_URL, LOGIN_URL
+from backend.behavior.calt_desktop.tabs.bible import BibleTab
+from backend.behavior.calt_desktop.tabs.device import DeviceTab
+from backend.behavior.calt_desktop.tabs.plan import PlanTab
 from backend.behavior.calt_desktop.tabs.rules import RulesTab
+from backend.behavior.calt_desktop.tabs.schedules import SchedulesTab
 from backend.behavior.calt_desktop.tabs.today import TodayTab
 
 if TYPE_CHECKING:
@@ -64,26 +68,11 @@ class MainWindow(QMainWindow):
 
         tabs = QTabWidget()
         tabs.addTab(TodayTab(service), "Today")
-        tabs.addTab(
-            _placeholder("Bible", "Morning bible reader + mark done — next."),
-            "Bible",
-        )
-        tabs.addTab(
-            _placeholder(
-                "Plan",
-                "Confirm today's plan here next. Full calendar editor stays on the website.",
-            ),
-            "Plan",
-        )
+        tabs.addTab(BibleTab(service), "Bible")
+        tabs.addTab(PlanTab(service), "Plan")
         tabs.addTab(RulesTab(service), "Rules")
-        tabs.addTab(
-            _placeholder("Schedules", "Freedom-style recurring windows — next."),
-            "Schedules",
-        )
-        tabs.addTab(
-            _placeholder("Device", "Hosts / porn / social block — next."),
-            "Device",
-        )
+        tabs.addTab(SchedulesTab(), "Schedules")
+        tabs.addTab(DeviceTab(), "Device")
         tabs.addTab(
             _placeholder("Watch", "CALT Sync hub status + setup — Phase 2."),
             "Watch",

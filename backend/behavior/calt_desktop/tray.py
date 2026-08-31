@@ -90,12 +90,9 @@ class DesktopTray:
             self._show_window()
 
     def _free_time_stub(self) -> None:
-        QMessageBox.information(
-            self._window,
-            "Free time",
-            "PIN free-time override moves here in Phase 1.\n"
-            "Until then use the legacy tray or API override.",
-        )
+        from backend.behavior.calt_desktop.dialogs import prompt_free_time
+
+        prompt_free_time(self._window)
 
     def _restart(self) -> None:
         reply = QMessageBox.question(

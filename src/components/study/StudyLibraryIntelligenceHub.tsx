@@ -139,8 +139,8 @@ export function StudyLibraryIntelligenceHub({
     <section className="study-library-glass w-72 shrink-0 flex flex-col p-3 min-h-0">
       <div className="flex items-center justify-between mb-2">
         <h2 className="font-semibold text-sm text-foreground">Study tools</h2>
-        <Link to="/ai-coach" className="text-primary hover:text-primary/80 text-xs">
-          AI Coach
+        <Link to="/review" className="text-primary hover:text-primary/80 text-xs">
+          Study Loop
         </Link>
       </div>
 
@@ -368,8 +368,8 @@ export function StudyLibraryIntelligenceHub({
         {tab === "quiz" && pasteOpen && onPasteQuiz && (
           <div className="space-y-1.5">
             <textarea
-              className="w-full h-24 text-[10px] bg-muted/40 border border-border rounded p-2 font-mono text-foreground"
-              placeholder="Paste web/book MCQs (Question 1 … A) … B) …)"
+              className="w-full h-28 text-[10px] bg-muted/40 border border-border rounded p-2 font-mono text-foreground"
+              placeholder={`Paste JSON, JSONL, or MCQ blocks.\n\nPer-question tags:\ntopic_id: L2-T07\nTags: numpy, L2-T08\n\n---\nQuestion 1\nWhat does np.array do?\nA) ...\nB) ...\nAnswer: A`}
               value={pasteText}
               onChange={(e) => setPasteText(e.target.value)}
             />
@@ -384,7 +384,7 @@ export function StudyLibraryIntelligenceHub({
                 setPasteOpen(false);
               }}
             >
-              Import into draft
+              Import & seed SRS
             </Button>
           </div>
         )}
@@ -412,9 +412,16 @@ export function StudyLibraryIntelligenceHub({
             quizQuestions.map((q, i) => (
               <div key={q.id} className="study-library-glass-card p-3">
                 <div className="flex items-start justify-between gap-1 mb-1">
-                  <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
-                    {q.concept || `Q${i + 1}`}
-                  </p>
+                  <div className="flex flex-wrap items-center gap-1.5 min-w-0">
+                    {q.topic_id ? (
+                      <code className="text-[9px] px-1 py-0.5 rounded bg-primary/15 text-primary font-mono shrink-0">
+                        {q.topic_id}
+                      </code>
+                    ) : null}
+                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground truncate">
+                      {q.concept || `Q${i + 1}`}
+                    </p>
+                  </div>
                   {onRemoveQuestion && !generating && (
                     <button
                       type="button"

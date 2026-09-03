@@ -31,7 +31,6 @@ Primary study loops:
 - Math Tutor: practice, canvas OCR, rule-based + optional local AI hints (/math-tutor)
 - Life Tracker: sleep, study minutes, mood, life score (/life-tracker)
 - Lecture Notes: Windows Live Captions → AI notes (/lecture-notes)
-- Project Agent: Gemma + codebase file access for finishing the app (/project-agent) — pairs with Cursor
 - Focus Mirror: webcam attention + Pomodoro red-border when unfocused 5s+ (plugin)
 - Pomodoro: focus/break cycles in the top bar
 

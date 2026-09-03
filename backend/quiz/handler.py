@@ -160,6 +160,8 @@ def _item_to_question(
                 "review_card_id": item.get("review_card_id"),
                 "source_chunk_id": item.get("source_chunk_id"),
                 "citation": item.get("citation"),
+                "entry_point": item.get("entry_point") or "",
+                "test_case_count": len(item.get("test_cases") or []),
             },
         }
         return _attach_session_meta(q, payload)
@@ -397,9 +399,124 @@ def start_session(
         count = int(config.get("count") or config.get("question_count") or 5)
         skill_id = config.get("node_id") or config.get("skill_id")
         skill_id_s = str(skill_id).strip() if skill_id else None
+        content_topic_id = str(config.get("topic_id") or "").strip() or None
+        note_topic_id = str(config.get("note_topic_id") or "").strip() or None
+        prefer_topic_ids = [
+            str(t).strip()
+            for t in (config.get("prefer_topic_ids") or [])
+            if str(t).strip()
+        ]
 
         items: list[dict[str, Any]] = []
-        if skill_id_s:
+        use_generator = bool(config.get("use_generator")) or (
+            content_topic_id or ""
+        ).startswith("math.gen.")
+        gen_id_cfg = config.get("gen_id")
+        adaptive_aptitude = bool(
+            config.get("adaptive_aptitude")
+            or config.get("adaptive")
+            or config.get("core_math_drill")
+        )
+
+        # Hybrid bank:
+        # 0) adaptive core aptitude → mathgenerator only, weighted by weak tags
+        # 1) explicit generator / use_generator
+        # 2) curated content_bank packs
+        # 3) generator fill for MT tag
+        # 4) legacy skill nodes / DB bank
+        if adaptive_aptitude:
+            from backend.quiz import math_generators as mg
+
+            items = mg.generate_quiz_items(
+                db,
+                count=count,
+                adaptive=True,
+                aptitude_only=True,
+                user_id=user.id,
+                note_topic_id=note_topic_id,
+                boost_note_topics=list(config.get("boost_note_topics") or []) or None,
+            )
+            topic = "Core math (adaptive)"
+        elif use_generator or gen_id_cfg is not None:
+            from backend.quiz import math_generators as mg
+
+            recipe = None
+            if gen_id_cfg is not None:
+                for r in mg.list_recipes():
+                    if r.gen_id == int(gen_id_cfg):
+                        recipe = r
+                        break
+            items = mg.generate_quiz_items(
+                db,
+                recipe=recipe,
+                topic_id=None if recipe else content_topic_id,
+                note_topic_id=None if (recipe or content_topic_id) else note_topic_id,
+                count=count,
+                adaptive=bool(config.get("adaptive")),
+                user_id=user.id,
+            )
+            topic = str(items[0].get("topic_title") or items[0].get("topic_id") or topic)
+        elif content_topic_id or note_topic_id or prefer_topic_ids:
+            from backend.quiz import content_bank as cb
+            from backend.quiz import math_generators as mg
+
+            gathered: list[dict[str, Any]] = []
+            # Generator topic_id alone
+            if content_topic_id and content_topic_id.startswith("math.gen."):
+                gathered = mg.generate_quiz_items(
+                    db, topic_id=content_topic_id, count=count
+                )
+            else:
+                if prefer_topic_ids:
+                    for tid in prefer_topic_ids:
+                        if tid.startswith("math.gen."):
+                            gathered.extend(
+                                mg.generate_quiz_items(db, topic_id=tid, count=max(2, count // 2))
+                            )
+                        else:
+                            gathered.extend(
+                                cb.build_quiz_items(kind="math", topic_id=tid, shuffle=True)
+                            )
+                else:
+                    gathered = cb.build_quiz_items(
+                        kind="math",
+                        topic_id=content_topic_id,
+                        note_topic_id=note_topic_id,
+                        shuffle=True,
+                    )
+                # Fill shortfall from generators mapped to the same MT tag
+                if len(gathered) < count and note_topic_id:
+                    try:
+                        extra_gen = mg.generate_quiz_items(
+                            db,
+                            note_topic_id=note_topic_id,
+                            count=count - len(gathered),
+                        )
+                        gathered.extend(extra_gen)
+                    except ValueError:
+                        pass
+            if not gathered:
+                # Last resort: generators for MT tag or any recipe
+                try:
+                    gathered = mg.generate_quiz_items(
+                        db,
+                        note_topic_id=note_topic_id,
+                        topic_id=content_topic_id,
+                        count=count,
+                    )
+                except ValueError as exc:
+                    raise ValueError(
+                        "No math questions for that topic in content bank or mathgenerator."
+                    ) from exc
+            items = gathered[: max(1, count)]
+            topic = str(
+                items[0].get("topic_title")
+                or items[0].get("topic_id")
+                or content_topic_id
+                or note_topic_id
+                or topic
+            )
+        elif skill_id_s:
             from backend.math.skills import generate_drill_items, get_node, node_status
 
             node = get_node(skill_id_s)
@@ -438,6 +555,10 @@ def start_session(
         if skill_id_s:
             extra["skill_id"] = skill_id_s
             extra["node_id"] = skill_id_s
+        if content_topic_id:
+            extra["topic_id"] = content_topic_id
+        if note_topic_id:
+            extra["note_topic_id"] = note_topic_id
         payload = _build_session_payload(config, items=items, extra=extra)
         session_id = create_global_session(db, user_id=user.id, domain="math", payload=payload)
         q = _study_question_from_payload(items, 0, "", db, payload)
@@ -773,20 +894,37 @@ def _submit_study(
         topic = word.get("word")
     elif kind == "math":
         expected = str(item.get("expected_answer") or "")
-        correct = answers_equivalent(expected, response)
-        strategy = str(item.get("hint") or item.get("explanation") or "").strip()
-        if correct:
-            feedback = "Correct!"
-            if time_taken_ms and time_taken_ms <= 3000:
-                feedback = "Correct — instant!"
-            elif time_taken_ms and time_taken_ms <= 8000:
-                feedback = "Correct — solid pace."
-            else:
-                feedback = "Correct — aim for under 8s next time."
+        open_ended = (
+            not expected.strip()
+            or str(item.get("answer_format") or "").lower() == "open"
+            or "no-answer" in [str(t).lower() for t in (item.get("tags") or [])]
+        )
+        if open_ended:
+            # Self-check: any non-empty attempt counts; show solution if present.
+            correct = bool(response.strip())
+            strategy = str(item.get("hint") or item.get("explanation") or "").strip()
+            steps = item.get("solution_steps") or []
+            sol = strategy or ("\n".join(str(s) for s in steps[:8] if s))
+            feedback = "Recorded (open problem — check the solution)."
+            if sol:
+                feedback = f"{feedback}\n\nSolution:\n{sol}"
+            elif not correct:
+                feedback = "Write any attempt / outline, then continue."
         else:
-            feedback = f"Expected: {expected}"
-            if strategy:
-                feedback = f"{feedback}\n\nStrategy: {strategy}"
+            correct = answers_equivalent(expected, response)
+            strategy = str(item.get("hint") or item.get("explanation") or "").strip()
+            if correct:
+                feedback = "Correct!"
+                if time_taken_ms and time_taken_ms <= 3000:
+                    feedback = "Correct — instant!"
+                elif time_taken_ms and time_taken_ms <= 8000:
+                    feedback = "Correct — solid pace."
+                else:
+                    feedback = "Correct — aim for under 8s next time."
+            else:
+                feedback = f"Expected: {expected}"
+                if strategy:
+                    feedback = f"{feedback}\n\nStrategy: {strategy}"
         label = str(item.get("prompt") or item.get("topic") or "Math")[:300]
         domain = "math"
         payload = dict(item)
@@ -797,7 +935,7 @@ def _submit_study(
             topic=topic,
             prompt=str(item.get("prompt") or ""),
             user_answer=response,
-            expected_answer=expected,
+            expected_answer=expected or "(open)",
             is_correct=correct,
             question_id=item.get("question_id"),
             generated_id=item.get("generated_id"),
@@ -955,23 +1093,46 @@ def _submit_study(
         }
     )
     requeued = False
+    retry_count = int(item.get("_retry_count") or 0)
+    max_retries = 8 if (kind == "math" or item.get("repeat_until_correct")) else 1
     if (
         not correct
         and eligible_for_review
         and not item.get("schedule_topic_pack")
-        and not item.get("_requeued")
+        and retry_count < max_retries
         and (
             (fmt == "mcq" and kind not in ("vocab", "math", "code"))
             or kind == "math"
+            or item.get("repeat_until_correct")
         )
     ):
-        # Re-ask later in this session (mental math: drill weak facts again).
+        # Re-ask later in this session until correct (math / aptitude drills).
         retry = dict(item)
-        retry["id"] = f"{item.get('id') or item_id}-retry"
+        retry["id"] = f"{item.get('id') or item_id}-retry{retry_count + 1}"
+        retry["_retry_count"] = retry_count + 1
         retry["_requeued"] = True
         items.append(retry)
         sess["payload"]["items"] = items
         requeued = True
+
+        # When mathgen miss, inject one more live problem of the same recipe.
+        if kind == "math" and item.get("gen_id") is not None:
+            try:
+                from backend.quiz import math_generators as mg
+
+                extra = mg.generate_quiz_items(
+                    db,
+                    topic_id=str(item.get("topic_id") or ""),
+                    count=1,
+                    user_id=user.id,
+                )
+                for ex in extra:
+                    ex["repeat_until_correct"] = True
+                    ex["_retry_count"] = 0
+                    items.append(ex)
+                sess["payload"]["items"] = items
+            except Exception:  # noqa: BLE001
+                pass
 
     sess["index"] += 1
     save_global_session(db, sess)
@@ -1129,6 +1290,39 @@ def delete_deck(db: Session, *, user: User, deck_id: int) -> None:
         raise ValueError("Deck not found.")
     db.delete(row)
     db.commit()
+
+
+def wipe_practice_history(
+    db: Session,
+    *,
+    user: User | None = None,
+    all_users: bool = False,
+) -> dict[str, int]:
+    """Delete decks, ReviewCards, and quiz sessions (vocab word bank untouched)."""
+    from backend.models.review_card import ReviewCard
+
+    if not all_users and user is None:
+        raise ValueError("user required unless all_users=True")
+
+    uid = None if all_users else user.id
+
+    cards_q = db.query(ReviewCard)
+    decks_q = db.query(QuizDeck)
+    sess_q = db.query(QuizSession)
+    if uid is not None:
+        cards_q = cards_q.filter(ReviewCard.user_id == uid)
+        decks_q = decks_q.filter(QuizDeck.user_id == uid)
+        sess_q = sess_q.filter(QuizSession.user_id == uid)
+
+    cards = cards_q.delete(synchronize_session=False)
+    decks = decks_q.delete(synchronize_session=False)
+    sessions = sess_q.delete(synchronize_session=False)
+    db.commit()
+    return {
+        "review_cards": int(cards),
+        "quiz_decks": int(decks),
+        "quiz_sessions": int(sessions),
+    }
 
 
 def clear_review_cards(

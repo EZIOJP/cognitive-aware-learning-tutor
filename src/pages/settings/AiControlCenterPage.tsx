@@ -143,12 +143,10 @@ const FEATURE_TASKS = [
   { task: "notes_job", label: "Notes generation" },
   { task: "corpus_grounded", label: "Grounded RAG notes" },
   { task: "quiz_gen", label: "Quiz generation" },
-  { task: "coach", label: "AI coach chat" },
   { task: "classify", label: "App classification" },
   { task: "daily_review", label: "Daily review" },
   { task: "math_hint", label: "Math hints" },
   { task: "block_regen", label: "Block repair / regen" },
-  { task: "project_agent", label: "Project agent" },
   { task: "vocab_enrich", label: "GRE vocab card enrich" },
   { task: "gap_analysis", label: "Gap analysis" },
 ] as const;

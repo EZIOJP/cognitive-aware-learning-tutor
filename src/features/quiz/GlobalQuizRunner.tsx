@@ -9,8 +9,10 @@ import { submitTrainSample } from "../../api/mathClient";
 import {
   completeGlobalQuiz,
   fetchGlobalQuizQuestion,
+  runQuizCode,
   startGlobalQuiz,
   submitGlobalQuizAnswer,
+  type QuizCodeRunResult,
 } from "../../api/globalQuizClient";
 import type { GlobalQuizQuestion, QuizDomain, QuizSessionSummary } from "./types";
 import {
@@ -62,6 +64,8 @@ export function GlobalQuizRunner({
   const [ocrMeta, setOcrMeta] = useState<MathQuizOcrMeta | null>(null);
   const [ocrSubmitOk, setOcrSubmitOk] = useState(true);
   const [holdAdvance, setHoldAdvance] = useState(false);
+  const [testRunResult, setTestRunResult] = useState<QuizCodeRunResult | null>(null);
+  const [testRunBusy, setTestRunBusy] = useState(false);
   const pendingNextRef = useRef<GlobalQuizQuestion | null | undefined>(undefined);
   const timedOutRef = useRef(false);
   const hintRevealsRef = useRef(0);
@@ -69,6 +73,32 @@ export function GlobalQuizRunner({
   const configKey = useMemo(() => JSON.stringify(config), [config]);
   const isMathHandwrite =
     question?.domain === "math" && question.format === "free_text";
+  const hasTestCases =
+    question?.format === "code" && Number(question.meta?.test_case_count ?? 0) > 0;
+
+  const runTests = useCallback(async () => {
+    if (!question || !freeText.trim()) return;
+    setTestRunBusy(true);
+    setTestRunResult(null);
+    try {
+      const result = await runQuizCode({
+        code: freeText,
+        item_id: question.item_id,
+      });
+      setTestRunResult(result);
+    } catch (e) {
+      setTestRunResult({
+        correct: false,
+        feedback: e instanceof Error ? e.message : "Could not run tests",
+        all_passed: false,
+        passed: 0,
+        total: 0,
+        compile_error: e instanceof Error ? e.message : "Could not run tests",
+      });
+    } finally {
+      setTestRunBusy(false);
+    }
+  }, [freeText, question]);
 
   const perQuestionSec =
     question?.meta?.per_question_sec ??
@@ -140,6 +170,8 @@ export function GlobalQuizRunner({
     setOcrMeta(null);
     setOcrSubmitOk(true);
     setHoldAdvance(false);
+    setTestRunResult(null);
+    setTestRunBusy(false);
     pendingNextRef.current = undefined;
     setStartedAt(Date.now());
     timedOutRef.current = false;
@@ -332,7 +364,7 @@ export function GlobalQuizRunner({
           <div className="flex flex-wrap gap-2 self-start">
             <Button variant="outline" asChild>
               <Link to="/review?tab=due">
-                <Play className="h-4 w-4 mr-1" /> Review Hub
+                <Play className="h-4 w-4 mr-1" /> Study Loop
               </Link>
             </Button>
             <Button onClick={onClose}>Done</Button>
@@ -419,11 +451,51 @@ export function GlobalQuizRunner({
       )}
 
       {question.format === "code" && (
-        <PythonCodeBlock
-          code={freeText || (question.starter_code ?? "")}
-          onCodeChange={setFreeText}
-          readOnly={!!feedback}
-        />
+        <>
+          <PythonCodeBlock
+            code={freeText || (question.starter_code ?? "")}
+            onCodeChange={setFreeText}
+            readOnly={!!feedback}
+          />
+          {hasTestCases && !feedback && (
+            <div className="space-y-2">
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                className="gap-1.5"
+                disabled={testRunBusy || busy || !freeText.trim()}
+                onClick={() => void runTests()}
+              >
+                {testRunBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
+                {testRunBusy ? "Running tests…" : "Run tests"}
+              </Button>
+              {testRunResult && (
+                <div className="rounded-lg border bg-muted/30 p-3 text-sm space-y-2">
+                  <p className={testRunResult.all_passed ? "text-emerald-600" : "text-amber-600"}>
+                    {testRunResult.feedback}
+                  </p>
+                  {testRunResult.compile_error && (
+                    <pre className="text-xs whitespace-pre-wrap text-destructive">{testRunResult.compile_error}</pre>
+                  )}
+                  {(testRunResult.outcomes ?? []).length > 0 && (
+                    <ul className="space-y-1 text-xs">
+                      {(testRunResult.outcomes ?? []).map((o) => (
+                        <li
+                          key={o.name}
+                          className={o.passed ? "text-emerald-600" : "text-amber-600"}
+                        >
+                          {o.passed ? "✓" : "✗"} {o.name}
+                          {!o.passed && o.error ? ` — ${o.error}` : null}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        </>
       )}
 
       {hint && !feedback && (

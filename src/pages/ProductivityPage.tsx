@@ -17,7 +17,6 @@ import { PlanningSettingsPanel } from "../components/productivity/PlanningSettin
 import { DemoModePanel } from "../components/productivity/DemoModePanel";
 import { RoutinesPanel } from "../components/productivity/RoutinesPanel";
 import { ProposeStepPanel, applyRangeForHorizon } from "../components/productivity/ProposeStepPanel";
-import { resolveProposedOverlaps } from "../components/productivity/resolveProposedOverlaps";
 import { proposeBlockStatKind, blockDurationMinutes } from "../components/productivity/proposeBlockStats";
 import { Link, useSearchParams } from "react-router";
 import { useEaster, useLongPress } from "../easter";
@@ -25,12 +24,18 @@ import {
   fetchAdherence,
   createPlannerBlock,
   downloadProductivityWeekExport,
+  MAX_PRODUCTIVITY_EXPORT_DAYS,
   proposeWeekFromExport,
+  mergeProposeResult,
   applyProposedBlocks,
+  applyMyDay,
+  revertLastApply,
+  fetchPlanDrift,
+  fetchMorningOrderRule,
   fetchPlannerBlocks,
-  fetchRoutines,
   syncPlannerToGoogleCalendar,
   type AdherenceSummary,
+  type PlanDriftSummary,
   type ProposedPlannerBlock,
   type PlannerRoutine,
 } from "../api/plannerClient";
@@ -42,6 +47,7 @@ import ShutdownRitualPanel from "../components/productivity/ShutdownRitualPanel"
 import WeeklyDigestPanel from "../components/productivity/WeeklyDigestPanel";
 import SessionOverridePanel from "../components/productivity/SessionOverridePanel";
 import DesktopManagedBanner from "../components/productivity/DesktopManagedBanner";
+import { ExportRangeCalendar } from "../components/productivity/ExportRangeCalendar";
 import ProductivityGoalsPanel, {
   formatGoalsForPrompt,
   GOALS_UPDATED_EVENT,
@@ -51,7 +57,6 @@ import GoogleCalendarSyncPanel from "../components/productivity/GoogleCalendarSy
 import PlannerRemindersPanel from "../components/productivity/PlannerRemindersPanel";
 import {
   statsRangeForView,
-  draftCoveredBySavedBlocks,
   type CalendarStatsView,
 } from "../components/productivity/planVsActualUtils";
 import { endOfDay, startOfDay } from "date-fns";
@@ -101,55 +106,44 @@ function toApiDay(d: Date): string {
   return `${y}-${m}-${day}`;
 }
 
-const ROUTINE_WEEKDAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as const;
-
-/** Local wall-clock materialization of enabled routines (fallback if API omit them). */
-function materializeRoutineBlocks(
-  routines: PlannerRoutine[],
-  rangeStart: string,
-  horizonDays: number,
-): ProposedPlannerBlock[] {
-  const out: ProposedPlannerBlock[] = [];
-  const base = new Date(`${rangeStart}T12:00:00`);
-  for (let i = 0; i < Math.max(1, horizonDays); i++) {
-    const day = new Date(base);
-    day.setDate(base.getDate() + i);
-    const key = ROUTINE_WEEKDAYS[(day.getDay() + 6) % 7];
-    for (const r of routines) {
-      if (!r.enabled) continue;
-      const days = r.days?.length ? r.days : [...ROUTINE_WEEKDAYS];
-      if (!days.includes(key)) continue;
-      const [sh, sm] = (r.start_time || "09:00").split(":").map((x) => Number(x) || 0);
-      let eh: number;
-      let em: number;
-      if (r.end_time) {
-        [eh, em] = r.end_time.split(":").map((x) => Number(x) || 0);
-      } else {
-        const total = sh * 60 + sm + Math.max(1, r.duration_minutes || 30);
-        eh = Math.floor(total / 60) % 24;
-        em = total % 60;
-      }
-      const start = new Date(day.getFullYear(), day.getMonth(), day.getDate(), sh, sm, 0, 0);
-      let end = new Date(day.getFullYear(), day.getMonth(), day.getDate(), eh, em, 0, 0);
-      if (end <= start) end = new Date(start.getTime() + 30 * 60_000);
-      out.push({
-        title: r.title,
-        category: r.category || "personal",
-        start_at: start.toISOString(),
-        end_at: end.toISOString(),
-        source: "routine",
-      });
-    }
-  }
-  return out;
+function parseApiDay(iso: string): Date {
+  const [y, m, d] = iso.split("-").map(Number);
+  return new Date(y, (m || 1) - 1, d || 1);
 }
 
-function blocksOverlap(a: ProposedPlannerBlock, b: ProposedPlannerBlock): boolean {
-  const as = new Date(a.start_at).getTime();
-  const ae = new Date(a.end_at).getTime();
-  const bs = new Date(b.start_at).getTime();
-  const be = new Date(b.end_at).getTime();
-  return as < be && bs < ae;
+function addApiDays(iso: string, delta: number): string {
+  const d = parseApiDay(iso);
+  d.setDate(d.getDate() + delta);
+  return toApiDay(d);
+}
+
+/** Inclusive day count between YYYY-MM-DD bounds (local calendar). */
+function inclusiveExportDays(startIso: string, endIso: string): number {
+  const ms = parseApiDay(endIso).getTime() - parseApiDay(startIso).getTime();
+  return Math.floor(ms / 86_400_000) + 1;
+}
+
+function clampExportWindow(
+  startIso: string,
+  endIso: string,
+): { start: string; end: string; days: number; clamped: boolean } {
+  let start = startIso;
+  let end = endIso;
+  if (parseApiDay(start).getTime() > parseApiDay(end).getTime()) {
+    [start, end] = [end, start];
+  }
+  let days = inclusiveExportDays(start, end);
+  let clamped = false;
+  if (days < 1) {
+    days = 1;
+    start = end;
+    clamped = true;
+  } else if (days > MAX_PRODUCTIVITY_EXPORT_DAYS) {
+    start = addApiDays(end, -(MAX_PRODUCTIVITY_EXPORT_DAYS - 1));
+    days = MAX_PRODUCTIVITY_EXPORT_DAYS;
+    clamped = true;
+  }
+  return { start, end, days, clamped };
 }
 
 function calendarViewToStats(view: View): CalendarStatsView {
@@ -485,6 +479,15 @@ export function ProductivityPage() {
   const [exporting, setExporting] = useState(false);
   const [exportHint, setExportHint] = useState<string | null>(null);
   const [exportDays, setExportDays] = useState(7);
+  /** Draft for the days number input so typing "107" is not snapped mid-edit. */
+  const [exportDaysText, setExportDaysText] = useState("7");
+  const [exportEndDay, setExportEndDay] = useState(() => toApiDay(new Date()));
+  const [exportStartDay, setExportStartDay] = useState(() =>
+    addApiDays(toApiDay(new Date()), -6),
+  );
+  const [exportRangeNote, setExportRangeNote] = useState<string | null>(null);
+  /** When false (default), API skip_empty=true — omit blank calendar days. */
+  const [exportIncludeEmpty, setExportIncludeEmpty] = useState(false);
   const [exportInclude, setExportInclude] = useState({
     summary: true,
     patterns: true,
@@ -513,6 +516,9 @@ export function ProductivityPage() {
   const [dayLockedHours, setDayLockedHours] = useState(0);
   /** Goals step only checks off after Save or Next — not because defaults prefill text */
   const [goalsConfirmed, setGoalsConfirmed] = useState(false);
+  const [applyingDay, setApplyingDay] = useState(false);
+  const [planDrift, setPlanDrift] = useState<PlanDriftSummary | null>(null);
+  const [morningRule, setMorningRule] = useState<string | null>(null);
 
   const onRoutinesChange = useCallback((rows: PlannerRoutine[]) => {
     setHasRoutines(rows.length > 0);
@@ -538,6 +544,29 @@ export function ProductivityPage() {
     window.addEventListener(GOALS_UPDATED_EVENT, onGoals);
     return () => window.removeEventListener(GOALS_UPDATED_EVENT, onGoals);
   }, []);
+
+  const plannerDayKey = useMemo(() => toApiDay(plannerDay), [plannerDay]);
+
+  useEffect(() => {
+    let cancelled = false;
+    void fetchPlanDrift(plannerDayKey)
+      .then((d) => {
+        if (!cancelled) setPlanDrift(d);
+      })
+      .catch(() => {
+        if (!cancelled) setPlanDrift(null);
+      });
+    void fetchMorningOrderRule(plannerDayKey)
+      .then((r) => {
+        if (!cancelled) setMorningRule(r.rule);
+      })
+      .catch(() => {
+        if (!cancelled) setMorningRule(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [plannerDayKey, plannerRefresh, lastRefresh]);
 
   useEffect(() => {
     let cancelled = false;
@@ -739,6 +768,39 @@ export function ProductivityPage() {
     }
   }, [load, loadAdherence, loadDue, plannerDay]);
 
+  const applyExportWindow = useCallback(
+    (startIso: string, endIso: string, note?: string | null) => {
+      const next = clampExportWindow(startIso, endIso);
+      setExportStartDay(next.start);
+      setExportEndDay(next.end);
+      setExportDays(next.days);
+      setExportDaysText(String(next.days));
+      if (note !== undefined) setExportRangeNote(note);
+      else if (next.clamped) {
+        setExportRangeNote(
+          `Range clamped to ${MAX_PRODUCTIVITY_EXPORT_DAYS} days (API max).`,
+        );
+      } else {
+        setExportRangeNote(null);
+      }
+    },
+    [],
+  );
+
+  const setExportDaysWindow = useCallback(
+    (days: number, endIso?: string) => {
+      const end = endIso ?? exportEndDay;
+      const safe = Math.max(1, Math.min(MAX_PRODUCTIVITY_EXPORT_DAYS, Math.floor(days) || 1));
+      const start = addApiDays(end, -(safe - 1));
+      const note =
+        safe !== Math.floor(days)
+          ? `Days clamped to ${safe} (allowed 1–${MAX_PRODUCTIVITY_EXPORT_DAYS}).`
+          : null;
+      applyExportWindow(start, end, note);
+    },
+    [applyExportWindow, exportEndDay],
+  );
+
   const exportWeek = useCallback(async (format: "json" | "csv") => {
     setExporting(true);
     setExportHint(null);
@@ -747,17 +809,40 @@ export function ProductivityPage() {
         .filter(([, on]) => on)
         .map(([k]) => k)
         .join(",");
-      await downloadProductivityWeekExport(exportDays, format, {
+      const skipEmpty = !exportIncludeEmpty;
+      const days = Math.max(
+        1,
+        Math.min(MAX_PRODUCTIVITY_EXPORT_DAYS, Math.floor(exportDays) || 1),
+      );
+      if (days !== exportDays) {
+        setExportDaysWindow(days);
+      }
+      await downloadProductivityWeekExport(days, format, {
         include: include || "summary,patterns,policy",
         productiveOnly: exportProductiveOnly,
+        skipEmpty,
+        endDay: exportEndDay,
       });
-      setExportHint(`Downloaded ${exportDays}d ${format.toUpperCase()}`);
+      const emptyNote = skipEmpty ? " · empty days omitted" : " · empty days included";
+      const rangeLabel =
+        exportStartDay === addApiDays(exportEndDay, -(days - 1))
+          ? `${exportStartDay} → ${exportEndDay}`
+          : `${days}d ending ${exportEndDay}`;
+      setExportHint(`Downloaded ${rangeLabel} ${format.toUpperCase()}${emptyNote}`);
     } catch (e: unknown) {
       setExportHint(e instanceof Error ? e.message : "Export failed");
     } finally {
       setExporting(false);
     }
-  }, [exportDays, exportInclude, exportProductiveOnly]);
+  }, [
+    exportDays,
+    exportEndDay,
+    exportStartDay,
+    exportInclude,
+    exportIncludeEmpty,
+    exportProductiveOnly,
+    setExportDaysWindow,
+  ]);
 
   const runPropose = useCallback(
     async (mode: "smart" | "review" | "full") => {
@@ -787,59 +872,17 @@ export function ProductivityPage() {
           mode,
           draft_blocks: draftForReview?.length ? draftForReview : undefined,
         });
-        const from = new Date(`${proposeRangeStart}T00:00:00`);
-        const to = new Date(from);
-        to.setDate(to.getDate() + horizonDays);
 
-        const [calendarBlocks, routines] = await Promise.all([
-          fetchPlannerBlocks(from, to).catch(() => []),
-          fetchRoutines().catch(() => []),
-        ]);
-
-        const existing: ProposedPlannerBlock[] = calendarBlocks.map((b) => ({
-          title: b.title,
-          category: b.category,
-          start_at: b.start_at,
-          end_at: b.end_at,
-          source: "existing" as const,
-          existing_id: b.id,
-        }));
-
-        const proposedFresh = (res.blocks || [])
-          .map((b) => ({
+        const mergedRes = await mergeProposeResult({
+          api_blocks: (res.blocks || []).map((b) => ({
             ...b,
             source: (b.source ?? "study") as ProposedPlannerBlock["source"],
-          }))
-          // Drop drafts already on the calendar (routines applied earlier, etc.)
-          .filter((b) => !draftCoveredBySavedBlocks(b, calendarBlocks));
-
-        const hasRoutineFromApi = proposedFresh.some((b) => b.source === "routine");
-        const routineBlocks = hasRoutineFromApi
-          ? []
-          : materializeRoutineBlocks(
-              routines.filter((r) => r.enabled),
-              proposeRangeStart,
-              horizonDays,
-            ).filter((r) => !draftCoveredBySavedBlocks(r, calendarBlocks));
-
-        // Keep proposed study/break/routine hours that aren't already saved.
-        // Overlay existing calendar only where it doesn't collide with drafts.
-        const proposedCore = [
-          ...proposedFresh,
-          ...routineBlocks.filter((r) => !proposedFresh.some((p) => blocksOverlap(p, r))),
-        ];
-        const existingOverlay = existing.filter(
-          (e) => !proposedCore.some((p) => blocksOverlap(p, e)),
-        );
-        const mergedRaw = [...proposedCore, ...existingOverlay];
-        // Drop anything before today (local) — past days are not plannable.
-        const mergedFiltered = mergedRaw.filter((b) => {
-          const local = new Date(b.start_at);
-          const lk = `${local.getFullYear()}-${String(local.getMonth() + 1).padStart(2, "0")}-${String(local.getDate()).padStart(2, "0")}`;
-          return lk >= proposeRangeStart;
+          })),
+          range_start: proposeRangeStart,
+          horizon_days: horizonDays,
         });
-        // No overlaps: cascade later blocks (routines/existing keep earlier slots when tied)
-        const merged = resolveProposedOverlaps(mergedFiltered);
+        const merged = mergedRes.blocks;
+        if (mergedRes.rule) setMorningRule(mergedRes.rule);
 
         setProposed(merged);
         const label =
@@ -940,6 +983,46 @@ export function ProductivityPage() {
     },
     [proposed, bumpPlanner],
   );
+
+  const runApplyMyDay = useCallback(async () => {
+    setApplyingDay(true);
+    setExportHint(null);
+    try {
+      const goals = loadProductivityGoals();
+      const res = await applyMyDay({
+        goals: formatGoalsForPrompt(goals),
+        study_tasks: goals.studyTasks,
+      });
+      if (!res.ok) throw new Error(res.error || "Apply my day failed");
+      setExportHint(
+        `Apply my day · routines +${res.routines_created ?? 0} · blocks +${res.study_created ?? 0}`,
+      );
+      setPlanAppliedThisSession(true);
+      setProposed(null);
+      setProposeMeta(null);
+      bumpPlanner();
+      setPlanStep("done");
+    } catch (e: unknown) {
+      setExportHint(e instanceof Error ? e.message : "Apply my day failed");
+    } finally {
+      setApplyingDay(false);
+    }
+  }, [bumpPlanner]);
+
+  const runRevertApply = useCallback(async () => {
+    setApplyingDay(true);
+    setExportHint(null);
+    try {
+      const res = await revertLastApply();
+      if (!res.ok) throw new Error(res.error || "Nothing to revert");
+      setExportHint(`Reverted ${res.restored ?? 0} blocks from last apply`);
+      bumpPlanner();
+    } catch (e: unknown) {
+      setExportHint(e instanceof Error ? e.message : "Revert failed");
+    } finally {
+      setApplyingDay(false);
+    }
+  }, [bumpPlanner]);
 
   useEffect(() => {
     void loadDue();
@@ -1190,6 +1273,22 @@ export function ProductivityPage() {
           }}
         />
 
+        {planDrift && planDrift.block_count > 0 ? (
+          <div className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 space-y-1">
+            <p className="text-xs font-medium text-foreground">Plan vs actual</p>
+            <p className="text-[11px] text-muted-foreground">{planDrift.summary}</p>
+            {planDrift.lines.length > 0 ? (
+              <ul className="text-[11px] text-amber-100/90 space-y-0.5 list-disc list-inside">
+                {planDrift.lines.map((line) => (
+                  <li key={line}>{line}</li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-[11px] text-emerald-200/80">On track so far today.</p>
+            )}
+          </div>
+        ) : null}
+
         <ShutdownRitualPanel
           day={plannerDay}
           desktop={desktop}
@@ -1407,6 +1506,29 @@ export function ProductivityPage() {
               Work the steps below, then tap <strong className="text-foreground">Confirm plan</strong> to
               leave planning mode.
             </p>
+            {morningRule ? (
+              <p className="text-[10px] text-emerald-200/90 border border-emerald-500/20 rounded-lg px-2 py-1 bg-emerald-500/5">
+                {morningRule}
+              </p>
+            ) : null}
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                disabled={applyingDay}
+                onClick={() => void runApplyMyDay()}
+                className="rounded-lg bg-primary px-2 py-2 text-[11px] text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+              >
+                {applyingDay ? "Applying…" : "Apply my day"}
+              </button>
+              <button
+                type="button"
+                disabled={applyingDay}
+                onClick={() => void runRevertApply()}
+                className="rounded-lg border border-white/10 px-2 py-2 text-[11px] hover:bg-white/5 disabled:opacity-50"
+              >
+                Revert last apply
+              </button>
+            </div>
             <ConfirmPlanButton size="block" />
           </div>
           <nav aria-label="Plan steps" className="shrink-0 px-1 pt-0.5 pb-0.5">
@@ -1523,7 +1645,7 @@ export function ProductivityPage() {
                 horizonDays={horizonDays}
                 rangeStart={proposeRangeStart}
                 exportDays={exportDays}
-                onExportDaysChange={setExportDays}
+                onExportDaysChange={setExportDaysWindow}
                 proposing={proposing}
                 onGenerate={(mode) => void runPropose(mode)}
                 exportHint={exportHint}
@@ -1738,7 +1860,7 @@ export function ProductivityPage() {
               <h2 className="text-sm font-semibold text-foreground">Schedule preview</h2>
               <p className="text-[11px] text-muted-foreground mt-0.5">
                 {proposed?.length
-                  ? "Day timeline · dashed = draft · edit / move / delete on each block"
+                  ? "2D day grid · minute-positioned blocks · dashed = draft · Timeline edit for drag/move"
                   : "Today’s blocks live here — generate a schedule, draft auto plan, or click an hour to add."}
               </p>
             </div>
@@ -1880,21 +2002,124 @@ export function ProductivityPage() {
 
             <div className="grid gap-4 lg:grid-cols-2">
               <div className="space-y-4">
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <label className="space-y-1 text-xs text-muted-foreground">
-                    Date range
-                    <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-black/20 px-3 py-2">
-                      <span>Last</span>
+                <div className="space-y-2">
+                  <p className="text-xs font-medium text-muted-foreground">Date range</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {(
+                      [
+                        { days: 7, label: "7d" },
+                        { days: 30, label: "30d" },
+                        { days: 90, label: "90d" },
+                        { days: 365, label: "Year" },
+                      ] as const
+                    ).map(({ days, label }) => (
+                      <button
+                        key={days}
+                        type="button"
+                        onClick={() => {
+                          const end = toApiDay(new Date());
+                          setExportDaysWindow(days, end);
+                        }}
+                        className={`rounded-full border px-3 py-1 text-xs transition-colors ${
+                          exportDays === days &&
+                          exportEndDay === toApiDay(new Date())
+                            ? "border-primary/30 bg-primary/10 text-primary"
+                            : "border-white/10 bg-black/20 text-muted-foreground hover:bg-white/5"
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <label className="block space-y-1 text-xs text-muted-foreground">
+                      <span>From</span>
                       <input
-                        type="number"
-                        min={1}
-                        max={31}
-                        value={exportDays}
-                        onChange={(e) => setExportDays(Math.max(1, Math.min(31, Number(e.target.value) || 7)))}
-                        className="w-14 rounded border border-white/10 bg-black/30 px-2 py-1 text-foreground"
+                        type="date"
+                        value={exportStartDay}
+                        max={exportEndDay}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          if (!v) return;
+                          applyExportWindow(v, exportEndDay);
+                        }}
+                        className="w-full rounded border border-white/10 bg-black/30 px-2 py-1.5 text-foreground"
                       />
-                      <span>days</span>
-                    </div>
+                    </label>
+                    <label className="block space-y-1 text-xs text-muted-foreground">
+                      <span>To</span>
+                      <input
+                        type="date"
+                        value={exportEndDay}
+                        max={toApiDay(new Date())}
+                        min={exportStartDay}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          if (!v) return;
+                          applyExportWindow(exportStartDay, v);
+                        }}
+                        className="w-full rounded border border-white/10 bg-black/30 px-2 py-1.5 text-foreground"
+                      />
+                    </label>
+                  </div>
+
+                  <label className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                    <span>Days</span>
+                    <input
+                      type="number"
+                      inputMode="numeric"
+                      min={1}
+                      max={MAX_PRODUCTIVITY_EXPORT_DAYS}
+                      value={exportDaysText}
+                      onChange={(e) => {
+                        const raw = e.target.value;
+                        setExportDaysText(raw);
+                        if (raw.trim() === "") return;
+                        const n = Number(raw);
+                        if (!Number.isFinite(n) || n < 1) return;
+                        if (n <= MAX_PRODUCTIVITY_EXPORT_DAYS) {
+                          setExportDaysWindow(Math.floor(n));
+                        }
+                      }}
+                      onBlur={() => {
+                        const n = Number(exportDaysText);
+                        const clamped = Math.max(
+                          1,
+                          Math.min(
+                            MAX_PRODUCTIVITY_EXPORT_DAYS,
+                            Number.isFinite(n) && n >= 1 ? Math.floor(n) : exportDays || 7,
+                          ),
+                        );
+                        setExportDaysWindow(clamped);
+                      }}
+                      className="w-20 rounded border border-white/10 bg-black/30 px-2 py-1 text-foreground"
+                    />
+                    <span>
+                      (1–{MAX_PRODUCTIVITY_EXPORT_DAYS}; ends on selected To date)
+                    </span>
+                  </label>
+                  {exportRangeNote && (
+                    <p className="text-[10px] text-amber-300/90">{exportRangeNote}</p>
+                  )}
+                  <p className="text-[10px] text-muted-foreground">
+                    Up to {MAX_PRODUCTIVITY_EXPORT_DAYS} days; empty days omitted unless toggled below.
+                  </p>
+                </div>
+
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <label className="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm">
+                    <span>
+                      <span className="block font-medium">Include empty days</span>
+                      <span className="text-xs text-muted-foreground">
+                        Off by default — blank days are skipped.
+                      </span>
+                    </span>
+                    <input
+                      type="checkbox"
+                      checked={exportIncludeEmpty}
+                      onChange={(e) => setExportIncludeEmpty(e.target.checked)}
+                    />
                   </label>
                   <label className="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm">
                     <span>
@@ -1908,6 +2133,18 @@ export function ProductivityPage() {
                     />
                   </label>
                 </div>
+
+                <p className="rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-[11px] text-muted-foreground">
+                  Last {exportDays} day{exportDays === 1 ? "" : "s"}
+                  {" · "}
+                  {exportStartDay} → {exportEndDay}
+                  {" · "}
+                  {exportIncludeEmpty ? "empty days included" : "empty days omitted"}
+                  {" · "}
+                  CSV/JSON
+                  {exportProductiveOnly ? " · productive only" : ""}
+                </p>
+
                 <div>
                   <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
                     Include sections
@@ -1933,7 +2170,12 @@ export function ProductivityPage() {
                   </div>
                 </div>
               </div>
-              <div className="flex flex-col gap-2 justify-center">
+              <div className="flex flex-col gap-3">
+                <ExportRangeCalendar
+                  startIso={exportStartDay}
+                  endIso={exportEndDay}
+                  onRangeChange={(start, end) => applyExportWindow(start, end)}
+                />
                 <button
                   type="button"
                   disabled={exporting}

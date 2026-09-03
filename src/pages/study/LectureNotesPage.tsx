@@ -1,5 +1,5 @@
 import { Link, useSearchParams } from "react-router";
-import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { buildStudyQuizConfig } from "../../api/globalQuizClient";
 import { GlobalQuizRunner } from "../../features/quiz/GlobalQuizRunner";
 import {
@@ -12,7 +12,6 @@ import {
   PanelLeftOpen,
   PanelRight,
   Plus,
-  ScrollText,
   Search,
   X,
 } from "lucide-react";
@@ -42,6 +41,8 @@ import {
   repairAndSaveNote,
   NoteConflictError,
   saveNoteContent,
+  searchLibraryNotes,
+  libraryFilterToKinds,
   summarizeLibraryFolder,
   syncStudySession,
   updateLibraryFile,
@@ -55,15 +56,20 @@ import {
   type CodeDrill,
   type StudySessionItem,
   type TranscriptFile,
+  type LibrarySearchHit,
 } from "../../api/transcriptsClient";
 import { setActiveTranscript } from "../../face-tracker/activeTranscript";
 import { StudyLibraryGapPanel } from "../../components/study/StudyLibraryGapPanel";
 import { StudyLibraryIntelligenceHub } from "../../components/study/StudyLibraryIntelligenceHub";
 import { StudyLibraryReviewPanel } from "../../components/study/StudyLibraryReviewPanel";
 import { StudyLibraryStepper, type StudyWorkflowStep } from "../../components/study/StudyLibraryStepper";
+import { StudyLibrarySearchBar, type LibrarySearchFilter, type SearchScope } from "../../components/study/StudyLibrarySearchBar";
+import { findInNoteContent, scrollToCharOffset } from "../../components/study/inNoteSearch";
 import { StudyLibraryExplorer } from "../../components/study/StudyLibraryExplorer";
+import { StudyLibraryBreadcrumb } from "../../components/study/StudyLibraryBreadcrumb";
+import { StudyLibraryFileToolbar } from "../../components/study/StudyLibraryFileToolbar";
 import { StudyLibraryLogPanel } from "../../components/study/StudyLibraryLogPanel";
-import { findLibraryFile, isImportableNoteFile, titleFromImportFileName, withPreservedScroll } from "../../components/study/studyLibraryUtils";
+import { findLibraryFile, folderNoteNav, findNodeAt, isImportableNoteFile, titleFromImportFileName, withPreservedScroll, type LibraryExplorerSelection, type LibrarySortMode } from "../../components/study/studyLibraryUtils";
 import { setLectureNotesPresence } from "../../utils/lectureNotesPresence";
 import {
   applyBlockUpdate,
@@ -96,6 +102,7 @@ const NOTE_KINDS = [
 const LS_FILE_MANAGER_COLLAPSED = "lecture-notes:file-manager-collapsed";
 const LS_LAST_OPEN_NOTE = "lecture-notes:last-open-path";
 const LS_NOTE_FONT_STEP = "lecture-notes:font-step";
+const DEFAULT_LIBRARY_FOLDER = "";
 const NOTE_FONT_STEPS = [1.05, 1.2, 1.35, 1.5, 1.7, 1.9, 2.2];
 const DEFAULT_NOTE_FONT_STEP = 3;
 
@@ -159,13 +166,24 @@ export function LectureNotesPage() {
 
   const [transcripts, setTranscripts] = useState<TranscriptFile[]>([]);
   const [libraryTree, setLibraryTree] = useState<LibraryTree | null>(null);
-  const [selectedFolder, setSelectedFolder] = useState("");
+  const [selectedFolder, setSelectedFolder] = useState(DEFAULT_LIBRARY_FOLDER);
   const [selectedNote, setSelectedNote] = useState("");
+  const [searchScope, setSearchScope] = useState<SearchScope>("library");
+  const [libraryFilter, setLibraryFilter] = useState<LibrarySearchFilter>("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [librarySearchResults, setLibrarySearchResults] = useState<LibrarySearchHit[]>([]);
+  const [librarySearchLoading, setLibrarySearchLoading] = useState(false);
+  const [librarySearchError, setLibrarySearchError] = useState<string | null>(null);
+  const [inNoteMatchIndex, setInNoteMatchIndex] = useState(0);
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
+  const librarySearchAbortRef = useRef<AbortController | null>(null);
   const [comparePaths, setComparePaths] = useState<string[]>([]);
   const [selectedTranscript, setSelectedTranscript] = useState("");
   const [noteTitle, setNoteTitle] = useState("");
   const [summarizingFolder, setSummarizingFolder] = useState("");
   const [libraryViewMode, setLibraryViewMode] = useState<"grid" | "list">("list");
+  const [librarySortMode, setLibrarySortMode] = useState<LibrarySortMode>("name-asc");
+  const [explorerSelection, setExplorerSelection] = useState<LibraryExplorerSelection>(null);
   const [fileManagerCollapsed, setFileManagerCollapsed] = useState(() => {
     try {
       return localStorage.getItem(LS_FILE_MANAGER_COLLAPSED) === "1";
@@ -403,12 +421,8 @@ export function LectureNotesPage() {
   useEffect(() => {
     if (!selectedNote) return;
     writeLastOpenNote(selectedNote);
-    setSelectedFolder((prev) => {
-      const folder = folderOf(selectedNote);
-      // Keep browse folder aligned when restoring last note (don't fight user browsing)
-      if (!prev) return folder;
-      return prev;
-    });
+    const folder = folderOf(selectedNote);
+    setSelectedFolder(folder);
   }, [selectedNote]);
 
   useEffect(() => {
@@ -567,6 +581,20 @@ export function LectureNotesPage() {
       setTimeout(() => setToast(null), 2500);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not move file");
+    }
+  };
+
+  const handleRenameFile = async (path: string, newTitle: string) => {
+    try {
+      const row = await updateLibraryFile(path, { title: newTitle, new_title: newTitle });
+      await refresh();
+      const nextPath = row.relative_path ?? row.filename;
+      if (selectedNote === path) setSelectedNote(nextPath);
+      setComparePaths((prev) => prev.map((p) => (p === path ? nextPath : p)));
+      setToast(`Renamed to “${newTitle}”`);
+      setTimeout(() => setToast(null), 2500);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not rename file");
     }
   };
 
@@ -1087,6 +1115,205 @@ export function LectureNotesPage() {
   const primaryMeta = findLibraryFile(libraryTree, comparePaths[0] ?? selectedNote);
   const secondaryMeta = findLibraryFile(libraryTree, comparePaths[1] ?? "");
   const activeFileMeta = findLibraryFile(libraryTree, selectedNote);
+  const explorerFolderNode = useMemo(
+    () => (libraryTree ? findNodeAt(libraryTree, selectedFolder) : null),
+    [libraryTree, selectedFolder],
+  );
+  const showFileToolbar = tab === "library" && !fileManagerCollapsed;
+  const inNoteMatches = useMemo(() => {
+    if (searchScope !== "current" || !selectedNote || showCompare) return [];
+    return findInNoteContent(content, searchQuery);
+  }, [searchScope, selectedNote, showCompare, content, searchQuery]);
+
+  useEffect(() => {
+    setInNoteMatchIndex(0);
+  }, [searchQuery, searchScope, selectedNote]);
+
+  const jumpToInNoteMatch = useCallback(
+    (index: number) => {
+      const match = inNoteMatches[index];
+      if (!match) return;
+      setInNoteMatchIndex(index);
+      scrollToCharOffset(scrollContainerRef.current, content, match.charOffset);
+    },
+    [content, inNoteMatches],
+  );
+
+  const siblingNav = useMemo(
+    () => (showCompare ? null : folderNoteNav(libraryTree, selectedNote)),
+    [libraryTree, selectedNote, showCompare],
+  );
+
+  const navigateFolderNote = useCallback(
+    (path: string) => {
+      setSelectedNote(path);
+      setSelectedFolder(folderOf(path));
+    },
+    [],
+  );
+
+  const handleExplorerDelete = useCallback(() => {
+    if (!explorerSelection) return;
+    if (explorerSelection.kind === "file") {
+      if (window.confirm("Delete this note? This cannot be undone.")) {
+        void handleDeleteFile(explorerSelection.path);
+      }
+    } else if (window.confirm("Delete this folder and everything inside? This cannot be undone.")) {
+      void handleDeleteFolder(explorerSelection.path);
+    }
+    setExplorerSelection(null);
+  }, [explorerSelection]);
+
+  const handleExplorerRename = useCallback(() => {
+    if (explorerSelection?.kind !== "file") return;
+    const file = explorerFolderNode?.files.find((f) => f.relative_path === explorerSelection.path);
+    const currentTitle = file?.title ?? explorerSelection.path.split("/").pop() ?? "";
+    const next = window.prompt("Rename note", currentTitle)?.trim();
+    if (!next || next === currentTitle) return;
+    void handleRenameFile(explorerSelection.path, next);
+  }, [explorerFolderNode, explorerSelection]);
+
+  const focusSearch = useCallback(() => {
+    searchInputRef.current?.focus();
+    searchInputRef.current?.select();
+  }, []);
+
+  const handleOpenNoteFromSearch = useCallback((path: string) => {
+    setSelectedNote(path);
+    setSelectedFolder(folderOf(path) || DEFAULT_LIBRARY_FOLDER);
+    setFileManagerCollapsed(true);
+  }, []);
+
+  useEffect(() => {
+    const q = searchQuery.trim();
+    if (searchScope !== "library" || !q) {
+      librarySearchAbortRef.current?.abort();
+      setLibrarySearchResults([]);
+      setLibrarySearchLoading(false);
+      if (!q) setLibrarySearchError(null);
+      return;
+    }
+    let cancelled = false;
+    setLibrarySearchLoading(true);
+    setLibrarySearchError(null);
+    const timer = window.setTimeout(() => {
+      librarySearchAbortRef.current?.abort();
+      const controller = new AbortController();
+      librarySearchAbortRef.current = controller;
+      void searchLibraryNotes(q, 50, {
+        kinds: libraryFilterToKinds(libraryFilter),
+        signal: controller.signal,
+      })
+        .then((items) => {
+          if (!cancelled) {
+            setLibrarySearchResults(items);
+            setLibrarySearchError(null);
+          }
+        })
+        .catch((err) => {
+          if (!cancelled && (err as Error).name !== "AbortError") {
+            setLibrarySearchResults([]);
+            const msg = err instanceof Error ? err.message : "Search failed";
+            setLibrarySearchError(msg);
+            console.error("Note search failed:", err);
+          }
+        })
+        .finally(() => {
+          if (!cancelled) setLibrarySearchLoading(false);
+        });
+    }, 750);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [searchScope, searchQuery, libraryFilter]);
+
+  useEffect(() => {
+    if (searchScope === "current" && !selectedNote) {
+      setSearchScope("library");
+    }
+  }, [searchScope, selectedNote]);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (
+        searchScope !== "current" ||
+        inNoteMatches.length === 0 ||
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement
+      ) {
+        return;
+      }
+      if (e.key === "F3" || (e.key === "g" && (e.ctrlKey || e.metaKey))) {
+        e.preventDefault();
+        jumpToInNoteMatch((inNoteMatchIndex + 1) % inNoteMatches.length);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [inNoteMatchIndex, inNoteMatches.length, jumpToInNoteMatch, searchScope]);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+        if (
+          e.target instanceof HTMLInputElement ||
+          e.target instanceof HTMLTextAreaElement
+        ) {
+          return;
+        }
+        e.preventDefault();
+        focusSearch();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [focusSearch]);
+
+  const folderNavProps = useMemo(() => {
+    if (!siblingNav) return undefined;
+    const prevMeta = siblingNav.prevPath
+      ? findLibraryFile(libraryTree, siblingNav.prevPath)
+      : undefined;
+    const nextMeta = siblingNav.nextPath
+      ? findLibraryFile(libraryTree, siblingNav.nextPath)
+      : undefined;
+    return {
+      index: siblingNav.index,
+      total: siblingNav.total,
+      prevTitle: prevMeta?.title ?? siblingNav.prevPath?.split("/").pop(),
+      nextTitle: nextMeta?.title ?? siblingNav.nextPath?.split("/").pop(),
+      onPrev: siblingNav.prevPath
+        ? () => navigateFolderNote(siblingNav.prevPath!)
+        : undefined,
+      onNext: siblingNav.nextPath
+        ? () => navigateFolderNote(siblingNav.nextPath!)
+        : undefined,
+    };
+  }, [libraryTree, navigateFolderNote, siblingNav]);
+
+  useEffect(() => {
+    if (!folderNavProps || showCompare || tab !== "library") return;
+    const onKey = (e: KeyboardEvent) => {
+      if (
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement ||
+        e.target instanceof HTMLSelectElement ||
+        (e.target as HTMLElement).isContentEditable
+      ) {
+        return;
+      }
+      if (e.key === "ArrowRight" && folderNavProps.onNext) {
+        e.preventDefault();
+        folderNavProps.onNext();
+      } else if (e.key === "ArrowLeft" && folderNavProps.onPrev) {
+        e.preventDefault();
+        folderNavProps.onPrev();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [folderNavProps, showCompare, tab]);
   const bookmarkScrollTop =
     readingOverrides[selectedNote]?.bookmark_scroll_top ?? activeFileMeta?.bookmark_scroll_top;
 
@@ -1211,13 +1438,32 @@ export function LectureNotesPage() {
     setIntelGenerating(true);
     setError(null);
     try {
+      const notePath = selectedNote || primaryMeta?.relative_path || "";
+      const importFolderPath =
+        notePath && notePath.includes("/")
+          ? notePath.replace(/\\/g, "/").split("/").slice(0, -1).join("/")
+          : folderForSave;
       const result = await pasteLibraryQuiz(text, {
         topic: noteTitle.trim() || primaryMeta?.title,
+        note_path: notePath,
+        folder_path: importFolderPath,
+        seed_deck: true,
       });
       setQuizQuestions(result.questions);
       addSessionItem(result.session_item);
-      setToast(`Imported ${result.questions.length} questions into draft — review, then Take quiz`);
-      setTimeout(() => setToast(null), 4000);
+      const tagged = result.import_summary?.tagged ?? 0;
+      const deck = result.deck_id ? ` · deck #${result.deck_id}` : "";
+      const srs = result.cards_seeded ? ` · ${result.cards_seeded} SRS cards` : "";
+      const unknown = result.import_summary?.unknown_topics ?? [];
+      setToast(
+        `Imported ${result.questions.length} questions (${tagged} tagged)${deck}${srs} — review draft or Take quiz`,
+      );
+      if (unknown.length > 0) {
+        setError(
+          `Tags not found in this note: ${unknown.join(", ")} — check for typos or pick the right lecture.`,
+        );
+      }
+      setTimeout(() => setToast(null), 5000);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Paste import failed");
     } finally {
@@ -1325,35 +1571,53 @@ export function LectureNotesPage() {
       <div className="relative z-10 flex flex-col h-full min-h-0 p-4 gap-3">
         <header className="study-library-glass flex flex-col gap-2 px-3 py-2 shrink-0">
           <div className="flex items-center gap-2 min-w-0">
-            {!notesFullscreen ? (
-            <Button
-              type="button"
-              size="icon"
-              variant={fileManagerCollapsed ? "outline" : "secondary"}
-              className="h-8 w-8 shrink-0"
-              onClick={() => setFileManagerCollapsed((c) => !c)}
-              title={fileManagerCollapsed ? "Show files" : "Hide files"}
-              aria-label={fileManagerCollapsed ? "Show files" : "Hide files"}
-              aria-pressed={!fileManagerCollapsed}
-            >
-              {fileManagerCollapsed ? (
-                <PanelLeftOpen className="w-4 h-4" />
-              ) : (
-                <PanelLeftClose className="w-4 h-4" />
-              )}
-            </Button>
+            {notesFullscreen ? (
+              <>
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="secondary"
+                  className="h-8 w-8 shrink-0"
+                  onClick={exitNotesFullscreen}
+                  title="Exit fullscreen (Esc)"
+                  aria-label="Exit fullscreen"
+                >
+                  <Minimize2 className="w-4 h-4" />
+                </Button>
+                <Button
+                  type="button"
+                  size="icon"
+                  variant={fileManagerCollapsed ? "outline" : "secondary"}
+                  className="h-8 w-8 shrink-0"
+                  onClick={() => setFileManagerCollapsed((c) => !c)}
+                  title={fileManagerCollapsed ? "Show notes list" : "Hide notes list"}
+                  aria-label={fileManagerCollapsed ? "Show notes list" : "Hide notes list"}
+                  aria-pressed={!fileManagerCollapsed}
+                >
+                  {fileManagerCollapsed ? (
+                    <PanelLeftOpen className="w-4 h-4" />
+                  ) : (
+                    <PanelLeftClose className="w-4 h-4" />
+                  )}
+                </Button>
+              </>
             ) : (
-            <Button
-              type="button"
-              size="icon"
-              variant="secondary"
-              className="h-8 w-8 shrink-0"
-              onClick={exitNotesFullscreen}
-              title="Exit fullscreen (Esc)"
-              aria-label="Exit fullscreen"
-            >
-              <Minimize2 className="w-4 h-4" />
-            </Button>
+              <Button
+                type="button"
+                size="icon"
+                variant={fileManagerCollapsed ? "outline" : "secondary"}
+                className="h-8 w-8 shrink-0"
+                onClick={() => setFileManagerCollapsed((c) => !c)}
+                title={fileManagerCollapsed ? "Show notes list" : "Hide notes list"}
+                aria-label={fileManagerCollapsed ? "Show notes list" : "Hide notes list"}
+                aria-pressed={!fileManagerCollapsed}
+              >
+                {fileManagerCollapsed ? (
+                  <PanelLeftOpen className="w-4 h-4" />
+                ) : (
+                  <PanelLeftClose className="w-4 h-4" />
+                )}
+              </Button>
             )}
 
             <div
@@ -1417,19 +1681,84 @@ export function LectureNotesPage() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="min-w-[11rem]">
                   <DropdownMenuItem asChild>
-                    <Link to="/review?tab=due&source=lecture_notes">Review Hub</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link to="/system-logs" className="flex items-center gap-2">
-                      <ScrollText className="w-4 h-4" />
-                      Logs
-                    </Link>
+                    <Link to="/review?tab=due&source=lecture_notes">Study Loop</Link>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
                 </>
               ) : null}
             </div>
+          </div>
+
+          <div className="study-library-header-tools flex items-center gap-2 min-w-0">
+            {showFileToolbar ? (
+              <>
+                <StudyLibraryFileToolbar
+                  selection={explorerSelection}
+                  comparePaths={comparePaths}
+                  viewMode={libraryViewMode}
+                  sortMode={librarySortMode}
+                  importing={importing}
+                  folderSummarizeDisabled={summarizingFolder === explorerSelection?.path}
+                  onNewFile={() => void handleCreateFile()}
+                  onImportFiles={(files) => void handleImportFiles(files, selectedFolder)}
+                  onRename={handleExplorerRename}
+                  onToggleCompare={() => {
+                    if (explorerSelection?.kind === "file") handleToggleCompare(explorerSelection.path);
+                  }}
+                  onDelete={handleExplorerDelete}
+                  onNewFolder={() => void handleCreateFolder()}
+                  onSummarizeFolder={() => {
+                    if (explorerSelection?.kind === "folder") void handleSummarizeFolder(explorerSelection.path);
+                  }}
+                  onSortToggle={() =>
+                    setLibrarySortMode((m) => (m === "name-asc" ? "name-desc" : "name-asc"))
+                  }
+                  onViewModeChange={setLibraryViewMode}
+                />
+                {libraryTree ? (
+                  <StudyLibraryBreadcrumb
+                    browsePath={selectedFolder}
+                    fileCount={explorerFolderNode?.files.length ?? 0}
+                    folderCount={explorerFolderNode?.folders.length ?? 0}
+                    onBrowsePath={setSelectedFolder}
+                  />
+                ) : null}
+                <div className="study-library-header-tools-divider hidden lg:block" aria-hidden />
+              </>
+            ) : null}
+            <StudyLibrarySearchBar
+              scope={searchScope}
+              onScopeChange={setSearchScope}
+              filter={libraryFilter}
+              onFilterChange={setLibraryFilter}
+              query={searchQuery}
+              onQueryChange={setSearchQuery}
+              currentNoteOpen={Boolean(selectedNote) && !showCompare}
+              currentNoteTitle={primaryMeta?.title}
+              inNoteMatches={inNoteMatches}
+              inNoteMatchIndex={inNoteMatchIndex}
+              onInNotePrev={() =>
+                jumpToInNoteMatch(
+                  (inNoteMatchIndex - 1 + inNoteMatches.length) % Math.max(1, inNoteMatches.length),
+                )
+              }
+              onInNoteNext={() =>
+                jumpToInNoteMatch((inNoteMatchIndex + 1) % Math.max(1, inNoteMatches.length))
+              }
+              onJumpToInNoteMatch={(m) => {
+                const idx = inNoteMatches.findIndex(
+                  (x) => x.charOffset === m.charOffset && x.line === m.line,
+                );
+                jumpToInNoteMatch(idx >= 0 ? idx : 0);
+              }}
+              libraryResults={librarySearchResults}
+              libraryLoading={librarySearchLoading}
+              libraryError={librarySearchError}
+              onOpenLibraryHit={handleOpenNoteFromSearch}
+              inputRef={searchInputRef}
+              compact
+            />
           </div>
 
           {navItems.length > 1 && !notesFullscreen && (
@@ -1473,8 +1802,8 @@ export function LectureNotesPage() {
           />
         )}
 
-        <main className="flex flex-1 gap-3 min-h-0 overflow-hidden">
-          {!fileManagerCollapsed && !notesFullscreen && (
+        <main className="relative flex flex-1 gap-3 min-h-0 overflow-hidden">
+          {!fileManagerCollapsed && tab === "library" ? (
             <aside className="study-library-glass study-library-sidebar study-library-sidebar--expanded shrink-0 flex flex-col min-h-0 overflow-hidden">
               <div className="flex-1 min-h-0 overflow-hidden">
                 {loading ? (
@@ -1488,27 +1817,25 @@ export function LectureNotesPage() {
                     tree={libraryTree}
                     browsePath={selectedFolder}
                     selectedFile={selectedNote}
+                    selection={explorerSelection}
+                    onSelectionChange={setExplorerSelection}
                     comparePaths={comparePaths}
+                    sortMode={librarySortMode}
                     onBrowsePath={setSelectedFolder}
-                    onSelectFile={setSelectedNote}
+                    onSelectFile={(path) => {
+                      setSelectedNote(path);
+                      setFileManagerCollapsed(true);
+                    }}
                     onToggleCompare={handleToggleCompare}
                     onMoveFile={(path, dest) => void handleMoveFile(path, dest)}
-                    onDeleteFile={(path) => void handleDeleteFile(path)}
-                    onDeleteFolder={(path) => void handleDeleteFolder(path)}
-                    onSummarizeFolder={(path) => void handleSummarizeFolder(path)}
-                    onNewFolder={() => void handleCreateFolder()}
-                    onNewFile={() => void handleCreateFile()}
                     onImportFiles={(files, dest) => void handleImportFiles(files, dest)}
-                    importing={importing}
                     viewMode={libraryViewMode}
-                    onViewModeChange={setLibraryViewMode}
-                    summarizingFolder={summarizingFolder}
-                    onCollapse={() => setFileManagerCollapsed(true)}
+                    importing={importing}
                   />
                 ) : null}
               </div>
             </aside>
-          )}
+          ) : null}
 
           <div className="flex-1 flex flex-col min-w-0 min-h-0 gap-2">
             {/* Note/content fetch errors use toast — no sticky red banner here */}
@@ -1593,6 +1920,11 @@ export function LectureNotesPage() {
               onRepairSyntaxOnly={handleRepairSyntaxOnly}
               onRepairAllBlocks={handleRepairAllBlocks}
               onRegenerateSelection={handleSelectionRegenerate}
+              folderNav={folderNavProps}
+              onFocusSearch={() => {
+                setSearchScope(selectedNote ? "current" : "library");
+                focusSearch();
+              }}
             />
           </div>
 
@@ -1700,7 +2032,7 @@ export function LectureNotesPage() {
               navigateOnComplete={false}
               onDone={() => {
                 setActiveQuiz(null);
-                setToast("Quiz done — cards queued. Open Review Hub for spaced repetition.");
+                setToast("Quiz done — cards queued. Open Study Loop for spaced repetition.");
                 setTimeout(() => setToast(null), 5000);
               }}
               onClose={() => setActiveQuiz(null)}

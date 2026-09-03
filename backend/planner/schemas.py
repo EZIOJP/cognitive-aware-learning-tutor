@@ -45,7 +45,7 @@ class GenerateWeekBody(BaseModel):
 
 
 class ProposeFromExportBody(BaseModel):
-    days: int = Field(7, ge=1, le=31)  # look-back for tracker export
+    days: int = Field(7, ge=1, le=366)  # look-back for tracker export (max ~1 leap year)
     goals: Optional[str] = None
     week_start: Optional[str] = None  # YYYY-MM-DD (legacy alias for range_start)
     range_start: Optional[str] = None  # YYYY-MM-DD first day to fill
@@ -99,3 +99,23 @@ class ApplyRoutinesBody(BaseModel):
 class GoogleOAuthCredentialsBody(BaseModel):
     client_id: str = Field(..., min_length=10)
     client_secret: str = Field(..., min_length=5)
+
+
+class ApplyDayRhythmBody(BaseModel):
+    blocks: list[dict]
+    day: Optional[str] = None  # YYYY-MM-DD
+
+
+class MergeProposeBody(BaseModel):
+    """Raw propose-from-export blocks → merged draft (same path as CALT Desktop)."""
+    api_blocks: list[dict]
+    range_start: Optional[str] = None  # YYYY-MM-DD
+    horizon_days: int = Field(7, ge=1, le=62)
+
+
+class ApplyMyDayBody(BaseModel):
+    """Optional overrides — web passes goals/studyTasks from localStorage."""
+    wake_hm: Optional[str] = None
+    goals: Optional[str] = None  # pre-formatted prompt text
+    study_tasks: Optional[list[dict]] = None
+    snapshot: bool = True

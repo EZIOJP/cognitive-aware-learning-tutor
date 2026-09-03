@@ -441,7 +441,8 @@ URL resolution: `src/utils/resolveBackendUrl.ts`
 
 ### Static (`src/app/App.tsx`)
 
-`/`, `/login`, `/admin`, `/profile`, `/settings/*`, `/gre-vocab/add-words`, `/ai-coach`, `/project-agent`
+`/`, `/login`, `/admin`, `/profile`, `/settings/*`, `/gre-vocab/add-words`
+(bookmarks `/cortex`, `/ai-coach`, `/project-agent` redirect home — those product lanes were removed)
 
 ### Core plugin (`src/plugins/core_plugins.tsx`)
 

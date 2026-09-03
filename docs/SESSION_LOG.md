@@ -2,7 +2,23 @@
 
 Running checklist for Cursor sessions.
 
-**Current focus (2026-08-31):** CALT Desktop (PySide6) — productivity home. OCR parked.
+**Current focus (2026-09-03):** Study Loop / Daily Learn shipped (Tasks 1–9 verified). Manual A5 click-through still on owner. CALT Desktop remains daily productivity home.
+
+---
+
+## 2026-09-03 — Study Loop / Daily Learn (Tasks 1–9)
+
+**Done:**
+- [x] Spec: `docs/superpowers/specs/2026-09-03-study-loop-design.md`
+- [x] Plan: `docs/superpowers/plans/2026-09-03-study-loop.md`
+- [x] Tasks 1–9: backend (read cards, Approach A write-back, tags, questions, SQLite sessions + `resolve_practice_route`, vocab stitch) + Loop UI + `POST /api/quiz/code/run`
+- [x] Locks: Approach A, `card_id` = `path::topic_id`, SQLite `StudyLoopSession`, content-inspected domain routing (no silent L* → math)
+- [x] Acceptance: `pytest` study-loop + code/run + content bank + note_topics **32 passed**; `npm run build` exit 0
+- [x] Docs: `docs/MIGRATIONS.md` notes revision `0030_study_loop_sessions`
+
+**Not claimed:** Manual A5 / `/review?tab=loop` click-through (owner on return).
+
+**Try:** `/review?tab=loop` → pick `L5-T05` or `MT1-T02` → edit read card → mark read → practice → Due.
 
 ---
 

@@ -31,29 +31,3 @@ def test_patch_env_updates_and_preserves_comments(isolated_env: Path):
 def test_patch_env_rejects_unknown_keys(isolated_env: Path):
     written = env_store.patch_env({"JWT_SECRET": "hacked", "LLM_API_KEY": "lm-studio"})
     assert written == ["LLM_API_KEY"]
-
-
-def test_resolve_agent_manual():
-    from backend.hub.agents.cortex import resolve_agent
-
-    agent, trace = resolve_agent("coding", prompt="hello")
-    assert agent == "coding"
-    assert trace[0] == "manual:coding"
-
-
-def test_resolve_agent_pdf_mime():
-    from backend.hub.agents.cortex import resolve_agent
-
-    agent, trace = resolve_agent("auto", prompt="summarize", content_type="application/pdf")
-    assert agent == "pdf_rag"
-
-
-def test_session_rag_chunk_and_retrieve():
-    from backend.hub.agents.session_rag import ingest_upload, retrieve, clear_session
-
-    sid = "test-session"
-    count = ingest_upload(sid, "notes.txt", b"numpy arrays and linear algebra vectors", "text/plain")
-    assert count >= 1
-    hits = retrieve(sid, "numpy linear", top_k=2)
-    assert hits
-    clear_session(sid)

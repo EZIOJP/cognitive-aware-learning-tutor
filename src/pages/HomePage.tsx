@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Link } from "react-router";
 import {
-  Clock, MessageSquare, GripVertical, Brain,
+  Clock, GripVertical, Brain,
   Settings2, X, Eye, EyeOff, Maximize2, Minimize2,
   ChevronLeft, ChevronRight, LayoutGrid, Timer, Target, Bot
 } from "lucide-react";
@@ -19,7 +19,6 @@ import {
   type HubDailyPayload,
 } from "../api/hubClient";
 import { formatHoursMins } from "../utils/formatDuration";
-import { AiReviewWidget } from "../components/dashboard/AiReviewWidget";
 import { StudyLoopWidget } from "../components/dashboard/StudyLoopWidget";
 import { useTheme } from "../context/ThemeContext";
 import { useDashboardChrome } from "../context/DashboardChromeContext";
@@ -49,7 +48,6 @@ const DATA_HEAVY_WIDGET_IDS = new Set([
   "life-score",
   "browser-activity",
   "study-loop",
-  "ai-comments",
 ]);
 
 function loadWidgetState(): WidgetStateMap {
@@ -101,22 +99,12 @@ function buildCoreWidgets(
     {
       id: "study-loop",
       type: "info",
-      title: "Study Loop & Review",
+      title: "Study Loop",
       description: "Your spaced-repetition backlog and where to start.",
       icon: Brain,
       accent: "from-violet-500/20 to-purple-500/10",
       defaultColSpan: 2,
       component: <StudyLoopWidget />,
-    },
-    {
-      id: "ai-comments",
-      type: "info",
-      title: "AI Review & Next Steps",
-      description: "Daily coach from your hub metrics.",
-      icon: MessageSquare,
-      accent: "from-blue-500/20 to-cyan-500/10",
-      defaultColSpan: 2,
-      component: <AiReviewWidget />,
     },
   ];
 

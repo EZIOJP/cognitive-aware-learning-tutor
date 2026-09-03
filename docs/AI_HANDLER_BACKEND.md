@@ -111,7 +111,6 @@ Defined in `llm_gateway.TASK_DEFAULTS`:
 | `corpus_grounded` | heavy | RAG single-shot / hybrid summaries |
 | `quiz_gen`, `drill_gen`, `gap_analysis` | medium | JSON output required |
 | `coach`, `classify`, `kg_anchor`, `memory_extract` | light | Fast / local-biased |
-| `project_agent` | medium | Codebase agent |
 | `generic` | medium | `/api/llm/complete` default |
 
 When adding a new AI feature, pick an existing task or add one entry here with appropriate `LlmRequirements`.

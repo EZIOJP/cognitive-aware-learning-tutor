@@ -13,9 +13,6 @@ import SettingsHubPage from "../pages/settings/SettingsHubPage";
 import AiControlCenterPage from "../pages/settings/AiControlCenterPage";
 import { PluginSettingsPage } from "../pages/settings/PluginSettingsPage";
 import { AddWordsPage } from "../pages/vocab/AddWordsPage";
-import { AiCoachPage } from "../pages/AiCoachPage";
-import { HubCortexPage } from "../pages/HubCortexPage";
-import { ProjectAgentPage } from "../pages/ProjectAgentPage";
 import { JournalPage } from "../pages/JournalPage";
 
 // Import registry and trigger registration of all plugins
@@ -45,9 +42,11 @@ function AppRoutes() {
         <Route path="settings/plugins" element={<PluginSettingsPage />} />
         <Route path="settings/features" element={<FeatureStudioPage />} />
         <Route path="gre-vocab/add-words" element={<AddWordsPage />} />
-        <Route path="hub" element={<HubCortexPage />} />
-        <Route path="ai-coach" element={<AiCoachPage />} />
-        <Route path="project-agent" element={<ProjectAgentPage />} />
+        <Route path="hub" element={<Navigate to="/" replace />} />
+        {/* Removed product lanes — bookmarks redirect home */}
+        <Route path="cortex" element={<Navigate to="/" replace />} />
+        <Route path="ai-coach" element={<Navigate to="/" replace />} />
+        <Route path="project-agent" element={<Navigate to="/" replace />} />
         <Route path="journal" element={<JournalPage />} />
 
         {/* Dynamically mount plugin routes */}

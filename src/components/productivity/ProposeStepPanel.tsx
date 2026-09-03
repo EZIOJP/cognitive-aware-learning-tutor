@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   CalendarDays,
   ChevronDown,
@@ -11,6 +11,7 @@ import {
 import type { ApplyPlanRange } from "./ProposePlanPreview";
 import { resolveProposedOverlaps } from "./resolveProposedOverlaps";
 import type { ProposedPlannerBlock } from "../../api/plannerClient";
+import { MAX_PRODUCTIVITY_EXPORT_DAYS } from "../../api/plannerClient";
 
 export type ProposeHorizon = "day" | "week" | "month" | "custom";
 
@@ -97,6 +98,10 @@ export function ProposeStepPanel({
   onDismissDraft,
 }: Props) {
   const [advancedOpen, setAdvancedOpen] = useState(false);
+  const [exportDaysText, setExportDaysText] = useState(String(exportDays));
+  useEffect(() => {
+    setExportDaysText(String(exportDays));
+  }, [exportDays]);
   const blocks = proposed || [];
   const hasDraft = blocks.length > 0;
 
@@ -216,14 +221,37 @@ export function ProposeStepPanel({
             <label className="block text-xs text-muted-foreground space-y-1">
               <span>History lookback (days)</span>
               <span className="block text-[10px] leading-snug">
-                Uses recent tracker data for block lengths. Default 7 is fine.
+                Uses recent tracker data for block lengths. Default 7 is fine. Up to 1 year (
+                {MAX_PRODUCTIVITY_EXPORT_DAYS} days).
               </span>
               <input
                 type="number"
+                inputMode="numeric"
                 min={1}
-                max={31}
-                value={exportDays}
-                onChange={(e) => onExportDaysChange(Math.max(1, Math.min(31, Number(e.target.value) || 7)))}
+                max={MAX_PRODUCTIVITY_EXPORT_DAYS}
+                value={exportDaysText}
+                onChange={(e) => {
+                  const raw = e.target.value;
+                  setExportDaysText(raw);
+                  if (raw.trim() === "") return;
+                  const n = Number(raw);
+                  if (!Number.isFinite(n) || n < 1) return;
+                  if (n <= MAX_PRODUCTIVITY_EXPORT_DAYS) {
+                    onExportDaysChange(Math.floor(n));
+                  }
+                }}
+                onBlur={() => {
+                  const n = Number(exportDaysText);
+                  const clamped = Math.max(
+                    1,
+                    Math.min(
+                      MAX_PRODUCTIVITY_EXPORT_DAYS,
+                      Number.isFinite(n) && n >= 1 ? Math.floor(n) : exportDays || 7,
+                    ),
+                  );
+                  onExportDaysChange(clamped);
+                  setExportDaysText(String(clamped));
+                }}
                 className="mt-1 w-20 rounded-lg border border-white/10 bg-black/40 px-2 py-1.5 text-foreground"
               />
             </label>

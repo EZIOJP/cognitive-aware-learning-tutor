@@ -69,14 +69,12 @@ TAVILY_API_KEY=tvly-...  # optional: Cortex Hub web search agent
 | `POST` | `/api/system/llm/test-all-profiles` | Enqueue matrix probe → `202 { job_id }` (Huey) |
 | `GET` | `/api/system/llm/jobs/{id}` | Poll job status / result |
 
-## Cortex Hub
+## Insights (retained)
 
-Multi-agent chat at `/hub` — routes to coach, corpus RAG, project agent, Tavily search, ephemeral PDF Q&A.
+- `GET /api/insights/daily` — home dashboard stats
+- `POST /api/insights/review` — daily review (template or local LLM)
 
-- `GET /api/insights/hub/agents` — agent modes
-- `POST /api/insights/hub/chat` — multipart (prompt, agent, optional PDF file)
-
-Gateway tasks: `hub_router`, `corpus_qa`, `web_search`.
+Cortex Hub / Project Agent chat surfaces were removed from the product.
 
 ## OpenRouter (native routing)
 

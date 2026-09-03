@@ -20,18 +20,25 @@ import { getVocabToken } from "../../api/vocabClient";
 import { resolveApiUrl } from "../../utils/resolveBackendUrl";
 import {
   deleteQuizDeck,
+  fetchContentCatalog,
   fetchDueReview,
+  fetchMathCurriculum,
   fetchQuizBacklog,
   fetchQuizDecks,
   fetchRecentQuizResults,
+  importContentBank,
   saveQuizDeck,
+  syncContentBankToDb,
+  type ContentTopicSummary,
+  type GeneratorRecipeSummary,
 } from "../../api/globalQuizClient";
 import { llmBodyFieldsForTask } from "../../api/transcriptsClient";
 import { GlobalQuizRunner } from "../../features/quiz/GlobalQuizRunner";
+import { LoopTab } from "../../features/quiz/studyLoop/LoopTab";
 import type { DueReviewItem, QuizDeckSummary, QuizDomain } from "../../features/quiz/types";
 import { useAuth } from "../../context/AuthContext";
 
-type Tab = "due" | "start" | "decks" | "create" | "results";
+type Tab = "due" | "loop" | "start" | "decks" | "create" | "results";
 
 type ActiveQuiz =
   | { mode: "start"; domain: QuizDomain; config: Record<string, unknown> }
@@ -89,6 +96,21 @@ export function ReviewHubPage() {
   const [mathNodeId, setMathNodeId] = useState(mathNodeParam || "times_1_20");
   const [mathCount, setMathCount] = useState(5);
   const [mathSkills, setMathSkills] = useState<MathSkillNode[]>([]);
+  const [contentTopics, setContentTopics] = useState<ContentTopicSummary[]>([]);
+  const [generators, setGenerators] = useState<GeneratorRecipeSummary[]>([]);
+  const [generatorTopicId, setGeneratorTopicId] = useState("");
+  const [contentStats, setContentStats] = useState<{
+    question_count: number;
+    topic_count: number;
+    generator_count: number;
+    db_question_count: number;
+  } | null>(null);
+  const [contentTopicId, setContentTopicId] = useState("");
+  const [contentNoteTag, setContentNoteTag] = useState("");
+  const [curriculumSteps, setCurriculumSteps] = useState<
+    Array<{ order: number; note_topic_id: string; title: string; prefer_topic_ids: string[] }>
+  >([]);
+  const [seedingContent, setSeedingContent] = useState(false);
   const [notePath, setNotePath] = useState("");
   const [noteQuizCount, setNoteQuizCount] = useState(5);
   const [timeLimitMin, setTimeLimitMin] = useState(10);
@@ -139,6 +161,44 @@ export function ReviewHubPage() {
         }
       } catch {
         /* skills optional */
+      }
+      try {
+        const [cat, cur] = await Promise.all([
+          fetchContentCatalog({ kind: "math" }),
+          fetchMathCurriculum().catch(() => null),
+        ]);
+        setContentTopics(cat.topics || []);
+        setGenerators(cat.generators || []);
+        setContentStats({
+          question_count: cat.question_count || 0,
+          topic_count: cat.topic_count || 0,
+          generator_count: cat.generator_count || cat.generators?.length || 0,
+          db_question_count: cat.db_question_count || 0,
+        });
+        if (!contentTopicId && cat.topics?.length) {
+          setContentTopicId(cat.topics[0].topic_id);
+        }
+        if (!generatorTopicId && cat.generators?.length) {
+          setGeneratorTopicId(cat.generators[0].topic_id);
+        }
+        if (cur?.levels?.length) {
+          const steps = cur.levels.flatMap((l) =>
+            (l.steps || []).map((s) => ({
+              order: s.order,
+              note_topic_id: s.note_topic_id,
+              title: s.title,
+              prefer_topic_ids: s.prefer_topic_ids || [],
+            }))
+          );
+          setCurriculumSteps(steps);
+          if (!contentNoteTag && steps[0]) {
+            setContentNoteTag(steps[0].note_topic_id);
+          }
+        }
+      } catch {
+        setContentTopics([]);
+        setGenerators([]);
+        setContentStats(null);
       }
     } catch {
       setDue([]);
@@ -222,7 +282,7 @@ export function ReviewHubPage() {
   if (!user) {
     return (
       <div className="p-8 text-center text-muted-foreground space-y-3">
-        <p>Start the local API with run.bat, then refresh to use Review Hub.</p>
+        <p>Start the local API with run.bat, then refresh to use Study Loop.</p>
         <Button asChild>
           <Link to="/">Dashboard</Link>
         </Button>
@@ -267,9 +327,10 @@ export function ReviewHubPage() {
 
   const tabs: { id: Tab; label: string }[] = [
     { id: "due", label: `Due (${backlog?.due_count ?? due.length})` },
-    { id: "start", label: "Start quiz" },
-    { id: "decks", label: "My decks" },
-    { id: "create", label: "Create quiz" },
+    { id: "loop", label: "Loop" },
+    { id: "start", label: "Learn" },
+    { id: "decks", label: "Flash decks" },
+    { id: "create", label: "Create deck" },
     { id: "results", label: "Results" },
   ];
 
@@ -283,16 +344,20 @@ export function ReviewHubPage() {
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <h1 className="text-2xl font-semibold tracking-tight flex items-center gap-2">
-              <Brain className="h-6 w-6 text-primary" /> Review Hub
+              <Brain className="h-6 w-6 text-primary" /> Study Loop
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              One quiz handler for vocab, math, lecture notes, and code — FSRS scheduling, time bounds, and custom decks.
+              Daily Learn — vocab · lecture · core math (live) · flash decks — then FSRS until you get them right.
             </p>
             <p className="mt-2 text-xs text-muted-foreground">
               <Link to="/lecture-notes" className="text-primary hover:underline">
                 Lecture Notes
               </Link>
-              {" · generate notes → quiz · cards land here automatically"}
+              {" · "}
+              <Link to="/gre-vocab" className="text-primary hover:underline">
+                GRE Vocab
+              </Link>
+              {" · wrong answers reappear until correct"}
             </p>
           </div>
           {hasDue && (
@@ -417,6 +482,14 @@ export function ReviewHubPage() {
         </p>
       </section>
 
+      {tab === "loop" && (
+        <LoopTab
+          onStartPractice={(sessionId) => {
+            setActive({ mode: "resume", sessionId });
+          }}
+        />
+      )}
+
       {tab === "due" && (
         <section
           className={`gloss-panel rounded-xl p-5 space-y-3 ${
@@ -499,10 +572,233 @@ export function ReviewHubPage() {
 
       {tab === "start" && (
         <section className="gloss-panel rounded-xl p-5 space-y-4">
-          <h2 className="font-medium">Start from content</h2>
+          <h2 className="font-medium">Today&apos;s learn tasks</h2>
           <p className="text-xs text-muted-foreground">
-            Pick Math skill, Notes deck, or Vocab — then start. One short form, same quiz runner.
+            Vocab + lecture quizzes seed FSRS. Core math uses live mathgenerator — misses get more of the same until you learn them.
           </p>
+
+          <div className="rounded-lg border-2 border-primary/40 bg-primary/10 p-3 space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="text-sm font-medium">Core math drill (adaptive live)</div>
+              <span className="text-[11px] text-muted-foreground">
+                aptitude generators only · wrong → retry + more of that type
+              </span>
+            </div>
+            <div className="flex flex-wrap gap-2 items-center">
+              <label className="text-xs text-muted-foreground whitespace-nowrap">Questions</label>
+              <input
+                type="number"
+                min={5}
+                max={40}
+                value={mathCount}
+                onChange={(e) => setMathCount(Number(e.target.value) || 15)}
+                className="w-16 rounded border bg-background px-2 py-1 text-sm"
+              />
+              <Button
+                size="sm"
+                onClick={() =>
+                  setActive({
+                    mode: "start",
+                    domain: "math",
+                    config: {
+                      adaptive_aptitude: true,
+                      core_math_drill: true,
+                      count: mathCount,
+                      boost_note_topics: contentNoteTag ? [contentNoteTag] : undefined,
+                      ...timeOpts,
+                    },
+                  })
+                }
+              >
+                Start adaptive core math
+              </Button>
+            </div>
+          </div>
+
+          <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2 text-sm font-medium">
+                <Brain className="h-4 w-4" /> Curated packs + single generator
+              </div>
+              {contentStats && (
+                <span className="text-[11px] text-muted-foreground">
+                  {contentStats.question_count.toLocaleString()} curated · {contentStats.generator_count}{" "}
+                  generators · DB {contentStats.db_question_count.toLocaleString()}
+                </span>
+              )}
+            </div>
+            {!contentTopics.length && !generators.length ? (
+              <p className="text-xs text-muted-foreground">
+                No packs or generators loaded. Confirm API is running and{" "}
+                <code className="text-foreground">data/questions/math/</code> + mathgenerator clone exist.
+              </p>
+            ) : (
+              <>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <div className="space-y-1">
+                    <label className="text-[11px] text-muted-foreground">Daily Path step (MT tag)</label>
+                    <select
+                      value={contentNoteTag}
+                      onChange={(e) => setContentNoteTag(e.target.value)}
+                      className="w-full rounded border bg-background px-2 py-1.5 text-sm"
+                    >
+                      {(curriculumSteps.length
+                        ? curriculumSteps
+                        : Array.from(
+                            new Set(
+                              [
+                                ...contentTopics.flatMap((t) => t.note_topic_ids || []),
+                                ...generators.flatMap((g) => g.note_topic_ids || []),
+                              ].filter(Boolean)
+                            )
+                          ).map((tag) => ({
+                            order: 0,
+                            note_topic_id: tag,
+                            title: tag,
+                            prefer_topic_ids: [] as string[],
+                          }))
+                      ).map((s) => (
+                        <option key={`${s.order}-${s.note_topic_id}`} value={s.note_topic_id}>
+                          {s.order ? `${s.order}. ` : ""}
+                          {s.note_topic_id} — {s.title}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[11px] text-muted-foreground">Curated pack</label>
+                    <select
+                      value={contentTopicId}
+                      onChange={(e) => setContentTopicId(e.target.value)}
+                      className="w-full rounded border bg-background px-2 py-1.5 text-sm"
+                    >
+                      {contentTopics.map((t) => (
+                        <option key={t.topic_id} value={t.topic_id}>
+                          {t.title} ({t.question_count ?? "?"}) · {(t.note_topic_ids || []).join(",") || "—"}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="space-y-1 sm:col-span-2">
+                    <label className="text-[11px] text-muted-foreground">
+                      On-demand generator (indexes into DB when served)
+                    </label>
+                    <select
+                      value={generatorTopicId}
+                      onChange={(e) => setGeneratorTopicId(e.target.value)}
+                      className="w-full rounded border bg-background px-2 py-1.5 text-sm"
+                    >
+                      {generators
+                        .filter(
+                          (g) =>
+                            !contentNoteTag ||
+                            (g.note_topic_ids || []).includes(contentNoteTag)
+                        )
+                        .map((g) => (
+                          <option key={g.topic_id} value={g.topic_id}>
+                            #{g.gen_id} {g.title} · {(g.note_topic_ids || []).join(",") || "—"}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-2 items-center">
+                  <label className="text-xs text-muted-foreground whitespace-nowrap">Questions</label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={40}
+                    value={mathCount}
+                    onChange={(e) => setMathCount(Number(e.target.value) || 10)}
+                    className="w-16 rounded border bg-background px-2 py-1 text-sm"
+                  />
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      const step = curriculumSteps.find((s) => s.note_topic_id === contentNoteTag);
+                      if (step?.prefer_topic_ids?.length) {
+                        setActive({
+                          mode: "start",
+                          domain: "math",
+                          config: {
+                            note_topic_id: contentNoteTag,
+                            prefer_topic_ids: step.prefer_topic_ids,
+                            count: mathCount,
+                            ...timeOpts,
+                          },
+                        });
+                        return;
+                      }
+                      setActive({
+                        mode: "start",
+                        domain: "math",
+                        config: {
+                          note_topic_id: contentNoteTag || undefined,
+                          count: mathCount,
+                          ...timeOpts,
+                        },
+                      });
+                    }}
+                    disabled={!contentNoteTag && !contentTopicId}
+                  >
+                    Start Daily Path step
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() =>
+                      setActive({
+                        mode: "start",
+                        domain: "math",
+                        config: { topic_id: contentTopicId, count: mathCount, ...timeOpts },
+                      })
+                    }
+                    disabled={!contentTopicId}
+                  >
+                    Start curated pack
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() =>
+                      setActive({
+                        mode: "start",
+                        domain: "math",
+                        config: {
+                          topic_id: generatorTopicId,
+                          use_generator: true,
+                          count: mathCount,
+                          ...timeOpts,
+                        },
+                      })
+                    }
+                    disabled={!generatorTopicId}
+                  >
+                    Generate live
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    disabled={seedingContent}
+                    onClick={async () => {
+                      setSeedingContent(true);
+                      try {
+                        await syncContentBankToDb("math");
+                        await importContentBank({ kind: "math" });
+                        await refresh();
+                      } finally {
+                        setSeedingContent(false);
+                      }
+                    }}
+                  >
+                    {seedingContent ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
+                    Sync curated → DB
+                  </Button>
+                </div>
+              </>
+            )}
+          </div>
+
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="rounded-lg border p-3 space-y-2">
               <div className="flex items-center gap-2 text-sm font-medium">

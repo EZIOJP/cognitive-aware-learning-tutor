@@ -69,9 +69,14 @@ export function StudyLoopWidget() {
   const next = backlog.next_step;
   const fallback =
     FALLBACK_LINKS[backlog.recommended_action] ?? FALLBACK_LINKS.lecture_notes;
-  const primaryLabel = next?.label ?? fallback.label;
-  const primaryTo = next?.to ?? fallback.to;
-  const hint = next?.reason ?? fallback.hint;
+  const dueCount = backlog.due_count ?? 0;
+  const primaryLabel = dueCount === 0 ? "Study Loop" : next?.label ?? fallback.label;
+  const primaryTo =
+    dueCount === 0 ? "/review?tab=loop" : next?.to ?? fallback.to;
+  const hint =
+    dueCount === 0
+      ? "Nothing due — open the Study Loop to read a tag then practice."
+      : next?.reason ?? fallback.hint;
   const domains = Object.entries(backlog.by_domain);
 
   return (
@@ -140,6 +145,11 @@ export function StudyLoopWidget() {
             <Button size="sm" variant="outline" className="h-7 text-[10px] gap-1" asChild>
               <Link to="/review?tab=start">
                 <Calculator className="h-3 w-3" /> Math
+              </Link>
+            </Button>
+            <Button size="sm" variant="outline" className="h-7 text-[10px] gap-1" asChild>
+              <Link to="/review?tab=loop">
+                <Sparkles className="h-3 w-3" /> Study Loop
               </Link>
             </Button>
             <Button size="sm" variant="outline" className="h-7 text-[10px] gap-1" asChild>

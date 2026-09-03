@@ -1,6 +1,11 @@
 """Smoke tests for productivity week export (timetable drafting)."""
 
-from backend.planner.week_export import export_as_csv
+from backend.planner.week_export import (
+    MAX_EXPORT_DAYS,
+    export_as_csv,
+    is_empty_export_day,
+    omit_empty_export_days,
+)
 
 
 def test_export_as_csv_headers():
@@ -25,6 +30,167 @@ def test_export_as_csv_headers():
     assert "date,weekday,planned_minutes" in csv_text
     assert "2026-07-11,sat,60" in csv_text
     assert "Protect 10:00 blocks." in csv_text
+
+
+def test_is_empty_export_day_and_omit():
+    empty = {
+        "date": "2026-07-09",
+        "session_count": 0,
+        "actual_minutes": 0,
+        "productive_minutes": 0,
+        "planned_minutes": 0,
+        "block_count": 0,
+        "wearable": None,
+    }
+    tracked = {**empty, "date": "2026-07-10", "session_count": 1, "actual_minutes": 30.0}
+    planned = {**empty, "date": "2026-07-11", "planned_minutes": 45, "block_count": 1}
+    wearable = {**empty, "date": "2026-07-12", "wearable": {"steps": 1000}}
+
+    assert is_empty_export_day(empty) is True
+    assert is_empty_export_day(tracked) is False
+    assert is_empty_export_day(planned) is False
+    assert is_empty_export_day(wearable) is False
+
+    kept = omit_empty_export_days([empty, tracked, planned, wearable])
+    assert [d["date"] for d in kept] == ["2026-07-10", "2026-07-11", "2026-07-12"]
+
+    csv_text = export_as_csv({"by_day": kept, "suggested_timetable_hints": []})
+    assert "2026-07-09" not in csv_text
+    assert "2026-07-10" in csv_text
+
+
+def test_list_nonempty_export_days_marks_sessions_and_wearables():
+    from datetime import date, datetime
+
+    from sqlalchemy import create_engine
+    from sqlalchemy.orm import sessionmaker
+
+    from backend.db.base import Base
+    from backend.models.timetable import TrackedSession
+    from backend.models.user import User
+    from backend.models.wearable_daily import WearableDaily
+    from backend.planner.week_export import list_nonempty_export_days
+
+    engine = create_engine("sqlite:///:memory:")
+    Base.metadata.create_all(engine)
+    Session = sessionmaker(bind=engine)
+    db = Session()
+    user = User(id=1, username="presence_user", password_hash="x")
+    db.add(user)
+    db.commit()
+
+    db.add(
+        TrackedSession(
+            session_id="presence-1",
+            user_id=1,
+            start_time=datetime(2026, 7, 10, 10, 0, 0),
+            end_time=datetime(2026, 7, 10, 11, 0, 0),
+            source="desktop_tracker",
+            category="IDE / Code Editor",
+            app_name="Code.exe",
+            window_title="test",
+        )
+    )
+    db.add(
+        WearableDaily(
+            user_id=1,
+            local_date=date(2026, 7, 12),
+            source="amazfit",
+            steps=1200,
+        )
+    )
+    db.commit()
+
+    days = list_nonempty_export_days(
+        db, user, start=date(2026, 7, 9), end=date(2026, 7, 12)
+    )
+    assert days == ["2026-07-10", "2026-07-12"]
+    db.close()
+
+
+def test_week_export_skips_empty_days_by_default():
+    from datetime import date, datetime
+
+    from sqlalchemy import create_engine
+    from sqlalchemy.orm import sessionmaker
+
+    from backend.behavior.category_scores import seed_category_scores
+    from backend.db.base import Base
+    from backend.models.timetable import TrackedSession
+    from backend.models.user import User
+    from backend.planner.week_export import build_productivity_week_export
+
+    engine = create_engine("sqlite:///:memory:")
+    Base.metadata.create_all(engine)
+    Session = sessionmaker(bind=engine)
+    db = Session()
+    user = User(id=1, username="export_skip_empty", password_hash="x")
+    db.add(user)
+    db.commit()
+    seed_category_scores(db)
+
+    db.add(
+        TrackedSession(
+            session_id="export-skip-1",
+            user_id=1,
+            start_time=datetime(2026, 7, 10, 10, 0, 0),
+            end_time=datetime(2026, 7, 10, 11, 0, 0),
+            source="desktop_tracker",
+            category="IDE / Code Editor",
+            app_name="Code.exe",
+            window_title="test",
+        )
+    )
+    db.commit()
+
+    end = date(2026, 7, 12)
+    payload = build_productivity_week_export(db, user, days=3, end_day=end)
+    assert payload["range"]["days"] == 3
+    assert payload["range"]["skip_empty"] is True
+    assert payload["range"]["days_exported"] == 1
+    assert payload["range"]["empty_days_omitted"] == 2
+    assert [d["date"] for d in payload["by_day"]] == ["2026-07-10"]
+
+    full = build_productivity_week_export(
+        db, user, days=3, end_day=end, skip_empty=False
+    )
+    assert len(full["by_day"]) == 3
+    assert full["range"]["empty_days_omitted"] == 0
+    db.close()
+
+
+def test_week_export_allows_multi_month_window():
+    from datetime import date
+
+    from sqlalchemy import create_engine
+    from sqlalchemy.orm import sessionmaker
+
+    from backend.behavior.category_scores import seed_category_scores
+    from backend.db.base import Base
+    from backend.models.user import User
+    from backend.planner.week_export import build_productivity_week_export
+
+    engine = create_engine("sqlite:///:memory:")
+    Base.metadata.create_all(engine)
+    Session = sessionmaker(bind=engine)
+    db = Session()
+    user = User(id=1, username="export_long", password_hash="x")
+    db.add(user)
+    db.commit()
+    seed_category_scores(db)
+
+    payload = build_productivity_week_export(
+        db, user, days=90, end_day=date(2026, 7, 10), skip_empty=False
+    )
+    assert payload["range"]["days"] == 90
+    assert len(payload["by_day"]) == 90
+
+    capped = build_productivity_week_export(
+        db, user, days=9999, end_day=date(2026, 7, 10), skip_empty=False
+    )
+    assert capped["range"]["days"] == MAX_EXPORT_DAYS
+    assert len(capped["by_day"]) == MAX_EXPORT_DAYS
+    db.close()
 
 
 def test_week_export_tolerates_naive_session_datetimes():
@@ -192,3 +358,74 @@ def test_week_export_counts_session_on_local_calendar_day():
         assert utc_day != local_day or offset.total_seconds() == 0
 
     db.close()
+
+
+def test_week_export_respects_explicit_end_day_window():
+    from datetime import date
+
+    from sqlalchemy import create_engine
+    from sqlalchemy.orm import sessionmaker
+
+    from backend.behavior.category_scores import seed_category_scores
+    from backend.db.base import Base
+    from backend.models.user import User
+    from backend.planner.week_export import build_productivity_week_export
+
+    engine = create_engine("sqlite:///:memory:")
+    Base.metadata.create_all(engine)
+    Session = sessionmaker(bind=engine)
+    db = Session()
+    user = User(id=1, username="export_end_day", password_hash="x")
+    db.add(user)
+    db.commit()
+    seed_category_scores(db)
+
+    end = date(2026, 3, 15)
+    payload = build_productivity_week_export(
+        db, user, days=107, end_day=end, skip_empty=False
+    )
+    assert payload["range"]["days"] == 107
+    assert payload["range"]["end"] == "2026-03-15"
+    assert payload["range"]["start"] == "2025-11-29"
+    assert len(payload["by_day"]) == 107
+    db.close()
+
+
+def test_export_api_accepts_long_window_and_end_day():
+    """Regression: UI allows up to 366 days; old API le=31 caused 422."""
+    from fastapi.testclient import TestClient
+
+    from backend.core.auth import get_current_user
+    from backend.main import app
+    from backend.models import User
+
+    user = User(id=1, username="export_api", password_hash="x")
+    app.dependency_overrides[get_current_user] = lambda: user
+    client = TestClient(app)
+    try:
+        ok = client.get(
+            "/api/planner/export/last-7-days",
+            params={
+                "days": 107,
+                "format": "json",
+                "skip_empty": "true",
+                "end_day": "2026-03-15",
+                "include": "summary,by_day",
+            },
+        )
+        assert ok.status_code == 200, ok.text
+        body = ok.json()
+        assert body["range"]["days"] == 107
+        assert body["range"]["end"] == "2026-03-15"
+
+        bad = client.get(
+            "/api/planner/export/last-7-days",
+            params={"days": 999, "format": "json"},
+        )
+        assert bad.status_code == 422
+        err = bad.json()
+        assert err.get("error", {}).get("code") == "validation_error"
+        details = err.get("error", {}).get("details") or []
+        assert any("days" in str(d.get("loc", [])) for d in details)
+    finally:
+        app.dependency_overrides.pop(get_current_user, None)

@@ -20,10 +20,6 @@ const NAV_ORDER: string[] = [
   "/productivity",
   "/life-tracker",
   "/nutrition",
-  "/ai-coach",
-  "/hub",
-  "/project-agent",
-  "/system-logs",
   "/settings",
   "/admin",
 ];

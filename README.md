@@ -20,7 +20,7 @@ See **[docs/WORKING_PRODUCT.md](docs/WORKING_PRODUCT.md)** for the daily-use che
 - **Modular plugins** (Math, Vocab, Life, EEG, Focus Mirror, NutriNode) synced to the server when signed in.
 - **Feature Studio** — users add custom features + metrics without redeploying.
 - **Draggable dashboard** with layout saved locally and to the hub when authenticated.
-- **AI Review** card from `/api/insights/review` + Life Clock from hub rollups.
+- **Life Clock** from hub rollups + insights daily stats on the home dashboard.
 - **Advanced Theme Settings:** Upgraded settings page allowing users to customize hex accent colors, select background theme styles, and control dark/light mode intensity (contrast level).
 - **Life Tracker Dashboard & Page:** A dedicated health & wellness tracking suite (accessible via the ❤️ sidebar icon) assessing four pillars:
   - **Health:** Sleep hours/quality, exercise, water, healthy meals.

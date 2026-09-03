@@ -142,7 +142,7 @@ All study functions in `transcriptsClient.ts` accept optional `llm?: LlmOverride
 | Fix mermaid block | `regenerateNoteBlock()` | `POST /api/transcripts/library/regenerate-block` |
 | Grounded RAG button | `generateGroundedNotes()` | `POST /api/corpus/generate-notes-grounded` |
 
-Coach and project agent pass `loadLlmPrefs()` via `hubClient`. Math tutor uses gateway on the backend with no tier UI (defaults to `math_hint` / light). Classification scan passes `loadLlmPrefs()` via `behaviorClient`.
+Math tutor uses gateway on the backend with no tier UI (defaults to `math_hint` / light). Classification scan passes `loadLlmPrefs()` via `behaviorClient`.
 
 ---
 

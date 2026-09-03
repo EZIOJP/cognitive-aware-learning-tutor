@@ -24,9 +24,151 @@ from backend.timetable.tracker_query import tracker_user_ids
 
 _WEEKDAYS = ("mon", "tue", "wed", "thu", "fri", "sat", "sun")
 
+# Cap at 366 calendar days (~1 leap year). Longer windows are rarely useful
+# for timetable drafting and can stress SQLite session scans.
+MAX_EXPORT_DAYS = 366
+
 
 def _local_hour(dt: datetime) -> int:
     return _utc(dt).astimezone().hour
+
+
+def is_empty_export_day(day: dict[str, Any]) -> bool:
+    """Return True when a day has no tracked, planned, or wearable signal.
+
+    Empty means all of:
+    - no tracker sessions / zero actual & productive minutes
+    - no planner blocks (planned_minutes and block_count both zero)
+    - no wearable snapshot attached
+    """
+    if int(day.get("session_count") or 0) > 0:
+        return False
+    if float(day.get("actual_minutes") or 0) > 0:
+        return False
+    if float(day.get("productive_minutes") or 0) > 0:
+        return False
+    if float(day.get("planned_minutes") or 0) > 0:
+        return False
+    if int(day.get("block_count") or 0) > 0:
+        return False
+    if day.get("wearable") is not None:
+        return False
+    return True
+
+
+def omit_empty_export_days(by_day: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Drop blank calendar days from export rows (CSV/JSON by_day series)."""
+    return [day for day in by_day if not is_empty_export_day(day)]
+
+
+def _clamp_presence_window(start: date, end: date) -> tuple[date, date]:
+    """Normalize and cap an inclusive [start, end] to MAX_EXPORT_DAYS."""
+    if end < start:
+        start, end = end, start
+    if (end - start).days + 1 > MAX_EXPORT_DAYS:
+        start = end - timedelta(days=MAX_EXPORT_DAYS - 1)
+    return start, end
+
+
+def _mark_local_days_in_span(
+    marked: set[date],
+    span_start: datetime,
+    span_end: datetime,
+    window_start: date,
+    window_end: date,
+    *,
+    min_seconds: float = 0.0,
+) -> None:
+    """Mark host-local calendar days that overlap [span_start, span_end]."""
+    if span_end <= span_start:
+        return
+    local_start = _utc(span_start).astimezone()
+    local_end = _utc(span_end).astimezone()
+    day = max(local_start.date(), window_start)
+    last = min(local_end.date(), window_end)
+    while day <= last:
+        day_start, day_end = local_day_bounds_utc(day)
+        seg_start = max(_utc(span_start), day_start)
+        seg_end = min(_utc(span_end), day_end)
+        if (seg_end - seg_start).total_seconds() >= min_seconds:
+            marked.add(day)
+        day += timedelta(days=1)
+
+
+def list_nonempty_export_days(
+    db: Session,
+    user: User,
+    *,
+    start: date,
+    end: date,
+) -> list[str]:
+    """Return ISO dates in inclusive [start, end] with export-worthy signal.
+
+    Matches ``is_empty_export_day`` intent without building full day metrics:
+    wearable snapshot, planner blocks, or non-ignored tracker sessions (≥2s).
+    """
+    start, end = _clamp_presence_window(start, end)
+    marked: set[date] = set()
+    user_ids = tracker_user_ids(db, user)
+    range_start, _ = local_day_bounds_utc(start)
+    _, range_end = local_day_bounds_utc(end)
+
+    for (local_date,) in (
+        db.query(WearableDaily.local_date)
+        .filter(
+            WearableDaily.user_id == user.id,
+            WearableDaily.local_date >= start,
+            WearableDaily.local_date <= end,
+        )
+        .all()
+    ):
+        marked.add(local_date)
+
+    blocks = (
+        db.query(PlannerBlock.start_at, PlannerBlock.end_at)
+        .filter(
+            PlannerBlock.user_id == user.id,
+            PlannerBlock.start_at < range_end,
+            PlannerBlock.end_at > range_start,
+            PlannerBlock.status.in_(("scheduled", "in_progress", "done")),
+        )
+        .all()
+    )
+    for start_at, end_at in blocks:
+        if start_at is None or end_at is None:
+            continue
+        _mark_local_days_in_span(marked, start_at, end_at, start, end)
+
+    sessions = (
+        db.query(
+            TrackedSession.start_time,
+            TrackedSession.end_time,
+            TrackedSession.app_name,
+            TrackedSession.window_title,
+        )
+        .filter(
+            TrackedSession.user_id.in_(user_ids),
+            TrackedSession.source.in_(("desktop_tracker", "extension", "calt_spa")),
+            TrackedSession.start_time < range_end,
+            TrackedSession.end_time > range_start,
+        )
+        .all()
+    )
+    for start_time, end_time, app_name, window_title in sessions:
+        if start_time is None or end_time is None:
+            continue
+        if is_ignored_app(app_name or "", window_title or ""):
+            continue
+        _mark_local_days_in_span(
+            marked,
+            start_time,
+            end_time,
+            start,
+            end,
+            min_seconds=2.0,
+        )
+
+    return [d.isoformat() for d in sorted(marked)]
 
 
 def _wearable_export(row: WearableDaily | None) -> dict[str, Any] | None:
@@ -70,9 +212,15 @@ def build_productivity_week_export(
     *,
     days: int = 7,
     end_day: date | None = None,
+    skip_empty: bool = True,
 ) -> dict[str, Any]:
-    """Aggregate plan vs actual for the last `days` calendar days (inclusive of end_day)."""
-    days = max(1, min(int(days), 31))
+    """Aggregate plan vs actual for the last `days` calendar days (inclusive of end_day).
+
+    When ``skip_empty`` is True (default), ``by_day`` omits days with no tracked
+    sessions, no planner blocks, and no wearable snapshot. Summary / weekday
+    patterns still cover the full requested window.
+    """
+    days = max(1, min(int(days), MAX_EXPORT_DAYS))
     end = end_day or date.today()
     start = end - timedelta(days=days - 1)
 
@@ -288,8 +436,11 @@ def build_productivity_week_export(
             "No planner blocks in this window — use hour heatmaps to draft a first weekly timetable."
         )
 
+    exported_days = omit_empty_export_days(by_day) if skip_empty else by_day
+    empty_omitted = max(0, len(by_day) - len(exported_days))
+
     return {
-        "export_version": "1.2",
+        "export_version": "1.3",
         "exported_at": datetime.now(timezone.utc).isoformat(),
         "purpose": (
             "Last-N-days productivity and wearable snapshot for designing weekly "
@@ -299,6 +450,9 @@ def build_productivity_week_export(
             "start": start.isoformat(),
             "end": end.isoformat(),
             "days": days,
+            "days_exported": len(exported_days),
+            "empty_days_omitted": empty_omitted,
+            "skip_empty": bool(skip_empty),
         },
         "policy_snapshot": policy,
         "summary": {
@@ -315,7 +469,7 @@ def build_productivity_week_export(
         },
         "weekday_patterns": weekday_patterns,
         "suggested_timetable_hints": hints,
-        "by_day": by_day,
+        "by_day": exported_days,
     }
 
 

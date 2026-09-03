@@ -74,15 +74,22 @@ def upsert_review_card(
 def card_to_quiz_item(card: ReviewCard) -> dict[str, Any]:
     payload = json.loads(card.payload_json or "{}")
     kind = payload.get("kind") or ("code" if card.format == "code" else "mcq")
-    if kind == "code" or card.format == "code":
+    if kind in ("code", "coding") or card.format == "code":
         return {
-            "kind": "code",
+            "kind": payload.get("kind") or "code",
             "id": payload.get("id") or card.item_key,
             "title": payload.get("title") or card.label,
             "prompt": payload.get("prompt") or card.label,
             "starter_code": payload.get("starter_code", "# your code\n"),
             "hint": payload.get("hint"),
             "language": payload.get("language", "python"),
+            "entry_point": payload.get("entry_point", ""),
+            "setup_code": payload.get("setup_code", ""),
+            "test_cases": payload.get("test_cases") or [],
+            "solution": payload.get("solution", ""),
+            "explanation": payload.get("explanation", ""),
+            "difficulty": payload.get("difficulty"),
+            "topic_id": payload.get("topic_id") or card.topic,
             "review_card_id": card.id,
             "domain": card.domain,
         }
@@ -255,13 +262,19 @@ def group_items_into_topic_packs(items: list[dict[str, Any]]) -> list[dict[str, 
             continue
         if tid not in groups:
             title = str(item.get("concept") or item.get("topic") or tid)[:160]
+            excerpt = str(item.get("reading_excerpt") or "").strip()
             groups[tid] = {
                 "kind": "topic_pack",
                 "topic_id": tid,
                 "title": title,
                 "note_path": str(item.get("note_path") or "").replace("\\", "/").strip() or None,
+                "reading_excerpt": excerpt[:800] if excerpt else None,
                 "questions": [],
             }
+        elif not groups[tid].get("reading_excerpt"):
+            excerpt = str(item.get("reading_excerpt") or "").strip()
+            if excerpt:
+                groups[tid]["reading_excerpt"] = excerpt[:800]
         groups[tid]["questions"].append(item)
     return list(groups.values())
 
@@ -290,6 +303,60 @@ def expand_cards_to_quiz_items(cards: list[ReviewCard]) -> list[dict[str, Any]]:
         else:
             items.append(card_to_quiz_item(card))
     return items
+
+
+def seed_content_cards(
+    db: Session,
+    *,
+    user_id: int,
+    domain: str,
+    topic_id: str,
+    topic_title: str,
+    items: list[dict[str, Any]],
+) -> int:
+    """Seed one FSRS topic-pack card for an authored content-bank topic."""
+    tid = (topic_id or "").strip()
+    if not tid or not items:
+        return 0
+    domain_s = (domain or "math").strip().lower() or "math"
+    key = _item_key(domain_s, f"content-{tid}", "")[:200]
+    label = f"{tid} — {topic_title or tid}"[:300]
+    payload = {
+        "kind": "topic_pack",
+        "id": f"content-{tid}",
+        "topic_id": tid,
+        "title": topic_title or tid,
+        "questions": list(items),
+        "source": "content_bank",
+    }
+    existing = (
+        db.query(ReviewCard)
+        .filter(ReviewCard.user_id == user_id, ReviewCard.item_key == key)
+        .first()
+    )
+    if existing:
+        existing.label = label
+        existing.payload_json = json.dumps(payload)
+        existing.topic = tid[:160]
+        existing.domain = domain_s
+        existing.format = "mcq" if domain_s != "code" else "code"
+        db.commit()
+        return 1
+    row = ReviewCard(
+        user_id=user_id,
+        domain=domain_s,
+        item_key=key,
+        label=label,
+        topic=tid[:160],
+        note_path=None,
+        format="code" if domain_s == "code" else "mcq",
+        payload_json=json.dumps(payload),
+        srs_json=json.dumps(srs_mod.srs_to_metadata(srs_mod.SrsState())),
+        deck_id=None,
+    )
+    db.add(row)
+    db.commit()
+    return 1
 
 
 def seed_deck_cards(db: Session, *, user_id: int, deck: QuizDeck) -> int:
@@ -331,7 +398,14 @@ def seed_deck_cards(db: Session, *, user_id: int, deck: QuizDeck) -> int:
             db.add(row)
             count += 1
         db.commit()
-        return count
+        # Mixed imports: tagged items live in packs, the rest still need their own cards.
+        items = [
+            it
+            for it in items
+            if isinstance(it, dict) and not str(it.get("topic_id") or "").strip()
+        ]
+        if not items:
+            return count
 
     for i, item in enumerate(items):
         if not isinstance(item, dict):

@@ -12,6 +12,8 @@
 | `0004_reconcile` | **Idempotent repair** — missing tables/columns, `password_plain`, partial upgrades |
 | `0005_words_hub` | `words` table; `hub_session_id` on `quiz_sessions` and `math_attempts` |
 | `0006_user_features` | User-defined features; per-user `reading_definitions` |
+| … | *(revisions `0007`–`0029` exist under `alembic/versions/` — chain continues)* |
+| `0030_study_loop_sessions` | `study_loop_sessions` table (Study Loop read-gate → practice) |
 
 ## Everyday commands
 

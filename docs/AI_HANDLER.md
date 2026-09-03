@@ -44,7 +44,6 @@ Browser (tier prefs)  →  transcriptsClient.ts  →  FastAPI routers  →  doma
 |------|------|
 | `src/api/transcriptsClient.ts` | **FE AI bridge** — prefs, config fetch, `llmBodyFields` |
 | `src/pages/settings/AiControlCenterPage.tsx` | Settings → keys, test connections, tiers |
-| `src/pages/HubCortexPage.tsx` | Cortex Hub multi-agent chat |
 | `src/pages/study/LectureNotesPage.tsx` | Study Library — tier UI + generate/regen actions |
 
 ### Config (server-side)
@@ -65,8 +64,6 @@ Browser (tier prefs)  →  transcriptsClient.ts  →  FastAPI routers  →  doma
 | Quiz / drills / gap analysis | `study_intel` | medium |
 | Block regen / repair | `block_regenerate`, `note_block_repair` | medium |
 | Study flow orchestrator | `study_flow` | medium (sticky job) |
-| Coach chat | `hub/services/local_coach` | light |
-| Cortex Hub | `hub/agents/cortex` | hub_router / corpus_qa |
 | App classification | `behavior/classification_service` | light |
 | Math tutor hints (text) | `math/ollama_tutor` | light (`math_hint`) |
 | Daily AI review | `hub/services/gemma_review` | heavy (`daily_review`) |
@@ -83,7 +80,7 @@ Browser (tier prefs)  →  transcriptsClient.ts  →  FastAPI routers  →  doma
 
 - `PATCH /api/system/llm/keys` — update whitelisted `.env` vars (JWT)
 - `POST /api/system/llm/test-chain` — probe each provider in a tier chain
-- `POST /api/insights/hub/chat` — Cortex Hub (multipart, optional PDF)
+- `POST /api/insights/review` — daily insights review (template or local LLM)
 
 ## Quick health check
 

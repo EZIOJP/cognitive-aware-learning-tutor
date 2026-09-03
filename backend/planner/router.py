@@ -1,5 +1,5 @@
 import json
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import HTMLResponse, Response
@@ -21,12 +21,15 @@ from backend.planner.routines import (
     upgrade_stock_default_routines,
 )
 from backend.planner.schemas import (
+    ApplyDayRhythmBody,
+    ApplyMyDayBody,
     ApplyProposedBlocksBody,
     ApplyRoutinesBody,
     CompleteBlockBody,
     GenerateDayBody,
     GenerateWeekBody,
     GoogleOAuthCredentialsBody,
+    MergeProposeBody,
     PlannerBlockCreate,
     PlannerBlockUpdate,
     ProposeFromExportBody,
@@ -407,13 +410,26 @@ def _adherence_for_day(db: Session, user: User, day: datetime) -> dict:
 
 @router.get("/export/last-7-days")
 def export_productivity_last_days(
-    days: int = Query(7, ge=1, le=31, description="How many calendar days ending today"),
+    days: int = Query(
+        7,
+        ge=1,
+        le=366,
+        description="Inclusive calendar-day window length (max 366 / ~1 leap year)",
+    ),
     format: str = Query("json", pattern="^(json|csv)$"),
     include: str = Query(
         "summary,patterns,by_day,blocks,hints,policy,wearable",
         description="Comma list: summary,patterns,by_day,blocks,hints,policy,wearable",
     ),
     productive_only: bool = Query(False, description="Prefer productive metrics in by_day"),
+    skip_empty: bool = Query(
+        True,
+        description="Omit days with no sessions, no plan, and no wearable snapshot",
+    ),
+    end_day: date | None = Query(
+        None,
+        description="Inclusive end calendar day (YYYY-MM-DD); default today",
+    ),
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
@@ -426,7 +442,9 @@ def export_productivity_last_days(
         filter_export_payload,
     )
 
-    payload = build_productivity_week_export(db, user, days=days)
+    payload = build_productivity_week_export(
+        db, user, days=days, end_day=end_day, skip_empty=skip_empty
+    )
     include_set = {p.strip() for p in include.split(",") if p.strip()}
     payload = filter_export_payload(
         payload, include=include_set, productive_only=productive_only
@@ -442,6 +460,29 @@ def export_productivity_last_days(
             },
         )
     return payload
+
+
+@router.get("/export/day-presence")
+def export_day_presence(
+    start: date = Query(..., description="Inclusive start calendar day (YYYY-MM-DD)"),
+    end: date = Query(..., description="Inclusive end calendar day (YYYY-MM-DD)"),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Lightweight list of days with tracked/plan/wearable signal for export calendars."""
+    from backend.planner.week_export import MAX_EXPORT_DAYS, list_nonempty_export_days
+
+    if end < start:
+        start, end = end, start
+    if (end - start).days + 1 > MAX_EXPORT_DAYS:
+        start = end - timedelta(days=MAX_EXPORT_DAYS - 1)
+    days = list_nonempty_export_days(db, user, start=start, end=end)
+    return {
+        "start": start.isoformat(),
+        "end": end.isoformat(),
+        "days": days,
+        "count": len(days),
+    }
 
 
 @router.post("/propose-from-export", response_model=dict)
@@ -575,6 +616,148 @@ def apply_proposed_blocks(
         "skipped_overlaps": skipped,
         "blocks": [serialize_block(b) for b in created],
     }
+
+
+@router.post("/apply-day-rhythm", response_model=dict)
+def apply_day_rhythm_route(
+    body: ApplyDayRhythmBody,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Morning-first order + study floor + breaks — same logic as CALT Desktop merge."""
+    from datetime import date as date_cls
+
+    from backend.planner.morning_order import apply_day_rhythm, morning_order_rule_text
+
+    day = date_cls.fromisoformat(body.day[:10]) if body.day else datetime.now(local_tz()).date()
+    rows = (
+        db.query(PlannerRoutine)
+        .filter(PlannerRoutine.user_id == user.id, PlannerRoutine.enabled.is_(True))
+        .order_by(PlannerRoutine.sort_order, PlannerRoutine.id)
+        .all()
+    )
+    routines = [serialize_routine(r) for r in rows]
+    blocks = apply_day_rhythm(list(body.blocks or []), day=day, routines=routines)
+    return {
+        "blocks": blocks,
+        "rule": morning_order_rule_text(day=day, routines=routines, calendar_blocks=blocks),
+    }
+
+
+@router.post("/merge-propose", response_model=dict)
+def merge_propose_route(
+    body: MergeProposeBody,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Merge propose API output with calendar + routines — same logic as CALT Desktop."""
+    from datetime import date as date_cls
+
+    from backend.behavior.calt_desktop.planner_propose_merge import merge_propose_result
+    from backend.planner.morning_order import morning_order_rule_text
+    from backend.planner.service import serialize_block
+
+    range_start = (
+        date_cls.fromisoformat(body.range_start[:10])
+        if body.range_start
+        else datetime.now(local_tz()).date()
+    )
+    horizon = body.horizon_days
+    start_utc, _ = local_day_bounds_utc(range_start)
+    _, end_utc = local_day_bounds_utc(range_start + timedelta(days=max(1, horizon) - 1))
+    cal_rows = (
+        db.query(PlannerBlock)
+        .filter(
+            PlannerBlock.user_id == user.id,
+            PlannerBlock.start_at < end_utc,
+            PlannerBlock.end_at > start_utc,
+        )
+        .order_by(PlannerBlock.start_at)
+        .all()
+    )
+    calendar_blocks = [serialize_block(b) for b in cal_rows]
+    routine_rows = (
+        db.query(PlannerRoutine)
+        .filter(PlannerRoutine.user_id == user.id, PlannerRoutine.enabled.is_(True))
+        .order_by(PlannerRoutine.sort_order, PlannerRoutine.id)
+        .all()
+    )
+    routines = [serialize_routine(r) for r in routine_rows]
+    merged = merge_propose_result(
+        api_blocks=list(body.api_blocks or []),
+        calendar_blocks=calendar_blocks,
+        routines=routines,
+        range_start=range_start,
+        horizon_days=horizon,
+    )
+    return {
+        "blocks": merged,
+        "rule": morning_order_rule_text(day=range_start, routines=routines, calendar_blocks=merged),
+        "merged_count": len(merged),
+    }
+
+
+@router.post("/apply-my-day", response_model=dict)
+def apply_my_day_route(
+    body: ApplyMyDayBody,
+    user: User = Depends(get_current_user),
+):
+    """One-shot day build: morning order → routines → smart fill → study tasks."""
+    from backend.behavior.calt_desktop.day_coach import apply_my_day
+    from backend.behavior.calt_desktop.sleep_anchor import DEFAULT_WAKE_HM
+
+    wake = body.wake_hm or DEFAULT_WAKE_HM
+    return apply_my_day(
+        user.id,
+        wake_hm=wake,
+        snapshot=body.snapshot,
+        goals_prompt=body.goals,
+        study_tasks=body.study_tasks,
+    )
+
+
+@router.post("/revert-last-apply", response_model=dict)
+def revert_last_apply_route(user: User = Depends(get_current_user)):
+    """Undo the last apply-my-day / apply-proposed snapshot."""
+    from backend.behavior.calt_desktop.apply_snapshot import revert_last_apply
+
+    return revert_last_apply(user.id)
+
+
+@router.get("/plan-drift", response_model=dict)
+def plan_drift_route(
+    day: str | None = Query(None),
+    user: User = Depends(get_current_user),
+):
+    """Plan vs actual drift lines for Today / calendar glance."""
+    from datetime import date as date_cls
+
+    from backend.behavior.calt_desktop.day_coach import plan_drift_summary
+
+    d = date_cls.fromisoformat(day[:10]) if day else datetime.now(local_tz()).date()
+    return plan_drift_summary(user.id, day=d)
+
+
+@router.get("/morning-order-rule", response_model=dict)
+def morning_order_rule_route(
+    day: str | None = Query(None),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Human-readable morning scheduling rule for UI hints."""
+    from datetime import date as date_cls
+
+    from backend.planner.morning_order import morning_order_rule_text
+
+    d = date_cls.fromisoformat(day[:10]) if day else datetime.now(local_tz()).date()
+    rows = (
+        db.query(PlannerRoutine)
+        .filter(PlannerRoutine.user_id == user.id, PlannerRoutine.enabled.is_(True))
+        .order_by(PlannerRoutine.sort_order, PlannerRoutine.id)
+        .all()
+    )
+    routines = [serialize_routine(r) for r in rows]
+    return {"rule": morning_order_rule_text(day=d, routines=routines)}
 
 
 @router.post("/generate-week", response_model=dict)

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -566,6 +567,166 @@ def post_code_run(body: CodeRunBody, user: User = Depends(get_current_user)):
         raise HTTPException(status_code=400, detail="item or item_id required")
     correct, feedback, payload = cr.grade_submission(item, body.code)
     return {"correct": correct, "feedback": feedback, **payload}
+
+
+class ImportancePutBody(BaseModel):
+    importance: int = Field(..., ge=1, le=5)
+    note: str | None = None
+    expected_updated_at: str | None = None
+
+
+class LowMasteryStartBody(BaseModel):
+    tag: str | None = None
+    count: int | None = Field(default=None, ge=1, le=40)
+
+
+class ImportanceSuggestBody(BaseModel):
+    tags: list[str] | None = None
+    overwrite_claude: bool = False
+
+
+@router.get("/importance")
+def get_importance(
+    tag: str | None = None,
+    user: User = Depends(get_current_user),
+):
+    from backend.quiz import importance as imp
+
+    _ = user
+    store = imp.load_store()
+    if tag:
+        row = (store.get("tags") or {}).get(tag)
+        return {
+            "tag_id": tag,
+            "importance": imp.importance_for(tag, store),
+            "source": (row or {}).get("source", "default"),
+            "updated_at": (row or {}).get("updated_at"),
+            "note": (row or {}).get("note"),
+            "bar": imp.bar_for(imp.importance_for(tag, store)),
+            "interval_factor": imp.interval_factor_for(imp.importance_for(tag, store)),
+            "row": row,
+        }
+    return store
+
+
+@router.get("/importance/low-mastery")
+def get_low_mastery(
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    from backend.quiz import importance as imp
+    from backend.quiz import tag_index as ti
+    from backend.models.review_card import ReviewCard
+
+    store = imp.load_store()
+    cards = db.query(ReviewCard).filter(ReviewCard.user_id == user.id).all()
+    tag_ids = [str(t["id"]) for t in ti.list_tags()]
+    return {"tags": imp.list_low_mastery(cards, tag_ids, store)}
+
+
+@router.post("/importance/low-mastery/start")
+def post_low_mastery_start(
+    body: LowMasteryStartBody | None = None,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    payload = body or LowMasteryStartBody()
+    try:
+        return handler.start_low_mastery_session(
+            db, user=user, tag=payload.tag, count=payload.count
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.post("/importance/suggest")
+def post_importance_suggest(
+    body: ImportanceSuggestBody | None = None,
+    user: User = Depends(get_current_user),
+):
+    from backend.core.llm_gateway import llm_complete
+    from backend.quiz import importance as imp
+    from backend.quiz import tag_index as ti
+
+    _ = user
+    payload = body or ImportanceSuggestBody()
+    known = {str(t["id"]) for t in ti.list_tags()}
+    want = payload.tags or sorted(known)
+    prompt = (
+        "Assign importance 1-5 for these study tags. "
+        "Return JSON {\"suggestions\": [{\"tag_id\": \"...\", \"importance\": 3, \"note\": \"optional\"}]}.\n"
+        f"Tags: {json.dumps(want[:200])}"
+    )
+    try:
+        result = llm_complete(prompt, task="classify", json_schema=None)
+        text = getattr(result, "text", None)
+        if not text:
+            raise imp.SuggestLlmError("llm_failed")
+        return imp.run_suggest(
+            tags=payload.tags,
+            overwrite_claude=payload.overwrite_claude,
+            known_tags=known,
+            llm_text=text,
+        )
+    except Exception as exc:
+        if isinstance(exc, HTTPException):
+            raise
+        if isinstance(exc, imp.SuggestLlmError):
+            raise HTTPException(status_code=502, detail="suggest_llm_failed") from exc
+        raise HTTPException(status_code=502, detail="suggest_llm_failed") from exc
+
+
+@router.get("/importance/{tag}")
+def get_importance_tag(
+    tag: str,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    from backend.quiz import importance as imp
+    from backend.models.review_card import ReviewCard
+
+    store = imp.load_store()
+    row = (store.get("tags") or {}).get(tag)
+    cards = db.query(ReviewCard).filter(ReviewCard.user_id == user.id).all()
+    progress = imp.progress_for_tag(cards, tag, store)
+    return {
+        "tag_id": tag,
+        "importance": imp.importance_for(tag, store),
+        "source": (row or {}).get("source", "default"),
+        "updated_at": (row or {}).get("updated_at"),
+        "note": (row or {}).get("note"),
+        "bar": progress["bar"],
+        "interval_factor": imp.interval_factor_for(imp.importance_for(tag, store)),
+        "progress": {
+            "cleared": progress["cleared"],
+            "total": progress["total"],
+            "mastered": progress["mastered"],
+        },
+    }
+
+
+@router.put("/importance/{tag}")
+def put_importance_tag(
+    tag: str,
+    body: ImportancePutBody,
+    user: User = Depends(get_current_user),
+):
+    from backend.quiz import importance as imp
+
+    _ = user
+    try:
+        row = imp.put_importance(
+            tag,
+            body.importance,
+            note=body.note,
+            expected_updated_at=body.expected_updated_at,
+            source="user",
+        )
+    except ValueError as exc:
+        if str(exc) == "mtime_conflict":
+            raise HTTPException(status_code=409, detail="mtime_conflict") from exc
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return row
 
 
 @router.post("/start")

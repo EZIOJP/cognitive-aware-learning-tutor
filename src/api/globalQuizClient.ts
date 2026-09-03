@@ -257,11 +257,13 @@ export function buildMathQuizConfig(
 export type StudyLoopTag = {
   id: string;
   kind?: string;
+  group?: string;
   label?: string;
   question_count?: number;
   vocab_count?: number;
   has_read_card?: boolean;
   note_paths?: string[];
+  file_order?: string;
   due_count?: number;
   pillar_weight?: number;
   [key: string]: unknown;
@@ -388,4 +390,73 @@ export async function runQuizCode(payload: {
     method: "POST",
     body: JSON.stringify(payload),
   });
+}
+
+export type TagImportanceRow = {
+  importance: number;
+  source?: string;
+  updated_at?: string | null;
+  note?: string | null;
+};
+
+export type TagImportanceProgress = {
+  tag_id: string;
+  importance: number;
+  source: string;
+  updated_at?: string | null;
+  note?: string | null;
+  bar: number;
+  interval_factor: number;
+  progress: { cleared: number; total: number; mastered: boolean };
+};
+
+export type LowMasteryTag = {
+  tag_id: string;
+  importance: number;
+  bar: number;
+  cleared: number;
+  total: number;
+  weak_count: number;
+  owes_count: number;
+};
+
+export async function fetchTagImportance(): Promise<{
+  default_importance?: number;
+  tags: Record<string, TagImportanceRow>;
+}> {
+  return quizRequest("/importance");
+}
+
+export async function fetchTagImportanceDetail(tag: string): Promise<TagImportanceProgress> {
+  return quizRequest(`/importance/${encodeURIComponent(tag)}`);
+}
+
+export async function putTagImportance(
+  tag: string,
+  body: { importance: number; note?: string; expected_updated_at?: string | null }
+) {
+  return quizRequest<TagImportanceRow>(`/importance/${encodeURIComponent(tag)}`, {
+    method: "PUT",
+    body: JSON.stringify(body),
+  });
+}
+
+export async function fetchLowMasteryTags(): Promise<{ tags: LowMasteryTag[] }> {
+  return quizRequest("/importance/low-mastery");
+}
+
+export async function startLowMasteryDrill(body?: { tag?: string; count?: number }) {
+  return quizRequest<{ session_id: string; domain: string; question: unknown; card_count: number }>(
+    "/importance/low-mastery/start",
+    { method: "POST", body: JSON.stringify(body || {}) }
+  );
+}
+
+export async function suggestTagImportance(body?: { tags?: string[]; overwrite_claude?: boolean }) {
+  return quizRequest<{
+    updated: Array<{ tag_id: string; importance: number }>;
+    skipped_user: Array<{ tag_id: string; reason: string }>;
+    skipped_claude: Array<{ tag_id: string; reason: string }>;
+    dropped_invalid: Array<{ tag_id: string; reason: string; got?: unknown }>;
+  }>("/importance/suggest", { method: "POST", body: JSON.stringify(body || {}) });
 }

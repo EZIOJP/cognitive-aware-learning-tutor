@@ -33,6 +33,7 @@ def upsert_review_card(
     note_path: str | None = None,
     fmt: str = "mcq",
     deck_id: int | None = None,
+    session_tag: str | None = None,
 ) -> ReviewCard:
     key = _item_key(domain, item_id, note_path or "")
     row = (
@@ -63,7 +64,16 @@ def upsert_review_card(
             row.note_path = note_path
 
     state = srs_mod.srs_from_metadata(json.loads(row.srs_json or "{}"))
-    state = srs_mod.schedule_after_answer(state, correct=correct, elapsed_ms=elapsed_ms)
+    from backend.quiz import importance as imp_mod
+
+    state = imp_mod.apply_learning_grade(
+        state,
+        correct=correct,
+        elapsed_ms=elapsed_ms,
+        payload=payload,
+        topic=topic,
+        session_tag=session_tag,
+    )
     row.srs_json = json.dumps(srs_mod.srs_to_metadata(state))
     row.updated_at = datetime.now(UTC)
     db.commit()

@@ -23,6 +23,7 @@ class SrsState:
     times_correct: int = 0
     consecutive_correct: int = 0
     lapses: int = 0
+    owes_corrects: int = 0
 
 
 def _clamp(value: float, low: float, high: float) -> float:
@@ -74,8 +75,22 @@ def schedule_after_answer(
     return state
 
 
+def apply_recycle_answer(state: SrsState, *, correct: bool) -> SrsState:
+    """In-session / debt recovery: bump mastery, never reschedule FSRS."""
+    state.times_asked += 1
+    if correct:
+        state.times_correct += 1
+        state.mastery = min(10, state.mastery + 1)
+        state.owes_corrects = max(0, int(state.owes_corrects or 0) - 1)
+    else:
+        state.owes_corrects = 2
+    return state
+
+
 def is_due(state: SrsState, *, now: datetime | None = None) -> bool:
     now = now or datetime.now(UTC)
+    if int(state.owes_corrects or 0) > 0:
+        return True
     if state.due_date is None:
         return state.mastery < 3 or state.times_asked == 0
     return now >= state.due_date.replace(tzinfo=UTC) if state.due_date.tzinfo is None else now >= state.due_date.astimezone(UTC)
@@ -99,6 +114,7 @@ def srs_from_metadata(raw: dict | None) -> SrsState:
         times_correct=int(raw.get("times_correct", 0)),
         consecutive_correct=int(raw.get("consecutive_correct", 0)),
         lapses=int(raw.get("lapses", 0)),
+        owes_corrects=int(raw.get("owes_corrects", 0) or 0),
     )
 
 
@@ -116,4 +132,5 @@ def srs_to_metadata(state: SrsState) -> dict:
         "times_correct": state.times_correct,
         "consecutive_correct": state.consecutive_correct,
         "lapses": state.lapses,
+        "owes_corrects": int(state.owes_corrects or 0),
     }

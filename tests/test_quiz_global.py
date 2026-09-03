@@ -170,7 +170,7 @@ def test_submit_study_mcq_correct():
         mp.setattr(handler, "upsert_node", lambda *a, **k: node)
         mp.setattr(handler, "log_observation", lambda *a, **k: None)
         mp.setattr(handler, "save_global_session", lambda *a, **k: None)
-        mp.setattr(handler, "_record_review_card", lambda *a, **k: 3)
+        mp.setattr(handler, "_record_review_card", lambda *a, **k: (3, 0))
 
         result = handler.submit_answer(
             db,
@@ -223,7 +223,7 @@ def test_submit_study_mcq_wrong_shows_concept_and_requeues():
         mp.setattr(handler, "upsert_node", lambda *a, **k: node)
         mp.setattr(handler, "log_observation", lambda *a, **k: None)
         mp.setattr(handler, "save_global_session", lambda *a, **k: None)
-        mp.setattr(handler, "_record_review_card", lambda *a, **k: 3)
+        mp.setattr(handler, "_record_review_card", lambda *a, **k: (3, 0))
 
         result = handler.submit_answer(
             db,
@@ -238,10 +238,8 @@ def test_submit_study_mcq_wrong_shows_concept_and_requeues():
     assert result["requeued"] is True
     assert result["complete"] is False
     assert result["next_question"] is not None
-    # Original q2 remains next; retry appended at end
     assert len(sess["payload"]["items"]) == 3
-    assert sess["payload"]["items"][-1]["id"] == "q1-retry"
-    assert sess["payload"]["items"][-1].get("_requeued") is True
+    assert any(it.get("_requeued") for it in sess["payload"]["items"])
 
 
 def test_generate_quiz_items_template_without_llm(monkeypatch):

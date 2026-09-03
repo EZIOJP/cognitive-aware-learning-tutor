@@ -13,7 +13,7 @@ from backend.hub.services.knowledge_graph import log_observation, upsert_node
 from backend.math.answer_grade import answers_equivalent
 from backend.math.services.randomizer import pick_from_bank, pick_n_from_bank
 from backend.models import MathAttempt, QuizSession, User, WordProgress
-from backend.models.review_card import QuizDeck
+from backend.models.review_card import QuizDeck, ReviewCard
 from backend.quiz import review_cards as rc_mod
 from backend.quiz import srs as srs_mod
 from backend.quiz.store import (
@@ -211,6 +211,9 @@ def _build_session_payload(
         "note_path": str(config.get("note_path") or ""),
         "topic": config.get("topic") or "",
     }
+    learning_tag = str(config.get("learning_tag") or config.get("note_topic_id") or "").strip()
+    if learning_tag:
+        payload["learning_tag"] = learning_tag
     if config.get("time_limit_sec"):
         payload["time_limit_sec"] = int(config["time_limit_sec"])
     if config.get("per_question_sec"):
@@ -239,6 +242,38 @@ def start_review_session(
     items = rc_mod.expand_cards_to_quiz_items(cards)
     config: dict[str, Any] = {"time_limit_sec": time_limit_sec, "per_question_sec": per_question_sec}
     payload = _build_session_payload(config, items=items, extra={"review_mode": True})
+    session_id = create_global_session(db, user_id=user.id, domain="mixed", payload=payload)
+    q = _study_question_from_payload(items, 0, payload.get("note_path", ""), db, payload)
+    return {"session_id": session_id, "domain": "mixed", "question": q, "card_count": len(items)}
+
+
+def start_low_mastery_session(
+    db: Session,
+    *,
+    user: User,
+    tag: str | None = None,
+    count: int | None = None,
+) -> dict[str, Any]:
+    from backend.quiz import importance as imp_mod
+
+    n = 15 if count is None else int(count)
+    n = max(1, min(40, n))
+    cards = db.query(ReviewCard).filter(ReviewCard.user_id == user.id).all()
+    store = imp_mod.load_store()
+    session_tag = (tag or "").strip() or None
+    weak = imp_mod.weak_cards_for_session(cards, tag=session_tag, store=store)
+    weak = imp_mod.sort_cards_for_queue(weak, session_tag=session_tag, store=store)[:n]
+    if not weak:
+        raise ValueError("No low-mastery cards for this drill.")
+    items = rc_mod.expand_cards_to_quiz_items(weak)
+    config: dict[str, Any] = {}
+    if session_tag:
+        config["learning_tag"] = session_tag
+    payload = _build_session_payload(
+        config,
+        items=items,
+        extra={"low_mastery": True, "learning_tag": session_tag} if session_tag else {"low_mastery": True},
+    )
     session_id = create_global_session(db, user_id=user.id, domain="mixed", payload=payload)
     q = _study_question_from_payload(items, 0, payload.get("note_path", ""), db, payload)
     return {"session_id": session_id, "domain": "mixed", "question": q, "card_count": len(items)}
@@ -353,6 +388,14 @@ def start_session(
     config: dict[str, Any],
 ) -> dict[str, Any]:
     domain = domain.strip().lower()
+
+    if config.get("low_mastery"):
+        return start_low_mastery_session(
+            db,
+            user=user,
+            tag=str(config.get("tag") or config.get("note_topic_id") or "").strip() or None,
+            count=config.get("count"),
+        )
 
     if domain == "review":
         return start_review_session(
@@ -671,7 +714,8 @@ def _record_review_card(
     note_path: str | None = None,
     fmt: str = "mcq",
     deck_id: int | None = None,
-) -> int:
+    session_tag: str | None = None,
+) -> tuple[int, int]:
     card = rc_mod.upsert_review_card(
         db,
         user_id=user.id,
@@ -685,9 +729,10 @@ def _record_review_card(
         note_path=note_path,
         fmt=fmt,
         deck_id=deck_id,
+        session_tag=session_tag,
     )
     state = srs_mod.srs_from_metadata(json.loads(card.srs_json or "{}"))
-    return state.mastery
+    return int(state.mastery), int(state.owes_corrects or 0)
 
 
 def submit_answer(
@@ -746,7 +791,7 @@ def _submit_vocab(
         p.interval_days = fsrs.interval_days
     db.commit()
 
-    mastery = _record_review_card(
+    mastery, _owes = _record_review_card(
         db,
         user=user,
         domain="vocab",
@@ -823,7 +868,7 @@ def _submit_math(
     )
 
     item_id = str(problem.get("question_id") or topic)
-    mastery = _record_review_card(
+    mastery, _owes = _record_review_card(
         db,
         user=user,
         domain="math",
@@ -1037,6 +1082,8 @@ def _submit_study(
         )
 
     mastery = 0
+    owes = 0
+    card_id = str(item.get("id") or item_id)
     if item.get("schedule_topic_pack"):
         pack_id = str(item.get("review_card_id") or "")
         scores = sess["payload"].setdefault("topic_pack_scores", {})
@@ -1048,7 +1095,7 @@ def _submit_study(
             pack_results = scores.get(pack_id) or []
             pack_ok = sum(1 for x in pack_results if x) * 2 >= max(1, len(pack_results))
             topic_id = str(item.get("topic_id") or topic or "topic")
-            mastery = _record_review_card(
+            mastery, _owes = _record_review_card(
                 db,
                 user=user,
                 domain=domain,
@@ -1065,13 +1112,19 @@ def _submit_study(
                 note_path=note_path or None,
                 fmt="mcq",
                 deck_id=int(deck_id) if deck_id else None,
+                session_tag=str(sess["payload"].get("learning_tag") or "") or None,
             )
     elif eligible_for_review:
-        mastery = _record_review_card(
+        card_id = str(item.get("_card_item_id") or item.get("id") or item_id)
+        for sep in ("-recycle", "-retry"):
+            if sep in card_id:
+                card_id = card_id.split(sep)[0]
+                break
+        mastery, owes = _record_review_card(
             db,
             user=user,
             domain=domain,
-            item_id=str(item.get("id") or item_id),
+            item_id=card_id,
             label=label,
             payload=payload,
             correct=correct,
@@ -1080,6 +1133,7 @@ def _submit_study(
             note_path=note_path or None,
             fmt=fmt,
             deck_id=int(deck_id) if deck_id else None,
+            session_tag=str(sess["payload"].get("learning_tag") or "") or None,
         )
 
     sess["attempts"].append(
@@ -1094,45 +1148,61 @@ def _submit_study(
     )
     requeued = False
     retry_count = int(item.get("_retry_count") or 0)
-    max_retries = 8 if (kind == "math" or item.get("repeat_until_correct")) else 1
-    if (
-        not correct
-        and eligible_for_review
-        and not item.get("schedule_topic_pack")
-        and retry_count < max_retries
-        and (
-            (fmt == "mcq" and kind not in ("vocab", "math", "code"))
-            or kind == "math"
-            or item.get("repeat_until_correct")
-        )
-    ):
-        # Re-ask later in this session until correct (math / aptitude drills).
+    if owes > 0 and eligible_for_review and not item.get("schedule_topic_pack"):
+        from backend.quiz import importance as imp_mod
+
         retry = dict(item)
-        retry["id"] = f"{item.get('id') or item_id}-retry{retry_count + 1}"
+        retry["_card_item_id"] = str(item.get("_card_item_id") or card_id)
         retry["_retry_count"] = retry_count + 1
         retry["_requeued"] = True
-        items.append(retry)
-        sess["payload"]["items"] = items
-        requeued = True
-
-        # When mathgen miss, inject one more live problem of the same recipe.
-        if kind == "math" and item.get("gen_id") is not None:
+        if kind == "math":
             try:
-                from backend.quiz import math_generators as mg
-
-                extra = mg.generate_quiz_items(
-                    db,
-                    topic_id=str(item.get("topic_id") or ""),
-                    count=1,
-                    user_id=user.id,
-                )
-                for ex in extra:
-                    ex["repeat_until_correct"] = True
-                    ex["_retry_count"] = 0
-                    items.append(ex)
-                sess["payload"]["items"] = items
+                retry = imp_mod.ephemeral_math_recycle(retry)
             except Exception:  # noqa: BLE001
                 pass
+        retry["id"] = f"{retry['_card_item_id']}-recycle{retry['_retry_count']}"
+        pos = imp_mod.recycle_insert_index(sess["index"], len(items))
+        items.insert(pos, retry)
+        sess["payload"]["items"] = items
+        requeued = True
+    else:
+        max_retries = 8 if (kind == "math" or item.get("repeat_until_correct")) else 1
+        if (
+            not correct
+            and eligible_for_review
+            and not item.get("schedule_topic_pack")
+            and retry_count < max_retries
+            and (
+                (fmt == "mcq" and kind not in ("vocab", "math", "code"))
+                or kind == "math"
+                or item.get("repeat_until_correct")
+            )
+        ):
+            retry = dict(item)
+            retry["id"] = f"{item.get('id') or item_id}-retry{retry_count + 1}"
+            retry["_retry_count"] = retry_count + 1
+            retry["_requeued"] = True
+            items.append(retry)
+            sess["payload"]["items"] = items
+            requeued = True
+
+            if kind == "math" and item.get("gen_id") is not None:
+                try:
+                    from backend.quiz import math_generators as mg
+
+                    extra = mg.generate_quiz_items(
+                        db,
+                        topic_id=str(item.get("topic_id") or ""),
+                        count=1,
+                        user_id=user.id,
+                    )
+                    for ex in extra:
+                        ex["repeat_until_correct"] = True
+                        ex["_retry_count"] = 0
+                        items.append(ex)
+                    sess["payload"]["items"] = items
+                except Exception:  # noqa: BLE001
+                    pass
 
     sess["index"] += 1
     save_global_session(db, sess)

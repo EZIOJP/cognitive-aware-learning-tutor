@@ -121,7 +121,7 @@ def test_submit_math_item_advances_to_next():
         mp.setattr(handler, "upsert_node", lambda *a, **k: node)
         mp.setattr(handler, "log_observation", lambda *a, **k: None)
         mp.setattr(handler, "save_global_session", lambda *a, **k: None)
-        mp.setattr(handler, "_record_review_card", lambda *a, **k: 2)
+        mp.setattr(handler, "_record_review_card", lambda *a, **k: (2, 0))
         out = handler.submit_answer(
             db,
             user=_user(),

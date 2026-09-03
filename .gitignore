@@ -119,3 +119,5 @@ gref_material/
 transcript-notes-studio/data/
 transcript-notes-studio.7z
 scripts/experiments/out/
+
+.worktrees/

@@ -76,7 +76,7 @@ Every file has the same top-level shape:
 | `path` | string[] | no | Breadcrumb: roadmap stage → topic → subtopic |
 | `track` | string | no | `aiml` \| `aptitude` (math) or `numpy` \| `pandas` \| `ml` … (coding) |
 | `prerequisites` | string[] | no | Other `topic_id`s |
-| `note_topic_ids` | string[] | no | Lecture-note topic tags (`L{n}-Txx`) this topic backs — this is what links a lecture note to practice questions |
+| `note_topic_ids` | string[] | no | Note topic tags (`L{n}-Txx` or `MT{n}-Txx`) this topic backs — links notes to practice |
 | `description` | string | no | One-line scope |
 
 `note_topic_ids` is the bridge to lecture notes: an `L04-T02` note section can offer
@@ -86,7 +86,9 @@ Every file has the same top-level shape:
 
 | Field | Type | Required | Notes |
 |---|---|---|---|
-| `id` | string | yes | Globally unique, stable. Convention: `<topic_id>.q001` |
+| `id` | string | yes | Globally unique, stable. For curriculum-pass imports: `math.{source}.{source_id}` (e.g. `math.mathqa.142`) — **do not** embed pack `topic_id` in `id`. Older packs may still use `<topic_id>.q001`. |
+| `source` | string | no | Upstream name (`sat`, `mathqa`, `hendrycks`, `saket`, `mathgenerator`, `deepmind`, `mathnet`, `authored`) |
+| `source_id` | string | no | Upstream id; with `source` forms the merge key |
 | `difficulty` | `"easy" \| "medium" \| "hard"` | no | Default `medium` |
 | `explanation` | string | no | Shown after answering |
 | `hint` | string | no | Behind the "Show hint" button |
@@ -336,8 +338,14 @@ changes:
 
 - [ ] `schema_version: 1` and `kind` set
 - [ ] `topic.topic_id` is stable, lowercase, and unique across all files
-- [ ] Every question `id` is unique and prefixed with the `topic_id`
-- [ ] Math: `answer` is SymPy-parseable when `answer_format` is `number`/`expression`
+- [ ] Every question `id` is unique (prefer `math.{source}.{source_id}` for imported items)
+- [ ] Math: empty `answer` is allowed with `answer_format: open`; otherwise SymPy-parseable when `number`/`expression`
+- [ ] Refresh English curriculum mapping (optional):
+
+```bat
+python scripts/math_en_curriculum_pass.py --skip-seed
+```
+
 - [ ] Coding: at least one non-edge case **and** at least one `is_edge_case: true` case
 - [ ] Coding: `solution` actually passes its own `test_cases`
 - [ ] Validate before hand-off:

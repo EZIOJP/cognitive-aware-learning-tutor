@@ -49,11 +49,20 @@ function fmtRemainMinutes(m: number): string {
   return formatHoursMins(m);
 }
 
+export type PolicyPanelVariant = "all" | "softland" | "unlock" | "scoring";
+
 type Props = {
   onSaved?: () => void;
+  /** Disassembled Settings groups — default keeps legacy full panel. */
+  variant?: PolicyPanelVariant;
 };
 
-export function ProductivityPolicyPanel({ onSaved }: Props) {
+export function ProductivityPolicyPanel({ onSaved, variant = "all" }: Props) {
+  const showSoftlandToggle = variant === "all" || variant === "softland";
+  const showUnlockExtras = variant === "all" || variant === "unlock";
+  const showCommitmentBox = showSoftlandToggle || showUnlockExtras;
+  const showScoring = variant === "all" || variant === "scoring";
+  const showDevice = variant === "all";
   const [policy, setPolicy] = useState<ProductivityPolicy | null>(null);
   const [scores, setScores] = useState<Record<string, number>>({});
   const [gate, setGate] = useState<DistractionGate | null>(null);
@@ -223,22 +232,15 @@ export function ProductivityPolicyPanel({ onSaved }: Props) {
       {error && <p className="text-xs text-rose-300">{error}</p>}
       {hint && <p className="text-xs text-emerald-300">{hint}</p>}
 
+      {showCommitmentBox && (
       <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 space-y-3">
+        {showSoftlandToggle && (
         <div className="flex items-start justify-between gap-2">
           <div>
-            <p className="text-xs font-semibold text-amber-100">SoftLand / game-bank until daily goal</p>
+            <p className="text-xs font-semibold text-amber-100">SoftLand on</p>
             <p className="text-[11px] text-muted-foreground mt-0.5">
-              This toggle is SoftLand + game-bank only — it does <strong className="text-foreground/80">not</strong>{" "}
-              control OS process kills.               For kills use{" "}
-              <a className="underline text-amber-200/90" href="#focus">
-                Settings → Focus / Enforcer
-              </a>{" "}
-              or{" "}
-              <a className="underline text-amber-200/90" href="#rules">
-                Blocking rules
-              </a>{" "}
-              (<code className="text-foreground/70">enforcer_policy.json</code>). Site SoftLand ={" "}
-              <strong className="text-foreground/80">CALT Gate</strong> on Edge.
+              Site blocking in Edge only — does <strong className="text-foreground/80">not</strong> Arm OS
+              kills. Arm lives under Settings → Now / Apps.
             </p>
           </div>
           <label className="flex items-center gap-2 text-xs shrink-0">
@@ -259,10 +261,12 @@ export function ProductivityPolicyPanel({ onSaved }: Props) {
             SoftLand on
           </label>
         </div>
+        )}
+        {showUnlockExtras && (
+        <>
         <p className="text-[11px] text-muted-foreground">
-          Games unlock when you hit your <strong className="text-foreground/80">study goal</strong>{" "}
-          and complete <strong className="text-foreground/80">1 Bible chapter</strong> (unlimited
-          until midnight).{" "}
+          Day unlocks when you hit your <strong className="text-foreground/80">study goal</strong>{" "}
+          and tick <strong className="text-foreground/80">1 Bible chapter</strong> (until midnight).{" "}
           <a className="underline text-amber-200/90" href="/bible">
             Open Bible reader
           </a>
@@ -608,8 +612,13 @@ export function ProductivityPolicyPanel({ onSaved }: Props) {
             </button>
           </div>
         </div>
+        </>
+        )}
       </div>
+      )}
 
+      {showScoring && (
+      <>
       <label className="flex items-center gap-2 text-xs">
         Productive threshold
         <input
@@ -735,8 +744,10 @@ export function ProductivityPolicyPanel({ onSaved }: Props) {
           )}
         </ul>
       </div>
+      </>
+      )}
 
-      <DeviceBlockPanel />
+      {showDevice && <DeviceBlockPanel />}
     </div>
   );
 }

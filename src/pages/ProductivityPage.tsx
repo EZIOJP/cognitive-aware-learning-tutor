@@ -13,14 +13,11 @@ import { GlanceBar } from "../components/productivity/GlanceBar";
 import { PlanVsActualDashboard } from "../components/productivity/PlanVsActualDashboard";
 import { ConfirmPlanButton } from "../components/productivity/ConfirmPlanButton";
 import { TimetablePanel } from "../components/productivity/TimetablePanel";
-import { PlanningSettingsPanel } from "../components/productivity/PlanningSettingsPanel";
-import { DemoModePanel } from "../components/productivity/DemoModePanel";
-import FocusControlPanel from "../components/productivity/FocusControlPanel";
-import ProductivityPolicyPanel from "../components/productivity/ProductivityPolicyPanel";
-import GateSchedulesPanel from "../components/productivity/GateSchedulesPanel";
-import AppKillRulesPanel from "../components/productivity/AppKillRulesPanel";
-import SoftLandSiteRulesPanel from "../components/productivity/SoftLandSiteRulesPanel";
-import { WearablesSyncPanel } from "../components/productivity/WearablesSyncPanel";
+import {
+  ProductivitySettingsTab,
+  parseSettingsSection,
+  type SettingsSectionId,
+} from "../components/productivity/ProductivitySettingsTab";
 import { RoutinesPanel } from "../components/productivity/RoutinesPanel";
 import { ProposeStepPanel, applyRangeForHorizon } from "../components/productivity/ProposeStepPanel";
 import { proposeBlockStatKind, blockDurationMinutes } from "../components/productivity/proposeBlockStats";
@@ -47,13 +44,8 @@ import {
 } from "../api/plannerClient";
 import { fetchDueReview } from "../api/globalQuizClient";
 import { fetchHubDaily } from "../api/hubClient";
-import ClassificationReview from "../components/productivity/ClassificationReview";
-import ActivitiesPanel from "../components/productivity/ActivitiesPanel";
 import ShutdownRitualPanel from "../components/productivity/ShutdownRitualPanel";
 import WeeklyDigestPanel from "../components/productivity/WeeklyDigestPanel";
-import SessionOverridePanel from "../components/productivity/SessionOverridePanel";
-import DesktopManagedBanner from "../components/productivity/DesktopManagedBanner";
-import { ExportRangeCalendar } from "../components/productivity/ExportRangeCalendar";
 import ProductivityGoalsPanel, {
   formatGoalsForPrompt,
   GOALS_UPDATED_EVENT,
@@ -457,6 +449,23 @@ export function ProductivityPage() {
   const rawTab = searchParams.get("tab");
   const tab: "calendar" | "plan" | "settings" =
     rawTab === "plan" || rawTab === "settings" ? rawTab : "calendar";
+  const settingsSection = parseSettingsSection(
+    searchParams.get("section") || searchParams.get("settings") || (typeof window !== "undefined" ? window.location.hash.replace(/^#/, "") : null),
+  );
+  const setSettingsSection = useCallback(
+    (id: SettingsSectionId) => {
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          next.set("tab", "settings");
+          next.set("section", id);
+          return next;
+        },
+        { replace: true },
+      );
+    },
+    [setSearchParams],
+  );
   const setTab = useCallback(
     (id: "calendar" | "plan" | "settings") => {
       if (id === "calendar") {
@@ -1794,488 +1803,51 @@ export function ProductivityPage() {
       )}
 
       {tab === "settings" && (
-      <div className="space-y-8">
-        <div className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-muted-foreground space-y-2">
-          <p className="font-medium text-foreground text-xs uppercase tracking-wider">Settings</p>
-          <p>
-            SoftLand = sites in Edge (CALT Gate). Arm Enforcer = OS process kills (
-            <code className="text-foreground/80">calt_enforcer</code>
-            ). SoftLand ON does <strong className="text-foreground/85">not</strong> kill Steam.
-            Arm does <strong className="text-foreground/85">not</strong> SoftLand sites by itself.
-          </p>
-          <p className="text-[11px] flex flex-wrap gap-x-3 gap-y-1">
-            <a href="#focus" className="text-sky-300 underline underline-offset-2 hover:text-white">
-              Focus
-            </a>
-            <a href="#policy" className="text-sky-300 underline underline-offset-2 hover:text-white">
-              SoftLand policy
-            </a>
-            <a href="#rules" className="text-sky-300 underline underline-offset-2 hover:text-white">
-              Blocking rules
-            </a>
-            <a href="#planning" className="text-sky-300 underline underline-offset-2 hover:text-white">
-              Planning
-            </a>
-            <a href="#demo-mode" className="text-amber-200 underline underline-offset-2 hover:text-white">
-              Demo
-            </a>
-            <a href="#watch" className="text-sky-300 underline underline-offset-2 hover:text-white">
-              Watch
-            </a>
-            <a href="#reminders" className="text-sky-300 underline underline-offset-2 hover:text-white">
-              Reminders
-            </a>
-            <a href="#scoring" className="text-sky-300 underline underline-offset-2 hover:text-white">
-              Scoring
-            </a>
-            <a href="#export" className="text-sky-300 underline underline-offset-2 hover:text-white">
-              Export
-            </a>
-            <a href="#setup" className="text-sky-300 underline underline-offset-2 hover:text-white">
-              Setup
-            </a>
-          </p>
-        </div>
-
-        <section id="focus" className="space-y-3 scroll-mt-24">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Focus / Enforcer
-          </h2>
-          <p className="text-[11px] text-muted-foreground px-1">
-            Edit full kill list, SoftLand domains, and schedules in{" "}
-            <a href="#rules" className="underline text-sky-300/90">
-              Blocking rules
-            </a>
-            .
-          </p>
-          <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-4 sm:p-6">
-            <FocusControlPanel />
-          </div>
-        </section>
-
-        <section id="policy" className="space-y-3 scroll-mt-24">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            SoftLand / productivity policy
-          </h2>
-          <p className="text-[11px] text-muted-foreground px-1">
-            Site allow/watch/block extras and gate windows:{" "}
-            <a href="#rules" className="underline text-sky-300/90">
-              Edit full rules → #rules
-            </a>
-            .
-          </p>
-          <ProductivityPolicyPanel
-            onSaved={() => {
-              setPlannerRefresh((n) => n + 1);
-              void load();
-            }}
-          />
-        </section>
-
-        <section id="rules" className="space-y-3 scroll-mt-24">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Blocking rules
-          </h2>
-          <p className="text-[11px] text-muted-foreground px-1">
-            Gate schedules (SoftLand mode by time), OS kill list (Arm), and SoftLand site extras.
-            SoftLand ≠ Arm.
-          </p>
-          <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-4 sm:p-6">
-            <GateSchedulesPanel />
-          </div>
-          <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-4 sm:p-6">
-            <AppKillRulesPanel />
-          </div>
-          <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-4 sm:p-6">
-            <SoftLandSiteRulesPanel />
-          </div>
-        </section>
-
-        <section id="planning" className="space-y-3 scroll-mt-24">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Planning
-          </h2>
-          <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6">
-            <PlanningSettingsPanel
-              refreshKey={plannerRefresh}
-              onPlannerChange={bumpPlanner}
-            />
-          </div>
-        </section>
-
-        <section id="demo-mode" className="space-y-3 scroll-mt-24">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-amber-200/90">
-            Demo mode
-          </h2>
-          <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6">
-            <DemoModePanel
-              onChanged={() => {
-                setPlannerRefresh((n) => n + 1);
-                void fetchDemoClock()
-                  .then(setDemoClock)
-                  .catch(() => setDemoClock(null));
-              }}
-              onJumpToDay={(day) => {
-                setPlannerDay(day);
-                setSearchParams(
-                  (prev) => {
-                    const next = new URLSearchParams(prev);
-                    next.delete("tab");
-                    const y = day.getFullYear();
-                    const m = String(day.getMonth() + 1).padStart(2, "0");
-                    const d = String(day.getDate()).padStart(2, "0");
-                    next.set("day", `${y}-${m}-${d}`);
-                    return next;
-                  },
-                  { replace: true },
-                );
-                setCalendarView(Views.DAY);
-              }}
-            />
-          </div>
-        </section>
-
-        <section id="watch" className="space-y-3 scroll-mt-24">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Watch ↔ PC
-          </h2>
-          <DesktopManagedBanner feature="Watch sync and voice notes" />
-          <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6">
-            <WearablesSyncPanel />
-          </div>
-        </section>
-
-        <section id="reminders" className="space-y-3 scroll-mt-24">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Plan reminders
-          </h2>
-          <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6">
-            <PlannerRemindersPanel />
-          </div>
-        </section>
-
-        <section id="scoring" className="space-y-3 scroll-mt-24">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Scoring & classification
-          </h2>
-          <DesktopManagedBanner feature="Rules, hard block, gate schedules, and device block" />
-          <p className="text-xs text-muted-foreground px-1">
-            Session override / classification below stay on the web for calendar cleanup. SoftLand
-            policy:{" "}
-            <a href="#policy" className="underline">
-              #policy
-            </a>
-            . OS kills:{" "}
-            <a href="#focus" className="underline">
-              #focus
-            </a>
-            .
-          </p>
-          <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6">
-            <SessionOverridePanel
-              timeline={timeline}
-              onSaved={() => {
-                void load();
-                setPlannerRefresh((k) => k + 1);
-              }}
-            />
-          </div>
-          <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6">
-            <ActivitiesPanel
-              day={toApiDay(plannerDay)}
-              trackerNoData={trackerStatus === "no_data"}
-              refreshKey={plannerRefresh}
-            />
-          </div>
-          <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6">
-            <ClassificationReview trackerNoData={trackerStatus === "no_data"} />
-          </div>
-        </section>
-
-        <section id="export" className="space-y-3 scroll-mt-24">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Export data</h2>
-          <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6 space-y-5">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <h3 className="font-semibold flex items-center gap-2 text-sm">
-                  <Download size={16} className="text-primary" />
-                  Week export
-                </h3>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Download productivity data as JSON or CSV (also used as context for AI propose).
-                </p>
-              </div>
-              {exportHint && (
-                <span className="max-w-xs truncate rounded-full border border-sky-500/25 bg-sky-500/10 px-3 py-1 text-xs text-sky-300" title={exportHint}>
-                  {exportHint}
-                </span>
-              )}
-            </div>
-
-            <div className="grid gap-4 lg:grid-cols-2">
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <p className="text-xs font-medium text-muted-foreground">Date range</p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {(
-                      [
-                        { days: 7, label: "7d" },
-                        { days: 30, label: "30d" },
-                        { days: 90, label: "90d" },
-                        { days: 365, label: "Year" },
-                      ] as const
-                    ).map(({ days, label }) => (
-                      <button
-                        key={days}
-                        type="button"
-                        onClick={() => {
-                          const end = toApiDay(new Date());
-                          setExportDaysWindow(days, end);
-                        }}
-                        className={`rounded-full border px-3 py-1 text-xs transition-colors ${
-                          exportDays === days &&
-                          exportEndDay === toApiDay(new Date())
-                            ? "border-primary/30 bg-primary/10 text-primary"
-                            : "border-white/10 bg-black/20 text-muted-foreground hover:bg-white/5"
-                        }`}
-                      >
-                        {label}
-                      </button>
-                    ))}
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2">
-                    <label className="block space-y-1 text-xs text-muted-foreground">
-                      <span>From</span>
-                      <input
-                        type="date"
-                        value={exportStartDay}
-                        max={exportEndDay}
-                        onChange={(e) => {
-                          const v = e.target.value;
-                          if (!v) return;
-                          applyExportWindow(v, exportEndDay);
-                        }}
-                        className="w-full rounded border border-white/10 bg-black/30 px-2 py-1.5 text-foreground"
-                      />
-                    </label>
-                    <label className="block space-y-1 text-xs text-muted-foreground">
-                      <span>To</span>
-                      <input
-                        type="date"
-                        value={exportEndDay}
-                        max={toApiDay(new Date())}
-                        min={exportStartDay}
-                        onChange={(e) => {
-                          const v = e.target.value;
-                          if (!v) return;
-                          applyExportWindow(exportStartDay, v);
-                        }}
-                        className="w-full rounded border border-white/10 bg-black/30 px-2 py-1.5 text-foreground"
-                      />
-                    </label>
-                  </div>
-
-                  <label className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                    <span>Days</span>
-                    <input
-                      type="number"
-                      inputMode="numeric"
-                      min={1}
-                      max={MAX_PRODUCTIVITY_EXPORT_DAYS}
-                      value={exportDaysText}
-                      onChange={(e) => {
-                        const raw = e.target.value;
-                        setExportDaysText(raw);
-                        if (raw.trim() === "") return;
-                        const n = Number(raw);
-                        if (!Number.isFinite(n) || n < 1) return;
-                        if (n <= MAX_PRODUCTIVITY_EXPORT_DAYS) {
-                          setExportDaysWindow(Math.floor(n));
-                        }
-                      }}
-                      onBlur={() => {
-                        const n = Number(exportDaysText);
-                        const clamped = Math.max(
-                          1,
-                          Math.min(
-                            MAX_PRODUCTIVITY_EXPORT_DAYS,
-                            Number.isFinite(n) && n >= 1 ? Math.floor(n) : exportDays || 7,
-                          ),
-                        );
-                        setExportDaysWindow(clamped);
-                      }}
-                      className="w-20 rounded border border-white/10 bg-black/30 px-2 py-1 text-foreground"
-                    />
-                    <span>
-                      (1–{MAX_PRODUCTIVITY_EXPORT_DAYS}; ends on selected To date)
-                    </span>
-                  </label>
-                  {exportRangeNote && (
-                    <p className="text-[10px] text-amber-300/90">{exportRangeNote}</p>
-                  )}
-                  <p className="text-[10px] text-muted-foreground">
-                    Up to {MAX_PRODUCTIVITY_EXPORT_DAYS} days; empty days omitted unless toggled below.
-                  </p>
-                </div>
-
-                <div className="grid gap-2 sm:grid-cols-2">
-                  <label className="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm">
-                    <span>
-                      <span className="block font-medium">Include empty days</span>
-                      <span className="text-xs text-muted-foreground">
-                        Off by default — blank days are skipped.
-                      </span>
-                    </span>
-                    <input
-                      type="checkbox"
-                      checked={exportIncludeEmpty}
-                      onChange={(e) => setExportIncludeEmpty(e.target.checked)}
-                    />
-                  </label>
-                  <label className="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm">
-                    <span>
-                      <span className="block font-medium">Productive only</span>
-                      <span className="text-xs text-muted-foreground">Skip distracting sessions.</span>
-                    </span>
-                    <input
-                      type="checkbox"
-                      checked={exportProductiveOnly}
-                      onChange={(e) => setExportProductiveOnly(e.target.checked)}
-                    />
-                  </label>
-                </div>
-
-                <p className="rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-[11px] text-muted-foreground">
-                  Last {exportDays} day{exportDays === 1 ? "" : "s"}
-                  {" · "}
-                  {exportStartDay} → {exportEndDay}
-                  {" · "}
-                  {exportIncludeEmpty ? "empty days included" : "empty days omitted"}
-                  {" · "}
-                  CSV/JSON
-                  {exportProductiveOnly ? " · productive only" : ""}
-                </p>
-
-                <div>
-                  <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                    Include sections
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {(["summary", "patterns", "by_day", "blocks", "hints", "policy", "wearable"] as const).map((k) => (
-                      <label
-                        key={k}
-                        className={`flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs transition-colors ${
-                          exportInclude[k]
-                            ? "border-primary/30 bg-primary/10 text-primary"
-                            : "border-white/10 bg-black/20 text-muted-foreground"
-                        }`}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={exportInclude[k]}
-                          onChange={() => setExportInclude((prev) => ({ ...prev, [k]: !prev[k] }))}
-                        />
-                        {k.replace("_", " ")}
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              </div>
-              <div className="flex flex-col gap-3">
-                <ExportRangeCalendar
-                  startIso={exportStartDay}
-                  endIso={exportEndDay}
-                  onRangeChange={(start, end) => applyExportWindow(start, end)}
-                />
-                <button
-                  type="button"
-                  disabled={exporting}
-                  onClick={() => void exportWeek("json")}
-                  className="flex items-center justify-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs hover:bg-white/10 disabled:opacity-50"
-                >
-                  {exporting ? <Loader2 size={13} className="animate-spin" /> : <Download size={13} />}
-                  Export JSON
-                </button>
-                <button
-                  type="button"
-                  disabled={exporting}
-                  onClick={() => void exportWeek("csv")}
-                  className="flex items-center justify-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs hover:bg-white/10 disabled:opacity-50"
-                >
-                  <Download size={13} />
-                  Export CSV
-                </button>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section id="setup" className="space-y-3 scroll-mt-24">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Tracker setup</h2>
-          <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6 space-y-3">
-            <h3 className="font-semibold flex items-center gap-2 text-sm">
-              <Terminal size={15} className="text-sky-400" />
-              Edge SelfTracker + Gate
-            </h3>
-            <p className="text-[11px] text-muted-foreground leading-relaxed">
-              Study browsing is <strong className="text-foreground/85">Microsoft Edge only</strong>. Load
-              SelfTracker + CALT Gate, then use{" "}
-              <a href="#focus" className="underline text-sky-300/90">
-                Focus → Enforcer
-              </a>{" "}
-              for OS kills and SoftLand mode for sites.
-            </p>
-            <ol className="space-y-2 text-sm text-muted-foreground list-decimal list-inside">
-              <li>
-                Open <code className="bg-black/40 px-1.5 py-0.5 rounded text-xs font-mono">edge://extensions</code>{" "}
-                → Developer mode → Load unpacked →{" "}
-                <code className="bg-black/40 px-1.5 py-0.5 rounded text-xs font-mono">selftracker-extension/</code>{" "}
-                and <code className="bg-black/40 px-1.5 py-0.5 rounded text-xs font-mono">calt-gate-extension/</code>
-              </li>
-              <li>
-                Or run{" "}
-                <code className="bg-black/40 px-1.5 py-0.5 rounded text-xs font-mono">
-                  scripts\launch_selftracker_edge.bat
-                </code>
-              </li>
-              <li>
-                After code updates: <strong className="text-foreground/85">Reload</strong> both extensions
-              </li>
-            </ol>
-          </div>
-          <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6 space-y-3">
-            <h3 className="font-semibold flex items-center gap-2 text-sm">
-              <Terminal size={15} className="text-green-400" />
-              Native enforcer (OS kills)
-            </h3>
-            <ol className="space-y-2 text-sm text-muted-foreground list-decimal list-inside">
-              <li>
-                Daily:{" "}
-                <code className="bg-black/40 px-1.5 py-0.5 rounded text-xs font-mono">
-                  scripts\desktop_tracker\run\run_calt_desktop.bat
-                </code>{" "}
-                (opens Focus; prefers Windows service)
-              </li>
-              <li>
-                Console smoke:{" "}
-                <code className="bg-black/40 px-1.5 py-0.5 rounded text-xs font-mono">
-                  scripts\desktop_tracker\run\run_native_enforcer_console.bat
-                </code>
-              </li>
-              <li>
-                Stay-alive (Admin once):{" "}
-                <code className="bg-black/40 px-1.5 py-0.5 rounded text-xs font-mono">
-                  scripts\desktop_tracker\install\install_native_enforcer.ps1
-                </code>
-              </li>
-            </ol>
-            <p className="text-[11px] text-muted-foreground">
-              Prefer C++ enforcer + Focus — do not use legacy Python tracker scripts for kills.
-            </p>
-          </div>
-        </section>
-      </div>
+      <ProductivitySettingsTab
+        section={settingsSection}
+        onSectionChange={setSettingsSection}
+        plannerRefresh={plannerRefresh}
+        bumpPlanner={bumpPlanner}
+        onPolicySaved={() => {
+          setPlannerRefresh((n) => n + 1);
+          void load();
+        }}
+        timeline={timeline}
+        plannerDayApi={toApiDay(plannerDay)}
+        trackerNoData={trackerStatus === "no_data"}
+        onLoad={() => void load()}
+        onDemoChanged={() => {
+          setPlannerRefresh((n) => n + 1);
+          void fetchDemoClock()
+            .then(setDemoClock)
+            .catch(() => setDemoClock(null));
+        }}
+        onJumpToDay={(day) => {
+          setPlannerDay(day);
+          setSearchParams(
+            (prev) => {
+              const next = new URLSearchParams(prev);
+              next.delete("tab");
+              const y = day.getFullYear();
+              const m = String(day.getMonth() + 1).padStart(2, "0");
+              const d = String(day.getDate()).padStart(2, "0");
+              next.set("day", `${y}-${m}-${d}`);
+              return next;
+            },
+            { replace: true },
+          );
+          setCalendarView(Views.DAY);
+        }}
+        exportHint={exportHint}
+        exportDays={exportDays}
+        exportStartDay={exportStartDay}
+        exportEndDay={exportEndDay}
+        exporting={exporting}
+        applyExportWindow={applyExportWindow}
+        setExportDaysWindow={setExportDaysWindow}
+        exportWeek={exportWeek}
+        toApiDay={toApiDay}
+      />
       )}
 
     </div>

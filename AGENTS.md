@@ -79,7 +79,9 @@ No Qt, no pystray, no Electron.
 | **Prod P3** | Gate → msg-host → native SoftLand decide | **Done** (`calt_msg_host` get_mode; Gate nativeMessaging + HTTP fallback) |
 | **Prod P4** | Remove SoftLand HTTP `:8000` dependency | **Done** (Gate HTTP SoftLand fallback opt-in only; edits go through the gateway) |
 | **Prod P5** | Native unlock accounting + classification/scoring (owner chose full P5 2026-09-08) | **Designed, not built** — [P5 design](docs/superpowers/specs/2026-09-08-calt-productivity-p5-native-unlock-accounting-design.md); first plan ready: [P5a](docs/superpowers/plans/2026-09-08-calt-productivity-p5a-native-unlock-accounting.md) |
+| **Settings UI** | Grouped Settings overhaul (Focus) — communicate SoftLand/Arm/lists | **Done (React)** — [design](docs/superpowers/specs/2026-09-08-productivity-settings-ui-overhaul-design.md); Figma polish optional |
 | **Prod P6** | Browser track without Python | Planned |
+| **Future F1–F3** | Plan/Calendar/Watch deeper into Focus/C++ (parked) | [Thin future plan](docs/superpowers/exports/2026-09-08-future-plan-calendar-watch-cpp.md) |
 | **Phase 2 gateway** | Enforcer-owned command API + SQLite SoT + SoftLand tick; JSON mirrors | **Backend done + verified with `:8000` stopped** (2026-09-08). Next: Settings **frontend** overhaul only |
 | P4 (old) | Msg-host relay → Python | **Superseded** — host must ask C++ SoftLand, not Python |
 | P7 | Python kills again | **Rejected** |

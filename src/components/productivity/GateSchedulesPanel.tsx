@@ -103,6 +103,7 @@ export function GateSchedulesPanel() {
             Recurring gate schedules
           </h3>
           <p className="text-xs text-muted-foreground mt-1">
+            SoftLand schedule — week strip is the calendar for each window (Mon–Sun). First match wins.
             SoftLand schedule windows → <code className="text-[10px]">softland_policy.json</code> (Phase 2 SoT).
           </p>
         </div>

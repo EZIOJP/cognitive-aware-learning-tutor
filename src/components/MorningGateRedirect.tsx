@@ -1,39 +1,57 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router";
-import { BookOpen, CalendarCheck, Sparkles } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { fetchDistractionGate, type MorningGate } from "../api/behaviorClient";
-import { ConfirmPlanButton, MORNING_UPDATED_EVENT } from "./productivity/ConfirmPlanButton";
+import { MORNING_UPDATED_EVENT } from "./productivity/ConfirmPlanButton";
 
-/** Soft-landing for morning.next=plan — Productivity Plan tab. */
+/** Soft-landing for morning.next=plan — Productivity Plan tab (server default). */
 export const MORNING_PLAN_PATH = "/productivity?tab=plan";
+
+const GATE_BC = "calt-morning-gate";
+const HEARTBEAT_MS = 5 * 60 * 1000;
+
+/**
+ * Gate APIs return absolute SPA URLs for the desktop tracker (open Edge).
+ * React Router navigate() must get a path — absolute http(s) URLs become
+ * broken relative paths like /http:/localhost:5173/bible.
+ */
+export function spaNavigateTarget(raw: string | null | undefined, fallback = "/"): string {
+  const value = (raw || "").trim();
+  if (!value) return fallback;
+  if (value.startsWith("/")) return value;
+  try {
+    const u = new URL(value);
+    if (u.protocol === "http:" || u.protocol === "https:") {
+      return `${u.pathname}${u.search}${u.hash}` || fallback;
+    }
+  } catch {
+    /* not a URL */
+  }
+  // Already a path missing leading slash, or opaque string — best effort.
+  if (value.includes("://")) return fallback;
+  return value.startsWith("/") ? value : `/${value}`;
+}
 
 function pathAllowed(pathname: string, allow: string[] | undefined): boolean {
   if (!allow || allow.includes("*")) return true;
-  return allow.some((p) => pathname === p || pathname.startsWith(p + "/"));
+  return allow.some((p) => {
+    const pathOnly = spaNavigateTarget(p).split("?")[0] || p;
+    return pathname === pathOnly || pathname.startsWith(pathOnly + "/");
+  });
 }
 
-function onPlanTab(pathname: string, search: string): boolean {
-  return pathname === "/productivity" && new URLSearchParams(search).get("tab") === "plan";
-}
-
-function rewardLine(morning: MorningGate): string | null {
-  const awards = morning.rewards?.awards;
-  if (!awards) return null;
-  const bits: string[] = [];
-  if (awards.bible?.granted) bits.push(awards.bible.label);
-  if (awards.plan?.granted) bits.push(awards.plan.label);
-  if (morning.next === "bible" && !awards.bible?.granted) {
-    bits.push(`Next: Bible +${morning.rewards?.bible_points ?? 10}`);
-  } else if (morning.next === "plan" && !awards.plan?.granted) {
-    bits.push(`Next: Plan +${morning.rewards?.plan_points ?? 10}`);
-  }
-  return bits.length ? bits.join(" · ") : null;
+function defaultRedirect(morning: MorningGate): string {
+  if (morning.redirect_url) return spaNavigateTarget(morning.redirect_url, "/bible");
+  if (morning.next === "bible") return spaNavigateTarget(morning.bible_url, "/bible");
+  if (morning.next === "plan") return spaNavigateTarget(morning.plan_url, MORNING_PLAN_PATH);
+  if (morning.next === "study") return "/review?tab=loop";
+  return "/bible";
 }
 
 /**
- * Forces Bible → Confirm plan before the rest of the SPA opens.
- * Separate from desktop game hard-block (same API, nested `morning`).
+ * Soft redirect from server morning gate — trusts allow_paths + redirect_url.
+ * One BroadcastChannel leader polls every 5 min; others consume; pause when hidden.
+ * Rule changes still arrive via MORNING_UPDATED_EVENT (immediate).
  */
 export function MorningGateRedirect() {
   const { isAuthenticated, sessionReady } = useAuth();
@@ -41,6 +59,7 @@ export function MorningGateRedirect() {
   const navigate = useNavigate();
   const [morning, setMorning] = useState<MorningGate | null>(null);
   const lastNav = useRef<string>("");
+  const isLeader = useRef(false);
 
   useEffect(() => {
     if (!sessionReady || !isAuthenticated) {
@@ -48,103 +67,78 @@ export function MorningGateRedirect() {
       return;
     }
     let cancelled = false;
+    let intervalId = 0;
+    const bc =
+      typeof BroadcastChannel !== "undefined" ? new BroadcastChannel(GATE_BC) : null;
+
+    const applyMorning = (m: MorningGate | null) => {
+      if (!cancelled) setMorning(m);
+    };
+
     const poll = async () => {
       try {
         const g = await fetchDistractionGate();
-        if (!cancelled) setMorning(g.morning ?? null);
+        const m = g.morning ?? null;
+        applyMorning(m);
+        bc?.postMessage({ type: "morning", morning: m });
       } catch {
         if (!cancelled) setMorning(null);
       }
     };
-    void poll();
-    const id = window.setInterval(poll, 15000);
+
+    const becomeLeader = () => {
+      isLeader.current = true;
+      void poll();
+      window.clearInterval(intervalId);
+      intervalId = window.setInterval(() => {
+        if (document.visibilityState === "visible") void poll();
+      }, HEARTBEAT_MS);
+    };
+
+    // First tab to open claims leadership; others follow BroadcastChannel.
+    const claim = window.setTimeout(() => {
+      if (!cancelled && !isLeader.current) becomeLeader();
+    }, 50 + Math.floor(Math.random() * 200));
+
+    bc?.addEventListener("message", (ev) => {
+      const data = ev.data;
+      if (data?.type === "morning") {
+        applyMorning(data.morning ?? null);
+      } else if (data?.type === "leader-here") {
+        isLeader.current = false;
+        window.clearInterval(intervalId);
+      }
+    });
+    bc?.postMessage({ type: "leader-here" });
+
     const onVis = () => {
-      if (document.visibilityState === "visible") void poll();
+      if (document.visibilityState === "visible" && isLeader.current) void poll();
     };
     const onMorning = () => void poll();
     document.addEventListener("visibilitychange", onVis);
     window.addEventListener(MORNING_UPDATED_EVENT, onMorning);
+
     return () => {
       cancelled = true;
-      window.clearInterval(id);
+      window.clearTimeout(claim);
+      window.clearInterval(intervalId);
       document.removeEventListener("visibilitychange", onVis);
       window.removeEventListener(MORNING_UPDATED_EVENT, onMorning);
+      bc?.close();
     };
   }, [isAuthenticated, sessionReady]);
 
   useEffect(() => {
     if (!isAuthenticated || !morning?.enabled) return;
     if (morning.next === "open") return;
+    if (pathAllowed(location.pathname, morning.allow_paths)) return;
 
-    if (morning.next === "bible") {
-      if (pathAllowed(location.pathname, morning.allow_paths)) return;
-      const target = "/bible";
-      if (lastNav.current === target && location.pathname === "/bible") return;
-      lastNav.current = target;
-      navigate(target, { replace: true });
-      return;
-    }
-
-    // morning.next === "plan" — land on Plan tab; Bible/profile still allowed.
-    if (
-      location.pathname === "/bible" ||
-      location.pathname.startsWith("/bible/") ||
-      location.pathname === "/profile"
-    ) {
-      return;
-    }
-    if (onPlanTab(location.pathname, location.search)) return;
-    const target = MORNING_PLAN_PATH;
-    if (lastNav.current === target && onPlanTab(location.pathname, location.search)) return;
+    const target = defaultRedirect(morning);
+    const targetPath = target.split("?")[0] || target;
+    if (lastNav.current === target && location.pathname === targetPath) return;
     lastNav.current = target;
     navigate(target, { replace: true });
   }, [isAuthenticated, morning, location.pathname, location.search, navigate]);
 
-  if (!isAuthenticated || !morning?.enabled || morning.next === "open") {
-    return null;
-  }
-
-  const rewards = rewardLine(morning);
-
-  return (
-    <div className="fixed bottom-3 left-1/2 z-[60] -translate-x-1/2 max-w-md w-[min(92vw,28rem)] rounded-xl border border-amber-500/40 bg-amber-950/95 text-amber-50 shadow-lg px-4 py-3 flex gap-3 items-start">
-      {morning.next === "bible" ? (
-        <BookOpen className="size-5 shrink-0 mt-0.5 text-amber-300" />
-      ) : (
-        <CalendarCheck className="size-5 shrink-0 mt-0.5 text-amber-300" />
-      )}
-      <div className="min-w-0 text-sm">
-        <p className="font-semibold text-amber-100">
-          {morning.next === "bible"
-            ? "Morning: Bible chapter first (+10)"
-            : "Morning: confirm today’s plan when ready (+10)"}
-        </p>
-        <p className="text-[12px] text-amber-100/80 mt-0.5 leading-snug">
-          {morning.hint ||
-            (morning.next === "bible"
-              ? "Finish today’s chapter in the Bible reader (web or CALT Desktop → Bible) to continue."
-              : `Edit goals & blocks anytime, then tap Confirm (${morning.blocks_today} block${morning.blocks_today === 1 ? "" : "s"} today) — or confirm in CALT Desktop → Plan.`)}
-        </p>
-        {rewards && (
-          <p className="text-[11px] text-emerald-200/90 mt-1.5 flex items-center gap-1">
-            <Sparkles className="size-3.5 shrink-0" />
-            {rewards}
-            {typeof morning.rewards?.total_points === "number" && morning.rewards.total_points > 0
-              ? ` · ${morning.rewards.total_points} pts today`
-              : ""}
-          </p>
-        )}
-        {morning.next === "plan" && !morning.plan_done ? (
-          <div className="mt-2">
-            <ConfirmPlanButton
-              size="banner"
-              onDone={() =>
-                void fetchDistractionGate().then((g) => setMorning(g.morning ?? null))
-              }
-            />
-          </div>
-        ) : null}
-      </div>
-    </div>
-  );
+  return null;
 }

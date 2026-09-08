@@ -25,7 +25,14 @@ export type { RegistryContextValue };
 const LS_KEY = "active_plugins";
 
 function defaultEnabledPluginIds(): string[] {
-  const defaultOn = new Set(["math-tutor", "gre-vocab", "life-tracker", "study-room", "productivity"]);
+  const defaultOn = new Set([
+    "math-tutor",
+    "gre-vocab",
+    "life-tracker",
+    "study-room",
+    "productivity",
+    "eeg",
+  ]);
   return getAllPlugins().filter((p) => p.isCore || defaultOn.has(p.id)).map((p) => p.id);
 }
 
@@ -55,7 +62,13 @@ export function PluginRegistryProvider({ children }: { children: ReactNode }) {
   const loadLocal = useCallback(() => {
     try {
       const saved = localStorage.getItem(LS_KEY);
-      setEnabledIds(saved ? JSON.parse(saved) : defaultEnabledPluginIds());
+      let ids: string[] = saved ? JSON.parse(saved) : defaultEnabledPluginIds();
+      // Ensure ESP32 / EEG LED page is reachable for existing installs
+      if (!ids.includes("eeg") && getAllPlugins().some((p) => p.id === "eeg")) {
+        ids = [...ids, "eeg"];
+        localStorage.setItem(LS_KEY, JSON.stringify(ids));
+      }
+      setEnabledIds(ids);
     } catch {
       setEnabledIds(defaultEnabledPluginIds());
     }
@@ -76,7 +89,11 @@ export function PluginRegistryProvider({ children }: { children: ReactNode }) {
       return;
     }
     setSyncError(null);
-    const frontendIds = backendStateToFrontendIds(state.plugins);
+    let frontendIds = backendStateToFrontendIds(state.plugins);
+    if (!frontendIds.includes("eeg") && getAllPlugins().some((p) => p.id === "eeg")) {
+      frontendIds = [...frontendIds, "eeg"];
+      void setHubPlugin("eeg", true);
+    }
     setEnabledIds(frontendIds);
     localStorage.setItem(LS_KEY, JSON.stringify(frontendIds));
     setCustomFeatures((state.custom_features ?? []).filter((f) => f.enabled));

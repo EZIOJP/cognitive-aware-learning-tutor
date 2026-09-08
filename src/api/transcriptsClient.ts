@@ -616,6 +616,48 @@ export async function fetchLibraryTree(): Promise<LibraryTree> {
   return data as LibraryTree;
 }
 
+export type LibrarySearchHit = {
+  relative_path: string;
+  title: string;
+  kind: string;
+  folder_path: string;
+  topic_id?: string;
+  topic_title?: string;
+  match_kind: "topic" | "function" | "text" | "file";
+  label?: string;
+  snippet: string;
+  score: number;
+  /** Total times the query appears in this file's body */
+  body_match_count?: number;
+  /** Distinct topic/function/section hits in this file */
+  section_hit_count?: number;
+};
+
+export type LibrarySearchFilter = "all" | "topics" | "functions" | "text";
+
+export function libraryFilterToKinds(filter: LibrarySearchFilter): string | undefined {
+  if (filter === "all") return undefined;
+  if (filter === "topics") return "topic";
+  if (filter === "functions") return "function";
+  return "text";
+}
+
+export async function searchLibraryNotes(
+  query: string,
+  limit = 40,
+  opts?: { kinds?: string; signal?: AbortSignal },
+): Promise<LibrarySearchHit[]> {
+  const q = encodeURIComponent(query.trim());
+  const kindParam = opts?.kinds ? `&kinds=${encodeURIComponent(opts.kinds)}` : "";
+  const res = await fetch(
+    `${BASE}/api/transcripts/library/search?q=${q}&limit=${limit}${kindParam}`,
+    { headers: headers(), signal: opts?.signal },
+  );
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(apiErrorMessage(data, res.status));
+  return (data as { items: LibrarySearchHit[] }).items ?? [];
+}
+
 export async function createLibraryFolder(folderPath: string): Promise<{ folder_path: string }> {
   const res = await fetch(`${BASE}/api/transcripts/library/folders`, {
     method: "POST",
@@ -1012,12 +1054,28 @@ export async function fetchNoteTopics(path: string): Promise<{
 
 export async function pasteLibraryQuiz(
   text: string,
-  opts?: { topic?: string },
+  opts?: {
+    topic?: string;
+    note_path?: string;
+    folder_path?: string;
+    seed_deck?: boolean;
+    default_topic_id?: string;
+  },
 ): Promise<{
   questions: QuizQuestion[];
   markdown: string;
   session_item: Omit<StudySessionItem, "approved">;
   source?: string;
+  import_summary?: {
+    total: number;
+    tagged: number;
+    untagged: number;
+    topics: { topic_id: string; count: number }[];
+    unknown_topics?: string[];
+  };
+  deck_id?: number | null;
+  cards_seeded?: number;
+  note_path?: string | null;
 }> {
   const res = await fetch(`${BASE}/api/transcripts/library/paste-quiz`, {
     method: "POST",
@@ -1025,6 +1083,10 @@ export async function pasteLibraryQuiz(
     body: JSON.stringify({
       text,
       topic: opts?.topic ?? "",
+      note_path: opts?.note_path ?? "",
+      folder_path: opts?.folder_path ?? "",
+      seed_deck: opts?.seed_deck ?? true,
+      default_topic_id: opts?.default_topic_id ?? "",
     }),
   });
   const data = await res.json().catch(() => ({}));
@@ -1034,6 +1096,16 @@ export async function pasteLibraryQuiz(
     markdown: string;
     session_item: Omit<StudySessionItem, "approved">;
     source?: string;
+    import_summary?: {
+      total: number;
+      tagged: number;
+      untagged: number;
+      topics: { topic_id: string; count: number }[];
+      unknown_topics?: string[];
+    };
+    deck_id?: number | null;
+    cards_seeded?: number;
+    note_path?: string | null;
   };
 }
 

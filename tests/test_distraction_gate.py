@@ -1,9 +1,22 @@
 """Tests for distraction hard-block gate."""
 
+import pytest
+
 from backend.behavior.distraction_gate import (
     DEFAULT_HARD_BLOCK_EXES,
     should_hard_block,
 )
+
+
+@pytest.fixture(autouse=True)
+def _clear_gate_caches():
+    from backend.behavior import distraction_gate as dg
+
+    dg._gate_payload_cache.clear()
+    dg._nudge_cache.clear()
+    yield
+    dg._gate_payload_cache.clear()
+    dg._nudge_cache.clear()
 
 
 def test_should_hard_block_exe_list():
@@ -291,6 +304,7 @@ def test_morning_gate_bible_then_plan(monkeypatch, tmp_path):
     assert out["morning"]["next"] == "bible"
     assert out["morning"]["allow_paths"] == ["/bible", "/profile"]
 
+    mod._gate_payload_cache.clear()
     monkeypatch.setattr(
         "backend.bible.store.summary",
         lambda uid: {
@@ -309,6 +323,7 @@ def test_morning_gate_bible_then_plan(monkeypatch, tmp_path):
     assert "/productivity" in out2["morning"]["allow_paths"]
     assert out2["morning"]["rewards"]["awards"]["bible"]["granted"] is True
 
+    mod._gate_payload_cache.clear()
     monkeypatch.setattr(
         "backend.planner.morning_plan.is_plan_confirmed",
         lambda uid, day=None: True,

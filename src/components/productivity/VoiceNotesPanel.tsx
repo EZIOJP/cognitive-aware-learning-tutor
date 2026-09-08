@@ -63,7 +63,7 @@ export function VoiceNotesPanel() {
 
   useEffect(() => {
     if (!watching) return;
-    const id = window.setInterval(() => void refresh(), 12_000);
+    const id = window.setInterval(() => void refresh(), 120_000);
     return () => window.clearInterval(id);
   }, [watching, refresh]);
 

@@ -25,6 +25,14 @@ _NOTE_TOPIC_RE = re.compile(r"^(?:L|MT)\d+-T\d+$", re.IGNORECASE)
 _FREE_TAG_RE = re.compile(r"^[a-z0-9][a-z0-9._-]*$")
 _VOCAB_GROUP_RE = re.compile(r"^vocab\.group\.(\d+)$", re.IGNORECASE)
 
+# list_tags walks notes + full question catalog — cache for SPA polls.
+_TAGS_TTL_S = 30.0
+_tags_cache: dict[tuple[str, str], tuple[float, list[dict[str, Any]]]] = {}
+
+
+def invalidate_tag_list_cache() -> None:
+    _tags_cache.clear()
+
 
 def is_note_topic(tag: str) -> bool:
     raw = (tag or "").strip()
@@ -298,6 +306,16 @@ def _rewrite_vocab_tags(old: str, new: str) -> int:
 
 def list_tags(*, q: str | None = None, kind: str | None = None) -> list[dict[str, Any]]:
     """Union of note topics, free question tags, and vocab group/free tags."""
+    import time
+
+    want_kind = (kind or "").strip().lower() or ""
+    needle = (q or "").strip().lower() or ""
+    cache_key = (want_kind, needle)
+    now = time.monotonic()
+    hit = _tags_cache.get(cache_key)
+    if hit is not None and (now - hit[0]) < _TAGS_TTL_S:
+        return hit[1]
+
     by_id: dict[str, dict[str, Any]] = {}
 
     def ensure(tag_id: str, *, label: str | None = None) -> dict[str, Any] | None:
@@ -333,8 +351,8 @@ def list_tags(*, q: str | None = None, kind: str | None = None) -> list[dict[str
         if rel and rel not in entry["note_paths"]:
             entry["note_paths"].append(rel)
 
-    # Content bank → note_topic_ids + item tags
-    catalog = load_catalog(root=QUESTIONS_DIR, refresh=True)
+    # Content bank → note_topic_ids + item tags (cached; writers call bump_questions)
+    catalog = load_catalog(root=QUESTIONS_DIR)
     for topic in catalog.topics:
         for ntid in topic.note_topic_ids:
             entry = ensure(ntid, label=topic.title)
@@ -359,16 +377,39 @@ def list_tags(*, q: str | None = None, kind: str | None = None) -> list[dict[str
             continue
         row["vocab_count"] += int(entry.get("vocab_count") or 0)
 
-    want_kind = (kind or "").strip().lower() or None
-    needle = (q or "").strip().lower() or None
     out: list[dict[str, Any]] = []
     for entry in by_id.values():
         if want_kind and entry["kind"] != want_kind:
             continue
         if needle and needle not in entry["id"].lower() and needle not in str(entry["label"]).lower():
             continue
+        tid = str(entry["id"])
+        paths = list(entry.get("note_paths") or [])
+        entry["file_order"] = paths[0] if paths else ""
+        from backend.quiz.learn_folders import enrich_tag_folder
+
+        enrich_tag_folder(entry)
         out.append(entry)
-    out.sort(key=lambda e: (e["kind"], e["id"]))
+
+    def _sort_key(e: dict[str, Any]) -> tuple:
+        folder_rank = int(e.get("folder_rank") or 99)
+        tid = str(e.get("id") or "")
+        file_order = str(e.get("file_order") or "")
+        if e.get("folder") == "vocab" or e.get("group") == "vocab":
+            m = re.search(r"(\d+)$", tid)
+            return (folder_rank, "", int(m.group(1)) if m else 0, tid)
+        # Math Core: basics-first learn order (MT0 before interview MT1-T02+)
+        if e.get("folder") == "math-core":
+            try:
+                from backend.quiz.math_core import learn_order
+
+                return (folder_rank, "", learn_order(tid), tid.upper())
+            except Exception:
+                pass
+        return (folder_rank, file_order.lower(), 0, tid.upper())
+
+    out.sort(key=_sort_key)
+    _tags_cache[cache_key] = (time.monotonic(), out)
     return out
 
 

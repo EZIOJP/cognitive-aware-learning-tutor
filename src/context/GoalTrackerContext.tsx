@@ -192,7 +192,7 @@ export function GoalTrackerProvider({ children }: { children: ReactNode }) {
     void refreshToday();
     const onRefresh = () => void refreshToday();
     window.addEventListener("hub:refresh", onRefresh);
-    const id = window.setInterval(() => void refreshToday(), 15000);
+    const id = window.setInterval(() => void refreshToday(), 120_000);
     return () => {
       window.removeEventListener("hub:refresh", onRefresh);
       window.clearInterval(id);

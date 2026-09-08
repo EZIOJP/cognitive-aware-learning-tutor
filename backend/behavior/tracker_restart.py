@@ -94,34 +94,58 @@ def mutex_held() -> bool:
     return False
 
 
-def wait_until_clear(*, timeout_s: float = 25.0, wait_pid: int | None = None) -> bool:
+def wait_until_clear(*, timeout_s: float = 12.0, wait_pid: int | None = None) -> bool:
     deadline = time.time() + max(1.0, timeout_s)
+    delay = 0.1
     while time.time() < deadline:
         if wait_pid is not None:
             try:
                 import psutil
 
                 if psutil.pid_exists(wait_pid):
-                    time.sleep(0.2)
+                    time.sleep(delay)
                     continue
             except Exception:  # noqa: BLE001
                 wait_pid = None
         if root_tracker_count() == 0 and not mutex_held():
             return True
-        time.sleep(0.25)
+        time.sleep(delay)
+        delay = min(0.35, delay + 0.05)
     return root_tracker_count() == 0 and not mutex_held()
 
 
 def kill_all_trackers() -> int:
-    killed = 0
+    """Stop tracker processes — terminate first, kill stragglers after a short wait."""
+    try:
+        import psutil
+    except ImportError:
+        return 0
+
+    procs: list[psutil.Process] = []
     for pid, _ in _tracker_processes():
         try:
-            import psutil
-
-            psutil.Process(pid).kill()
-            killed += 1
-        except Exception:  # noqa: BLE001
+            procs.append(psutil.Process(pid))
+        except (psutil.Error, TypeError, ValueError):
             continue
+    if not procs:
+        return 0
+
+    for proc in procs:
+        try:
+            proc.terminate()
+        except (psutil.Error, OSError):
+            continue
+
+    _gone, alive = psutil.wait_procs(procs, timeout=3)
+    killed = len(procs) - len(alive)
+    for proc in alive:
+        try:
+            proc.kill()
+            killed += 1
+        except (psutil.Error, OSError):
+            continue
+    if alive:
+        psutil.wait_procs(alive, timeout=2)
     return killed
 
 
@@ -146,39 +170,67 @@ def _launch_lock_ok(*, force: bool = False) -> bool:
 def launch_tray_tracker(*, force: bool = False) -> bool:
     if sys.platform != "win32":
         return False
-    if not VBS.is_file():
-        log.error("Missing %s", VBS)
-        return False
     if not _launch_lock_ok(force=force):
         log.warning("Restart launch skipped — recent launch lock")
         return False
-    if root_tracker_count() >= 1 or mutex_held():
-        log.warning("Restart launch skipped — tracker still running")
-        return False
+
     py = _pythonw()
     creation = getattr(subprocess, "CREATE_NO_WINDOW", 0)
+    module = "backend.behavior.calt_desktop"
+
+    def _try_launch() -> bool:
+        if not force and (root_tracker_count() >= 1 or mutex_held()):
+            return False
+        try:
+            subprocess.Popen(
+                [str(py), "-m", module],
+                cwd=str(ROOT),
+                creationflags=creation,
+            )
+            log.info("Launched CALT Desktop via %s -m %s", py.name, module)
+            return True
+        except OSError as exc:
+            log.error("Could not launch tracker: %s", exc)
+            return False
+
+    if _try_launch():
+        return True
+
+    if not VBS.is_file():
+        log.error("Missing %s", VBS)
+        return False
+
     try:
         subprocess.Popen(
             ["wscript.exe", "//B", str(VBS), str(py)],
             cwd=str(ROOT),
             creationflags=creation,
         )
-        log.info("Launched CALT Desktop (fresh Python process) via %s", VBS.name)
+        log.info("Launched CALT Desktop (fallback VBS) via %s", VBS.name)
         return True
     except OSError as exc:
-        log.error("Could not launch tracker: %s", exc)
+        log.error("Could not launch tracker via VBS: %s", exc)
         return False
 
 
-def run_restart(*, timeout_s: float = 25.0) -> int:
+def run_restart(*, timeout_s: float = 12.0) -> int:
     """Single restart implementation — used by bat and tray spawn."""
     log.info("Restart go — stop all desktop_tracker PIDs, wait, relaunch")
     kill_all_trackers()
     if not wait_until_clear(timeout_s=timeout_s):
-        log.error("Restart failed — tracker still present after kill")
-        return 1
-    time.sleep(0.5)
-    return 0 if launch_tray_tracker(force=True) else 1
+        log.warning("Tracker/mutex still present — force-killing again")
+        kill_all_trackers()
+        wait_until_clear(timeout_s=max(4.0, timeout_s / 2))
+    time.sleep(0.8)
+    for attempt in range(3):
+        if launch_tray_tracker(force=True):
+            return 0
+        log.warning("Launch attempt %s failed — retrying", attempt + 1)
+        time.sleep(1.0)
+        kill_all_trackers()
+        wait_until_clear(timeout_s=4.0)
+    log.error("Restart failed — could not relaunch after 3 attempts")
+    return 1
 
 
 def show_confirm_dialog() -> bool:
@@ -235,6 +287,7 @@ def confirm_restart_subprocess() -> bool:
 def spawn_restart_detached() -> bool:
     """Detached ``go`` — same entry point as restart_desktop_tracker.bat step 2."""
     pyw = _pythonw()
+    py = _python_exe()
     env = os.environ.copy()
     env["CALT_TRACKER_SKIP_STOP_PIN"] = "1"
     creation = getattr(subprocess, "CREATE_NO_WINDOW", 0) | getattr(
@@ -251,8 +304,29 @@ def spawn_restart_detached() -> bool:
         log.info("Spawned detached restart (go)")
         return True
     except OSError as exc:
-        log.warning("Detached restart spawn failed: %s", exc)
-        return False
+        log.warning("Detached restart spawn failed: %s — trying visible console", exc)
+        try:
+            subprocess.Popen(
+                [
+                    "cmd",
+                    "/c",
+                    "start",
+                    "CALT tracker restart",
+                    "cmd",
+                    "/k",
+                    str(py),
+                    "-m",
+                    "backend.behavior.tracker_restart",
+                    "go",
+                ],
+                cwd=str(ROOT),
+                env=env,
+            )
+            log.info("Spawned visible restart (go)")
+            return True
+        except OSError as exc2:
+            log.warning("Visible restart spawn failed: %s", exc2)
+            return False
 
 
 def flush_before_restart(service: object | None) -> None:
@@ -301,13 +375,13 @@ def main_cli(argv: list[str] | None = None) -> int:
         return 0 if show_confirm_dialog() else 1
 
     if cmd in ("go", "force", "restart"):
-        timeout = 25.0
+        timeout = 12.0
         if len(args) >= 3 and args[1] in ("--timeout", "-t"):
             timeout = float(args[2])
         return run_restart(timeout_s=timeout)
 
     if cmd in ("wait-gone", "wait"):
-        timeout = 25.0
+        timeout = 12.0
         if len(args) >= 3 and args[1] in ("--timeout", "-t"):
             timeout = float(args[2])
         return 0 if wait_until_clear(timeout_s=timeout) else 1

@@ -1,6 +1,7 @@
 /**
- * Softens lag between wearables → life → hub → widgets and tracker → hub.
- * One watcher in AppShell; widgets listen for hub:refresh / calt:pipeline.
+ * Softens lag between tracker → hub → widgets.
+ * Wearables are manual Dump→Send only (notifyPipeline("wearables") after Refresh).
+ * One BroadcastChannel leader across tabs; never hammer hub/daily or zepp/status.
  */
 
 import { resolveApiUrl } from "./resolveBackendUrl";
@@ -17,8 +18,8 @@ export type PipelineSource =
   | "poll";
 
 const TOKEN_KEY = "vocab:auth-token";
-const WEARABLE_TOKEN_KEY = "calt:wearables:token";
-const DEFAULT_WEARABLE_TOKEN = "calt-local-wearables";
+const POLL_MS = 120_000;
+const CHANNEL = "calt-pipeline-watch";
 
 function authHeaders(): HeadersInit {
   const headers: Record<string, string> = { "Content-Type": "application/json" };
@@ -31,16 +32,6 @@ function authHeaders(): HeadersInit {
   return headers;
 }
 
-function wearableHeaders(): HeadersInit {
-  let t = DEFAULT_WEARABLE_TOKEN;
-  try {
-    t = localStorage.getItem(WEARABLE_TOKEN_KEY) || DEFAULT_WEARABLE_TOKEN;
-  } catch {
-    /* ignore */
-  }
-  return { Authorization: `Bearer ${t}`, "Content-Type": "application/json" };
-}
-
 export function notifyPipeline(source: PipelineSource, detail?: Record<string, unknown>) {
   if (typeof window === "undefined") return;
   window.dispatchEvent(new CustomEvent(HUB_REFRESH_EVENT, { detail: { source, ...detail } }));
@@ -49,63 +40,29 @@ export function notifyPipeline(source: PipelineSource, detail?: Record<string, u
 
 let watchStarted = false;
 let lastFingerprint = "";
+let tickInFlight = false;
 
+/** Cheap fingerprint — avoid hub/daily rebuild + voice-notes directory walks. */
 async function fingerprint(): Promise<string> {
   const base = resolveApiUrl().replace(/\/$/, "");
-  const parts: string[] = [];
-
   try {
-    const hubRes = await fetch(`${base}/api/hub/daily/today`, { headers: authHeaders() });
-    if (hubRes.ok) {
-      const h = await hubRes.json();
-      parts.push(
-        `h:${h.date}:${h.sleep_minutes ?? 0}:${h.productive_minutes ?? 0}:${(h.segments || []).length}`,
-      );
-    }
-  } catch {
-    /* ignore */
-  }
-
-  try {
-    const wRes = await fetch(`${base}/api/wearables/zepp/status`, { headers: wearableHeaders() });
-    if (wRes.ok) {
-      const w = await wRes.json();
-      const ls = w.last_sync || {};
-      parts.push(
-        `w:${ls.last_ingest_at || ""}:${ls.last_sleep_hours ?? ""}:${ls.last_steps ?? ""}:${ls.updated_at || ""}`,
-      );
-    }
-  } catch {
-    /* ignore */
-  }
-
-  try {
-    const tRes = await fetch(`${base}/api/behavior/tracker-health`, { headers: authHeaders() });
+    const tRes = await fetch(`${base}/api/behavior/tracker-health`, {
+      headers: authHeaders(),
+      signal: AbortSignal.timeout(8_000),
+    });
     if (tRes.ok) {
       const t = await tRes.json();
-      parts.push(`t:${t.last_event_at || t.status || ""}:${t.pid || ""}`);
+      return `t:${t.last_event_at || t.status || ""}:${t.sessions_today ?? ""}:${t.pid || ""}`;
     }
   } catch {
     /* ignore */
   }
-
-  try {
-    const vnRes = await fetch(`${base}/api/behavior/voice-notes`, { headers: authHeaders() });
-    if (vnRes.ok) {
-      const vn = (await vnRes.json()) as { notes?: { name: string; mtime: number }[] };
-      const top = vn.notes?.[0];
-      parts.push(`vn:${vn.notes?.length ?? 0}:${top?.name || ""}:${top?.mtime ?? 0}`);
-    }
-  } catch {
-    /* ignore */
-  }
-
-  return parts.join("|");
+  return "";
 }
 
 /**
- * Call once from AppShell. Polls lightly while the tab is visible and
- * fires hub:refresh when any upstream fingerprint changes.
+ * Call once from AppShell. Only the BroadcastChannel leader polls;
+ * followers react to hub:refresh from the leader (and local events).
  */
 export function startDataPipelineWatch() {
   if (typeof window === "undefined" || watchStarted) return () => {};
@@ -113,10 +70,48 @@ export function startDataPipelineWatch() {
 
   let timer: ReturnType<typeof setInterval> | undefined;
   let cancelled = false;
+  let isLeader = false;
+  let bc: BroadcastChannel | null = null;
+
+  try {
+    bc = new BroadcastChannel(CHANNEL);
+  } catch {
+    bc = null;
+  }
+
+  const claimLeader = () => {
+    isLeader = true;
+    try {
+      bc?.postMessage({ type: "leader" });
+    } catch {
+      /* ignore */
+    }
+  };
+
+  // First tab wins; late tabs yield when they hear a leader.
+  claimLeader();
+  if (bc) {
+    bc.onmessage = (ev) => {
+      const msg = ev.data;
+      if (msg?.type === "leader" && !isLeader) {
+        /* already follower */
+      } else if (msg?.type === "leader" && isLeader) {
+        // Another tab also claims — yield if we are older? Keep simple: random yield
+        if (Math.random() < 0.5) isLeader = false;
+      } else if (msg?.type === "fingerprint" && typeof msg.value === "string") {
+        if (lastFingerprint && msg.value !== lastFingerprint) {
+          notifyPipeline("poll", { fingerprint: msg.value, via: "bc" });
+        }
+        lastFingerprint = msg.value;
+      }
+    };
+  }
 
   const tick = async () => {
-    if (cancelled) return;
+    if (cancelled || !isLeader) return;
     if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
+    if (tickInFlight) return;
+    tickInFlight = true;
     try {
       const next = await fingerprint();
       if (!next) return;
@@ -124,21 +119,27 @@ export function startDataPipelineWatch() {
         notifyPipeline("poll", { fingerprint: next });
       }
       lastFingerprint = next;
+      try {
+        bc?.postMessage({ type: "fingerprint", value: next });
+      } catch {
+        /* ignore */
+      }
     } catch {
       /* ignore */
+    } finally {
+      tickInFlight = false;
     }
   };
 
   const arm = () => {
     if (timer) clearInterval(timer);
-    // Visible: snappy. Hidden: pause (tick no-ops).
-    timer = setInterval(() => void tick(), 12_000);
+    timer = setInterval(() => void tick(), POLL_MS);
     void tick();
   };
 
   arm();
   const onVis = () => {
-    if (document.visibilityState === "visible") void tick();
+    if (document.visibilityState === "visible" && isLeader) void tick();
   };
   document.addEventListener("visibilitychange", onVis);
 
@@ -147,5 +148,10 @@ export function startDataPipelineWatch() {
     watchStarted = false;
     if (timer) clearInterval(timer);
     document.removeEventListener("visibilitychange", onVis);
+    try {
+      bc?.close();
+    } catch {
+      /* ignore */
+    }
   };
 }

@@ -36,10 +36,7 @@ _BATCH_TASKS = frozenset(
 _INTERACTIVE_TASKS = frozenset(
     {
         "coach",
-        "hub_router",
-        "corpus_qa",
         "math_hint",
-        "project_agent",
         "web_search",
     }
 )
@@ -308,6 +305,6 @@ def openrouter_session_id(*, task: str, tier: str) -> str | None:
     ctx = get_job_context()
     if ctx and ctx.task:
         return normalize_session_id(f"calt-{ctx.task}-{tier}")
-    if task in ("notes_job", "notes_chunk", "coach", "hub_router", "corpus_qa"):
+    if task in ("notes_job", "notes_chunk", "coach"):
         return normalize_session_id(f"calt-{task}-{tier}")
     return None

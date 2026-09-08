@@ -97,6 +97,53 @@ def test_browser_stats_from_desktop_csv_with_scores(tmp_path, monkeypatch):
     assert result["domains"][0]["productivity_score"] == 90
 
 
+def test_stats_from_db_ignores_behavioral_update_phantom_duration(db_session):
+    """Heartbeats must not inflate Browser Activity with a default 30s each."""
+    from backend.models.hub import Reading, ReadingDefinition
+    from backend.behavior.router import _stats_from_db, _shape_stats_for_ui
+    from backend.planner.service import local_day_bounds_utc
+
+    day = datetime.now(UTC).date()
+    start, _ = local_day_bounds_utc(day)
+    defn = ReadingDefinition(slug="browser_event", label="Browser", unit="event")
+    db_session.add(defn)
+    db_session.flush()
+
+    # 100 heartbeats without duration → used to become 100×30s = 3000s phantom time
+    for i in range(100):
+        db_session.add(
+            Reading(
+                user_id=1,
+                definition_id=defn.id,
+                recorded_at=start + timedelta(minutes=i),
+                value_json='{"type":"BEHAVIORAL_UPDATE","domain":"scaler.com","source":"extension"}',
+                client_event_id=f"hb-{i}",
+            )
+        )
+    # One real closed session
+    db_session.add(
+        Reading(
+            user_id=1,
+            definition_id=defn.id,
+            recorded_at=start + timedelta(hours=2),
+            value_json=(
+                '{"type":"SESSION_END","domain":"scaler.com","source":"extension",'
+                '"duration_seconds":600,"title":"Course"}'
+            ),
+            client_event_id="se-1",
+        )
+    )
+    db_session.commit()
+
+    raw = _stats_from_db(db_session, 1, day)
+    assert raw["events_today"] == 1
+    assert raw["domains"][0]["domain"] == "scaler.com"
+    assert raw["domains"][0]["seconds"] == 600
+    shaped = _shape_stats_for_ui(raw)
+    assert shaped["top_domains"][0]["seconds"] == 600
+    assert sum(shaped["category_breakdown"].values()) == 600
+
+
 def test_behavior_stats_endpoint_returns_200():
     r = client.get("/api/behavior/stats")
     assert r.status_code == 200

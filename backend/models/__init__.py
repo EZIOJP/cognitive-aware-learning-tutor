@@ -15,7 +15,7 @@ from backend.models.study import FocusEvent, LectureNote
 from backend.models.word import Word
 from backend.models.knowledge_graph import KgNode, KgEdge, KgEmbedding, KgObservation
 from backend.models.review_card import QuizDeck, ReviewCard
-from backend.models.study_loop import StudyLoopSession
+from backend.models.study_loop import StudyLoopSession, StudyLoopDay
 from backend.models.timetable import Timetable, TimetableTask, TrackedSession
 from backend.models.planner import PlannerBlock
 from backend.models.planner_routine import PlannerRoutine
@@ -25,6 +25,8 @@ from backend.models.category_score import CategoryScore
 from backend.models.coach_memory import CoachMemory
 from backend.models.productivity_policy import ProductivityPolicy
 from backend.models.wearable_daily import WearableDaily, WearableIngestEvent
+from backend.models.break_reward import BreakSession, RewardLedger
+from backend.models.enforcer_runtime import EnforcerRuntime
 
 __all__ = [
     "User",
@@ -50,6 +52,7 @@ __all__ = [
     "ReviewCard",
     "QuizDeck",
     "StudyLoopSession",
+    "StudyLoopDay",
     "Timetable",
     "TimetableTask",
     "TrackedSession",
@@ -63,4 +66,7 @@ __all__ = [
     "ProductivityPolicy",
     "WearableDaily",
     "WearableIngestEvent",
+    "BreakSession",
+    "RewardLedger",
+    "EnforcerRuntime",
 ]

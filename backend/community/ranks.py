@@ -30,7 +30,7 @@ def local_card(db: Session, user: User) -> dict[str, Any]:
     }
 
 
-def fetch_peer_card(base_url: str, *, timeout: float = 2.5) -> dict[str, Any] | None:
+def fetch_peer_card(base_url: str, *, timeout: float = 1.0) -> dict[str, Any] | None:
     if not peer_url_allowed(base_url):
         return None
     url = f"{base_url.rstrip('/')}/api/community/public-card"

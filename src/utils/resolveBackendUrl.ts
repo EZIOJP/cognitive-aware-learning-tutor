@@ -13,8 +13,17 @@ function hostFromWindow(): string | null {
   return null;
 }
 
+/** WebView2 virtual-host shell (calt_focus.exe maps dist/ → https://calt.app). */
+function isCaltDesktopShellHost(host: string | null): boolean {
+  if (!host) return false;
+  return host === "calt.app" || host.endsWith(".calt.app");
+}
+
 function lanHost(): string {
-  return hostFromWindow() ?? "localhost";
+  const host = hostFromWindow();
+  // Desktop shell must hit the real API on loopback, not the virtual host name.
+  if (!host || isCaltDesktopShellHost(host)) return "127.0.0.1";
+  return host;
 }
 
 export function resolveApiUrl(path?: string): string {

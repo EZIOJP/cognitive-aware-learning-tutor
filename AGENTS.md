@@ -1,24 +1,67 @@
 # Agent Context
 
-You are finishing a **local-first study platform** for daily personal use.
+You are finishing a **local-first study + productivity platform** for daily personal use.
 
-**Mandate (2026-08-17 — unattended completion):** While the owner is away, execute the approved design [docs/superpowers/specs/2026-08-17-unified-quiz-completion-design.md](docs/superpowers/specs/2026-08-17-unified-quiz-completion-design.md). Prefer proof + smallest wiring. Owner will review and tweak on return.
+**Mandate (2026-09-07 — owner locked):** **Two products.**
+
+| Product | Tech | Owns |
+|---------|------|------|
+| **CALT Productivity** | C++ (`calt_enforcer` + SoftLand engine + tracker + `calt_msg_host` + `calt_focus`) | Tracking, SoftLand decide/apply, hard-block kills/locks, schedules, day-pass/free/incubation, goals-as-blocker-state, productivity Settings/Focus UI, tray |
+| **CALT Study** | Python FastAPI + React `:8000` | Notes, Study Loop *content*, GRE, Math, Journal, Bible *content* — pure study workflows |
+
+- SoftLand must **not** depend on live `:8000` (target: Gate → msg-host → C++ SoftLand).  
+- Study may optionally emit events into the productivity store later; Study is **never** the SoftLand brain.  
+- **Cold Turkey** = language/architecture *pattern* only — **no CT code**.  
+
+```text
+DESKTOP TRACKER RULE (locked):
+calt_enforcer.exe must start, read policy, kill processes, write sessions,
+hold the ownership lock, and expose status with ZERO runtime dependency
+on any Python process.
+
+PRODUCTIVITY RULE (locked 2026-09-07):
+SoftLand decide, day-pass/free/incubation accounting, and productivity
+tracking runtime belong to the C++ Productivity product — not the study
+webapp. Python may remain for study content only.
+```
+
+**Authoritative product lock:** [docs/superpowers/specs/2026-09-07-calt-productivity-cpp-product-design.md](docs/superpowers/specs/2026-09-07-calt-productivity-cpp-product-design.md)  
+**Phase 2 SoftLand store:** [docs/superpowers/specs/2026-09-07-calt-productivity-softland-state-model.md](docs/superpowers/specs/2026-09-07-calt-productivity-softland-state-model.md)  
+**Prior split (partially superseded for SoftLand-as-brain):** [docs/superpowers/specs/2026-09-07-calt-blocker-study-split-decisions.md](docs/superpowers/specs/2026-09-07-calt-blocker-study-split-decisions.md)  
+**One-engine map (options; SoftLand-on-Python brain superseded):** [docs/superpowers/specs/2026-09-07-one-engine-map.md](docs/superpowers/specs/2026-09-07-one-engine-map.md)  
+**P5a (superseded by Productivity product lock):** [docs/superpowers/specs/2026-09-07-p5a-native-softland-study-flags-design.md](docs/superpowers/specs/2026-09-07-p5a-native-softland-study-flags-design.md)  
+Design: [docs/superpowers/specs/2026-09-06-calt-native-enforcer-design.md](docs/superpowers/specs/2026-09-06-calt-native-enforcer-design.md)  
+Plan: [docs/superpowers/plans/2026-09-06-calt-native-enforcer.md](docs/superpowers/plans/2026-09-06-calt-native-enforcer.md)
+
+Quiz mandate is **Done** (regressions only). EEG soft-fail is **Done** (flash needs USB).
 
 ---
 
-## What “complete” means (this mandate)
+## Architecture (locked)
 
 ```text
-ONE quiz engine (/api/quiz) with modes: study (lecture notes) · math · vocab
-ALL graded lasting knowledge → ReviewCard FSRS → /review + dashboard "Review N due"
-Notes + quiz generation follow Cursor rules (grounded, linted, prefer_notes)
-Productivity Calendar tracking visuals finished (empty states, adherence, plan-vs-actual)
-PLUS: npm run build passes, core pytest green, GRE cycle still works
+CALT Study (content only)     → Python + React (:8000) — notes, GRE, quiz UI, Bible pages
+CALT Productivity (blocker)   → C++ product:
+  SoftLand decide/apply       → SoftLand engine + calt_msg_host (Gate native messaging)
+  OS kills + stay-alive       → calt_enforcer (ZERO Python)
+  Tracking                    → native (expand browser path over phases)
+  Settings / Focus UI         → calt_focus (tray + WebView2)
+Policy kills hot path         → data/behavior/enforcer_policy.json (mirror)
+SoftLand state (SoT)          → SQLite productivity_* in data/vocab_app.db
+Writes (only mutator)         → calt_enforcer gateway: \\.\pipe\calt_enforcer_cmd
+SoftLand hot read             → data/behavior/softland_policy.json (mirror)
+Status (native-owned)         → data/behavior/enforcer_status.json
 ```
 
-**Not required:** restoring Study Flow / corpus RAG KB, hardware, BKT, Neo4j, math OCR Phase 3c, PostgreSQL, wearables/hard-block expansion.
+**Naming (forever):** `softland_enabled` = sites / SoftLand only. `hard_block_armed` = native kill switch only. SoftLand ON ≠ Arm.
 
-**Already shipped (keep working):** distraction gate, wearables ingest, planner/calendar, morning bible+plan confirm, productivity export (incl. watch metrics), math Layer 0 + SymPy path.
+**Owner (2026-09-07):** Desktop **app + UI is essential** via **`calt_focus.exe`**
+(CT-class split: tray UI ≠ kill engine). WebView2 hosts React **Productivity**
+(Calendar / Plan / Settings / Focus) — study content stays in the Study webapp.
+Prefer **prebuilt `dist-focus/`** (`npm run build:focus`, virtual host `calt.app`).
+No Qt, no pystray, no Electron.
+`run_calt_desktop.bat` launches `calt_focus.exe`. PySide6 `calt_desktop` remains **legacy only**
+(`run_calt_desktop_qt.bat`).
 
 ---
 
@@ -26,70 +69,52 @@ PLUS: npm run build passes, core pytest green, GRE cycle still works
 
 | Phase | Deliverable | Status |
 |-------|-------------|--------|
-| 0 | Spec + AGENTS + notes/quiz Cursor rules | **Done** |
-| 1 | Vocab adaptive → ReviewCard + unified CTAs | **Done** |
-| 2 | Notes/quiz generation guardrails + tests | **Done** |
-| 3 | Mixed daily practice / StudyLoop | **Done** (due → Review Hub; Cycle stays adaptive + SRS bridge) |
-| 4 | Productivity infographic polish | **Done** (sleep-clip ribbon, watch sleep score, heatmap labels) |
-| 5 | Verify (pytest + build + A5 notes) | **pytest + build green** — A5 lecture walkthrough on owner return |
+| N1–N3 | Native kills + sessions | **Done** |
+| Z0–Z4 | Enforcer JSON path / Focus Arm / publish | **Done** |
+| P0 (old) | Stay split SoftLand Python / kills native | **Superseded** by Productivity product lock |
+| P1 | Strong OS engine (browsers, anti-tamper, Admin scripts) | **Done** (owner: run Admin install once if not already) |
+| P3 | One control door (tray → Settings) | **Done** (`Open Settings` → `?tab=settings`) |
+| **Prod P0** | Product lock: Productivity C++ vs Study Python | **Done** (this doc + product design) |
+| **Prod P2** | C++-owned SoftLand **state** store + UI writes | **Done** (softland_policy.json writers/migrator) |
+| **Prod P3** | Gate → msg-host → native SoftLand decide | **Done** (`calt_msg_host` get_mode; Gate nativeMessaging + HTTP fallback) |
+| **Prod P4** | Remove SoftLand HTTP `:8000` dependency | **Done** (Gate HTTP SoftLand fallback opt-in only; edits go through the gateway) |
+| **Prod P5** | Native unlock accounting + classification/scoring (owner chose full P5 2026-09-08) | **Designed, not built** — [P5 design](docs/superpowers/specs/2026-09-08-calt-productivity-p5-native-unlock-accounting-design.md); first plan ready: [P5a](docs/superpowers/plans/2026-09-08-calt-productivity-p5a-native-unlock-accounting.md) |
+| **Prod P6** | Browser track without Python | Planned |
+| **Phase 2 gateway** | Enforcer-owned command API + SQLite SoT + SoftLand tick; JSON mirrors | **Backend done + verified with `:8000` stopped** (2026-09-08). Next: Settings **frontend** overhaul only |
+| P4 (old) | Msg-host relay → Python | **Superseded** — host must ask C++ SoftLand, not Python |
+| P7 | Python kills again | **Rejected** |
 
-See [docs/SESSION_LOG.md](docs/SESSION_LOG.md) and [docs/PROJECT_STATUS.md](docs/PROJECT_STATUS.md).
+**Parked ideas (not product lock):** [docs/superpowers/exports/2026-09-07-ct-maturity-ideas-reminder.md](docs/superpowers/exports/2026-09-07-ct-maturity-ideas-reminder.md) — Tier 1 **done**. Tier 2+ ideas only; no CT code.
+
+**Morning smoke:** [docs/superpowers/exports/2026-09-07-morning-smoke.md](docs/superpowers/exports/2026-09-07-morning-smoke.md)
+
+**How the rules actually behave (read before Settings work):** [docs/BLOCKING_RULES.md](docs/BLOCKING_RULES.md)
 
 ---
 
 ## How to work
 
-1. **Anchor:** `@AGENTS.md` `@docs/superpowers/specs/2026-08-17-unified-quiz-completion-design.md` `@docs/decisions/ADR-001-quiz-practice-orchestration.md`
-2. **Superpowers:** `verification-before-completion`, `systematic-debugging`, `executing-plans` / `subagent-driven-development`
-3. **Wire, don’t migrate** — no second SRS, no second quiz runner, no `/api/home/summary`
-4. **Correct layers:**
-   - Study notes/quiz gen: `backend/transcripts/`
-   - Quiz/SRS/backlog: `backend/quiz/`
-   - Math drills: `backend/math/` → enqueue via quiz ReviewCards
-   - GRE bank still in `backend/vocab/` but **sessions should prefer `/api/quiz` domain=vocab**; adaptive routes may remain as shims that also write ReviewCards
-5. **Do not extend:** `UniversalReadMode.jsx`, `vocab_backend.py` shim, `backend_example.py`
-6. **Do not resurrect** live corpus RAG / Study Flow unless the owner reopens that lane
-7. **Backend:** `backend.main` · Alembic — [docs/MIGRATIONS.md](docs/MIGRATIONS.md)
-8. **Commits / push:** only when the user asks (or when continuing an explicit push request)
-9. **Check off** [docs/TASK_COMPLETION.md](docs/TASK_COMPLETION.md) only when verified
+1. Anchor this file + [Productivity C++ product design](docs/superpowers/specs/2026-09-07-calt-productivity-cpp-product-design.md)  
+2. Wire, don’t migrate study **content**; SoftLand/blocker state moves to C++-owned store per Phase 2 model  
+3. No CT code  
+4. Commits only when user asks  
+5. Python `enforcer_service` = **legacy fallback only** — do not add new Python kill/track code  
+6. Never require a live Python process for `calt_enforcer` to arm/kill/track/status  
+7. SoftLand decide: Gate → `calt_msg_host` → C++ `get_mode`. The HTTP `:8000` SoftLand fallback is off unless `caltSoftlandHttpFallback` is set (debug only). 
+8. SoftLand SoT = **SQLite `productivity_*` tables in `data/vocab_app.db`**, mutated only by the `calt_enforcer` gateway (named pipe `\\.\pipe\calt_enforcer_cmd`); `softland_policy.json` / `enforcer_policy.json` are published **mirrors**. Python may still write the JSON mirror — the enforcer imports it when its `updated_at` is newer. SoftLand never sets `hard_block_armed`. 
 
----
-
-## Stack (short)
-
-```text
-React (Vite) → FastAPI → SQLite
-APIs: /api/transcripts · /api/quiz · /api/vocab · /api/math · /api/hub · /api/planner · /api/behavior
-Daily study path: Lecture Notes → quiz → Review Hub
-```
-
----
-
-## Dev servers
+## Dev
 
 ```bat
 run.bat
+python -m alembic upgrade head
+scripts\desktop_tracker\build\build_native_enforcer.bat
+powershell -File scripts\desktop_tracker\install\install_native_enforcer.ps1
+scripts\desktop_tracker\build\build_calt_msg_host.bat
+powershell -File scripts\desktop_tracker\install\install_calt_msg_host.ps1 -ExtensionId <GATE_ID>
+:: verify the native path with no Python running
+powershell -File scripts\desktop_tracker\run\gateway_cmd.ps1 -Op status.snapshot
+powershell -File scripts\desktop_tracker\run\msg_host_cmd.ps1 -Json "{\"type\":\"get_mode\",\"url\":\"https://youtube.com\"}"
 ```
 
-Frontend: `http://localhost:5173` · API: `http://localhost:8000` · Health: `GET /health`
-
----
-
-## Touch only when user asks
-
-New wearables product features, hard-block UX redesign, life-clock skins expansion, hardware, platform rewrite, restoring Knowledge Base / Study Flow.
-
----
-
-## Docs
-
-| Doc | Use |
-|-----|-----|
-| [docs/superpowers/specs/2026-08-17-unified-quiz-completion-design.md](docs/superpowers/specs/2026-08-17-unified-quiz-completion-design.md) | **Active mandate** |
-| [docs/decisions/ADR-001-quiz-practice-orchestration.md](docs/decisions/ADR-001-quiz-practice-orchestration.md) | Quiz architecture lock |
-| [docs/TASK_COMPLETION.md](docs/TASK_COMPLETION.md) | Master checklist |
-| [docs/PROJECT_STATUS.md](docs/PROJECT_STATUS.md) | What’s working today |
-| [docs/SESSION_LOG.md](docs/SESSION_LOG.md) | Per-session progress |
-| `.cursor/rules/notes-generation.mdc` | Notes gen policy |
-| `.cursor/rules/quiz-generation.mdc` | Quiz gen / SRS policy |
-| `.cursor/skills/study-completion-workflow/SKILL.md` | Repo workflow |
+Thin compat shims still exist at the old flat paths under `scripts\desktop_tracker\` (e.g. `build_native_enforcer.bat` → `build\…`). Prefer the `build\` / `install\` / `run\` / `installer\` layout; see `scripts\desktop_tracker\README.md`.

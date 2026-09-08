@@ -4,6 +4,8 @@ import { NoteConflictError } from "../../api/transcriptsClient";
 import {
   Bookmark,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   FileText,
   Loader2,
   MapPin,
@@ -12,6 +14,7 @@ import {
   MoreHorizontal,
   Pencil,
   Play,
+  Search,
   Sparkles,
   Wrench,
 } from "lucide-react";
@@ -67,6 +70,16 @@ type Props = {
   noteFontStep?: number;
   noteFontMax?: number;
   onNoteFontStep?: (delta: -1 | 1) => void;
+  onFocusSearch?: () => void;
+  /** Prev/next within the same folder (sibling lecture notes). */
+  folderNav?: {
+    index: number;
+    total: number;
+    prevTitle?: string;
+    nextTitle?: string;
+    onPrev?: () => void;
+    onNext?: () => void;
+  };
 };
 
 export function StudyLibraryViewer({
@@ -104,6 +117,8 @@ export function StudyLibraryViewer({
   noteFontStep = 3,
   noteFontMax = 6,
   onNoteFontStep,
+  onFocusSearch,
+  folderNav,
 }: Props) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const lastRestoreKeyRef = useRef("");
@@ -289,6 +304,51 @@ export function StudyLibraryViewer({
         </div>
 
         <div className="flex items-center gap-1.5 shrink-0">
+          {folderNav && folderNav.total > 1 ? (
+            <div className="flex items-center gap-0.5 rounded-md border border-border overflow-hidden">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-8 rounded-none px-2"
+                disabled={!folderNav.onPrev}
+                onClick={folderNav.onPrev}
+                title={folderNav.prevTitle ? `Previous: ${folderNav.prevTitle}` : "Previous note in folder"}
+                aria-label="Previous note in folder"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </Button>
+              <span className="px-1.5 text-[10px] tabular-nums text-muted-foreground whitespace-nowrap">
+                {folderNav.index + 1}/{folderNav.total}
+              </span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-8 rounded-none px-2"
+                disabled={!folderNav.onNext}
+                onClick={folderNav.onNext}
+                title={folderNav.nextTitle ? `Next: ${folderNav.nextTitle}` : "Next note in folder"}
+                aria-label="Next note in folder"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+            </div>
+          ) : null}
+          {onFocusSearch ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-8 text-xs gap-1.5"
+              onClick={onFocusSearch}
+              title="Search this note or all notes (Ctrl+K)"
+              aria-label="Search"
+            >
+              <Search className="w-3.5 h-3.5" />
+              <span className="hidden lg:inline">Search</span>
+            </Button>
+          ) : null}
           {onToggleFullscreen ? (
             <Button
               type="button"
@@ -529,21 +589,49 @@ export function StudyLibraryViewer({
               />
             </div>
           ) : (
-            <div
-              ref={setScrollContainer}
-              className="flex-1 overflow-y-auto study-library-markdown-scroll study-library-viewer-body"
-            >
-              {primaryContent ? (
-                <NoteDocumentView content={primaryContent} sectionEdit={sectionEdit} />
-              ) : (
-                <div className="study-library-viewer-empty">
-                  <FileText className="w-10 h-10 text-muted-foreground/40 mb-3" />
-                  <p className="text-sm font-medium text-foreground/90">No note selected</p>
-                  <p className="text-xs text-muted-foreground mt-1 max-w-xs text-center">
-                    Choose a note from the library, or create one from live captions.
-                  </p>
-                </div>
-              )}
+            <div className="relative flex-1 min-h-0 flex flex-col">
+              {folderNav && folderNav.total > 1 ? (
+                <>
+                  <button
+                    type="button"
+                    aria-label="Previous note in folder"
+                    disabled={!folderNav.onPrev || editing}
+                    className="absolute left-0 top-0 bottom-0 z-10 w-10 sm:w-12 touch-manipulation opacity-0 hover:opacity-100 focus-visible:opacity-100 transition-opacity disabled:pointer-events-none"
+                    onClick={folderNav.onPrev}
+                  >
+                    <span className="flex h-full items-center justify-center bg-gradient-to-r from-background/60 to-transparent">
+                      <ChevronLeft className="w-6 h-6 text-foreground/70" />
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    aria-label="Next note in folder"
+                    disabled={!folderNav.onNext || editing}
+                    className="absolute right-0 top-0 bottom-0 z-10 w-10 sm:w-12 touch-manipulation opacity-0 hover:opacity-100 focus-visible:opacity-100 transition-opacity disabled:pointer-events-none"
+                    onClick={folderNav.onNext}
+                  >
+                    <span className="flex h-full items-center justify-center bg-gradient-to-l from-background/60 to-transparent">
+                      <ChevronRight className="w-6 h-6 text-foreground/70" />
+                    </span>
+                  </button>
+                </>
+              ) : null}
+              <div
+                ref={setScrollContainer}
+                className="flex-1 overflow-y-auto study-library-markdown-scroll study-library-viewer-body"
+              >
+                {primaryContent ? (
+                  <NoteDocumentView content={primaryContent} sectionEdit={sectionEdit} />
+                ) : (
+                  <div className="study-library-viewer-empty">
+                    <FileText className="w-10 h-10 text-muted-foreground/40 mb-3" />
+                    <p className="text-sm font-medium text-foreground/90">No note selected</p>
+                    <p className="text-xs text-muted-foreground mt-1 max-w-xs text-center">
+                      Choose a note from the library, or create one from live captions.
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </section>

@@ -9,12 +9,13 @@ import { submitTrainSample } from "../../api/mathClient";
 import {
   completeGlobalQuiz,
   fetchGlobalQuizQuestion,
+  keepGoingGlobalQuiz,
   runQuizCode,
   startGlobalQuiz,
   submitGlobalQuizAnswer,
   type QuizCodeRunResult,
 } from "../../api/globalQuizClient";
-import type { GlobalQuizQuestion, QuizDomain, QuizSessionSummary } from "./types";
+import type { GlobalQuizQuestion, MathCoreCoverage, QuizDomain, QuizSessionSummary } from "./types";
 import {
   MathQuizAnswerPanel,
   type MathQuizOcrMeta,
@@ -58,6 +59,10 @@ export function GlobalQuizRunner({
   const [error, setError] = useState<string | null>(null);
   const [startedAt, setStartedAt] = useState(Date.now());
   const [summary, setSummary] = useState<QuizSessionSummary | null>(null);
+  const [chunkGate, setChunkGate] = useState<{
+    coverage?: MathCoreCoverage;
+    can_keep_going: boolean;
+  } | null>(null);
   const [showHint, setShowHint] = useState(false);
   const [now, setNow] = useState(Date.now());
   const [sessionDeadline, setSessionDeadline] = useState<number | undefined>(undefined);
@@ -67,6 +72,10 @@ export function GlobalQuizRunner({
   const [testRunResult, setTestRunResult] = useState<QuizCodeRunResult | null>(null);
   const [testRunBusy, setTestRunBusy] = useState(false);
   const pendingNextRef = useRef<GlobalQuizQuestion | null | undefined>(undefined);
+  const pendingChunkGateRef = useRef<{
+    coverage?: MathCoreCoverage;
+    can_keep_going: boolean;
+  } | null>(null);
   const timedOutRef = useRef(false);
   const hintRevealsRef = useRef(0);
 
@@ -84,6 +93,7 @@ export function GlobalQuizRunner({
       const result = await runQuizCode({
         code: freeText,
         item_id: question.item_id,
+        session_id: sessionId || undefined,
       });
       setTestRunResult(result);
     } catch (e) {
@@ -98,7 +108,7 @@ export function GlobalQuizRunner({
     } finally {
       setTestRunBusy(false);
     }
-  }, [freeText, question]);
+  }, [freeText, question, sessionId]);
 
   const perQuestionSec =
     question?.meta?.per_question_sec ??
@@ -115,6 +125,7 @@ export function GlobalQuizRunner({
       setBusy(true);
       setError(null);
       setSummary(null);
+      setChunkGate(null);
       setSessionDeadline(undefined);
       try {
         if (resumeSessionId) {
@@ -173,6 +184,7 @@ export function GlobalQuizRunner({
     setTestRunResult(null);
     setTestRunBusy(false);
     pendingNextRef.current = undefined;
+    pendingChunkGateRef.current = null;
     setStartedAt(Date.now());
     timedOutRef.current = false;
   }, [question?.item_id, question?.format, question?.starter_code]);
@@ -190,6 +202,7 @@ export function GlobalQuizRunner({
       }
       if (sessionId) {
         const result = await completeGlobalQuiz(sessionId);
+        setChunkGate(null);
         setSummary(result);
         onDone?.(result);
         void rebuildHubDaily();
@@ -201,6 +214,36 @@ export function GlobalQuizRunner({
     },
     [sessionId, onDone, navigate, navigateOnComplete]
   );
+
+  const onKeepGoing = useCallback(async () => {
+    if (!sessionId || busy) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await keepGoingGlobalQuiz(sessionId);
+      setChunkGate(null);
+      setFeedback(null);
+      setLastCorrect(null);
+      if (res.question) {
+        setQuestion(res.question);
+      } else {
+        await advance(null);
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not continue drills");
+    } finally {
+      setBusy(false);
+    }
+  }, [sessionId, busy, advance]);
+
+  const onEndChunk = useCallback(async () => {
+    setBusy(true);
+    try {
+      await advance(null);
+    } finally {
+      setBusy(false);
+    }
+  }, [advance]);
 
   const logOcrCorrectionIfNeeded = useCallback(
     async (confirmed: string) => {
@@ -265,11 +308,28 @@ export function GlobalQuizRunner({
       // Math OCR: pause so you can review recognition before next Q
       if (isMathHandwrite && !timedOut) {
         setHoldAdvance(true);
-        pendingNextRef.current = result.complete ? null : result.next_question;
+        if (result.complete && result.can_keep_going) {
+          pendingNextRef.current = null;
+          pendingChunkGateRef.current = {
+            coverage: result.coverage,
+            can_keep_going: true,
+          };
+        } else {
+          pendingChunkGateRef.current = null;
+          pendingNextRef.current = result.complete ? null : result.next_question;
+        }
         return;
       }
       const pauseMs = timedOut ? 400 : correct ? 900 : 2200;
-      if (result.complete) {
+      if (result.complete && result.can_keep_going) {
+        setTimeout(() => {
+          setChunkGate({
+            coverage: result.coverage,
+            can_keep_going: true,
+          });
+          setQuestion(null);
+        }, pauseMs);
+      } else if (result.complete) {
         setTimeout(async () => {
           await advance(null);
         }, pauseMs);
@@ -286,9 +346,16 @@ export function GlobalQuizRunner({
   };
 
   const continueAfterMath = async () => {
+    const gate = pendingChunkGateRef.current;
     const next = pendingNextRef.current;
     setHoldAdvance(false);
     pendingNextRef.current = undefined;
+    pendingChunkGateRef.current = null;
+    if (gate?.can_keep_going) {
+      setChunkGate(gate);
+      setQuestion(null);
+      return;
+    }
     await advance(next);
   };
 
@@ -325,6 +392,34 @@ export function GlobalQuizRunner({
     );
   }
 
+  if (!question && chunkGate) {
+    const cov = chunkGate.coverage;
+    return (
+      <div className="flex flex-col gap-4 p-6">
+        <h2 className="text-lg font-semibold">Chunk complete</h2>
+        <p className="text-sm text-muted-foreground">
+          Short set done. Keep going to cover more number combinations, or end for now.
+        </p>
+        {cov && (
+          <p className="text-sm">
+            <span className="font-medium">{cov.label || cov.tag || "Topic"}</span>
+            {" · "}
+            {cov.practiced ?? 0}/{cov.total ?? 0} proficient ({cov.pct ?? 0}%)
+            {cov.remaining != null ? ` · ${cov.remaining} left` : ""}
+          </p>
+        )}
+        <div className="flex flex-wrap gap-2">
+          <Button onClick={() => void onKeepGoing()} disabled={busy}>
+            Keep going
+          </Button>
+          <Button variant="outline" onClick={() => void onEndChunk()} disabled={busy}>
+            End
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   if (!question && summary) {
     return (
       <div className="flex flex-col gap-4 p-6">
@@ -335,6 +430,12 @@ export function GlobalQuizRunner({
             ({summary.accuracy_pct ?? 0}%)
           </span>
         </p>
+        {summary.coverage && (
+          <p className="text-sm text-muted-foreground">
+            {summary.coverage.label || summary.coverage.tag}: {summary.coverage.practiced}/
+            {summary.coverage.total} proficient ({summary.coverage.pct}%)
+          </p>
+        )}
         {summary.total_time_ms != null && (
           <p className="text-sm text-muted-foreground flex items-center gap-1">
             <Clock className="h-4 w-4" /> Total time {formatMs(summary.total_time_ms)}

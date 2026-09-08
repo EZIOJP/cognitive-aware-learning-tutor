@@ -1,4 +1,5 @@
 from datetime import UTC, datetime, timedelta
+import time
 
 from fastapi import Depends, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -13,6 +14,9 @@ from backend.models import User
 pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
 security = HTTPBearer(auto_error=False)
 settings = get_settings()
+
+_solo_owner_cache: tuple[float, int] | None = None
+_SOLO_OWNER_TTL_S = 120.0
 
 
 def token_for(user: User) -> str:
@@ -78,7 +82,15 @@ def ensure_default_admin(db: Session) -> User:
 
 def ensure_solo_owner(db: Session) -> User:
     """Single local calendar owner (admin). Used when solo_local_user is on."""
-    return ensure_default_admin(db)
+    global _solo_owner_cache
+    now = time.monotonic()
+    if _solo_owner_cache is not None and (now - _solo_owner_cache[0]) < _SOLO_OWNER_TTL_S:
+        cached = db.get(User, _solo_owner_cache[1])
+        if cached is not None:
+            return cached
+    owner = ensure_default_admin(db)
+    _solo_owner_cache = (now, int(owner.id))
+    return owner
 
 
 def merge_demo_planner_into_solo(db: Session) -> int:

@@ -48,6 +48,15 @@ class RewardDayIn(BaseModel):
     confirm: str = Field("", description="Type REWARD to spend an earned reward day")
 
 
+class DevotionNotesIn(BaseModel):
+    slot: str = Field(..., description="morning | afternoon | evening")
+    notes: str = Field("", max_length=4000)
+
+
+class DevotionDoneIn(BaseModel):
+    done: bool = True
+
+
 @router.get("/pdf")
 def get_pdf(user: User = Depends(get_current_user)):
     """Optional legacy GNB PDF — not required for chapter goal."""
@@ -216,3 +225,84 @@ def remove_bookmark(bookmark_id: int, user: User = Depends(get_current_user)):
     if not bible_store.delete_bookmark(user.id, bookmark_id):
         raise HTTPException(status_code=404, detail="Bookmark not found")
     return {"ok": True}
+
+
+@router.get("/devotion/today")
+def devotion_today(
+    version: str = "web",
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """3× daily devotion — morning chapter, afternoon Proverbs, evening Psalms + worship."""
+    from backend.behavior.distraction_gate import compute_distraction_gate
+
+    summary = bible_store.devotion_summary(user.id)
+    assigned = bible_store.resolve_today_chapter(user.id, version=version)
+    try:
+        morning_chapter = bible_text.read_chapter(
+            version, assigned["book"], int(assigned["chapter"])
+        )
+    except (FileNotFoundError, KeyError, IndexError) as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+    aft = summary.get("afternoon") or {}
+    eve = summary.get("evening") or {}
+    afternoon_chapter = None
+    evening_chapter = None
+    try:
+        afternoon_chapter = bible_text.read_chapter(
+            version, str(aft.get("book") or "Proverbs"), int(aft.get("chapter") or 1)
+        )
+    except (FileNotFoundError, KeyError, IndexError):
+        afternoon_chapter = None
+    try:
+        evening_chapter = bible_text.read_chapter(
+            version, str(eve.get("book") or "Psalms"), int(eve.get("chapter") or 1)
+        )
+    except (FileNotFoundError, KeyError, IndexError):
+        evening_chapter = None
+
+    base = bible_store.summary(user.id)
+    gate = compute_distraction_gate(db, user.id)
+    chapters = base.get("chapters_completed_today") or []
+    morning_done = bool(assigned.get("done")) or assigned.get("key") in chapters
+    return {
+        **summary,
+        "today_chapter": {**assigned, "done": morning_done},
+        "morning_chapter": morning_chapter,
+        "afternoon_chapter": afternoon_chapter,
+        "evening_chapter": evening_chapter,
+        "chapter_goal": base.get("chapter_goal"),
+        "gate": gate,
+    }
+
+
+@router.post("/devotion/{slot}/done")
+def devotion_mark_done(
+    slot: str,
+    body: DevotionDoneIn,
+    user: User = Depends(get_current_user),
+):
+    if slot == "morning":
+        assigned = bible_store.resolve_today_chapter(user.id)
+        try:
+            return bible_store.tick_chapter(
+                user.id,
+                book=str(assigned.get("book") or ""),
+                chapter=int(assigned.get("chapter") or 1),
+                done=body.done,
+            )
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+    try:
+        return bible_store.mark_devotion_done(user.id, slot, done=body.done)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.patch("/devotion/notes")
+def devotion_save_notes(body: DevotionNotesIn, user: User = Depends(get_current_user)):
+    try:
+        return bible_store.save_devotion_notes(user.id, body.slot, body.notes)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc

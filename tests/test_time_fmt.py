@@ -1,6 +1,13 @@
 """Hours + minutes display labels (storage stays in minutes)."""
 
-from backend.behavior.time_fmt import format_hours_mins
+from backend.behavior.time_fmt import format_duration_spoken, format_hours_mins, enrich_duration_fmt
+
+
+def test_format_duration_spoken() -> None:
+    assert format_duration_spoken(50) == "50 mins"
+    assert format_duration_spoken(90) == "1 hour 30 mins"
+    enriched = enrich_duration_fmt({"focus_min": 90})
+    assert enriched["focus_hm"] == "1 hour 30 mins"
 
 
 def test_format_hours_mins_examples():

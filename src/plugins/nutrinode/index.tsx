@@ -17,7 +17,7 @@ export const NutriNodePlugin: PluginDef = {
     { path: "nutrition", element: <NutritionPage /> },
   ],
   navItems: [
-    { to: "/nutrition", label: "Nutrition", icon: Apple, end: false },
+    { to: "/nutrition", label: "Nutrition", icon: Apple, end: false, category: "life" },
   ],
   widgets: [
     {

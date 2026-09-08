@@ -52,12 +52,23 @@ def _write(data: dict[str, Any]) -> dict[str, Any]:
 
 
 def load_gate_schedules() -> dict[str, Any]:
-    data = _read()
-    if "windows" not in data:
-        data["windows"] = list(DEFAULT_SCHEDULES["windows"])
-    if "enabled" not in data:
-        data["enabled"] = False
-    return data
+    """Phase 2: schedules live in softland_policy.json (legacy file dual-written)."""
+    try:
+        from backend.behavior.softland_policy import schedules_from_policy
+
+        data = schedules_from_policy()
+        if "windows" not in data:
+            data["windows"] = list(DEFAULT_SCHEDULES["windows"])
+        if "enabled" not in data:
+            data["enabled"] = False
+        return data
+    except Exception:
+        data = _read()
+        if "windows" not in data:
+            data["windows"] = list(DEFAULT_SCHEDULES["windows"])
+        if "enabled" not in data:
+            data["enabled"] = False
+        return data
 
 
 def save_gate_schedules(payload: dict[str, Any]) -> dict[str, Any]:
@@ -81,10 +92,17 @@ def save_gate_schedules(payload: dict[str, Any]) -> dict[str, Any]:
             "end": str(w.get("end") or "17:00")[:5],
             "mode": mode,
         })
-    return _write({
+    schedules = {
         "enabled": bool(payload.get("enabled")),
         "windows": cleaned or list(DEFAULT_SCHEDULES["windows"]),
-    })
+    }
+    try:
+        from backend.behavior.softland_policy import patch_softland_policy
+
+        data = patch_softland_policy({"schedules": schedules})
+        return dict(data.get("schedules") or schedules)
+    except Exception:
+        return _write(schedules)
 
 
 def _parse_hm(hm: str) -> int:

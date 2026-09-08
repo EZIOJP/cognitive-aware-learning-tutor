@@ -45,7 +45,12 @@ class DeviceTab(QWidget):
         tip.setStyleSheet("color: #94a3b8;")
         lay.addWidget(tip)
         lay.addStretch(1)
-        self.reload()
+
+    def showEvent(self, event) -> None:  # noqa: N802
+        super().showEvent(event)
+        if not getattr(self, "_loaded", False):
+            self._loaded = True
+            self.reload()
 
     def reload(self) -> None:
         from backend.behavior import device_block as db

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import time
-from datetime import UTC, datetime, timedelta, timezone
+from datetime import UTC, date, datetime, timedelta, timezone
 
 import pytest
 from sqlalchemy import create_engine
@@ -169,6 +169,78 @@ def test_merge_adjacent_sessions(db_session):
     assert (merged[0].end_time - merged[0].start_time).total_seconds() >= 110
 
 
+def test_merge_tracked_rows_mixed_naive_and_aware():
+    """Native enforcer writes UTC-aware; Python/extension often write naive — must not crash sort."""
+    aware_start = datetime(2026, 9, 7, 6, 0, 0, tzinfo=UTC)
+    aware_end = datetime(2026, 9, 7, 6, 5, 0, tzinfo=UTC)
+    naive_start = datetime(2026, 9, 7, 6, 5, 2)  # naive local-ish wall clock
+    naive_end = datetime(2026, 9, 7, 6, 10, 0)
+    rows = [
+        {
+            "session_id": "native-1",
+            "start_time": aware_start,
+            "end_time": aware_end,
+            "app_name": "cursor.exe",
+            "category": "IDE / Code Editor",
+            "window_title": "a",
+            "source": "desktop_tracker",
+        },
+        {
+            "session_id": "py-1",
+            "start_time": naive_start,
+            "end_time": naive_end,
+            "app_name": "cursor.exe",
+            "category": "IDE / Code Editor",
+            "window_title": "b",
+            "source": "desktop_tracker",
+        },
+    ]
+    merged = merge_tracked_rows(rows)
+    assert len(merged) >= 1
+    assert all(_ is not None for _ in (merged[0]["start_time"], merged[0]["end_time"]))
+
+
+def test_desktop_stats_mixed_naive_and_aware(db_session):
+    """desktop-stats must tolerate native (aware) + extension (naive) rows on the same day."""
+    from backend.behavior.router import _desktop_stats_from_tracked_sessions
+
+    day = date(2026, 9, 7)
+    aware_start = datetime(2026, 9, 7, 6, 0, 0, tzinfo=UTC)
+    aware_end = datetime(2026, 9, 7, 6, 10, 0, tzinfo=UTC)
+    naive_start = datetime(2026, 9, 7, 8, 0, 0)
+    naive_end = datetime(2026, 9, 7, 8, 15, 0)
+    db_session.add(
+        TrackedSession(
+            session_id="native-mix-1",
+            user_id=1,
+            start_time=aware_start,
+            end_time=aware_end,
+            source="desktop_tracker",
+            category="IDE / Code Editor",
+            category_source="native",
+            app_name="cursor.exe",
+            window_title="a",
+        )
+    )
+    db_session.add(
+        TrackedSession(
+            session_id="ext-mix-1",
+            user_id=1,
+            start_time=naive_start,
+            end_time=naive_end,
+            source="extension",
+            category="Social Media",
+            category_source="url_rule",
+            app_name="youtube.com",
+            window_title="YouTube",
+        )
+    )
+    db_session.commit()
+    payload = _desktop_stats_from_tracked_sessions(db_session, [1], day, user_id=1)
+    assert payload["total_seconds"] > 0
+    assert payload["source"] == "tracked_sessions"
+
+
 def test_flush_request_ack(tmp_path, monkeypatch):
     monkeypatch.setattr("backend.behavior.tracker_storage.APP_DATA_DIR", tmp_path)
     monkeypatch.setattr("backend.behavior.tracker_storage.FLUSH_REQUEST_PATH", tmp_path / "tracker_flush.request")
@@ -257,14 +329,21 @@ def test_is_ignored_move_mouse():
 
 
 def test_is_ignored_msedge_for_extension_ownership():
-    """Desktop must not record Edge — SelfTracker extension owns browser sessions."""
+    """Desktop capture skips Edge; extension tab sessions must not be dropped."""
     from backend.behavior.tracker_ignore import is_ignored_app
 
     assert is_ignored_app("msedge.exe", "Scaler | Dashboard")
     assert is_ignored_app("msedgewebview2.exe", "")
     assert is_ignored_app("C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe", "YouTube")
-    assert not is_ignored_app("chrome.exe", "Gmail")
-    assert not is_ignored_app("firefox.exe", "Mozilla Firefox")
+    assert not is_ignored_app(
+        "msedge.exe", "Some Video · youtube.com", source="extension"
+    )
+    # Other browsers: desktop ignored; extension sessions kept (no double-count)
+    assert is_ignored_app("chrome.exe", "Gmail")
+    assert is_ignored_app("firefox.exe", "Mozilla Firefox")
+    assert is_ignored_app("brave.exe", "Brave")
+    assert not is_ignored_app("chrome.exe", "Gmail", source="extension")
+    assert not is_ignored_app("firefox.exe", "Mozilla Firefox", source="extension")
 
 
 def test_merge_for_calendar_drops_move_mouse():

@@ -21,7 +21,10 @@ from typing import Callable, Literal
 log = logging.getLogger("desktop_tracker.stack_health")
 
 PROBE_INTERVAL_S = float(os.environ.get("CALT_STACK_PROBE_INTERVAL_S", "20") or "20")
+# When Vite is down/hung, probe less often so desktop UI does not pile CLOSE_WAIT sockets.
+PROBE_DOWN_INTERVAL_S = float(os.environ.get("CALT_STACK_PROBE_DOWN_INTERVAL_S", "60") or "60")
 PROBE_TIMEOUT_S = float(os.environ.get("CALT_STACK_PROBE_TIMEOUT_S", "1.5") or "1.5")
+PROBE_WEB_TIMEOUT_S = float(os.environ.get("CALT_STACK_PROBE_WEB_TIMEOUT_S", "3") or "3")
 JARVIS_DOWN_COOLDOWN_S = float(os.environ.get("CALT_STACK_JARVIS_COOLDOWN_S", "300") or "300")
 STACK_WAIT_TIMEOUT_S = float(os.environ.get("CALT_STACK_WAIT_TIMEOUT_S", "120") or "120")
 STACK_WAIT_POLL_S = float(os.environ.get("CALT_STACK_WAIT_POLL_S", "2.5") or "2.5")
@@ -120,14 +123,21 @@ def probe_url(url: str, *, timeout: float | None = None, method: str = "GET") ->
         return False
 
 
+def _probe_interval_s(cached: StackHealth | None) -> float:
+    """Shorter interval when healthy; back off when web is down/hung."""
+    if cached is not None and not cached.web_up:
+        return PROBE_DOWN_INTERVAL_S
+    return PROBE_INTERVAL_S
+
+
 def probe_stack(*, timeout: float | None = None) -> StackHealth:
     """Probe API /health and frontend root. Does not touch hub :8765."""
-    api = probe_url(api_health_url(), timeout=timeout, method="GET")
-    # Prefer HEAD for Vite; fall back to GET if HEAD rejected
+    api_t = PROBE_TIMEOUT_S if timeout is None else float(timeout)
+    web_t = PROBE_WEB_TIMEOUT_S if timeout is None else float(timeout)
+    api = probe_url(api_health_url(), timeout=api_t, method="GET")
+    # Single GET — avoid HEAD+GET doubling TCP load on a hung Vite listener.
     fe = frontend_url() + "/"
-    web = probe_url(fe, timeout=timeout, method="HEAD")
-    if not web:
-        web = probe_url(fe, timeout=timeout, method="GET")
+    web = probe_url(fe, timeout=web_t, method="GET")
     return StackHealth(api_up=api, web_up=web)
 
 
@@ -149,11 +159,12 @@ def _apply_probe_result(snap: StackHealth, *, now: float | None = None) -> Stack
 
 
 def get_stack_health(*, force: bool = False) -> StackHealth:
-    """Cached probe (default ~20s). Safe to call from UI poll / tray tooltip."""
+    """Cached probe (default ~20s; ~60s when web down). Safe from UI poll / tray."""
     global _cached, _cached_at
     now = time.monotonic()
     with _lock:
-        age_ok = _cached is not None and (now - _cached_at) < PROBE_INTERVAL_S
+        interval = _probe_interval_s(_cached)
+        age_ok = _cached is not None and (now - _cached_at) < interval
         if not force and age_ok:
             return _cached  # type: ignore[return-value]
 

@@ -1,0 +1,3 @@
+C:/Users/Lenovo/Desktop/Cognitive-Aware Learning Tutor/native/calt_focus/build_quitfix/CMakeFiles/calt_focus.dir
+C:/Users/Lenovo/Desktop/Cognitive-Aware Learning Tutor/native/calt_focus/build_quitfix/CMakeFiles/edit_cache.dir
+C:/Users/Lenovo/Desktop/Cognitive-Aware Learning Tutor/native/calt_focus/build_quitfix/CMakeFiles/rebuild_cache.dir

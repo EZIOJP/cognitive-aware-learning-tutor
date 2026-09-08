@@ -115,8 +115,19 @@ export function TrackerDayBoard() {
             <p className="text-xs text-muted-foreground">
               Hard-block {hb?.armed ? "armed" : "off"}
               {hb?.locked ? " · locked" : ""}
+              {status.incubation?.active
+                ? ` · incubation ${Math.max(0, Math.round((status.incubation.remaining_sec || 0) / 60))}m`
+                : ""}
+              {status.desktop?.enforcer_owns_kills ? " · enforcer on" : ""}
               {status.tracker_alive ? " · tracker on" : " · tracker idle"}
             </p>
+            {status.desktop?.hint ? (
+              <p className="text-[11px] text-muted-foreground mt-1">{status.desktop.hint}</p>
+            ) : (
+              <p className="text-[11px] text-muted-foreground mt-1">
+                Control: CALT Desktop · Focus · sites: CALT Gate
+              </p>
+            )}
           </div>
         </div>
       ) : null}

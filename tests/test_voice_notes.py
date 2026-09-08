@@ -8,6 +8,7 @@ does not match what was recorded.
 from __future__ import annotations
 
 import base64
+import json
 
 import pytest
 
@@ -152,6 +153,37 @@ def test_resume_after_interruption_completes_without_resending_everything(_tmp_d
     assert (_tmp_dirs / NAME).read_bytes() == blob
 
 
+def test_begin_stores_gain_in_manifest():
+    blob = _blob()
+    begin = vn.begin_upload(
+        name=NAME,
+        size=len(blob),
+        chunk_size=CHUNK,
+        total_chunks=(len(blob) + CHUNK - 1) // CHUNK,
+        sha=vn.fnv1a32(blob),
+        gain=2.5,
+    )
+    status = vn.upload_status(upload_id=begin["upload_id"])
+    assert status.get("ok")
+    manifest_path = vn._manifest_path(begin["upload_id"])
+    data = json.loads(manifest_path.read_text(encoding="utf-8"))
+    assert data["gain"] == 2.5
+
+
+def test_normalize_gain_clamps():
+    assert vn._normalize_gain(99) == 8.0
+    assert vn._normalize_gain(0) == 0.25
+    assert vn._normalize_gain("bad") == 1.0
+
+
+def test_amplify_passthrough_without_opuslib(_tmp_dirs):
+    from backend.behavior import voice_opus_gain as vog
+
+    blob = _blob(64)
+    out = vog.amplify_zepp_opus(blob, 2.5)
+    assert out == blob
+
+
 def test_begin_on_already_published_note_reports_stored(_tmp_dirs):
     blob = _blob()
     begin = _begin(blob)
@@ -162,6 +194,46 @@ def test_begin_on_already_published_note_reports_stored(_tmp_dirs):
 
     # Watch may retry after losing the ack; it must be told to drop its copy.
     assert again["complete"] and again["stored"]
+
+
+def test_begin_requires_hash_not_just_size(_tmp_dirs):
+    blob = _blob()
+    bad = bytes((i * 3 + 5) % 256 for i in range(len(blob)))
+    assert len(bad) == len(blob)
+    assert vn.fnv1a32(blob) != vn.fnv1a32(bad)
+    _tmp_dirs.mkdir(parents=True, exist_ok=True)
+    (_tmp_dirs / NAME).write_bytes(bad)
+
+    again = _begin(blob)
+
+    assert not again.get("stored")
+    assert not (_tmp_dirs / NAME).exists()
+
+
+def test_begin_auto_finishes_when_all_chunks_already_received(_tmp_dirs):
+    blob = _blob()
+    begin = _begin(blob)
+    _send_all(begin["upload_id"], blob)
+
+    # Simulate VN_FINISH never arriving from the watch.
+    again = _begin(blob)
+
+    assert again["ok"] and again["stored"]
+    assert (_tmp_dirs / NAME).read_bytes() == blob
+    assert not vn.list_pending_uploads()
+
+
+def test_corrupt_published_file_is_removed_on_reupload(_tmp_dirs):
+    blob = _blob()
+    bad = b"\x00" * len(blob)
+    _tmp_dirs.mkdir(parents=True, exist_ok=True)
+    (_tmp_dirs / NAME).write_bytes(bad)
+
+    begin = _begin(blob)
+    assert not begin.get("stored")
+    _send_all(begin["upload_id"], blob)
+    assert vn.finish_upload(upload_id=begin["upload_id"])["ok"]
+    assert (_tmp_dirs / NAME).read_bytes() == blob
 
 
 # --- corruption refusal ----------------------------------------------------

@@ -16,7 +16,7 @@ export const LifeTrackerPlugin: PluginDef = {
     { path: "life-tracker", element: <LifeTrackerPage /> },
   ],
   navItems: [
-    { to: "/life-tracker", label: "Life Tracker", icon: Heart, end: false },
+    { to: "/life-tracker", label: "Life Tracker", icon: Heart, end: false, category: "life" },
   ],
   widgets: [
     {

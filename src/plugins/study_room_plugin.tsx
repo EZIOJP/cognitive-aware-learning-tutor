@@ -10,7 +10,7 @@ export const StudyRoomPlugin: PluginDef = {
   icon: LayoutTemplate,
   isCore: false,
   routes: [{ path: "study-room", element: <StudyRoomPage /> }],
-  navItems: [{ to: "/study-room", label: "Study Room", icon: LayoutTemplate, end: true }],
+  navItems: [{ to: "/study-room", label: "Study Room", icon: LayoutTemplate, end: true, category: "study" }],
 };
 
 registerPlugin(StudyRoomPlugin);

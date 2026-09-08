@@ -1,0 +1,3022 @@
+{
+  "schema_version": 1,
+  "kind": "math",
+  "topic": {
+    "topic_id": "math.aptitude.dm-lcm",
+    "title": "DeepMind LCM",
+    "stage": "foundations",
+    "path": [
+      "Aptitude",
+      "DeepMind",
+      "numbers__lcm"
+    ],
+    "track": "aptitude",
+    "prerequisites": [],
+    "note_topic_ids": [
+      "MT1-T02"
+    ],
+    "description": "google-deepmind/mathematics_dataset (numbers__lcm)."
+  },
+  "questions": [
+    {
+      "id": "math.aptitude.dm-lcm.q0001",
+      "problem": "Find the common denominator of 7/26002170 and 167/30.",
+      "answer": "26002170",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0002",
+      "problem": "Find the common denominator of 47/295756 and -113/48.",
+      "answer": "3549072",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0003",
+      "problem": "What is the smallest common multiple of 77584 and 5968?",
+      "answer": "77584",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0004",
+      "problem": "Calculate the common denominator of 105/1976 and 55/14.",
+      "answer": "13832",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0005",
+      "problem": "Calculate the least common multiple of 11 and 3984.",
+      "answer": "43824",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0006",
+      "problem": "What is the common denominator of 58/1516623 and -77/2?",
+      "answer": "3033246",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0007",
+      "problem": "Calculate the smallest common multiple of 2 and 32.",
+      "answer": "32",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0008",
+      "problem": "What is the smallest common multiple of 61410 and 1335?",
+      "answer": "61410",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0009",
+      "problem": "Find the common denominator of 61/340 and 51/360170.",
+      "answer": "12245780",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0010",
+      "problem": "Calculate the lowest common multiple of 287 and 1435.",
+      "answer": "1435",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0011",
+      "problem": "Calculate the common denominator of 119/2866758 and -58/219.",
+      "answer": "209273334",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0012",
+      "problem": "Calculate the smallest common multiple of 17168 and 812.",
+      "answer": "120176",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0013",
+      "problem": "Calculate the smallest common multiple of 1476 and 27.",
+      "answer": "4428",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0014",
+      "problem": "Find the common denominator of 27/385 and 6/4655.",
+      "answer": "51205",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0015",
+      "problem": "Find the common denominator of -37/237082 and 14/4037.",
+      "answer": "2607902",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0016",
+      "problem": "What is the lowest common multiple of 11186 and 34629?",
+      "answer": "3255126",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0017",
+      "problem": "What is the least common multiple of 66876625 and 50?",
+      "answer": "133753250",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0018",
+      "problem": "What is the smallest common multiple of 1662 and 1108?",
+      "answer": "3324",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0019",
+      "problem": "What is the common denominator of -61/8118897 and -61/56832279?",
+      "answer": "56832279",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0020",
+      "problem": "Calculate the smallest common multiple of 84 and 32.",
+      "answer": "672",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0021",
+      "problem": "Calculate the common denominator of 103/1110 and 13/666.",
+      "answer": "3330",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0022",
+      "problem": "What is the common denominator of 47/5224 and -43/5224?",
+      "answer": "5224",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0023",
+      "problem": "Calculate the common denominator of 125/1314 and 69/4.",
+      "answer": "2628",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0024",
+      "problem": "Calculate the smallest common multiple of 20292 and 203756.",
+      "answer": "54402852",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0025",
+      "problem": "Find the common denominator of -43/18 and -45/43316.",
+      "answer": "389844",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0026",
+      "problem": "Calculate the smallest common multiple of 20 and 29362.",
+      "answer": "293620",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0027",
+      "problem": "What is the common denominator of -27/8 and 83/14108?",
+      "answer": "28216",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0028",
+      "problem": "Calculate the common denominator of 67/15 and -29/3.",
+      "answer": "15",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0029",
+      "problem": "Calculate the common denominator of -72/33075035 and 52/175.",
+      "answer": "165375175",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0030",
+      "problem": "Find the common denominator of 68/14769 and 137/4716234.",
+      "answer": "14148702",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0031",
+      "problem": "Calculate the least common multiple of 59879171 and 43548488.",
+      "answer": "479033368",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0032",
+      "problem": "Find the common denominator of 47/9840 and -101/40918.",
+      "answer": "4910160",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0033",
+      "problem": "Calculate the lowest common multiple of 130 and 4045873.",
+      "answer": "40458730",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0034",
+      "problem": "What is the common denominator of -56/319275 and 22/4719465?",
+      "answer": "259570575",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0035",
+      "problem": "What is the common denominator of 101/92 and -89/230?",
+      "answer": "460",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0036",
+      "problem": "What is the common denominator of 17/2052 and 73/2052?",
+      "answer": "2052",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0037",
+      "problem": "What is the common denominator of -125/726 and 95/24?",
+      "answer": "2904",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0038",
+      "problem": "Calculate the common denominator of 62/87 and -85/18.",
+      "answer": "522",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0039",
+      "problem": "Calculate the least common multiple of 1758 and 748029.",
+      "answer": "1496058",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0040",
+      "problem": "Calculate the lowest common multiple of 19080 and 8528760.",
+      "answer": "8528760",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0041",
+      "problem": "What is the common denominator of -76/1275 and -31/1530?",
+      "answer": "7650",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0042",
+      "problem": "Calculate the common denominator of 13/9229 and 89/5398965.",
+      "answer": "5398965",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0043",
+      "problem": "Calculate the least common multiple of 4188 and 6282.",
+      "answer": "12564",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0044",
+      "problem": "What is the least common multiple of 130 and 89961200?",
+      "answer": "1169495600",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0045",
+      "problem": "Calculate the common denominator of -24/5 and -79/22.",
+      "answer": "110",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0046",
+      "problem": "Calculate the common denominator of -57/6320 and -37/1580.",
+      "answer": "6320",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0047",
+      "problem": "Calculate the least common multiple of 117600 and 33600.",
+      "answer": "235200",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0048",
+      "problem": "Calculate the smallest common multiple of 66520 and 20.",
+      "answer": "66520",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0049",
+      "problem": "What is the common denominator of -8/975 and 65/12?",
+      "answer": "3900",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0050",
+      "problem": "What is the common denominator of 73/624448410 and -29/312224205?",
+      "answer": "624448410",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0051",
+      "problem": "Find the common denominator of 38/65 and 71/8.",
+      "answer": "520",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0052",
+      "problem": "What is the common denominator of 83/7088 and 101/5316?",
+      "answer": "21264",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0053",
+      "problem": "What is the lowest common multiple of 464004 and 1160010?",
+      "answer": "2320020",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0054",
+      "problem": "Find the common denominator of 127/19767748 and 79/19748.",
+      "answer": "19767748",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0055",
+      "problem": "What is the common denominator of 21/4 and -57/580?",
+      "answer": "580",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0056",
+      "problem": "Calculate the least common multiple of 2096 and 1920.",
+      "answer": "251520",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0057",
+      "problem": "Calculate the lowest common multiple of 377 and 284344710.",
+      "answer": "284344710",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0058",
+      "problem": "What is the least common multiple of 9455 and 279?",
+      "answer": "85095",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0059",
+      "problem": "What is the least common multiple of 14595094 and 574610?",
+      "answer": "72975470",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0060",
+      "problem": "Find the common denominator of -81/7430 and 53/8.",
+      "answer": "29720",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0061",
+      "problem": "Find the common denominator of 52/587001 and 65/3018.",
+      "answer": "1174002",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0062",
+      "problem": "Find the common denominator of -95/20864 and -89/166912.",
+      "answer": "166912",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0063",
+      "problem": "Calculate the common denominator of -93/2610280 and 22/65257.",
+      "answer": "2610280",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0064",
+      "problem": "What is the least common multiple of 981 and 175170?",
+      "answer": "57280590",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0065",
+      "problem": "Calculate the smallest common multiple of 160 and 640.",
+      "answer": "640",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0066",
+      "problem": "Calculate the common denominator of -131/336 and 127/588.",
+      "answer": "2352",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0067",
+      "problem": "What is the smallest common multiple of 2 and 37464?",
+      "answer": "37464",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0068",
+      "problem": "Calculate the least common multiple of 1822260 and 106.",
+      "answer": "96579780",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0069",
+      "problem": "What is the common denominator of 83/50 and 93/5024?",
+      "answer": "125600",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0070",
+      "problem": "Calculate the least common multiple of 6259257 and 135.",
+      "answer": "93888855",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0071",
+      "problem": "Calculate the smallest common multiple of 70 and 449764.",
+      "answer": "2248820",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0072",
+      "problem": "Calculate the smallest common multiple of 198 and 282.",
+      "answer": "9306",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0073",
+      "problem": "Calculate the lowest common multiple of 7165951 and 3307362.",
+      "answer": "42995706",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0074",
+      "problem": "Calculate the common denominator of 13/11418 and 91/56430.",
+      "answer": "9762390",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0075",
+      "problem": "Calculate the lowest common multiple of 77935 and 26.",
+      "answer": "155870",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0076",
+      "problem": "What is the least common multiple of 78 and 22?",
+      "answer": "858",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0077",
+      "problem": "Find the common denominator of -81/76 and 43/1178.",
+      "answer": "2356",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0078",
+      "problem": "Calculate the common denominator of 2/729759 and 151/1230.",
+      "answer": "7297590",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0079",
+      "problem": "Calculate the smallest common multiple of 124 and 4.",
+      "answer": "124",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0080",
+      "problem": "Calculate the common denominator of 53/21 and -139/1536.",
+      "answer": "10752",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0081",
+      "problem": "Find the common denominator of -83/450 and 25/16.",
+      "answer": "3600",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0082",
+      "problem": "Calculate the least common multiple of 900 and 45.",
+      "answer": "900",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0083",
+      "problem": "What is the smallest common multiple of 54 and 501?",
+      "answer": "9018",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0084",
+      "problem": "Calculate the least common multiple of 40865 and 110.",
+      "answer": "81730",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0085",
+      "problem": "Calculate the lowest common multiple of 2457 and 16971864.",
+      "answer": "152746776",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0086",
+      "problem": "Calculate the smallest common multiple of 825 and 295.",
+      "answer": "48675",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0087",
+      "problem": "Find the common denominator of 5/84196 and -33/81868.",
+      "answer": "17765356",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0088",
+      "problem": "Calculate the lowest common multiple of 83674 and 3128.",
+      "answer": "334696",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0089",
+      "problem": "Calculate the common denominator of -35/5057 and 107/10114.",
+      "answer": "10114",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0090",
+      "problem": "Calculate the least common multiple of 102371742 and 34123914.",
+      "answer": "102371742",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0091",
+      "problem": "Calculate the smallest common multiple of 7307500 and 462500.",
+      "answer": "36537500",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0092",
+      "problem": "What is the common denominator of -35/12 and 55/46?",
+      "answer": "276",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0093",
+      "problem": "Calculate the lowest common multiple of 383258 and 568.",
+      "answer": "1533032",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0094",
+      "problem": "What is the least common multiple of 10 and 906272456?",
+      "answer": "4531362280",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0095",
+      "problem": "Calculate the common denominator of -48/12919501 and 101/138726.",
+      "answer": "697653054",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0096",
+      "problem": "What is the least common multiple of 20 and 11876596?",
+      "answer": "59382980",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0097",
+      "problem": "What is the common denominator of -103/5755068 and 91/15346848?",
+      "answer": "46040544",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0098",
+      "problem": "Find the common denominator of 13/66 and -43/3168.",
+      "answer": "3168",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0099",
+      "problem": "Calculate the least common multiple of 8369872 and 10.",
+      "answer": "41849360",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0100",
+      "problem": "What is the lowest common multiple of 2 and 8?",
+      "answer": "8",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0101",
+      "problem": "Find the common denominator of -131/1900 and 91/18012.",
+      "answer": "450300",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0102",
+      "problem": "What is the common denominator of 59/38 and -97/4?",
+      "answer": "76",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0103",
+      "problem": "Calculate the least common multiple of 8 and 1181.",
+      "answer": "9448",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0104",
+      "problem": "What is the lowest common multiple of 1814650 and 275?",
+      "answer": "19961150",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0105",
+      "problem": "Calculate the common denominator of -77/115893 and -13/128612.",
+      "answer": "188673804",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0106",
+      "problem": "What is the lowest common multiple of 750 and 27?",
+      "answer": "6750",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0107",
+      "problem": "Calculate the least common multiple of 9 and 29.",
+      "answer": "261",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0108",
+      "problem": "Find the common denominator of 49/3600 and 48/589435.",
+      "answer": "424393200",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0109",
+      "problem": "Calculate the common denominator of 109/20 and 97/6.",
+      "answer": "60",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0110",
+      "problem": "What is the lowest common multiple of 63465 and 4845?",
+      "answer": "20499195",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0111",
+      "problem": "Calculate the smallest common multiple of 114 and 16853.",
+      "answer": "101118",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0112",
+      "problem": "What is the least common multiple of 492 and 31775?",
+      "answer": "381300",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0113",
+      "problem": "Calculate the lowest common multiple of 287 and 164.",
+      "answer": "1148",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0114",
+      "problem": "Calculate the common denominator of 47/1754366 and -107/1414.",
+      "answer": "1240336762",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0115",
+      "problem": "Find the common denominator of -38/9141811 and 16/4823.",
+      "answer": "118843543",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0116",
+      "problem": "What is the least common multiple of 2552 and 176?",
+      "answer": "5104",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0117",
+      "problem": "What is the smallest common multiple of 26 and 380?",
+      "answer": "4940",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0118",
+      "problem": "Calculate the lowest common multiple of 135 and 150.",
+      "answer": "1350",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0119",
+      "problem": "Calculate the common denominator of 131/11160 and 19/40.",
+      "answer": "11160",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0120",
+      "problem": "What is the lowest common multiple of 7810508 and 11715762?",
+      "answer": "23431524",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0121",
+      "problem": "Calculate the common denominator of -63/5501080 and 17/130.",
+      "answer": "5501080",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0122",
+      "problem": "Calculate the common denominator of 5/34664 and -97/392.",
+      "answer": "242648",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0123",
+      "problem": "Calculate the least common multiple of 43627 and 9.",
+      "answer": "392643",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0124",
+      "problem": "What is the smallest common multiple of 110 and 110?",
+      "answer": "110",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0125",
+      "problem": "Find the common denominator of 103/8216 and 49/65.",
+      "answer": "41080",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0126",
+      "problem": "What is the smallest common multiple of 4 and 822980?",
+      "answer": "822980",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0127",
+      "problem": "Calculate the common denominator of 27/454 and 25/6.",
+      "answer": "1362",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0128",
+      "problem": "What is the common denominator of -17/140 and -9/224?",
+      "answer": "1120",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0129",
+      "problem": "What is the common denominator of 49/8341762 and -57/220?",
+      "answer": "83417620",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0130",
+      "problem": "Find the common denominator of -111/36140360 and 49/964.",
+      "answer": "36140360",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0131",
+      "problem": "What is the lowest common multiple of 72 and 108?",
+      "answer": "216",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0132",
+      "problem": "What is the least common multiple of 40 and 8?",
+      "answer": "40",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0133",
+      "problem": "Calculate the common denominator of 43/27 and -20/635529.",
+      "answer": "5719761",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0134",
+      "problem": "What is the lowest common multiple of 3570 and 717570?",
+      "answer": "717570",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0135",
+      "problem": "Find the common denominator of 4/7 and 65/2197958.",
+      "answer": "2197958",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0136",
+      "problem": "What is the smallest common multiple of 168818 and 416?",
+      "answer": "2701088",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0137",
+      "problem": "Calculate the common denominator of -19/170748 and -119/50220.",
+      "answer": "853740",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0138",
+      "problem": "Calculate the smallest common multiple of 55000 and 27500.",
+      "answer": "55000",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0139",
+      "problem": "What is the lowest common multiple of 4 and 130?",
+      "answer": "260",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0140",
+      "problem": "Calculate the lowest common multiple of 3 and 142254.",
+      "answer": "142254",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0141",
+      "problem": "What is the lowest common multiple of 324 and 1717758?",
+      "answer": "30919644",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0142",
+      "problem": "Calculate the common denominator of 169/1410 and -179/5922.",
+      "answer": "29610",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0143",
+      "problem": "Calculate the common denominator of 67/18 and -8/333.",
+      "answer": "666",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0144",
+      "problem": "What is the common denominator of 89/4 and 43/246?",
+      "answer": "492",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0145",
+      "problem": "What is the least common multiple of 1920 and 240?",
+      "answer": "1920",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0146",
+      "problem": "Calculate the smallest common multiple of 672 and 96.",
+      "answer": "672",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0147",
+      "problem": "Calculate the common denominator of 34/9 and -31/71.",
+      "answer": "639",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0148",
+      "problem": "Find the common denominator of -89/4 and -119/2784.",
+      "answer": "2784",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0149",
+      "problem": "Find the common denominator of 39/307 and 55/57.",
+      "answer": "17499",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0150",
+      "problem": "What is the common denominator of -113/11856 and 159/138320?",
+      "answer": "414960",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0151",
+      "problem": "Calculate the lowest common multiple of 605306 and 65286.",
+      "answer": "49029786",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0152",
+      "problem": "What is the lowest common multiple of 560 and 840?",
+      "answer": "1680",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0153",
+      "problem": "Find the common denominator of -31/13813668 and -47/24.",
+      "answer": "27627336",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0154",
+      "problem": "What is the lowest common multiple of 15120 and 12960?",
+      "answer": "90720",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0155",
+      "problem": "What is the common denominator of 14/625 and -37/2500?",
+      "answer": "2500",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0156",
+      "problem": "What is the least common multiple of 20 and 4?",
+      "answer": "20",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0157",
+      "problem": "Calculate the lowest common multiple of 76 and 34600.",
+      "answer": "657400",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0158",
+      "problem": "What is the common denominator of -22/725 and 4/1595?",
+      "answer": "7975",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0159",
+      "problem": "What is the smallest common multiple of 786 and 5109?",
+      "answer": "10218",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0160",
+      "problem": "Find the common denominator of -79/174564 and -109/1726244.",
+      "answer": "15536196",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0161",
+      "problem": "Calculate the common denominator of 37/8 and -119/24.",
+      "answer": "24",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0162",
+      "problem": "What is the smallest common multiple of 464 and 176?",
+      "answer": "5104",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0163",
+      "problem": "What is the smallest common multiple of 147 and 35322?",
+      "answer": "247254",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0164",
+      "problem": "Calculate the smallest common multiple of 1469 and 791.",
+      "answer": "10283",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0165",
+      "problem": "Calculate the common denominator of 143/174 and 56/489375.",
+      "answer": "978750",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0166",
+      "problem": "Find the common denominator of 58/119175 and -79/366.",
+      "answer": "14539350",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0167",
+      "problem": "Calculate the smallest common multiple of 78 and 7.",
+      "answer": "546",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0168",
+      "problem": "What is the smallest common multiple of 24 and 3?",
+      "answer": "24",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0169",
+      "problem": "Calculate the lowest common multiple of 34 and 2567.",
+      "answer": "5134",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0170",
+      "problem": "What is the lowest common multiple of 20 and 2792?",
+      "answer": "13960",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0171",
+      "problem": "Calculate the common denominator of -63/23960 and -73/136.",
+      "answer": "407320",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0172",
+      "problem": "Find the common denominator of -19/60 and -71/12.",
+      "answer": "60",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0173",
+      "problem": "What is the lowest common multiple of 530 and 55?",
+      "answer": "5830",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0174",
+      "problem": "What is the common denominator of -44/8523 and 1/9470?",
+      "answer": "85230",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0175",
+      "problem": "Find the common denominator of -31/6 and 31/2134.",
+      "answer": "6402",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0176",
+      "problem": "What is the common denominator of 58/118775 and 74/213795?",
+      "answer": "1068975",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0177",
+      "problem": "Find the common denominator of -131/18696 and -93/2231056.",
+      "answer": "6693168",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0178",
+      "problem": "Find the common denominator of 61/94851 and 62/729.",
+      "answer": "853659",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0179",
+      "problem": "Calculate the smallest common multiple of 9 and 36.",
+      "answer": "36",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0180",
+      "problem": "Find the common denominator of -27/15580640 and -13/246.",
+      "answer": "1916418720",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0181",
+      "problem": "Calculate the common denominator of 74/225 and 127/23850.",
+      "answer": "23850",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0182",
+      "problem": "What is the lowest common multiple of 612 and 306?",
+      "answer": "612",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0183",
+      "problem": "Calculate the smallest common multiple of 5761 and 8.",
+      "answer": "46088",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0184",
+      "problem": "Calculate the least common multiple of 6 and 64.",
+      "answer": "192",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0185",
+      "problem": "Calculate the lowest common multiple of 1038 and 18.",
+      "answer": "3114",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0186",
+      "problem": "What is the common denominator of 81/31772 and 161/47658?",
+      "answer": "95316",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0187",
+      "problem": "What is the lowest common multiple of 8588 and 570?",
+      "answer": "128820",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0188",
+      "problem": "Calculate the common denominator of 57/98 and 61/168460194.",
+      "answer": "1179221358",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0189",
+      "problem": "What is the common denominator of -67/3 and 77/496?",
+      "answer": "1488",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0190",
+      "problem": "Calculate the least common multiple of 4005 and 1255.",
+      "answer": "1005255",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0191",
+      "problem": "Calculate the least common multiple of 10330 and 11363.",
+      "answer": "113630",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0192",
+      "problem": "Calculate the least common multiple of 67363 and 37789.",
+      "answer": "1549349",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0193",
+      "problem": "Find the common denominator of 59/20 and -55/3096.",
+      "answer": "15480",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0194",
+      "problem": "Find the common denominator of 145/132 and 57/38368.",
+      "answer": "115104",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0195",
+      "problem": "Calculate the common denominator of -23/232886 and -19/2.",
+      "answer": "232886",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0196",
+      "problem": "Calculate the lowest common multiple of 18 and 3.",
+      "answer": "18",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0197",
+      "problem": "Find the common denominator of 33/493342 and -119/1480026.",
+      "answer": "1480026",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0198",
+      "problem": "Find the common denominator of -43/10 and -127/36.",
+      "answer": "180",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0199",
+      "problem": "What is the common denominator of -71/42740 and -9/17096?",
+      "answer": "85480",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-lcm.q0200",
+      "problem": "What is the least common multiple of 86527 and 15871524?",
+      "answer": "111100668",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__lcm",
+      "hint": "DeepMind LCM",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__lcm"
+      ]
+    }
+  ]
+}

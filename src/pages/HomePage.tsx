@@ -60,6 +60,42 @@ function saveWidgetState(m: WidgetStateMap) {
   localStorage.setItem(LS_WIDGET_STATE, JSON.stringify(m));
 }
 
+const CORE_DASHBOARD_IDS = ["study-loop", "life-clock", "study-time"] as const;
+
+/** If every widget is hidden, unhide the core study widgets so Home is usable. */
+function ensureCoreWidgetsVisible(
+  widgets: PluginWidget[],
+  state: WidgetStateMap
+): WidgetStateMap {
+  const knownIds = widgets.map((w) => w.id);
+  if (!knownIds.length) return state;
+  const anyVisible = knownIds.some((id) => !(state[id]?.hidden));
+  if (anyVisible) return state;
+  const next: WidgetStateMap = { ...state };
+  for (const id of CORE_DASHBOARD_IDS) {
+    if (!knownIds.includes(id)) continue;
+    const cur = next[id];
+    const defaults = widgets.find((w) => w.id === id);
+    next[id] = {
+      colSpan: (cur?.colSpan as 1 | 2) ?? (defaults?.defaultColSpan ?? 2),
+      rowSpan: (cur?.rowSpan as 1 | 2) ?? (defaults?.defaultRowSpan ?? 1),
+      hidden: false,
+    };
+  }
+  // If core ids missing from this layout, unhide the first three widgets.
+  if (CORE_DASHBOARD_IDS.every((id) => !knownIds.includes(id))) {
+    for (const w of widgets.slice(0, 3)) {
+      const cur = next[w.id];
+      next[w.id] = {
+        colSpan: (cur?.colSpan as 1 | 2) ?? (w.defaultColSpan ?? 1),
+        rowSpan: (cur?.rowSpan as 1 | 2) ?? (w.defaultRowSpan ?? 1),
+        hidden: false,
+      };
+    }
+  }
+  return next;
+}
+
 function performanceToPct(
   perf: InsightsDailyPayload["overall_performance"] | undefined
 ): number {
@@ -358,15 +394,27 @@ export function HomePage() {
       if (remote?.widget_order?.length) {
         const ordered = resolveOrder(remote.widget_order);
         const missing = available.filter((w) => !remote.widget_order!.includes(w.id));
-        setAllWidgets([...ordered, ...missing]);
-        setStateMap((remote.widget_state as WidgetStateMap) ?? {});
+        const widgets = [...ordered, ...missing];
+        let state = ensureCoreWidgetsVisible(
+          widgets,
+          (remote.widget_state as WidgetStateMap) ?? {}
+        );
+        setAllWidgets(widgets);
+        setStateMap(state);
         setFocusMode(Boolean(remote.focus_mode));
         localStorage.setItem(
           LS_WIDGET_ORDER,
-          JSON.stringify([...ordered, ...missing].map((w) => w.id))
+          JSON.stringify(widgets.map((w) => w.id))
         );
-        saveWidgetState((remote.widget_state as WidgetStateMap) ?? {});
+        saveWidgetState(state);
         localStorage.setItem(LS_FOCUS_MODE, remote.focus_mode ? "1" : "0");
+        if (JSON.stringify(state) !== JSON.stringify(remote.widget_state ?? {})) {
+          void saveDashboardLayout({
+            widget_order: widgets.map((w) => w.id),
+            widget_state: state,
+            focus_mode: Boolean(remote.focus_mode),
+          });
+        }
         return;
       }
       try {
@@ -375,16 +423,22 @@ export function HomePage() {
           const ids = JSON.parse(savedOrder) as string[];
           const ordered = resolveOrder(ids);
           const missing = available.filter((w) => !ids.includes(w.id));
-          setAllWidgets([...ordered, ...missing]);
-          setStateMap(loadWidgetState());
+          const widgets = [...ordered, ...missing];
+          const state = ensureCoreWidgetsVisible(widgets, loadWidgetState());
+          setAllWidgets(widgets);
+          setStateMap(state);
+          saveWidgetState(state);
           setFocusMode(localStorage.getItem(LS_FOCUS_MODE) === "1");
         } else {
           setAllWidgets(available);
-          setStateMap(loadWidgetState());
+          const state = ensureCoreWidgetsVisible(available, loadWidgetState());
+          setStateMap(state);
+          saveWidgetState(state);
         }
       } catch {
         setAllWidgets(available);
-        setStateMap(loadWidgetState());
+        const state = ensureCoreWidgetsVisible(available, loadWidgetState());
+        setStateMap(state);
       }
     })();
   }, [isLoaded, themeWidgets, insights]); // eslint-disable-line

@@ -697,8 +697,27 @@ def set_free_override(
     minutes: int | None = None,
     path: Path | None = None,
     now: datetime | None = None,
+    skip_incubation_check: bool = False,
 ) -> datetime:
-    """Grant free browsing until now+minutes (default 90). Returns until."""
+    """Grant free browsing until now+minutes (default 90). Returns until.
+
+    Q4 D1: raises ``IncubationBlocksFreeOverride`` while incubation is active
+    (unless ``skip_incubation_check`` — used by ledger spend after its own check).
+    """
+    if not skip_incubation_check:
+        try:
+            from backend.behavior.break_reward import (
+                IncubationBlocksFreeOverride,
+                solo_incubation_active,
+            )
+
+            active = solo_incubation_active(now=now)
+        except Exception:
+            active = False
+        else:
+            if active:
+                raise IncubationBlocksFreeOverride()
+
     store = path if path is not None else _FREE_OVERRIDE_PATH
     mins = minutes if minutes is not None else int(
         os.environ.get("BROWSER_FREE_OVERRIDE_MINUTES") or _FREE_OVERRIDE_DEFAULT_MIN
@@ -713,6 +732,7 @@ def set_free_override(
         json.dumps({"until": until.isoformat(), "minutes": mins}, indent=2),
         encoding="utf-8",
     )
+    _invalidate_solo_gate("free_override_set")
     return until
 
 
@@ -722,6 +742,21 @@ def clear_free_override(*, path: Path | None = None) -> None:
         if store.exists():
             store.unlink()
     except OSError:
+        pass
+    _invalidate_solo_gate("free_override_clear")
+
+
+def _invalidate_solo_gate(reason: str) -> None:
+    """Local-first solo app — bump gate so extensions refresh SoftLand/DNR now."""
+    try:
+        from backend.behavior.gate_notify import invalidate_gate_cache
+        from backend.core.auth import ensure_solo_owner
+        from backend.db.session import SessionLocal
+
+        with SessionLocal() as db:
+            user = ensure_solo_owner(db)
+            invalidate_gate_cache(int(user.id), reason=reason)
+    except Exception:
         pass
 
 
@@ -750,6 +785,16 @@ def resolve_day_mode(
         return "planning"
 
     dt = now if now is not None else datetime.now().astimezone()
+
+    # Q3 C2: incubation forces study-hard (beats free override / leisure).
+    try:
+        from backend.behavior.break_reward import solo_incubation_active
+
+        if solo_incubation_active(now=dt):
+            return "study"
+    except Exception:
+        pass
+
     if free_override_active is None:
         free_override_active = free_override_until() is not None
     if free_override_active:
@@ -823,13 +868,23 @@ def mode_policy_flags(mode: str) -> dict[str, bool]:
 
 
 def allow_domains_for_mode(mode: str) -> list[str]:
+    from backend.behavior.softland_site_rules import merge_allow
+
     m = (mode or "free").strip().lower()
     if m in ("bible", "planning"):
-        return list((*STRICT_ALLOW_DOMAINS, *CAPTURE_WORKFLOW_ALLOW_DOMAINS))
-    if m == "free":
+        base = list((*STRICT_ALLOW_DOMAINS, *CAPTURE_WORKFLOW_ALLOW_DOMAINS))
+    elif m == "free":
         # Free merges shopping/house domains into the effective allow list.
-        return list(dict.fromkeys([*DEFAULT_ALLOW_DOMAINS, *FREE_LIFE_ALLOW_DOMAINS]))
-    return list(DEFAULT_ALLOW_DOMAINS)
+        base = list(dict.fromkeys([*DEFAULT_ALLOW_DOMAINS, *FREE_LIFE_ALLOW_DOMAINS]))
+    else:
+        base = list(DEFAULT_ALLOW_DOMAINS)
+    return merge_allow(base)
+
+
+def _merged_watch_domains() -> list[str]:
+    from backend.behavior.softland_site_rules import merge_watch
+
+    return merge_watch(list(DEFAULT_WATCH_DOMAINS))
 
 
 def merge_free_life_domains(allow: list[str] | tuple[str, ...]) -> list[str]:
@@ -881,23 +936,16 @@ def extension_should_enforce(
 
 
 # Always hard-blocked in bible / planning / study (even if flags glitch).
-FORCE_WATCH_HOSTS: tuple[str, ...] = (
-    "youtube.com",
-    "youtu.be",
-    "netflix.com",
-    "primevideo.com",
-    "hotstar.com",
-    "disneyplus.com",
-    "hulu.com",
-    "twitch.tv",
-)
+# Same set as DEFAULT_WATCH_DOMAINS — single source; DNR + SoftLand both use it.
+FORCE_WATCH_HOSTS: tuple[str, ...] = DEFAULT_WATCH_DOMAINS
 
 
 def _host_matches_force_watch(host: str) -> bool:
     h = (host or "").lower().removeprefix("www.")
     if not h:
         return False
-    for d in FORCE_WATCH_HOSTS:
+    # Include user watch_extra / block_extra (same merge as Gate force_watch_hosts).
+    for d in _merged_watch_domains():
         if h == d or h.endswith("." + d):
             return True
     return False
@@ -1021,6 +1069,23 @@ def resolve_browser_redirect(
     }
 
 
+def _content_score_payload() -> dict[str, Any]:
+    """DOM content-score weights for calt-gate — same dict as content_score.py."""
+    from backend.behavior.content_score import (
+        CONTENT_SCORE_WEIGHTS,
+        THRESHOLDS_FREE,
+        THRESHOLDS_STUDY,
+    )
+
+    return {
+        "weights": dict(CONTENT_SCORE_WEIGHTS),
+        "thresholds": {
+            "free": dict(THRESHOLDS_FREE),
+            "study": dict(THRESHOLDS_STUDY),
+        },
+    }
+
+
 def build_browser_gate_section(
     *,
     enabled: bool,
@@ -1107,6 +1172,35 @@ def build_browser_gate_section(
 
     browsers = catalog_payload()
 
+    incubating = False
+    try:
+        from backend.behavior.break_reward import solo_incubation_active
+
+        incubating = bool(
+            solo_incubation_active(
+                now=now if now is not None else datetime.now().astimezone()
+            )
+        )
+        if incubating:
+            enforce = True
+            allow_free_life = False
+    except Exception:
+        incubating = False
+
+    note = (
+        "Study browsing = Microsoft Edge + CALT Gate / SelfTracker. "
+        "Hard-block app kills: CALT Desktop Enforcer (Windows service / Task). "
+        "Control UI: CALT Desktop · Focus Dashboard. "
+        "YouTube/Netflix blocked in bible/planning/study and during incubation breaks. "
+        "Free when daily focus goal is met, leisure blocks, after free_after, or "
+        "earned free time (PIN) — not during incubation."
+    )
+    if incubating:
+        note = (
+            "Incubation break — entertainment stays blocked. "
+            "Rest or stretch; control in CALT Desktop · Focus. "
+        ) + note
+
     return {
         "mode": resolved,
         "mode_label": mode_label(resolved),
@@ -1121,32 +1215,28 @@ def build_browser_gate_section(
         "morning_next": (morning_next or "open").strip().lower(),
         "daytime_default": "study",
         "free_after": free_hm,
-        "free_override_active": override_on,
-        "free_override_until": ov_until.isoformat() if ov_until else None,
+        "free_override_active": override_on and not incubating,
+        "free_override_until": ov_until.isoformat() if ov_until and not incubating else None,
         "day_unlimited": bool(day_unlimited),
+        "incubation_active": incubating,
         "allow_free_life": allow_free_life,
         "free_life_allow_domains": list(FREE_LIFE_ALLOW_DOMAINS),
-        "note": (
-            "Study browsing = Microsoft Edge + SelfTracker only. "
-            "Other browsers and browser installers soft-lock while enforcing. "
-            "Study mode allows Scaler/Colab/GitHub — it does not auto-open them. "
-            "YouTube/Netflix blocked in bible/planning/study. Free when daily "
-            "focus goal is met (day_unlimited), explicit break/leisure blocks, "
-            "after free_after, or tray Free time (PIN). "
-            "Personal/meal/gym blocks stay study (no YouTube) until goal is met. "
-            "Shopping/errands blocks get free-life sites (Amazon etc.) without unlocking YouTube."
-        ),
+        "note": note,
         "allow_domains": allow,
         "localhost_path_prefixes": list(STRICT_LOCALHOST_PATH_PREFIXES) if strict else [],
-        "watch_domains": list(DEFAULT_WATCH_DOMAINS),
+        "watch_domains": _merged_watch_domains(),
         "porn_domains": list(DEFAULT_PORN_DOMAINS),
         "porn_suffixes": list(DEFAULT_PORN_SUFFIXES),
         "social_domains": list(DEFAULT_SOCIAL_DOMAINS),
         "block_keywords_list": list(DEFAULT_BLOCK_KEYWORDS),
+        # Explicit fail-closed hosts for extensions — defaults + user watch/block extras.
+        "force_watch_hosts": _merged_watch_domains(),
+        "force_porn_hosts": list(DEFAULT_PORN_DOMAINS),
         "bible_url": redir["bible_url"],
         "plan_url": redir["plan_url"],
         "redirect_url": redir["redirect_url"],
         "redirect_reason": redir["redirect_reason"],
+        "content_score": _content_score_payload(),
         "nsfw_screen": {
             "desktop_tracker": True,
             "continuous_video_gpu": False,
@@ -1161,13 +1251,14 @@ def build_browser_gate_section(
         "known_browsers": browsers["known_browsers"],
         "browser_installers": browsers["browser_installers"],
         "intervals": {
-            "extension_gate_poll_s": 4,
-            "extension_gate_idle_alarm_min": 1,
+            # 5‑minute heartbeat backup. Rule changes push GATE_CHANGED for immediate refresh.
+            "extension_gate_poll_s": 300,
+            "extension_gate_idle_alarm_min": 5,
             "nsfw_screen_s": 60,
             "speak_alert_gap_s": 45,
             "note": (
-                "Light routine: keyword = string match on URL/title only; "
-                "no DOM crawl; NSFW every ~60s CPU when Armed; no 100ms loops."
+                "Baseline poll ~5 min; invalidate+WS GATE_CHANGED on rule/morning changes. "
+                "Keyword = URL/title string match; NSFW ~60s CPU when Armed."
             ),
         },
     }

@@ -2,6 +2,8 @@
 
 from pathlib import Path
 
+import pytest
+
 from backend.transcripts.cleanup import repair_mermaid_fences
 from backend.transcripts.concept_extract import concepts_to_retrieval_query, extract_concepts
 from backend.transcripts.study_intel import (
@@ -217,27 +219,19 @@ def test_generate_quiz_walks_every_topic_before_quota(monkeypatch):
     seen: list[str] = []
 
     def fake_generate(prompt, **kwargs):
-        if "L5-T01" in prompt:
-            seen.append("L5-T01")
-            return (
-                '{"questions":[{"question":"Why is T01 contiguous memory faster?",'
-                '"options":["A","B","C","D"],"answer_index":0,'
-                '"explanation":"e","hint":"h","concept":"T01"}]}'
-            )
-        if "L5-T02" in prompt:
-            seen.append("L5-T02")
-            return (
-                '{"questions":[{"question":"When does T02 fancy indexing copy?",'
-                '"options":["A","B","C","D"],"answer_index":1,'
-                '"explanation":"e","hint":"h","concept":"T02"}]}'
-            )
-        if "L5-T03" in prompt:
-            seen.append("L5-T03")
-            return (
-                '{"questions":[{"question":"What breaks if T03 bounds are ignored?",'
-                '"options":["A","B","C","D"],"answer_index":2,'
-                '"explanation":"e","hint":"h","concept":"T03"}]}'
-            )
+        # Match scoped topic (rules block also mentions L5-T02 etc.)
+        for tid in ("L5-T01", "L5-T02", "L5-T03"):
+            if f"THIS TOPIC ONLY ({tid}" in prompt or f"topic «{tid}" in prompt:
+                seen.append(tid)
+                return (
+                    '{"questions":[{"question":"Why is '
+                    + tid
+                    + ' contiguous memory faster for vectorized ops?",'
+                    '"options":["A","B","C","D"],"answer_index":0,'
+                    '"explanation":"e","hint":"h","concept":"'
+                    + tid
+                    + '"}]}'
+                )
         return '{"questions":[]}'
 
     monkeypatch.setattr("backend.transcripts.study_intel.ollama_generate", fake_generate)
@@ -396,7 +390,10 @@ An index outside the array range raises an `IndexError`.
 
 def test_extractive_quiz_rejects_outline_cloze_junk(monkeypatch):
     monkeypatch.setattr("backend.transcripts.study_intel.ollama_available", lambda *_: False)
-    note = Path("data/notes/data_foundations/lecture_2/numpy_lecture_notes.md").read_text(encoding="utf-8")
+    candidates = sorted(Path("data/notes").glob("L02_*_notes.md"))
+    if not candidates:
+        pytest.skip("lecture 2 notes not present")
+    note = candidates[0].read_text(encoding="utf-8")
     result = generate_quiz_items([note], count=5, topic="NumPy")
     combined = " ".join(
         [q["question"] for q in result["questions"]]

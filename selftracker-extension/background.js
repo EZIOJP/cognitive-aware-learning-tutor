@@ -35,6 +35,8 @@ let redirectsEnabled = true;
 let lastGateFetchAt = 0;
 let lastAlertAt = 0;
 let gatePollTimer = null;
+/** Current light-poll interval ms (from server intervals.extension_gate_poll_s). */
+var currentGatePollMs = 0;
 /** @type {number|null} */
 let caltTabId = null;
 let lastJarvisLine = "";
@@ -88,14 +90,90 @@ extAPI.storage.local.get(
 function scheduleAlarms() {
   extAPI.alarms.create("flush", { periodInMinutes: BULK_FLUSH_MINUTES });
   extAPI.alarms.create("ws-keepalive", { periodInMinutes: 2 });
-  // Idle backup — Chrome alarms min ~1 min; active refresh uses setInterval ~4s
-  extAPI.alarms.create("gate-poll", { periodInMinutes: 1 });
+  // Backup heartbeat — Chrome alarms min ~1 min; default period 5 min from server.
+  var idleMin = 5;
+  try {
+    var iv = gateCache && gateCache.browser && gateCache.browser.intervals;
+    if (iv && Number(iv.extension_gate_idle_alarm_min) > 0) {
+      idleMin = Math.max(1, Number(iv.extension_gate_idle_alarm_min));
+    }
+  } catch (e) {
+    /* ignore */
+  }
+  extAPI.alarms.create("gate-poll", { periodInMinutes: idleMin });
+}
+
+var gateFetchBackoffMs = 0;
+var gateNotifyWs = null;
+
+function noteGateFetchSuccess() {
+  gateFetchBackoffMs = 0;
+}
+
+function noteGateFetchFailure() {
+  // 30s → 1m → 2m → 5m cap while API is down (still fail-closed on cache).
+  if (!gateFetchBackoffMs) gateFetchBackoffMs = 30000;
+  else gateFetchBackoffMs = Math.min(300000, gateFetchBackoffMs * 2);
+  lastGateFetchAt = Date.now();
+}
+
+function connectGateNotifyWs() {
+  var url = typeof GATE_NOTIFY_WS_URL !== "undefined" ? GATE_NOTIFY_WS_URL : "ws://127.0.0.1:8000/ws/gate";
+  if (gateNotifyWs && (gateNotifyWs.readyState === WebSocket.OPEN || gateNotifyWs.readyState === WebSocket.CONNECTING)) {
+    return;
+  }
+  try {
+    gateNotifyWs = new WebSocket(url);
+    gateNotifyWs.onmessage = function (ev) {
+      try {
+        var msg = JSON.parse(ev.data);
+        if (msg && msg.type === "GATE_CHANGED") {
+          void pollDistractionGate({ force: true, enforce: true });
+        }
+      } catch (e) {
+        /* ignore */
+      }
+    };
+    gateNotifyWs.onclose = function () {
+      gateNotifyWs = null;
+      extAPI.alarms.create("gate-ws-retry", { delayInMinutes: 1 });
+    };
+    gateNotifyWs.onerror = function () {
+      try {
+        gateNotifyWs.close();
+      } catch (e2) {
+        /* ignore */
+      }
+      gateNotifyWs = null;
+    };
+  } catch (e) {
+    console.warn("SelfTracker: gate notify WS unavailable", e);
+  }
+}
+
+function desiredGatePollMs() {
+  var s = typeof GATE_POLL_ACTIVE_S === "number" ? GATE_POLL_ACTIVE_S : 300;
+  try {
+    var iv = gateCache && gateCache.browser && gateCache.browser.intervals;
+    if (iv && Number(iv.extension_gate_poll_s) > 0) {
+      s = Number(iv.extension_gate_poll_s);
+    }
+  } catch (e) {
+    /* ignore */
+  }
+  var base = Math.max(4000, Math.min(600000, Math.round(s * 1000)));
+  if (gateFetchBackoffMs > base) return gateFetchBackoffMs;
+  return base;
 }
 
 function startLightGatePoll() {
-  if (gatePollTimer) return;
-  // Slower than 4s — Edge crashes when SW wakes + DNR churn too often.
-  var ms = Math.max(8000, Math.min(15000, (GATE_POLL_ACTIVE_S || 4) * 2000));
+  var ms = desiredGatePollMs();
+  if (gatePollTimer && currentGatePollMs === ms) return;
+  if (gatePollTimer) {
+    clearInterval(gatePollTimer);
+    gatePollTimer = null;
+  }
+  currentGatePollMs = ms;
   gatePollTimer = setInterval(function () {
     // Cache + DNR fingerprint only — NEVER enforce/tabs.query on this timer.
     void pollDistractionGate({ opportunistic: true, enforce: false });
@@ -130,6 +208,7 @@ extAPI.runtime.onInstalled.addListener(() => {
   scheduleAlarms();
   startLightGatePoll();
   connectWebSocket();
+  connectGateNotifyWs();
   pollDistractionGate();
 });
 
@@ -137,12 +216,14 @@ extAPI.runtime.onStartup.addListener(() => {
   scheduleAlarms();
   startLightGatePoll();
   connectWebSocket();
+  connectGateNotifyWs();
   pollDistractionGate();
 });
 
 scheduleAlarms();
 startLightGatePoll();
 connectWebSocket();
+connectGateNotifyWs();
 pollDistractionGate();
 try {
   startBrowserTelemetry(extAPI, function () {
@@ -205,7 +286,12 @@ async function pollDistractionGate(opts) {
   // (1 min alarm / explicit REFRESH / toggle redirects).
   var doEnforce = opts.enforce === true;
   var now = Date.now();
-  if (opts.opportunistic && lastGateFetchAt && now - lastGateFetchAt < (GATE_POLL_ACTIVE_S || 4) * 1000) {
+  if (
+    !opts.force &&
+    opts.opportunistic &&
+    lastGateFetchAt &&
+    now - lastGateFetchAt < desiredGatePollMs() - 500
+  ) {
     return;
   }
   try {
@@ -213,6 +299,7 @@ async function pollDistractionGate(opts) {
     if (!r.ok) throw new Error("HTTP " + r.status);
     const g = await r.json();
     lastGateFetchAt = Date.now();
+    noteGateFetchSuccess();
     const morning = g.morning || {};
     const browser = g.browser || {};
     gateCache = {
@@ -220,6 +307,7 @@ async function pollDistractionGate(opts) {
       stale: false,
       degraded: false,
       fetched_at: lastGateFetchAt,
+      policy_gen: g.policy_gen ?? null,
       locked: Boolean(g.locked),
       unlocked: Boolean(g.unlocked),
       enabled: Boolean(g.enabled),
@@ -245,8 +333,12 @@ async function pollDistractionGate(opts) {
       enforce: Boolean(browser.enforce) || Boolean(g.locked),
     };
     await extAPI.storage.local.set({ gateCache });
+    startLightGatePoll();
+    scheduleAlarms();
     // Blocking / DNR owned by CALT Gate — tracker only caches mode for UI + Jarvis.
   } catch (e) {
+    noteGateFetchFailure();
+    startLightGatePoll();
     // Fail-closed for study/bible — but NEVER re-arm YouTube block while already FREE.
     const err = String(e && e.message ? e.message : e);
     const prev = gateCache && typeof gateCache === "object" ? gateCache : null;
@@ -733,6 +825,56 @@ function flushOutboundQueue() {
   }
 }
 
+function hostBrowserExe() {
+  // Broad browser coverage — Edge-first CALT (same list as browser_labels.py).
+  try {
+    var ua = String(navigator.userAgent || "").toLowerCase();
+    if (ua.indexOf("edg/") >= 0 || ua.indexOf("edgios") >= 0) return "msedge.exe";
+    if (ua.indexOf("opr/") >= 0 || ua.indexOf("opera") >= 0) return "opera.exe";
+    if (ua.indexOf("vivaldi") >= 0) return "vivaldi.exe";
+    if (ua.indexOf("brave") >= 0) return "brave.exe";
+    if (ua.indexOf("librewolf") >= 0) return "librewolf.exe";
+    if (ua.indexOf("waterfox") >= 0) return "waterfox.exe";
+    if (ua.indexOf("firefox") >= 0) return "firefox.exe";
+    if (ua.indexOf("sidekick") >= 0) return "sidekick.exe";
+    if (ua.indexOf("arc/") >= 0) return "arc.exe";
+    if (ua.indexOf("chrome") >= 0 && ua.indexOf("edg/") < 0) return "chrome.exe";
+  } catch (e) {
+    /* ignore */
+  }
+  return "msedge.exe";
+}
+
+function hostBrowserLabel() {
+  var exe = hostBrowserExe();
+  var map = {
+    "msedge.exe": "Edge",
+    "chrome.exe": "Chrome",
+    "firefox.exe": "Firefox",
+    "brave.exe": "Brave",
+    "opera.exe": "Opera",
+    "vivaldi.exe": "Vivaldi",
+    "arc.exe": "Arc",
+    "librewolf.exe": "LibreWolf",
+    "waterfox.exe": "Waterfox",
+    "sidekick.exe": "Sidekick",
+  };
+  return map[exe] || "Browser";
+}
+
+function buildTabSessionFields() {
+  return {
+    exe: hostBrowserExe(),
+    browser: hostBrowserLabel(),
+    tab_id: activeTabId,
+    url: activeUrl,
+    title: activeTitle || "Untitled",
+    domain: extractDomain(activeUrl),
+    active_tab_only: true,
+    window_focused: Boolean(windowFocused),
+  };
+}
+
 function logCurrentSession(reason = "tab_switch") {
   // CALT SPA (localhost) → study-presence only; never double-count as extension.
   if (isExtensionOrInternalUrl(activeUrl) || isCaltSpaUrl(activeUrl)) return;
@@ -741,19 +883,17 @@ function logCurrentSession(reason = "tab_switch") {
   const duration = Math.round((Date.now() - sessionStart) / 1000);
   if (duration < 2) return;
   const category = classifyUrl(activeUrl, activeTitle);
+  const tabFields = buildTabSessionFields();
   const entry = {
     timestamp: sessionStart,
     end_timestamp: Date.now(),
     duration_seconds: duration,
-    url: activeUrl,
-    title: activeTitle || "Untitled",
-    domain: extractDomain(activeUrl),
+    ...tabFields,
     category,
     productivity_score: productivityScore(category),
     reason,
     tab_switches_today: tabSwitchCount,
     gate_locked: Boolean(gateCache && gateCache.locked),
-    active_tab_only: true,
   };
   dailyLog.push(entry);
   if (dailyLog.length > 5000) dailyLog = dailyLog.slice(-5000);
@@ -819,12 +959,13 @@ if (extAPI.idle && extAPI.idle.setDetectionInterval) {
 }
 
 extAPI.alarms.onAlarm.addListener((alarm) => {
-  if (alarm.name === "ws-retry" || alarm.name === "ws-keepalive") {
+  if (alarm.name === "ws-retry" || alarm.name === "ws-keepalive" || alarm.name === "gate-ws-retry") {
     connectWebSocket();
+    connectGateNotifyWs();
     return;
   }
   if (alarm.name === "gate-poll") {
-    // ~1 min: refresh + rare enforce sweep (not the 4s light poll).
+    // 5 min backup: refresh + rare enforce sweep.
     void pollDistractionGate({ enforce: true });
     return;
   }
@@ -838,20 +979,27 @@ extAPI.alarms.onAlarm.addListener((alarm) => {
     ) {
       const category = classifyUrl(activeUrl, activeTitle);
       const liveEntry = {
+        type: "LIVE_SNAPSHOT",
+        source: "extension",
         timestamp: sessionStart,
         end_timestamp: Date.now(),
         duration_seconds: Math.round((Date.now() - sessionStart) / 1000),
-        url: activeUrl,
-        title: activeTitle || "Untitled",
-        domain: extractDomain(activeUrl),
+        ...buildTabSessionFields(),
         category,
         productivity_score: productivityScore(category),
         reason: "live",
         tab_switches_today: tabSwitchCount,
         gate_locked: Boolean(gateCache && gateCache.locked),
-        active_tab_only: true,
       };
       extAPI.storage.local.set({ liveEntry });
+      // LIVE_SNAPSHOT: local only — do not enqueue as SESSION_END (would inflate stats).
+      try {
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify(liveEntry));
+        }
+      } catch (e) {
+        /* ignore */
+      }
     }
   }
 });

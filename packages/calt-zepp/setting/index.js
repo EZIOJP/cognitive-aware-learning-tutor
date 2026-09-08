@@ -55,7 +55,7 @@ AppSettingsPage({
       [
         Text(
           { style: { fontSize: '18px', fontWeight: '600', marginBottom: '4px' } },
-          ['CALT Sync 4.0'],
+          ['CALT Sync 4.2'],
         ),
         Text(
           {
@@ -70,7 +70,7 @@ AppSettingsPage({
             },
           },
           [
-            'Manual health dump only. Base URL = desktop tracker hub http://<PC-LAN-IP>:8765. Dump on watch, then Send. 7-day queue = days you previously dumped — sensors do not invent history.',
+            'Rich health dump → PC. Tries tracker hub :8765 first, then FastAPI :8000 on the same LAN IP. Dump on watch, then Send. Sensors do not invent history.',
           ],
         ),
 
@@ -79,9 +79,14 @@ AppSettingsPage({
           ['Connection'],
         ),
         TextInput({
-          label: 'Base URL (tracker hub)',
+          label: 'Base URL (tracker hub :8765)',
           value: get('base_url', 'http://192.168.0.110:8765'),
           onChange: (val) => storage.setItem('base_url', String(val || '').trim()),
+        }),
+        TextInput({
+          label: 'API URL optional (:8000 — blank = auto)',
+          value: get('api_url', ''),
+          onChange: (val) => storage.setItem('api_url', String(val || '').trim()),
         }),
         Text(
           {
@@ -96,8 +101,9 @@ AppSettingsPage({
             },
           },
           [
-            'Use your PC LAN IP — localhost / 127.0.0.1 will NOT work from the phone. ' +
-              'Verify: open http://<IP>:8765/health in the phone browser while the desktop tracker runs.',
+            'Use your PC LAN IP — localhost will NOT work from the phone. ' +
+              'Hub preferred; if tracker is down, Sync auto-tries http://<same-IP>:8000. ' +
+              'Verify: phone browser → /health on :8765 or :8000.',
           ],
         ),
         TextInput({

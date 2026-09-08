@@ -1,0 +1,3022 @@
+{
+  "schema_version": 1,
+  "kind": "math",
+  "topic": {
+    "topic_id": "math.aptitude.dm-root",
+    "title": "DeepMind roots",
+    "stage": "foundations",
+    "path": [
+      "Aptitude",
+      "DeepMind",
+      "arithmetic__nearest_integer_root"
+    ],
+    "track": "aptitude",
+    "prerequisites": [],
+    "note_topic_ids": [
+      "MT1-T01"
+    ],
+    "description": "google-deepmind/mathematics_dataset (arithmetic__nearest_integer_root)."
+  },
+  "questions": [
+    {
+      "id": "math.aptitude.dm-root.q0001",
+      "problem": "What is 173916633 to the power of 1/9, to the nearest integer?",
+      "answer": "8",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0002",
+      "problem": "What is the cube root of 40855462 to the nearest integer?",
+      "answer": "344",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0003",
+      "problem": "What is 168682954 to the power of 1/2, to the nearest integer?",
+      "answer": "12988",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0004",
+      "problem": "What is the third root of 93081 to the nearest integer?",
+      "answer": "45",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0005",
+      "problem": "What is 5491 to the power of 1/6, to the nearest integer?",
+      "answer": "4",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0006",
+      "problem": "What is the square root of 827 to the nearest integer?",
+      "answer": "29",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0007",
+      "problem": "What is 1024052226 to the power of 1/3, to the nearest integer?",
+      "answer": "1008",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0008",
+      "problem": "What is the cube root of 160787 to the nearest integer?",
+      "answer": "54",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0009",
+      "problem": "What is 1894684 to the power of 1/3, to the nearest integer?",
+      "answer": "124",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0010",
+      "problem": "What is 76093 to the power of 1/7, to the nearest integer?",
+      "answer": "5",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0011",
+      "problem": "What is the square root of 776061 to the nearest integer?",
+      "answer": "881",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0012",
+      "problem": "What is 67252129 to the power of 1/3, to the nearest integer?",
+      "answer": "407",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0013",
+      "problem": "What is 46320 to the power of 1/5, to the nearest integer?",
+      "answer": "9",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0014",
+      "problem": "What is 665 to the power of 1/2, to the nearest integer?",
+      "answer": "26",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0015",
+      "problem": "What is the third root of 18674 to the nearest integer?",
+      "answer": "27",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0016",
+      "problem": "What is the third root of 864740091 to the nearest integer?",
+      "answer": "953",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0017",
+      "problem": "What is the fourth root of 12099 to the nearest integer?",
+      "answer": "10",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0018",
+      "problem": "What is 4513 to the power of 1/3, to the nearest integer?",
+      "answer": "17",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0019",
+      "problem": "What is 2111768 to the power of 1/7, to the nearest integer?",
+      "answer": "8",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0020",
+      "problem": "What is the cube root of 49387427 to the nearest integer?",
+      "answer": "367",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0021",
+      "problem": "What is the square root of 12757 to the nearest integer?",
+      "answer": "113",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0022",
+      "problem": "What is 3648702774 to the power of 1/2, to the nearest integer?",
+      "answer": "60404",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0023",
+      "problem": "What is the ninth root of 361338 to the nearest integer?",
+      "answer": "4",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0024",
+      "problem": "What is the square root of 4345 to the nearest integer?",
+      "answer": "66",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0025",
+      "problem": "What is the cube root of 4336374 to the nearest integer?",
+      "answer": "163",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0026",
+      "problem": "What is the ninth root of 283845219 to the nearest integer?",
+      "answer": "9",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0027",
+      "problem": "What is 1035 to the power of 1/2, to the nearest integer?",
+      "answer": "32",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0028",
+      "problem": "What is 5 to the power of 1/5, to the nearest integer?",
+      "answer": "1",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0029",
+      "problem": "What is 1377936 to the power of 1/2, to the nearest integer?",
+      "answer": "1174",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0030",
+      "problem": "What is 4502251 to the power of 1/10, to the nearest integer?",
+      "answer": "5",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0031",
+      "problem": "What is 321965864 to the power of 1/2, to the nearest integer?",
+      "answer": "17943",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0032",
+      "problem": "What is 30390283 to the power of 1/7, to the nearest integer?",
+      "answer": "12",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0033",
+      "problem": "What is 14529 to the power of 1/3, to the nearest integer?",
+      "answer": "24",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0034",
+      "problem": "What is the sixth root of 72759356 to the nearest integer?",
+      "answer": "20",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0035",
+      "problem": "What is 1115704 to the power of 1/7, to the nearest integer?",
+      "answer": "7",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0036",
+      "problem": "What is 53 to the power of 1/2, to the nearest integer?",
+      "answer": "7",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0037",
+      "problem": "What is the sixth root of 6389753 to the nearest integer?",
+      "answer": "14",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0038",
+      "problem": "What is 125990 to the power of 1/5, to the nearest integer?",
+      "answer": "10",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0039",
+      "problem": "What is the sixth root of 837548 to the nearest integer?",
+      "answer": "10",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0040",
+      "problem": "What is 35302 to the power of 1/7, to the nearest integer?",
+      "answer": "4",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0041",
+      "problem": "What is 8530 to the power of 1/2, to the nearest integer?",
+      "answer": "92",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0042",
+      "problem": "What is 64434 to the power of 1/2, to the nearest integer?",
+      "answer": "254",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0043",
+      "problem": "What is the fifth root of 2286 to the nearest integer?",
+      "answer": "5",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0044",
+      "problem": "What is the fifth root of 41174235 to the nearest integer?",
+      "answer": "33",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0045",
+      "problem": "What is 232564067 to the power of 1/7, to the nearest integer?",
+      "answer": "16",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0046",
+      "problem": "What is the square root of 1114360 to the nearest integer?",
+      "answer": "1056",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0047",
+      "problem": "What is the cube root of 4090522 to the nearest integer?",
+      "answer": "160",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0048",
+      "problem": "What is 2616395 to the power of 1/2, to the nearest integer?",
+      "answer": "1618",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0049",
+      "problem": "What is the fourth root of 3006384389 to the nearest integer?",
+      "answer": "234",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0050",
+      "problem": "What is the third root of 152553 to the nearest integer?",
+      "answer": "53",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0051",
+      "problem": "What is the square root of 8371536 to the nearest integer?",
+      "answer": "2893",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0052",
+      "problem": "What is the square root of 1178271 to the nearest integer?",
+      "answer": "1085",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0053",
+      "problem": "What is 13033027 to the power of 1/2, to the nearest integer?",
+      "answer": "3610",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0054",
+      "problem": "What is the square root of 1516345562 to the nearest integer?",
+      "answer": "38940",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0055",
+      "problem": "What is 1625 to the power of 1/3, to the nearest integer?",
+      "answer": "12",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0056",
+      "problem": "What is the fifth root of 48093 to the nearest integer?",
+      "answer": "9",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0057",
+      "problem": "What is the square root of 777 to the nearest integer?",
+      "answer": "28",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0058",
+      "problem": "What is 1116095452 to the power of 1/3, to the nearest integer?",
+      "answer": "1037",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0059",
+      "problem": "What is the third root of 227380 to the nearest integer?",
+      "answer": "61",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0060",
+      "problem": "What is the third root of 401864 to the nearest integer?",
+      "answer": "74",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0061",
+      "problem": "What is 1381952 to the power of 1/7, to the nearest integer?",
+      "answer": "8",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0062",
+      "problem": "What is 4480984023 to the power of 1/2, to the nearest integer?",
+      "answer": "66940",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0063",
+      "problem": "What is the sixth root of 126338252 to the nearest integer?",
+      "answer": "22",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0064",
+      "problem": "What is 197778 to the power of 1/10, to the nearest integer?",
+      "answer": "3",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0065",
+      "problem": "What is the third root of 71603323 to the nearest integer?",
+      "answer": "415",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0066",
+      "problem": "What is 761300044 to the power of 1/2, to the nearest integer?",
+      "answer": "27592",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0067",
+      "problem": "What is 1143502 to the power of 1/2, to the nearest integer?",
+      "answer": "1069",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0068",
+      "problem": "What is 998 to the power of 1/2, to the nearest integer?",
+      "answer": "32",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0069",
+      "problem": "What is the third root of 1656961 to the nearest integer?",
+      "answer": "118",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0070",
+      "problem": "What is the square root of 356923 to the nearest integer?",
+      "answer": "597",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0071",
+      "problem": "What is the third root of 6977 to the nearest integer?",
+      "answer": "19",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0072",
+      "problem": "What is the fourth root of 146054 to the nearest integer?",
+      "answer": "20",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0073",
+      "problem": "What is the cube root of 42776318 to the nearest integer?",
+      "answer": "350",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0074",
+      "problem": "What is 17055499 to the power of 1/3, to the nearest integer?",
+      "answer": "257",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0075",
+      "problem": "What is 852183695 to the power of 1/2, to the nearest integer?",
+      "answer": "29192",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0076",
+      "problem": "What is the fourth root of 57339169 to the nearest integer?",
+      "answer": "87",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0077",
+      "problem": "What is the third root of 1170 to the nearest integer?",
+      "answer": "11",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0078",
+      "problem": "What is 624728427 to the power of 1/2, to the nearest integer?",
+      "answer": "24995",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0079",
+      "problem": "What is 650810721 to the power of 1/2, to the nearest integer?",
+      "answer": "25511",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0080",
+      "problem": "What is the fourth root of 24343811 to the nearest integer?",
+      "answer": "70",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0081",
+      "problem": "What is the tenth root of 378740482 to the nearest integer?",
+      "answer": "7",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0082",
+      "problem": "What is 4686 to the power of 1/9, to the nearest integer?",
+      "answer": "3",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0083",
+      "problem": "What is the square root of 24007639 to the nearest integer?",
+      "answer": "4900",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0084",
+      "problem": "What is 65540836 to the power of 1/3, to the nearest integer?",
+      "answer": "403",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0085",
+      "problem": "What is 1343756 to the power of 1/5, to the nearest integer?",
+      "answer": "17",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0086",
+      "problem": "What is 444020 to the power of 1/2, to the nearest integer?",
+      "answer": "666",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0087",
+      "problem": "What is the fourth root of 17 to the nearest integer?",
+      "answer": "2",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0088",
+      "problem": "What is 675412 to the power of 1/8, to the nearest integer?",
+      "answer": "5",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0089",
+      "problem": "What is the fifth root of 77554267 to the nearest integer?",
+      "answer": "38",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0090",
+      "problem": "What is the square root of 1115741 to the nearest integer?",
+      "answer": "1056",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0091",
+      "problem": "What is the tenth root of 10925602 to the nearest integer?",
+      "answer": "5",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0092",
+      "problem": "What is 82226 to the power of 1/8, to the nearest integer?",
+      "answer": "4",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0093",
+      "problem": "What is the square root of 236 to the nearest integer?",
+      "answer": "15",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0094",
+      "problem": "What is the fourth root of 8501670 to the nearest integer?",
+      "answer": "54",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0095",
+      "problem": "What is the ninth root of 116252700 to the nearest integer?",
+      "answer": "8",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0096",
+      "problem": "What is 132316074 to the power of 1/3, to the nearest integer?",
+      "answer": "510",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0097",
+      "problem": "What is the square root of 2696737627 to the nearest integer?",
+      "answer": "51930",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0098",
+      "problem": "What is the third root of 404653 to the nearest integer?",
+      "answer": "74",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0099",
+      "problem": "What is 22667 to the power of 1/2, to the nearest integer?",
+      "answer": "151",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0100",
+      "problem": "What is the cube root of 3274 to the nearest integer?",
+      "answer": "15",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0101",
+      "problem": "What is 1795683728 to the power of 1/2, to the nearest integer?",
+      "answer": "42376",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0102",
+      "problem": "What is 1112 to the power of 1/7, to the nearest integer?",
+      "answer": "3",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0103",
+      "problem": "What is 16279 to the power of 1/10, to the nearest integer?",
+      "answer": "3",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0104",
+      "problem": "What is the square root of 406240 to the nearest integer?",
+      "answer": "637",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0105",
+      "problem": "What is 1020503 to the power of 1/10, to the nearest integer?",
+      "answer": "4",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0106",
+      "problem": "What is the seventh root of 4581382 to the nearest integer?",
+      "answer": "9",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0107",
+      "problem": "What is the cube root of 772669010 to the nearest integer?",
+      "answer": "918",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0108",
+      "problem": "What is 417 to the power of 1/2, to the nearest integer?",
+      "answer": "20",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0109",
+      "problem": "What is 4401 to the power of 1/4, to the nearest integer?",
+      "answer": "8",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0110",
+      "problem": "What is the square root of 41355746 to the nearest integer?",
+      "answer": "6431",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0111",
+      "problem": "What is the square root of 74461 to the nearest integer?",
+      "answer": "273",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0112",
+      "problem": "What is the cube root of 1457905037 to the nearest integer?",
+      "answer": "1134",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0113",
+      "problem": "What is 115497 to the power of 1/2, to the nearest integer?",
+      "answer": "340",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0114",
+      "problem": "What is 4819863 to the power of 1/9, to the nearest integer?",
+      "answer": "6",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0115",
+      "problem": "What is the cube root of 43313036 to the nearest integer?",
+      "answer": "351",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0116",
+      "problem": "What is 1441504 to the power of 1/2, to the nearest integer?",
+      "answer": "1201",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0117",
+      "problem": "What is the ninth root of 3103268 to the nearest integer?",
+      "answer": "5",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0118",
+      "problem": "What is 68384510 to the power of 1/7, to the nearest integer?",
+      "answer": "13",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0119",
+      "problem": "What is the square root of 139669 to the nearest integer?",
+      "answer": "374",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0120",
+      "problem": "What is the square root of 1842183 to the nearest integer?",
+      "answer": "1357",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0121",
+      "problem": "What is the third root of 899 to the nearest integer?",
+      "answer": "10",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0122",
+      "problem": "What is the ninth root of 577 to the nearest integer?",
+      "answer": "2",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0123",
+      "problem": "What is the cube root of 46996462 to the nearest integer?",
+      "answer": "361",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0124",
+      "problem": "What is the square root of 54048395 to the nearest integer?",
+      "answer": "7352",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0125",
+      "problem": "What is the sixth root of 540779739 to the nearest integer?",
+      "answer": "29",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0126",
+      "problem": "What is 160766 to the power of 1/2, to the nearest integer?",
+      "answer": "401",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0127",
+      "problem": "What is the eighth root of 248011 to the nearest integer?",
+      "answer": "5",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0128",
+      "problem": "What is 441417 to the power of 1/7, to the nearest integer?",
+      "answer": "6",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0129",
+      "problem": "What is 149839 to the power of 1/5, to the nearest integer?",
+      "answer": "11",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0130",
+      "problem": "What is the fourth root of 1421590024 to the nearest integer?",
+      "answer": "194",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0131",
+      "problem": "What is 21779276 to the power of 1/4, to the nearest integer?",
+      "answer": "68",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0132",
+      "problem": "What is the third root of 36067 to the nearest integer?",
+      "answer": "33",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0133",
+      "problem": "What is 55971 to the power of 1/7, to the nearest integer?",
+      "answer": "5",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0134",
+      "problem": "What is the seventh root of 803208 to the nearest integer?",
+      "answer": "7",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0135",
+      "problem": "What is 2972 to the power of 1/2, to the nearest integer?",
+      "answer": "55",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0136",
+      "problem": "What is 1720517230 to the power of 1/6, to the nearest integer?",
+      "answer": "35",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0137",
+      "problem": "What is 6751 to the power of 1/3, to the nearest integer?",
+      "answer": "19",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0138",
+      "problem": "What is 122001113 to the power of 1/9, to the nearest integer?",
+      "answer": "8",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0139",
+      "problem": "What is 821591472 to the power of 1/2, to the nearest integer?",
+      "answer": "28663",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0140",
+      "problem": "What is 852 to the power of 1/4, to the nearest integer?",
+      "answer": "5",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0141",
+      "problem": "What is 827091575 to the power of 1/2, to the nearest integer?",
+      "answer": "28759",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0142",
+      "problem": "What is 10070 to the power of 1/3, to the nearest integer?",
+      "answer": "22",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0143",
+      "problem": "What is 14415 to the power of 1/2, to the nearest integer?",
+      "answer": "120",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0144",
+      "problem": "What is 2004203170 to the power of 1/5, to the nearest integer?",
+      "answer": "73",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0145",
+      "problem": "What is the fourth root of 6095534 to the nearest integer?",
+      "answer": "50",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0146",
+      "problem": "What is the third root of 10518376 to the nearest integer?",
+      "answer": "219",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0147",
+      "problem": "What is the third root of 2616 to the nearest integer?",
+      "answer": "14",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0148",
+      "problem": "What is the seventh root of 123091504 to the nearest integer?",
+      "answer": "14",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0149",
+      "problem": "What is 847643 to the power of 1/3, to the nearest integer?",
+      "answer": "95",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0150",
+      "problem": "What is 102096919 to the power of 1/2, to the nearest integer?",
+      "answer": "10104",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0151",
+      "problem": "What is 1728711 to the power of 1/6, to the nearest integer?",
+      "answer": "11",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0152",
+      "problem": "What is the tenth root of 547778681 to the nearest integer?",
+      "answer": "7",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0153",
+      "problem": "What is the cube root of 3919 to the nearest integer?",
+      "answer": "16",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0154",
+      "problem": "What is the third root of 10256626 to the nearest integer?",
+      "answer": "217",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0155",
+      "problem": "What is the cube root of 2896870 to the nearest integer?",
+      "answer": "143",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0156",
+      "problem": "What is the fifth root of 871758 to the nearest integer?",
+      "answer": "15",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0157",
+      "problem": "What is the tenth root of 16473 to the nearest integer?",
+      "answer": "3",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0158",
+      "problem": "What is the square root of 587628299 to the nearest integer?",
+      "answer": "24241",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0159",
+      "problem": "What is the third root of 665677164 to the nearest integer?",
+      "answer": "873",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0160",
+      "problem": "What is the eighth root of 146306476 to the nearest integer?",
+      "answer": "10",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0161",
+      "problem": "What is the ninth root of 8742109 to the nearest integer?",
+      "answer": "6",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0162",
+      "problem": "What is 4352 to the power of 1/8, to the nearest integer?",
+      "answer": "3",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0163",
+      "problem": "What is 75568 to the power of 1/6, to the nearest integer?",
+      "answer": "7",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0164",
+      "problem": "What is the square root of 14143 to the nearest integer?",
+      "answer": "119",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0165",
+      "problem": "What is the square root of 1856889525 to the nearest integer?",
+      "answer": "43092",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0166",
+      "problem": "What is 13309848 to the power of 1/3, to the nearest integer?",
+      "answer": "237",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0167",
+      "problem": "What is the cube root of 1352 to the nearest integer?",
+      "answer": "11",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0168",
+      "problem": "What is 936 to the power of 1/6, to the nearest integer?",
+      "answer": "3",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0169",
+      "problem": "What is 267620 to the power of 1/2, to the nearest integer?",
+      "answer": "517",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0170",
+      "problem": "What is 208961217 to the power of 1/5, to the nearest integer?",
+      "answer": "46",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0171",
+      "problem": "What is 654229125 to the power of 1/6, to the nearest integer?",
+      "answer": "29",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0172",
+      "problem": "What is the third root of 24515112 to the nearest integer?",
+      "answer": "290",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0173",
+      "problem": "What is the square root of 464757155 to the nearest integer?",
+      "answer": "21558",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0174",
+      "problem": "What is the third root of 14744293 to the nearest integer?",
+      "answer": "245",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0175",
+      "problem": "What is 6850286 to the power of 1/3, to the nearest integer?",
+      "answer": "190",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0176",
+      "problem": "What is the square root of 16547 to the nearest integer?",
+      "answer": "129",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0177",
+      "problem": "What is the eighth root of 230242 to the nearest integer?",
+      "answer": "5",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0178",
+      "problem": "What is the square root of 2828 to the nearest integer?",
+      "answer": "53",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0179",
+      "problem": "What is 1541137692 to the power of 1/3, to the nearest integer?",
+      "answer": "1155",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0180",
+      "problem": "What is the square root of 1966 to the nearest integer?",
+      "answer": "44",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0181",
+      "problem": "What is the cube root of 4262 to the nearest integer?",
+      "answer": "16",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0182",
+      "problem": "What is 1407521409 to the power of 1/3, to the nearest integer?",
+      "answer": "1121",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0183",
+      "problem": "What is the square root of 1494436697 to the nearest integer?",
+      "answer": "38658",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0184",
+      "problem": "What is the ninth root of 296969 to the nearest integer?",
+      "answer": "4",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0185",
+      "problem": "What is 6367 to the power of 1/8, to the nearest integer?",
+      "answer": "3",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0186",
+      "problem": "What is the square root of 929710049 to the nearest integer?",
+      "answer": "30491",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0187",
+      "problem": "What is the square root of 116906 to the nearest integer?",
+      "answer": "342",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0188",
+      "problem": "What is 57513 to the power of 1/3, to the nearest integer?",
+      "answer": "39",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0189",
+      "problem": "What is the fifth root of 56390886 to the nearest integer?",
+      "answer": "36",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0190",
+      "problem": "What is the ninth root of 804263743 to the nearest integer?",
+      "answer": "10",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0191",
+      "problem": "What is the ninth root of 1064722 to the nearest integer?",
+      "answer": "5",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0192",
+      "problem": "What is 43335974 to the power of 1/8, to the nearest integer?",
+      "answer": "9",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0193",
+      "problem": "What is 1524 to the power of 1/9, to the nearest integer?",
+      "answer": "2",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0194",
+      "problem": "What is 149014 to the power of 1/8, to the nearest integer?",
+      "answer": "4",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0195",
+      "problem": "What is the fourth root of 612 to the nearest integer?",
+      "answer": "5",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0196",
+      "problem": "What is the square root of 8897 to the nearest integer?",
+      "answer": "94",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0197",
+      "problem": "What is 17595648 to the power of 1/10, to the nearest integer?",
+      "answer": "5",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0198",
+      "problem": "What is 114206 to the power of 1/7, to the nearest integer?",
+      "answer": "5",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0199",
+      "problem": "What is 50637 to the power of 1/2, to the nearest integer?",
+      "answer": "225",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-root.q0200",
+      "problem": "What is the square root of 31597 to the nearest integer?",
+      "answer": "178",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__nearest_integer_root",
+      "hint": "DeepMind roots",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__nearest_integer_root"
+      ]
+    }
+  ]
+}

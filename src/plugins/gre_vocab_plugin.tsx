@@ -17,7 +17,7 @@ export const VocabPlugin: PluginDef = {
     { path: "gre-vocab/read/:mode", element: <VocabReadPage /> },
     { path: "gre-vocab/cycle", element: <VocabCyclePage /> },
   ],
-  navItems: [{ to: "/gre-vocab", label: "GRE Vocab", icon: BookOpen, end: false }],
+  navItems: [{ to: "/gre-vocab", label: "GRE Vocab", icon: BookOpen, end: false, category: "study" }],
 };
 
 registerPlugin(VocabPlugin);

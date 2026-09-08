@@ -183,26 +183,34 @@ DEFAULT_ROUTINES = [
     {
         "title": "Bible / devotion",
         "category": "spiritual",
-        "start_time": "06:30",
-        "end_time": "07:00",
+        "start_time": "06:00",
+        "end_time": "06:30",
         "days": list(_DAY_NAMES),
         "color": "#a78bfa",
     },
     {
         "title": "Bath / self-care",
         "category": "personal",
-        "start_time": "07:00",
-        "end_time": "07:30",
+        "start_time": "06:30",
+        "end_time": "07:00",
         "days": list(_DAY_NAMES),
         "color": "#06b6d4",
     },
     {
         "title": "Breakfast",
         "category": "food",
-        "start_time": "08:00",
-        "end_time": "08:30",
+        "start_time": "07:00",
+        "end_time": "07:30",
         "days": list(_DAY_NAMES),
         "color": "#f59e0b",
+    },
+    {
+        "title": "Daily review (SRS)",
+        "category": "study",
+        "start_time": "08:00",
+        "end_time": "08:35",
+        "days": list(_DAY_NAMES),
+        "color": "#34d399",
     },
     {
         "title": "Lunch",
@@ -211,6 +219,14 @@ DEFAULT_ROUTINES = [
         "end_time": "13:45",
         "days": list(_DAY_NAMES),
         "color": "#f59e0b",
+    },
+    {
+        "title": "Proverbs / Psalms (afternoon)",
+        "category": "spiritual",
+        "start_time": "14:30",
+        "end_time": "15:00",
+        "days": list(_DAY_NAMES),
+        "color": "#c4b5fd",
     },
     {
         "title": "Dinner",
@@ -228,7 +244,20 @@ DEFAULT_ROUTINES = [
         "days": list(_DAY_NAMES),
         "color": "#6366f1",
     },
+    {
+        "title": "Evening praise & hymn",
+        "category": "spiritual",
+        "start_time": "21:00",
+        "end_time": "21:25",
+        "days": list(_DAY_NAMES),
+        "color": "#818cf8",
+    },
 ]
+
+# Wake → Bible → freshen → eat → productive day → 8h sleep (in bed ~22:00).
+CANONICAL_ROUTINE_TIMES: dict[str, tuple[str, str]] = {
+    spec["title"]: (spec["start_time"], spec["end_time"]) for spec in DEFAULT_ROUTINES
+}
 
 
 def seed_default_routines(db: Session, user_id: int) -> int:
@@ -301,12 +330,40 @@ def upgrade_stock_default_routines(db: Session, user_id: int) -> int:
         )
         changed += 1
 
+    for title in ("Proverbs / Psalms (afternoon)", "Evening praise & hymn", "Daily review (SRS)"):
+        has_row = (
+            db.query(PlannerRoutine)
+            .filter(PlannerRoutine.user_id == user_id, PlannerRoutine.title == title)
+            .count()
+        )
+        if has_row == 0:
+            spec = next(s for s in DEFAULT_ROUTINES if s["title"] == title)
+            db.add(
+                PlannerRoutine(
+                    user_id=user_id,
+                    title=spec["title"],
+                    category=spec["category"],
+                    start_time=spec["start_time"],
+                    end_time=spec["end_time"],
+                    days_json=json.dumps(spec["days"]),
+                    color=spec.get("color"),
+                    sort_order=by_title.get(title, 99),
+                    enabled=True,
+                )
+            )
+            changed += 1
+
     db.flush()
     rows = db.query(PlannerRoutine).filter(PlannerRoutine.user_id == user_id).all()
     for row in rows:
         want = by_title.get(row.title)
         if want is not None and row.sort_order != want:
             row.sort_order = want
+            changed += 1
+        times = CANONICAL_ROUTINE_TIMES.get(row.title)
+        if times and (row.start_time != times[0] or row.end_time != times[1]):
+            row.start_time = times[0]
+            row.end_time = times[1]
             changed += 1
 
     if changed:

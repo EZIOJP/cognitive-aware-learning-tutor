@@ -5,6 +5,7 @@ import type {
   DueReviewItem,
   GlobalQuizAnswerResult,
   GlobalQuizQuestion,
+  MathCoreCoverage,
   QuizBacklog,
   QuizDeckSummary,
   QuizDomain,
@@ -128,6 +129,17 @@ export async function submitGlobalQuizAnswer(
 
 export async function completeGlobalQuiz(sessionId: string): Promise<QuizSessionSummary & { complete: boolean }> {
   return quizRequest(`/${sessionId}/complete`, { method: "POST" });
+}
+
+/** Append another Math Core drill chunk after a short set. */
+export async function keepGoingGlobalQuiz(sessionId: string): Promise<{
+  session_id: string;
+  domain: string;
+  question: GlobalQuizQuestion | null;
+  coverage?: MathCoreCoverage;
+  can_keep_going?: boolean;
+}> {
+  return quizRequest(`/${sessionId}/keep-going`, { method: "POST" });
 }
 
 export async function fetchGlobalQuizQuestion(
@@ -258,6 +270,9 @@ export type StudyLoopTag = {
   id: string;
   kind?: string;
   group?: string;
+  folder?: string;
+  folder_label?: string;
+  folder_rank?: number;
   label?: string;
   question_count?: number;
   vocab_count?: number;
@@ -287,7 +302,9 @@ export async function fetchStudyLoopTags(opts?: { q?: string; kind?: string }) {
   if (opts?.q) qs.set("q", opts.q);
   if (opts?.kind) qs.set("kind", opts.kind);
   const q = qs.toString();
-  return quizRequest<{ tags: StudyLoopTag[]; count?: number }>(`/study-loop/tags${q ? `?${q}` : ""}`);
+  return quizRequest<{ tags: StudyLoopTag[]; count?: number }>(`/study-loop/tags${q ? `?${q}` : ""}`, {
+    signal: AbortSignal.timeout(20_000),
+  });
 }
 
 export async function fetchStudyLoopReadCards(tag: string) {
@@ -303,6 +320,47 @@ export async function patchStudyLoopReadCard(
   return quizRequest<StudyLoopReadCard>(`/study-loop/read-cards/${encodeURIComponent(cardId)}`, {
     method: "PATCH",
     body: JSON.stringify(body),
+  });
+}
+
+export async function fetchStudyLoopToday() {
+  return quizRequest<{
+    day: string;
+    tags: string[];
+    mode: string;
+    state: string;
+    current_step: number;
+    current_tag: string | null;
+    empty_reason?: string | null;
+    stub_flags?: Record<string, boolean>;
+    has_mathcore?: boolean;
+    steps?: Array<Record<string, unknown>>;
+  }>("/study-loop/today");
+}
+
+export async function startStudyLoopToday(markRead = false) {
+  return quizRequest<{
+    day: string;
+    tags: string[];
+    mode: string;
+    state: string;
+    current_step: number;
+    current_tag: string | null;
+    loop_session_id?: string;
+    loop_session_ids?: string[];
+    read_completed?: boolean;
+    read_cards?: StudyLoopReadCard[];
+    unread_tags?: string[];
+    steps?: Array<{ tag?: string; kind?: string; label?: string }>;
+    step_kind?: string;
+    step_label?: string;
+    practice_target?: number;
+    encourage_more?: boolean;
+    difficulty_level?: string | null;
+    quiz?: { session_id?: string; domain?: string; question?: GlobalQuizQuestion };
+  }>("/study-loop/today/start", {
+    method: "POST",
+    body: JSON.stringify({ mark_read: markRead }),
   });
 }
 
@@ -332,9 +390,13 @@ export async function startStudyLoopPractice(sessionId: string, count = 5) {
     method: "POST",
     body: JSON.stringify({ count }),
   });
-  const quizSessionId =
-    String(raw.practice_quiz_session_id || raw.quiz?.session_id || "").trim() ||
-    String(raw.session_id || "").trim();
+  // Prefer quiz engine ids only — never fall back to the Study Loop UUID.
+  const quizSessionId = String(
+    raw.practice_quiz_session_id || raw.quiz?.session_id || ""
+  ).trim();
+  if (!quizSessionId) {
+    throw new Error("Practice started but no quiz session was returned.");
+  }
   return {
     session_id: quizSessionId,
     loop_session_id: raw.session_id,
@@ -385,6 +447,7 @@ export async function runQuizCode(payload: {
   code: string;
   item?: Record<string, unknown>;
   item_id?: string;
+  session_id?: string;
 }): Promise<QuizCodeRunResult> {
   return quizRequest<QuizCodeRunResult>("/code/run", {
     method: "POST",
@@ -442,7 +505,7 @@ export async function putTagImportance(
 }
 
 export async function fetchLowMasteryTags(): Promise<{ tags: LowMasteryTag[] }> {
-  return quizRequest("/importance/low-mastery");
+  return quizRequest("/importance/low-mastery", { signal: AbortSignal.timeout(12_000) });
 }
 
 export async function startLowMasteryDrill(body?: { tag?: string; count?: number }) {

@@ -16,14 +16,17 @@ var GATE_API_URL = "http://127.0.0.1:8000/api/behavior/distraction-gate";
 var GATE_ALERT_URL = "http://127.0.0.1:8000/api/behavior/gate-alert";
 var GATE_EXT_LOG_URL = "http://127.0.0.1:8000/api/behavior/gate-extension-log";
 var CALT_TAB_CMD_URL = "http://127.0.0.1:8000/api/behavior/calt-tab-command";
+var GATE_NOTIFY_WS_URL = "ws://127.0.0.1:8000/ws/gate";
 var CALT_BIBLE_URL = "http://localhost:5173/bible";
 var CALT_PRODUCTIVITY_URL = "http://localhost:5173/productivity?tab=plan";
 var CALT_ORIGIN = "http://localhost:5173";
-/** Suggested opportunistic gate refresh while tabs are active (seconds). */
-var GATE_POLL_ACTIVE_S = 4;
+/** Suggested heartbeat while tabs are active (seconds). Server may override via intervals. */
+var GATE_POLL_ACTIVE_S = 300;
 /** Min gap between gate-alert POSTs (ms). */
 var GATE_ALERT_GAP_MS = 45000;
 
+// BEGIN GENERATED_GATE_SEEDS (scripts/sync_gate_policy_seeds.py)
+/** Offline seeds — generated from backend.behavior.browser_gate_policy. Do not edit by hand. */
 /** Shopping / house / errands — allowed in free mode (and errands-lite). */
 var FREE_LIFE_ALLOW_DOMAINS = [
   "amazon.com",
@@ -44,22 +47,19 @@ var FREE_LIFE_ALLOW_DOMAINS = [
   "meesho.com",
 ];
 
-
-/** @deprecated Prefer gateCache.browser.watch_domains — kept for GET_GATE / offline. */
+/** @deprecated Prefer gateCache.browser.watch_domains — offline fallback. */
 var DISTRACTION_DOMAINS = [
-  "netflix.com",
   "youtube.com",
   "youtu.be",
-  "twitch.tv",
-  "disneyplus.com",
+  "netflix.com",
   "primevideo.com",
   "hotstar.com",
-  "instagram.com",
-  "reddit.com",
-  "x.com",
-  "twitter.com",
-  "tiktok.com",
-  "facebook.com",
+  "disneyplus.com",
+  "hulu.com",
+  "twitch.tv",
+  "crunchyroll.com",
+  "sonyliv.com",
+  "zee5.com",
 ];
 
 var FALLBACK_ALLOW_DOMAINS = [
@@ -69,7 +69,6 @@ var FALLBACK_ALLOW_DOMAINS = [
   "scaler.com",
   "interviewbit.com",
   "scaleracademy.com",
-  // Scaler lecture PDFs on S3 (also matched via isScalerAttachmentHost)
   "scaler-production-new.s3.ap-southeast-1.amazonaws.com",
   "github.com",
   "githubusercontent.com",
@@ -89,8 +88,6 @@ var FALLBACK_ALLOW_DOMAINS = [
   "aistudio.google.com",
   "bard.google.com",
   "googleusercontent.com",
-  // Omnibox / new-tab search hops — without these, typing scaler.com soft-lands
-  // Bing/Google as "restricted" before the allowlisted destination loads.
   "google.com",
   "bing.com",
   "duckduckgo.com",
@@ -98,19 +95,35 @@ var FALLBACK_ALLOW_DOMAINS = [
   "ntp.msn.com",
   "msn.com",
   "notion.so",
+  "notion.site",
   "leetcode.com",
+  "codeforces.com",
+  "atcoder.jp",
+  "hackerrank.com",
   "coursera.org",
   "udemy.com",
+  "edx.org",
   "khanacademy.org",
+  "brilliant.org",
   "arxiv.org",
   "wikipedia.org",
   "developer.mozilla.org",
+  "mdn.io",
   "python.org",
   "docs.python.org",
+  "pypi.org",
+  "npmjs.com",
+  "vscode.dev",
+  "cursor.com",
   "chatgpt.com",
   "claude.ai",
+  "openai.com",
+  "anthropic.com",
   "figma.com",
-  // Data science / AI learning (keep in sync with browser_gate_policy.py)
+  "excalidraw.com",
+  "obsidian.md",
+  "zoom.us",
+  "web.whatsapp.com",
   "numpy.org",
   "pandas.pydata.org",
   "scipy.org",
@@ -156,6 +169,8 @@ var FALLBACK_WATCH_DOMAINS = [
   "hulu.com",
   "twitch.tv",
   "crunchyroll.com",
+  "sonyliv.com",
+  "zee5.com",
 ];
 
 /** Always blocked in bible / planning / study — even if server flags are stale. */
@@ -168,13 +183,13 @@ var FORCE_WATCH_HOSTS = [
   "disneyplus.com",
   "hulu.com",
   "twitch.tv",
+  "crunchyroll.com",
+  "sonyliv.com",
+  "zee5.com",
 ];
 var STRICT_DAY_MODES = ["bible", "planning", "study"];
 
-/**
- * Always blocked (distraction filter) — like FORCE_WATCH, but every mode including free.
- * Runs before enforce early-return so Disarmed / stale flags cannot open these.
- */
+/** Always blocked (every mode including free) when offline / stale. */
 var FORCE_PORN_HOSTS = [
   "pornhub.com",
   "xvideos.com",
@@ -188,9 +203,9 @@ var FORCE_PORN_HOSTS = [
   "onlyfans.com",
   "porn.com",
   "sex.com",
+  "hentaihaven.xxx",
   "nhentai.net",
   "rule34.xxx",
-  "hentaihaven.xxx",
   "erome.com",
   "v3.erome.com",
   "eromecdn.com",
@@ -206,11 +221,20 @@ var FORCE_PORN_HOSTS = [
   "missav.com",
   "jable.tv",
   "thisvid.com",
+  "xhamster2.com",
+  "xhamster3.com",
+  "xvideos2.com",
+  "xnxx.tv",
+  "pornhub.org",
+  "pornhub.net",
 ];
-var FORCE_PORN_SUFFIXES = [".xxx", ".adult", ".porn", ".sex"];
-
+var FORCE_PORN_SUFFIXES = [
+  ".xxx",
+  ".adult",
+  ".porn",
+  ".sex",
+];
 var FALLBACK_PORN_DOMAINS = FORCE_PORN_HOSTS.slice();
-
 var FALLBACK_PORN_SUFFIXES = FORCE_PORN_SUFFIXES.slice();
 
 var FALLBACK_SOCIAL_DOMAINS = [
@@ -222,14 +246,11 @@ var FALLBACK_SOCIAL_DOMAINS = [
   "facebook.com",
 ];
 
-/**
- * Temporary per-host soft-allow from locked.html (extension chrome.storage.local).
- * Short TTL on purpose — long windows get abused for YouTube.
- */
+/** Temporary per-host soft-allow from locked.html (extension chrome.storage.local). */
 var TEMP_ALLOW_MS = 60000;
 var TEMP_ALLOW_STORAGE_KEY = "tempAllows";
 
-/** Offline keyword seed — prefer server block_keywords_list. Avoid bare "ass"/"sex". */
+/** Offline keyword seed — prefer server block_keywords_list. */
 var FALLBACK_BLOCK_KEYWORDS = [
   "bdsm",
   "porn",
@@ -238,6 +259,9 @@ var FALLBACK_BLOCK_KEYWORDS = [
   "xxx",
   "onlyfans",
   "fansly",
+  "manyvids",
+  "chaturbate",
+  "stripchat",
   "hentai",
   "nsfw",
   "nude",
@@ -245,9 +269,12 @@ var FALLBACK_BLOCK_KEYWORDS = [
   "nudity",
   "fetish",
   "bondage",
+  "pegging",
   "blowjob",
   "handjob",
+  "deepthroat",
   "cumshot",
+  "creampie",
   "gangbang",
   "threesome",
   "milf",
@@ -257,22 +284,33 @@ var FALLBACK_BLOCK_KEYWORDS = [
   "xhamster",
   "xvideos",
   "pornhub",
-  "chaturbate",
-  "redgifs",
-  "hqporner",
-  "eporner",
+  "redtube",
+  "youporn",
+  "spankbang",
   "erome",
+  "eporner",
+  "hqporner",
+  "redgifs",
   "camgirl",
+  "cam girl",
   "sex cam",
+  "live sex",
   "sex tape",
   "sex video",
   "adult video",
   "erotic",
   "erotica",
   "hardcore porn",
+  "naked photo",
+  "naked pics",
+  "nude photo",
+  "nude pics",
+  "xxx video",
 ];
+// END GENERATED_GATE_SEEDS
 
-/** Weighted page-text score — keep in sync with backend/behavior/content_score.py */
+// BEGIN GENERATED_CONTENT_SCORE (scripts/sync_gate_policy_seeds.py)
+/** Weighted page-text score — generated from backend.behavior.content_score. */
 var CONTENT_SCORE_WEIGHTS = {
   pornography: 4,
   "hardcore porn": 5,
@@ -328,6 +366,32 @@ var CONTENT_SCORE_THRESHOLDS = {
   free: { warn: 8, lock: 16, maxSamples: 5 },
   study: { warn: 5, lock: 10, maxSamples: 3 },
 };
+// END GENERATED_CONTENT_SCORE
+/** Apply live content_score from browser payload (Python content_score.py). */
+function applyContentScoreFromPolicy(policy) {
+  var cs = policy && policy.content_score;
+  if (!cs || typeof cs !== "object") return;
+  if (cs.weights && typeof cs.weights === "object") {
+    CONTENT_SCORE_WEIGHTS = cs.weights;
+  }
+  if (cs.thresholds && typeof cs.thresholds === "object") {
+    var free = cs.thresholds.free || {};
+    var study = cs.thresholds.study || {};
+    CONTENT_SCORE_THRESHOLDS = {
+      free: {
+        warn: free.warn != null ? free.warn : 8,
+        lock: free.lock != null ? free.lock : 16,
+        maxSamples: free.max_samples != null ? free.max_samples : free.maxSamples != null ? free.maxSamples : 5,
+      },
+      study: {
+        warn: study.warn != null ? study.warn : 5,
+        lock: study.lock != null ? study.lock : 10,
+        maxSamples:
+          study.max_samples != null ? study.max_samples : study.maxSamples != null ? study.maxSamples : 3,
+      },
+    };
+  }
+}
 
 function scorePageHaystack(text, weights, perTermCap) {
   var hay = String(text || "").toLowerCase();
@@ -419,20 +483,70 @@ function isStrictDayMode(mode) {
   return STRICT_DAY_MODES.indexOf(String(mode || "").toLowerCase()) >= 0;
 }
 
-function isForceWatchHost(host) {
-  return listMatch(host, FORCE_WATCH_HOSTS);
+/** Prefer live server force/watch lists; offline seeds are last resort. */
+function forceWatchList(policy) {
+  if (policy && policy.force_watch_hosts && policy.force_watch_hosts.length) {
+    return policy.force_watch_hosts;
+  }
+  if (policy && policy.watch_domains && policy.watch_domains.length) {
+    return policy.watch_domains;
+  }
+  return FORCE_WATCH_HOSTS;
 }
 
-function isForcePornHost(host) {
+function forcePornList(policy) {
+  if (policy && policy.force_porn_hosts && policy.force_porn_hosts.length) {
+    return policy.force_porn_hosts;
+  }
+  if (policy && policy.porn_domains && policy.porn_domains.length) {
+    return policy.porn_domains;
+  }
+  return FORCE_PORN_HOSTS;
+}
+
+function forcePornSuffixes(policy) {
+  if (policy && policy.porn_suffixes && policy.porn_suffixes.length) {
+    return policy.porn_suffixes;
+  }
+  return FORCE_PORN_SUFFIXES;
+}
+
+function isForceWatchHost(host, policy) {
+  return listMatch(host, forceWatchList(policy || null));
+}
+
+function isForcePornHost(host, policy) {
   var h = String(host || "")
     .toLowerCase()
     .replace(/^www\./, "");
   if (!h) return false;
-  if (listMatch(h, FORCE_PORN_HOSTS)) return true;
-  for (var i = 0; i < FORCE_PORN_SUFFIXES.length; i++) {
-    if (h.endsWith(FORCE_PORN_SUFFIXES[i])) return true;
+  if (listMatch(h, forcePornList(policy || null))) return true;
+  var suffixes = forcePornSuffixes(policy || null);
+  for (var i = 0; i < suffixes.length; i++) {
+    if (h.endsWith(suffixes[i])) return true;
   }
   return false;
+}
+
+/** Unique host list for DNR — prefer force_* order, then remaining watch/porn. */
+function dnrHostList(primary, secondary, maxHosts) {
+  var out = [];
+  var seen = Object.create(null);
+  function pushAll(arr) {
+    if (!arr || !arr.length) return;
+    for (var i = 0; i < arr.length; i++) {
+      var h = String(arr[i] || "")
+        .toLowerCase()
+        .replace(/^www\./, "");
+      if (!h || seen[h]) continue;
+      seen[h] = true;
+      out.push(h);
+      if (out.length >= maxHosts) return;
+    }
+  }
+  pushAll(primary);
+  pushAll(secondary);
+  return out;
 }
 
 function normalizeHost(host) {
@@ -448,8 +562,8 @@ function normalizeHost(host) {
 function isTempAllowExcludedHost(host, policy) {
   var h = normalizeHost(host);
   if (!h) return true;
-  if (isForceWatchHost(h) || isForcePornHost(h)) return true;
   var pol = policy || browserPolicyOrFallback(null);
+  if (isForceWatchHost(h, pol) || isForcePornHost(h, pol)) return true;
   var cat = classifyHostCategory(h, pol);
   return cat === "watch" || cat === "porn" || cat === "social";
 }
@@ -511,10 +625,10 @@ function buildTempAllowGrant(host, now, policy) {
   if (!h) return { ok: false, error: "No host to allow" };
   if (isTempAllowExcludedHost(h, pol)) {
     var cat = classifyHostCategory(h, pol);
-    if (isForceWatchHost(h) || cat === "watch") {
+    if (isForceWatchHost(h, pol) || cat === "watch") {
       return { ok: false, error: "Watch sites can't be temporarily allowed" };
     }
-    if (isForcePornHost(h) || cat === "porn") {
+    if (isForcePornHost(h, pol) || cat === "porn") {
       return { ok: false, error: "Distractions can't be temporarily allowed" };
     }
     if (cat === "social") {
@@ -575,6 +689,12 @@ function browserPolicyOrFallback(browser) {
     mode = b.enforce || b.block_other || b.block_watch_sites ? "study" : "free";
   }
   var strict = isStrictDayMode(mode);
+  var prefixes =
+    b.localhost_path_prefixes && b.localhost_path_prefixes.length
+      ? b.localhost_path_prefixes
+      : strict
+        ? ["/bible", "/productivity", "/profile", "/lecture-notes"]
+        : [];
   return {
     mode: mode,
     mode_label: b.mode_label || mode.toUpperCase(),
@@ -587,10 +707,11 @@ function browserPolicyOrFallback(browser) {
       b.block_keywords_list && b.block_keywords_list.length
         ? b.block_keywords_list
         : FALLBACK_BLOCK_KEYWORDS,
-    localhost_path_prefixes:
-      b.localhost_path_prefixes && b.localhost_path_prefixes.length
-        ? b.localhost_path_prefixes
-        : ["/bible", "/productivity", "/profile", "/lecture-notes"],
+    force_watch_hosts:
+      b.force_watch_hosts && b.force_watch_hosts.length ? b.force_watch_hosts : FORCE_WATCH_HOSTS,
+    force_porn_hosts:
+      b.force_porn_hosts && b.force_porn_hosts.length ? b.force_porn_hosts : FORCE_PORN_HOSTS,
+    localhost_path_prefixes: prefixes,
     // Strict day modes always block watch (YouTube etc.) — never trust a stale false flag.
     block_watch_sites: b.block_watch_sites === true || strict,
     block_porn: b.block_porn !== false,
@@ -609,6 +730,8 @@ function browserPolicyOrFallback(browser) {
       b.free_life_allow_domains && b.free_life_allow_domains.length
         ? b.free_life_allow_domains
         : FREE_LIFE_ALLOW_DOMAINS,
+    intervals: b.intervals || null,
+    content_score: b.content_score || null,
   };
 }
 
@@ -668,9 +791,19 @@ function isDistractionUrl(url) {
  * Keywords: URL path/query + optional page title only (no DOM scraping).
  * @returns {boolean}
  */
+/** Incubation break — never treat as free (beats day_unlimited / reward). */
+function isIncubationActive(gateCache) {
+  if (!gateCache) return false;
+  var inc = gateCache.incubation;
+  if (inc && inc.active) return true;
+  var browser = browserPolicyOrFallback(gateCache.browser);
+  return Boolean(browser.incubation_active);
+}
+
 /** FREE / goal met / earned reward day — YouTube+games open; porn/keywords still blocked. */
 function isFreeDay(gateCache) {
   if (!gateCache) return false;
+  if (isIncubationActive(gateCache)) return false;
   var browser = browserPolicyOrFallback(gateCache.browser);
   return (
     browser.mode === "free" ||
@@ -691,8 +824,8 @@ function shouldBlockUrl(url, gateCache, title) {
   var cat = classifyHostCategory(host, browser);
   var freeDay = isFreeDay(gateCache);
 
-  // Distraction filter always on (before enforce) — stale Disarmed cannot open those TLDs/domains.
-  if (isForcePornHost(host) || cat === "porn") return true;
+  // Distraction filter always on (before enforce) — uses live porn lists when present.
+  if (isForcePornHost(host, browser) || cat === "porn") return true;
   // Keywords on non-allow hosts always (allowlist still wins — e.g. Colab notebook ids).
   if (cat !== "allow" && browser.block_keywords !== false) {
     var adultHit = textMatchesKeywords(
@@ -709,11 +842,17 @@ function shouldBlockUrl(url, gateCache, title) {
     Boolean(browser.enforce) ||
     Boolean(gateCache.enforce) ||
     Boolean(gateCache.locked) ||
+    Boolean(isIncubationActive(gateCache)) ||
     Boolean(gateCache.degraded && isStrictDayMode(browser.mode));
   if (!enforce) return false;
 
-  // Hard force: youtube.com / youtu.be never allowed in bible / planning / study.
-  if (isForceWatchHost(host) && isStrictDayMode(browser.mode)) return true;
+  // Incubation: no temp-allow bypass for leisure.
+  if (isIncubationActive(gateCache) && cat !== "allow") {
+    if (cat === "watch" || cat === "social" || cat === "porn") return true;
+  }
+
+  // Strict day: all watch hosts from server list (not a baked subset).
+  if (isForceWatchHost(host, browser) && isStrictDayMode(browser.mode)) return true;
 
   // Per-host temp allow (locked.html "Allow this site 60 sec") — never watch/porn/social.
   var tempAllows = gateCache.temp_allows || gateCache.tempAllows || [];
@@ -733,24 +872,27 @@ function shouldBlockUrl(url, gateCache, title) {
   return false;
 }
 
-/** Category for voice alert when blocking (best-effort). */
+/** SoftLand reason strings — keep aligned with native softland_decide.cpp. */
 function blockKindForUrl(url, gateCache, title) {
   var browser = browserPolicyOrFallback(gateCache && gateCache.browser);
   var morning = (gateCache && gateCache.morning) || {};
   var next = browser.morning_next || morning.next || "open";
-  var mode = browser.mode || "free";
-  if (next === "bible" || mode === "bible") return "morning_bible_required";
-  if (next === "plan" || mode === "planning") return "morning_plan_required";
+  var mode = String(browser.mode || "free").toLowerCase();
+  // Native uses short reason tokens on locked.html ?why=
+  if (next === "bible" || mode === "bible") return "morning_bible";
+  if (next === "plan" || mode === "planning") return "morning_plan";
+  if (gateCache && gateCache.incubation && gateCache.incubation.active) return "incubation";
+  if (browser.incubation_active) return "incubation";
   var host = hostnameFromUrl(url);
   var cat = classifyHostCategory(host, browser);
-  if (cat === "porn") return "porn_or_keyword_block";
-  if (cat === "watch" || cat === "social") return "watch_site_block";
+  if (cat === "porn") return "porn";
   if (browser.block_keywords) {
     var hit = textMatchesKeywords(url + " " + (title || ""), browser.block_keywords_list);
-    if (hit) return "porn_or_keyword_block";
+    if (hit) return "keyword";
   }
-  if (mode === "study") return "generic_rule_break";
-  return "generic_rule_break";
+  if (cat === "watch" || cat === "social") return "watch_list";
+  if (mode === "study") return "study_block";
+  return "softland_block";
 }
 
 /**
@@ -807,19 +949,22 @@ function isCaltSpaUrl(url) {
 /* global GATE_API_URL, GATE_ALERT_URL, GATE_EXT_LOG_URL, GATE_ALERT_GAP_MS, FORCE_WATCH_HOSTS,
    FORCE_PORN_HOSTS, isStrictDayMode, TEMP_ALLOW_STORAGE_KEY, TEMP_ALLOW_MS, pruneTempAllows,
    buildTempAllowGrant, upsertTempAllow, isTempAllowExcludedHost,
-   tempAllowUntilForHost, browserPolicyOrFallback, shouldBlockUrl,
+   tempAllowUntilForHost, browserPolicyOrFallback, shouldBlockUrl, dnrHostList, listMatch,
    redirectTargetUrl, isCaltSpaUrl, blockKindForUrl, hostnameFromUrl,
    isForceWatchHost, isForcePornHost, classifyHostCategory, isExtensionOrInternalUrl,
-   CALT_BIBLE_URL, CALT_PRODUCTIVITY_URL */
+   applyContentScoreFromPolicy, CALT_BIBLE_URL, CALT_PRODUCTIVITY_URL */
 
 // Shared helpers are prepended by scripts/build_extension_workers.ps1 into service_worker.js
 
 var DNR_WATCH_RULE_BASE = 9200;
-var MAX_DNR_WATCH_HOSTS = 8;
+/** Cap DNR rules — SoftLand covers any overflow from server watch_domains. */
+var MAX_DNR_WATCH_HOSTS = 16;
 /** Hard-block distraction hosts in every mode (including FREE). */
 var DNR_PORN_RULE_BASE = 9300;
 var MAX_DNR_PORN_HOSTS = 40;
-var GATE_POLL_MS = 12000;
+/** Default poll; overwritten from browser.intervals.extension_gate_poll_s. */
+var GATE_POLL_MS =
+  typeof GATE_POLL_ACTIVE_S === "number" ? Math.max(4000, GATE_POLL_ACTIVE_S * 1000) : 4000;
 var SOFTLAND_DEDUP_MS = 15000;
 
 var extAPI = typeof chrome !== "undefined" && chrome.runtime ? chrome : browser;
@@ -829,6 +974,9 @@ var redirectsEnabled = true;
 var lastGateFetchAt = 0;
 var lastDnrFingerprint = "";
 var lastDnrPornFingerprint = "";
+/** Hosts currently covered by active DNR — SoftLand skips these only. */
+var activeDnrWatchHosts = [];
+var activeDnrPornHosts = [];
 var gatePollTimer = null;
 var lastAlertAt = 0;
 var softLandDone = Object.create(null);
@@ -856,7 +1004,7 @@ function lockedPageUrl() {
   return extAPI.runtime.getURL("locked.html");
 }
 
-function lockedPageUrlForBlocked(blockedUrl) {
+function lockedPageUrlForBlocked(blockedUrl, reason, untilIso) {
   var base = lockedPageUrl();
   var host = "";
   try {
@@ -864,16 +1012,23 @@ function lockedPageUrlForBlocked(blockedUrl) {
   } catch (e) {
     host = "";
   }
-  if (!host) return base;
-  var q = "host=" + encodeURIComponent(host);
+  if (!host && !reason && !untilIso) return base;
+  var q = host ? "host=" + encodeURIComponent(host) : "";
   try {
     if (blockedUrl && String(blockedUrl).indexOf("http") === 0) {
-      q += "&from=" + encodeURIComponent(String(blockedUrl).slice(0, 500));
+      q += (q ? "&" : "") + "from=" + encodeURIComponent(String(blockedUrl).slice(0, 500));
+    }
+    if (reason) {
+      q += (q ? "&" : "") + "why=" + encodeURIComponent(String(reason).slice(0, 80));
+    }
+    // SoftLand get_mode until (ISO) — native path; not temp-allow until.
+    if (untilIso) {
+      q += (q ? "&" : "") + "until=" + encodeURIComponent(String(untilIso).slice(0, 40));
     }
   } catch (e2) {
     /* ignore */
   }
-  return base + "?" + q;
+  return q ? base + "?" + q : base;
 }
 
 function gateCacheForBlockCheck() {
@@ -946,9 +1101,10 @@ function showBlockNotification(title, message) {
     extAPI.notifications.create("calt-gate-" + now, {
       type: "basic",
       iconUrl: "icon.png",
-      title: title || "CALT Gate",
-      message: message || "One tab redirected — Edge was not closed.",
-      priority: 1,
+      title: title || "CALT blocked a webpage",
+      message: message || "This site is SoftLand-blocked. Edge stayed open.",
+      priority: 2,
+      requireInteraction: false,
     });
   } catch (e) {
     /* ignore */
@@ -974,8 +1130,14 @@ async function syncDeclarativeWatchBlock(opts) {
   if (!extAPI.declarativeNetRequest || !extAPI.declarativeNetRequest.updateDynamicRules) {
     return;
   }
-  var raw = typeof FORCE_WATCH_HOSTS !== "undefined" ? FORCE_WATCH_HOSTS : ["youtube.com", "youtu.be"];
-  var hosts = raw.slice(0, MAX_DNR_WATCH_HOSTS);
+  var pol =
+    typeof browserPolicyOrFallback === "function"
+      ? browserPolicyOrFallback(gateCache && gateCache.browser)
+      : {};
+  var hosts =
+    typeof dnrHostList === "function"
+      ? dnrHostList(pol.force_watch_hosts || pol.watch_domains, pol.watch_domains, MAX_DNR_WATCH_HOSTS)
+      : (pol.watch_domains || FORCE_WATCH_HOSTS || []).slice(0, MAX_DNR_WATCH_HOSTS);
   var active = watchBlockActive();
   var fingerprint = (active ? "1" : "0") + "|" + hosts.join(",");
   if (!opts.force && fingerprint === lastDnrFingerprint) return;
@@ -990,6 +1152,7 @@ async function syncDeclarativeWatchBlock(opts) {
         addRules: [],
       });
       lastDnrFingerprint = fingerprint;
+      activeDnrWatchHosts = [];
       return;
     }
     var target = lockedPageUrl();
@@ -1010,6 +1173,7 @@ async function syncDeclarativeWatchBlock(opts) {
       addRules: addRules,
     });
     lastDnrFingerprint = fingerprint;
+    activeDnrWatchHosts = hosts.slice();
   } catch (e) {
     console.warn("CALT Gate: DNR watch sync failed", e);
   }
@@ -1021,11 +1185,14 @@ async function syncDeclarativePornBlock(opts) {
   if (!extAPI.declarativeNetRequest || !extAPI.declarativeNetRequest.updateDynamicRules) {
     return;
   }
-  var raw =
-    typeof FORCE_PORN_HOSTS !== "undefined" && FORCE_PORN_HOSTS.length
-      ? FORCE_PORN_HOSTS
-      : ["pornhub.com", "xvideos.com", "erome.com"];
-  var hosts = raw.slice(0, MAX_DNR_PORN_HOSTS);
+  var pol =
+    typeof browserPolicyOrFallback === "function"
+      ? browserPolicyOrFallback(gateCache && gateCache.browser)
+      : {};
+  var hosts =
+    typeof dnrHostList === "function"
+      ? dnrHostList(pol.force_porn_hosts || pol.porn_domains, pol.porn_domains, MAX_DNR_PORN_HOSTS)
+      : (pol.porn_domains || FORCE_PORN_HOSTS || []).slice(0, MAX_DNR_PORN_HOSTS);
   var active = redirectsEnabled !== false;
   var fingerprint = (active ? "1" : "0") + "|porn|" + hosts.join(",");
   if (!opts.force && fingerprint === lastDnrPornFingerprint) return;
@@ -1040,6 +1207,7 @@ async function syncDeclarativePornBlock(opts) {
         addRules: [],
       });
       lastDnrPornFingerprint = fingerprint;
+      activeDnrPornHosts = [];
       return;
     }
     var target = lockedPageUrl();
@@ -1060,9 +1228,20 @@ async function syncDeclarativePornBlock(opts) {
       addRules: addRules,
     });
     lastDnrPornFingerprint = fingerprint;
+    activeDnrPornHosts = hosts.slice();
   } catch (e) {
     console.warn("CALT Gate: DNR distraction sync failed", e);
   }
+}
+
+function hostCoveredByActiveDnr(host) {
+  if (!host) return false;
+  if (typeof listMatch === "function") {
+    if (activeDnrWatchHosts.length && listMatch(host, activeDnrWatchHosts)) return true;
+    if (activeDnrPornHosts.length && listMatch(host, activeDnrPornHosts)) return true;
+    return false;
+  }
+  return false;
 }
 
 function caltExtensionHeaders() {
@@ -1086,14 +1265,67 @@ function caltExtensionHeaders() {
   };
 }
 
-async function pollGate() {
+var gateFetchBackoffMs = 0;
+var gateNotifyWs = null;
+
+function noteGateFetchSuccess() {
+  gateFetchBackoffMs = 0;
+}
+
+function noteGateFetchFailure() {
+  if (!gateFetchBackoffMs) gateFetchBackoffMs = 30000;
+  else gateFetchBackoffMs = Math.min(300000, gateFetchBackoffMs * 2);
+  lastGateFetchAt = Date.now();
+}
+
+function connectGateNotifyWs() {
+  var url = typeof GATE_NOTIFY_WS_URL !== "undefined" ? GATE_NOTIFY_WS_URL : "ws://127.0.0.1:8000/ws/gate";
+  if (gateNotifyWs && (gateNotifyWs.readyState === WebSocket.OPEN || gateNotifyWs.readyState === WebSocket.CONNECTING)) {
+    return;
+  }
+  try {
+    gateNotifyWs = new WebSocket(url);
+    gateNotifyWs.onmessage = function (ev) {
+      try {
+        var msg = JSON.parse(ev.data);
+        if (msg && msg.type === "GATE_CHANGED") {
+          void pollGate({ force: true });
+        }
+      } catch (e) {
+        /* ignore */
+      }
+    };
+    gateNotifyWs.onclose = function () {
+      gateNotifyWs = null;
+      try {
+        extAPI.alarms.create("gate-ws-retry", { delayInMinutes: 1 });
+      } catch (e2) {
+        /* ignore */
+      }
+    };
+    gateNotifyWs.onerror = function () {
+      try {
+        gateNotifyWs.close();
+      } catch (e3) {
+        /* ignore */
+      }
+      gateNotifyWs = null;
+    };
+  } catch (e) {
+    console.warn("CALT Gate: notify WS unavailable", e);
+  }
+}
+
+async function pollGate(opts) {
+  opts = opts || {};
   var now = Date.now();
-  if (lastGateFetchAt && now - lastGateFetchAt < GATE_POLL_MS - 500) return;
+  if (!opts.force && lastGateFetchAt && now - lastGateFetchAt < desiredGatePollMs() - 500) return;
   try {
     var r = await fetch(GATE_API_URL, { cache: "no-store", headers: caltExtensionHeaders() });
     if (!r.ok) throw new Error("HTTP " + r.status);
     var g = await r.json();
     lastGateFetchAt = Date.now();
+    noteGateFetchSuccess();
     var morning = g.morning || {};
     var browser = g.browser || {};
     gateCache = {
@@ -1101,6 +1333,7 @@ async function pollGate() {
       stale: false,
       degraded: false,
       fetched_at: lastGateFetchAt,
+      policy_gen: g.policy_gen ?? null,
       locked: Boolean(g.locked),
       unlocked: Boolean(g.unlocked),
       enabled: Boolean(g.enabled),
@@ -1126,6 +1359,9 @@ async function pollGate() {
       enforce: Boolean(browser.enforce) || Boolean(g.locked),
     };
     await extAPI.storage.local.set({ gateCache: gateCache });
+    if (typeof applyContentScoreFromPolicy === "function") {
+      applyContentScoreFromPolicy(browserPolicyOrFallback(browser));
+    }
     var modeNow = String(browser.mode || "").toLowerCase();
     var freeNow =
       Boolean(g.day_unlimited) || Boolean(g.reward_day) || modeNow === "free";
@@ -1139,9 +1375,12 @@ async function pollGate() {
       Boolean(g.locked);
     var forceDnr = modeKey !== lastGateModeKey;
     if (forceDnr) lastGateModeKey = modeKey;
-    await syncDeclarativeWatchBlock({ force: forceDnr });
-    await syncDeclarativePornBlock({ force: forceDnr });
+    await syncDeclarativeWatchBlock({ force: forceDnr || opts.force });
+    await syncDeclarativePornBlock({ force: forceDnr || opts.force });
+    startPoll();
   } catch (e) {
+    noteGateFetchFailure();
+    startPoll();
     var err = String(e && e.message ? e.message : e);
     var prev = gateCache && typeof gateCache === "object" ? gateCache : null;
     var prevBrowser = (prev && prev.browser) || {};
@@ -1199,29 +1438,54 @@ async function pollGate() {
   }
 }
 
+function desiredGatePollMs() {
+  var s = typeof GATE_POLL_ACTIVE_S === "number" ? GATE_POLL_ACTIVE_S : 300;
+  try {
+    var iv = gateCache && gateCache.browser && gateCache.browser.intervals;
+    if (iv && Number(iv.extension_gate_poll_s) > 0) {
+      s = Number(iv.extension_gate_poll_s);
+    }
+  } catch (e) {
+    /* ignore */
+  }
+  var base = Math.max(4000, Math.min(600000, Math.round(s * 1000)));
+  if (gateFetchBackoffMs > base) return gateFetchBackoffMs;
+  return base;
+}
+
 function startPoll() {
-  if (gatePollTimer) return;
+  var ms = desiredGatePollMs();
+  if (gatePollTimer && GATE_POLL_MS === ms) return;
+  GATE_POLL_MS = ms;
+  if (gatePollTimer) {
+    clearInterval(gatePollTimer);
+    gatePollTimer = null;
+  }
   gatePollTimer = setInterval(function () {
     void pollGate();
   }, GATE_POLL_MS);
 }
 
-extAPI.alarms.create("gate-poll", { periodInMinutes: 1 });
+extAPI.alarms.create("gate-poll", { periodInMinutes: 5 });
 extAPI.alarms.onAlarm.addListener(function (alarm) {
-  if (alarm.name === "gate-poll") void pollGate();
+  if (alarm.name === "gate-poll") void pollGate({ force: true });
+  if (alarm.name === "gate-ws-retry") connectGateNotifyWs();
 });
 
 extAPI.runtime.onInstalled.addListener(function () {
   startPoll();
-  void pollGate();
+  connectGateNotifyWs();
+  void pollGate({ force: true });
 });
 extAPI.runtime.onStartup.addListener(function () {
   startPoll();
-  void pollGate();
+  connectGateNotifyWs();
+  void pollGate({ force: true });
 });
 
 startPoll();
-void pollGate();
+connectGateNotifyWs();
+void pollGate({ force: true });
 
 async function softLandBlockedTab(tabId, spaUrl, meta) {
   if (tabId == null || !redirectsEnabled || redirectsPausedByCircuit()) return false;
@@ -1270,9 +1534,11 @@ async function softLandBlockedTab(tabId, spaUrl, meta) {
       tab_id: tabId,
       notify: true,
     });
+    var why = meta.kind ? String(meta.kind) : "blocked";
+    var site = meta.host || blockedUrl.slice(0, 80) || "site";
     showBlockNotification(
-      "CALT Gate redirected this tab",
-      "Edge was not closed. Blocked: " + (meta.host || blockedUrl.slice(0, 80) || "site")
+      "CALT blocked a webpage",
+      site + " · " + why + " — SoftLand redirected this tab (browser stayed open)."
     );
     await extAPI.tabs.update(tabId, { url: target });
     softLandDone[tabId] = { target: target, at: Date.now() };
@@ -1284,10 +1550,67 @@ async function softLandBlockedTab(tabId, spaUrl, meta) {
   }
 }
 
+async function softlandNativeGetMode(url) {
+  // Prod P3: Gate → com.calt.msg_host → C++ SoftLand (softland_policy.json).
+  // Set storage caltSoftlandHttpFallback=true to skip native and use HTTP path only.
+  return new Promise(function (resolve) {
+    try {
+      extAPI.storage.local.get(["caltSoftlandHttpFallback"], function (st) {
+        if (st && st.caltSoftlandHttpFallback) {
+          resolve(null);
+          return;
+        }
+        if (!extAPI.runtime || typeof extAPI.runtime.connectNative !== "function") {
+          resolve(null);
+          return;
+        }
+        var port;
+        try {
+          port = extAPI.runtime.connectNative("com.calt.msg_host");
+        } catch (e) {
+          resolve(null);
+          return;
+        }
+        var done = false;
+        var timer = setTimeout(function () {
+          if (done) return;
+          done = true;
+          try {
+            port.disconnect();
+          } catch (e2) {}
+          resolve(null);
+        }, 900);
+        port.onMessage.addListener(function (msg) {
+          if (done) return;
+          done = true;
+          clearTimeout(timer);
+          try {
+            port.disconnect();
+          } catch (e3) {}
+          resolve(msg && typeof msg === "object" ? msg : null);
+        });
+        port.onDisconnect.addListener(function () {
+          if (done) return;
+          done = true;
+          clearTimeout(timer);
+          resolve(null);
+        });
+        port.postMessage({
+          type: "get_mode",
+          schema_version: 1,
+          url: String(url || ""),
+          tab_id: null,
+          now: null,
+        });
+      });
+    } catch (e) {
+      resolve(null);
+    }
+  });
+}
+
 async function maybeRedirectTab(tabId, url, title) {
   if (!redirectsEnabled) return false;
-  var gc = gateCacheForBlockCheck();
-  if (!gc || (!gc.ok && !gc.degraded)) return false;
   if (!url || (typeof isExtensionOrInternalUrl === "function" && isExtensionOrInternalUrl(url))) return false;
   if (url.indexOf("locked.html") >= 0) return false;
   if (typeof isCaltSpaUrl === "function" && isCaltSpaUrl(url)) return false;
@@ -1298,24 +1621,50 @@ async function maybeRedirectTab(tabId, url, title) {
   } catch (e) {
     host = "";
   }
-  // Watch / distraction hosts = DNR only — never also softLand (Edge double-hit crash).
-  if (host && typeof isForceWatchHost === "function" && isForceWatchHost(host) && watchBlockActive()) {
+  if (host && hostCoveredByActiveDnr(host)) {
     return false;
   }
-  if (host && typeof isForcePornHost === "function" && isForcePornHost(host)) {
+
+  // Prefer native SoftLand decide (works with uvicorn stopped).
+  var native = await softlandNativeGetMode(url);
+  if (native && native.ok !== false && native.action) {
+    if (native.action === "allow" || native.action === "none") return false;
+    if (native.action === "block" && native.enforce !== false) {
+      var kindN = native.reason || "blocked";
+      reportGateAlert(kindN, url.slice(0, 120));
+      var spaN = lockedPageUrlForBlocked(url, kindN, native.until || "");
+      return softLandBlockedTab(tabId, spaN, {
+        fromUrl: url,
+        kind: kindN,
+        host: host || native.matched || "",
+        until: native.until || "",
+      });
+    }
     return false;
   }
+
+  // Prod P4: SoftLand HTTP :8000 fallback is opt-in debug only (caltSoftlandHttpFallback=true).
+  var allowHttpFallback = await new Promise(function (resolve) {
+    try {
+      extAPI.storage.local.get(["caltSoftlandHttpFallback"], function (st) {
+        resolve(!!(st && st.caltSoftlandHttpFallback));
+      });
+    } catch (e) {
+      resolve(false);
+    }
+  });
+  if (!allowHttpFallback) {
+    return false;
+  }
+
+  // HTTP fallback (debug) when native host missing / failed AND flag set.
+  var gc = gateCacheForBlockCheck();
+  if (!gc || (!gc.ok && !gc.degraded)) return false;
   if (!shouldBlockUrl(url, gc, title || "")) return false;
-  var browser = gc.browser || {};
-  var cat =
-    typeof classifyHostCategory === "function"
-      ? classifyHostCategory(host, browserPolicyOrFallback(browser))
-      : "";
-  if (cat === "watch" && watchBlockActive()) return false;
 
   var kind = typeof blockKindForUrl === "function" ? blockKindForUrl(url, gc, title || "") : "blocked";
   reportGateAlert(kind, url.slice(0, 120));
-  var spa = redirectTargetUrl(gc, lockedPageUrlForBlocked(url));
+  var spa = redirectTargetUrl(gc, lockedPageUrlForBlocked(url, kind));
   if (spa && spa.indexOf("locked.html") >= 0) {
     var next = (gc.morning && gc.morning.next) || "";
     var mode = String((gc.browser && gc.browser.mode) || "").toLowerCase();
@@ -1324,10 +1673,10 @@ async function maybeRedirectTab(tabId, url, title) {
     } else if (next === "plan" || mode === "planning") {
       spa = (gc.browser && gc.browser.plan_url) || CALT_PRODUCTIVITY_URL;
     } else {
-      spa = lockedPageUrlForBlocked(url);
+      spa = lockedPageUrlForBlocked(url, kind);
     }
   } else if (!spa) {
-    spa = lockedPageUrlForBlocked(url);
+    spa = lockedPageUrlForBlocked(url, kind);
   }
   return softLandBlockedTab(tabId, spa, { fromUrl: url, kind: kind, host: host });
 }
@@ -1367,16 +1716,25 @@ extAPI.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
     }
     var lockUrl = String(msg.url || "");
     var tabId = sender && sender.tab && sender.tab.id;
-    reportGateAlert(
-      "distraction",
-      "content_score:" + String(msg.score || 0) + " " + lockUrl.slice(0, 100)
-    );
-    if (typeof tabId === "number") {
-      void softLandBlockedTab(tabId, lockedPageUrlForBlocked(lockUrl), {
-        fromUrl: lockUrl,
-        kind: "content_score",
-      });
-    }
+    // Prod P3: honor native SoftLand (off / free → do not SoftLand from content score alone).
+    void (async function () {
+      var native = await softlandNativeGetMode(lockUrl);
+      if (native && native.ok !== false) {
+        if (!native.softland_enabled || native.action === "allow" || native.mode === "free") {
+          return;
+        }
+      }
+      reportGateAlert(
+        "distraction",
+        "content_score:" + String(msg.score || 0) + " " + lockUrl.slice(0, 100)
+      );
+      if (typeof tabId === "number") {
+        void softLandBlockedTab(tabId, lockedPageUrlForBlocked(lockUrl), {
+          fromUrl: lockUrl,
+          kind: "content_score",
+        });
+      }
+    })();
     sendResponse({ ok: true });
     return false;
   }

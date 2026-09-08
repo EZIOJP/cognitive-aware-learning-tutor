@@ -1,0 +1,328 @@
+{
+  "schema_version": 1,
+  "kind": "math",
+  "topic": {
+    "topic_id": "math.aptitude.saket-accenture",
+    "title": "Programming aptitude — Accenture",
+    "stage": "foundations",
+    "path": [
+      "Aptitude",
+      "SAKET",
+      "Accenture"
+    ],
+    "track": "aptitude",
+    "prerequisites": [],
+    "note_topic_ids": [
+      "MT1-T13"
+    ],
+    "description": "Interview coding aptitude from Accenture."
+  },
+  "questions": [
+    {
+      "id": "math.aptitude.saket-accenture.q0001",
+      "problem": "**Accenture · Que 1 - Rat Count House**\n\nQuestion 1: Rat Count House\n(Asked in Accenture OnCampus 10 Aug 2021, Slot 1)\n\nProblem Description :\n\nThe function accepts two positive integers ‘r’ and ‘unit’ and a positive integer array ‘arr’ of size ‘n’ as its argument ‘r’ represents the number of rats present in an area, ‘unit’ is the amount of food each rat consumes and each ith element of array ‘arr’ represents the amount of food present in ‘i+1’ house number, where 0 <= i\n\nNote:\n\nReturn -1 if the array is null\nReturn 0 if the total amount of food from all houses is not sufficient for all the rats.\nComputed values lie within the integer range.\nExample:\n\nInput:\n\nr: 7\nunit: 2\nn: 8\narr: 2 8 3 5 7 4 1 2\nOutput:\n\n4\n\nExplanation:\n\nTotal amount of food required for all rats = r * unit\n\n= 7 * 2 = 14.\n\nThe amount of food in 1st houses = 2+8+3+5 = 18. Since, amount of food in 1st 4 houses is sufficient for all the rats. Thus, output is 4.\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "4",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: r: 7 | unit: 2 | n: 8 | arr: 2 8 3 5 7 4 1 2",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "accenture"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-accenture.q0002",
+      "problem": "**Accenture · Que 10**\n\nQuestion:10\n(Asked in Accenture Offcampus 1 Aug 2021, Slot 2)\n\nProblem Statement\n\nA carry is a digit that is transferred to left if sum of digits exceeds 9 while adding two numbers from right-to-left one digit at a time\n\nYou are required to implement the following function.\n\nInt NumberOfCarries(int num1 , int num2);\n\nThe functions accepts two numbers ‘num1’ and ‘num2’ as its arguments. You are required to calculate and return  the total number of carries generated while adding digits of two numbers ‘num1’ and ‘ num2’.\n\nAssumption: num1, num2>=0\n\nExample:\n\nInput\nNum 1: 451\nNum 2: 349\nOutput\n2\nExplanation:\n\nAdding ‘num 1’ and ‘num 2’ right-to-left results in 2 carries since ( 1+9) is 10. 1 is carried and (5+4=1) is 10, again 1 is carried. Hence 2 is returned.\n\nSample Input\n\nNum 1: 23\n\nNum 2: 563\n\nSample Output\n\n0\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "2",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: Num 1: 451 | Num 2: 349 | Output | 2 | Explanation: |  | Adding ‘num 1’ and ‘num 2’ right-to-left results in 2 carries since ( 1+9) is 10. 1 is carried and (5+…",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "accenture"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-accenture.q0003",
+      "problem": "**Accenture · Que 11**\n\nQuestion:11\n(Asked in Accenture Offcampus 1 Aug 2021, Slot 3)\n\nProblem Statement\n\nYou are given a function,\n\nVoid *ReplaceCharacter(Char str[], int n, char ch1, char ch2);\n\nThe function accepts a string  ‘ str’ of length n and two characters ‘ch1’ and ‘ch2’ as its arguments . Implement the function to modify and return the string ‘ str’ in such a way that all occurrences of ‘ch1’ in original string are replaced by ‘ch2’ and all occurrences of ‘ch2’  in original string are replaced by ‘ch1’.\n\nAssumption: String Contains only lower-case alphabetical letters.\n\nNote:\n\nReturn null if string is null.\nIf both characters are not present in string or both of them are same , then return the string unchanged.\nExample:\n\nInput:\nStr: apples\nch1:a\nch2:p\nOutput:\npaales\nExplanation:\n\n‘A’ in original string is replaced with ‘p’ and ‘p’ in original string is replaced with ‘a’, thus output is paales.\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "paales",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: Str: apples | ch1:a | ch2:p",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "accenture"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-accenture.q0004",
+      "problem": "**Accenture · Que 12**\n\nQuestion:13\n(Asked in Accenture Offcampus 2 Aug 2021, Slot 2)\n\nProblem Statement\n\nYou are given a function,\n\nInt MaxExponents (int a , int b);\n\nYou have to find and return the number between ‘a’ and ‘b’ ( range inclusive on both ends) which has the maximum exponent of 2.\n\nThe algorithm to find the number with maximum exponent of 2 between the given range is\n\nLoop between ‘a’ and ‘b’. Let the looping variable be ‘i’.\nFind the exponent (power) of 2 for each ‘i’ and store the number with maximum exponent of 2 so faqrd in a variable , let say ‘max’. Set ‘max’ to ‘i’ only if ‘i’ has more exponent of 2 than ‘max’.\nReturn ‘max’.\nAssumption: a <b\n\nNote: If two or more numbers in the range have the same exponents of  2 , return the small number.\n\nExample\n\nInput:\n7\n12\nOutput:\n8\nExplanation:\n\nExponents of 2 in:\n\n7-0\n\n8-3\n\n9-0\n\n10-1\n\n11-0\n\n12-2\n\nHence maximum exponent if two is of 8.\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "8",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: 7 | 12",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "accenture"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-accenture.q0005",
+      "problem": "**Accenture · Que 13**\n\nQuestion:12\n(Asked in Accenture Offcampus 2 Aug 2021, Slot 1)\n\nProblem Statement\n\nYou are required to implement the following function.\n\nInt OperationChoices(int c, int n, int a , int b )\n\nThe function accepts 3 positive integers ‘a’ , ‘b’ and ‘c ‘ as its arguments. Implement the function to return.\n\n( a+ b ) , if c=1\n( a – b ) , if c=2\n( a * b ) ,  if c=3\n(a / b) ,  if c =4\nAssumption : All operations will result in integer output.\n\nExample:\n\nInput\nc :1\na:12\nb:16\nOutput:\nSince ‘c’=1 , (12+16) is performed which is equal to 28 , hence 28 is returned.\nSample Input\n\n c : 2\n\n a : 16\n\n b : 20\n\nSample Output\n\n-4\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": ".",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: c :1 | a:12 | b:16",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "accenture"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-accenture.q0006",
+      "problem": "**Accenture · Que 14**\n\nQuestion : 14\n(Asked in Accenture Offcampus 2 Aug 2021, Slot 3)\n\nProblem Statement\n\nYou are required to implement the following function:\n\nInt Calculate(int m, int n);\n\nThe function accepts 2 positive integer ‘m’ and ‘n’ as its arguments.You are required to calculate the sum of numbers divisible both by 3 and 5, between ‘m’ and ‘n’ both inclusive and return the same.\nNote\n0 < m <= n\n\nExample\n\nInput:\n\nm : 12\n\nn : 50\n\nOutput\n\n90\n\nExplanation:\nThe numbers divisible by both 3 and 5, between 12 and 50 both inclusive are {15, 30, 45} and their sum is 90.\nSample Input\nm : 100\nn : 160\nSample Output\n510\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "90",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: m : 12 |  | n : 50 |  | Output |  | 90 |  | Explanation: | The numbers divisible by both 3 and 5, between 12 and 50 both inclusive are {15, 30, 45} and their s…",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "accenture"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-accenture.q0007",
+      "problem": "**Accenture · Que 15**\n\nQuestion 15\nProblem Statement \n\nYou are required to input the size of the matrix then the elements of matrix, then you have to divide the main matrix in two sub matrices (even and odd) in such a way that element at 0 index will be considered as even and element at 1st index will be considered as odd and so on. then you have sort the even and odd matrices in ascending order then print the sum of second largest number from both the matrices\n\nExample\n\nenter the size of array : 5\nenter element at 0 index : 3\nenter element at 1 index : 4\nenter element at 2 index : 1\nenter element at 3 index : 7\nenter element at 4 index : 9\nSorted even array : 1 3 9\nSorted odd array : 4 7\n\n7\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "",
+      "answer_format": "open",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: the size of the matrix then the elements of matrix, then you have to divide the main matrix in two sub matrices (even and odd) in such a way that element at 0 …",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "accenture",
+        "no-answer",
+        "open"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-accenture.q0008",
+      "problem": "**Accenture · Que 16**\n\nQuestion : 16\nInstructions: You are required to write the code. You can click on compile and run anytime to check compilation/execution status. The code should be logically/syntactically correct.\n\nProblem: Write a program in C to display the table of a number and print the sum of all the multiples in it.\n\nTest Cases:\n\nTest Case 1:\nInput:\n5\nExpected Result Value:\n5, 10, 15, 20, 25, 30, 35, 40, 45, 50\n275\n\nTest Case 2:\nInput:\n12\nExpected Result Value:\n12, 24, 36, 48, 60, 72, 84, 96, 108, 120\n660\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "5, 10, 15, 20, 25, 30, 35, 40, 45, 50",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: 5 | Expected Result Value: | 5, 10, 15, 20, 25, 30, 35, 40, 45, 50 | 275 |  | Test Case 2: | Input: | 12 | Expected Result Value: | 12, 24, 36, 48, 60, 72, 84,…",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "accenture"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-accenture.q0009",
+      "problem": "**Accenture · Que 17**\n\nQuestion : 17\nInstructions: You are required to write the code. You can click on compile and run anytime to check compilation/execution status. The code should be logically/syntactically correct.\n\nQuestion: Write a program in C such that it takes a lower limit and upper limit as inputs and print all the intermediate palindrome numbers.\n\nTest Cases:\n\nTestCase 1:\nInput :\n10 , 80\nExpected Result:\n11 , 22 , 33 , 44 , 55 , 66 , 77.\n\nTest Case 2:\nInput:\n100,200\nExpected Result:\n101 , 111 , 121 , 131 , 141 , 151 , 161 , 171 , 181 , 191.\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "",
+      "answer_format": "open",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: s and print all the intermediate palindrome numbers. |  | Test Cases: |  | TestCase 1: | Input : | 10 , 80 | Expected Result: | 11 , 22 , 33 , 44 , 55 , 66 , 7…",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "accenture",
+        "no-answer",
+        "open"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-accenture.q0010",
+      "problem": "**Accenture · Que 18**\n\nQuestion : 18\n\nInstructions: You are required to write the code. You can click on compile & run anytime to check the compilation/ execution status of the program. The submitted code should be logically/syntactically correct and pass all the test cases.\n\nQues: The program is supposed to calculate the distance between three points.\n\nFor\nx1 = 1 y1 = 1\nx2 = 2 y2 = 4\nx3 = 3 y3 = 6\n\nDistance is calculated as : sqrt(x2-x1)2 + (y2-y1)2\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "",
+      "answer_format": "open",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Trace the sample carefully; watch null / edge cases.",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "accenture",
+        "no-answer",
+        "open"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-accenture.q0011",
+      "problem": "**Accenture · Que 19**\n\nQuestion : 19\n\nFind the maximum value and its index in the array\n\nProblem Statement :\n\nYou are given a function, void MaxInArray(int arr[], int length); The function accepts an integer array ‘arr’ of size ‘length’ as its argument. Implement the function to find the maximum element of the array and print the maximum element and its index to the standard output \n\n(STDOUT). The maximum element and its index should be printed in separate lines.\n\nNote: \n\nArray index starts with 0 \nMaximum element and its index should be separated by a line in the output \nAssume there is only 1 maximum element in the array \nPrint exactly what is asked, do not print any additional greeting messages \nExample: \n\nInput: \n\n23 45 82 27 66 12 78 13 71 86 \n\nOutput: \n\n86 \n\n9 \n\nExplanation: \n\n86 is the maximum element of the array at index 9.\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "(STDOUT). The maximum element and its index should be printed in separate lines.",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: 23 45 82 27 66 12 78 13 71 86",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "accenture"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-accenture.q0012",
+      "problem": "**Accenture · Que 2**\n\nQuestion 2: \n(Asked in Accenture OnCampus 10 Aug 2021, Slot 2)\n\nProblem Description :\n\nThe Binary number system only uses two digits, 0 and 1 and number system can be called binary string. You are required to implement the following function:\n\nint OperationsBinaryString(char* str);\n\nThe function accepts a string str as its argument. The string str consists of binary digits eparated with an alphabet as follows:\n\n– A denotes AND operation\n– B denotes OR operation\n– C denotes XOR Operation\nYou are required to calculate the result of the string str, scanning the string to right taking one opearation at a time, and return the same.\n\nNote:\n\nNo order of priorities of operations is required\nLength of str is odd\nIf str is NULL or None (in case of Python), return -1\nInput:\n\nstr: 1C0C1C1A0B1\n\nOutput:\n\n1\n\nExplanation:\n\nThe alphabets in str when expanded becomes “1 XOR 0 XOR 1 XOR 1 AND 0 OR 1”, result of the expression becomes 1, hence 1 is returned.\n\nSample Input:\n\n0C1A1B1C1C1B0A0\n\nOutput:\n\n0\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "1",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: str: 1C0C1C1A0B1",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "accenture"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-accenture.q0013",
+      "problem": "**Accenture · Que 20 - Autobiographical Number**\n\nQuestion : 20\n\nAutobiographical Number\n\nProblem Statement :\n\nAn Autobiographical Number is a number N such that the first digit of N represents the count of how many zeroes are there in N, the second digit represents the count of how many ones are there in N and so on.\n\nYou are given a function, def FindAutoCount(n):\n\nThe function accepts string “n” which is a number and checks whether the number is an autobiographical number or not. If it is, an integer is returned, i.e. the count of distinct numbers in ‘n’. If not, it returns 0.\n\nAssumption:\n\nThe input string will not be longer than 10 characters.\nInput string will consist of numeric characters.\nNote:\n\nIf string is None return 0.\n\nExample:\n\nInput:\n\nn: “1210”\n\nOutput:\n\n3\n\nExplanation:\n\n0th position in the input contains the number of 0 present in input, i.e. 1, in 1st position the count of number of 1s in input i.e. 2, in 2nd position the count of 2s in input i.e. 1, and in 3rd position the count of 3s i.e. 0, so the number is an autobiographical number.\n\nNow unique numbers in the input are 0, 1, 2, so the count of unique numbers is 3. So 3 is returned.\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "3",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: string will not be longer than 10 characters. | Input string will consist of numeric characters. | Note: |  | If string is None return 0. |  | Example: |  | In…",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "accenture"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-accenture.q0014",
+      "problem": "**Accenture · Que 3 - Password Checker**\n\nQuestion 3: Password Checker\n(Asked in Accenture OnCampus 10 Aug 2021, Slot 3)\n\nYou are given a function.\nint CheckPassword(char str[], int n);\nThe function accepts string str of size n as an argument. Implement the function which returns 1 if given string str is valid password else 0.\nstr is a valid password if it satisfies the below conditions.\n\n– At least 4 characters\n– At least one numeric digit\n– At Least one Capital Letter\n– Must not have space or slash (/)\n– Starting character must not be a number\nAssumption:\nInput string will not be empty.\n\nExample:\n\nInput:\naA1_67\nOutput:\n1\n\nSample Input:\na987 abC012\nOutput:\n0\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "1",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: string will not be empty. |  | Example: |  | Input: | aA1_67",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "accenture"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-accenture.q0015",
+      "problem": "**Accenture · Que 4**\n\nQuestion 4:\n(Asked in Accenture OnCampus 11 Aug 2021, Slot 1)\n\nYou are given a function,\nint findCount(int arr[], int length, int num, int diff);\n\nThe function accepts an integer array ‘arr’, its length and two integer variables ‘num’ and ‘diff’. Implement this function to find and return the number of elements of ‘arr’ having an absolute difference of less than or equal to ‘diff’ with ‘num’.\nNote: In case there is no element in ‘arr’ whose absolute difference with ‘num’ is less than or equal to ‘diff’, return -1.\n\nExample:\nInput:\n\narr: 12 3 14 56 77 13\nnum: 13\ndiff: 2\nOutput:\n3\n\nExplanation:\nElements of ‘arr’ having absolute difference of less than or equal to ‘diff’ i.e. 2 with ‘num’ i.e. 13 are 12, 13 and 14.\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "3",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: arr: 12 3 14 56 77 13 | num: 13 | diff: 2",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "accenture"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-accenture.q0016",
+      "problem": "**Accenture · Que 5**\n\nQuestion 5 :\n(Asked in Accenture OnCampus 11 Aug 2021, Slot 2)\n\nImplement the following Function \n\ndef differenceofSum(n. m)\n\nThe function accepts two integers n, m as arguments Find the sum of all numbers in range from 1 to m(both inclusive) that are not divisible by n. Return difference between sum of integers not divisible by n with sum of numbers divisible by n.\n\nAssumption:\n\nn>0 and m>0\nSum lies between integral range\nExample\n\nInput\nn:4\nm:20\nOutput\n90\n\nExplanation\n\nSum of numbers divisible by 4 are 4 + 8 + 12 + 16 + 20 = 60\nSum of numbers not divisible by 4 are 1 +2 + 3 + 5 + 6 + 7 + 9 + 10 + 11 + 13 + 14 + 15 + 17 + 18 + 19 = 150\nDifference 150 – 60 = 90\nSample Input\nn:3\nm:10\nSample Output\n19\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "90",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: n:4 | m:20 | Output | 90 |  | Explanation |  | Sum of numbers divisible by 4 are 4 + 8 + 12 + 16 + 20 = 60 | Sum of numbers not divisible by 4 are 1 +2 + 3 + 5…",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "accenture"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-accenture.q0017",
+      "problem": "**Accenture · Que 6**\n\nQuestion:6\n(Asked in Accenture OnCampus 11 Aug 2021, Slot 3)\n\nYou are required to implement the following Function \n\ndef LargeSmallSum(arr)\n\nThe function accepts an integers arr of size ’length’ as its arguments you are required to return the sum of second largest  element from the even positions and second smallest from the odd position of given ‘arr’\n\nAssumption:\n\nAll array elements are unique\nTreat the 0th position as even\nNOTE\n\nReturn 0 if array is empty\nReturn 0, if array length is 3 or less than 3\nExample\n\nInput\n\narr:3 2 1 7 5 4\n\nOutput\n\n7\n\nExplanation\n\nSecond largest among even position elements(1 3 5) is 3\nSecond smallest among odd position element is 4\nThus output is 3+4 = 7\nSample Input\n\narr:1 8 0 2 3 5 6\n\nSample Output\n\n8\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "7",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: arr:3 2 1 7 5 4 |  | Output |  | 7 |  | Explanation |  | Second largest among even position elements(1 3 5) is 3 | Second smallest among odd position element i…",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "accenture"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-accenture.q0018",
+      "problem": "**Accenture · Que 7**\n\nQuestion:7\n(Asked in Accenture OnCampus 12 Aug 2021, Slot 1)\n\nImplement the following Function\n\ndef ProductSmallestPair(sum, arr)\n\nThe function accepts an integers sum and an integer array arr of size n. Implement the function to find the pair, (arr[j], arr[k]) where j!=k, Such that arr[j] and arr[k] are the least two elements of array (arr[j] + arr[k] <= sum) and return the product of element of this pair\n\nNOTE\n\nReturn -1 if array is empty or if n<2\nReturn 0, if no such pairs found\nAll computed values lie within integer range\nExample\n\nInput\n\nsum:9\n\nArr:5 2 4 3 9 7 1\n\nOutput\n\n2\n\nExplanation\n\nPair of least two element is (2, 1) 2 + 1 = 3 < 9, Product of (2, 1) 2*1 = 2. Thus, output is 2\n\nSample Input\n\nsum:4\n\nArr:9 8 3 -7 3 9\n\nSample Output\n\n-21\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "2",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: sum:9 |  | Arr:5 2 4 3 9 7 1 |  | Output |  | 2 |  | Explanation |  | Pair of least two element is (2, 1) 2 + 1 = 3 < 9, Product of (2, 1) 2*1 = 2. Thus, outpu…",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "accenture"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-accenture.q0019",
+      "problem": "**Accenture · Que 8**\n\nQuestion:8\n(Asked in Accenture OnCampus 12 Aug 2021, Slot 2)\n\nN-base notation is a system for writing numbers that uses only n different symbols, This symbols are the first n symbols from the given notation list(Including the symbol for o) Decimal to n base notation are (0:0, 1:1, 2:2, 3:3, 4:4, 5:5, 6:6, 7:7, 8:8, 9:9, 10:A,11:B and so on upto 35:Z)\n\nImplement the following function\n\nChar* DectoNBase(int n, int num):\n\nThe function accept positive integer n and num Implement the function to calculate the n-base equivalent of num and return the same as a string\n\nSteps:\n\nDivide the decimal number by n,Treat the division as the integer division\nWrite the the remainder (in  n-base notation)\nDivide the quotient again by n, Treat the division as integer division\nRepeat step 2 and 3 until the quotient is 0\nThe n-base value is the sequence of the remainders from last to first\nAssumption:\n\n1 < n < = 36\n\nExample\n\nInput\n\nn: 12\n\nnum: 718\n\nOutput\n\n4BA\n\nExplanation\n\nnum       Divisor       quotient       remainder\n\n718           12               59                 10(A)\n\n59             12                4                   11(B)\n\n4               12                0                   4(4)\n\nSample Input\n\nn: 21\n\nnum: 5678\n\nSample Output\n\nCI8\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "4BA",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: n: 12 |  | num: 718 |  | Output |  | 4BA |  | Explanation |  | num       Divisor       quotient       remainder |  | 718           12               59         …",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "accenture"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-accenture.q0020",
+      "problem": "**Accenture · Que 9**\n\nQuestion:9\n(Asked in Accenture Offcampus 1 Aug 2021, Slot 1)\n\nImplement the following functions.a\n\nchar*MoveHyphen(char str[],int n);\n\nThe function accepts a string “str” of length ‘n’, that contains alphabets and hyphens (-). Implement the function to move all hyphens(-) in the string to the front of the given string.\n\nNOTE:- Return null if str is null.\n\nExample :-\n\nInput:\nstr.Move-Hyphens-to-Front\nOutput:\n—MoveHyphenstoFront\nExplanation:-\n\nThe string “Move-Hyphens -to-front” has 3 hyphens (-), which are moved to the front of the string, this output is “— MoveHyphen”\n\nSample Input\n\nStr: String-Compare\nSample Output-\n\n-StringCompare\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "—MoveHyphenstoFront",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: str.Move-Hyphens-to-Front",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "accenture"
+      ]
+    }
+  ]
+}

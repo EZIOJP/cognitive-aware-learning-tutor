@@ -1,0 +1,832 @@
+{
+  "schema_version": 1,
+  "kind": "math",
+  "topic": {
+    "topic_id": "math.aptitude.sat-geometry",
+    "title": "SAT Geometry & Trig",
+    "stage": "foundations",
+    "path": [
+      "Aptitude",
+      "SAT",
+      "Geometry and Trigonometry"
+    ],
+    "track": "aptitude",
+    "prerequisites": [],
+    "note_topic_ids": [
+      "MT1-T14"
+    ],
+    "description": "College Readiness / SAT-style items (Geometry and Trigonometry)."
+  },
+  "questions": [
+    {
+      "id": "math.aptitude.sat-geometry.q0001",
+      "problem": "A student launches a model rocket at a $60^\\circ$ angle from the horizontal ground. If the rocket travels 200 meters along its path, what is the horizontal distance, in meters, from the launch point to where the rocket lands?\n\nOptions:\nA) 50 meters\nB) 100 meters\nC) 173 meters\nD) 200 meters",
+      "answer": "100 meters",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "The setup/stem is really unclear and misleading. The question reads like a trajectory/physics problem (or a problem with quadratics). If this question is kept, I suggest either changing the stem topic away from a rocket launch, or adjusting the vocabulary (ex: the rocket will not land in this case, as the problem says).",
+      "hint": "Skill: Right triangles and trigonometry",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "right-triangles-and-trigonometry"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-geometry.q0002",
+      "problem": "A student launches a model rocket at a $60^\\circ$ angle from the horizontal ground. If the rocket travels 200 meters along its path, what is the horizontal distance, in meters, from the launch point to where the rocket lands?\n\nOptions:\nA) 50 meters\nB) 100 meters\nC) 173 meters\nD) 200 meters",
+      "answer": "100 meters",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "The trajectory of a rocket is parabolic. This problem does not make sense.",
+      "hint": "Skill: Right triangles and trigonometry",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "right-triangles-and-trigonometry"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-geometry.q0003",
+      "problem": "A student launches a model rocket at a $60^\\circ$ angle from the horizontal ground. If the rocket travels 200 meters along its path, what is the horizontal distance, in meters, from the launch point to where the rocket lands?\n\nOptions:\nA) 50 meters\nB) 100 meters\nC) 173 meters\nD) 200 meters",
+      "answer": "100 meters",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "I reviewed this item already",
+      "hint": "Skill: Right triangles and trigonometry",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "right-triangles-and-trigonometry"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-geometry.q0004",
+      "problem": "A rectangular garden is divided diagonally into two right triangular sections. Each triangular section has an area of 30 square meters. If one leg of the triangle measures 5 meters, what is the length of the diagonal that divides the garden? (The area of a triangle is $A = \\frac{1}{2}bh.)\n\nOptions:\nA) 8 meters\nB) 12 meters\nC) 17 meters\nD) 13 meters",
+      "answer": "13 meters",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Include the formula for the area of a triangle.",
+      "hint": "Skill: Right triangles and trigonometry",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "right-triangles-and-trigonometry"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-geometry.q0005",
+      "problem": "If $\\sin(4\\x^\\circ) = \\cos(\\x^\\circ + 15^\\circ)$ and all angles involved are acute, what is the value of $\\x$?\n\nOptions:\nA) $25$\nB) $21$\nC) $15$\nD) $35$",
+      "answer": "$15$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "I originally read this as 40 instead of 4 theta. I suggest using x instead of theta, because I fear students picking the wrong answer because they misread the problem like I did.",
+      "hint": "Skill: Right triangles and trigonometry",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "right-triangles-and-trigonometry"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-geometry.q0006",
+      "problem": "If $\\sin(3\\theta^\\circ) = \\cos(\\theta^\\circ + 10^\\circ)$ and all angles involved are acute, what is the value of $\\theta$?\n\nOptions:\nA) $20$\nB) $25$\nC) $40$\nD) $50$",
+      "answer": "$20$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "I have really mixed feelings about this problem. Ultimately though, the answer is WAY too obvious and one can quickly just plug in the provided answers for theta. It does not require that the student know anything about the task at all.",
+      "hint": "Skill: Right triangles and trigonometry",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "right-triangles-and-trigonometry"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-geometry.q0007",
+      "problem": "Triangles RST and UVW are similar right triangles. Triangle RST has legs measuring 5 meters and 13 meters, with a hypotenuse of 14 meters. If leg UV in triangle UVW measures 35 meters, what is the tangent of the largest angle in triangle UVW?\n\nOptions:\nA) $5/13$\nB) $13/5$\nC) $13/14$\nD) $35/13$",
+      "answer": "$13/5$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Similarity is not required to solve the problem and a lot of extra information is provided because the tangent of the angles will remain the same since they have the same angle and proportional corresponding sides.",
+      "hint": "Skill: Right triangles and trigonometry",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "right-triangles-and-trigonometry"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-geometry.q0008",
+      "problem": "A lighthouse keeper observes a ship through a telescope. The angle of depression from the horizontal is $30 degrees$, and the lighthouse is 120 meters above sea level. Assuming the ship is directly below the observation point, how far away from the base of the lighthouse, in meters, is the ship?\n\nOptions:\nA) 69.3\nB) 138.6\nC) 207.8\nD) 240",
+      "answer": "207.8",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "I would only recommend this if it came with a figure/ diagram.",
+      "hint": "Skill: Right triangles and trigonometry",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "right-triangles-and-trigonometry"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-geometry.q0009",
+      "problem": "A circle in the xy-plane is tangent to both the x-axis and y-axis and has its center at (4, 4). Which equation represents the circle?\n\nOptions:\nA) $(x - 4)^2 + (y - 4)^2 = 16$\nB) $(x - 4)^2 + (y - 4)^2 = 4$\nC) $(x - 4)^2 + (y - 4)^2 = 64$\nD) $(x + 4)^2 + (y + 4)^2 = 16$",
+      "answer": "$(x - 4)^2 + (y - 4)^2 = 16$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "revised \"which of the following\" language",
+      "hint": "Skill: Circles",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "circles"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-geometry.q0010",
+      "problem": "A circle in the xy-plane has the equation $(x + 3)^2 + (y - 2)^2 = 25$. If the equation is changed to $(x + 3)^2 + (y - 2)^2 = 16$, which statement describes the transformation from the original circle to the new circle?\n\nOptions:\nA) The circle's radius decreases by 3 units, and the center remains the same.\nB) The circle's radius increases by 1 unit, and the center remains the same.\nC) The circle's radius decreases by 1 unit, and the center remains the same.\nD) The circle's radius decreases by 9 units, and the center remains the same.",
+      "answer": "The circle's radius decreases by 1 unit, and the center remains the same.",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "revised \"which of the following\" language",
+      "hint": "Skill: Circles",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "circles"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-geometry.q0011",
+      "problem": "A circle in the xy-plane has diameter endpoints at $(1, 2)$ and $(5, 8)$. Which of the following equations represents the circle? (Circles are created using the equation  (x - h)² + (y - k)² = r².)\n\nOptions:\nA) $(x - 3)^2 + (y - 5)^2 = 13$\nB) $(x - 3)^2 + (y - 5)^2 = 25$\nC) $(x - 3)^2 + (y - 5)^2 = 52$\nD) $(x - 6)^2 + (y - 10)^2 = 89$",
+      "answer": "$(x - 3)^2 + (y - 5)^2 = 13$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "I added the equation of the circle. I am also noticing there are many duplicate question types, like this one.",
+      "hint": "Skill: Circles",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "circles"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-geometry.q0012",
+      "problem": "A circle has a radius of 15 units. What is the perpendicular distance from the center of the circle to a chord that is 24 units long?\n\nOptions:\nA) 3 units\nB) 12 units\nC) 19 units\nD) 9 units",
+      "answer": "9 units",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "The location of where you're measuring the distance from matters (e.g., the distance from the center to the endpoint of the chord is 15). I modified the prompt to make sure students know the chord is perpendicular to the radius.",
+      "hint": "Skill: Circles",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "circles"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-geometry.q0013",
+      "problem": "A circle in the xy-plane is tangent to both the x-axis and y-axis and has its center at (4, 4). Which of the following equations represents the circle?\n\nOptions:\nA) $(x - 4)^2 + (y - 4)^2 = 16$\nB) $(x - 4)^2 + (y - 4)^2 = 4$\nC) $(x - 4)^2 + (y - 4)^2 = 64$\nD) $(x + 4)^2 + (y + 4)^2 = 16$",
+      "answer": "$(x - 4)^2 + (y - 4)^2 = 16$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "I gave it a 2 to flag it so the equation could be included. Or is there going to be some sort of reference sheet with formulas?",
+      "hint": "Skill: Circles",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "circles"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-geometry.q0014",
+      "problem": "The equation of a circle is given by $x^2 + y^2 - 10x + 4y = -20$. Which of the following best describes the position of the point $(6, -1)$ relative to the circle?\n\nOptions:\nA) Inside the circle\nB) On the circle\nC) Outside the circle\nD) At the center of the circle",
+      "answer": "Inside the circle",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Correct answer choice is B - flipped available answers to reflect A as correct, as noted in Prodigy.",
+      "hint": "Skill: Circles",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "circles"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-geometry.q0015",
+      "problem": "A windmill blade rotates 150 degrees during operation. What is the measure of this rotation in radians?\n\nOptions:\nA) $\\frac{15}{18}$\nB) $\\frac{5\\pi}{6}$\nC) $\\frac{3\\pi}{2}$\nD) $\\frac{6\\pi}{5}$",
+      "answer": "$\\frac{5\\pi}{6}$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "I'm not 100% sure this actually makes sense in real life though because I do not know anything about windmill blades.",
+      "hint": "Skill: Circles",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "circles"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-geometry.q0016",
+      "problem": "A circle in the xy-plane has its center at (-3, 4) and passes through the origin. Which of the following equations represents the circle?\n\nOptions:\nA) $(x + 3)^2 + (y - 4)^2 = 9$\nB) $(x + 3)^2 + (y + 4)^2 = 25$\nC) $(x - 3)^2 + (y + 4)^2 = 9$\nD) $(x + 3)^2 + (y - 4)^2 = 25$",
+      "answer": "$(x + 3)^2 + (y - 4)^2 = 25$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Updated answers for better distractors. Answer was obvious based on just the center before.",
+      "hint": "Skill: Circles",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "circles"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-geometry.q0017",
+      "problem": "A planetary gear in a watch mechanism rotates $240°$ while tracking time. What is this rotation expressed in radians?\n\nOptions:\nA) $2\\pi/3$\nB) $3\\pi/4$\nC) $4\\pi/3$\nD) $8\\pi/3$",
+      "answer": "$4\\pi/3$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Not sure how to fix the LaTex formatting error",
+      "hint": "Skill: Circles",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "circles"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-geometry.q0018",
+      "problem": "A point on the unit circle is located at an angle of $\\frac{4pi}{3}$ radians from the positive x-axis. What are the coordinates of this point?\n\nOptions:\nA) $(-\\sqrt{3}/2, -1/2)$\nB) $(-1/2, -\\sqrt{3}/2)$\nC) $(-1/2, \\sqrt{3}/2)$\nD) $(1/2, \\sqrt{3}/2)$",
+      "answer": "$(-1/2, -\\sqrt{3}/2)$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Please make the answers into actual fractions (I only updated the one in the prompt)",
+      "hint": "Skill: Circles",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "circles"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-geometry.q0019",
+      "problem": "A gear in a watch mechanism rotates $240^{\\circ}$ while tracking time. What is this rotation expressed in radians?\n\nOptions:\nA) $2\\pi/3$\nB) $3\\pi/4$\nC) $4\\pi/3$\nD) $8\\pi/3$",
+      "answer": "$4\\pi/3$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "I have no idea what \"planetary gear in a watch\" means. Consider changing the context? I made a suggestion in the prompt by removing the \"planetary\" part. And the degrees symbol seems to be coming across as lower case gamma. I think I fixed it, but I'm not sure.",
+      "hint": "Skill: Circles",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "circles"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-geometry.q0020",
+      "problem": "A circle in the xy-plane has the equation $x^2 + y^2 = 25$. If the equation is changed to $(x - h)^2 + (y - k)^2 = 25$, where h and k are positive integers, which of the following statements must be true about the new circle?\n\nOptions:\nA) The circle moves $h$ units left and $k$ units up\nB) The circle moves $h$ units right and $k$ units up\nC) The circle moves $h$ units right and $k$ units down\nD) The circle moves $k$ units right and $h$ units up",
+      "answer": "The circle moves $h$ units right and $k$ units up",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Changing the answers to have italics around the variables.",
+      "hint": "Skill: Circles",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "circles"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-geometry.q0021",
+      "problem": "A point on the unit circle is located at an angle of $4\\pi/3$ radians from the positive x-axis. What are the coordinates of this point?\n\nOptions:\nA) $(-\\sqrt{3}/2, -1/2)$\nB) $(-1/2, -\\sqrt{3}/2)$\nC) $(-1/2, \\sqrt{3}/2)$\nD) $(1/2, \\sqrt{3}/2)$",
+      "answer": "$(-1/2, -\\sqrt{3}/2)$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Great question, but this will be out of reach for anyone who hasn't taken precalculus or calculus.",
+      "hint": "Skill: Circles",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "circles"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-geometry.q0022",
+      "problem": "In the unit circle ($radius = 1$), a chord subtends a central angle of $2\\pi/3$ radians. What is the length of the chord?\n\nOptions:\nA) $\\sqrt{2}$\nB) $2$\nC) $\\sqrt{3}$\nD) $2\\pi/3$",
+      "answer": "$\\sqrt{3}$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "A student is being assessed on whether they know the definition of a \"unit\" circle (i.e. radius = 1), what a \"chord\" is, how many degrees is 2pi/3, and how to use trig to find the value of 1/2 the chord. Lots going on here. I think providing information at least about what a unit circle is would be helpful to reduce cognitive load a bit.",
+      "hint": "Skill: Circles",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "circles"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-geometry.q0023",
+      "problem": "A car's wheel rotates $3\\pi/4$ radians during a turn. What is the measure of this rotation in degrees?\n\nOptions:\nA) $135 degrees$\nB) $45 degrees$\nC) $240 degrees$\nD) $270 degrees$",
+      "answer": "$135 degrees$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "updated answers with word degrees instead of weird symbol",
+      "hint": "Skill: Circles",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "circles"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-geometry.q0024",
+      "problem": "A circle has a radius of 15 units. What is the distance from the center of the circle to a chord that is 24 units long?\n\nOptions:\nA) 3 units\nB) 12 units\nC) 19 units\nD) 9 units",
+      "answer": "9 units",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "This problem is fine but it would be improved with a figure",
+      "hint": "Skill: Circles",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "circles"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-geometry.q0025",
+      "problem": "In a circle, a central angle of $ \\frac{2\\pi}{3} $ radians subtends a chord of length 12 units. What is the radius of the circle?\n\nChord Length Formula: c=2rsin(θ/2)\n\nOptions:\nA) 6\nB) 8\nC) $4\\sqrt{3}$\nD) 12",
+      "answer": "$4\\sqrt{3}$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "This formula is not provided on the SAT. If this problem is to be used, the chord length formula needs to be provided. LaTex needed for formula provided.",
+      "hint": "Skill: Circles",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "circles"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-geometry.q0026",
+      "problem": "In a circle with radius 8 units, two tangent segments drawn from an external point P meet the circle at points A and B. If angle APB measures 60 degrees, what is the length of arc AB?\n\nOptions:\nA) $4\\pi/3$\nB) $8\\pi/3$\nC) $16\\pi/3$\nD) $8\\pi$",
+      "answer": "$8\\pi/3$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "This problem NEEDS a figure as well as the necessary formulas (these angle and arc formulas are not provided on the SAT reference sheet). In addition, I think the answer chosen is incorrect but it was hard to picture the figure as described so I may have misinterpreted it which is a problem in and of itself.",
+      "hint": "Skill: Circles",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "circles"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-geometry.q0027",
+      "problem": "A circular table is divided into six equal sections for a game. What is the measure, in radians, of the central angle of each section?\n\nOptions:\nA) $frac{\\pi}{6}$\nB) $frac{\\pi}{3}$\nC) $\\pi$\nD) $2\\pi$",
+      "answer": "$frac{\\pi}{3}$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Answers updated to look like fractions",
+      "hint": "Skill: Circles",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "circles"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-geometry.q0028",
+      "problem": "A sector of a circle with radius 6 has an area of 18 square units. What is the measure of the sector's central angle in radians?\n\nOptions:\nA) $0.5$\nB) $1$\nC) $18$\nD) $\\pi/3$",
+      "answer": "$1$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "If this problem is used, the formula for area of a sector of a circle needs to be provided (it is not on the SAT reference sheet). A= 0.5r^2 θ",
+      "hint": "Skill: Circles",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "circles"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-geometry.q0029",
+      "problem": "A circular pizza is divided into 8 equal slices. What is the measure, in radians, of the central angle of one slice?\n\nOptions:\nA) $\\pi/8$\nB) $\\pi/4$\nC) $\\pi/2$\nD) $2\\pi$",
+      "answer": "$\\pi/4$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Answers should look like fractions",
+      "hint": "Skill: Circles",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "circles"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-geometry.q0030",
+      "problem": "A student draws a circle with center O and a point P outside the circle. The length of the tangent segment from P to the circle is 12 units, and the distance from P to O is 13 units. What is the radius of the circle?\n\nOptions:\nA) 1\nB) 5\nC) 12\nD) 25",
+      "answer": "5",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "A diagram would be helpful",
+      "hint": "Skill: Circles",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "circles"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-geometry.q0031",
+      "problem": "An angle $\\theta$ in standard position has a tangent of -1 and lies in the fourth quadrant. What is the value of $\\sin \\theta$?\n\nOptions:\nA) $1/\\sqrt{2}$\nB) $-1/2$\nC) $-1$\nD) $-1/\\sqrt{2}$",
+      "answer": "$-1/\\sqrt{2}$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "It's generally considered bad form to leave a radical in the denominator. I suggest making D \\(-\\frac{\\sqrt{2}}{2}\\) and A \\(\\frac{\\sqrt{2}}{2}\\)",
+      "hint": "Skill: Circles",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "circles"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-geometry.q0032",
+      "problem": "A barn-shaped building consists of a rectangular prism base with a pyramid roof. The prism is 8 meters long, 6 meters wide, and 4 meters tall. The pyramid has a base congruent to the prism's top and a height of 3 meters. What is the total volume of the building, in cubic meters?\n\nOptions:\nA) 21\nB) 192\nC) 240\nD) 336",
+      "answer": "240",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "The roof can't be a square pyramid if the dimensions of its sides aren't equal.",
+      "hint": "Skill: Area and volume",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "area-and-volume"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-geometry.q0033",
+      "problem": "A cone has a volume of $48\\pi$ cubic inches. If the height of the cone is tripled while the volume remains constant, what is the new radius in terms of the original radius r?\n\nOptions:\nA) $r/3$\nB) $(r\\sqrt{3})/3$\nC) $r$\nD) $r\\sqrt{3}$",
+      "answer": "$(r\\sqrt{3})/3$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "This does not match the task. This is not a \"real world problem\". Also, are the formulas provided?",
+      "hint": "Skill: Area and volume",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "area-and-volume"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-geometry.q0034",
+      "problem": "A cone has a volume of $48\\pi$ cubic inches. If the height of the cone is tripled while the volume remains constant, what is the new radius in terms of the original radius r?\n\nOptions:\nA) $r/3$\nB) $(r\\sqrt{3})/3$\nC) $r$\nD) $r\\sqrt{3}$",
+      "answer": "$(r\\sqrt{3})/3$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "This doesn't actually \"Solve real-world and mathematical problems about the surface area or volume of a geometric figure or an object that can be modeled by a geometric figure using given information such as length, area, surface area, or volume.\" This is most definitely not real world. There are million better ways to do this task that would actually assess students' proficiency",
+      "hint": "Skill: Area and volume",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "area-and-volume"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-geometry.q0035",
+      "problem": "A cone has a volume of $V$. If the radius of the cone is halved and the height is tripled, what is the new volume in terms of $V$?\n\nOptions:\nA) \\(\\frac{3}{8}\\)V\nB) \\(\\frac{3}{2}\\)V\nC) \\(\\frac{3}{4}\\)V\nD) \\(\\frac{9}{4}\\)V",
+      "answer": "\\(\\frac{3}{4}\\)V",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Does not match topic. There is no real \"solving\" and it's not real life.",
+      "hint": "Skill: Area and volume",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "area-and-volume"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-geometry.q0036",
+      "problem": "A right triangle has legs measuring 6 meters and 8 meters. A semicircle is drawn with its diameter along the hypotenuse of the triangle. What is the total area of the triangle and the semicircle?\n\nOptions:\nA) $24 + 12.5\\pi$\nB) $24 +24.5\\pi$\nC) $24 +25\\pi$\nD) $24 +50\\pi$",
+      "answer": "$24 + 12.5\\pi$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "I'm between a 1 and a 2 on this one. On the one hand, it's a good problem, except that it doesn't say what direction the semi-circle is drawn. The assumption is that it's drawn so there is no overlap between the triangle and the semi-circle, and with that, the language is pretty complex to figure out. A drawing would be really good for this one so students wouldn't have to parse difficult language. On the same hand, this assesses multiple things. 1) This is assessing your vocab of right triangl…",
+      "hint": "Skill: Area and volume",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "area-and-volume"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-geometry.q0037",
+      "problem": "A cylindrical container has a volume of $100\\pi$ cubic centimeters. If the radius of the cylinder is doubled while the volume remains constant, what is the new height in terms of the original height h?\n\nOptions:\nA) $h/4$\nB) $h/2$\nC) $h$\nD) $4h$",
+      "answer": "$h/4$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Task topic is incorrect - needs to be about being able to calculate values of k when dimensions are changed.",
+      "hint": "Skill: Area and volume",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "area-and-volume"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-geometry.q0038",
+      "problem": "A spherical balloon's radius is scaled up by a factor of $1.5$. By what factor does its surface area increase?\n\nOptions:\nA) $0.50$\nB) $2.25$\nC) $1.25$\nD) $2.5$",
+      "answer": "$2.25$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Changing from a factor to a percent is unnecessarily adding a layer of complexity. Taking the percent part out and making it a factor. Also, the answer (I think) should be 225%.",
+      "hint": "Skill: Area and volume",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "area-and-volume"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-geometry.q0039",
+      "problem": "A rectangular storage tank has a width of 4 feet and a length of 6 feet. If the tank currently holds 120 cubic feet of water, what is the total height of the tank in feet?\n\nOptions:\nA) 6\nB) 6.25\nC) 5\nD) 4",
+      "answer": "5",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Updated problem to make it more straightforward.",
+      "hint": "Skill: Area and volume",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "area-and-volume"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-geometry.q0040",
+      "problem": "A swimming pool is shaped like a rectangle with a semicircle at each end. The total perimeter of the pool is 100 meters, and the rectangular section has a length of 30 meters. What is the width, in meters, of the rectangular part of the pool?\n\nOptions:\nA) \\(\\dfrac{20}{\\pi}\\)\nB) \\(\\dfrac{40}{2 + \\pi}\\)\nC) \\(\\dfrac{40}{\\pi}\\)\nD) \\(20\\)",
+      "answer": "\\(\\dfrac{40}{\\pi}\\)",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Recommend adding a visual to prevent unnecessary confusion of length and width",
+      "hint": "Skill: Area and volume",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "area-and-volume"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-geometry.q0041",
+      "problem": "A building has a rectangular prism base 20 meters long, 15 meters wide, and 8 meters high, topped by a rectangular pyramid roof with the same base dimensions and a height of 5 meters. What is the total volume of the building in cubic meters?\n\nOptions:\nA) 3150\nB) 3900\nC) 4500\nD) 2900",
+      "answer": "2900",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Recommend adding a visual",
+      "hint": "Skill: Area and volume",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "area-and-volume"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-geometry.q0042",
+      "problem": "A window at the top of a door is in the shape of a trapezoid. The shorter base of the window measures 8 inches. The longer base is 2 inches less than three times the shorter base. What is the length, in inches, of the longer base?\n\nOptions:\nA) 7\nB) 18\nC) 22\nD) 26",
+      "answer": "22",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "The first sentence in the problem is unnecessary. Revised language to make it less complicated.",
+      "hint": "Skill: Area and volume",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "area-and-volume"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-geometry.q0043",
+      "problem": "In a isosceles triangle, the two congruent angles measure $(2x + 10)$ degrees. The third angle of the triangle measures $(x + 20)$ degrees. What is the value of x?\n\nOptions:\nA) $20$\nB) $25$\nC) $50$\nD) $28$",
+      "answer": "$28$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Two angles in a triangle can't be vertical angles. I modified the prompt so it makes sense to form a triangle.",
+      "hint": "Skill: Lines, angles, and triangles",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "lines,-angles,-and-triangles"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-geometry.q0044",
+      "problem": "To estimate the height of a tree, a student positions a mirror 4 meters from its base and steps 1.6 meters back from the mirror. If the student's eyes are 1.8 meters above the ground and align with the tree's top in the mirror, what is the tree's height?\n\nOptions:\nA) 2.88 meters\nB) 4.5 meters\nC) 5.6 meters\nD) 7.2 meters",
+      "answer": "4.5 meters",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "overall the wording of this problem and the basic premise that one should understand that similar triangles should be used because of the mirror reflection is very confusing. Perhaps if there was a diagram with the problem, even if the numbers themselves were not labeled, it would improve it significantly.",
+      "hint": "Skill: Lines, angles, and triangles",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "lines,-angles,-and-triangles"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-geometry.q0045",
+      "problem": "A right triangle has legs measuring 3 inches and 4 inches. This triangle is scaled by a factor of 1.5 to create a larger, similar triangle. What is the measure of the smallest angle in the scaled triangle, when rounded to the nearest degree?\n\nOptions:\nA) $30\\degree$\nB) $37\\degree$\nC) $45\\degree$\nD) $53\\degree$",
+      "answer": "$37\\degree$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "added language about rounding",
+      "hint": "Skill: Lines, angles, and triangles",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "lines,-angles,-and-triangles"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-geometry.q0046",
+      "problem": "To prove that triangle ABC is congruent to triangle DEF using the SAS (Side-Angle-Side) theorem, which of the following sets of information must be included?\n\nOptions:\nA) AB $\\cong$ DE, BC $\\cong$ EF, and angle C $\\cong$ angle F\nB) AB $\\cong$ DE, BC $\\cong$ EF, and angle B $\\cong$ angle E\nC) AB $\\cong$ DE, BC $\\cong$ DF, and angle B $\\cong$ angle E\nD) AB $\\cong$ DE, AC $\\cong$ DF, and angle B $\\cong$ angle E",
+      "answer": "AB $\\cong$ DE, BC $\\cong$ EF, and angle B $\\cong$ angle E",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Recommend using < instead of \"angle\" in answer choices",
+      "hint": "Skill: Lines, angles, and triangles",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "lines,-angles,-and-triangles"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-geometry.q0047",
+      "problem": "Triangle ABC is similar to triangle XYZ. If  the height of triangle ABC is 18 feet, and the area of triangle XYZ is 216 square feet, what is the height of triangle XYZ in feet if the area of triangle ABC is 96 square feet?\n\nOptions:\nA) 12\nB) 27\nC) 30\nD) 40.5",
+      "answer": "27",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Removed confusing context",
+      "hint": "Skill: Lines, angles, and triangles",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "lines,-angles,-and-triangles"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-geometry.q0048",
+      "problem": "To prove that triangle PQR is similar to triangle STU using the AA (Angle-Angle) similarity theorem, which of the following pieces of information must be included if it is already given that $\\angle$P $\\cong$ $\\angle$S?\n\nOptions:\nA) $\\angle$Q $\\cong$ $\\angle$T\nB) $\\angle$Q $\\cong$ $\\angle$U\nC) $\\angle$R $\\cong$ $\\angle$T\nD) PQ $\\cong$ ST",
+      "answer": "$\\angle$Q $\\cong$ $\\angle$T",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "There were two correct answer. Updated so there is only one.",
+      "hint": "Skill: Lines, angles, and triangles",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "lines,-angles,-and-triangles"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-geometry.q0049",
+      "problem": "To prove that triangle ABC is congruent to triangle DEF, which of the following sets of information would allow you to conclude these triangles are congruent using the SAS (Side-Angle-Side) theorem?\n\nOptions:\nA) AB $\\cong$ DE, BC $\\cong$ EF, and angle C $\\cong$ angle F\nB) AB $\\cong$ DE, BC $\\cong$ EF, and angle B $\\cong$ angle E\nC) AB $\\cong$ DE, BC $\\cong$ DF, and angle B $\\cong$ angle E\nD) AB $\\cong$ DE, AC $\\cong$ DF, and angle B $\\cong$ angle E",
+      "answer": "AB $\\cong$ DE, BC $\\cong$ EF, and angle B $\\cong$ angle E",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Changed the wording a little.",
+      "hint": "Skill: Lines, angles, and triangles",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "lines,-angles,-and-triangles"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-geometry.q0050",
+      "problem": "To prove that triangle PQR is similar to triangle STU using the AA (Angle-Angle) similarity theorem, which of the following pieces of information must be included if it is already given that $\\angle$P $\\cong$ $\\angle$S?\n\nOptions:\nA) $\\angle$Q $\\cong$ $\\angle$T\nB) $\\angle$Q $\\cong$ $\\angle$U\nC) $\\angle$R $\\cong$ $\\angle$T\nD) PQ $\\cong$ ST",
+      "answer": "$\\angle$Q $\\cong$ $\\angle$T",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Revised option C to be incorrect",
+      "hint": "Skill: Lines, angles, and triangles",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "lines,-angles,-and-triangles"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-geometry.q0051",
+      "problem": "A scale model of a triangular park is created with a scale factor of 1:20. If one of the angles in the actual park measures $37°$, what is the measure of the corresponding angle in the scale model?\n\nOptions:\nA) $37°$\nB) '1.85°'\nC) '20°'\nD) '0.37°'",
+      "answer": "$37°$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "LaTex formatting is all over the place.",
+      "hint": "Skill: Lines, angles, and triangles",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "lines,-angles,-and-triangles"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-geometry.q0052",
+      "problem": "Two equilateral triangles are similar, with the smaller triangle having a perimeter of 12 centimeters. If one of the sides of the larger triangle measures 8 centimeters, what is the scale factor of the larger triangle to the smaller?\n\nOptions:\nA) $0.5$\nB) $1.5$\nC) $2$\nD) $4$",
+      "answer": "$2$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "The scale factor could go from larger to smaller, making choice A correct. The prompt needs to give the direction rather than just saying \"between\" the triangles.",
+      "hint": "Skill: Lines, angles, and triangles",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "lines,-angles,-and-triangles"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-geometry.q0053",
+      "problem": "In an isosceles triangle, the two congruent angles each measure $(2x + 10)$ degrees. The third angle of the triangle measures $(x + 20)$ degrees. What is the value of $x$?\n\nOptions:\nA) $20$\nB) $25$\nC) $50$\nD) $28$",
+      "answer": "$28$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Prompt updated to make sense and more easily visualized without a figure, as well as subsequent answers.",
+      "hint": "Skill: Lines, angles, and triangles",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "lines,-angles,-and-triangles"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-geometry.q0054",
+      "problem": "At a construction site, a support beam creates a right triangle with the ground and a vertical wall. A second, larger support beam creates a similar right triangle. If the first beam is 12 feet long and makes a $40°$ angle with the ground, and the second beam makes the same angle but is 20 feet long, what is the height difference between the tops of these beams in feet?\n\nOptions:\nA) 13.4\nB) 8\nC) 6.1\nD) 6.7",
+      "answer": "13.4",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "I cannot visualize what is actually happening here. A diagram/ figure might make it doable, but I really cannot tell.",
+      "hint": "Skill: Lines, angles, and triangles",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "lines,-angles,-and-triangles"
+      ]
+    }
+  ]
+}

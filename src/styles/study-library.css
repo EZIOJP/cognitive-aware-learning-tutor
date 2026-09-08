@@ -34,9 +34,39 @@
 
 .lecture-notes-markdown {
   font-size: var(--lecture-note-size, 1.2rem);
-  line-height: 1.7;
+  line-height: 1.75;
   -webkit-text-size-adjust: auto;
   text-size-adjust: auto;
+  color: var(--foreground);
+}
+
+.lecture-notes-lead {
+  margin-bottom: 2.25rem;
+  padding-bottom: 1.75rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+}
+
+.lecture-topic-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+}
+
+.lecture-topic-section {
+  padding: 0 1.35rem 1.65rem;
+  border-radius: 0.9rem;
+  border: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
+  background: color-mix(in srgb, var(--card) 72%, var(--muted) 28%);
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--foreground) 4%, transparent);
+}
+
+.lecture-doc-title {
+  margin: 0 0 1rem;
+  padding-bottom: 0.75rem;
+  font-size: 1.55em;
+  font-weight: 700;
+  line-height: 1.3;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 75%, transparent);
 }
 
 .lecture-notes-markdown h1 {
@@ -46,6 +76,194 @@
 .lecture-notes-markdown h2 {
   font-size: 1.3em;
   line-height: 1.35;
+}
+.lecture-section-heading {
+  margin: 2rem 0 0.85rem;
+  font-size: 1.35em;
+  font-weight: 700;
+  line-height: 1.35;
+  color: var(--foreground);
+}
+.lecture-notes-markdown h2.lecture-topic-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.55rem 0.75rem;
+  margin: 0;
+  font-size: 1.5em;
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+}
+.lecture-topic-heading-wrap {
+  margin: 2.25rem -1.35rem 1.15rem;
+  padding: 0.7rem 1.35rem 0.75rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 65%, transparent);
+  background: color-mix(in srgb, var(--muted) 38%, transparent);
+  border-radius: 0.9rem 0.9rem 0 0;
+}
+.lecture-topic-section .lecture-topic-heading-wrap,
+.lecture-topic-heading-wrap:first-child {
+  margin-top: 0;
+}
+.lecture-topic-section .lecture-topic-heading-wrap {
+  margin-bottom: 1rem;
+}
+
+.lecture-notes-markdown .topic-id-badge {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  padding: 0.28rem 0.65rem;
+  border-radius: 0.45rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.82em;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #1a1d22;
+  background: linear-gradient(
+    155deg,
+    #f8f9fb 0%,
+    #d4d9e2 22%,
+    #a8b0bc 48%,
+    #e2e6ed 72%,
+    #f5f7fa 100%
+  );
+  border: 1px solid color-mix(in srgb, #ffffff 55%, #7a8494);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.85),
+    inset 0 -1px 0 rgba(90, 100, 115, 0.25),
+    0 1px 2px rgba(0, 0, 0, 0.22);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.45);
+}
+.dark .lecture-notes-markdown .topic-id-badge,
+[data-theme="dark"] .lecture-notes-markdown .topic-id-badge {
+  color: #eef1f5;
+  background: linear-gradient(
+    155deg,
+    #5c6674 0%,
+    #8a939f 28%,
+    #b8c0ca 50%,
+    #6d7785 74%,
+    #9aa5b3 100%
+  );
+  border-color: color-mix(in srgb, #c5cdd8 40%, #3d4654);
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.45);
+}
+.lecture-notes-markdown .lecture-topic-title {
+  min-width: 0;
+  flex: 1 1 12rem;
+}
+.lecture-notes-markdown h2.lecture-topic-heading code {
+  font-size: 0.92em;
+  padding: 0.1rem 0.35rem;
+  vertical-align: baseline;
+}
+.lecture-subheading {
+  margin: 1.35rem 0 0.65rem;
+  font-size: 1.12em;
+  font-weight: 600;
+  line-height: 1.4;
+  color: color-mix(in srgb, var(--foreground) 92%, var(--muted-foreground));
+}
+.lecture-paragraph {
+  margin: 0.85rem 0;
+  color: color-mix(in srgb, var(--foreground) 90%, var(--muted-foreground));
+}
+.lecture-topic-section .lecture-paragraph:first-of-type {
+  margin-top: 0.15rem;
+}
+.lecture-list {
+  margin: 0.85rem 0 1rem;
+  padding-left: 1.35rem;
+}
+.lecture-list--unordered {
+  list-style-type: disc;
+}
+.lecture-list--ordered {
+  list-style-type: decimal;
+}
+.lecture-list li + li {
+  margin-top: 0.45rem;
+}
+.lecture-callout {
+  margin: 1.1rem 0;
+  padding: 0.85rem 1rem 0.85rem 1.1rem;
+  border-left: 4px solid color-mix(in srgb, var(--primary) 55%, #10b981);
+  border-radius: 0 0.5rem 0.5rem 0;
+  font-style: italic;
+  color: color-mix(in srgb, var(--foreground) 88%, var(--muted-foreground));
+  background: color-mix(in srgb, var(--muted) 35%, transparent);
+}
+.lecture-topic-section > blockquote.lecture-callout:first-of-type,
+.lecture-topic-section blockquote.lecture-callout:first-of-type {
+  margin-top: 0.35rem;
+  font-style: normal;
+  font-size: 0.94em;
+  border-left-color: color-mix(in srgb, var(--primary) 45%, #94a3b8);
+  background: color-mix(in srgb, var(--primary) 6%, var(--muted) 30%);
+}
+.lecture-notes-markdown blockquote.lecture-callout:has(strong:first-child) {
+  font-style: normal;
+}
+.lecture-topic-section > blockquote.lecture-callout + blockquote.lecture-callout {
+  margin-top: 0.5rem;
+  border-left-color: color-mix(in srgb, #f59e0b 50%, var(--primary));
+  background: color-mix(in srgb, #f59e0b 8%, var(--muted) 28%);
+  font-size: 0.9em;
+}
+.lecture-table-wrap {
+  margin: 1.15rem 0 1.35rem;
+  overflow-x: auto;
+}
+.lecture-table {
+  width: 100%;
+  font-size: 0.92em;
+  border-collapse: collapse;
+  border: 1px solid var(--border);
+}
+.lecture-table-th {
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--muted) 55%, transparent);
+  padding: 0.55rem 0.75rem;
+  text-align: left;
+  font-weight: 600;
+}
+.lecture-table-td {
+  border: 1px solid var(--border);
+  padding: 0.55rem 0.75rem;
+}
+.lecture-divider {
+  margin: 1.75rem 0;
+  border: none;
+  border-top: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+}
+.lecture-topic-section .lecture-divider {
+  margin: 1.35rem 0;
+  opacity: 0.65;
+}
+.lecture-inline-code {
+  border-radius: 0.3rem;
+  background: color-mix(in srgb, var(--muted) 80%, transparent);
+  padding: 0.12rem 0.38rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.88em;
+}
+.lecture-figure {
+  margin: 0.85rem 0 1rem;
+}
+.lecture-lite-fence {
+  margin: 1rem 0;
+  overflow-x: auto;
+  border-radius: 0.65rem;
+  border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  background: color-mix(in srgb, var(--muted) 35%, transparent);
+  padding: 0.85rem 1rem;
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+}
+.lecture-lite-fence--mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 .lecture-notes-markdown h3 {
   font-size: 1.15em;
@@ -105,7 +323,7 @@
 }
 
 .study-library-compare-pane .lecture-notes-markdown h1,
-.study-library-compare-pane .lecture-notes-markdown h2 {
+.study-library-compare-pane .lecture-notes-markdown h2.lecture-topic-heading .lecture-topic-title {
   color: var(--primary);
 }
 
@@ -176,7 +394,7 @@
 }
 
 .study-library-viewer-body {
-  padding: 1.25rem 1.5rem 2rem;
+  padding: 1.5rem 1.75rem 2.5rem;
 }
 
 .study-library-viewer-empty {
@@ -204,6 +422,30 @@
   font-size: 0.625rem;
   color: var(--muted-foreground);
   background: color-mix(in srgb, var(--muted) 35%, transparent);
+}
+
+.study-library-explorer-selection-hint {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.65rem;
+  border-top: 1px solid var(--border);
+  font-size: 0.625rem;
+  color: var(--foreground);
+  background: color-mix(in srgb, var(--primary) 6%, transparent);
+}
+
+.study-library-explorer-compare-pill {
+  font-size: 0.5625rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.1rem 0.35rem;
+  border-radius: 9999px;
+  background: color-mix(in srgb, var(--primary) 18%, transparent);
+  color: var(--primary);
+  margin-left: auto;
+  shrink: 0;
 }
 
 .study-library-markdown-scroll::-webkit-scrollbar {
@@ -269,8 +511,8 @@
 }
 
 .study-library-sidebar--expanded {
-  width: min(340px, 38vw);
-  min-width: 260px;
+  width: min(380px, 42vw);
+  min-width: 300px;
 }
 
 .study-library-sidebar--collapsed {
@@ -336,10 +578,38 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.15rem;
-  padding: 0.35rem 0.5rem;
+  gap: 0.35rem;
+  padding: 0.4rem 0.5rem;
   border-bottom: 1px solid var(--border);
   background: color-mix(in srgb, var(--muted) 40%, transparent);
+}
+
+.study-library-explorer-toolbar-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.study-library-explorer-toolbar-title {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+  padding: 0 0.15rem;
+}
+
+.study-library-explorer-toolbar-actions {
+  flex: 1;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+}
+
+.study-library-explorer-count {
+  font-size: 0.625rem;
+  color: var(--muted-foreground);
+  padding-left: 0.35rem;
 }
 
 .study-library-explorer-tool {
@@ -571,6 +841,326 @@
   padding: 1rem;
 }
 
+/* Fullscreen browse + Paperless-style search */
+.study-library-browse {
+  background: color-mix(in srgb, var(--card) 92%, transparent);
+  border-radius: 1rem;
+  border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+}
+
+.study-library-browse-search {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in srgb, var(--muted) 35%, transparent);
+}
+
+.study-library-browse-search-input {
+  flex: 1;
+  min-width: 0;
+  height: 2.5rem;
+  padding: 0 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--border);
+  background: var(--background);
+  color: var(--foreground);
+  font-size: 0.9375rem;
+  appearance: none;
+}
+
+.study-library-browse-search-input:focus {
+  outline: none;
+  border-color: color-mix(in srgb, var(--primary) 50%, var(--border));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 18%, transparent);
+}
+
+.study-library-browse-search-clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem;
+  border-radius: 0.35rem;
+  color: var(--muted-foreground);
+}
+
+.study-library-browse-search-clear:hover {
+  color: var(--foreground);
+  background: color-mix(in srgb, var(--muted) 60%, transparent);
+}
+
+.study-library-browse-search-kbd {
+  font-size: 0.625rem;
+  padding: 0.2rem 0.45rem;
+  border-radius: 0.3rem;
+  border: 1px solid var(--border);
+  color: var(--muted-foreground);
+  background: color-mix(in srgb, var(--muted) 50%, transparent);
+}
+
+.study-library-browse-results {
+  padding: 0.5rem;
+}
+
+.study-library-browse-results-list {
+  list-style: none;
+  margin: 0;
+  padding: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-width: 56rem;
+  margin-inline: auto;
+}
+
+.study-library-browse-file-group {
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--card) 70%, transparent);
+}
+
+.study-library-browse-file-header {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.65rem 0.85rem;
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in srgb, var(--muted) 40%, transparent);
+}
+
+.study-library-browse-match-badge {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  padding: 0.2rem 0.55rem;
+  border-radius: 9999px;
+  border: 1px solid color-mix(in srgb, var(--primary) 35%, var(--border));
+  background: color-mix(in srgb, var(--primary) 12%, transparent);
+  color: var(--primary);
+  white-space: nowrap;
+}
+
+.study-library-browse-file-hits {
+  list-style: none;
+  margin: 0;
+  padding: 0.35rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.study-library-browse-result--nested {
+  padding: 0.65rem 0.75rem;
+  border-radius: 0.5rem;
+}
+
+.study-library-browse-result {
+  display: flex;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.85rem 1rem;
+  border-radius: 0.65rem;
+  border: 1px solid transparent;
+  text-align: left;
+  transition: background 0.12s, border-color 0.12s;
+}
+
+.study-library-browse-result:hover {
+  background: color-mix(in srgb, var(--muted) 45%, transparent);
+  border-color: var(--border);
+}
+
+.study-library-browse-result--active {
+  background: color-mix(in srgb, var(--primary) 12%, transparent);
+  border-color: color-mix(in srgb, var(--primary) 35%, var(--border));
+}
+
+.study-library-browse-match-kind {
+  font-size: 0.5625rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 0.12rem 0.4rem;
+  border-radius: 0.25rem;
+  border: 1px solid var(--border);
+  color: var(--muted-foreground);
+  background: color-mix(in srgb, var(--muted) 50%, transparent);
+}
+
+.study-library-browse-match-kind--topic {
+  color: color-mix(in srgb, var(--primary) 90%, white);
+  border-color: color-mix(in srgb, var(--primary) 35%, var(--border));
+  background: color-mix(in srgb, var(--primary) 12%, transparent);
+}
+
+.study-library-browse-match-kind--fn {
+  color: color-mix(in srgb, #22c55e 85%, white);
+  border-color: color-mix(in srgb, #22c55e 35%, var(--border));
+  background: color-mix(in srgb, #22c55e 10%, transparent);
+}
+
+.study-library-browse-hint {
+  background: color-mix(in srgb, var(--muted) 25%, transparent);
+}
+
+.study-library-browse--fullscreen {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  border-radius: 0;
+  border: none;
+}
+
+.study-library-search-bar-wrap {
+  width: 100%;
+}
+
+.study-library-header-tools {
+  flex-wrap: wrap;
+}
+
+.study-library-header-tools-divider {
+  width: 1px;
+  align-self: stretch;
+  min-height: 1.75rem;
+  background: var(--border);
+  margin: 0 0.15rem;
+}
+
+.study-library-file-toolbar {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.study-library-file-toolbar-divider {
+  width: 1px;
+  align-self: stretch;
+  min-height: 1.5rem;
+  background: color-mix(in srgb, var(--border) 80%, transparent);
+  margin: 0 0.15rem;
+}
+
+.study-library-file-toolbar-views {
+  align-items: center;
+  gap: 0.1rem;
+}
+
+.study-library-breadcrumb {
+  align-items: center;
+  gap: 0.1rem;
+  padding: 0 0.35rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.study-library-breadcrumb-count {
+  font-size: 0.625rem;
+  color: var(--muted-foreground);
+  white-space: nowrap;
+}
+
+.study-library-header-tools .study-library-search-bar-wrap {
+  flex: 1;
+  min-width: min(100%, 14rem);
+}
+
+.study-library-search-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 0.65rem;
+  border-radius: 0.65rem;
+  border: 1px solid color-mix(in srgb, var(--primary) 35%, var(--border));
+  background: color-mix(in srgb, var(--muted) 35%, transparent);
+}
+
+.study-library-search-scope,
+.study-library-search-filter {
+  height: 2rem;
+  max-width: 6.5rem;
+  border-radius: 0.4rem;
+  border: 1px solid var(--border);
+  background: var(--background);
+  color: var(--foreground);
+  font-size: 0.6875rem;
+  padding: 0 0.4rem;
+}
+
+.study-library-search-input {
+  flex: 1;
+  min-width: 0;
+  height: 2rem;
+  border: none;
+  background: transparent;
+  color: var(--foreground);
+  font-size: 0.8125rem;
+  outline: none;
+  appearance: none;
+}
+
+.study-library-search-dropdown {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 0.35rem);
+  z-index: 30;
+  max-height: min(42vh, 22rem);
+  overflow-y: auto;
+  border-radius: 0.65rem;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--card) 96%, transparent);
+  box-shadow: 0 12px 32px color-mix(in srgb, var(--foreground) 12%, transparent);
+}
+
+.study-library-search-dropdown-list {
+  list-style: none;
+  margin: 0;
+  padding: 0.35rem;
+}
+
+.study-library-search-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  text-align: left;
+  padding: 0.45rem 0.55rem;
+  border-radius: 0.45rem;
+  border: 1px solid transparent;
+}
+
+.study-library-search-dropdown-item:hover,
+.study-library-search-dropdown-item--active {
+  background: color-mix(in srgb, var(--primary) 12%, transparent);
+  border-color: color-mix(in srgb, var(--primary) 28%, var(--border));
+}
+
+.study-library-search-file-block {
+  padding: 0.25rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.study-library-search-file-block:last-child {
+  border-bottom: none;
+}
+
+.study-library-search-file-head {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.35rem 0.55rem 0.2rem;
+}
+
+.lecture-notes-markdown .study-code-block,
+.lecture-notes-markdown .study-python-editor,
+.lecture-notes-markdown .study-mermaid-block {
+  margin-top: 1rem;
+  margin-bottom: 1.15rem;
+}
+
 .lecture-notes-markdown .study-code-block pre {
   margin: 0;
 }
@@ -619,15 +1209,62 @@
   max-width: 100%;
 }
 
-/* Readable column width — diagram SVGs only (not Lucide toolbar icons). */
+/* Pan/zoom viewport — diagram stays at natural Mermaid size inside. */
+.study-mermaid-viewport {
+  position: relative;
+  overflow: auto;
+  max-height: min(36rem, 70vh);
+  min-height: 4rem;
+  border-radius: 0.375rem;
+  background: color-mix(in srgb, var(--muted) 18%, transparent);
+  cursor: grab;
+  touch-action: none;
+}
+
+.study-mermaid-viewport.is-panning {
+  cursor: grabbing;
+  user-select: none;
+}
+
+.study-mermaid-viewport-inner {
+  transform-origin: 0 0;
+  display: inline-block;
+  min-width: min-content;
+  padding: 0.35rem;
+}
+
+/* react-super-mermaid visual editor host */
+.study-super-mermaid-host {
+  min-height: 320px;
+}
+.study-super-mermaid-host .rsm-root,
+.study-super-mermaid-host [class*="rsm-"] {
+  max-width: 100%;
+}
+.study-super-mermaid-host .rsm-root {
+  --rsm-border: color-mix(in srgb, var(--border) 80%, transparent);
+  --rsm-fg: #e5e7eb;
+  --rsm-muted: #9ca3af;
+  --rsm-accent: #34d399;
+  --rsm-hover: #27272a;
+  --rsm-surface: #18181b;
+  --rsm-paper: #1a1b1e;
+}
+
+.study-mermaid-zoom-controls .study-mermaid-toolbar svg {
+  width: 0.875rem !important;
+  height: 0.875rem !important;
+}
+
+/* Natural SVG size — no forced column shrink (use Fit / zoom instead). */
 .study-mermaid-block .study-mermaid-render > svg,
 .study-mermaid-block .study-mermaid-render svg.study-mermaid-svg,
 .lecture-notes-markdown .study-mermaid-block .study-mermaid-render > svg {
   display: block;
-  max-width: 42rem;
-  width: 100%;
+  max-width: none;
+  width: auto;
   height: auto;
-  margin-inline: 0;
+  margin-inline: auto;
 }
 
 .study-mermaid-toolbar svg,

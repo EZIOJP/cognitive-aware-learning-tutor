@@ -398,6 +398,8 @@ export function PlannerCalendar({
   const [showPlanned, setShowPlanned] = useState(true);
   const [show2dTrack, setShow2dTrack] = useState(true);
   const [loading, setLoading] = useState(true);
+  /** Plan tab: 2D minute grid (default) vs lane-based timeline editor */
+  const [planAgendaEdit, setPlanAgendaEdit] = useState(false);
   /** Plan tab: no desktop actuals, but still paint Amazfit sleep on the day grid. */
   const layerVisibility = calendarLayerVisibility({
     planned: showPlanned,
@@ -503,6 +505,11 @@ export function PlannerCalendar({
   // Taller hours so 15/30/45m marks stay readable after collapsing the all-day header.
   const calendarHeight = Math.round((expanded ? 880 : 720) * HOUR_STRETCH_HEIGHT[hourStretch]);
 
+  const use2dLayer =
+    show2dTrack &&
+    view === Views.DAY &&
+    (planningOnly ? effectiveShowPlanned : effectiveShowActual);
+
   const events: CalendarEvent[] = useMemo(() => {
     const planned: CalendarEvent[] = effectiveShowPlanned
       ? blocks
@@ -534,13 +541,18 @@ export function PlannerCalendar({
           })
       : [];
 
+    // Plan-tab 2D track: DayGridActualLayer paints plan blocks minute-positioned
+    if (use2dLayer && planningOnly) {
+      return [];
+    }
+
     if (!effectiveShowActual && actuals.length === 0) {
       return [...planned, ...draftEvents];
     }
 
     // 2D track mode on Day view: hide RBC actuals (DayGridActualLayer paints instead)
-    const use2d = effectiveShowActual && show2dTrack && view === Views.DAY;
-    if (use2d) {
+    const use2dActual = use2dLayer && !planningOnly;
+    if (use2dActual) {
       return [...planned, ...draftEvents];
     }
 
@@ -586,11 +598,9 @@ export function PlannerCalendar({
     }
 
     return [...planned, ...draftEvents, ...actualEvents];
-  }, [blocks, actuals, effectiveShowActual, effectiveShowPlanned, view, draftBlocks, show2dTrack]);
+  }, [blocks, actuals, effectiveShowActual, effectiveShowPlanned, view, draftBlocks, use2dLayer, planningOnly]);
 
   const mergedActuals = useMemo(() => mergeForCalendar(actuals), [actuals]);
-
-  const use2dLayer = !planningOnly && effectiveShowActual && show2dTrack && view === Views.DAY;
 
   const planHourSegs = useMemo(() => {
     if (!use2dLayer || !effectiveShowPlanned) return [];
@@ -985,9 +995,24 @@ export function PlannerCalendar({
     blocks.filter((b) => b.status !== "rolled").length === 0 &&
     (!effectiveShowActual || actuals.length === 0);
 
-  if (planningOnly) {
+  if (planningOnly && planAgendaEdit) {
     return (
       <div className="space-y-3">
+        <div className="flex flex-wrap items-center justify-end gap-1.5 px-0.5">
+          <button
+            type="button"
+            onClick={() => setPlanAgendaEdit(false)}
+            className="rounded-lg border border-white/10 px-2.5 py-1 text-[11px] text-muted-foreground hover:bg-white/5"
+          >
+            2D view
+          </button>
+          <button
+            type="button"
+            className="rounded-lg border border-primary/40 bg-primary/15 px-2.5 py-1 text-[11px] text-primary"
+          >
+            Timeline edit
+          </button>
+        </div>
         <PlanningDayAgenda
           day={date}
           blocks={blocks}
@@ -1039,6 +1064,37 @@ export function PlannerCalendar({
 
   return (
     <div className="planner-calendar-shell">
+      {planningOnly ? (
+        <div className="mb-2 flex flex-wrap items-center justify-between gap-2 px-0.5">
+          <p className="text-[10px] text-muted-foreground">
+            Left→right = minutes within each hour · click a block or time slot to edit
+          </p>
+          <div className="flex gap-1.5">
+            <button
+              type="button"
+              onClick={() => setPlanAgendaEdit(false)}
+              className={`rounded-lg border px-2.5 py-1 text-[11px] ${
+                !planAgendaEdit
+                  ? "border-primary/40 bg-primary/15 text-primary"
+                  : "border-white/10 text-muted-foreground hover:bg-white/5"
+              }`}
+            >
+              2D view
+            </button>
+            <button
+              type="button"
+              onClick={() => setPlanAgendaEdit(true)}
+              className={`rounded-lg border px-2.5 py-1 text-[11px] ${
+                planAgendaEdit
+                  ? "border-primary/40 bg-primary/15 text-primary"
+                  : "border-white/10 text-muted-foreground hover:bg-white/5"
+              }`}
+            >
+              Timeline edit
+            </button>
+          </div>
+        </div>
+      ) : null}
       <div className="planner-cal-header">
         <div className="planner-cal-header__brand">
           {headerTitle}
@@ -1255,7 +1311,7 @@ export function PlannerCalendar({
             {use2dLayer ? (
               <DayGridActualLayer
                 day={date}
-                slices={effectiveShowActual ? hourSlices : []}
+                slices={planningOnly ? [] : effectiveShowActual ? hourSlices : []}
                 planSegs={planHourSegs}
                 focusedPlanId={focusedEventId}
                 containerRef={calendarWrapRef}

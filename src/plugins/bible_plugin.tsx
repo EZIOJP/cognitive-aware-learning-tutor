@@ -10,7 +10,7 @@ export const BiblePlugin: PluginDef = {
   icon: BookMarked,
   isCore: true,
   routes: [{ path: "bible", element: <BibleReaderPage /> }],
-  navItems: [{ to: "/bible", label: "Bible", icon: BookMarked, end: true }],
+  navItems: [{ to: "/bible", label: "Bible", icon: BookMarked, end: true, category: "life" }],
   widgets: [],
 };
 

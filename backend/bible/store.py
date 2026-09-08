@@ -79,6 +79,8 @@ def load_day(user_id: int) -> dict[str, Any]:
         raw["chapters_completed"] = []
     if not isinstance(raw.get("chapter_dwell"), dict):
         raw["chapter_dwell"] = {}
+    if not isinstance(raw.get("devotion"), dict):
+        raw["devotion"] = {}
     return raw
 
 
@@ -112,50 +114,54 @@ def save_day(
             return
     except Exception:
         pass
+    from backend.quiz.importance import _file_lock
+
     path = _day_path(user_id)
-    data = dict(data)
-    data["day"] = _day_key()
-    on_disk = _read_json(path, None)
-    if isinstance(on_disk, dict) and on_disk.get("day") == _day_key():
-        if replace_completed:
-            pass  # trust caller (explicit untick / full replace)
-        else:
-            merged = set(on_disk.get("chapters_completed") or []) | set(
-                data.get("chapters_completed") or []
+    lock = path.with_suffix(path.suffix + ".lock")
+    with _file_lock(lock):
+        data = dict(data)
+        data["day"] = _day_key()
+        on_disk = _read_json(path, None)
+        if isinstance(on_disk, dict) and on_disk.get("day") == _day_key():
+            if replace_completed:
+                pass  # trust caller (explicit untick / full replace)
+            else:
+                merged = set(on_disk.get("chapters_completed") or []) | set(
+                    data.get("chapters_completed") or []
+                )
+                data["chapters_completed"] = sorted(merged)
+            # Keep the furthest assignment if two writers race
+            disk_key = on_disk.get("assigned_key")
+            mem_key = data.get("assigned_key")
+            if _plan_index(str(disk_key) if disk_key else None) > _plan_index(
+                str(mem_key) if mem_key else None
+            ):
+                data["assigned_book"] = on_disk.get("assigned_book")
+                data["assigned_chapter"] = on_disk.get("assigned_chapter")
+                data["assigned_key"] = disk_key
+            disk_dwell = on_disk.get("chapter_dwell") or {}
+            mem_dwell = data.get("chapter_dwell") or {}
+            if isinstance(disk_dwell, dict) and isinstance(mem_dwell, dict):
+                out_dwell: dict[str, Any] = dict(disk_dwell)
+                for k, v in mem_dwell.items():
+                    out_dwell[k] = max(int(out_dwell.get(k) or 0), int(v or 0))
+                data["chapter_dwell"] = out_dwell
+            data["bible_seconds"] = max(
+                int(on_disk.get("bible_seconds") or 0), int(data.get("bible_seconds") or 0)
             )
-            data["chapters_completed"] = sorted(merged)
-        # Keep the furthest assignment if two writers race
-        disk_key = on_disk.get("assigned_key")
-        mem_key = data.get("assigned_key")
-        if _plan_index(str(disk_key) if disk_key else None) > _plan_index(
-            str(mem_key) if mem_key else None
-        ):
-            data["assigned_book"] = on_disk.get("assigned_book")
-            data["assigned_chapter"] = on_disk.get("assigned_chapter")
-            data["assigned_key"] = disk_key
-        disk_dwell = on_disk.get("chapter_dwell") or {}
-        mem_dwell = data.get("chapter_dwell") or {}
-        if isinstance(disk_dwell, dict) and isinstance(mem_dwell, dict):
-            out_dwell: dict[str, Any] = dict(disk_dwell)
-            for k, v in mem_dwell.items():
-                out_dwell[k] = max(int(out_dwell.get(k) or 0), int(v or 0))
-            data["chapter_dwell"] = out_dwell
-        data["bible_seconds"] = max(
-            int(on_disk.get("bible_seconds") or 0), int(data.get("bible_seconds") or 0)
-        )
-        data["game_consumed_seconds"] = max(
-            int(on_disk.get("game_consumed_seconds") or 0),
-            int(data.get("game_consumed_seconds") or 0),
-        )
-        data["last_heartbeat_at"] = max(
-            float(on_disk.get("last_heartbeat_at") or 0),
-            float(data.get("last_heartbeat_at") or 0),
-        )
-        if on_disk.get("day_pass"):
-            data["day_pass"] = True
-        if on_disk.get("reward_day"):
-            data["reward_day"] = True
-    _write_json(path, data)
+            data["game_consumed_seconds"] = max(
+                int(on_disk.get("game_consumed_seconds") or 0),
+                int(data.get("game_consumed_seconds") or 0),
+            )
+            data["last_heartbeat_at"] = max(
+                float(on_disk.get("last_heartbeat_at") or 0),
+                float(data.get("last_heartbeat_at") or 0),
+            )
+            if on_disk.get("day_pass"):
+                data["day_pass"] = True
+            if on_disk.get("reward_day"):
+                data["reward_day"] = True
+        _write_json(path, data)
 
 
 def bible_seconds(user_id: int) -> int:
@@ -512,6 +518,12 @@ def tick_chapter(
             speak("bible_done_praise", force=True)
         except Exception:
             pass
+    try:
+        from backend.behavior.gate_notify import invalidate_gate_cache
+
+        invalidate_gate_cache(user_id, reason="bible_chapter_tick")
+    except Exception:
+        pass
     return out
 
 
@@ -557,7 +569,13 @@ def summary(user_id: int) -> dict[str, Any]:
 
 
 def grant_day_pass(user_id: int) -> dict[str, Any]:
-    """Unlock games until local midnight (manual day pass). Does not enforce weekly quota."""
+    """Unlock games until local midnight (manual day pass). Does not enforce weekly quota.
+
+    Sites are NOT unlocked here: native SoftLand decides URLs and ignores
+    runtime.day_pass. Prod P5a moves the grant into calt_enforcer, which opens
+    the free window natively — see docs/superpowers/plans/
+    2026-09-08-calt-productivity-p5a-native-unlock-accounting.md.
+    """
     day = load_day(user_id)
     day["day_pass"] = True
     day["game_consumed_seconds"] = 0
@@ -815,3 +833,92 @@ def delete_bookmark(user_id: int, bookmark_id: int) -> bool:
         return False
     _write_json(_bookmarks_path(user_id), nxt)
     return True
+
+
+def _devotion_state(day: dict[str, Any]) -> dict[str, Any]:
+    devo = day.get("devotion")
+    if not isinstance(devo, dict):
+        devo = {}
+    return devo
+
+
+def devotion_summary(user_id: int) -> dict[str, Any]:
+    """Morning prayer note + afternoon/evening assignments and completion flags."""
+    from backend.bible import devotion as devotion_content
+
+    day = load_day(user_id)
+    devo = _devotion_state(day)
+    day_s = str(day.get("day") or _day_key())
+    afternoon = devotion_content.resolve_afternoon_reading(day_s)
+    evening = devotion_content.resolve_evening_reading(day_s)
+    morning = devotion_content.morning_devotion()
+    aft_key = str(afternoon.get("key") or "")
+    eve_key = str(evening.get("key") or "")
+    eve_hymn_id = str(evening.get("hymn_id") or "")
+    return {
+        "morning": {
+            **morning,
+            "notes": str(devo.get("morning_notes") or ""),
+        },
+        "afternoon": {
+            **afternoon,
+            "done": bool(devo.get("afternoon_done"))
+            and str(devo.get("afternoon_key") or "") == aft_key,
+            "notes": str(devo.get("afternoon_notes") or ""),
+        },
+        "evening": {
+            **evening,
+            "done": bool(devo.get("evening_done"))
+            and (
+                str(devo.get("evening_key") or "") == eve_key
+                or (
+                    not devo.get("evening_key")
+                    and str(devo.get("evening_hymn_id") or "") == eve_hymn_id
+                )
+            ),
+            "notes": str(devo.get("evening_notes") or ""),
+        },
+        "hymns_catalog": devotion_content.list_praise_hymns(),
+    }
+
+
+def save_devotion_notes(user_id: int, slot: str, notes: str) -> dict[str, Any]:
+    """Save personal reflection notes for morning / afternoon / evening."""
+    slot = str(slot or "").strip().lower()
+    field = {
+        "morning": "morning_notes",
+        "afternoon": "afternoon_notes",
+        "evening": "evening_notes",
+    }.get(slot)
+    if not field:
+        raise ValueError("slot must be morning, afternoon, or evening")
+    day = load_day(user_id)
+    devo = _devotion_state(day)
+    devo[field] = str(notes or "")[:4000]
+    day["devotion"] = devo
+    save_day(user_id, day)
+    return devotion_summary(user_id)
+
+
+def mark_devotion_done(user_id: int, slot: str, *, done: bool = True) -> dict[str, Any]:
+    """Mark afternoon Proverbs or evening Psalms+worship done (does not affect morning gate)."""
+    from backend.bible import devotion as devotion_content
+
+    slot = str(slot or "").strip().lower()
+    if slot not in ("afternoon", "evening"):
+        raise ValueError("slot must be afternoon or evening")
+    day = load_day(user_id)
+    devo = _devotion_state(day)
+    day_s = str(day.get("day") or _day_key())
+    if slot == "afternoon":
+        aft = devotion_content.resolve_afternoon_reading(day_s)
+        devo["afternoon_done"] = bool(done)
+        devo["afternoon_key"] = aft["key"] if done else devo.get("afternoon_key")
+    else:
+        eve = devotion_content.resolve_evening_reading(day_s)
+        devo["evening_done"] = bool(done)
+        devo["evening_key"] = eve["key"] if done else devo.get("evening_key")
+        devo["evening_hymn_id"] = eve.get("hymn_id") if done else devo.get("evening_hymn_id")
+    day["devotion"] = devo
+    save_day(user_id, day)
+    return devotion_summary(user_id)

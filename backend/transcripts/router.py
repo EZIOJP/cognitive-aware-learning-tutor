@@ -36,6 +36,7 @@ from backend.transcripts.library import (
     move_note,
     note_storage_path,
     save_note_content,
+    search_library_notes,
     update_note_meta,
     update_reading_state,
 )
@@ -61,12 +62,16 @@ from backend.transcripts.study_intel import (
     generate_code_drills,
     generate_quiz_items,
     load_note_text,
-    parse_pasted_mcq_quiz,
     quiz_to_markdown,
     run_gap_analysis,
     summarize_folder,
     generate_primer,
     sync_session_items,
+)
+from backend.transcripts.quiz_import import (
+    import_summary,
+    parse_smart_quiz_import,
+    resolve_quiz_tags,
 )
 
 router = APIRouter(prefix="/api/transcripts", tags=["transcripts"])
@@ -207,6 +212,10 @@ class GenerateIntelRequest(BaseModel):
 class PasteQuizRequest(BaseModel):
     text: str = Field(..., min_length=20)
     topic: str = Field(default="", max_length=160)
+    note_path: str = Field(default="", max_length=512)
+    folder_path: str = Field(default="", max_length=512)
+    seed_deck: bool | None = Field(default=True)
+    default_topic_id: str = Field(default="", max_length=32)
 
 
 class SyncSessionItem(BaseModel):
@@ -568,6 +577,27 @@ def get_note_topics(db: Session = Depends(get_db), user: User = Depends(get_curr
 @router.get("/library/tree")
 def get_library_tree(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     return library_tree_for_user(db, user.id)
+
+
+@router.get("/library/search")
+def get_library_search(
+    q: str = "",
+    limit: int = 40,
+    kinds: str | None = None,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    kind_set: set[str] | None = None
+    if kinds:
+        kind_set = {k.strip() for k in kinds.split(",") if k.strip()}
+    items = search_library_notes(
+        db,
+        user.id,
+        q,
+        limit=min(max(limit, 1), 80),
+        kinds=kind_set,
+    )
+    return {"query": q.strip(), "items": items}
 
 
 @router.post("/library/folders")
@@ -1050,6 +1080,14 @@ def post_generate_quiz(
     }
 
 
+@router.get("/library/generation-rules")
+def get_generation_rules(_user: User = Depends(get_current_user)):
+    """Permanent notes + per-topic quiz generation rules (good/bad examples)."""
+    from backend.transcripts.generation_rules import rules_summary_for_api
+
+    return rules_summary_for_api()
+
+
 @router.get("/library/note-topics")
 def get_note_topics(
     path: str,
@@ -1079,31 +1117,99 @@ def get_note_topics(
 @router.post("/library/paste-quiz")
 def post_paste_quiz(
     body: PasteQuizRequest,
-    _user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
 ):
-    questions = parse_pasted_mcq_quiz(body.text)
+    questions = parse_smart_quiz_import(body.text)
     if not questions:
         raise HTTPException(
             status_code=400,
-            detail="Could not parse any MCQs. Paste blocks like: Question 1 … A) … B) …",
+            detail=(
+                "Could not parse any questions. Supported: JSON/JSONL, GFG-style MCQ blocks, "
+                "or tagged text with topic_id: L2-T07 / Tags: ..."
+            ),
         )
-    if body.topic.strip():
-        for q in questions:
-            if not q.get("concept") or q.get("concept") == "Imported":
-                q["concept"] = body.topic.strip()[:80]
-                q["hint"] = f"Review topic: {q['concept']}"
-    title = body.topic.strip() or "Pasted Quiz"
+
+    from backend.transcripts.note_topics import normalize_topic_shorthand, remap_legacy_note_path
+    from backend.transcripts.notes_generator import resolve_notes_path
+
+    note_path = remap_legacy_note_path((body.note_path or "").strip())
+    note_text = ""
+    if note_path:
+        try:
+            note_text = resolve_notes_path(note_path).read_text(encoding="utf-8", errors="replace")
+        except (OSError, ValueError, FileNotFoundError):
+            note_path = ""
+
+    default_topic_id = (body.default_topic_id or "").strip()
+    if not default_topic_id and body.topic.strip():
+        default_topic_id = normalize_topic_shorthand(body.topic.strip()) or ""
+
+    questions = resolve_quiz_tags(
+        questions,
+        note_text=note_text,
+        note_path=note_path,
+        default_topic_id=default_topic_id,
+        default_concept=body.topic.strip(),
+    )
+    summary = import_summary(questions)
+
+    title = body.topic.strip()
+    if not title and note_path:
+        title = note_path.rsplit("/", 1)[-1].replace("_notes.md", "").replace("_", " ")
+    if not title:
+        title = "Imported Quiz"
+
     md = quiz_to_markdown(questions, title=title)
+
+    deck_id: int | None = None
+    cards_seeded = 0
+    should_seed = body.seed_deck if body.seed_deck is not None else True
+    if should_seed and questions:
+        try:
+            from backend.quiz import handler as quiz_handler
+
+            deck = quiz_handler.save_deck(
+                db,
+                user=user,
+                title=title[:200],
+                items=questions,
+                domain="study",
+                topic=body.topic.strip()
+                or (summary["topics"][0]["topic_id"] if summary.get("topics") else "")
+                or (note_path.split("/")[-1] if note_path else "imported"),
+            )
+            deck_id = deck.get("id")
+            cards_seeded = int(deck.get("cards_seeded") or 0)
+        except Exception as exc:  # noqa: BLE001
+            log.warning("paste-quiz deck seed failed: %s", exc)
+
+    detail_parts = [f"{len(questions)} imported questions"]
+    if summary.get("tagged"):
+        detail_parts.append(f"{summary['tagged']} tagged")
+    if summary.get("topics"):
+        detail_parts.append(f"{len(summary['topics'])} topics")
+    if deck_id:
+        detail_parts.append(f"deck #{deck_id}")
+    if cards_seeded:
+        detail_parts.append(f"{cards_seeded} SRS cards")
+    if summary.get("unknown_topics"):
+        detail_parts.append(f"unknown tags: {', '.join(summary['unknown_topics'])}")
+
     return {
         "questions": questions,
         "markdown": md,
-        "source": "pasted",
+        "source": "imported",
+        "import_summary": summary,
+        "deck_id": deck_id,
+        "cards_seeded": cards_seeded,
+        "note_path": note_path or None,
         "session_item": {
             "id": f"quiz-paste-{int(time.time())}",
             "kind": "quiz",
             "title": title,
             "content": md,
-            "detail": f"{len(questions)} pasted questions",
+            "detail": " · ".join(detail_parts),
         },
     }
 

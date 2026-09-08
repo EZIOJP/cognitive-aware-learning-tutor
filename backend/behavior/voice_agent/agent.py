@@ -143,6 +143,14 @@ class VoiceAgent:
             if voice_reply is not None:
                 return voice_reply
 
+            from backend.behavior.calt_desktop.voice_day_commands import try_day_command
+
+            day_reply = try_day_command(self.user_id, text)
+            if day_reply is not None:
+                mem.append_turn(self.user_id, "user", text)
+                mem.append_turn(self.user_id, "assistant", day_reply)
+                return self._emit(day_reply, say=say)
+
             # Confirm flow first
             def _exec(name: str, args: dict[str, Any]) -> str:
                 return execute_tool(self.user_id, name, args)

@@ -43,6 +43,8 @@ export interface BrowserSite {
 export interface AppSession {
   kind?: "app" | "browser";
   exe: string;
+  /** Human label e.g. Microsoft Edge (when exe is msedge.exe). */
+  display_name?: string;
   seconds: number;
   category: string;
   productivity_score: number;
@@ -199,6 +201,16 @@ export interface DayStatusResponse {
     productive_label?: string;
     daily_goal_label?: string;
     remaining_label?: string;
+  };
+  incubation?: {
+    active?: boolean;
+    remaining_sec?: number;
+    total_sec?: number;
+  };
+  desktop?: {
+    control?: string;
+    enforcer_owns_kills?: boolean;
+    hint?: string;
   };
   wearables?: {
     sleep_hours?: number | null;
@@ -374,6 +386,73 @@ export async function saveGateSchedules(
   return res.json();
 }
 
+export interface SoftLandSiteRules {
+  allow_extra: string[];
+  watch_extra: string[];
+  block_extra: string[];
+}
+
+export async function fetchSoftLandSiteRules(): Promise<SoftLandSiteRules> {
+  const res = await fetch(resolveApiUrl("/api/behavior/softland-site-rules"), {
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error(`behavior/softland-site-rules: ${res.status}`);
+  return res.json();
+}
+
+export async function saveSoftLandSiteRules(
+  body: SoftLandSiteRules,
+): Promise<SoftLandSiteRules> {
+  const res = await fetch(resolveApiUrl("/api/behavior/softland-site-rules"), {
+    method: "PUT",
+    headers: authHeaders(),
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error(`behavior/softland-site-rules: ${res.status}`);
+  return res.json();
+}
+
+/** Phase 2 SoftLand SoT — softland_policy.json */
+export interface SoftLandPolicy {
+  schema_version: number;
+  updated_at?: string | null;
+  softland_enabled: boolean;
+  site_rules: SoftLandSiteRules;
+  schedules: GateSchedulesResponse;
+  runtime: Record<string, unknown>;
+  goals: Record<string, unknown>;
+  mode_flags?: Record<string, Record<string, boolean>>;
+}
+
+export async function fetchSoftLandPolicy(): Promise<SoftLandPolicy> {
+  const res = await fetch(resolveApiUrl("/api/behavior/softland-policy"), {
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error(`behavior/softland-policy: ${res.status}`);
+  return res.json();
+}
+
+export async function saveSoftLandPolicy(
+  body: Partial<SoftLandPolicy> | SoftLandPolicy,
+): Promise<SoftLandPolicy> {
+  const res = await fetch(resolveApiUrl("/api/behavior/softland-policy"), {
+    method: "PUT",
+    headers: authHeaders(),
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error(`behavior/softland-policy: ${res.status}`);
+  return res.json();
+}
+
+export async function migrateSoftLandPolicy(): Promise<SoftLandPolicy> {
+  const res = await fetch(resolveApiUrl("/api/behavior/softland-policy/migrate"), {
+    method: "POST",
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error(`behavior/softland-policy/migrate: ${res.status}`);
+  return res.json();
+}
+
 export async function fetchWeeklyDigest(
   days = 7,
   endDay?: string,
@@ -399,6 +478,7 @@ export async function fetchFocusQuality(day?: string): Promise<FocusQualityRespo
 export async function fetchDayStatus(): Promise<DayStatusResponse> {
   const res = await fetch(resolveApiUrl("/api/behavior/day-status"), {
     headers: authHeaders(),
+    signal: AbortSignal.timeout(15_000),
   });
   if (!res.ok) throw new Error(`behavior/day-status: ${res.status}`);
   return res.json();
@@ -572,7 +652,10 @@ export interface ProductivityPolicy {
   blocked_categories: string[];
   app_overrides: Record<string, string>;
   threshold: number;
+  /** @deprecated SoftLand flag — prefer softland_enabled; NOT OS hard_block_armed */
   hard_block_enabled?: boolean;
+  /** SoftLand / game-bank (Edge Gate). Not OS process kills. */
+  softland_enabled?: boolean;
   daily_goal_minutes?: number;
   hard_block_gaming?: boolean;
   hard_block_exes?: string[];
@@ -627,6 +710,14 @@ export interface MorningGateConfig {
   plan_eod?: string;
   auto_plan?: boolean;
   auto_plan_confirm?: boolean;
+  /** When true, unfinished daily bite forces SoftLand next=study. */
+  study_loop_required?: boolean;
+}
+
+export interface StudyLoopGateSettings {
+  enabled: boolean;
+  default_enabled?: boolean;
+  path?: string;
 }
 
 export interface MorningDailyPractice {
@@ -645,16 +736,19 @@ export interface MorningGate {
   plan_done: boolean;
   plan_confirmed?: boolean;
   blocks_today: number;
-  next: "bible" | "plan" | "open";
+  next: "bible" | "plan" | "study" | "open";
   allow_paths: string[];
   rewards?: MorningRewards;
   hint?: string;
   plan_window?: MorningPlanWindow;
   bible_url?: string;
   plan_url?: string;
+  /** Soft redirect target when path not in allow_paths. */
+  redirect_url?: string | null;
   auto_plan?: MorningAutoPlan | null;
   daily_practice?: MorningDailyPractice | null;
   config?: MorningGateConfig;
+  study_loop_gate?: StudyLoopGateSettings;
 }
 
 export interface BrowserGateSection {
@@ -671,6 +765,7 @@ export interface BrowserGateSection {
   daytime_default?: string;
   free_after?: string;
   free_override_active?: boolean;
+  incubation_active?: boolean;
   allow_free_life?: boolean;
   free_life_allow_domains?: string[];
   note?: string;
@@ -683,6 +778,13 @@ export interface BrowserGateSection {
   plan_url?: string;
   redirect_url?: string | null;
   redirect_reason?: string | null;
+  intervals?: {
+    extension_gate_poll_s?: number;
+    extension_gate_idle_alarm_min?: number;
+    nsfw_screen_s?: number;
+    speak_alert_gap_s?: number;
+    note?: string;
+  };
 }
 
 export interface RewardDayStatus {
@@ -731,9 +833,21 @@ export interface DistractionGate {
   reward_day_status?: RewardDayStatus;
   unlock_mode?: string;
   morning?: MorningGate;
-  /** Day browser mode payload (SelfTracker source of truth). */
+  /** Day browser mode payload (CALT Gate / Desktop Focus source of truth). */
   browser?: BrowserGateSection;
   browser_mode?: string;
+  /** Incubation break (Desktop v2) — entertainment SoftLand stays on. */
+  incubation?: {
+    active?: boolean;
+    remaining_sec?: number;
+    total_sec?: number;
+  };
+  /** Desktop Focus control metadata. */
+  desktop?: {
+    control?: string;
+    enforcer_owns_kills?: boolean;
+    hint?: string;
+  };
   /** Present when demo clock module is available (enabled or not). */
   demo?: DemoClockStatus;
 }
@@ -802,6 +916,132 @@ export async function fetchDistractionGate(): Promise<DistractionGate> {
     headers: authHeaders(),
   });
   if (!res.ok) throw new Error(`behavior/distraction-gate: ${res.status}`);
+  return res.json();
+}
+
+/** Web Focus control snapshot (replaces PySide6 Desktop Dashboard). */
+export interface FocusDashboardSnapshot {
+  active?: {
+    hard_block_armed?: boolean;
+    browser_mode_label?: string;
+    morning_next?: string;
+    why?: string;
+    until?: { kind?: string; label?: string };
+    blocked_summary?: string[];
+  };
+  incubation?: { active?: boolean; remaining_sec?: number; total_sec?: number };
+  earned?: { balance_minutes?: number; daily_earned?: number; daily_cap?: number };
+  actions?: {
+    can_spend_earned?: boolean;
+    can_pin_free?: boolean;
+    incubation_blocks_pin?: boolean;
+  };
+  enforcer?: {
+    owns?: boolean;
+    exe_built?: boolean;
+    service_running?: boolean | null;
+    last_kill?: string;
+    last_kill_exe?: string;
+    lock_present?: boolean;
+    armed?: boolean;
+    locked?: boolean;
+    policy_source?: string;
+    status_source?: string;
+    status_age_s?: number | null;
+  };
+  enforcer_policy?: {
+    hard_block_armed?: boolean;
+    gate_locked?: boolean;
+    incubation_active?: boolean;
+    exes?: string[];
+    lock_mode?: string;
+    lock_until_unix?: number;
+    unlock_password?: string;
+    unlock_phrase?: string;
+    anti_tamper?: boolean;
+    protect_uninstall?: boolean;
+  };
+}
+
+export async function fetchFocusDashboard(): Promise<FocusDashboardSnapshot> {
+  const res = await fetch(resolveApiUrl("/api/behavior/focus-dashboard"), {
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error(`behavior/focus-dashboard: ${res.status}`);
+  return res.json();
+}
+
+export async function putEnforcerPolicy(body: {
+  hard_block_armed: boolean;
+  gate_locked: boolean;
+  incubation_active?: boolean;
+  exes?: string[];
+  lock_mode?: string;
+  lock_until_unix?: number;
+  unlock_password?: string;
+  unlock_phrase?: string;
+  anti_tamper?: boolean;
+  provided_unlock?: string;
+  protect_uninstall?: boolean;
+}): Promise<{ ok: boolean; policy: Record<string, unknown>; snapshot: FocusDashboardSnapshot }> {
+  const res = await fetch(resolveApiUrl("/api/behavior/enforcer-policy"), {
+    method: "PUT",
+    headers: authHeaders(),
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const detail = await res.text().catch(() => "");
+    throw new Error(detail || `enforcer-policy: ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function postFocusFreeOverride(
+  pin: string
+): Promise<{ ok: boolean; snapshot: FocusDashboardSnapshot }> {
+  const res = await fetch(resolveApiUrl("/api/behavior/focus-free-override"), {
+    method: "POST",
+    headers: authHeaders(),
+    body: JSON.stringify({ pin }),
+  });
+  if (!res.ok) {
+    const detail = await res.text().catch(() => "");
+    throw new Error(detail || `focus-free-override: ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function postFocusSpendEarned(
+  pin: string,
+  minutes: number
+): Promise<{ ok: boolean; snapshot: FocusDashboardSnapshot }> {
+  const res = await fetch(resolveApiUrl("/api/behavior/focus-spend-earned"), {
+    method: "POST",
+    headers: authHeaders(),
+    body: JSON.stringify({ pin, minutes }),
+  });
+  if (!res.ok) {
+    const detail = await res.text().catch(() => "");
+    throw new Error(detail || `focus-spend-earned: ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function fetchStudyLoopGate(): Promise<StudyLoopGateSettings> {
+  const res = await fetch(resolveApiUrl("/api/behavior/study-loop-gate"), {
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error(`behavior/study-loop-gate: ${res.status}`);
+  return res.json();
+}
+
+export async function saveStudyLoopGate(enabled: boolean): Promise<StudyLoopGateSettings> {
+  const res = await fetch(resolveApiUrl("/api/behavior/study-loop-gate"), {
+    method: "PUT",
+    headers: { ...authHeaders(), "Content-Type": "application/json" },
+    body: JSON.stringify({ enabled }),
+  });
+  if (!res.ok) throw new Error(`behavior/study-loop-gate PUT: ${res.status}`);
   return res.json();
 }
 

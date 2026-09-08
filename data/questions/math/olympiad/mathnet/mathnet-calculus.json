@@ -1,0 +1,1333 @@
+{
+  "schema_version": 1,
+  "kind": "math",
+  "topic": {
+    "topic_id": "math.olympiad.mathnet-calculus",
+    "title": "MathNet Calculus",
+    "stage": "advanced",
+    "path": [
+      "Math",
+      "Olympiad",
+      "MathNet",
+      "MathNet Calculus"
+    ],
+    "track": "aiml",
+    "prerequisites": [],
+    "note_topic_ids": [
+      "MT4-T01"
+    ],
+    "description": "ShadenA/MathNet olympiad problems (with or without final answers)."
+  },
+  "questions": [
+    {
+      "id": "math.olympiad.mathnet-calculus.q0001",
+      "problem": "Problem:\nIf $\\tan x + \\tan y = 5$ and $\\tan (x + y) = 10$, find $\\cot^2 x + \\cot^2 y$.",
+      "answer": "96",
+      "answer_format": "expression",
+      "difficulty": "hard",
+      "solution_steps": [
+        "Solution:",
+        "We know that",
+        "$$",
+        "\\tan(x + y) = \\frac{\\tan x + \\tan y}{1 - \\tan x \\tan y} = 10",
+        "$$",
+        "This leads to",
+        "$$",
+        "\\tan x \\tan y = \\frac{1}{2}",
+        "$$",
+        "Hence,"
+      ],
+      "explanation": "Solution:\nWe know that\n$$\n\\tan(x + y) = \\frac{\\tan x + \\tan y}{1 - \\tan x \\tan y} = 10\n$$\nThis leads to\n$$\n\\tan x \\tan y = \\frac{1}{2}\n$$\nHence,\n$$\n\\begin{aligned}\n\\cot^2 x + \\cot^2 y &= \\frac{1}{\\tan^2 x} + \\frac{1}{\\tan^2 y} \\\\\n&= \\frac{\\tan^2 y + \\tan^2 x}{\\tan^2 x \\tan^2 y} \\\\\n&= \\frac{(\\tan x + \\tan y)^2 - 2 \\tan x \\tan y}{(\\tan x \\tan y)^2} \\\\\n&= \\frac{5^2 - 1}{\\frac{1}{4}} \\\\\n&= 96\n\\end{aligned}\n$$",
+      "hint": "18th PMO National Stage Oral Phase · Precalculus > Trigonometric functions",
+      "tags": [
+        "mathnet",
+        "philippines"
+      ]
+    },
+    {
+      "id": "math.olympiad.mathnet-calculus.q0002",
+      "problem": "Problem:\nLet $f(x) = x^{3} + a x + b$, with $a \\neq b$, and suppose the tangent lines to the graph of $f$ at $x = a$ and $x = b$ are parallel. Find $f(1)$.",
+      "answer": "1",
+      "answer_format": "expression",
+      "difficulty": "hard",
+      "solution_steps": [
+        "Solution:",
+        "Since $f'(x) = 3x^{2} + a$, we must have $3a^{2} + a = 3b^{2} + a$. Then $a^{2} = b^{2}$, and since $a \\neq b$, $a = -b$. Thus $f(1) = 1 + a + b = 1$."
+      ],
+      "explanation": "Solution:\nSince $f'(x) = 3x^{2} + a$, we must have $3a^{2} + a = 3b^{2} + a$. Then $a^{2} = b^{2}$, and since $a \\neq b$, $a = -b$. Thus $f(1) = 1 + a + b = 1$.",
+      "hint": "Harvard-MIT Mathematics Tournament · Calculus > Differential Calculus > Derivatives",
+      "tags": [
+        "mathnet",
+        "united-states"
+      ]
+    },
+    {
+      "id": "math.olympiad.mathnet-calculus.q0003",
+      "problem": "Let $\\alpha$ and $\\beta$, $\\alpha \\neq \\beta$, be acute angles such that\n$$\n(\\cos^2 \\alpha + \\cos^2 \\beta)(1 + \\tan \\alpha \\tan \\beta) = 2.\n$$\nProve that $\\alpha + \\beta = 90^\\circ$.",
+      "answer": "",
+      "answer_format": "open",
+      "difficulty": "hard",
+      "solution_steps": [
+        "Let $x = \\tan \\alpha$, $y = \\tan \\beta$.",
+        "We have $\\cos^2 \\alpha = \\dfrac{1}{1 + x^2}$ and $\\cos^2 \\beta = \\dfrac{1}{1 + y^2}$.",
+        "So,",
+        "$$",
+        "\\left( \\dfrac{1}{1 + x^2} + \\dfrac{1}{1 + y^2} \\right)(1 + x y) = 2.",
+        "$$",
+        "Multiply both sides by $(1 + x^2)(1 + y^2)$:",
+        "$$",
+        "\\left[ (1 + y^2) + (1 + x^2) \\right](1 + x y) = 2(1 + x^2)(1 + y^2)",
+        "$$"
+      ],
+      "explanation": "Let $x = \\tan \\alpha$, $y = \\tan \\beta$.\n\nWe have $\\cos^2 \\alpha = \\dfrac{1}{1 + x^2}$ and $\\cos^2 \\beta = \\dfrac{1}{1 + y^2}$.\n\nSo,\n$$\n\\left( \\dfrac{1}{1 + x^2} + \\dfrac{1}{1 + y^2} \\right)(1 + x y) = 2.\n$$\n\nMultiply both sides by $(1 + x^2)(1 + y^2)$:\n$$\n\\left[ (1 + y^2) + (1 + x^2) \\right](1 + x y) = 2(1 + x^2)(1 + y^2)\n$$\n$$\n(2 + x^2 + y^2)(1 + x y) = 2(1 + x^2 + y^2 + x^2 y^2)\n$$\n\nExpand the left side:\n$$\n(2 + x^2 + y^2)(1 + x y) = 2(1 + x y) + x^2(1 + x y) + y^2(1 + x y)\n$$\n$$\n= 2(1 + x y) + x^2 + x^3 y + y^2 + x y^3\n$$\n\nBut let's expand both sides fully:\n\nLeft:\n$$\n(2 + x^2 + y^2)(1 + x y) = 2(1 + x y) + x^2(1 + x y) + y^2(1 + x y)\n$$\n$$\n= 2 + 2 x y + x^2 + x^3 y + y^2 + x y^3\n$$\n\nRight:\n$$\n2(1 + x^2)(1 + y^2) = 2(1 + x^2 + y^2 + x^2 y^2) = 2 + 2x^2 + 2y^2 + 2x^2 y^2\n$$\n\nSet equal:\n$$\n2 + 2 x y + x^2 + x^3 y + y^2 + x y^3 = 2 + 2x^2 + 2y^2 + 2x^2 y^2\n$$\n\nSubtract $2$ from both sides:\n$$\n2 x y + x^2 + x^3 y + y^2 + x y^3 = 2x^2 + 2y^2 + 2x^2 y^2\n$$\n\nBring all terms to one side:\n$$\n2 x y + x^2 + x^3 y + y^2 + x y^3 - 2x^2 - 2y^2 - 2x^2 y^2 = 0\n$$\n$$\n2 x y + x^2 + x^3 y + y^2 + x y^3 - 2x^2 - 2y^2 - 2x^2 y^2 = 0\n$$\nGroup terms:\n$$\n(x^2 - 2x^2) + (y^2 - 2y^2) + 2 x y + x^3 y + x y^3 - 2x^2 y^2 = 0\n$$\n$$\n(-x^2) + (-y^2) + 2 x y + x^3 y + x y^3 - 2x^2 y^2 = 0\n$$\n\nNow, $x^3 y + x y^3 = x y (x^2 + y^2)$, so:\n$$\n(-x^2) + (-y^2) + 2 x y + x y (x^2 + y^2) - 2x^2 y^2 = 0\n$$\n$$\n(-x^2 - y^2) + 2 x y + x y (x^2 + y^2) - 2x^2 y^2 = 0\n$$\n\nNow, $x y (x^2 + y^2) = x^3 y + x y^3$ as above…",
+      "hint": "Fall Mathematical Competition · Precalculus > Trigonometric functions",
+      "tags": [
+        "mathnet",
+        "bulgaria",
+        "no-answer",
+        "open"
+      ]
+    },
+    {
+      "id": "math.olympiad.mathnet-calculus.q0004",
+      "problem": "Problem:\nFind all real numbers $a$ and $b$ so that for all real numbers $x$,\n$$\n2 \\cos^2\\left(x+\\frac{b}{2}\\right) - 2 \\sin\\left(a x - \\frac{\\pi}{2}\\right) \\cos\\left(a x - \\frac{\\pi}{2}\\right) = 1\n$$",
+      "answer": "All solutions are a = 1 with b = π/2 + 2πk, or a = −1 with b = −π/2 + 2πk, for any integer k.",
+      "answer_format": "expression",
+      "difficulty": "hard",
+      "solution_steps": [],
+      "explanation": "",
+      "hint": "18th PMO Area Stage · Precalculus > Trigonometric functions",
+      "tags": [
+        "mathnet",
+        "philippines"
+      ]
+    },
+    {
+      "id": "math.olympiad.mathnet-calculus.q0005",
+      "problem": "Let $u : [a, b] \\to \\mathbb{R}$ be a continuous function which has at each point $x \\in (a, b]$ a finite left derivative, denoted by $u'_s(x)$. Prove that the function $u$ is increasing if and only if $u'_s(x) \\ge 0$, for all $x \\in (a, b]$.",
+      "answer": "",
+      "answer_format": "open",
+      "difficulty": "hard",
+      "solution_steps": [
+        "We shall use the following results which can be viewed as generalizations of the theorems of Rolle and Lagrange.",
+        "**Lemma 1.** If a function $u : [\\alpha, \\beta] \\to \\mathbb{R}$ has left and right finite derivatives at any point in $[\\alpha, \\beta]$ and $u(\\alpha) = u(\\beta)$, then there is $c \\in [\\alpha, \\beta]$ such that $u'_s(c) \\le 0$.",
+        "*Proof.* It is obvious that $u$ is continuous on $[\\alpha, \\beta]$, so it has a global minimum which belongs to the interior of the interval or coincides with one of the extremities; this point can be chosen as $c$.",
+        "**Lemma 2.** If a function $u : [\\alpha, \\beta] \\to \\mathbb{R}$ has right and left finite derivatives at each point in the interval $[\\alpha, \\beta]$, then there is $c \\in [\\alpha, \\beta]$ such that $u(\\beta) - u(\\alpha) \\ge (\\beta - \\alpha)u'_s(c)$.",
+        "*Proof.* Define $v : [\\alpha, \\beta] \\to \\mathbb{R}$, $v(x) = u(x) - \\frac{u(\\beta) - u(\\alpha)}{\\beta - \\alpha}x$. The function $v$ satisfies the conditions in Lemma 1, so there is a point $c \\in [\\alpha, \\beta]$ such that $v'_s(c) \\le 0$.",
+        "Returning to the solution of the problem, let $a \\le x < y \\le b$. By Lemma 1, there exists $c \\in [x, y]$ such that $u(y) - u(x) \\ge (y - x)u'_s(c)$, which implies that $u$ is increasing.",
+        "The reverse condition is easily implied by the definition of the left derivative."
+      ],
+      "explanation": "We shall use the following results which can be viewed as generalizations of the theorems of Rolle and Lagrange.\n\n**Lemma 1.** If a function $u : [\\alpha, \\beta] \\to \\mathbb{R}$ has left and right finite derivatives at any point in $[\\alpha, \\beta]$ and $u(\\alpha) = u(\\beta)$, then there is $c \\in [\\alpha, \\beta]$ such that $u'_s(c) \\le 0$.\n*Proof.* It is obvious that $u$ is continuous on $[\\alpha, \\beta]$, so it has a global minimum which belongs to the interior of the interval or coincides with one of the extremities; this point can be chosen as $c$.\n\n**Lemma 2.** If a function $u : [\\alpha, \\beta] \\to \\mathbb{R}$ has right and left finite derivatives at each point in the interval $[\\alpha, \\beta]$, then there is $c \\in [\\alpha, \\beta]$ such that $u(\\beta) - u(\\alpha) \\ge (\\beta - \\alpha)u'_s(c)$.\n*Proof.* Define $v : [\\alpha, \\beta] \\to \\mathbb{R}$, $v(x) = u(x) - \\frac{u(\\beta) - u(\\alpha)}{\\beta - \\alpha}x$. The function $v$ satisfies the conditions in Lemma 1, so there is a point $c \\in [\\alpha, \\beta]$ such that $v'_s(c) \\le 0$.\n\nReturning to the solution of the problem, let $a \\le x < y \\le b$. By Lemma 1, there exists $c \\in [x, y]$ such that $u(y) - u(x) \\ge (y - x)u'_s(c)$, which implies that $u$ is increasing.\n\nThe reverse condition is easily implied by the definition of the left derivative.",
+      "hint": "62nd ROMANIAN MATHEMATICAL OLYMPIAD · Calculus > Differential Calculus > Derivatives",
+      "tags": [
+        "mathnet",
+        "romania",
+        "no-answer",
+        "open"
+      ]
+    },
+    {
+      "id": "math.olympiad.mathnet-calculus.q0006",
+      "problem": "Find all positive integer numbers $n$ such that the number $3\\pi$ is a period of the function $f(x) = \\cos nx \\cdot \\sin \\frac{2009x}{n^2}$.",
+      "answer": "1, 7",
+      "answer_format": "expression",
+      "difficulty": "hard",
+      "solution_steps": [
+        "$3\\pi$ is a period of the function $f(x)$ if and only if $f(x+3\\pi) = f(x)$ for arbitrary real number $x$. Putting $x=0$ we obtain that $f(0)=0$, since $f(3\\pi) = \\cos 3\\pi n \\cdot \\sin \\frac{3 \\cdot 2009\\pi}{n^2}$ we have $0 = \\cos 3\\pi n \\cdot \\sin \\frac{3 \\cdot 2009\\pi}{n^2} \\Leftrightarrow 0 = \\sin \\frac{3 \\cdot 2009\\pi}{n^2} \\Leftrightarrow \\frac{6027\\pi}{n^2} = \\pi k,\\ k \\in \\mathbb{Z} \\Leftrightarrow 6027 : n^2$.",
+        "As $6027 = 3 \\cdot 7^2 \\cdot 41$ thus the possible values for $n$ can only be numbers $1$ or $7$. It is directly verified that the numbers $1$ and $7$ satisfy the same initial conditions."
+      ],
+      "explanation": "$3\\pi$ is a period of the function $f(x)$ if and only if $f(x+3\\pi) = f(x)$ for arbitrary real number $x$. Putting $x=0$ we obtain that $f(0)=0$, since $f(3\\pi) = \\cos 3\\pi n \\cdot \\sin \\frac{3 \\cdot 2009\\pi}{n^2}$ we have $0 = \\cos 3\\pi n \\cdot \\sin \\frac{3 \\cdot 2009\\pi}{n^2} \\Leftrightarrow 0 = \\sin \\frac{3 \\cdot 2009\\pi}{n^2} \\Leftrightarrow \\frac{6027\\pi}{n^2} = \\pi k,\\ k \\in \\mathbb{Z} \\Leftrightarrow 6027 : n^2$.\n\nAs $6027 = 3 \\cdot 7^2 \\cdot 41$ thus the possible values for $n$ can only be numbers $1$ or $7$. It is directly verified that the numbers $1$ and $7$ satisfy the same initial conditions.",
+      "hint": "49th Mathematical Olympiad in Ukraine · Precalculus > Trigonometric functions",
+      "tags": [
+        "mathnet",
+        "ukraine"
+      ]
+    },
+    {
+      "id": "math.olympiad.mathnet-calculus.q0007",
+      "problem": "Find all the functions $f : [-\\frac{\\pi}{2}; \\frac{\\pi}{2}] \\to \\mathbb{R}$ such that:\na. $f$ is differentiable on $[-\\frac{\\pi}{2}, \\frac{\\pi}{2}]$;\nb. there exists an antiderivative $F$ of $f$ such that $F(x) + f'(x) \\le 0, \\forall x \\in [-\\frac{\\pi}{2}, \\frac{\\pi}{2}]$ and $F(-\\frac{\\pi}{2}) = F(\\frac{\\pi}{2}) = 0$.",
+      "answer": "All solutions are f(x) = C · sin x for an arbitrary real constant C.",
+      "answer_format": "expression",
+      "difficulty": "hard",
+      "solution_steps": [],
+      "explanation": "",
+      "hint": "SHORTLISTED PROBLEMS FOR THE 62nd NMO · Calculus > Differential Equations > ODEs",
+      "tags": [
+        "mathnet",
+        "romania"
+      ]
+    },
+    {
+      "id": "math.olympiad.mathnet-calculus.q0008",
+      "problem": "Consider a continuous function $f : [0, 1] \\to \\mathbb{R}$ with $f(1) = 0$. Prove that the following limit exists and calculate its value:\n$$\n\\lim_{t \\to 1^+} \\left( \\frac{1}{1-t} \\cdot \\int_{0}^{1} x(f(tx) - f(x)) \\, dx \\right).\n$$",
+      "answer": "2\\int_{0}^{1} x f(x) \\, dx",
+      "answer_format": "expression",
+      "difficulty": "hard",
+      "solution_steps": [
+        "Consider $g : [0, 1] \\to \\mathbb{R}$ defined by $g(x) = x f(x)$, for any $x \\in [0, 1]$. Being continuous, $g$ has an antiderivative $G : [0, 1] \\to \\mathbb{R}$ with $G(0) = 0$. Then $g(1) = f(1) = 0$ and",
+        "$$",
+        "\\int_{0}^{1} x f(x) \\, dx = \\int_{0}^{1} g(x) \\, dx = G(1),",
+        "$$",
+        "and",
+        "$$",
+        "\\int_{0}^{1} x f(tx) \\, dx = \\frac{1}{t^2} \\cdot \\int_{0}^{1} t g(tx) \\, dx = \\frac{1}{t^2} \\cdot G(t),",
+        "$$",
+        "for $t \\in (0, 1]$. Then",
+        "$$"
+      ],
+      "explanation": "Consider $g : [0, 1] \\to \\mathbb{R}$ defined by $g(x) = x f(x)$, for any $x \\in [0, 1]$. Being continuous, $g$ has an antiderivative $G : [0, 1] \\to \\mathbb{R}$ with $G(0) = 0$. Then $g(1) = f(1) = 0$ and\n$$\n\\int_{0}^{1} x f(x) \\, dx = \\int_{0}^{1} g(x) \\, dx = G(1),\n$$\nand\n$$\n\\int_{0}^{1} x f(tx) \\, dx = \\frac{1}{t^2} \\cdot \\int_{0}^{1} t g(tx) \\, dx = \\frac{1}{t^2} \\cdot G(t),\n$$\nfor $t \\in (0, 1]$. Then\n$$\n\\frac{1}{1-t} \\cdot \\int_{0}^{1} x(f(tx) - f(x)) \\, dx = \\frac{1}{1-t} \\cdot \\left( \\frac{1}{t^2} \\cdot G(t) - G(1) \\right) = \\frac{1}{t^2} \\cdot \\frac{G(t) - t^2 G(1)}{1-t}.\n$$\nLet $u, v : [0, 1] \\to \\mathbb{R}$ defined by $u(t) = G(t) - t^2 G(1)$, and $v(t) = 1 - t$, respectively, for $t \\in [0, 1]$. Both are differentiable and $u'(t) = g(t) - 2t G(1)$, $v'(t) = -1$, for $t \\in (0, 1)$, and:\n$$\n\\lim_{t \\to 1^+} u(t) = \\lim_{t \\to 1^+} v(t) = 0 \\quad \\text{and} \\quad \\lim_{t \\to 1^+} \\frac{u'(t)}{v'(t)} = 2G(1) - g(1) = 2G(1).\n$$\nBy the l'Hospital rule,\n$$\n\\lim_{t \\to 1^+} \\left( \\frac{1}{1-t} \\cdot \\int_{0}^{1} x(f(tx) - f(x)) \\, dx \\right) = \\lim_{t \\to 1^+} \\frac{1}{t^2} \\cdot \\frac{u(t)}{v(t)} = \\lim_{t \\to 1^+} \\frac{u(t)}{v(t)}\n$$\nso\n$$\n\\lim_{t \\to 1^+} \\frac{u'(t)}{v'(t)} = 2G(1) = 2 \\int_{0}^{1} x f(x) \\, dx.",
+      "hint": "74th Romanian Mathematical Olympiad · Calculus > Integral Calculus > Techniques > Single-variable",
+      "tags": [
+        "mathnet",
+        "romania"
+      ]
+    },
+    {
+      "id": "math.olympiad.mathnet-calculus.q0009",
+      "problem": "Problem:\nLet $f: \\mathbf{R} \\rightarrow \\mathbf{R}$ be a smooth function such that $f'(x)^2 = f(x) f''(x)$ for all $x$. Suppose $f(0) = 1$ and $f^{(4)}(0) = 9$. Find all possible values of $f'(0)$.",
+      "answer": "± sqrt(3)",
+      "answer_format": "expression",
+      "difficulty": "hard",
+      "solution_steps": [
+        "Solution: $\\pm \\sqrt{3}$",
+        "Let $f'(0) = a$. Then the equation gives $f''(0) = a^2$. Differentiating the given equation gives",
+        "$$",
+        "2 f'(x) f''(x) = f(x) f'''(x) + f'(x) f''(x)",
+        "$$",
+        "or $f'(x) f''(x) = f(x) f'''(x)$. Differentiating once more gives",
+        "$$",
+        "f'(x) f'''(x) + f''(x)^2 = f(x) f^{(4)}(x) + f'(x) f'''(x)",
+        "$$",
+        "or $f''(x)^2 = f(x) f^{(4)}(x)$, giving $9 = f^{(4)}(0) = a^4$. Thus $a = \\pm \\sqrt{3}$. These are indeed both attainable by $f(x) = e^{\\pm x \\sqrt{3}}$."
+      ],
+      "explanation": "Solution: $\\pm \\sqrt{3}$\nLet $f'(0) = a$. Then the equation gives $f''(0) = a^2$. Differentiating the given equation gives\n$$\n2 f'(x) f''(x) = f(x) f'''(x) + f'(x) f''(x)\n$$\nor $f'(x) f''(x) = f(x) f'''(x)$. Differentiating once more gives\n$$\nf'(x) f'''(x) + f''(x)^2 = f(x) f^{(4)}(x) + f'(x) f'''(x)\n$$\nor $f''(x)^2 = f(x) f^{(4)}(x)$, giving $9 = f^{(4)}(0) = a^4$. Thus $a = \\pm \\sqrt{3}$. These are indeed both attainable by $f(x) = e^{\\pm x \\sqrt{3}}$.\n\nAlternative Solution: Rewrite the given equation as $\\frac{f''(x)}{f'(x)} = \\frac{f'(x)}{f(x)}$. Integrating both sides gives $\\ln f'(x) = \\ln f(x) + C_1$, and exponentiating gives $f'(x) = C f(x)$. This has solution $f(x) = A e^{C x}$ for constants $A$ and $C$. Since $f(0) = 1$, $A = 1$, and differentiating we find that $C^4 = f^{(4)}(0) = 9$, yielding $f'(0) = C = \\pm \\sqrt{3}$.",
+      "hint": "Harvard-MIT Mathematics Tournament · Calculus > Differential Equations > ODEs",
+      "tags": [
+        "mathnet",
+        "united-states"
+      ]
+    },
+    {
+      "id": "math.olympiad.mathnet-calculus.q0010",
+      "problem": "Problem:\n\nFind the exact value of $\\frac{\\sqrt{3}}{\\sin 20^{\\circ}}-\\frac{1}{\\cos 20^{\\circ}}$.",
+      "answer": "4",
+      "answer_format": "expression",
+      "difficulty": "hard",
+      "solution_steps": [
+        "Solution:",
+        "Let us denote the expression as $E$:",
+        "$$",
+        "E = \\frac{\\sqrt{3}}{\\sin 20^{\\circ}} - \\frac{1}{\\cos 20^{\\circ}}",
+        "$$",
+        "Let us write both terms with a common denominator:",
+        "$$",
+        "E = \\frac{\\sqrt{3} \\cos 20^{\\circ} - 1 \\cdot \\sin 20^{\\circ}}{\\sin 20^{\\circ} \\cos 20^{\\circ}}",
+        "$$",
+        "Recall that $\\sin 20^{\\circ} \\cos 20^{\\circ} = \\frac{1}{2} \\sin 40^{\\circ}$."
+      ],
+      "explanation": "Solution:\n\nLet us denote the expression as $E$:\n\n$$\nE = \\frac{\\sqrt{3}}{\\sin 20^{\\circ}} - \\frac{1}{\\cos 20^{\\circ}}\n$$\n\nLet us write both terms with a common denominator:\n\n$$\nE = \\frac{\\sqrt{3} \\cos 20^{\\circ} - 1 \\cdot \\sin 20^{\\circ}}{\\sin 20^{\\circ} \\cos 20^{\\circ}}\n$$\n\nRecall that $\\sin 20^{\\circ} \\cos 20^{\\circ} = \\frac{1}{2} \\sin 40^{\\circ}$.\n\nSo,\n$$\nE = \\frac{\\sqrt{3} \\cos 20^{\\circ} - \\sin 20^{\\circ}}{\\frac{1}{2} \\sin 40^{\\circ}} = \\frac{2 (\\sqrt{3} \\cos 20^{\\circ} - \\sin 20^{\\circ})}{\\sin 40^{\\circ}}\n$$\n\nNow, let's try to simplify the numerator:\n\n$\\sqrt{3} \\cos 20^{\\circ} - \\sin 20^{\\circ}$\n\nRecall that $a \\cos x - b \\sin x = R \\cos(x + \\alpha)$, where $R = \\sqrt{a^2 + b^2}$ and $\\tan \\alpha = \\frac{b}{a}$.\n\nHere, $a = \\sqrt{3}$, $b = 1$.\n\nSo,\n$$\nR = \\sqrt{(\\sqrt{3})^2 + 1^2} = \\sqrt{3 + 1} = 2\n$$\n\n$\\tan \\alpha = \\frac{1}{\\sqrt{3}} = \\frac{1}{\\sqrt{3}}$\n\nSo $\\alpha = 30^{\\circ}$.\n\nTherefore,\n$$\n\\sqrt{3} \\cos 20^{\\circ} - \\sin 20^{\\circ} = 2 \\cos(20^{\\circ} + 30^{\\circ}) = 2 \\cos 50^{\\circ}\n$$\n\nSo,\n$$\nE = \\frac{2 \\cdot 2 \\cos 50^{\\circ}}{\\sin 40^{\\circ}} = \\frac{4 \\cos 50^{\\circ}}{\\sin 40^{\\circ}}\n$$\n\nBut $\\cos 50^{\\circ} = \\sin (90^{\\circ} - 50^{\\circ}) = \\sin 40^{\\circ}$.\n\nTherefore,\n$$\nE = \\frac{4 \\sin 40^{\\circ}}{\\sin 40^{\\circ}} = 4\n$$\n\n**Final Answer:**\n\n$\\boxed{4}$",
+      "hint": "Area Stage · Precalculus > Trigonometric functions",
+      "tags": [
+        "mathnet",
+        "philippines"
+      ]
+    },
+    {
+      "id": "math.olympiad.mathnet-calculus.q0011",
+      "problem": "Problem:\n\nWhat is the minimum vertical distance between the graphs of $2+\\sin (x)$ and $\\cos (x)$?",
+      "answer": "2 - sqrt(2)",
+      "answer_format": "expression",
+      "difficulty": "hard",
+      "solution_steps": [
+        "Solution:",
+        "The derivative of $2+\\sin (x)-\\cos (x)$ is $\\cos x+\\sin x$, which in the interval $0 \\leq x<2 \\pi$ is zero at $x=\\frac{3 \\pi}{4}, \\frac{7 \\pi}{4}$. At $\\frac{7 \\pi}{4}$, when $\\sin (x)$ is negative and $\\cos (x)$ is positive, the distance reaches its minimal value of $2-\\sqrt{2}$."
+      ],
+      "explanation": "Solution:\n\nThe derivative of $2+\\sin (x)-\\cos (x)$ is $\\cos x+\\sin x$, which in the interval $0 \\leq x<2 \\pi$ is zero at $x=\\frac{3 \\pi}{4}, \\frac{7 \\pi}{4}$. At $\\frac{7 \\pi}{4}$, when $\\sin (x)$ is negative and $\\cos (x)$ is positive, the distance reaches its minimal value of $2-\\sqrt{2}$.",
+      "hint": "Harvard-MIT Math Tournament · Calculus > Differential Calculus > Derivatives",
+      "tags": [
+        "mathnet",
+        "united-states"
+      ]
+    },
+    {
+      "id": "math.olympiad.mathnet-calculus.q0012",
+      "problem": "Problem:\n\nConsider the function\n$$\nf(x) = \\frac{x^{2} - 2006x + 1}{x^{2} + 1}\n$$\n\na. Solve the inequality $f'(x) \\geq 0$.\n\nb. Prove that $|f(x) - f(y)| \\leq 2006$ for all real numbers $x$ and $y$.",
+      "answer": "f'(x) ≥ 0 for x ≤ −1 or x ≥ 1; moreover, |f(x) − f(y)| ≤ 2006 for all real x, y.",
+      "answer_format": "expression",
+      "difficulty": "hard",
+      "solution_steps": [],
+      "explanation": "",
+      "hint": "Bulgarian Mathematical Competitions · Calculus > Differential Calculus > Derivatives",
+      "tags": [
+        "mathnet",
+        "bulgaria"
+      ]
+    },
+    {
+      "id": "math.olympiad.mathnet-calculus.q0013",
+      "problem": "Problem:\n\nThe differentiable function $F: \\mathbb{R} \\rightarrow \\mathbb{R}$ satisfies $F(0) = -1$ and\n$$\n\\frac{d}{d x} F(x) = \\sin (\\sin (\\sin (\\sin (x)))) \\cdot \\cos (\\sin (\\sin (x))) \\cdot \\cos (\\sin (x)) \\cdot \\cos (x)\n$$\nFind $F(x)$ as a function of $x$.",
+      "answer": "-cos(sin(sin(sin(x))))",
+      "answer_format": "expression",
+      "difficulty": "hard",
+      "solution_steps": [
+        "Solution:",
+        "Substituting $u = \\sin (\\sin (\\sin (x)))$, we find",
+        "$$",
+        "F(x) = \\int \\sin (u) \\, d u = -\\cos (u) + C",
+        "$$",
+        "for some $C$. Since $F(0) = -1$ we find $C = 0$."
+      ],
+      "explanation": "Solution:\n\nSubstituting $u = \\sin (\\sin (\\sin (x)))$, we find\n$$\nF(x) = \\int \\sin (u) \\, d u = -\\cos (u) + C\n$$\nfor some $C$. Since $F(0) = -1$ we find $C = 0$.",
+      "hint": "Harvard-MIT Mathematics Tournament · Calculus > Differential Calculus > Derivatives",
+      "tags": [
+        "mathnet",
+        "united-states"
+      ]
+    },
+    {
+      "id": "math.olympiad.mathnet-calculus.q0014",
+      "problem": "Let $f: \\mathbb{R} \\to \\mathbb{R}$ be a continuous function such that $f(x) + \\sin(f(x)) \\ge x$, for all $x \\in \\mathbb{R}$. Prove that\n$$\n\\int_{0}^{\\pi} f(x) \\, dx \\geq \\frac{\\pi^2}{2} - 2.\n$$",
+      "answer": "",
+      "answer_format": "open",
+      "difficulty": "hard",
+      "solution_steps": [
+        "Let $g : \\mathbb{R} \\to \\mathbb{R}$ defined by $g(x) = x + \\sin(x)$, for any $x \\in \\mathbb{R}$. Obviously, $g$ is differentiable on $\\mathbb{R}$, with $g'(x) > 0$, for all $x \\in ((2k-1)\\pi, (2k+1)\\pi)$, for $k \\in \\mathbb{Z}$. Thus $g$ is increasing on any interval $[(2k-1)\\pi, (2k+1)\\pi]$, with $k \\in \\mathbb{Z}$, so $g$ is increasing on $\\mathbb{R}$.",
+        "As $\\lim_{x \\to -\\infty} g(x) = -\\infty$ and $\\lim_{x \\to \\infty} g(x) = \\infty$, $g$ is one-to-one, with $g^{-1} : \\mathbb{R} \\to \\mathbb{R}$ continuous and increasing on $\\mathbb{R}$. The given inequality can thus be written",
+        "$$",
+        "g(f(x)) \\geq x, \\text{ for any } x \\in \\mathbb{R} \\iff f(x) \\geq g^{-1}(x), \\text{ for any } x \\in \\mathbb{R}.",
+        "$$",
+        "Then",
+        "$$",
+        "\\int_{0}^{\\pi} f(x) \\, dx \\geq \\int_{0}^{\\pi} g^{-1}(x) \\, dx .",
+        "$$",
+        "As $g(0) = 0$ and $g(\\pi) = \\pi$, by Young inequality, we have"
+      ],
+      "explanation": "Let $g : \\mathbb{R} \\to \\mathbb{R}$ defined by $g(x) = x + \\sin(x)$, for any $x \\in \\mathbb{R}$. Obviously, $g$ is differentiable on $\\mathbb{R}$, with $g'(x) > 0$, for all $x \\in ((2k-1)\\pi, (2k+1)\\pi)$, for $k \\in \\mathbb{Z}$. Thus $g$ is increasing on any interval $[(2k-1)\\pi, (2k+1)\\pi]$, with $k \\in \\mathbb{Z}$, so $g$ is increasing on $\\mathbb{R}$.\nAs $\\lim_{x \\to -\\infty} g(x) = -\\infty$ and $\\lim_{x \\to \\infty} g(x) = \\infty$, $g$ is one-to-one, with $g^{-1} : \\mathbb{R} \\to \\mathbb{R}$ continuous and increasing on $\\mathbb{R}$. The given inequality can thus be written\n$$\ng(f(x)) \\geq x, \\text{ for any } x \\in \\mathbb{R} \\iff f(x) \\geq g^{-1}(x), \\text{ for any } x \\in \\mathbb{R}.\n$$\nThen\n$$\n\\int_{0}^{\\pi} f(x) \\, dx \\geq \\int_{0}^{\\pi} g^{-1}(x) \\, dx .\n$$\nAs $g(0) = 0$ and $g(\\pi) = \\pi$, by Young inequality, we have\n$$\n\\begin{align*}\n\\int_{0}^{\\pi} g^{-1}(x) \\, dx &= \\pi \\cdot g(\\pi) - 0 \\cdot g(0) - \\int_{0}^{\\pi} g(x) \\, dx \\\\\n&= \\pi^2 - \\left( \\frac{\\pi^2}{2} - \\cos(\\pi) \\right) + (0 - \\cos(0)) = \\frac{\\pi^2}{2} - 2\n\\end{align*}\n$$\nwhich gives the result.",
+      "hint": "74th Romanian Mathematical Olympiad · Calculus > Integral Calculus > Techniques > Single-variable",
+      "tags": [
+        "mathnet",
+        "romania",
+        "no-answer",
+        "open"
+      ]
+    },
+    {
+      "id": "math.olympiad.mathnet-calculus.q0015",
+      "problem": "Let us consider the functions $f, g : \\mathbb{R} \\to \\mathbb{R}$, where $f$ is continuous. Assume that, for all real numbers $a < b < c$, there is a sequence $(x_n)_{n \\ge 1}$ which converges to $b$ such that the limit $\\lim_{n \\to \\infty} g(x_n)$ exists and we have\n$$\nf(a) < \\lim_{n \\to \\infty} g(x_n) < f(c).\n$$\na) Give an example of such functions, for which $g$ is discontinuous at any real point.\n\nb) Prove that, if $g$ is a monotone function, then $f = g$.",
+      "answer": "a) Example: f(x) = x for all real x, and g(x) = x if x is rational, g(x) = x + 1 if x is irrational. Then g is discontinuous at every real point, and for any a < b < c, a rational sequence x_n → b gives lim g(x_n) = b, which lies in (f(a), f(c)).\nb) If g is monotone, then g = f on all of R.",
+      "answer_format": "expression",
+      "difficulty": "hard",
+      "solution_steps": [
+        "a) Let us consider the functions $f(x) = x$, for all $x \\in \\mathbb{R}$, and",
+        "$$",
+        "g(x) = \\begin{cases} x, & x \\in \\mathbb{Q} \\\\ x+1, & x \\in \\mathbb{R} \\setminus \\mathbb{Q} \\end{cases}.",
+        "$$",
+        "The function $g$ is discontinuous at any real point. Let $a < b < c$ be three arbitrary real numbers. For any sequence $(x_n)_{n \\ge 1}$ of rational numbers converging to $b$, we have $\\lim_{n \\to \\infty} g(x_n) = \\lim_{n \\to \\infty} x_n = b \\in (a, c) = (f(a), f(c))$.",
+        "b) Consider $b \\in \\mathbb{R}$ a continuity point of $g$. We will prove $g(b) = f(b)$ by contradiction. If $g(b) < f(b)$ then, based on the continuity of $f$ at the point $b$, there is $a < b$ such that $f(a) > g(b)$. Then, for any sequence $(x_n)_{n \\ge 1}$ converging to $b$, we have $\\lim_{n \\to \\infty} g(x_n) = g(b) < f(a)$, contrary to the hypothesis. If $g(b) > f(b)$ then, by using again the continuity of $f$ at $b$, we can find $c > b$ such that $f(c) < g(b)$. For any sequence $(x_n)_{n \\ge 1}$ converging to $b$, we have $\\lim_{n \\to \\infty} g(x_n) = g(b) > f(c)$, contrary to the hypothesis. So $g(b) = f(b)$. We conclude that $g(x) = f(x)$ at any continuity point $x$ of $g$.",
+        "Let $x$ be an arbitrary real number. The monotone function $g$ has lateral limits at $x$. The set of discontinuity points of $g$ is at most countable. So, for any $n \\in \\mathbb{N}^*$, there are two continuity points of $g$: $u_n \\in (x - 1/n, x)$ and $v_n \\in (x, x + 1/n)$. Then $\\lim_{t \\searrow x} g(t) = \\lim_{n \\to \\infty} g(u_n) = \\lim_{n \\to \\infty} f(u_n) = f(x)$ and $\\lim_{t \\nearrow x} g(t) = \\lim_{n \\to \\infty} g(v_n) = \\lim_{n \\to \\infty} f(v_n) = f(x)$. Thus, $\\lim_{t \\searrow x} g(t) = \\lim_{t \\nearrow x} g(t) = f(x)$. From the monotony of $g$, we get $g(x) = f(x)$."
+      ],
+      "explanation": "a) Let us consider the functions $f(x) = x$, for all $x \\in \\mathbb{R}$, and\n$$\ng(x) = \\begin{cases} x, & x \\in \\mathbb{Q} \\\\ x+1, & x \\in \\mathbb{R} \\setminus \\mathbb{Q} \\end{cases}.\n$$\nThe function $g$ is discontinuous at any real point. Let $a < b < c$ be three arbitrary real numbers. For any sequence $(x_n)_{n \\ge 1}$ of rational numbers converging to $b$, we have $\\lim_{n \\to \\infty} g(x_n) = \\lim_{n \\to \\infty} x_n = b \\in (a, c) = (f(a), f(c))$.\n\nb) Consider $b \\in \\mathbb{R}$ a continuity point of $g$. We will prove $g(b) = f(b)$ by contradiction. If $g(b) < f(b)$ then, based on the continuity of $f$ at the point $b$, there is $a < b$ such that $f(a) > g(b)$. Then, for any sequence $(x_n)_{n \\ge 1}$ converging to $b$, we have $\\lim_{n \\to \\infty} g(x_n) = g(b) < f(a)$, contrary to the hypothesis. If $g(b) > f(b)$ then, by using again the continuity of $f$ at $b$, we can find $c > b$ such that $f(c) < g(b)$. For any sequence $(x_n)_{n \\ge 1}$ converging to $b$, we have $\\lim_{n \\to \\infty} g(x_n) = g(b) > f(c)$, contrary to the hypothesis. So $g(b) = f(b)$. We conclude that $g(x) = f(x)$ at any continuity point $x$ of $g$.\n\nLet $x$ be an arbitrary real number. The monotone function $g$ has lateral limits at $x$. The set of discontinuity points of $g$ is at most countable. So, for any $n \\in \\mathbb{N}^*$, there are two continuity points of $g$: $u_n \\in (x - 1/n, x)$ and $v_n \\in (x, x + 1/n)$. Then $\\lim_{t \\searrow x} g(t) = \\lim_{n \\to \\infty} g(u_n) = \\lim_{n \\to …",
+      "hint": "74th Romanian Mathematical Olympiad · Precalculus > Functions",
+      "tags": [
+        "mathnet",
+        "romania"
+      ]
+    },
+    {
+      "id": "math.olympiad.mathnet-calculus.q0016",
+      "problem": "Prove that, for a function $f : \\mathbb{R} \\to \\mathbb{R}$, the following affirmations are equivalent:\n(i) $f$ is differentiable on $\\mathbb{R}$ with continuous derivative;\n(ii) for any $a \\in \\mathbb{R}$ and two sequences $(x_n)_{n \\ge 1}$ and $(y_n)_{n \\ge 1}$, with limit $a$, such that $x_n \\neq y_n$, for all $n \\in \\mathbb{N}^*$, the sequence $\\left( \\frac{f(x_n) - f(y_n)}{x_n - y_n} \\right)_{n \\ge 1}$ is convergent.",
+      "answer": "",
+      "answer_format": "open",
+      "difficulty": "hard",
+      "solution_steps": [
+        "(i) $\\Rightarrow$ (ii)",
+        "Suppose $f: \\mathbb{R} \\to \\mathbb{R}$ is continuously differentiable on $\\mathbb{R}$.",
+        "Let $a \\in \\mathbb{R}$, and two sequences $(x_n)_{n \\ge 1}$ and $(y_n)_{n \\ge 1}$, convergent to $a$, such that $x_n \\ne y_n$, for $n \\in \\mathbb{N}^*$. By Lagrange theorem, there are points $a_n \\in (\\min\\{x_n, y_n\\}, \\max\\{x_n, y_n\\})$ such that",
+        "$$",
+        "\\frac{f(x_n)-f(y_n)}{x_n-y_n} = f'(a_n).",
+        "$$",
+        "We deduce that the sequence $(a_n)_{n \\ge 1}$ converges also to $a$. By the continuity of $f'$, we obtain",
+        "$$",
+        "\\lim_{n \\to \\infty} \\frac{f(x_n)-f(y_n)}{x_n-y_n} = \\lim_{n \\to \\infty} f'(a_n) = f'(a),",
+        "$$"
+      ],
+      "explanation": "(i) $\\Rightarrow$ (ii)\n\nSuppose $f: \\mathbb{R} \\to \\mathbb{R}$ is continuously differentiable on $\\mathbb{R}$.\nLet $a \\in \\mathbb{R}$, and two sequences $(x_n)_{n \\ge 1}$ and $(y_n)_{n \\ge 1}$, convergent to $a$, such that $x_n \\ne y_n$, for $n \\in \\mathbb{N}^*$. By Lagrange theorem, there are points $a_n \\in (\\min\\{x_n, y_n\\}, \\max\\{x_n, y_n\\})$ such that\n$$\n\\frac{f(x_n)-f(y_n)}{x_n-y_n} = f'(a_n).\n$$\nWe deduce that the sequence $(a_n)_{n \\ge 1}$ converges also to $a$. By the continuity of $f'$, we obtain\n$$\n\\lim_{n \\to \\infty} \\frac{f(x_n)-f(y_n)}{x_n-y_n} = \\lim_{n \\to \\infty} f'(a_n) = f'(a),\n$$\nimplying that the sequence $\\left(\\frac{f(x_n)-f(y_n)}{x_n-y_n}\\right)_{n \\ge 1}$ is convergent.\n\n(ii) $\\Rightarrow$ (i)\n\nLet $f: \\mathbb{R} \\to \\mathbb{R}$ be a function having property (ii). For $a \\in \\mathbb{R}$, there exists $\\ell_a = \\lim_{n \\to \\infty} \\frac{f(a+1/n)-f(a)}{1/n} \\in \\mathbb{R}$.\n\nConsider two sequences $(x_n)_{n \\ge 1}$ and $(y_n)_{n \\ge 1}$ with limit $a$, such that $x_n \\ne y_n$, for any $n \\in \\mathbb{N}^*$. Define sequences $(z_n)_{n \\ge 1}$ and $(t_n)_{n \\ge 1}$ by $z_{2n-1} = x_n$, $z_{2n} = a+1/n$, $t_{2n-1} = y_n$ and $t_{2n} = a$, for $n \\in \\mathbb{N}^*$. We have $\\lim_{n \\to \\infty} z_n = \\lim_{n \\to \\infty} t_n = a$ and $z_n \\ne t_n$, for any $n \\in \\mathbb{N}^*$. By hypothesis $\\left(\\frac{f(z_n)-f(t_n)}{z_n-t_n}\\right)_{n \\ge 1}$ is convergent. We get\n$$\n\\lim_{n \\to \\infty} \\frac{f(x_n)-f(y_n)}{x_n-y_n} = \\lim_{n \\to \\infty} \\frac{f(a+1/n)-f(a…",
+      "hint": "75th Romanian Mathematical Olympiad · Calculus > Differential Calculus > Derivatives",
+      "tags": [
+        "mathnet",
+        "romania",
+        "no-answer",
+        "open"
+      ]
+    },
+    {
+      "id": "math.olympiad.mathnet-calculus.q0017",
+      "problem": "Problem:\n\nEvaluate $\\int_{0}^{(\\sqrt{2}-1) / 2} \\frac{\\mathrm{~d} x}{(2 x+1) \\sqrt{x^{2}+x}}$.",
+      "answer": "π/4",
+      "answer_format": "expression",
+      "difficulty": "hard",
+      "solution_steps": [
+        "Solution:",
+        "Let $u=\\sqrt{x^{2}+x}$. Then $d u=\\frac{2 x+1}{2 \\sqrt{x^{2}+x}} d x$. So the integral becomes $2 \\int \\frac{d u}{4 x^{2}+4 x+1}$, or $2 \\int \\frac{d u}{4 u^{2}+1}$. This is $\\tan^{-1}(2 u)$, yielding a final answer of $\\tan^{-1}\\left(2 \\sqrt{x^{2}+x}\\right)+C$ for the indefinite integral. The definite integral becomes $\\tan^{-1}(1)-\\tan^{-1}(0)=\\frac{\\pi}{4}$."
+      ],
+      "explanation": "Solution:\n\nLet $u=\\sqrt{x^{2}+x}$. Then $d u=\\frac{2 x+1}{2 \\sqrt{x^{2}+x}} d x$. So the integral becomes $2 \\int \\frac{d u}{4 x^{2}+4 x+1}$, or $2 \\int \\frac{d u}{4 u^{2}+1}$. This is $\\tan^{-1}(2 u)$, yielding a final answer of $\\tan^{-1}\\left(2 \\sqrt{x^{2}+x}\\right)+C$ for the indefinite integral. The definite integral becomes $\\tan^{-1}(1)-\\tan^{-1}(0)=\\frac{\\pi}{4}$.",
+      "hint": "Harvard-MIT Math Tournament · Calculus > Integral Calculus > Techniques > Single-variable",
+      "tags": [
+        "mathnet",
+        "united-states"
+      ]
+    },
+    {
+      "id": "math.olympiad.mathnet-calculus.q0018",
+      "problem": "Problem:\n\nConsider the functions\n$$\nf(x) = \\frac{\\cos^2 x}{1 + \\cos x + \\cos^2 x} \\text{ and } g(x) = k \\tan x + (1-k) \\sin x - x\n$$\nwhere $k$ is a real number.\n\na) Prove that $g'(x) = \\frac{(1-\\cos x)(k-f(x))}{f(x)}$.\n\nb) Find the image of $f(x)$ if $x \\in \\left[0 ; \\frac{\\pi}{2}\\right)$.\n\nc) Find all $k$ such that $g(x) \\geq 0$ for any $x \\in \\left[0 ; \\frac{\\pi}{2}\\right)$.",
+      "answer": "Range of the first function on the given interval: (0, 1/3]; Parameter values: k ∈ [1/3, ∞).",
+      "answer_format": "expression",
+      "difficulty": "hard",
+      "solution_steps": [
+        "Solution:",
+        "a) We have",
+        "$$",
+        "\\begin{aligned}",
+        "g'(x) & = \\frac{(1-\\cos x)\\left[k\\left(1+\\cos x+\\cos^2 x\\right)-\\cos^2 x\\right]}{\\cos^2 x} \\\\",
+        "& = \\frac{(1-\\cos x)\\left(1+\\cos x+\\cos^2 x\\right)}{\\cos^2 x}[k-f(x)] \\\\",
+        "& = \\frac{(1-\\cos x)[k-f(x)]}{f(x)}",
+        "\\end{aligned}",
+        "$$",
+        "b) Set $\\cos x = t$. Then $t \\in (0 ; 1]$ for $x \\in \\left[0 ; \\frac{\\pi}{2}\\right)$ and $f(x) = h(t) = \\frac{t^2}{1 + t + t^2}$. Since $h'(t) = \\frac{t^2 + 2t}{\\left(1 + t + t^2\\right)^2}$, we see that $h'(t) > 0$ for $t \\in (0 ; 1]$ and therefore $h(t)$ increases in this interval. Having in mind that $h(0) = 0$ and $h(1) = \\frac{1}{3}$, we conclude that the range of $h(t)$ for $t \\in (0 ; 1]$, i.e., the range of $f(x)$ for $x \\in \\left[0 ; \\frac{\\pi}{2}\\right)$, is the interval $\\left(0 ; \\frac{1}{3}\\right]$."
+      ],
+      "explanation": "Solution:\n\na) We have\n$$\n\\begin{aligned}\ng'(x) & = \\frac{(1-\\cos x)\\left[k\\left(1+\\cos x+\\cos^2 x\\right)-\\cos^2 x\\right]}{\\cos^2 x} \\\\\n& = \\frac{(1-\\cos x)\\left(1+\\cos x+\\cos^2 x\\right)}{\\cos^2 x}[k-f(x)] \\\\\n& = \\frac{(1-\\cos x)[k-f(x)]}{f(x)}\n\\end{aligned}\n$$\n\nb) Set $\\cos x = t$. Then $t \\in (0 ; 1]$ for $x \\in \\left[0 ; \\frac{\\pi}{2}\\right)$ and $f(x) = h(t) = \\frac{t^2}{1 + t + t^2}$. Since $h'(t) = \\frac{t^2 + 2t}{\\left(1 + t + t^2\\right)^2}$, we see that $h'(t) > 0$ for $t \\in (0 ; 1]$ and therefore $h(t)$ increases in this interval. Having in mind that $h(0) = 0$ and $h(1) = \\frac{1}{3}$, we conclude that the range of $h(t)$ for $t \\in (0 ; 1]$, i.e., the range of $f(x)$ for $x \\in \\left[0 ; \\frac{\\pi}{2}\\right)$, is the interval $\\left(0 ; \\frac{1}{3}\\right]$.\n\nc) If $k < 0$, then $\\lim_{x \\rightarrow \\frac{\\pi}{2},\\ x < \\frac{\\pi}{2}} g(x) = -\\infty$, i.e., any $k < 0$ is not a solution of the problem. It is also easy to see that $k = 0$ is not a solution of the problem.\n\nIt follows by b) that if $k \\geq \\frac{1}{3}$, then $g'(x) > 0$ for $x \\in \\left(0 ; \\frac{\\pi}{2}\\right)$, i.e., the function $g(x)$ increases in this interval. Now $g(0) = 0$ implies that $g(x) \\geq 0$ for $x \\in \\left[0 ; \\frac{\\pi}{2}\\right)$.\n\nIf $k \\in \\left(0 ; \\frac{1}{3}\\right)$, then the equation $g'(x) = 0$ has a unique root $x_0$ in the interval $\\left(0 ; \\frac{\\pi}{2}\\right)$. The considerations above show that $g'(x) < 0$ for $x \\in \\left(0 ; x_0\\right)$, i.e., $g(x)$ decreases in th…",
+      "hint": "Bulgarian Mathematical Competitions · Calculus > Differential Calculus > Derivatives",
+      "tags": [
+        "mathnet",
+        "bulgaria"
+      ]
+    },
+    {
+      "id": "math.olympiad.mathnet-calculus.q0019",
+      "problem": "Problem:\n\ng is a twice differentiable function over the positive reals such that\n$$\n\\begin{aligned}\ng(x)+2 x^{3} g^{\\prime}(x)+x^{4} g^{\\prime \\prime}(x) & =0 \\quad \\text{ for all positive reals } x . \\\\\n\\lim _{x \\rightarrow \\infty} x g(x) & =1\n\\end{aligned}\n$$\nFind the real number $\\alpha>1$ such that $g(\\alpha)=1 / 2$.",
+      "answer": "6/pi",
+      "answer_format": "expression",
+      "difficulty": "hard",
+      "solution_steps": [
+        "Solution:",
+        "Answer: $\\frac{6}{\\pi}$.",
+        "In the first equation, we can convert the expression $2 x^{3} g^{\\prime}(x)+x^{4} g^{\\prime \\prime}(x)$ into the derivative of a product, and in fact a second derivative, by writing $y=1 / x$. Specifically,",
+        "$$",
+        "\\begin{aligned}",
+        "0=g(x)+2 x^{3} g^{\\prime}(x)+x^{4} g^{\\prime \\prime}(x) & =g\\left(\\frac{1}{y}\\right)+2 y^{-3} g^{\\prime}\\left(\\frac{1}{y}\\right)+y^{-4} g^{\\prime \\prime}\\left(\\frac{1}{y}\\right) \\\\",
+        "& =g\\left(\\frac{1}{y}\\right)+\\frac{\\mathrm{d}}{\\mathrm{~d} y}\\left[-y^{-2} g^{\\prime}\\left(\\frac{1}{y}\\right)\\right] \\\\",
+        "& =g\\left(\\frac{1}{y}\\right)+\\frac{\\mathrm{d}^{2}}{\\mathrm{~d} y^{2}}\\left[g\\left(\\frac{1}{y}\\right)\\right]",
+        "\\end{aligned}",
+        "$$"
+      ],
+      "explanation": "Solution:\n\nAnswer: $\\frac{6}{\\pi}$.\n\nIn the first equation, we can convert the expression $2 x^{3} g^{\\prime}(x)+x^{4} g^{\\prime \\prime}(x)$ into the derivative of a product, and in fact a second derivative, by writing $y=1 / x$. Specifically,\n$$\n\\begin{aligned}\n0=g(x)+2 x^{3} g^{\\prime}(x)+x^{4} g^{\\prime \\prime}(x) & =g\\left(\\frac{1}{y}\\right)+2 y^{-3} g^{\\prime}\\left(\\frac{1}{y}\\right)+y^{-4} g^{\\prime \\prime}\\left(\\frac{1}{y}\\right) \\\\\n& =g\\left(\\frac{1}{y}\\right)+\\frac{\\mathrm{d}}{\\mathrm{~d} y}\\left[-y^{-2} g^{\\prime}\\left(\\frac{1}{y}\\right)\\right] \\\\\n& =g\\left(\\frac{1}{y}\\right)+\\frac{\\mathrm{d}^{2}}{\\mathrm{~d} y^{2}}\\left[g\\left(\\frac{1}{y}\\right)\\right]\n\\end{aligned}\n$$\nThus $g\\left(\\frac{1}{y}\\right)=c_{1} \\cos (y)+c_{2} \\sin (y)$ or $g(x)=c_{1} \\cos (1 / x)+c_{2} \\sin (1 / x)$.\n\nNow the second condition gives\n$$\n1=\\lim _{x \\rightarrow \\infty} c_{1} x+c_{2} \\cdot \\frac{\\sin (1 / x)}{1 / x}=c_{2}+\\lim _{x \\rightarrow \\infty} c_{1} x\n$$\nIt must be that $c_{1}=0, c_{2}=1$.\n\nNow since $0<1 / \\alpha<1$, the value of $\\alpha$ such that $g(\\alpha)=\\sin (1 / \\alpha)=1 / 2$ is given by $1 / \\alpha=\\pi / 6$ and so $\\alpha=6 / \\pi$.",
+      "hint": "Harvard-MIT Mathematics Tournament · Calculus > Differential Equations > ODEs",
+      "tags": [
+        "mathnet",
+        "united-states"
+      ]
+    },
+    {
+      "id": "math.olympiad.mathnet-calculus.q0020",
+      "problem": "Determine which of the following numbers is greater: $2$ or $\\operatorname{tg} 1$?",
+      "answer": "2 > \\tan(1)",
+      "answer_format": "expression",
+      "difficulty": "hard",
+      "solution_steps": [
+        "Consider the following inequalities: $2 > \\sqrt{3} = \\operatorname{tg} \\frac{\\pi}{3} > \\operatorname{tg} 1$."
+      ],
+      "explanation": "Consider the following inequalities: $2 > \\sqrt{3} = \\operatorname{tg} \\frac{\\pi}{3} > \\operatorname{tg} 1$.",
+      "hint": "60th Ukrainian National Mathematical Olympiad · Precalculus > Trigonometric functions",
+      "tags": [
+        "mathnet",
+        "ukraine"
+      ]
+    },
+    {
+      "id": "math.olympiad.mathnet-calculus.q0021",
+      "problem": "Consider the functions $f(x) = |x-1| - |x-2|$ and $g(x) = |x-3|$.\n\na) Draw the graph of the function $f(x)$.\n\nb) Find the area of the figure determined by the graphs of $f(x)$ and $g(x)$.",
+      "answer": "1",
+      "answer_format": "expression",
+      "difficulty": "hard",
+      "solution_steps": [],
+      "explanation": "",
+      "hint": "Fall Mathematical Competition · Precalculus > Functions",
+      "tags": [
+        "mathnet",
+        "bulgaria"
+      ]
+    },
+    {
+      "id": "math.olympiad.mathnet-calculus.q0022",
+      "problem": "Problem:\n\nTwo differentiable real functions $f(x)$ and $g(x)$ satisfy\n$$\n\\frac{f^{\\prime}(x)}{g^{\\prime}(x)}=e^{f(x)-g(x)}\n$$\nfor all $x$, and $f(0)=g(2003)=1$. Find the largest constant $c$ such that $f(2003)>c$ for all such functions $f, g$.",
+      "answer": "1 - ln 2",
+      "answer_format": "expression",
+      "difficulty": "hard",
+      "solution_steps": [
+        "Solution: $1-\\ln 2$",
+        "Rearranging the given equation gives $f^{\\prime}(x) e^{-f(x)}=g^{\\prime}(x) e^{-g(x)}$ for all $x$, so",
+        "$$",
+        "\\frac{d}{d x}\\left(e^{-f(x)}-e^{-g(x)}\\right)=-f^{\\prime}(x) e^{-f(x)}+g^{\\prime}(x) e^{-g(x)}=0.",
+        "$$",
+        "Thus, $e^{-f(x)}-e^{-g(x)}$ is a constant, and it must be less than $e^{-f(0)}=e^{-1}$. Thus,",
+        "$$",
+        "e^{-f(2003)}<e^{-g(2003)}+e^{-1}=2 e^{-1}=e^{\\ln 2-1} \\Rightarrow f(2003)>1-\\ln 2.",
+        "$$",
+        "On the other hand, we can find positive-valued functions $e^{-f(x)}, e^{-g(x)}$ that take on the required values at $0$ and $2003$ and have constant difference arbitrarily close to $e^{-1}$. For example, for arbitrarily large $t$, we can set"
+      ],
+      "explanation": "Solution: $1-\\ln 2$\n\nRearranging the given equation gives $f^{\\prime}(x) e^{-f(x)}=g^{\\prime}(x) e^{-g(x)}$ for all $x$, so\n$$\n\\frac{d}{d x}\\left(e^{-f(x)}-e^{-g(x)}\\right)=-f^{\\prime}(x) e^{-f(x)}+g^{\\prime}(x) e^{-g(x)}=0.\n$$\nThus, $e^{-f(x)}-e^{-g(x)}$ is a constant, and it must be less than $e^{-f(0)}=e^{-1}$. Thus,\n$$\ne^{-f(2003)}<e^{-g(2003)}+e^{-1}=2 e^{-1}=e^{\\ln 2-1} \\Rightarrow f(2003)>1-\\ln 2.\n$$\nOn the other hand, we can find positive-valued functions $e^{-f(x)}, e^{-g(x)}$ that take on the required values at $0$ and $2003$ and have constant difference arbitrarily close to $e^{-1}$. For example, for arbitrarily large $t$, we can set\n$$\ne^{-f(x)}=e^{-(t(2003-x)+1)}+e^{-1}-e^{-(2003 t+1)}\n$$\nand\n$$\ne^{-g(x)}=e^{-(t(2003-x)+1)},\n$$\nand we can check that the resulting functions $f, g$ satisfy the required conditions. Thus, we can make $f(2003)$ arbitrarily close to $1-\\ln 2$, so this is the answer.",
+      "hint": "Harvard-MIT Mathematics Tournament · Calculus > Differential Calculus > Derivatives",
+      "tags": [
+        "mathnet",
+        "united-states"
+      ]
+    },
+    {
+      "id": "math.olympiad.mathnet-calculus.q0023",
+      "problem": "Find all real $x$ in $[0, 2\\pi)$ for which all terms of the sequence\n$$\na_n = \\frac{1}{\\cos(nx)}\n$$\nare integers.",
+      "answer": "x in {0, π/3, 2π/3, π, 4π/3, 5π/3}",
+      "answer_format": "expression",
+      "difficulty": "hard",
+      "solution_steps": [
+        "The numbers $a_1$ and $a_2$ are integers. Since $a_1 = \\frac{1}{\\cos x}$, $a_2 = \\frac{1}{\\cos(2x)}$ and $\\cos(2x) = 2(\\cos x)^2 - 1$, we have $a_2 = \\frac{1}{2\\cos^2 x - 1} = \\frac{a_1^2}{2 - a_1^2}$. Now, $a_2$ is an integer, so $2 - a_1^2$ is a divisor of $a_1^2$. So, $2 - a_1^2$ divides $2 - a_1^2$ and $a_1^2$. It therefore also divides their sum, which is equal to 2. We conclude that $2 - a_1^2$ is one of the numbers $-2, -1, 1$ or $2$.",
+        "In the first case we have $a_1^2 = 4$, in the second case we have $a_1^2 = 3$, in the third case we get $a_1^2 = 1$ and in the fourth case we get $a_1^2 = 0$. Since $a_1$ is a non-zero integer, we can only have $a_1 = -2$, $a_1 = 2$, $a_1 = -1$ or $a_1 = 1$. From here it follows that $x$ can only be equal to $0, \\frac{\\pi}{3}, \\frac{2\\pi}{3}, \\pi, \\frac{4\\pi}{3}$ or $\\frac{5\\pi}{3}$.",
+        "If $x = 0$, then $a_n = 1$ for all $n$. If $x = \\pi$, we get the sequence $-1, 1, -1, 1, \\dots$. In the remaining four cases we have $a_{n+6} = a_n$, since for all integers $a$ we have",
+        "$$",
+        "\\cos\\left(\\frac{(n+6) \\cdot a\\pi}{3}\\right) = \\cos\\left(\\frac{n \\cdot a\\pi}{3} + 2a\\pi\\right) = \\cos\\left(\\frac{n \\cdot a\\pi}{3}\\right).",
+        "$$",
+        "It therefore suffices to check that the first six terms of the sequence are integers. When $x = \\frac{\\pi}{3}$ and $\\frac{5\\pi}{3}$ we have $a_1 = 2$, $a_2 = -2$, $a_3 = -1$, $a_4 = -2$, $a_5 = 2$, $a_6 = 1$. If $x = \\frac{2\\pi}{3}$ or $x = \\frac{4\\pi}{3}$, then the first six terms are $-2, -2, 1, -2, -2, 1$.",
+        "The solutions are $0, \\frac{\\pi}{3}, \\frac{2\\pi}{3}, \\pi, \\frac{4\\pi}{3}$ and $\\frac{5\\pi}{3}$."
+      ],
+      "explanation": "The numbers $a_1$ and $a_2$ are integers. Since $a_1 = \\frac{1}{\\cos x}$, $a_2 = \\frac{1}{\\cos(2x)}$ and $\\cos(2x) = 2(\\cos x)^2 - 1$, we have $a_2 = \\frac{1}{2\\cos^2 x - 1} = \\frac{a_1^2}{2 - a_1^2}$. Now, $a_2$ is an integer, so $2 - a_1^2$ is a divisor of $a_1^2$. So, $2 - a_1^2$ divides $2 - a_1^2$ and $a_1^2$. It therefore also divides their sum, which is equal to 2. We conclude that $2 - a_1^2$ is one of the numbers $-2, -1, 1$ or $2$.\nIn the first case we have $a_1^2 = 4$, in the second case we have $a_1^2 = 3$, in the third case we get $a_1^2 = 1$ and in the fourth case we get $a_1^2 = 0$. Since $a_1$ is a non-zero integer, we can only have $a_1 = -2$, $a_1 = 2$, $a_1 = -1$ or $a_1 = 1$. From here it follows that $x$ can only be equal to $0, \\frac{\\pi}{3}, \\frac{2\\pi}{3}, \\pi, \\frac{4\\pi}{3}$ or $\\frac{5\\pi}{3}$.\nIf $x = 0$, then $a_n = 1$ for all $n$. If $x = \\pi$, we get the sequence $-1, 1, -1, 1, \\dots$. In the remaining four cases we have $a_{n+6} = a_n$, since for all integers $a$ we have\n$$\n\\cos\\left(\\frac{(n+6) \\cdot a\\pi}{3}\\right) = \\cos\\left(\\frac{n \\cdot a\\pi}{3} + 2a\\pi\\right) = \\cos\\left(\\frac{n \\cdot a\\pi}{3}\\right).\n$$\nIt therefore suffices to check that the first six terms of the sequence are integers. When $x = \\frac{\\pi}{3}$ and $\\frac{5\\pi}{3}$ we have $a_1 = 2$, $a_2 = -2$, $a_3 = -1$, $a_4 = -2$, $a_5 = 2$, $a_6 = 1$. If $x = \\frac{2\\pi}{3}$ or $x = \\frac{4\\pi}{3}$, then the first six terms are $-2, -2, 1, -2, -2, 1$.\nThe solutions are $0, \\frac…",
+      "hint": "National Math Olympiad · Precalculus > Trigonometric functions",
+      "tags": [
+        "mathnet",
+        "slovenia"
+      ]
+    },
+    {
+      "id": "math.olympiad.mathnet-calculus.q0024",
+      "problem": "Problem:\n\nOn the planet Lemniscate, the people use the elliptic table of elements, a far more advanced version of our periodic table. They're not very good at calculus, though, so they've asked for your help. They know that Kr is somewhat radioactive and deteriorates into Pl, a very unstable element that deteriorates to form the stable element As. They started with a block of Kr of size 10 and nothing else. (Their units don't translate into English, sorry.) At time $t$, they let $x(t)$ be the amount of Kr, $y(t)$ the amount of Pl, and $z(t)$ the amount of As. They know that $x'(t) = -x$, and that, in the absence of Kr, $y'(t) = -2y$. Your job is to find at what time $t$ the quantity of Pl will be largest. You should assume that the entire amount of Kr that deteriorates has turned into Pl.",
+      "answer": "ln 2",
+      "answer_format": "expression",
+      "difficulty": "hard",
+      "solution_steps": [
+        "Solution:",
+        "This problem is long-winded since it's giving an autonomous linear system of differential equations without using any such language (and it includes a number of subtle references). The system we have is $x' = -x$, $y' = x - 2y$. It's not hard to see that $x = 10 e^{-t}$ satisfies the first equation and the initial condition. Plugging this into the second equation and using the integrating factor $e^{2t}$ (or using eigenvalues and eigenvectors to solve the system directly, though I don't want to begin to explain what that means) lets us solve for $y$. More precisely, we want to solve $y' + 2y = 10 e^{-t}$. Multiply by $e^{2t}$ and simplify the left hand side to get $(y e^{2t})' = 10 e^{t}$. Integrating both sides with respect to $t$ then yields $y e^{2t} = 10 e^{t} + C$, or $y = 10 e^{-t} + C e^{-2t}$. Since $y(0) = 0$, we find $C = -10$. Now to maximize $y$, we solve $y'(t) = 0$, or $-10 e^{-t} + 20 e^{-2t} = 0$, or $t = \\ln 2$."
+      ],
+      "explanation": "Solution:\n\nThis problem is long-winded since it's giving an autonomous linear system of differential equations without using any such language (and it includes a number of subtle references). The system we have is $x' = -x$, $y' = x - 2y$. It's not hard to see that $x = 10 e^{-t}$ satisfies the first equation and the initial condition. Plugging this into the second equation and using the integrating factor $e^{2t}$ (or using eigenvalues and eigenvectors to solve the system directly, though I don't want to begin to explain what that means) lets us solve for $y$. More precisely, we want to solve $y' + 2y = 10 e^{-t}$. Multiply by $e^{2t}$ and simplify the left hand side to get $(y e^{2t})' = 10 e^{t}$. Integrating both sides with respect to $t$ then yields $y e^{2t} = 10 e^{t} + C$, or $y = 10 e^{-t} + C e^{-2t}$. Since $y(0) = 0$, we find $C = -10$. Now to maximize $y$, we solve $y'(t) = 0$, or $-10 e^{-t} + 20 e^{-2t} = 0$, or $t = \\ln 2$.",
+      "hint": "Harvard-MIT Math Tournament · Calculus > Differential Equations > ODEs",
+      "tags": [
+        "mathnet",
+        "united-states"
+      ]
+    },
+    {
+      "id": "math.olympiad.mathnet-calculus.q0025",
+      "problem": "Problem:\n\nHow many values of $x$, $-19 < x < 98$, satisfy\n$$\n\\cos^2 x + 2 \\sin^2 x = 1?\n$$",
+      "answer": "38",
+      "answer_format": "expression",
+      "difficulty": "hard",
+      "solution_steps": [
+        "Solution:",
+        "Answer: 38. For any $x$, $\\sin^2 x + \\cos^2 x = 1$. Subtracting this from the given equation gives $\\sin^2 x = 0$, or $\\sin x = 0$. Thus $x$ must be a multiple of $\\pi$, so $-19 < k\\pi < 98$ for some integer $k$, or approximately $-6.1 < k < 31.2$. There are 38 values of $k$ that satisfy this, so there are 38 values of $x$ that satisfy $\\cos^2 x + 2 \\sin^2 x = 1$."
+      ],
+      "explanation": "Solution:\n\nAnswer: 38. For any $x$, $\\sin^2 x + \\cos^2 x = 1$. Subtracting this from the given equation gives $\\sin^2 x = 0$, or $\\sin x = 0$. Thus $x$ must be a multiple of $\\pi$, so $-19 < k\\pi < 98$ for some integer $k$, or approximately $-6.1 < k < 31.2$. There are 38 values of $k$ that satisfy this, so there are 38 values of $x$ that satisfy $\\cos^2 x + 2 \\sin^2 x = 1$.",
+      "hint": "Harvard-MIT Mathematics Tournament · Precalculus > Trigonometric functions",
+      "tags": [
+        "mathnet",
+        "united-states"
+      ]
+    },
+    {
+      "id": "math.olympiad.mathnet-calculus.q0026",
+      "problem": "Problem:\nA function $f(x)$ is periodic if there is a positive number $p$ such that $f(x+p)=f(x)$ for all $x$. For example, $\\sin x$ is periodic with period $2 \\pi$. Is the function $\\sin \\left(x^{2}\\right)$ periodic? Prove your assertion.",
+      "answer": "It is not periodic.",
+      "answer_format": "expression",
+      "difficulty": "hard",
+      "solution_steps": [
+        "Solution:",
+        "Suppose $\\sin(x^2)$ is periodic with period $p > 0$. Then for all $x$, we have",
+        "$$",
+        "\\sin((x+p)^2) = \\sin(x^2).",
+        "$$",
+        "This means",
+        "$$",
+        "(x+p)^2 = x^2 + 2xp + p^2,",
+        "$$",
+        "so"
+      ],
+      "explanation": "Solution:\nSuppose $\\sin(x^2)$ is periodic with period $p > 0$. Then for all $x$, we have\n$$\n\\sin((x+p)^2) = \\sin(x^2).\n$$\nThis means\n$$\n(x+p)^2 = x^2 + 2xp + p^2,\n$$\nso\n$$\n\\sin(x^2 + 2xp + p^2) = \\sin(x^2).\n$$\nTherefore, for all $x$,\n$$\n\\sin(x^2 + 2xp + p^2) - \\sin(x^2) = 0.\n$$\nBut $\\sin(a) = \\sin(b)$ if and only if $a - b = 2\\pi k$ or $a + b = 2\\pi k$ for some integer $k$.\n\nConsider the first possibility:\n$$\nx^2 + 2xp + p^2 - x^2 = 2xp + p^2 = 2\\pi k\n$$\nfor some integer $k$ depending on $x$. But for $x$ real, $2xp + p^2$ can take all real values as $x$ varies, so this is only possible if $p = 0$, which is not allowed (since $p > 0$).\n\nAlternatively, consider the second possibility:\n$$\nx^2 + 2xp + p^2 + x^2 = 2x^2 + 2xp + p^2 = 2\\pi k\n$$\nAgain, as $x$ varies, $2x^2 + 2xp + p^2$ takes all real values, so this is not possible for all $x$.\n\nTherefore, $\\sin(x^2)$ is not periodic.",
+      "hint": "Canadian Mathematical Olympiad · Precalculus > Functions",
+      "tags": [
+        "mathnet",
+        "canada"
+      ]
+    },
+    {
+      "id": "math.olympiad.mathnet-calculus.q0027",
+      "problem": "Evaluate $\\lim_{n \\to \\infty} \\int_0^1 e^{x^n} dx$.",
+      "answer": "1",
+      "answer_format": "expression",
+      "difficulty": "hard",
+      "solution_steps": [
+        "Since $e^{x^n} \\ge 1$ for all $x \\in [0, 1]$ we get $\\int_0^1 e^{x^n} dx \\ge 1$. Notice that $e^t \\le 1 + 3t$ for all $t \\in [0, 1]$ to obtain",
+        "$$",
+        "\\int_{0}^{1} e^{x^{n}} dx \\le \\int_{0}^{1} (1 + 3x^{n}) dx = 1 + \\frac{3}{n + 1}",
+        "$$",
+        "Consequently, the limit is equal to 1."
+      ],
+      "explanation": "Since $e^{x^n} \\ge 1$ for all $x \\in [0, 1]$ we get $\\int_0^1 e^{x^n} dx \\ge 1$. Notice that $e^t \\le 1 + 3t$ for all $t \\in [0, 1]$ to obtain\n$$\n\\int_{0}^{1} e^{x^{n}} dx \\le \\int_{0}^{1} (1 + 3x^{n}) dx = 1 + \\frac{3}{n + 1}\n$$\nConsequently, the limit is equal to 1.",
+      "hint": "64th Romanian Mathematical Olympiad - District Round · Calculus > Integral Calculus > Techniques > Single-variable",
+      "tags": [
+        "mathnet",
+        "romania"
+      ]
+    },
+    {
+      "id": "math.olympiad.mathnet-calculus.q0028",
+      "problem": "Problem:\nFind $\\lim_{h \\rightarrow 0} \\frac{x^{2}-(x+h)^{2}}{h}$.",
+      "answer": "-2x",
+      "answer_format": "expression",
+      "difficulty": "hard",
+      "solution_steps": [
+        "Solution:",
+        "This equals $\\lim_{h \\rightarrow 0} \\frac{x^{2}-x^{2}-h^{2}-2 h x}{h} = \\lim_{h \\rightarrow 0} -h - 2x = -2x$.",
+        "Alternate Solution: This is the definition of the derivative of $-x^{2}$ with respect to $x$, which is $-2x$."
+      ],
+      "explanation": "Solution:\nThis equals $\\lim_{h \\rightarrow 0} \\frac{x^{2}-x^{2}-h^{2}-2 h x}{h} = \\lim_{h \\rightarrow 0} -h - 2x = -2x$.\n\nAlternate Solution: This is the definition of the derivative of $-x^{2}$ with respect to $x$, which is $-2x$.",
+      "hint": "Harvard-MIT Math Tournament · Calculus > Differential Calculus > Derivatives",
+      "tags": [
+        "mathnet",
+        "united-states"
+      ]
+    },
+    {
+      "id": "math.olympiad.mathnet-calculus.q0029",
+      "problem": "Problem:\n\nHow many roots does $\\arctan x = x^{2} - 1.6$ have, where the arctan function is defined in the range $-\\frac{\\pi}{2} < \\arctan x < \\frac{\\pi}{2}$?",
+      "answer": "2",
+      "answer_format": "expression",
+      "difficulty": "hard",
+      "solution_steps": [
+        "Solution:",
+        "2 ."
+      ],
+      "explanation": "Solution:\n\n2 .",
+      "hint": " · Precalculus > Functions",
+      "tags": [
+        "mathnet",
+        "united-states"
+      ]
+    },
+    {
+      "id": "math.olympiad.mathnet-calculus.q0030",
+      "problem": "Problem:\n\nFind all $y > 1$ satisfying\n$$\n\\int_{1}^{y} x \\ln x \\, dx = \\frac{1}{4}.\n$$",
+      "answer": "sqrt(e)",
+      "answer_format": "expression",
+      "difficulty": "hard",
+      "solution_steps": [
+        "Solution:",
+        "Applying integration by parts with $u = \\ln x$ and $dv = x \\, dx$, we get",
+        "$$",
+        "\\int_{1}^{y} x \\ln x \\, dx = \\left.\\frac{1}{2} x^{2} \\ln x\\right|_{1}^{y} - \\frac{1}{2} \\int_{1}^{y} x \\, dx = \\frac{1}{2} y^{2} \\ln y - \\frac{1}{4} y^{2} + \\frac{1}{4}",
+        "$$",
+        "So $y^{2} \\ln y = \\frac{1}{2} y^{2}$. Since $y > 1$, we obtain $\\ln y = \\frac{1}{2}$, and thus $y = \\sqrt{e}$."
+      ],
+      "explanation": "Solution:\n\nApplying integration by parts with $u = \\ln x$ and $dv = x \\, dx$, we get\n$$\n\\int_{1}^{y} x \\ln x \\, dx = \\left.\\frac{1}{2} x^{2} \\ln x\\right|_{1}^{y} - \\frac{1}{2} \\int_{1}^{y} x \\, dx = \\frac{1}{2} y^{2} \\ln y - \\frac{1}{4} y^{2} + \\frac{1}{4}\n$$\nSo $y^{2} \\ln y = \\frac{1}{2} y^{2}$. Since $y > 1$, we obtain $\\ln y = \\frac{1}{2}$, and thus $y = \\sqrt{e}$.",
+      "hint": "Harvard-MIT Mathematics Tournament · Calculus > Integral Calculus > Techniques > Single-variable",
+      "tags": [
+        "mathnet",
+        "united-states"
+      ]
+    },
+    {
+      "id": "math.olympiad.mathnet-calculus.q0031",
+      "problem": "Problem:\n\nFie $f: \\mathbb{R} \\rightarrow \\mathbb{R}$ o funcție derivabilă de ordinul $n \\geq 2$, astfel încât\n$$\n\\lim _{x \\rightarrow \\infty} f(x)=\\ell \\in \\mathbb{R} \\text{ şi } \\lim _{x \\rightarrow \\infty} f^{(n)}(x)=0\n$$\nDemonstrați că $\\lim _{x \\rightarrow \\infty} f^{(k)}(x)=0$, pentru orice $k \\in\\{1,2, \\ldots, n-1\\}$, unde $f^{(k)}$ reprezintă derivata de ordinul $k$ a functiei $f$.",
+      "answer": "",
+      "answer_format": "open",
+      "difficulty": "hard",
+      "solution_steps": [],
+      "explanation": "",
+      "hint": "Olimpiada Naţională GAZETA MATEMATICĂ · Calculus > Differential Calculus > Derivatives",
+      "tags": [
+        "mathnet",
+        "romania",
+        "no-answer",
+        "open"
+      ]
+    },
+    {
+      "id": "math.olympiad.mathnet-calculus.q0032",
+      "problem": "Problem:\nIf $x$ and $y$ are real numbers with $(x+y)^{4} = x - y$, what is the maximum possible value of $y$?",
+      "answer": "3 * cube_root(2) / 16",
+      "answer_format": "expression",
+      "difficulty": "hard",
+      "solution_steps": [
+        "Solution:",
+        "$$",
+        "3 \\sqrt[3]{2} / 16",
+        "$$",
+        "By drawing the graph of the curve (as shown), which is just a $135^{\\circ}$ clockwise rotation and scaling of $y = x^{4}$, we see that the maximum is achieved at the unique point where $d y / d x = 0$. Implicit differentiation gives $4(d y / d x + 1)(x + y)^{3} = 1 - d y / d x$, so setting $d y / d x = 0$ gives $4(x + y)^{3} = 1$. So $x + y = 1 / \\sqrt[3]{4} = \\sqrt[3]{2} / 2$, and $x - y = (x + y)^{4} = \\sqrt[3]{2} / 8$. Subtracting and dividing by 2 gives $y = (\\sqrt[3]{2} / 2 - \\sqrt[3]{2} / 8) / 2 = 3 \\sqrt[3]{2} / 16$.",
+        "![](attached_image_1.png)"
+      ],
+      "explanation": "Solution:\n$$\n3 \\sqrt[3]{2} / 16\n$$\nBy drawing the graph of the curve (as shown), which is just a $135^{\\circ}$ clockwise rotation and scaling of $y = x^{4}$, we see that the maximum is achieved at the unique point where $d y / d x = 0$. Implicit differentiation gives $4(d y / d x + 1)(x + y)^{3} = 1 - d y / d x$, so setting $d y / d x = 0$ gives $4(x + y)^{3} = 1$. So $x + y = 1 / \\sqrt[3]{4} = \\sqrt[3]{2} / 2$, and $x - y = (x + y)^{4} = \\sqrt[3]{2} / 8$. Subtracting and dividing by 2 gives $y = (\\sqrt[3]{2} / 2 - \\sqrt[3]{2} / 8) / 2 = 3 \\sqrt[3]{2} / 16$.\n\n![](attached_image_1.png)",
+      "hint": "Harvard-MIT Mathematics Tournament · Calculus > Differential Calculus > Derivatives",
+      "tags": [
+        "mathnet",
+        "united-states"
+      ]
+    },
+    {
+      "id": "math.olympiad.mathnet-calculus.q0033",
+      "problem": "Let $f : [0, 1] \\to (0, \\infty)$ be a continuous function on $[0, 1]$, and\n$$A = \\int_{0}^{1} f(t) \\, dt.$$\na) Show that the function $F : [0, 1] \\to [0, A]$, defined for any $x \\in [0, 1]$ by\n$$\nF(x) = \\int_{0}^{x} f(t) \\, dt,\n$$\n\nis invertible, with a differentiable inverse.\n\nb) Show that the equation\n$$\n\\int_{0}^{x} f(t) \\, dt = \\int_{g(x)}^{1} f(t) \\, dt\n$$\nwhere $g$ is a function $[0, 1] \\to [0, 1]$, has a unique solution $g(x)$ for each $x \\in [0, 1]$, and express $g(x)$ in terms of $F$ and $F^{-1}$.\n\nc) Show that $g$ is differentiable, strictly decreasing, and has a unique fixed point $c \\in [0, 1]$. Compute $g'(c)$.",
+      "answer": "g(x) = F^{-1}(A − F(x)); c = F^{-1}(A/2); g′(c) = −1",
+      "answer_format": "expression",
+      "difficulty": "hard",
+      "solution_steps": [
+        "a) Because $f$ is continuous, $F$ is continuous and differentiable, with $F'(x) = f(x) > 0$, for any $x \\in [0, 1]$. Hence, $F$ is strictly increasing, and thus injective. Being continuous, $F$ has the intermediate value property, and since $F(0) = 0$ and $F(1) = A$, $F$ is surjective. Thus, $F$ is bijective, hence invertible. Also, because $F'(x) = f(x) > 0$ for any $x \\in [0, 1]$, $F^{-1}$ is differentiable, with",
+        "$$",
+        "(F^{-1})'(x) = \\frac{1}{f(F^{-1}(x))}, \\quad \\text{for any } x \\in [0, A].",
+        "$$",
+        "b) The equality in the statement $\\int_{0}^{x} f(t) \\, dt = \\int_{g(x)}^{1} f(t) \\, dt$ becomes $F(x) = F(1) - F(g(x)) = A - F(g(x))$, or, equivalently, $F(g(x)) = A - F(x)$, for any $x \\in [0, 1]$.",
+        "The function $F$ being increasing, it follows that $A - F(x) \\in [0, A]$, for any $x \\in [0, 1]$, so that the function $g : [0, 1] \\to [0, 1]$, defined by $g(x) = F^{-1}(A - F(x))$ for any $x \\in [0, 1]$, is well defined and unique satisfying (1).",
+        "c) Since the functions $F$ and $F^{-1}$ are differentiable, the function $g$ defined above is also differentiable, and",
+        "$$",
+        "g'(x) = \\frac{(A - F(x))'}{f(F^{-1}(A - F(x)))} = \\frac{-f(x)}{f(F^{-1}(A - F(x)))}, \\quad \\text{for any } x \\in [0, 1]. \\quad (2)",
+        "$$"
+      ],
+      "explanation": "a) Because $f$ is continuous, $F$ is continuous and differentiable, with $F'(x) = f(x) > 0$, for any $x \\in [0, 1]$. Hence, $F$ is strictly increasing, and thus injective. Being continuous, $F$ has the intermediate value property, and since $F(0) = 0$ and $F(1) = A$, $F$ is surjective. Thus, $F$ is bijective, hence invertible. Also, because $F'(x) = f(x) > 0$ for any $x \\in [0, 1]$, $F^{-1}$ is differentiable, with\n$$\n(F^{-1})'(x) = \\frac{1}{f(F^{-1}(x))}, \\quad \\text{for any } x \\in [0, A].\n$$\n\nb) The equality in the statement $\\int_{0}^{x} f(t) \\, dt = \\int_{g(x)}^{1} f(t) \\, dt$ becomes $F(x) = F(1) - F(g(x)) = A - F(g(x))$, or, equivalently, $F(g(x)) = A - F(x)$, for any $x \\in [0, 1]$.\nThe function $F$ being increasing, it follows that $A - F(x) \\in [0, A]$, for any $x \\in [0, 1]$, so that the function $g : [0, 1] \\to [0, 1]$, defined by $g(x) = F^{-1}(A - F(x))$ for any $x \\in [0, 1]$, is well defined and unique satisfying (1).\n\nc) Since the functions $F$ and $F^{-1}$ are differentiable, the function $g$ defined above is also differentiable, and\n$$\ng'(x) = \\frac{(A - F(x))'}{f(F^{-1}(A - F(x)))} = \\frac{-f(x)}{f(F^{-1}(A - F(x)))}, \\quad \\text{for any } x \\in [0, 1]. \\quad (2)\n$$\nThe function $g$ is strictly decreasing, and so has a unique fixed point $c \\in [0, 1]$.\nFor this we have: $2F(c) = F(c) + F(g(c)) = A$, so that $F(c) = \\frac{1}{2} \\cdot A$ and $c = F^{-1}(\\frac{1}{2} \\cdot A)$.\n\nBecause $g$ is differentiable, the limit\n$$\n\\lim_{x \\to c} \\frac{g(x) - c}{x - c…",
+      "hint": "74th Romanian Mathematical Olympiad · Calculus > Integral Calculus > Techniques > Single-variable",
+      "tags": [
+        "mathnet",
+        "romania"
+      ]
+    },
+    {
+      "id": "math.olympiad.mathnet-calculus.q0034",
+      "problem": "Problem:\n\nEstudiar la función real\n$$\nf(x)=\\left(1+\\frac{1}{x}\\right)^{x}\n$$\ndefinida para $x \\in \\mathbb{R} - [-1,0]$. Representación gráfica.",
+      "answer": "",
+      "answer_format": "open",
+      "difficulty": "hard",
+      "solution_steps": [
+        "Solution:",
+        "Si analizamos su comportamiento tenemos que",
+        "$$",
+        "\\begin{gathered}",
+        "\\lim _{x \\longrightarrow-\\infty}\\left(1+\\frac{1}{x}\\right)^{x}=e ; \\quad \\lim _{\\substack{x \\rightarrow-1 \\\\ x<-1}}\\left(1+\\frac{1}{x}\\right)^{x}=\\infty \\\\",
+        "\\lim _{\\substack{x \\rightarrow 0 \\\\ x>0}}\\left(1+\\frac{1}{x}\\right)^{x}=1 ; \\quad \\lim _{x \\rightarrow \\infty}\\left(1+\\frac{1}{x}\\right)^{x}=e",
+        "\\end{gathered}",
+        "$$",
+        "Si analizamos su derivada",
+        "$$"
+      ],
+      "explanation": "Solution:\n\nSi analizamos su comportamiento tenemos que\n$$\n\\begin{gathered}\n\\lim _{x \\longrightarrow-\\infty}\\left(1+\\frac{1}{x}\\right)^{x}=e ; \\quad \\lim _{\\substack{x \\rightarrow-1 \\\\ x<-1}}\\left(1+\\frac{1}{x}\\right)^{x}=\\infty \\\\\n\\lim _{\\substack{x \\rightarrow 0 \\\\ x>0}}\\left(1+\\frac{1}{x}\\right)^{x}=1 ; \\quad \\lim _{x \\rightarrow \\infty}\\left(1+\\frac{1}{x}\\right)^{x}=e\n\\end{gathered}\n$$\nSi analizamos su derivada\n$$\nf^{\\prime}(x)=\\left(1+\\frac{1}{x}\\right)^{x}\\left[\\log \\left(1+\\frac{1}{x}\\right)+\\frac{-1}{x+1}\\right] \\Longrightarrow f^{\\prime}>0\n$$\n\n![](attached_image_1.png)",
+      "hint": "OME 12 · Calculus > Differential Calculus > Derivatives",
+      "tags": [
+        "mathnet",
+        "spain",
+        "no-answer",
+        "open"
+      ]
+    },
+    {
+      "id": "math.olympiad.mathnet-calculus.q0035",
+      "problem": "Problem:\n\nEl impuesto sobre el Rendimiento del Trabajo Personal es una función $f(x)$ del total $x$ de las retribuciones anuales (en pesetas). Sabiendo que\n\na) $f(x)$ es una función continua.\n\nb) La derivada $d f(x) / d x$ en el intervalo $0 \\leq x<60000$ es constante e igual a cero; en el intervalo $60000<x<P$ es constante e igual a 1; y para $x>P$ es constante e igual a 0.14 .\n\nc) $f(0)=0$ y $f(140000)=14000$.\n\nDeterminar el valor de la cantidad $P$ de pesetas y representar gráficamente la función $y=f(x)$.",
+      "answer": "P = 63255.81 pesetas (exact value 2720000/43). The function is: f(x) = 0 for 0 ≤ x < 60000; f(x) = x − 60000 for 60000 ≤ x < P; f(x) = (P − 60000) + 0.14 (x − P) for x ≥ P.",
+      "answer_format": "expression",
+      "difficulty": "hard",
+      "solution_steps": [
+        "Solution:",
+        "En los tres intervalos la derivada es constante, luego la función es lineal y podemos expresarla",
+        "$$",
+        "f(x)= \\begin{cases}0 & 0 \\leq x<60000 \\\\ x-60000 & 60000 \\leq x<P \\\\ P-60000+0.14(x-P) & x \\geq P\\end{cases}",
+        "$$",
+        "Imponiendo la condición $f(140000)=14000$, resulta",
+        "$$",
+        "14000 = P-60000 + 0.14(140000-P) \\Longrightarrow P=63255.81.",
+        "$$",
+        "![](attached_image_1.png)"
+      ],
+      "explanation": "Solution:\n\nEn los tres intervalos la derivada es constante, luego la función es lineal y podemos expresarla\n$$\nf(x)= \\begin{cases}0 & 0 \\leq x<60000 \\\\ x-60000 & 60000 \\leq x<P \\\\ P-60000+0.14(x-P) & x \\geq P\\end{cases}\n$$\nImponiendo la condición $f(140000)=14000$, resulta\n$$\n14000 = P-60000 + 0.14(140000-P) \\Longrightarrow P=63255.81.\n$$\n\n![](attached_image_1.png)",
+      "hint": "Olimpiadas Matemáticas Españolas · Calculus > Differential Calculus > Derivatives",
+      "tags": [
+        "mathnet",
+        "spain"
+      ]
+    },
+    {
+      "id": "math.olympiad.mathnet-calculus.q0036",
+      "problem": "Prove that a continuous function $f: \\mathbb{R} \\to \\mathbb{R}$ is non-decreasing if and only if\n$$\n(c - b) \\int_{a}^{b} f(x) \\, dx \\leq (b - a) \\int_{b}^{c} f(x) \\, dx,\n$$\nfor all $a < b < c$.",
+      "answer": "",
+      "answer_format": "open",
+      "difficulty": "hard",
+      "solution_steps": [],
+      "explanation": "",
+      "hint": "2018 Romanian Mathematical Olympiad · Calculus > Integral Calculus > Applications",
+      "tags": [
+        "mathnet",
+        "romania",
+        "no-answer",
+        "open"
+      ]
+    },
+    {
+      "id": "math.olympiad.mathnet-calculus.q0037",
+      "problem": "Problem:\n\nFie funcția $f:\\left[\\pi ; \\frac{3 \\pi}{2}\\right] \\rightarrow \\mathbb{R}$, $f(x)=\\frac{3 \\cos (2 x)-4 \\sin (2 x)+\\cos x-3 \\sin x}{(\\sin x+3 \\cos x)^{2022}}$. Determinați primitiva $F:\\left[\\pi ; \\frac{3 \\pi}{2}\\right] \\rightarrow \\mathbb{R}$ a funcției $f$, pentru care $F\\left(\\frac{3 \\pi}{2}\\right)=\\frac{1}{2021}$.",
+      "answer": "F(x) = -1/(2020 (sin x + 3 cos x)^{2020}) - 1/(2021 (sin x + 3 cos x)^{2021}) + 1/2020",
+      "answer_format": "expression",
+      "difficulty": "hard",
+      "solution_steps": [
+        "Solution:",
+        "$$",
+        "\\begin{aligned}",
+        "& \\int \\frac{3 \\cos (2 x)-4 \\sin (2 x)+\\cos x-3 \\sin x}{(\\sin x+3 \\cos x)^{2022}} \\, d x= \\\\",
+        "& =\\int \\frac{3 \\cos ^{2} x-3 \\sin ^{2} x-8 \\sin x \\cos x+\\cos x-3 \\sin x}{(\\sin x+3 \\cos x)^{2022}} \\, d x= \\\\",
+        "& =\\int \\frac{(\\sin x+3 \\cos x)(\\cos x-3 \\sin x)+\\cos x-3 \\sin x}{(\\sin x+3 \\cos x)^{2022}} \\, d x= \\\\",
+        "& =\\left|\\begin{array}{c}",
+        "t=\\sin x+3 \\cos x \\\\",
+        "d t=(\\cos x-3 \\sin x) \\, d x",
+        "\\end{array}\\right|=\\int \\frac{t+1}{t^{2022}} \\, d t=-\\frac{t^{-2020}}{2020}-\\frac{t^{-2021}}{2021}+C= \\\\"
+      ],
+      "explanation": "Solution:\n\n$$\n\\begin{aligned}\n& \\int \\frac{3 \\cos (2 x)-4 \\sin (2 x)+\\cos x-3 \\sin x}{(\\sin x+3 \\cos x)^{2022}} \\, d x= \\\\\n& =\\int \\frac{3 \\cos ^{2} x-3 \\sin ^{2} x-8 \\sin x \\cos x+\\cos x-3 \\sin x}{(\\sin x+3 \\cos x)^{2022}} \\, d x= \\\\\n& =\\int \\frac{(\\sin x+3 \\cos x)(\\cos x-3 \\sin x)+\\cos x-3 \\sin x}{(\\sin x+3 \\cos x)^{2022}} \\, d x= \\\\\n& =\\left|\\begin{array}{c}\nt=\\sin x+3 \\cos x \\\\\nd t=(\\cos x-3 \\sin x) \\, d x\n\\end{array}\\right|=\\int \\frac{t+1}{t^{2022}} \\, d t=-\\frac{t^{-2020}}{2020}-\\frac{t^{-2021}}{2021}+C= \\\\\n& =-\\frac{1}{2020(\\sin x+3 \\cos x)^{2020}}-\\frac{1}{2021(\\sin x+3 \\cos x)^{2021}}+C \\\\\n& F\\left(\\frac{3 \\pi}{2}\\right)=\\frac{1}{2021} \\Rightarrow-\\frac{1}{2020}+\\frac{1}{2021}+C=\\frac{1}{2021} \\Rightarrow C=\\frac{1}{2020}\n\\end{aligned}\n$$\n\nAstfel, am obținut $F(x)=-\\frac{1}{2020(\\sin x+3 \\cos x)^{2020}}-\\frac{1}{2021(\\sin x+3 \\cos x)^{2021}}+\\frac{1}{2020}$.",
+      "hint": "Olimpiada Republicană la Matematică · Calculus > Integral Calculus > Techniques > Single-variable",
+      "tags": [
+        "mathnet",
+        "moldova"
+      ]
+    },
+    {
+      "id": "math.olympiad.mathnet-calculus.q0038",
+      "problem": "Find all twice differentiable functions $f : \\mathbb{R} \\to (0, \\infty)$ with the property $3(f'(x))^2 \\le 2f(x)f''(x)$, for every $x \\in \\mathbb{R}$.",
+      "answer": "f(x) ≡ c for some constant c > 0",
+      "answer_format": "expression",
+      "difficulty": "hard",
+      "solution_steps": [],
+      "explanation": "",
+      "hint": "SHORTLISTED PROBLEMS FOR THE 73rd NMO · Calculus > Differential Calculus > Derivatives",
+      "tags": [
+        "mathnet",
+        "romania"
+      ]
+    },
+    {
+      "id": "math.olympiad.mathnet-calculus.q0039",
+      "problem": "Given real numbers $a, b, c, d$ such that $\\sin a + b > \\sin c + d$, $a + \\sin b > c + \\sin d$, prove that $a + b > c + d$.",
+      "answer": "",
+      "answer_format": "open",
+      "difficulty": "hard",
+      "solution_steps": [
+        "By condition, we have",
+        "$$",
+        "a + \\sin b > c + \\sin d, \\qquad (1)",
+        "$$",
+        "$$",
+        "\\sin a + b > \\sin c + d. \\qquad (2)",
+        "$$",
+        "Suppose, contrary to our claim, that",
+        "$$",
+        "c+d \\geq a+b. \\tag{3}"
+      ],
+      "explanation": "By condition, we have\n$$\na + \\sin b > c + \\sin d, \\qquad (1)\n$$\n$$\n\\sin a + b > \\sin c + d. \\qquad (2)\n$$\nSuppose, contrary to our claim, that\n$$\nc+d \\geq a+b. \\tag{3}\n$$\nSumming (1) and (3), we get\n$$\na + \\sin b + c + d > c + \\sin d + a + b \\implies d - \\sin d > b - \\sin b. \\quad (4)\n$$\nSumming (2) and (3), we get\n$$\n\\sin a + b + c + d > \\sin c + d + a + b \\implies c - \\sin c > a - \\sin a. \\quad (5)\n$$\nLet $f(x) = x - \\sin x$. Since $f'(x) = 1 - \\cos x \\ge 0$ and there are no intervals such that $f'(x) = 0$, we see that the function $f$ is strictly increasing. By the same argument, the function $g(x) = x + \\sin x$ is also strictly increasing.\nTherefore, from (4) and (5) we have\n$$\nd > b \\Rightarrow d + \\sin d > b + \\sin b, \\qquad (6)\n$$\nand\n$$\nc > a \\implies c + \\sin c > a + \\sin a. \\tag{7}\n$$\nSumming (1) and (6), we get\n$$\na + \\sin b + d + \\sin d > c + \\sin d + b + \\sin b \\Rightarrow a + d > b + c,\n$$\nand summing (2) and (7), we get\n$$\n\\sin a + b + c + \\sin c > \\sin c + d + a + \\sin a \\implies b + c > a + d.\n$$\nThis contradiction proves the required statement.",
+      "hint": "66th Belarusian Mathematical Olympiad · Calculus > Differential Calculus > Derivatives",
+      "tags": [
+        "mathnet",
+        "belarus",
+        "no-answer",
+        "open"
+      ]
+    },
+    {
+      "id": "math.olympiad.mathnet-calculus.q0040",
+      "problem": "Problem:\nCompute:\n$$\n\\lim_{x \\rightarrow 0} \\frac{x^{2}}{1-\\cos(x)}\n$$",
+      "answer": "2",
+      "answer_format": "expression",
+      "difficulty": "hard",
+      "solution_steps": [
+        "Solution:",
+        "Since $\\sin^{2}(x) = 1 - \\cos^{2}(x)$, we multiply the numerator and denominator by $1 + \\cos(x)$ and use the fact that $x / \\sin(x) \\rightarrow 1$, obtaining",
+        "$$",
+        "\\lim_{x \\rightarrow 0} \\frac{x^{2}}{1-\\cos(x)} = \\lim_{x \\rightarrow 0} \\frac{x^{2}(1+\\cos(x))}{1-\\cos^{2}(x)} = \\lim_{x \\rightarrow 0}\\left(\\frac{x}{\\sin(x)}\\right)^{2} \\cdot 2 = 2",
+        "$$"
+      ],
+      "explanation": "Solution:\nSince $\\sin^{2}(x) = 1 - \\cos^{2}(x)$, we multiply the numerator and denominator by $1 + \\cos(x)$ and use the fact that $x / \\sin(x) \\rightarrow 1$, obtaining\n$$\n\\lim_{x \\rightarrow 0} \\frac{x^{2}}{1-\\cos(x)} = \\lim_{x \\rightarrow 0} \\frac{x^{2}(1+\\cos(x))}{1-\\cos^{2}(x)} = \\lim_{x \\rightarrow 0}\\left(\\frac{x}{\\sin(x)}\\right)^{2} \\cdot 2 = 2\n$$",
+      "hint": "Harvard-MIT Mathematics Tournament · Precalculus > Limits",
+      "tags": [
+        "mathnet",
+        "united-states"
+      ]
+    },
+    {
+      "id": "math.olympiad.mathnet-calculus.q0041",
+      "problem": "Problem:\n\nLet $f: \\mathbf{R} \\rightarrow \\mathbf{R}$ be a continuous function with $\\int_{0}^{1} f(x) f^{\\prime}(x) d x=0$ and $\\int_{0}^{1} f(x)^{2} f^{\\prime}(x) d x=18$. What is $\\int_{0}^{1} f(x)^{4} f^{\\prime}(x) d x$?",
+      "answer": "486/5",
+      "answer_format": "expression",
+      "difficulty": "hard",
+      "solution_steps": [
+        "Solution:",
+        "$0=\\int_{0}^{1} f(x) f^{\\prime}(x) d x=\\int_{f(0)}^{f(1)} u d u=\\frac{1}{2}\\left(f(1)^{2}-f(0)^{2}\\right)$, and",
+        "$18=\\int_{0}^{1} f(x)^{2} f^{\\prime}(x) d x=\\int_{f(0)}^{f(1)} u^{2} d u=\\frac{1}{3}\\left(f(1)^{3}-f(0)^{3}\\right)$.",
+        "The first equation implies $f(0)= \\pm f(1)$. The second equation shows that $f(0) \\neq f(1)$, and in fact $54=f(1)^{3}-f(0)^{3}=2 f(1)^{3}$, so $f(1)=3$ and $f(0)=-3$. Then",
+        "$\\int_{0}^{1} f(x)^{4} f^{\\prime}(x) d x=\\int_{f(0)}^{f(1)} u^{4} d u=\\frac{1}{5}\\left(f(1)^{5}-f(0)^{5}\\right)=\\frac{1}{5}(243+243)=\\frac{486}{5}$."
+      ],
+      "explanation": "Solution:\n\n$0=\\int_{0}^{1} f(x) f^{\\prime}(x) d x=\\int_{f(0)}^{f(1)} u d u=\\frac{1}{2}\\left(f(1)^{2}-f(0)^{2}\\right)$, and\n\n$18=\\int_{0}^{1} f(x)^{2} f^{\\prime}(x) d x=\\int_{f(0)}^{f(1)} u^{2} d u=\\frac{1}{3}\\left(f(1)^{3}-f(0)^{3}\\right)$.\n\nThe first equation implies $f(0)= \\pm f(1)$. The second equation shows that $f(0) \\neq f(1)$, and in fact $54=f(1)^{3}-f(0)^{3}=2 f(1)^{3}$, so $f(1)=3$ and $f(0)=-3$. Then\n\n$\\int_{0}^{1} f(x)^{4} f^{\\prime}(x) d x=\\int_{f(0)}^{f(1)} u^{4} d u=\\frac{1}{5}\\left(f(1)^{5}-f(0)^{5}\\right)=\\frac{1}{5}(243+243)=\\frac{486}{5}$.",
+      "hint": "Harvard-MIT Mathematics Tournament · Calculus > Integral Calculus > Techniques > Single-variable",
+      "tags": [
+        "mathnet",
+        "united-states"
+      ]
+    },
+    {
+      "id": "math.olympiad.mathnet-calculus.q0042",
+      "problem": "Let $f : [0, \\infty) \\to \\mathbb{R}$ be a differentiable function, with continuous derivative, such that $f(0) = 0$, and $0 \\le f'(x) \\le 1$, for any $x > 0$. Prove that\n$$\n\\int_{0}^{a} f(t)^{2n+1} dt \\le (n+1) \\cdot \\left( \\int_{0}^{a} f(t)^{n} dt \\right)^{2},\n$$\nfor any $a > 0$ and $n \\in \\mathbb{N}^*$.",
+      "answer": "",
+      "answer_format": "open",
+      "difficulty": "hard",
+      "solution_steps": [
+        "Because $f'(x) \\ge 0$ for any $x \\ge 0$, the function $f$ is monotonically increasing, so that $f(x) \\ge f(0) = 0$, for any $x \\ge 0$.",
+        "Consider an arbitrary fixed $n \\in \\mathbb{N}^*$ and the function $F : [0, \\infty) \\to \\mathbb{R}$ defined for any $x \\ge 0$ by",
+        "$$",
+        "F(x) = (n + 1) \\cdot \\left( \\int_{0}^{x} f(t)^{n} dt \\right)^{2} - \\int_{0}^{x} f(t)^{2n+1} dt.",
+        "$$",
+        "We will show that $F$ is monotonically increasing, which, since $F(0) = 0$, will prove the stated inequality.",
+        "The function $f$ being continuous, $F$ is differentiable and",
+        "$$",
+        "\\begin{aligned}",
+        "F'(x) &= 2(n + 1) \\cdot \\left( \\int_{0}^{x} f(t)^{n} dt \\right) \\cdot f(x)^{n} - f(x)^{2n+1} \\\\"
+      ],
+      "explanation": "Because $f'(x) \\ge 0$ for any $x \\ge 0$, the function $f$ is monotonically increasing, so that $f(x) \\ge f(0) = 0$, for any $x \\ge 0$.\n\nConsider an arbitrary fixed $n \\in \\mathbb{N}^*$ and the function $F : [0, \\infty) \\to \\mathbb{R}$ defined for any $x \\ge 0$ by\n$$\nF(x) = (n + 1) \\cdot \\left( \\int_{0}^{x} f(t)^{n} dt \\right)^{2} - \\int_{0}^{x} f(t)^{2n+1} dt.\n$$\nWe will show that $F$ is monotonically increasing, which, since $F(0) = 0$, will prove the stated inequality.\n\nThe function $f$ being continuous, $F$ is differentiable and\n$$\n\\begin{aligned}\nF'(x) &= 2(n + 1) \\cdot \\left( \\int_{0}^{x} f(t)^{n} dt \\right) \\cdot f(x)^{n} - f(x)^{2n+1} \\\\\n&= f(x)^{n} \\cdot \\left( 2(n + 1) \\cdot \\left( \\int_{0}^{x} f(t)^{n} dt \\right) - f(x)^{n+1} \\right).\n\\end{aligned}\n$$\nBecause $f'(x) \\le 1$, for any $x \\ge 0$, we have that $f(x)^n \\ge f(x)^n \\cdot f'(x)$, $\\forall x \\ge 0$, hence\n$$\n(n + 1) \\cdot \\left( \\int_{0}^{x} f(t)^{n} dt \\right) \\ge \\int_{0}^{x} (n + 1) \\cdot f(t)^{n} \\cdot f'(t) dt = f(x)^{n+1}.\n$$\nIt follows that\n$$\n\\begin{aligned}\nF'(x) &= f(x)^n \\cdot \\left( 2(n + 1) \\cdot \\left( \\int_{0}^{x} f(t)^n dt \\right) - f(x)^{n+1} \\right) \\ge \\\\\n&\\ge f(x)^n \\cdot \\left( 2 \\cdot f(x)^{n+1} - f(x)^{n+1} \\right) = f(x)^{2n+1} \\ge 0,\n\\end{aligned}\n$$\nfor any $x \\ge 0$. Thus, $F$ is increasing, and so $F(x) \\ge F(0) = 0$, for any $x \\ge 0$. We obtain the stated inequality.",
+      "hint": "74th Romanian Mathematical Olympiad · Calculus > Integral Calculus > Techniques > Single-variable",
+      "tags": [
+        "mathnet",
+        "romania",
+        "no-answer",
+        "open"
+      ]
+    },
+    {
+      "id": "math.olympiad.mathnet-calculus.q0043",
+      "problem": "Problem:\n\nShow that there is a real number $x$ such that all of $\\cos x$, $\\cos 2x$, $\\cos 4x$, $\\ldots$, $\\cos (2^{n}x)$ are negative.",
+      "answer": "",
+      "answer_format": "open",
+      "difficulty": "hard",
+      "solution_steps": [],
+      "explanation": "",
+      "hint": "21st ASU · Precalculus > Trigonometric functions",
+      "tags": [
+        "mathnet",
+        "soviet-union",
+        "no-answer",
+        "open"
+      ]
+    },
+    {
+      "id": "math.olympiad.mathnet-calculus.q0044",
+      "problem": "The range of $f(x) = \\sqrt{x-5} - \\sqrt{24-3x}$ is ______.",
+      "answer": "[-3, √3]",
+      "answer_format": "expression",
+      "difficulty": "hard",
+      "solution_steps": [
+        "It is easy to see that $f(x)$ is increasing on its domain $[5, 8]$. Therefore, its range is $[-3, \\sqrt{3}]$."
+      ],
+      "explanation": "It is easy to see that $f(x)$ is increasing on its domain $[5, 8]$. Therefore, its range is $[-3, \\sqrt{3}]$.",
+      "hint": "China Mathematical Competition · Precalculus > Functions",
+      "tags": [
+        "mathnet",
+        "china"
+      ]
+    },
+    {
+      "id": "math.olympiad.mathnet-calculus.q0045",
+      "problem": "Problem:\nWe are given the values of the differentiable real functions $f$, $g$, $h$, as well as the derivatives of their pairwise products, at $x=0$:\n$$\nf(0)=1 ; \\quad g(0)=2 ; \\quad h(0)=3 ; \\quad (g h)'(0)=4 ; \\quad (h f)'(0)=5 ; \\quad (f g)'(0)=6 .\n$$\nFind the value of $(f g h)'(0)$.",
+      "answer": "16",
+      "answer_format": "expression",
+      "difficulty": "hard",
+      "solution_steps": [
+        "Solution:",
+        "16",
+        "By the product rule,",
+        "$$(f g h)' = f' g h + f g' h + f g h' = \\left( (f g)' h + (g h)' f + (h f)' g \\right) / 2.$$",
+        "Evaluated at $0$, this gives $16$."
+      ],
+      "explanation": "Solution:\n16\n\nBy the product rule,\n$$(f g h)' = f' g h + f g' h + f g h' = \\left( (f g)' h + (g h)' f + (h f)' g \\right) / 2.$$\nEvaluated at $0$, this gives $16$.",
+      "hint": "Harvard-MIT Math Tournament · Calculus > Differential Calculus > Derivatives",
+      "tags": [
+        "mathnet",
+        "united-states"
+      ]
+    },
+    {
+      "id": "math.olympiad.mathnet-calculus.q0046",
+      "problem": "Problem:\n\nCompute $\\lim_{x \\rightarrow 0} \\frac{e^{x \\cos x}-1-x}{\\sin \\left(x^{2}\\right)}$.",
+      "answer": "1/2",
+      "answer_format": "expression",
+      "difficulty": "hard",
+      "solution_steps": [
+        "Solution:",
+        "Let's compute all the relevant Maclaurin series expansions, up to the quadratic terms:",
+        "$$",
+        "x \\cos x = x + \\ldots, \\quad e^{x \\cos x} = 1 + x + \\frac{1}{2} x^{2} + \\ldots, \\quad \\sin \\left(x^{2}\\right) = x^{2} + \\ldots",
+        "$$",
+        "so",
+        "$$",
+        "\\lim_{x \\rightarrow 0} \\frac{e^{x \\cos x}-1-x}{\\sin \\left(x^{2}\\right)} = \\lim_{x \\rightarrow 0} \\frac{\\frac{1}{2} x^{2} + \\ldots}{x^{2} + \\ldots} = \\frac{1}{2}",
+        "$$"
+      ],
+      "explanation": "Solution:\n\nLet's compute all the relevant Maclaurin series expansions, up to the quadratic terms:\n$$\nx \\cos x = x + \\ldots, \\quad e^{x \\cos x} = 1 + x + \\frac{1}{2} x^{2} + \\ldots, \\quad \\sin \\left(x^{2}\\right) = x^{2} + \\ldots\n$$\nso\n$$\n\\lim_{x \\rightarrow 0} \\frac{e^{x \\cos x}-1-x}{\\sin \\left(x^{2}\\right)} = \\lim_{x \\rightarrow 0} \\frac{\\frac{1}{2} x^{2} + \\ldots}{x^{2} + \\ldots} = \\frac{1}{2}\n$$",
+      "hint": "Harvard-MIT Mathematics Tournament · Precalculus > Limits",
+      "tags": [
+        "mathnet",
+        "united-states"
+      ]
+    },
+    {
+      "id": "math.olympiad.mathnet-calculus.q0047",
+      "problem": "Let $x$ be a real number such that $\\cos(2x) + \\cos(3x) = 1$. Show that $2\\sin(2x) + 2\\sin(3x) = \\sin(4x) + 2\\sin(5x) + \\sin(6x)$.",
+      "answer": "",
+      "answer_format": "open",
+      "difficulty": "hard",
+      "solution_steps": [
+        "The double-angle formula and the angle sum identity for sines and cosines imply",
+        "$$",
+        "\\begin{aligned}",
+        "\\sin(4x) + 2\\sin(5x) + \\sin(6x) &= \\\\",
+        "&= 2\\sin(2x)\\cos(2x) + 2(\\sin(2x)\\cos(3x) + \\sin(3x)\\cos(2x)) + 2\\sin(3x)\\cos(3x) \\\\",
+        "&= 2\\cos(2x)(\\sin(2x) + \\sin(3x)) + 2\\cos(3x)(\\sin(2x) + \\sin(3x)) \\\\",
+        "&= 2(\\cos(2x) + \\cos(3x))(\\sin(2x) + \\sin(3x)).",
+        "\\end{aligned}",
+        "$$",
+        "and the latter is equal to $2(\\sin(2x) + \\sin(3x))$, which was to be shown."
+      ],
+      "explanation": "The double-angle formula and the angle sum identity for sines and cosines imply\n$$\n\\begin{aligned}\n\\sin(4x) + 2\\sin(5x) + \\sin(6x) &= \\\\\n&= 2\\sin(2x)\\cos(2x) + 2(\\sin(2x)\\cos(3x) + \\sin(3x)\\cos(2x)) + 2\\sin(3x)\\cos(3x) \\\\\n&= 2\\cos(2x)(\\sin(2x) + \\sin(3x)) + 2\\cos(3x)(\\sin(2x) + \\sin(3x)) \\\\\n&= 2(\\cos(2x) + \\cos(3x))(\\sin(2x) + \\sin(3x)).\n\\end{aligned}\n$$\nand the latter is equal to $2(\\sin(2x) + \\sin(3x))$, which was to be shown.",
+      "hint": "National Math Olympiad · Precalculus > Trigonometric functions",
+      "tags": [
+        "mathnet",
+        "slovenia",
+        "no-answer",
+        "open"
+      ]
+    },
+    {
+      "id": "math.olympiad.mathnet-calculus.q0048",
+      "problem": "Problem:\nFor how many positive integers $n \\leq 1000$ does the equation in real numbers\n$$\nx^{\\lfloor x\\rfloor}=n\n$$\nhave a positive solution for $x$? (For a real number $x$, $\\lfloor x\\rfloor$ denotes the largest integer that is not greater than $x$.)",
+      "answer": "412",
+      "answer_format": "expression",
+      "difficulty": "hard",
+      "solution_steps": [
+        "Solution:",
+        "If $\\lfloor x\\rfloor=0$, then $x^{\\lfloor x\\rfloor}=1=1^{\\lfloor 1\\rfloor}$, so we can safely ignore this case, as it does not introduce new solutions.",
+        "If $\\lfloor x\\rfloor=k$ for some $k>0$, $x \\mapsto x^{\\lfloor x\\rfloor}=x^{k}$ is a continuous and increasing function on the interval $[k, k+1)$. Therefore, the $x^{\\lfloor x\\rfloor}$ can take on any value in $\\left[k^{k},(k+1)^{k}\\right)$ when $\\lfloor x\\rfloor=k$. Because $5^{4}<1000<5^{5}$, it suffices to count the number of integers in the interval $\\left[k^{k},(k+1)^{k}\\right)$ for $1 \\leq k \\leq 4$.",
+        "Thus, the number of valid $n$ is simply",
+        "$$",
+        "\\sum_{k=1}^{4}(k+1)^{k}-k^{k}=(2-1)+(9-4)+(64-27)+(625-256)=412",
+        "$$"
+      ],
+      "explanation": "Solution:\nIf $\\lfloor x\\rfloor=0$, then $x^{\\lfloor x\\rfloor}=1=1^{\\lfloor 1\\rfloor}$, so we can safely ignore this case, as it does not introduce new solutions.\nIf $\\lfloor x\\rfloor=k$ for some $k>0$, $x \\mapsto x^{\\lfloor x\\rfloor}=x^{k}$ is a continuous and increasing function on the interval $[k, k+1)$. Therefore, the $x^{\\lfloor x\\rfloor}$ can take on any value in $\\left[k^{k},(k+1)^{k}\\right)$ when $\\lfloor x\\rfloor=k$. Because $5^{4}<1000<5^{5}$, it suffices to count the number of integers in the interval $\\left[k^{k},(k+1)^{k}\\right)$ for $1 \\leq k \\leq 4$.\nThus, the number of valid $n$ is simply\n$$\n\\sum_{k=1}^{4}(k+1)^{k}-k^{k}=(2-1)+(9-4)+(64-27)+(625-256)=412\n$$",
+      "hint": "HMMO · Precalculus > Functions",
+      "tags": [
+        "mathnet",
+        "united-states"
+      ]
+    },
+    {
+      "id": "math.olympiad.mathnet-calculus.q0049",
+      "problem": "Let $N = 2012$. Find all $N^2$-uples of real numbers $a_{i,j}$, $1 \\le i, j \\le N$, such that the following limit is convergent:\n$$\n\\lim_{x \\to +\\infty} \\sum_{1 \\le i,j \\le N} \\left(a_{i,j} \\sqrt[j]{x+i}\\right)\n$$",
+      "answer": "Exactly those arrays satisfying sum_{i=1}^N a_{i,j} = 0 for every j = 1, 2, ..., N. In this case the limit exists and equals sum_{i=1}^N a_{i,1} · i.",
+      "answer_format": "expression",
+      "difficulty": "hard",
+      "solution_steps": [],
+      "explanation": "",
+      "hint": "Brazilian Math Olympiad · Precalculus > Limits",
+      "tags": [
+        "mathnet",
+        "brazil"
+      ]
+    },
+    {
+      "id": "math.olympiad.mathnet-calculus.q0050",
+      "problem": "Problem:\n\nFind all positive integers $n$ satisfying $$(1 + 1 / n)^{n + 1} = (1 + 1 / 1998)^{1998}.$$",
+      "answer": "no solutions",
+      "answer_format": "expression",
+      "difficulty": "hard",
+      "solution_steps": [
+        "Solution:",
+        "Answer: no solutions.",
+        "We have $$(1 + 1 / n)^{n + 1} > e > (1 + 1 / n)^{n}.$$"
+      ],
+      "explanation": "Solution:\n\nAnswer: no solutions.\n\nWe have $$(1 + 1 / n)^{n + 1} > e > (1 + 1 / n)^{n}.$$",
+      "hint": "22nd ASU · Precalculus > Limits",
+      "tags": [
+        "mathnet",
+        "soviet-union"
+      ]
+    },
+    {
+      "id": "math.olympiad.mathnet-calculus.q0051",
+      "problem": "Problem:\n\nFind all real solutions to:\n$$\\sin x + 2\\sin (x + y + z) = 0$$\n$$\\sin y + 3\\sin (x + y + z) = 0$$\n$$\\sin z + 4\\sin (x + y + z) = 0$$",
+      "answer": "All solutions are x = k·pi, y = l·pi, z = m·pi for integers k, l, m.",
+      "answer_format": "expression",
+      "difficulty": "hard",
+      "solution_steps": [],
+      "explanation": "",
+      "hint": "ASU · Precalculus > Trigonometric functions",
+      "tags": [
+        "mathnet",
+        "soviet-union"
+      ]
+    },
+    {
+      "id": "math.olympiad.mathnet-calculus.q0052",
+      "problem": "Problem:\n\nFie $n \\in \\mathbb{N}$. Find all the primitives of the function\n$$\nf: \\mathbb{R} \\rightarrow \\mathbb{R}, \\quad f(x)=\\frac{x^{3}-9 x^{2}+29 x-33}{\\left(x^{2}-6 x+10\\right)^{n}}\n$$\n\nProblem:\n\nLet $n \\in \\mathbb{N}$. Find all the primitives of the function\n$$\nf: \\mathbb{R} \\rightarrow \\mathbb{R}, \\quad f(x)=\\frac{x^{3}-9 x^{2}+29 x-33}{\\left(x^{2}-6 x+10\\right)^{n}}\n$$",
+      "answer": "Let t = x^2 - 6x + 10.\nFor n ≠ 1, 2:\nF(x) = (1/2) [ t^(2 - n) / (2 - n) + t^(1 - n) / (1 - n) ] + C.\nFor n = 1:\nF(x) = (1/2) t + (1/2) ln t + C.\nFor n = 2:\nF(x) = (1/2) ln t - 1 / (2 t) + C.",
+      "answer_format": "expression",
+      "difficulty": "hard",
+      "solution_steps": [],
+      "explanation": "",
+      "hint": "THE 47-th MATHEMATIAL OLYMPIAD OF REPUBLIC OF MOLDOVA · Calculus > Integral Calculus > Techniques > Single-variable",
+      "tags": [
+        "mathnet",
+        "jbmo"
+      ]
+    },
+    {
+      "id": "math.olympiad.mathnet-calculus.q0053",
+      "problem": "Problem:\nA cube with sides $1$ m in length is filled with water, and has a tiny hole through which the water drains into a cylinder of radius $1$ m. If the water level in the cube is falling at a rate of $1~\\mathrm{cm}/\\mathrm{s}$, at what rate is the water level in the cylinder rising?",
+      "answer": "1/pi cm/s",
+      "answer_format": "expression",
+      "difficulty": "hard",
+      "solution_steps": [
+        "Solution:",
+        "The magnitude of the change in volume per unit time of the two solids is the same. The change in volume per unit time of the cube is $1~\\mathrm{cm} \\cdot \\mathrm{m}^2 / \\mathrm{s}$. The change in volume per unit time of the cylinder is $\\pi \\cdot \\frac{d h}{d t} \\cdot m^2$, where $\\frac{d h}{d t}$ is the rate at which the water level in the cylinder is rising.",
+        "Solving the equation $\\pi \\cdot \\frac{d h}{d t} \\cdot m^2 = 1~\\mathrm{cm} \\cdot m^2 / \\mathrm{s}$ yields $\\frac{1}{\\pi}~\\mathrm{cm}/\\mathrm{s}$."
+      ],
+      "explanation": "Solution:\nThe magnitude of the change in volume per unit time of the two solids is the same. The change in volume per unit time of the cube is $1~\\mathrm{cm} \\cdot \\mathrm{m}^2 / \\mathrm{s}$. The change in volume per unit time of the cylinder is $\\pi \\cdot \\frac{d h}{d t} \\cdot m^2$, where $\\frac{d h}{d t}$ is the rate at which the water level in the cylinder is rising.\n\nSolving the equation $\\pi \\cdot \\frac{d h}{d t} \\cdot m^2 = 1~\\mathrm{cm} \\cdot m^2 / \\mathrm{s}$ yields $\\frac{1}{\\pi}~\\mathrm{cm}/\\mathrm{s}$.",
+      "hint": "HMMT · Calculus > Differential Calculus > Related Rates",
+      "tags": [
+        "mathnet",
+        "united-states"
+      ]
+    },
+    {
+      "id": "math.olympiad.mathnet-calculus.q0054",
+      "problem": "Let $f : [1, +\\infty) \\to (0, +\\infty)$ be a continuous function having the following properties:\n(i) The function $g : [1, +\\infty) \\to (0, +\\infty)$ given by $g(x) = \\frac{f(x)}{x}$ has limit at $+\\infty$,\n(ii) The function $h : [1, +\\infty) \\to (0, +\\infty)$ given by $h(x) = \\frac{1}{x} \\int_{1}^{x} f(t) dt$ has finite limit at $+\\infty$.\n\na) Show that $\\lim_{x \\to +\\infty} g(x) = 0$.\nb) Show that $\\lim_{x \\to +\\infty} \\frac{1}{x^2} \\int_1^x f^2(t) dt = 0$.",
+      "answer": "",
+      "answer_format": "open",
+      "difficulty": "hard",
+      "solution_steps": [
+        "a.",
+        "Let $\\ell = \\lim_{x \\to +\\infty} g(x)$. If $\\ell \\in (0, +\\infty)$, let $a > 0$ be such that $g(x) > \\ell/2$ for $x \\ge a$. Then",
+        "$$",
+        "\\begin{aligned}",
+        "h(x) &= \\frac{1}{x} \\left( \\int_{1}^{a} f(t) \\, dt + \\int_{a}^{x} f(t) \\, dt \\right)",
+        "\\ge \\frac{1}{x} \\int_{1}^{a} f(t) \\, dt + \\frac{\\ell}{2x} \\int_{a}^{x} f(t) \\, dt \\\\",
+        "&= \\frac{1}{x} \\int_{1}^{a} f(t) \\, dt + \\frac{\\ell(x^2 - a^2)}{4x} \\underset{x \\to +\\infty}{\\longrightarrow} +\\infty,",
+        "\\end{aligned}",
+        "$$",
+        "in contradiction with (ii). In the same way we can prove that $\\ell = +\\infty$ is in contradiction with (ii), so $\\ell = 0$."
+      ],
+      "explanation": "a.\nLet $\\ell = \\lim_{x \\to +\\infty} g(x)$. If $\\ell \\in (0, +\\infty)$, let $a > 0$ be such that $g(x) > \\ell/2$ for $x \\ge a$. Then\n$$\n\\begin{aligned}\nh(x) &= \\frac{1}{x} \\left( \\int_{1}^{a} f(t) \\, dt + \\int_{a}^{x} f(t) \\, dt \\right) \n\\ge \\frac{1}{x} \\int_{1}^{a} f(t) \\, dt + \\frac{\\ell}{2x} \\int_{a}^{x} f(t) \\, dt \\\\\n&= \\frac{1}{x} \\int_{1}^{a} f(t) \\, dt + \\frac{\\ell(x^2 - a^2)}{4x} \\underset{x \\to +\\infty}{\\longrightarrow} +\\infty,\n\\end{aligned}\n$$\nin contradiction with (ii). In the same way we can prove that $\\ell = +\\infty$ is in contradiction with (ii), so $\\ell = 0$.\n\nb.\n$$\n\\begin{aligned}\n\\lim_{x \\to +\\infty} \\frac{1}{x^2} \\int_1^x f^2(t) dt &= \\lim_{x \\to +\\infty} \\left( \\frac{\\int_1^x f^2(t) dt}{x \\int_1^x f(t) dt} \\cdot \\frac{\\int_1^x f(t) dt}{x} \\right) \\\\\n&= \\lambda \\lim_{x \\to +\\infty} \\frac{\\int_1^x f^2(t) dt}{x \\int_1^x f(t) dt} = \\lambda \\lim_{x \\to +\\infty} \\frac{u(x)}{v(x)},\n\\end{aligned}\n$$\nwhere $\\lambda = \\lim_{x \\to +\\infty} h(x)$, $u(x) = \\int_{1}^{x} f^2(t) dt$, $v(x) = x \\int_{1}^{x} f(t) dt$.\n\nTo show that $\\lim_{x \\to +\\infty} \\frac{u(x)}{v(x)} = 0$ we shall use l'Hospital Rule:\n\n* $u$ and $v$ are differentiable,\n* $\\lim_{x \\to +\\infty} v(x) = +\\infty$ (this follows from $v(x) \\ge m(x - 1)$ for $x \\ge 2$, where $m = \\inf_{x \\in [1,2]} f(x)$),\n* $v'(x) = \\int_{1}^{x} f(t) dt + x f(x) \\ne 0$, for all $x \\ge 1$,\n\n• relations $\\frac{u'(x)}{v'(x)} = \\frac{f^2(x)}{x f(x) + \\int_1^x f(t) dt} = g(x) \\cdot \\frac{f(x)}{f(x) + h(x)} \\in (0, g(x))$ and $\\li…",
+      "hint": "65th Romanian Mathematical Olympiad · Calculus > Integral Calculus > Techniques > Single-variable",
+      "tags": [
+        "mathnet",
+        "romania",
+        "no-answer",
+        "open"
+      ]
+    },
+    {
+      "id": "math.olympiad.mathnet-calculus.q0055",
+      "problem": "Problem:\nSuppose the function $f(x)-f(2 x)$ has derivative $5$ at $x=1$ and derivative $7$ at $x=2$. Find the derivative of $f(x)-f(4 x)$ at $x=1$.",
+      "answer": "19",
+      "answer_format": "expression",
+      "difficulty": "hard",
+      "solution_steps": [
+        "Solution:",
+        "Let $g(x)=f(x)-f(2 x)$. Then we want the derivative of",
+        "$$",
+        "f(x)-f(4 x)=(f(x)-f(2 x))+(f(2 x)-f(4 x))=g(x)+g(2 x)",
+        "$$",
+        "at $x=1$. This is $g'(x)+2 g'(2 x)$ at $x=1$, or $5+2 \\cdot 7=19$."
+      ],
+      "explanation": "Solution:\nLet $g(x)=f(x)-f(2 x)$. Then we want the derivative of\n$$\nf(x)-f(4 x)=(f(x)-f(2 x))+(f(2 x)-f(4 x))=g(x)+g(2 x)\n$$\nat $x=1$. This is $g'(x)+2 g'(2 x)$ at $x=1$, or $5+2 \\cdot 7=19$.",
+      "hint": "Harvard-MIT Mathematics Tournament · Calculus > Differential Calculus > Derivatives",
+      "tags": [
+        "mathnet",
+        "united-states"
+      ]
+    },
+    {
+      "id": "math.olympiad.mathnet-calculus.q0056",
+      "problem": "Problem:\n\nV katerih točkah na krivulji, podani $z$ enačbo $f(x)=x^{3}-2 x^{2}+3$, tangenta $z$ abscisno osjo oklepa kot $135^{\\circ}$?\n\n(A) $T_{1}(1,-4)$ in $T_{2}(-2,0)$.\n(B) $T_{1}(1,-4)$ in $T_{2}(2,0)$.\n(C) $T_{1}(1,0)$ in $T_{2}(-1,4)$.\n(D) $T_{1}(1,2)$ in $T_{2}\\left(\\frac{1}{3}, \\frac{28}{9}\\right)$\n(E) $T_{1}(1,2)$ in $T_{2}\\left(\\frac{1}{3}, \\frac{76}{27}\\right)$.",
+      "answer": "E",
+      "answer_format": "expression",
+      "difficulty": "hard",
+      "solution_steps": [
+        "Solution:",
+        "Vrednost odvoda funkcije $f$ v iskanih točkah mora biti enaka tangensu naklonskega kota tangente $v$ teh točkah $f'(x)=\\tan 135^{\\circ}=-1$. Rešimo enačbo $3 x^{2}-4 x=-1$. Enačbo uredimo in izračunamo abscisi iskanih točk $x_{1}=1$ in $x_{2}=\\frac{1}{3}$. Izračunamo funkcijski vrednosti $f\\left(x_{1}\\right)=$ $f(1)=2$ in $f\\left(x_{2}\\right)=f\\left(\\frac{1}{3}\\right)=\\frac{76}{27}$. Zapišemo točki $T_{1}(1,2)$ in $T_{2}\\left(\\frac{1}{3}, \\frac{76}{27}\\right)$. Pravilen je odgovor E."
+      ],
+      "explanation": "Solution:\n\nVrednost odvoda funkcije $f$ v iskanih točkah mora biti enaka tangensu naklonskega kota tangente $v$ teh točkah $f'(x)=\\tan 135^{\\circ}=-1$. Rešimo enačbo $3 x^{2}-4 x=-1$. Enačbo uredimo in izračunamo abscisi iskanih točk $x_{1}=1$ in $x_{2}=\\frac{1}{3}$. Izračunamo funkcijski vrednosti $f\\left(x_{1}\\right)=$ $f(1)=2$ in $f\\left(x_{2}\\right)=f\\left(\\frac{1}{3}\\right)=\\frac{76}{27}$. Zapišemo točki $T_{1}(1,2)$ in $T_{2}\\left(\\frac{1}{3}, \\frac{76}{27}\\right)$. Pravilen je odgovor E.",
+      "hint": "21. tekmovanje v znanju matematike za dijake srednjih tehniških in strokovnih šol Državno tekmovanje · Calculus > Differential Calculus > Derivatives",
+      "tags": [
+        "mathnet",
+        "slovenia"
+      ]
+    },
+    {
+      "id": "math.olympiad.mathnet-calculus.q0057",
+      "problem": "Problem:\n\nLet $f$ be a differentiable real-valued function defined on the positive real numbers. The tangent lines to the graph of $f$ always meet the $y$-axis 1 unit lower than where they meet the function. If $f(1)=0$, what is $f(2)$?",
+      "answer": "ln(2)",
+      "answer_format": "expression",
+      "difficulty": "hard",
+      "solution_steps": [
+        "Solution:",
+        "The tangent line to $f$ at $x$ meets the $y$-axis at $f(x)-1$ for any $x$, so the slope of the tangent line is $f'(x) = \\frac{1}{x}$, and so $f(x) = \\ln(x) + C$ for some $C$. Since $f(1) = 0$, we have $C = 0$, and so $f(x) = \\ln(x)$. Thus $f(2) = \\ln(2)$."
+      ],
+      "explanation": "Solution:\n\nThe tangent line to $f$ at $x$ meets the $y$-axis at $f(x)-1$ for any $x$, so the slope of the tangent line is $f'(x) = \\frac{1}{x}$, and so $f(x) = \\ln(x) + C$ for some $C$. Since $f(1) = 0$, we have $C = 0$, and so $f(x) = \\ln(x)$. Thus $f(2) = \\ln(2)$.",
+      "hint": "Harvard-MIT Mathematics Tournament · Calculus > Differential Calculus > Derivatives",
+      "tags": [
+        "mathnet",
+        "united-states"
+      ]
+    },
+    {
+      "id": "math.olympiad.mathnet-calculus.q0058",
+      "problem": "Problem:\nGiven that $\\tan x + \\cot x = 8$, find the value of $\\sqrt{\\sec^{2} x + \\csc^{2} x - \\frac{1}{2} \\sec x \\csc x}$.",
+      "answer": "2√15",
+      "answer_format": "expression",
+      "difficulty": "hard",
+      "solution_steps": [
+        "Solution:",
+        "Note that",
+        "$$",
+        "\\tan x + \\cot x = \\frac{\\sin x}{\\cos x} + \\frac{\\cos x}{\\sin x} = \\frac{\\sin^{2} x + \\cos^{2} x}{\\sin x \\cos x} = \\frac{1}{\\sin x \\cos x}",
+        "$$",
+        "This means that $\\sin x \\cos x = \\frac{1}{8}$.",
+        "Now,",
+        "$$",
+        "\\begin{aligned}",
+        "\\sqrt{\\sec^{2} x + \\csc^{2} x - \\frac{1}{2} \\sec x \\csc x} & = \\sqrt{\\frac{1}{\\cos^{2} x} + \\frac{1}{\\sin^{2} x} - \\frac{1}{2} \\left(\\frac{1}{\\cos x}\\right)\\left(\\frac{1}{\\sin x}\\right)} \\\\"
+      ],
+      "explanation": "Solution:\nNote that\n$$\n\\tan x + \\cot x = \\frac{\\sin x}{\\cos x} + \\frac{\\cos x}{\\sin x} = \\frac{\\sin^{2} x + \\cos^{2} x}{\\sin x \\cos x} = \\frac{1}{\\sin x \\cos x}\n$$\nThis means that $\\sin x \\cos x = \\frac{1}{8}$.\nNow,\n$$\n\\begin{aligned}\n\\sqrt{\\sec^{2} x + \\csc^{2} x - \\frac{1}{2} \\sec x \\csc x} & = \\sqrt{\\frac{1}{\\cos^{2} x} + \\frac{1}{\\sin^{2} x} - \\frac{1}{2} \\left(\\frac{1}{\\cos x}\\right)\\left(\\frac{1}{\\sin x}\\right)} \\\\\n& = \\sqrt{\\frac{\\sin^{2} x + \\cos^{2} x}{\\sin^{2} x \\cos^{2} x} - \\left(\\frac{1}{2}\\right)(8)} \\\\\n& = \\sqrt{64 - 4} = 2 \\sqrt{15}\n\\end{aligned}",
+      "hint": "20th Philippine Mathematical Olympiad · Precalculus > Trigonometric functions",
+      "tags": [
+        "mathnet",
+        "philippines"
+      ]
+    },
+    {
+      "id": "math.olympiad.mathnet-calculus.q0059",
+      "problem": "Problem:\nWhat is the period of the function $f(x) = \\cos(\\cos(x))$?",
+      "answer": "π",
+      "answer_format": "expression",
+      "difficulty": "hard",
+      "solution_steps": [
+        "Solution:",
+        "$\\boxed{\\pi}$",
+        "Since $f(x)$ never equals $\\cos(1)$ for $x \\in (0, \\pi)$ but $f(0) = \\cos(1)$, the period is at least $\\pi$. However, $\\cos(x+\\pi) = -\\cos(x)$, so $\\cos(\\cos(x+\\pi)) = \\cos(\\cos(x))$."
+      ],
+      "explanation": "Solution:\n$\\boxed{\\pi}$\n\nSince $f(x)$ never equals $\\cos(1)$ for $x \\in (0, \\pi)$ but $f(0) = \\cos(1)$, the period is at least $\\pi$. However, $\\cos(x+\\pi) = -\\cos(x)$, so $\\cos(\\cos(x+\\pi)) = \\cos(\\cos(x))$.",
+      "hint": "Harvard-MIT November Tournament · Precalculus > Trigonometric functions",
+      "tags": [
+        "mathnet",
+        "united-states"
+      ]
+    },
+    {
+      "id": "math.olympiad.mathnet-calculus.q0060",
+      "problem": "Problem:\nFind the exact value of $\\tan^{-1}\\left(\\frac{1}{2}\\right) + \\tan^{-1}\\left(\\frac{1}{5}\\right) + \\tan^{-1}\\left(\\frac{1}{8}\\right)$.",
+      "answer": "π/4",
+      "answer_format": "expression",
+      "difficulty": "hard",
+      "solution_steps": [],
+      "explanation": "",
+      "hint": "19th Philippine Mathematical Olympiad · Precalculus > Trigonometric functions",
+      "tags": [
+        "mathnet",
+        "philippines"
+      ]
+    },
+    {
+      "id": "math.olympiad.mathnet-calculus.q0061",
+      "problem": "a) Exhibit a continuous function $f: (0, \\infty) \\to \\mathbb{R}$ such that\n$$\n\\lim_{x \\to \\infty} \\frac{1}{x^2} \\int_0^x f(t) \\, dt = 1,\n$$\nbut $f(x)/x$ has not a limit as $x \\to \\infty$.\nb) Let $f: (0, \\infty) \\to \\mathbb{R}$ be an increasing function such that\n$$\n\\lim_{x \\to \\infty} \\frac{1}{x^2} \\int_0^x f(t) \\, dt = 1.\n$$",
+      "answer": "a) One example is f(x) = 2x + 2x cos(x^2). b) Under the given conditions, f(x)/x → 2 as x → ∞.",
+      "answer_format": "expression",
+      "difficulty": "hard",
+      "solution_steps": [
+        "a) The function $f: (0, \\infty) \\to \\mathbb{R}$, $f(x) = 2x + 2x \\cos x^2$, is clearly continuous,",
+        "$$",
+        "\\lim_{x \\to \\infty} \\frac{1}{x^2} \\int_0^x f(t) \\, dt = \\lim_{x \\to \\infty} \\left( 1 + \\frac{\\sin x^2}{x^2} \\right) = 1,",
+        "$$",
+        "but $f(x)/x$ has obviously not a limit as $x \\to \\infty$. Another example is the function $x \\mapsto 4x(\\cos x)^2$, $x > 0$; verifications are routine, and hence omitted.",
+        "b) Let $g: (0, \\infty) \\to \\mathbb{R}$, $g(x) = x^{-2} \\int_0^x f(t) \\, dt - 1$, so $g(x) \\to 0$ as $x \\to \\infty$. Fix a small enough $\\varepsilon > 0$. Since $g(x) \\to 0$ as $x \\to \\infty$, if $x$ is large enough, then",
+        "$$",
+        "|g(x - \\varepsilon x)| < \\varepsilon^2, \\quad |g(x)| < \\varepsilon^2 \\quad \\text{and} \\quad |g(x + \\varepsilon x)| < \\varepsilon^2. \\quad (*)",
+        "$$",
+        "Consider such an $x$; since $f$ is increasing,"
+      ],
+      "explanation": "a) The function $f: (0, \\infty) \\to \\mathbb{R}$, $f(x) = 2x + 2x \\cos x^2$, is clearly continuous,\n$$\n\\lim_{x \\to \\infty} \\frac{1}{x^2} \\int_0^x f(t) \\, dt = \\lim_{x \\to \\infty} \\left( 1 + \\frac{\\sin x^2}{x^2} \\right) = 1,\n$$\nbut $f(x)/x$ has obviously not a limit as $x \\to \\infty$. Another example is the function $x \\mapsto 4x(\\cos x)^2$, $x > 0$; verifications are routine, and hence omitted.\n\nb) Let $g: (0, \\infty) \\to \\mathbb{R}$, $g(x) = x^{-2} \\int_0^x f(t) \\, dt - 1$, so $g(x) \\to 0$ as $x \\to \\infty$. Fix a small enough $\\varepsilon > 0$. Since $g(x) \\to 0$ as $x \\to \\infty$, if $x$ is large enough, then\n$$\n|g(x - \\varepsilon x)| < \\varepsilon^2, \\quad |g(x)| < \\varepsilon^2 \\quad \\text{and} \\quad |g(x + \\varepsilon x)| < \\varepsilon^2. \\quad (*)\n$$\nConsider such an $x$; since $f$ is increasing,\n$$\n\\frac{1}{\\varepsilon x} \\int_{x-\\varepsilon x}^{x} f(t) \\, dt \\le f(x) \\le \\frac{1}{\\varepsilon x} \\int_{x}^{x+\\varepsilon x} f(t) \\, dt.\n$$\nAlternatively, but equivalently, in terms of $g$,\n$$\n2 - \\varepsilon + \\frac{g(x)}{\\varepsilon} - (1 - \\varepsilon)^2 \\cdot \\frac{g(x - \\varepsilon x)}{\\varepsilon} \\le \\frac{f(x)}{x} \\le 2 + \\varepsilon + (1 + \\varepsilon)^2 \\cdot \\frac{g(x + \\varepsilon x)}{\\varepsilon} - \\frac{g(x)}{\\varepsilon},\n$$\nso, by (*),\n$$\n2 - 2\\varepsilon - \\varepsilon(1 - \\varepsilon)^2 < f(x)/x < 2 + 2\\varepsilon + \\varepsilon(1 + \\varepsilon)^2.\n$$",
+      "hint": "THE 68th ROMANIAN MATHEMATICAL OLYMPIAD · Calculus > Integral Calculus > Techniques > Single-variable",
+      "tags": [
+        "mathnet",
+        "romania"
+      ]
+    },
+    {
+      "id": "math.olympiad.mathnet-calculus.q0062",
+      "problem": "Problem:\nFind all values of $x$ with $0 \\leq x < 2\\pi$ that satisfy $\\sin x + \\cos x = \\sqrt{2}$.",
+      "answer": "π/4",
+      "answer_format": "expression",
+      "difficulty": "hard",
+      "solution_steps": [
+        "Solution:",
+        "Squaring both sides gives $\\sin^2 x + \\cos^2 x + 2 \\sin x \\cos x = 1 + \\sin 2x = 2$, so $x = \\frac{\\pi}{4}, \\frac{5\\pi}{4}$."
+      ],
+      "explanation": "Solution:\nSquaring both sides gives $\\sin^2 x + \\cos^2 x + 2 \\sin x \\cos x = 1 + \\sin 2x = 2$, so $x = \\frac{\\pi}{4}, \\frac{5\\pi}{4}$.",
+      "hint": "Harvard-MIT Math Tournament · Precalculus > Trigonometric functions",
+      "tags": [
+        "mathnet",
+        "united-states"
+      ]
+    },
+    {
+      "id": "math.olympiad.mathnet-calculus.q0063",
+      "problem": "Problem:\nFind the number of real roots of the equation\n$$\n4 \\cos (2007 a) = 2007 a\n$$",
+      "answer": "3",
+      "answer_format": "expression",
+      "difficulty": "hard",
+      "solution_steps": [
+        "Solution:",
+        "Let $x = 2007 a$. Then the given equation becomes $4 \\cos x = x$. The graphs of the equations $y = 4 \\cos x$ and $y = x$ intersect at three points. Thus, the equation $4 \\cos x = x$ has three roots. Consequently, the equation $4 \\cos (2007 a) = 2007 a$ also has three roots."
+      ],
+      "explanation": "Solution:\nLet $x = 2007 a$. Then the given equation becomes $4 \\cos x = x$. The graphs of the equations $y = 4 \\cos x$ and $y = x$ intersect at three points. Thus, the equation $4 \\cos x = x$ has three roots. Consequently, the equation $4 \\cos (2007 a) = 2007 a$ also has three roots.",
+      "hint": "Tenth Philippine Mathematical Olympiad · Precalculus > Trigonometric functions",
+      "tags": [
+        "mathnet",
+        "philippines"
+      ]
+    },
+    {
+      "id": "math.olympiad.mathnet-calculus.q0064",
+      "problem": "Problem:\nFind the area of the region bounded by the graphs of $y = x^{2}$, $y = x$, and $x = 2$.",
+      "answer": "1",
+      "answer_format": "expression",
+      "difficulty": "hard",
+      "solution_steps": [
+        "Solution:",
+        "There are two regions to consider. First, there is the region bounded by $y = x^{2}$ and $y = x$, in the interval $[0, 1]$. In this interval, the values of $y = x$ are greater than the values of $y = x^{2}$, thus the area is calculated by",
+        "$$",
+        "\\int_{0}^{1} (x - x^{2}) \\, dx",
+        "$$",
+        "Second, there is the region bounded by $y = x^{2}$ and $y = x$ and $x = 2$, in the interval $[1, 2]$. In this interval, the values of $y = x^{2}$ are greater than the values of $y = x$, thus the area is calculated by",
+        "$$",
+        "\\int_{1}^{2} (x^{2} - x) \\, dx",
+        "$$",
+        "Then the total area of the region bounded by the three graphs is"
+      ],
+      "explanation": "Solution:\nThere are two regions to consider. First, there is the region bounded by $y = x^{2}$ and $y = x$, in the interval $[0, 1]$. In this interval, the values of $y = x$ are greater than the values of $y = x^{2}$, thus the area is calculated by\n$$\n\\int_{0}^{1} (x - x^{2}) \\, dx\n$$\nSecond, there is the region bounded by $y = x^{2}$ and $y = x$ and $x = 2$, in the interval $[1, 2]$. In this interval, the values of $y = x^{2}$ are greater than the values of $y = x$, thus the area is calculated by\n$$\n\\int_{1}^{2} (x^{2} - x) \\, dx\n$$\nThen the total area of the region bounded by the three graphs is\n$$\n\\int_{0}^{1} (x - x^{2}) \\, dx + \\int_{1}^{2} (x^{2} - x) \\, dx = 1\n$$",
+      "hint": "HMMT · Calculus > Integral Calculus > Applications",
+      "tags": [
+        "mathnet",
+        "united-states"
+      ]
+    }
+  ]
+}

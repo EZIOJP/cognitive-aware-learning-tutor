@@ -34,7 +34,9 @@ import {
 } from "../../api/globalQuizClient";
 import { llmBodyFieldsForTask } from "../../api/transcriptsClient";
 import { GlobalQuizRunner } from "../../features/quiz/GlobalQuizRunner";
-import { LoopTab } from "../../features/quiz/studyLoop/LoopTab";
+import { FlashDecksPanel } from "../../features/quiz/FlashDecksPanel";
+import { DailyLearnShell, type DailyPageTab } from "../../features/quiz/studyLoop/DailyLearnShell";
+import type { LegacyTool } from "../../features/quiz/studyLoop/SettingsTab";
 import type { DueReviewItem, QuizDeckSummary, QuizDomain } from "../../features/quiz/types";
 import { useAuth } from "../../context/AuthContext";
 
@@ -62,11 +64,12 @@ const EMPTY_MCQ = () => ({
 export function ReviewHubPage() {
   const { user, sessionReady } = useAuth();
   const [searchParams] = useSearchParams();
-  const initialTab = (searchParams.get("tab") as Tab) || "due";
+  const initialTab = (searchParams.get("tab") as Tab) || "loop";
   const fromLectureNotes = searchParams.get("source") === "lecture_notes";
   const resumeSession = searchParams.get("session");
   const mathNodeParam = searchParams.get("math_node");
   const [tab, setTab] = useState<Tab>(initialTab);
+  const [dailyPageTab, setDailyPageTab] = useState<DailyPageTab>("learn");
 
   useEffect(() => {
     const t = searchParams.get("tab") as Tab | null;
@@ -224,11 +227,15 @@ export function ReviewHubPage() {
     }
   }, [mathNodeParam]);
 
-  const startDueReview = () => {
+  const startDueReview = (opts?: { limit?: number; domains?: string[] }) => {
     setActive({
       mode: "start",
       domain: "review",
-      config: { limit: 25, ...timeOpts },
+      config: {
+        limit: opts?.limit ?? 25,
+        ...(opts?.domains?.length ? { domains: opts.domains } : {}),
+        ...timeOpts,
+      },
     });
   };
 
@@ -326,9 +333,9 @@ export function ReviewHubPage() {
   }
 
   const tabs: { id: Tab; label: string }[] = [
+    { id: "loop", label: "Learn" },
     { id: "due", label: `Due (${backlog?.due_count ?? due.length})` },
-    { id: "loop", label: "Loop" },
-    { id: "start", label: "Learn" },
+    { id: "start", label: "Start quiz" },
     { id: "decks", label: "Flash decks" },
     { id: "create", label: "Create deck" },
     { id: "results", label: "Results" },
@@ -339,7 +346,8 @@ export function ReviewHubPage() {
   const queueEmpty = !hasDue && (backlog?.total_cards ?? 0) === 0;
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6 p-6">
+    <div className={`mx-auto space-y-6 p-6 ${tab === "loop" ? "max-w-6xl" : "max-w-3xl"}`}>
+      {tab !== "loop" && (
       <header>
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
@@ -377,6 +385,7 @@ export function ReviewHubPage() {
           )}
         </div>
       </header>
+      )}
 
       {(backlog?.weak_topics?.length ?? 0) > 0 && (
         <div className="gloss-panel rounded-xl p-3 text-xs text-muted-foreground">
@@ -452,6 +461,7 @@ export function ReviewHubPage() {
         </Button>
       </div>
 
+      {tab !== "loop" && (
       <section className="gloss-panel rounded-xl p-4 flex flex-wrap gap-4 items-end text-sm">
         <label className="space-y-1">
           <span className="text-xs text-muted-foreground flex items-center gap-1">
@@ -481,12 +491,27 @@ export function ReviewHubPage() {
           Applies to quizzes started from this page. 0 = no limit.
         </p>
       </section>
+      )}
 
       {tab === "loop" && (
-        <LoopTab
+        <DailyLearnShell
+          due={due}
+          dueCount={dueCount}
+          pageTab={dailyPageTab}
+          onPageTab={setDailyPageTab}
           onStartPractice={(sessionId) => {
             setActive({ mode: "resume", sessionId });
           }}
+          onStartDueReview={startDueReview}
+          onOpenTool={(tool: LegacyTool) => {
+            if (tool === "loop") {
+              setTab("loop");
+              setDailyPageTab("learn");
+              return;
+            }
+            setTab(tool);
+          }}
+          onRefreshDue={() => void refresh()}
         />
       )}
 
@@ -968,48 +993,18 @@ export function ReviewHubPage() {
       )}
 
       {tab === "decks" && (
-        <section className="gloss-panel rounded-xl p-5 space-y-3">
-          <h2 className="font-medium">My quiz decks</h2>
-          {decks.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              No custom decks yet. Use the Create tab to build your own MCQ set.
-            </p>
-          ) : (
-            <ul className="divide-y rounded-lg border">
-              {decks.map((d) => (
-                <li key={d.id} className="flex items-center justify-between px-3 py-2 text-sm gap-2">
-                  <div>
-                    <p className="font-medium">{d.title}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {d.item_count} questions · {d.domain}
-                      {d.time_limit_sec ? ` · ${Math.round(d.time_limit_sec / 60)}m limit` : ""}
-                    </p>
-                  </div>
-                  <div className="flex gap-1">
-                    <Button
-                      size="sm"
-                      onClick={() =>
-                        setActive({ mode: "start", domain: "deck", config: { deck_id: d.id } })
-                      }
-                    >
-                      Play
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={async () => {
-                        await deleteQuizDeck(d.id);
-                        void refresh();
-                      }}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
+        <FlashDecksPanel
+          decks={decks}
+          timeOpts={timeOpts}
+          onPlay={({ domain, config }) =>
+            setActive({ mode: "start", domain: domain as QuizDomain, config })
+          }
+          onDeleteDeck={async (id) => {
+            await deleteQuizDeck(id);
+            void refresh();
+          }}
+          onRefresh={() => void refresh()}
+        />
       )}
 
       {tab === "create" && (

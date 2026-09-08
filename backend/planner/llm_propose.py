@@ -448,7 +448,15 @@ def _pack_gaps_with_goals(
             filled += duration
             continuous_min += duration
             chunks_since_break += 1
-            cursor = cursor + duration  # breaks handle spacing; no silent +5 steal
+            cursor = cursor + duration
+            # Mandatory break after every study task
+            if filled < target_min or cursor < gap_end:
+                br = min(break_pref, max(8, gap_end - cursor))
+                if br >= 8 and cursor + br <= gap_end:
+                    out.append((cursor, cursor + br, "Break", "break"))
+                    cursor += br
+                    continuous_min = 0
+                    chunks_since_break = 0
 
     out.sort(key=lambda x: x[0])
     return out
@@ -620,7 +628,19 @@ def _fallback_blocks(
             busy.append(_routine_interval_minutes(r))
         busy.extend(_busy_from_iso_blocks(busy_blocks, day))
 
+        from backend.planner.morning_order import (
+            filter_gaps_after_morning,
+            morning_study_floor_min,
+        )
+
+        study_floor = morning_study_floor_min(
+            day=day,
+            routines=routines,
+            calendar_blocks=busy_blocks,
+        )
+
         gaps = _free_gaps(busy, day_start=day_start, day_end=day_end, min_gap=30)
+        gaps = filter_gaps_after_morning(gaps, study_floor, min_gap=30)
         packed = _pack_gaps_with_goals(
             gaps,
             target_min,
@@ -638,6 +658,7 @@ def _fallback_blocks(
             for s, e, _t, c in packed:
                 busy2.append((s, e))
             gaps2 = _free_gaps(busy2, day_start=day_start, day_end=day_end, min_gap=25)
+            gaps2 = filter_gaps_after_morning(gaps2, study_floor, min_gap=25)
             extra = _pack_gaps_with_goals(
                 gaps2,
                 target_min - filled,

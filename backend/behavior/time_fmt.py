@@ -39,3 +39,36 @@ def optional_hours_label(hours: float | int | None) -> str | None:
     if hours is None:
         return None
     return format_hours_mins_from_hours(hours)
+
+
+def format_duration_spoken(total_minutes: float | int | None) -> str:
+    """TTS-friendly label — omits a leading ``0 hours`` when under one hour."""
+    label = format_hours_mins(total_minutes)
+    if label.startswith("0 hours "):
+        return label[len("0 hours ") :]
+    return label
+
+
+_MINUTE_KEYS = (
+    "focus_min",
+    "distracted_min",
+    "productive_min",
+    "remaining_min",
+    "goal_min",
+    "daily_goal_min",
+    "productive_minutes",
+    "remaining_minutes",
+    "daily_goal_minutes",
+)
+
+
+def enrich_duration_fmt(fmt: dict[str, object]) -> dict[str, object]:
+    """Add ``*_hm`` spoken labels for minute fields present in ``fmt``."""
+    out = dict(fmt)
+    for key in _MINUTE_KEYS:
+        if key not in fmt:
+            continue
+        hm_key = key.replace("_minutes", "_hm").replace("_min", "_hm")
+        if hm_key.endswith("_hm") and hm_key not in out:
+            out[hm_key] = format_duration_spoken(fmt[key])
+    return out

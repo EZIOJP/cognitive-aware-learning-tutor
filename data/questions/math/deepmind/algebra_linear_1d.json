@@ -1,0 +1,3022 @@
+{
+  "schema_version": 1,
+  "kind": "math",
+  "topic": {
+    "topic_id": "math.aptitude.dm-linear-1d",
+    "title": "DeepMind linear 1D",
+    "stage": "foundations",
+    "path": [
+      "Aptitude",
+      "DeepMind",
+      "algebra__linear_1d"
+    ],
+    "track": "aptitude",
+    "prerequisites": [],
+    "note_topic_ids": [
+      "MT2-T01"
+    ],
+    "description": "google-deepmind/mathematics_dataset (algebra__linear_1d)."
+  },
+  "questions": [
+    {
+      "id": "math.aptitude.dm-linear-1d.q0001",
+      "problem": "Solve 43 = 2*z + 35 for z.",
+      "answer": "4",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0002",
+      "problem": "Solve -2*u = -2 - 6 for u.",
+      "answer": "4",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0003",
+      "problem": "Solve 555*a + 487906 + 858929 = 13890*a for a.",
+      "answer": "101",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0004",
+      "problem": "Solve 141*i - 60*i + 119 = 64*i for i.",
+      "answer": "-7",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0005",
+      "problem": "Solve 0 = -37*j - 139 - 120 for j.",
+      "answer": "-7",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0006",
+      "problem": "Solve -30*c + 17 = 47 for c.",
+      "answer": "-1",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0007",
+      "problem": "Solve 0 = 514*k + 59*k + 63*k - 3180 for k.",
+      "answer": "5",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0008",
+      "problem": "Solve 38*q + 221 = 1320 + 41 for q.",
+      "answer": "30",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0009",
+      "problem": "Solve 1070*r - 687*r - 849*r - 37746 = 0 for r.",
+      "answer": "-81",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0010",
+      "problem": "Solve 1186 = -111*n - 2144 for n.",
+      "answer": "-30",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0011",
+      "problem": "Solve 14*r - 6 = 16*r for r.",
+      "answer": "-3",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0012",
+      "problem": "Solve 15388*w - 4495 = 15233*w for w.",
+      "answer": "29",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0013",
+      "problem": "Solve -4*b + 3*b = -11*b - 90 for b.",
+      "answer": "-9",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0014",
+      "problem": "Solve 53*m - 48*m - 10 = 0 for m.",
+      "answer": "2",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0015",
+      "problem": "Solve 418*a + 2080 = -280*a + 568*a for a.",
+      "answer": "-16",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0016",
+      "problem": "Solve 0 = 110*p - 94*p - 224 for p.",
+      "answer": "14",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0017",
+      "problem": "Solve -3007 = 296*b + 102 + 1923 for b.",
+      "answer": "-17",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0018",
+      "problem": "Solve -186*f + 379 + 827 = -840 for f.",
+      "answer": "11",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0019",
+      "problem": "Solve 480*r + 2052 = 372*r for r.",
+      "answer": "-19",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0020",
+      "problem": "Solve -48*r - 6110 = -97*r + 179*r for r.",
+      "answer": "-47",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0021",
+      "problem": "Solve 0 = -1237*a + 9447 + 148889 for a.",
+      "answer": "128",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0022",
+      "problem": "Solve -21*k + 1497 = 17*k + 243 for k.",
+      "answer": "33",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0023",
+      "problem": "Solve -106*p = 13143 - 21835 for p.",
+      "answer": "82",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0024",
+      "problem": "Solve 58*f - 76 = 446 for f.",
+      "answer": "9",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0025",
+      "problem": "Solve -16*x + 48 = -10*x for x.",
+      "answer": "8",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0026",
+      "problem": "Solve -18*x + 111*x = 347 + 304 for x.",
+      "answer": "7",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0027",
+      "problem": "Solve 2*y - 37 = -49 for y.",
+      "answer": "-6",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0028",
+      "problem": "Solve 0 = 32*c + 23*c - 14*c - 738 for c.",
+      "answer": "18",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0029",
+      "problem": "Solve 6*u + 9 - 3 = 0 for u.",
+      "answer": "-1",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0030",
+      "problem": "Solve -2*p = 1 - 5 for p.",
+      "answer": "2",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0031",
+      "problem": "Solve 0 = 8*w - 14 + 22 for w.",
+      "answer": "-1",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0032",
+      "problem": "Solve -40*o = 22*o - 45*o for o.",
+      "answer": "0",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0033",
+      "problem": "Solve 456*o - 8 = 454*o for o.",
+      "answer": "4",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0034",
+      "problem": "Solve 85 = -53*z + 70*z for z.",
+      "answer": "5",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0035",
+      "problem": "Solve 658*j - 31700 + 17171 = 45349 for j.",
+      "answer": "91",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0036",
+      "problem": "Solve -212*x - 2088 + 180 = 0 for x.",
+      "answer": "-9",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0037",
+      "problem": "Solve -239*v + 252*v = -117 for v.",
+      "answer": "-9",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0038",
+      "problem": "Solve -1982*j = -1402*j + 7540 for j.",
+      "answer": "-13",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0039",
+      "problem": "Solve -47983*h + 47961*h = -374 for h.",
+      "answer": "17",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0040",
+      "problem": "Solve 73*y = -241*y + 453*y + 7645 for y.",
+      "answer": "-55",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0041",
+      "problem": "Solve 92558*n + 3 = 92561*n for n.",
+      "answer": "1",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0042",
+      "problem": "Solve 0 = -5*t + 152 - 132 for t.",
+      "answer": "4",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0043",
+      "problem": "Solve -2483*o = -834*o - 126973 for o.",
+      "answer": "77",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0044",
+      "problem": "Solve 94*i - 92*i - 14 = 0 for i.",
+      "answer": "7",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0045",
+      "problem": "Solve 0 = 66*z + 10932 - 11790 for z.",
+      "answer": "13",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0046",
+      "problem": "Solve -21*v + 13*v = 48 for v.",
+      "answer": "-6",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0047",
+      "problem": "Solve 202*q - 15900 = -150*q - 166*q + 200*q for q.",
+      "answer": "50",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0048",
+      "problem": "Solve 163*r = 165*r - 54 for r.",
+      "answer": "27",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0049",
+      "problem": "Solve 3549*f - 3547*f + 8 = 0 for f.",
+      "answer": "-4",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0050",
+      "problem": "Solve 102 - 50 - 52 = 37*s for s.",
+      "answer": "0",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0051",
+      "problem": "Solve 17 = -34*o - 14*o + 31*o for o.",
+      "answer": "-1",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0052",
+      "problem": "Solve -120*g - 302 = -157*g + 586 for g.",
+      "answer": "24",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0053",
+      "problem": "Solve -38 + 30 = 8*t for t.",
+      "answer": "-1",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0054",
+      "problem": "Solve -23*n - 25*n - 1900 = -178*n + 80*n for n.",
+      "answer": "38",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0055",
+      "problem": "Solve 0 = 14*i - 31 + 3 for i.",
+      "answer": "2",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0056",
+      "problem": "Solve 280*l - 139*l = -564 for l.",
+      "answer": "-4",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0057",
+      "problem": "Solve 0 = -1777*d + 1756*d - 126 for d.",
+      "answer": "-6",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0058",
+      "problem": "Solve -13*a - 80 = -210 for a.",
+      "answer": "10",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0059",
+      "problem": "Solve -146*i + 605 + 2961 = 356 - 3360 for i.",
+      "answer": "45",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0060",
+      "problem": "Solve -17*g = 74 - 23 for g.",
+      "answer": "-3",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0061",
+      "problem": "Solve -80 + 62 = 3*m for m.",
+      "answer": "-6",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0062",
+      "problem": "Solve -28*d = 91 + 21 for d.",
+      "answer": "-4",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0063",
+      "problem": "Solve 1071*h = 1111*h - 440 for h.",
+      "answer": "11",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0064",
+      "problem": "Solve -2 = 57*y - 55*y for y.",
+      "answer": "-1",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0065",
+      "problem": "Solve -5031*t - 5395*t + 746465 - 72077 = -208*t for t.",
+      "answer": "66",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0066",
+      "problem": "Solve 0 = -2805*v - 2139*v + 43*v - 39208 for v.",
+      "answer": "-8",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0067",
+      "problem": "Solve -2104985*k + 2105031*k = -1503 - 107 for k.",
+      "answer": "-35",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0068",
+      "problem": "Solve -630*i = -650*i - 247*i - 6942 for i.",
+      "answer": "-26",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0069",
+      "problem": "Solve 24 + 6 = -s - 5*s for s.",
+      "answer": "-5",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0070",
+      "problem": "Solve 176*l - 1827 = -1499 + 539 + 8285 for l.",
+      "answer": "52",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0071",
+      "problem": "Solve 158*u - 123*u = -73 - 67 for u.",
+      "answer": "-4",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0072",
+      "problem": "Solve 1359*d + 13688 - 10657 = -17354 for d.",
+      "answer": "-15",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0073",
+      "problem": "Solve -12 = -n - 15 for n.",
+      "answer": "-3",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0074",
+      "problem": "Solve 6674*y + 6902 = 6877*y for y.",
+      "answer": "34",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0075",
+      "problem": "Solve 100*l + 28*l = 128 for l.",
+      "answer": "1",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0076",
+      "problem": "Solve 59 + 61 = -15*a for a.",
+      "answer": "-8",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0077",
+      "problem": "Solve -133*z + 12*z - 3896 - 339 = 0 for z.",
+      "answer": "-35",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0078",
+      "problem": "Solve -622*v = -617*v - 20 for v.",
+      "answer": "4",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0079",
+      "problem": "Solve -419*k - 15570 = -17665 for k.",
+      "answer": "5",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0080",
+      "problem": "Solve -q + 5*q + 3*q = 0 for q.",
+      "answer": "0",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0081",
+      "problem": "Solve -91*c - 2035 = 1098 - 2 - 401 for c.",
+      "answer": "-30",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0082",
+      "problem": "Solve 720*q - 112*q = -1070*q + 90*q + 92104 for q.",
+      "answer": "58",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0083",
+      "problem": "Solve -28082*r - 8 = -28081*r for r.",
+      "answer": "-8",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0084",
+      "problem": "Solve 10404*f = 10374*f + 1350 for f.",
+      "answer": "45",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0085",
+      "problem": "Solve 62*x = -203*x + 160 - 3075 for x.",
+      "answer": "-11",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0086",
+      "problem": "Solve -163*s = 46*s + 7733 for s.",
+      "answer": "-37",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0087",
+      "problem": "Solve 15*i + 4053 - 2841 + 3710 = -199*i for i.",
+      "answer": "-23",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0088",
+      "problem": "Solve -3*l - 174*l + 2914 = 967 for l.",
+      "answer": "11",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0089",
+      "problem": "Solve 0 = -6*v + 12*v - 24 for v.",
+      "answer": "4",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0090",
+      "problem": "Solve 21 = 12*x - 63 for x.",
+      "answer": "7",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0091",
+      "problem": "Solve -7972*z + 1086*z = 89518 for z.",
+      "answer": "-13",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0092",
+      "problem": "Solve 29957*a + 214488 = 35915*a for a.",
+      "answer": "36",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0093",
+      "problem": "Solve -5415*w - 2905*w - 7412*w + 254848 = 196*w for w.",
+      "answer": "16",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0094",
+      "problem": "Solve -26*q + 58 = -20 for q.",
+      "answer": "3",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0095",
+      "problem": "Solve -11*x + 2402 - 2358 = 0 for x.",
+      "answer": "4",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0096",
+      "problem": "Solve -87*k - 129*k - 108*k = 324 for k.",
+      "answer": "-1",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0097",
+      "problem": "Solve 0 = 6*g + 35*g - 287 for g.",
+      "answer": "7",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0098",
+      "problem": "Solve -262 = 55*g - 83*g + 410 for g.",
+      "answer": "24",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0099",
+      "problem": "Solve 2738 = -913*p - 1 for p.",
+      "answer": "-3",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0100",
+      "problem": "Solve -194*j + 41*j - 3680 = 7*j for j.",
+      "answer": "-23",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0101",
+      "problem": "Solve 979*i - 550*i - 1273 = 495*i + 1565 for i.",
+      "answer": "-43",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0102",
+      "problem": "Solve -39*z + 54 = -12*z for z.",
+      "answer": "2",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0103",
+      "problem": "Solve 0 = 2*f - 0 - 10 for f.",
+      "answer": "5",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0104",
+      "problem": "Solve 0 = -99*d + 204*d + 3045 for d.",
+      "answer": "-29",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0105",
+      "problem": "Solve 149*q = 1762 - 2507 for q.",
+      "answer": "-5",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0106",
+      "problem": "Solve 18 = 14*a + 20*a + 460 for a.",
+      "answer": "-13",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0107",
+      "problem": "Solve -21161 = -162*v - 5*v - 99*v - 42973 for v.",
+      "answer": "-82",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0108",
+      "problem": "Solve 34*p + 180 = -418 + 88 for p.",
+      "answer": "-15",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0109",
+      "problem": "Solve -2168 = 80*g - 17*g - 3491 for g.",
+      "answer": "21",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0110",
+      "problem": "Solve 1619768 = 614*j + 1633890 for j.",
+      "answer": "-23",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0111",
+      "problem": "Solve 2486*l - 4155 = 65453 for l.",
+      "answer": "28",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0112",
+      "problem": "Solve -75*k + 79*k + 20 = 0 for k.",
+      "answer": "-5",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0113",
+      "problem": "Solve 80 + 218 = -23*n - 70 for n.",
+      "answer": "-16",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0114",
+      "problem": "Solve 9 = -2*c - c for c.",
+      "answer": "-3",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0115",
+      "problem": "Solve -21*i + 140 = -41*i for i.",
+      "answer": "-7",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0116",
+      "problem": "Solve 52*p - 27*p + 75 = 0 for p.",
+      "answer": "-3",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0117",
+      "problem": "Solve -18*l - 18 = -36 for l.",
+      "answer": "1",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0118",
+      "problem": "Solve -652*k - 4*k = -9840 for k.",
+      "answer": "15",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0119",
+      "problem": "Solve -743*m + 666*m + 693 = 0 for m.",
+      "answer": "9",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0120",
+      "problem": "Solve -360*a + 13827 = -837*a + 326*a + 5522 for a.",
+      "answer": "-55",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0121",
+      "problem": "Solve -8*d - 10 = -42 for d.",
+      "answer": "4",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0122",
+      "problem": "Solve 1678536*y - 1678307*y + 3435 = 0 for y.",
+      "answer": "-15",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0123",
+      "problem": "Solve -307*c = -168*c + 324*c + 27780 for c.",
+      "answer": "-60",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0124",
+      "problem": "Solve 25*y - 4*y = 4*y - 68 for y.",
+      "answer": "-4",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0125",
+      "problem": "Solve 72*c - 107*c = -385 for c.",
+      "answer": "11",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0126",
+      "problem": "Solve 0 = 222*o - 223*o + 3 for o.",
+      "answer": "3",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0127",
+      "problem": "Solve 2432 = 60*w - 179*w - 3170 - 1895 for w.",
+      "answer": "-63",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0128",
+      "problem": "Solve 8*l + 5 = -11 for l.",
+      "answer": "-2",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0129",
+      "problem": "Solve 66*a + 18 = 60*a for a.",
+      "answer": "-3",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0130",
+      "problem": "Solve -99233*k + 99301*k = 0 for k.",
+      "answer": "0",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0131",
+      "problem": "Solve 173*i + 183 = 801 + 766 for i.",
+      "answer": "8",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0132",
+      "problem": "Solve 212*q = 4704804 - 4716464 for q.",
+      "answer": "-55",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0133",
+      "problem": "Solve -166*o + 129*o = -1110 for o.",
+      "answer": "30",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0134",
+      "problem": "Solve 98 + 17 = -23*z for z.",
+      "answer": "-5",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0135",
+      "problem": "Solve -116324*q + 116395*q = 355 for q.",
+      "answer": "5",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0136",
+      "problem": "Solve -7*i + 10 = 38 for i.",
+      "answer": "-4",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0137",
+      "problem": "Solve 0 = -48*c - 69 + 21 for c.",
+      "answer": "-1",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0138",
+      "problem": "Solve 0 = 5*x - 37 + 17 for x.",
+      "answer": "4",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0139",
+      "problem": "Solve -64*m - 11967 + 3917 - 8432 = 338*m for m.",
+      "answer": "-41",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0140",
+      "problem": "Solve -159*s - 48*s - 386 = 1063 for s.",
+      "answer": "-7",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0141",
+      "problem": "Solve 429*c - 864 = 537*c for c.",
+      "answer": "-8",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0142",
+      "problem": "Solve 29*p + 171 = -32 for p.",
+      "answer": "-7",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0143",
+      "problem": "Solve 0 = -16*w + 13*w + 15 for w.",
+      "answer": "5",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0144",
+      "problem": "Solve l - 629 = -628*l for l.",
+      "answer": "1",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0145",
+      "problem": "Solve 172 - 20 = -38*w for w.",
+      "answer": "-4",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0146",
+      "problem": "Solve -805 = -83*p - 224 for p.",
+      "answer": "7",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0147",
+      "problem": "Solve -48 + 284 = 59*a for a.",
+      "answer": "4",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0148",
+      "problem": "Solve -8*f - 1935 = -1871 for f.",
+      "answer": "-8",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0149",
+      "problem": "Solve 3*f - 17 = -17 for f.",
+      "answer": "0",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0150",
+      "problem": "Solve -10069*q - 524527 + 197927 = 549403 for q.",
+      "answer": "-87",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0151",
+      "problem": "Solve 5*q + 14 + 11 = 0 for q.",
+      "answer": "-5",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0152",
+      "problem": "Solve -4983*h + 53267 - 269981 = 720*h for h.",
+      "answer": "-38",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0153",
+      "problem": "Solve -4892*b = 3994*b - 1158*b - 378200 - 70024 for b.",
+      "answer": "58",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0154",
+      "problem": "Solve 178*l - 113*l = 650 for l.",
+      "answer": "10",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0155",
+      "problem": "Solve -140*i = 84*i + 29*i + 2024 for i.",
+      "answer": "-8",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0156",
+      "problem": "Solve 82*a - 243*a + 47*a + 570 = 0 for a.",
+      "answer": "5",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0157",
+      "problem": "Solve -18*p + 1 = 52 + 3 for p.",
+      "answer": "-3",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0158",
+      "problem": "Solve 2174*p - 17200 = 1774*p for p.",
+      "answer": "43",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0159",
+      "problem": "Solve 161*d + 384 = -2514 for d.",
+      "answer": "-18",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0160",
+      "problem": "Solve -879*q = 769*q - 8497 - 3039 for q.",
+      "answer": "7",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0161",
+      "problem": "Solve 0 = 106*n - 105*n + 10 for n.",
+      "answer": "-10",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0162",
+      "problem": "Solve 0 = -13*r + 3076 - 2985 for r.",
+      "answer": "7",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0163",
+      "problem": "Solve 0 = 2032*i + 1149*i + 133602 for i.",
+      "answer": "-42",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0164",
+      "problem": "Solve 568*l + 175*l + 240*l - 38337 = 0 for l.",
+      "answer": "39",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0165",
+      "problem": "Solve 22 = -8*s + 6 for s.",
+      "answer": "-2",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0166",
+      "problem": "Solve 0 = -5838*m + 1553 - 7391 for m.",
+      "answer": "-1",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0167",
+      "problem": "Solve 57 = -6*m + 33 for m.",
+      "answer": "-4",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0168",
+      "problem": "Solve 6081*d = 3156*d - 122850 for d.",
+      "answer": "-42",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0169",
+      "problem": "Solve 747 = 33*x + 50*x for x.",
+      "answer": "9",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0170",
+      "problem": "Solve 91*t - 158 + 795 = 0 for t.",
+      "answer": "-7",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0171",
+      "problem": "Solve 13*g - 105 = 34*g for g.",
+      "answer": "-5",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0172",
+      "problem": "Solve 114443 = 188*o - 255*o - 1177*o + 19899 for o.",
+      "answer": "-76",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0173",
+      "problem": "Solve -5 = -9*i - 23 for i.",
+      "answer": "-2",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0174",
+      "problem": "Solve -42*o + 48*o = 6 for o.",
+      "answer": "1",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0175",
+      "problem": "Solve -442*r + 195 = -377*r for r.",
+      "answer": "3",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0176",
+      "problem": "Solve 242*o = 252*o - 150 for o.",
+      "answer": "15",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0177",
+      "problem": "Solve 58*c + 1646 = -34*c + 634 for c.",
+      "answer": "-11",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0178",
+      "problem": "Solve -3*v = -16*v + 35*v - 44 for v.",
+      "answer": "2",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0179",
+      "problem": "Solve -251*k = -272*k + 84 for k.",
+      "answer": "4",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0180",
+      "problem": "Solve 0*i - 3*i = 11*i for i.",
+      "answer": "0",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0181",
+      "problem": "Solve -269*b = 1554*b + 80694 - 22358 for b.",
+      "answer": "-32",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0182",
+      "problem": "Solve 17*x + 6 = 15*x for x.",
+      "answer": "-3",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0183",
+      "problem": "Solve 8*o + 303 = 287 for o.",
+      "answer": "-2",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0184",
+      "problem": "Solve -28*u = 64*u - 552 for u.",
+      "answer": "6",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0185",
+      "problem": "Solve -94604 = -52*q - 94500 for q.",
+      "answer": "2",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0186",
+      "problem": "Solve 933 - 463 + 20800 = 248*f - 2290 for f.",
+      "answer": "95",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0187",
+      "problem": "Solve -3270*h = -104238 + 349488 for h.",
+      "answer": "-75",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0188",
+      "problem": "Solve 58*j = 66*j - 16 for j.",
+      "answer": "2",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0189",
+      "problem": "Solve 22*i + 64*i - 2067 + 9205 = 0 for i.",
+      "answer": "-83",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0190",
+      "problem": "Solve -25*p = 51826 - 51301 for p.",
+      "answer": "-21",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0191",
+      "problem": "Solve 38*f = 34*f + 24 for f.",
+      "answer": "6",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0192",
+      "problem": "Solve -20*s = -10*s + 50 for s.",
+      "answer": "-5",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0193",
+      "problem": "Solve 8297 + 5731 = -668*v for v.",
+      "answer": "-21",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0194",
+      "problem": "Solve -386 + 440 = -9*t for t.",
+      "answer": "-6",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0195",
+      "problem": "Solve 25*y = 58 - 8 for y.",
+      "answer": "2",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0196",
+      "problem": "Solve 36*t = -13*t - 98 for t.",
+      "answer": "-2",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0197",
+      "problem": "Solve -3324*s + 1959*s - 27300 = 0 for s.",
+      "answer": "-20",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0198",
+      "problem": "Solve 0 = -968*w + 615*w - 10237 for w.",
+      "answer": "-29",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0199",
+      "problem": "Solve -125*q = -61*q - 97*q - 759 for q.",
+      "answer": "-23",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-linear-1d.q0200",
+      "problem": "Solve 0 = 3096*w - 3106*w - 70 for w.",
+      "answer": "-7",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · algebra__linear_1d",
+      "hint": "DeepMind linear 1D",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "algebra__linear_1d"
+      ]
+    }
+  ]
+}

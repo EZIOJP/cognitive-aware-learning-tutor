@@ -347,24 +347,60 @@ def progress_for_tag(
 
 def list_low_mastery(
     cards: list[Any],
-    tag_ids: list[str],
+    tag_ids: list[str] | None = None,
     store: dict[str, Any] | None = None,
 ) -> list[dict[str, Any]]:
+    """One pass over cards — never O(all_catalog_tags × cards).
+
+    When ``tag_ids`` is None/empty, only tags present on the user's cards are
+    considered (what Low Mastery UI needs). Passing an explicit list still
+    filters to that set without scanning the full question bank.
+    """
+    import json as _json
+
+    from backend.quiz import srs as srs_mod
+
     st = store or load_store()
-    rows: list[dict[str, Any]] = []
-    for tid in tag_ids:
-        prog = progress_for_tag(cards, tid, st)
-        if prog["total"] == 0 or prog["mastered"]:
+    want = {str(t).strip() for t in (tag_ids or []) if str(t).strip()} or None
+    # tag_id -> [total, cleared, owes]
+    stats: dict[str, list[int]] = {}
+    for card in cards:
+        payload = _json.loads(getattr(card, "payload_json", None) or "{}")
+        topic = getattr(card, "topic", None)
+        tags = card_tag_ids(payload, topic)
+        if not tags:
             continue
+        state = srs_mod.srs_from_metadata(_json.loads(getattr(card, "srs_json", None) or "{}"))
+        mastery = int(state.mastery)
+        owes = int(state.owes_corrects or 0)
+        for tid in tags:
+            if want is not None and tid not in want:
+                continue
+            row = stats.get(tid)
+            if row is None:
+                row = [0, 0, 0]
+                stats[tid] = row
+            bar = bar_for(importance_for(tid, st))
+            row[0] += 1
+            if mastery >= bar:
+                row[1] += 1
+            if owes > 0:
+                row[2] += 1
+
+    rows: list[dict[str, Any]] = []
+    for tid, (total, cleared, owes_count) in stats.items():
+        if total == 0 or cleared == total:
+            continue
+        bar = bar_for(importance_for(tid, st))
         rows.append(
             {
                 "tag_id": tid,
                 "importance": importance_for(tid, st),
-                "bar": prog["bar"],
-                "cleared": prog["cleared"],
-                "total": prog["total"],
-                "weak_count": prog["weak_count"],
-                "owes_count": prog["owes_count"],
+                "bar": bar,
+                "cleared": cleared,
+                "total": total,
+                "weak_count": max(0, total - cleared),
+                "owes_count": owes_count,
             }
         )
     rows.sort(key=lambda r: (-int(r["importance"]), -int(r["weak_count"]), r["tag_id"]))

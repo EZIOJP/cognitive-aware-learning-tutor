@@ -32,6 +32,12 @@ log = logging.getLogger(__name__)
 LOG_DIR = DATA_LOGS_DIR
 LOG_DIR.mkdir(exist_ok=True)
 
+# SPA / pipeline polls this often — keep responses cheap.
+_TRACKER_HEALTH_CACHE: dict[int, tuple[float, dict]] = {}
+_TRACKER_HEALTH_TTL_S = 12.0
+_VOICE_NOTES_CACHE: tuple[float, list] | None = None
+_VOICE_NOTES_TTL_S = 20.0
+
 
 def _fallback_tracker_user(db: Session) -> User:
     """Match desktop tracker resolve_user_id: prefer admin, never silent demo."""
@@ -171,14 +177,20 @@ async def behavior_websocket(websocket: WebSocket):
 
 
 def _stats_from_db(db: Session, user_id: int, day: date) -> dict:
+    """Fallback browser totals from hub readings.
+
+    Only closed ``SESSION_END`` rows with a real duration count. Heartbeats /
+    ``BEHAVIORAL_UPDATE`` used to inherit a phantom 30s each and inflate
+    Browser Activity far above Desktop App Usage.
+    """
     from backend.behavior.domain_classify import classify_domain
+    from backend.planner.service import local_day_bounds_utc
 
     defn = db.query(ReadingDefinition).filter(ReadingDefinition.slug == "browser_event").first()
     if not defn:
         return {"events_today": 0, "domains": [], "source": "database"}
 
-    start = datetime.combine(day, datetime.min.time()).replace(tzinfo=UTC)
-    end = start + timedelta(days=1)
+    start, end = local_day_bounds_utc(day)
     rows = (
         db.query(Reading)
         .filter(
@@ -200,13 +212,22 @@ def _stats_from_db(db: Session, user_id: int, day: date) -> dict:
         payload = json.loads(row.value_json) if row.value_json else {}
         if payload.get("source") == "desktop_tracker":
             continue
+        if str(payload.get("type") or "").upper() != "SESSION_END":
+            continue
+        if payload.get("duration_seconds") is None:
+            continue
+        try:
+            dur = int(payload.get("duration_seconds") or 0)
+        except (TypeError, ValueError):
+            continue
+        if dur < 2:
+            continue
         domain = (
             payload.get("domain")
             or (payload.get("url") or "unknown")[:48]
             or "unknown"
         )
         title = payload.get("title") or ""
-        dur = int(payload.get("duration_seconds") or 30)
 
         cat, score = classify_domain(domain, title)
 
@@ -257,10 +278,24 @@ def _stats_from_csv(day_str: str) -> dict | None:
     categories: Counter[str] = Counter()
 
     for row in rows:
+        event_type = str(row.get("type") or "").upper()
+        # Prefer closed sessions; older CSVs without type still count when duration exists.
+        if event_type and event_type not in ("SESSION_END", ""):
+            continue
+        if event_type == "BEHAVIORAL_UPDATE":
+            continue
         exe = row.get("exe") or ""
         title = row.get("title") or ""
         domain = row.get("domain") or (row.get("url") or "unknown")[:48]
-        dur = int(row.get("duration_seconds") or 30)
+        raw_dur = row.get("duration_seconds")
+        if raw_dur in (None, ""):
+            continue
+        try:
+            dur = int(raw_dur)
+        except (TypeError, ValueError):
+            continue
+        if dur < 2:
+            continue
 
         is_browser = is_browser_exe(exe)
         if is_browser:
@@ -318,7 +353,7 @@ def _shape_stats_for_ui(raw: dict) -> dict:
 
     top_domains = []
     for item in domains[:12]:
-        secs = int(item.get("seconds", 0)) or int(item.get("count", 0)) * 30
+        secs = int(item.get("seconds", 0) or 0)
         top_domains.append({
             "domain": item["domain"],
             "seconds": secs,
@@ -329,7 +364,7 @@ def _shape_stats_for_ui(raw: dict) -> dict:
     category_breakdown: dict[str, int] = {}
     for item in categories:
         cat = str(item.get("category", "other"))
-        val = int(item.get("seconds", 0)) or int(item.get("count", 0))
+        val = int(item.get("seconds", 0) or 0)
         category_breakdown[cat] = category_breakdown.get(cat, 0) + val
 
     top_category = "other"
@@ -369,23 +404,26 @@ def behavior_stats(
     else:
         d = date.fromisoformat(day)
 
-    payload = _stats_from_db(db, user.id, d)
     from backend.behavior.category_scores import load_score_map
 
     scores = load_score_map(db)
-    if payload["events_today"] == 0:
-        desktop_browser = _browser_stats_from_tracked_sessions(db, tracker_user_ids(db, user), d)
-        if desktop_browser and desktop_browser["events_today"] > 0:
-            return _shape_stats_for_ui(desktop_browser)
-        csv_stats = _stats_from_csv(d.isoformat())
-        if csv_stats and csv_stats["events_today"] > 0:
-            return _shape_stats_for_ui(csv_stats)
-        desktop_csv = _browser_stats_from_desktop_csv(d.isoformat(), scores=scores)
-        if desktop_csv and desktop_csv["events_today"] > 0:
-            return _shape_stats_for_ui(desktop_csv)
-    if payload["events_today"] == 0:
-        return _shape_stats_for_ui({**payload, "events_today": 0})
-    return _shape_stats_for_ui(payload)
+    # Prefer tracked_sessions (same clock as Desktop App Usage site buckets) so
+    # Browser Activity cannot diverge via heartbeat readings.
+    desktop_browser = _browser_stats_from_tracked_sessions(db, tracker_user_ids(db, user), d)
+    if desktop_browser and desktop_browser["events_today"] > 0:
+        return _shape_stats_for_ui(desktop_browser)
+
+    payload = _stats_from_db(db, user.id, d)
+    if payload["events_today"] > 0:
+        return _shape_stats_for_ui(payload)
+
+    csv_stats = _stats_from_csv(d.isoformat())
+    if csv_stats and csv_stats["events_today"] > 0:
+        return _shape_stats_for_ui(csv_stats)
+    desktop_csv = _browser_stats_from_desktop_csv(d.isoformat(), scores=scores)
+    if desktop_csv and desktop_csv["events_today"] > 0:
+        return _shape_stats_for_ui(desktop_csv)
+    return _shape_stats_for_ui({**payload, "events_today": 0})
 
 
 def _browser_stats_from_tracked_sessions(db: Session, user_ids: list[int], day: date) -> dict | None:
@@ -551,7 +589,7 @@ def _desktop_stats_from_tracked_sessions(
 
     last_end = None
     if rows:
-        last_end = max((r.end_time for r in rows if r.end_time), default=None)
+        last_end = max((r.end_time for r in rows if r.end_time), key=_as_utc, default=None)
 
     tracker_alive = False
     if last_end:
@@ -826,6 +864,58 @@ def put_gate_schedules(body: dict, user: User = Depends(get_current_user)):
     return save_gate_schedules(body if isinstance(body, dict) else {})
 
 
+@router.get("/api/behavior/softland-site-rules")
+def get_softland_site_rules(user: User = Depends(get_current_user)):
+    from backend.behavior.softland_site_rules import load_site_rules
+
+    _ = user
+    return load_site_rules()
+
+
+@router.put("/api/behavior/softland-site-rules")
+def put_softland_site_rules(body: dict, user: User = Depends(get_current_user)):
+    from backend.behavior.softland_site_rules import save_site_rules
+
+    _ = user
+    return save_site_rules(body if isinstance(body, dict) else {})
+
+
+@router.get("/api/behavior/softland-policy")
+def get_softland_policy(user: User = Depends(get_current_user)):
+    """Phase 2 SoftLand SoT — softland_policy.json."""
+    from backend.behavior.softland_policy import load_softland_policy
+
+    _ = user
+    return load_softland_policy()
+
+
+@router.put("/api/behavior/softland-policy")
+def put_softland_policy(body: dict, user: User = Depends(get_current_user)):
+    """Replace or patch SoftLand SoT. Never arms OS kills."""
+    from backend.behavior.softland_policy import patch_softland_policy, save_softland_policy
+
+    _ = user
+    payload = body if isinstance(body, dict) else {}
+    # Full replace when schema_version present with site_rules+schedules; else patch.
+    if (
+        "schema_version" in payload
+        and "site_rules" in payload
+        and "schedules" in payload
+        and "runtime" in payload
+    ):
+        return save_softland_policy(payload)
+    return patch_softland_policy(payload)
+
+
+@router.post("/api/behavior/softland-policy/migrate")
+def post_softland_policy_migrate(user: User = Depends(get_current_user)):
+    """One-shot / force re-import from legacy SoftLand JSON + SQLite flag."""
+    from backend.behavior.softland_policy import migrate_from_legacy
+
+    _ = user
+    return migrate_from_legacy(force=True)
+
+
 @router.get("/api/behavior/weekly-digest")
 def weekly_digest(
     days: int = Query(7, ge=1, le=31),
@@ -893,30 +983,33 @@ def tracker_health(
     user: User = Depends(get_current_user),
 ):
     """Whether standalone tracker has written recently."""
+    import time
+
     from backend.behavior.tracker_status import count_tracker_processes, tracker_process_detail
+    from sqlalchemy import func
+
+    uid = int(user.id)
+    now = time.monotonic()
+    hit = _TRACKER_HEALTH_CACHE.get(uid)
+    if hit is not None and (now - hit[0]) < _TRACKER_HEALTH_TTL_S:
+        return hit[1]
 
     today = date.today()
     start, end = _day_bounds(today)
     user_ids = tracker_user_ids(db, user)
-    _ensure_tracker_backfill(db, user_ids, today)
+    # Do NOT backfill on health polls — CSV import belongs on desktop-stats / force-sync.
     proc = tracker_process_detail()
     duplicate_processes = count_tracker_processes()
 
-    rows = (
-        db.query(TrackedSession)
-        .filter(
-            TrackedSession.user_id.in_(user_ids),
-            TrackedSession.source == "desktop_tracker",
-            TrackedSession.start_time >= start,
-            TrackedSession.start_time < end,
-        )
-        .all()
+    filt = (
+        TrackedSession.user_id.in_(user_ids),
+        TrackedSession.source == "desktop_tracker",
+        TrackedSession.start_time >= start,
+        TrackedSession.start_time < end,
     )
-    last_at = max((r.end_time for r in rows if r.end_time), default=None)
+    sessions_today = int(db.query(func.count(TrackedSession.session_id)).filter(*filt).scalar() or 0)
+    last_at = db.query(func.max(TrackedSession.end_time)).filter(*filt).scalar()
     total_seconds = 0
-    for row in rows:
-        if row.start_time and row.end_time:
-            total_seconds += max(0, int((row.end_time - row.start_time).total_seconds()))
 
     alive = _tracker_alive(last_at, process_alive=proc["process_alive"])
 
@@ -929,13 +1022,16 @@ def tracker_health(
 
     hint = None
     if duplicate_processes > 1:
-        hint = f"{duplicate_processes} tracker processes running — run scripts\\desktop_tracker\\stop_desktop_tracker.bat then start one."
+        hint = (
+            f"{duplicate_processes} tracker processes running — stop extras "
+            "(Task Manager: calt_enforcer / legacy desktop_tracker) then start one."
+        )
 
-    return {
+    payload = {
         "tracker_alive": alive,
         "status": status,
         "last_event_at": iso_utc(last_at),
-        "sessions_today": len(rows),
+        "sessions_today": sessions_today,
         "total_seconds_today": total_seconds,
         "source": "tracked_sessions",
         "process_alive": proc["process_alive"],
@@ -944,6 +1040,8 @@ def tracker_health(
         "tracker_process_count": duplicate_processes,
         "hint": hint,
     }
+    _TRACKER_HEALTH_CACHE[uid] = (time.monotonic(), payload)
+    return payload
 
 
 @router.get("/api/behavior/desktop-timeline")
@@ -990,7 +1088,7 @@ def desktop_timeline(
     policy = load_policy_dict(db, user.id)
     intervals = []
     for row in rows:
-        if is_ignored_app(row.app_name or "", row.window_title or ""):
+        if is_ignored_app(row.app_name or "", row.window_title or "", source=row.source):
             continue
         if not row.start_time or not row.end_time:
             continue
@@ -1000,8 +1098,8 @@ def desktop_timeline(
         exe = row.app_name or ""
         title = row.window_title
         src = row.source or ""
-        if src == "extension" or looks_like_domain(exe):
-            site = exe
+        if looks_like_domain(exe):
+            site = exe  # legacy extension: domain stored as app_name
         elif is_browser_exe(exe):
             site = site_label(exe, title)
         else:
@@ -1116,7 +1214,7 @@ def tracker_force_sync(
         )
         .all()
     )
-    last_at = max((r.end_time for r in rows if r.end_time), default=None)
+    last_at = max((r.end_time for r in rows if r.end_time), key=_as_utc, default=None)
     alive = False
     if last_at:
         alive = (_as_utc(datetime.now(UTC)) - _as_utc(last_at)).total_seconds() < TRACKER_ALIVE_SECONDS
@@ -1126,7 +1224,10 @@ def tracker_force_sync(
     elif alive:
         message = "Tracker is running but did not acknowledge flush in time. Data may still refresh on next poll."
     else:
-        message = "Tracker not running. Start scripts\\desktop_tracker\\run_desktop_tracker_headless.bat or tray app."
+        message = (
+            "Tracker not running. Start scripts\\desktop_tracker\\run\\run_native_enforcer_console.bat "
+            "or install the native enforcer service."
+        )
 
     return {
         "flushed": flushed,
@@ -1200,6 +1301,51 @@ class StudyPresenceIn(BaseModel):
     document_id: str | None = None
 
 
+@router.websocket("/ws/gate")
+async def gate_websocket(websocket: WebSocket):
+    """Push GATE_CHANGED when rules/morning/mode invalidate — companions to 5‑min poll."""
+    from backend.behavior.gate_notify import (
+        current_policy_gen,
+        register_gate_socket,
+        unregister_gate_socket,
+    )
+
+    await websocket.accept()
+    db = SessionLocal()
+    user = None
+    try:
+        user = _user_from_ws(websocket, db)
+        uid = int(user.id)
+        await register_gate_socket(uid, websocket)
+        await websocket.send_json(
+            {
+                "type": "GATE_HELLO",
+                "policy_gen": current_policy_gen(uid),
+                "poll_s": 300,
+            }
+        )
+        while True:
+            data = await websocket.receive_json()
+            if isinstance(data, dict) and str(data.get("type") or "").upper() == "PING":
+                await websocket.send_json(
+                    {"type": "PONG", "policy_gen": current_policy_gen(uid)}
+                )
+    except WebSocketDisconnect:
+        pass
+    except Exception as exc:
+        log.debug("gate ws closed: %s", exc)
+    finally:
+        if user is not None:
+            try:
+                await unregister_gate_socket(int(user.id), websocket)
+            except Exception:
+                pass
+        try:
+            db.close()
+        except Exception:
+            pass
+
+
 @router.get("/api/behavior/distraction-gate")
 def get_distraction_gate(
     request: Request,
@@ -1207,16 +1353,170 @@ def get_distraction_gate(
     user: User = Depends(get_current_user),
 ):
     """Desktop game hard-block status + nested morning SPA gate."""
-    from backend.behavior.comms_health import note_extension_from_request
-    from backend.behavior.distraction_gate import compute_distraction_gate
+    import concurrent.futures
 
-    payload = compute_distraction_gate(db, user.id)
+    from backend.behavior.comms_health import note_extension_from_request
+    from backend.behavior import distraction_gate as dg
+
+    try:
+        payload = dg.compute_distraction_gate(db, user.id)
+    except concurrent.futures.TimeoutError:
+        cached = dg._gate_payload_cache.get(int(user.id))
+        if cached is not None:
+            payload = dict(cached[1])
+            payload["stale"] = True
+        else:
+            raise
     browser = payload.get("browser") or {}
     note_extension_from_request(
         request,
         server_mode=str(payload.get("browser_mode") or browser.get("mode") or ""),
     )
     return payload
+
+
+@router.get("/api/behavior/focus-dashboard")
+def get_focus_dashboard(
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Web Focus control snapshot (replaces PySide6 Desktop Dashboard)."""
+    from backend.behavior.calt_desktop.dashboard_bridge import snapshot_for_user
+
+    return snapshot_for_user(int(user.id), db=db)
+
+
+class EnforcerPolicyBody(BaseModel):
+    hard_block_armed: bool = False
+    gate_locked: bool = False
+    incubation_active: bool = False
+    exes: list[str] | None = None
+    lock_mode: str | None = None  # none | timer | password | phrase
+    lock_until_unix: int | None = None
+    unlock_password: str | None = None
+    unlock_phrase: str | None = None
+    anti_tamper: bool | None = None
+    provided_unlock: str | None = None  # password/phrase when disarming
+    protect_uninstall: bool | None = None  # option B: hide Apps & features uninstall
+
+
+@router.get("/api/behavior/enforcer-status")
+def get_enforcer_status(user: User = Depends(get_current_user)):
+    """Native-written status JSON (Focus). No kill/track logic in Python."""
+    from backend.behavior.native_enforcer_status import collect_native_enforcer_status
+
+    return collect_native_enforcer_status()
+
+
+@router.get("/api/behavior/enforcer-policy")
+def get_enforcer_policy(user: User = Depends(get_current_user)):
+    from backend.behavior.enforcer_files import read_policy_file
+
+    return read_policy_file() or {
+        "hard_block_armed": False,
+        "gate_locked": False,
+        "incubation_active": False,
+        "exes": [],
+        "protect_uninstall": False,
+    }
+
+
+@router.put("/api/behavior/enforcer-policy")
+def put_enforcer_policy(
+    body: EnforcerPolicyBody,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Write enforcer_policy.json for native calt_enforcer (Phase 3A).
+
+    Web API only drops a file; the tracker process does not need Python after this.
+    Strong lock modes refuse disarm until timer/password/phrase is satisfied.
+    """
+    from fastapi import HTTPException
+
+    from backend.behavior.enforcer_files import EnforcerLockError, write_policy_file
+    from backend.behavior.calt_desktop.dashboard_bridge import snapshot_for_user
+
+    # Default exes from productivity policy if client omitted list
+    exes = list(body.exes) if body.exes is not None else None
+    if exes is None:
+        try:
+            from backend.behavior.productivity_policy import load_policy_dict
+
+            pol = load_policy_dict(db, int(user.id))
+            exes = list(pol.get("hard_block_exes") or [])
+        except Exception:  # noqa: BLE001
+            exes = []
+
+    try:
+        payload = write_policy_file(
+            hard_block_armed=bool(body.hard_block_armed),
+            gate_locked=bool(body.gate_locked),
+            incubation_active=bool(body.incubation_active),
+            exes=exes,
+            note="focus_ui",
+            lock_mode=body.lock_mode,
+            lock_until_unix=body.lock_until_unix,
+            unlock_password=body.unlock_password,
+            unlock_phrase=body.unlock_phrase,
+            anti_tamper=body.anti_tamper,
+            provided_unlock=str(body.provided_unlock or ""),
+            protect_uninstall=body.protect_uninstall,
+        )
+    except EnforcerLockError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
+    return {"ok": True, "policy": payload, "snapshot": snapshot_for_user(int(user.id), db=db)}
+
+
+class FocusPinBody(BaseModel):
+    pin: str = ""
+    minutes: int | None = None
+
+
+@router.post("/api/behavior/focus-free-override")
+def post_focus_free_override(
+    body: FocusPinBody,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """PIN free browse — web Focus (no Qt)."""
+    from backend.behavior.break_reward import IncubationBlocksFreeOverride
+    from backend.behavior.browser_gate_policy import set_free_override
+    from backend.behavior.tracker_exit import exit_confirmation_required, exit_secret_accepted
+
+    if exit_confirmation_required() and not exit_secret_accepted(body.pin or ""):
+        raise HTTPException(status_code=403, detail="Incorrect PIN")
+    try:
+        set_free_override()
+    except IncubationBlocksFreeOverride as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    from backend.behavior.calt_desktop.dashboard_bridge import snapshot_for_user
+
+    return {"ok": True, "snapshot": snapshot_for_user(int(user.id), db=db)}
+
+
+@router.post("/api/behavior/focus-spend-earned")
+def post_focus_spend_earned(
+    body: FocusPinBody,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Spend earned free minutes via web Focus."""
+    from backend.behavior.break_reward import IncubationBlocksFreeOverride, spend
+    from backend.behavior.tracker_exit import exit_confirmation_required, exit_secret_accepted
+
+    if exit_confirmation_required() and not exit_secret_accepted(body.pin or ""):
+        raise HTTPException(status_code=403, detail="Incorrect PIN")
+    mins = int(body.minutes or 15)
+    try:
+        result = spend(int(user.id), mins, apply_override=True, db=db)
+    except IncubationBlocksFreeOverride as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    from backend.behavior.calt_desktop.dashboard_bridge import snapshot_for_user
+
+    return {"ok": True, "result": result, "snapshot": snapshot_for_user(int(user.id), db=db)}
 
 
 class DeviceBlockSettingsIn(BaseModel):
@@ -1236,6 +1536,34 @@ def get_device_block(user: User = Depends(get_current_user)):
     return db_store.status()
 
 
+class StudyLoopGateIn(BaseModel):
+    enabled: bool
+
+
+@router.get("/api/behavior/study-loop-gate")
+def get_study_loop_gate(user: User = Depends(get_current_user)):
+    """Whether unfinished daily Study Loop forces SoftLand next=study."""
+    from backend.quiz import study_loop_gate as sl_gate
+
+    return sl_gate.serialize()
+
+
+@router.put("/api/behavior/study-loop-gate")
+def put_study_loop_gate(
+    body: StudyLoopGateIn,
+    user: User = Depends(get_current_user),
+):
+    from backend.quiz import study_loop_gate as sl_gate
+
+    out = sl_gate.set_enabled(bool(body.enabled))
+    try:
+        from backend.behavior.gate_notify import invalidate_gate_cache
+
+        invalidate_gate_cache(user.id, reason="study_loop_gate")
+    except Exception:
+        pass
+    return {**sl_gate.serialize(), **out}
+
 @router.put("/api/behavior/device-block")
 def put_device_block(
     body: DeviceBlockSettingsIn,
@@ -1248,6 +1576,12 @@ def put_device_block(
     patch = body.model_dump(exclude_unset=True, exclude={"apply_now"})
     cur.update(patch)
     db_store.save_settings(cur)
+    try:
+        from backend.behavior.gate_notify import invalidate_gate_cache
+
+        invalidate_gate_cache(user.id, reason="device_block_settings")
+    except Exception:
+        pass
     out = {"settings": cur, **db_store.status()}
     if body.apply_now:
         applied = db_store.apply_from_settings()
@@ -1631,6 +1965,12 @@ def confirm_morning_plan(
     except morning_store.PlanWindowError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     try:
+        from backend.behavior.gate_notify import invalidate_gate_cache
+
+        invalidate_gate_cache(user.id, reason="morning_plan_confirm")
+    except Exception:
+        pass
+    try:
         from backend.behavior.voice_agent.dialogues import speak
 
         speak("plan_done_praise", force=True)
@@ -1664,9 +2004,16 @@ def put_productivity_policy(
     from backend.behavior.productivity_policy import update_policy
 
     try:
-        return update_policy(db, user.id, body or {})
+        out = update_policy(db, user.id, body or {})
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
+    try:
+        from backend.behavior.gate_notify import invalidate_gate_cache
+
+        invalidate_gate_cache(user.id, reason="productivity_policy")
+    except Exception:
+        pass
+    return out
 
 
 @router.get("/api/behavior/category-scores")
@@ -1781,9 +2128,17 @@ def patch_tracked_session(
 @router.get("/api/behavior/voice-notes")
 def list_voice_notes(_user: User = Depends(get_current_user)):
     """Watch voice clips stored on this PC (data/voice_notes/)."""
+    import time
+
     from backend.behavior import voice_notes
 
-    return {"ok": True, "notes": voice_notes.list_notes()}
+    global _VOICE_NOTES_CACHE
+    now = time.monotonic()
+    if _VOICE_NOTES_CACHE is not None and (now - _VOICE_NOTES_CACHE[0]) < _VOICE_NOTES_TTL_S:
+        return {"ok": True, "notes": _VOICE_NOTES_CACHE[1]}
+    notes = voice_notes.list_notes()
+    _VOICE_NOTES_CACHE = (now, notes)
+    return {"ok": True, "notes": notes}
 
 
 @router.get("/api/behavior/voice-notes/{name}")

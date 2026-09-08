@@ -85,9 +85,16 @@ def test_extension_manifest_bumped_for_scaler_fix():
 
 
 TEMP_ALLOW_MS = 60_000
-_FORCE_WATCH = ("youtube.com", "youtu.be", "netflix.com", "primevideo.com")
-_SOCIAL = ("instagram.com", "reddit.com", "x.com", "twitter.com", "tiktok.com", "facebook.com")
-_PORN = ("pornhub.com", "xvideos.com", "xnxx.com")
+
+from backend.behavior.browser_gate_policy import (
+    DEFAULT_PORN_DOMAINS,
+    DEFAULT_SOCIAL_DOMAINS,
+    FORCE_WATCH_HOSTS,
+)
+
+_FORCE_WATCH = FORCE_WATCH_HOSTS
+_SOCIAL = tuple(d for d in DEFAULT_SOCIAL_DOMAINS if not d.startswith("www."))
+_PORN = DEFAULT_PORN_DOMAINS[:3]
 
 
 def _norm_host(host: str) -> str:

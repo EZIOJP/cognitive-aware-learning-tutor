@@ -188,6 +188,9 @@ export function queueSnapshot(health, opts) {
       heart: stamped.heart,
       stress: stamped.stress,
       spo2: stamped.spo2,
+      workouts: stamped.workouts,
+      pai: stamped.pai,
+      calorie: stamped.calorie,
     })
 
     if (force || !current) {
@@ -265,13 +268,31 @@ export function clearChunkResume() {
 /** Split a full snapshot into small ingest parts with stable chunk ids. */
 export function splitHealthChunks(health) {
   const h = health || {}
-  const dump = h.dump || 'processed_v1'
+  const dump = h.dump || 'processed_v2'
   const dumpId = h.dump_id || makeDumpId(h.local_date || localDateKey(), h.captured_at)
   const clock = {
     captured_at: h.captured_at,
     local_date: h.local_date,
     tz_offset_min: h.tz_offset_min,
   }
+  const heartScalars = h.heart
+    ? {
+        last: h.heart.last,
+        resting: h.heart.resting,
+        max: h.heart.max,
+        avg: h.heart.avg,
+        daily_summary: h.heart.daily_summary,
+        hr_zones: h.heart.hr_zones || h.hr_zones,
+      }
+    : undefined
+  const heartSeries =
+    h.heart && h.heart.today_min && h.heart.today_min.length
+      ? {
+          today_min: h.heart.today_min,
+          today_count: h.heart.today_count,
+        }
+      : undefined
+
   const parts = [
     { label: 'Sleep', health: { dump, dump_id: dumpId, ...clock, sleep: h.sleep, capabilities: h.capabilities } },
     {
@@ -286,22 +307,39 @@ export function splitHealthChunks(health) {
         stand: h.stand,
         battery: h.battery,
         sitting: h.sitting,
+        fat_burn: h.fat_burn,
         capabilities: h.capabilities,
       },
     },
-    { label: 'Heart', health: { dump, dump_id: dumpId, ...clock, heart: h.heart } },
+    { label: 'Heart', health: { dump, dump_id: dumpId, ...clock, heart: heartScalars } },
+    {
+      label: 'Series',
+      health: {
+        dump,
+        dump_id: dumpId,
+        ...clock,
+        heart: heartSeries ? { series: true, ...heartSeries } : undefined,
+        spo2: h.spo2
+          ? { recent: h.spo2.recent, last_day: h.spo2.last_day, last_day_avg: h.spo2.last_day_avg }
+          : undefined,
+        stress: h.stress
+          ? { today_by_hour: h.stress.today_by_hour, last_week: h.stress.last_week }
+          : undefined,
+      },
+    },
     {
       label: 'Extras',
       health: {
         dump,
         dump_id: dumpId,
         ...clock,
-        stress: h.stress,
-        spo2: h.spo2,
+        stress: h.stress ? { value: h.stress.value, time: h.stress.time } : undefined,
+        spo2: h.spo2 ? { value: h.spo2.value, time: h.spo2.time, retCode: h.spo2.retCode } : undefined,
         pai: h.pai,
-        fat_burn: h.fat_burn,
         temperature: h.temperature,
         weather: h.weather,
+        workouts: h.workouts,
+        hr_zones: h.hr_zones,
         meta_device: h.meta_device,
         capabilities: h.capabilities,
       },

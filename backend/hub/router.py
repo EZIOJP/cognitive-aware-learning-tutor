@@ -32,7 +32,7 @@ from backend.hub.services.features import (
     set_user_plugin,
 )
 from backend.hub.services.ingest import insert_reading, insert_readings_batch
-from backend.hub.services.rollup import daily_payload, rebuild_daily_rollup
+from backend.hub.services.rollup import daily_payload, get_daily_rollup, rebuild_daily_rollup
 from backend.models import ActivitySession, DailyRollup, LifeDailyLog, Reading, ReadingDefinition, User, UserPlugin, WearableDaily
 
 router = APIRouter(prefix="/api/hub", tags=["hub"])
@@ -151,8 +151,8 @@ def get_daily(
             raise HTTPException(status_code=400, detail="Invalid date YYYY-MM-DD") from e
 
     life = db.query(LifeDailyLog).filter(LifeDailyLog.user_id == user.id, LifeDailyLog.date == d).first()
-    # Always rebuild so calendars / life-clock pick up wearable_daily + tracker from central DB
-    rollup = rebuild_daily_rollup(db, user.id, d)
+    # TTL-cached rebuild — polling /hub/daily/today must not rescan tracker every few seconds
+    rollup = get_daily_rollup(db, user.id, d)
     payload = daily_payload(rollup, life)
     wd = (
         db.query(WearableDaily)

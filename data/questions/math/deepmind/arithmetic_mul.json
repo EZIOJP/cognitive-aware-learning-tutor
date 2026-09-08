@@ -1,0 +1,3022 @@
+{
+  "schema_version": 1,
+  "kind": "math",
+  "topic": {
+    "topic_id": "math.aptitude.dm-mul",
+    "title": "DeepMind multiplication",
+    "stage": "foundations",
+    "path": [
+      "Aptitude",
+      "DeepMind",
+      "arithmetic__mul"
+    ],
+    "track": "aptitude",
+    "prerequisites": [],
+    "note_topic_ids": [
+      "MT1-T01"
+    ],
+    "description": "google-deepmind/mathematics_dataset (arithmetic__mul)."
+  },
+  "questions": [
+    {
+      "id": "math.aptitude.dm-mul.q0001",
+      "problem": "What is the product of 136304 and -139?",
+      "answer": "-18946256",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0002",
+      "problem": "What is the product of -54449 and 0.02?",
+      "answer": "-1088.98",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0003",
+      "problem": "What is the product of 6.6 and -2181?",
+      "answer": "-14394.6",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0004",
+      "problem": "2810941 times -0.2",
+      "answer": "-562188.2",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0005",
+      "problem": "Product of 0.2 and 64.",
+      "answer": "12.8",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0006",
+      "problem": "-1210 times -4",
+      "answer": "4840",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0007",
+      "problem": "What is the product of -4 and 900?",
+      "answer": "-3600",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0008",
+      "problem": "Work out 32 * -2764143.",
+      "answer": "-88452576",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0009",
+      "problem": "0 times -1.07",
+      "answer": "0",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0010",
+      "problem": "Multiply -6567075 and 11.",
+      "answer": "-72237825",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0011",
+      "problem": "-13 times 0",
+      "answer": "0",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0012",
+      "problem": "What is -1 times -2252?",
+      "answer": "2252",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0013",
+      "problem": "What is -2849220 times 3?",
+      "answer": "-8547660",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0014",
+      "problem": "What is -0.58 times 7041779?",
+      "answer": "-4084231.82",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0015",
+      "problem": "Multiply -15.649 and 0.3.",
+      "answer": "-4.6947",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0016",
+      "problem": "Work out -0.1 * 0.31.",
+      "answer": "-0.031",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0017",
+      "problem": "Calculate -0.06521011*-0.5.",
+      "answer": "0.032605055",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0018",
+      "problem": "Calculate -75.213*5.9.",
+      "answer": "-443.7567",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0019",
+      "problem": "What is 2217 times -0.4?",
+      "answer": "-886.8",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0020",
+      "problem": "What is -29 times -121?",
+      "answer": "3509",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0021",
+      "problem": "1 * -8.827996",
+      "answer": "-8.827996",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0022",
+      "problem": "What is 1569 times 1?",
+      "answer": "1569",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0023",
+      "problem": "2 times 44.4",
+      "answer": "88.8",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0024",
+      "problem": "Calculate -40*-349.",
+      "answer": "13960",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0025",
+      "problem": "What is 9621 times -3?",
+      "answer": "-28863",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0026",
+      "problem": "What is the product of -25179 and 11?",
+      "answer": "-276969",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0027",
+      "problem": "-5.3757*-48.8",
+      "answer": "262.33416",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0028",
+      "problem": "Calculate -25.2*0.3.",
+      "answer": "-7.56",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0029",
+      "problem": "-1797985 times -12",
+      "answer": "21575820",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0030",
+      "problem": "Calculate -0.1*618468.",
+      "answer": "-61846.8",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0031",
+      "problem": "-1.5199 times -0.2",
+      "answer": "0.30398",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0032",
+      "problem": "What is 246 times -890?",
+      "answer": "-218940",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0033",
+      "problem": "Multiply 205292 and 2.",
+      "answer": "410584",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0034",
+      "problem": "2813344.875 * -1",
+      "answer": "-2813344.875",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0035",
+      "problem": "Calculate 12461*3.",
+      "answer": "37383",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0036",
+      "problem": "-41 * -655",
+      "answer": "26855",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0037",
+      "problem": "What is the product of -2.09 and 73752.5?",
+      "answer": "-154142.725",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0038",
+      "problem": "What is the product of -0.1 and 0.027?",
+      "answer": "-0.0027",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0039",
+      "problem": "1.4245*5.51",
+      "answer": "7.848995",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0040",
+      "problem": "770.55*0.3",
+      "answer": "231.165",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0041",
+      "problem": "Calculate 5*277.29.",
+      "answer": "1386.45",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0042",
+      "problem": "2*-0.145",
+      "answer": "-0.29",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0043",
+      "problem": "Work out 89788.6 * -7.",
+      "answer": "-628520.2",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0044",
+      "problem": "What is -164801731 times 0.4?",
+      "answer": "-65920692.4",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0045",
+      "problem": "Calculate -35584*-0.04.",
+      "answer": "1423.36",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0046",
+      "problem": "What is the product of 0.4 and 1539?",
+      "answer": "615.6",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0047",
+      "problem": "-0.05 times -1.01",
+      "answer": "0.0505",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0048",
+      "problem": "What is 1 times 31986901?",
+      "answer": "31986901",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0049",
+      "problem": "1.14 * 253303",
+      "answer": "288765.42",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0050",
+      "problem": "Multiply 15590 and 0.4.",
+      "answer": "6236",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0051",
+      "problem": "0.41757 * 351",
+      "answer": "146.56707",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0052",
+      "problem": "-21014 times 4",
+      "answer": "-84056",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0053",
+      "problem": "What is the product of -214.7 and 66?",
+      "answer": "-14170.2",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0054",
+      "problem": "Work out -0.02 * 3.01.",
+      "answer": "-0.0602",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0055",
+      "problem": "Work out 52020.48 * -0.3.",
+      "answer": "-15606.144",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0056",
+      "problem": "Product of 124.2 and -17.",
+      "answer": "-2111.4",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0057",
+      "problem": "Work out 1122 * -1747100.",
+      "answer": "-1960246200",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0058",
+      "problem": "Calculate -3*0.07793.",
+      "answer": "-0.23379",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0059",
+      "problem": "What is 0.01 times 6.37?",
+      "answer": "0.0637",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0060",
+      "problem": "Work out 5 * 185.",
+      "answer": "925",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0061",
+      "problem": "What is -0.072 times -0.7?",
+      "answer": "0.0504",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0062",
+      "problem": "-56720 times 5",
+      "answer": "-283600",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0063",
+      "problem": "Product of 4944 and -1.011.",
+      "answer": "-4998.384",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0064",
+      "problem": "What is -3 times 2.3355?",
+      "answer": "-7.0065",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0065",
+      "problem": "Multiply -1804 and -0.14.",
+      "answer": "252.56",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0066",
+      "problem": "What is the product of -0.4 and 0.058?",
+      "answer": "-0.0232",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0067",
+      "problem": "What is the product of -362.4 and 1528?",
+      "answer": "-553747.2",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0068",
+      "problem": "Work out -789 * 56687.",
+      "answer": "-44726043",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0069",
+      "problem": "Product of -171595 and 1.59.",
+      "answer": "-272836.05",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0070",
+      "problem": "-0.64 * -0.1",
+      "answer": "0.064",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0071",
+      "problem": "Multiply 514.88 and 0.24.",
+      "answer": "123.5712",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0072",
+      "problem": "What is the product of -2928 and -0.1?",
+      "answer": "292.8",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0073",
+      "problem": "1*-0.283274",
+      "answer": "-0.283274",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0074",
+      "problem": "126193*0.5",
+      "answer": "63096.5",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0075",
+      "problem": "Work out 1 * 0.3347.",
+      "answer": "0.3347",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0076",
+      "problem": "265*30.055",
+      "answer": "7964.575",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0077",
+      "problem": "What is 2 times -22512?",
+      "answer": "-45024",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0078",
+      "problem": "What is the product of -216 and 2?",
+      "answer": "-432",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0079",
+      "problem": "Calculate -0.5*-0.128.",
+      "answer": "0.064",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0080",
+      "problem": "-6*16",
+      "answer": "-96",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0081",
+      "problem": "Product of 2203897 and -8.",
+      "answer": "-17631176",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0082",
+      "problem": "Work out 276 * 36.",
+      "answer": "9936",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0083",
+      "problem": "Work out -0.7 * -19312.",
+      "answer": "13518.4",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0084",
+      "problem": "-0.05 * 2196",
+      "answer": "-109.8",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0085",
+      "problem": "-2846*-1",
+      "answer": "2846",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0086",
+      "problem": "What is the product of -54362 and 2?",
+      "answer": "-108724",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0087",
+      "problem": "0.17 * 0.7",
+      "answer": "0.119",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0088",
+      "problem": "163 times 0",
+      "answer": "0",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0089",
+      "problem": "Calculate -971*-1488.",
+      "answer": "1444848",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0090",
+      "problem": "Work out 78925.3 * -80.",
+      "answer": "-6314024",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0091",
+      "problem": "-2 * -0.94",
+      "answer": "1.88",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0092",
+      "problem": "3.7*0.03",
+      "answer": "0.111",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0093",
+      "problem": "8 * 0.35692",
+      "answer": "2.85536",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0094",
+      "problem": "-598 * 0.013",
+      "answer": "-7.774",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0095",
+      "problem": "Calculate -8189614.6*-1.",
+      "answer": "8189614.6",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0096",
+      "problem": "What is -0.1 times -106094?",
+      "answer": "10609.4",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0097",
+      "problem": "What is 3 times -14.2?",
+      "answer": "-42.6",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0098",
+      "problem": "Work out -1589 * -4.",
+      "answer": "6356",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0099",
+      "problem": "What is the product of -107455 and -0.465?",
+      "answer": "49966.575",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0100",
+      "problem": "Multiply -2 and -0.2273.",
+      "answer": "0.4546",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0101",
+      "problem": "Work out 3241 * -0.1.",
+      "answer": "-324.1",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0102",
+      "problem": "1089*0.68",
+      "answer": "740.52",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0103",
+      "problem": "140184 * 0.63",
+      "answer": "88315.92",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0104",
+      "problem": "Multiply 227 and 9485.",
+      "answer": "2153095",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0105",
+      "problem": "What is -6651 times -225.2?",
+      "answer": "1497805.2",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0106",
+      "problem": "Product of 66.49 and 5487.",
+      "answer": "364830.63",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0107",
+      "problem": "3577822 * 6",
+      "answer": "21466932",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0108",
+      "problem": "Calculate -3*-237.5.",
+      "answer": "712.5",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0109",
+      "problem": "Calculate 89013*-0.4.",
+      "answer": "-35605.2",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0110",
+      "problem": "Calculate -33.0885*7.",
+      "answer": "-231.6195",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0111",
+      "problem": "What is -56644 times -8?",
+      "answer": "453152",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0112",
+      "problem": "-0.023966 * 2",
+      "answer": "-0.047932",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0113",
+      "problem": "What is -5001.8 times 0.4?",
+      "answer": "-2000.72",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0114",
+      "problem": "-32.4 * 0.18",
+      "answer": "-5.832",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0115",
+      "problem": "Calculate 199.689*-0.05.",
+      "answer": "-9.98445",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0116",
+      "problem": "Multiply -131.3 and -0.05.",
+      "answer": "6.565",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0117",
+      "problem": "12978*-0.2",
+      "answer": "-2595.6",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0118",
+      "problem": "-2*-4.023293",
+      "answer": "8.046586",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0119",
+      "problem": "-0.2 times 6207.9",
+      "answer": "-1241.58",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0120",
+      "problem": "1*0.31",
+      "answer": "0.31",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0121",
+      "problem": "-16220 times -0.3",
+      "answer": "4866",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0122",
+      "problem": "21.16 times 0.3",
+      "answer": "6.348",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0123",
+      "problem": "What is -0.5 times 34185.35?",
+      "answer": "-17092.675",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0124",
+      "problem": "Work out 2.07 * -0.0408092.",
+      "answer": "-0.084475044",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0125",
+      "problem": "Work out 19 * -0.15.",
+      "answer": "-2.85",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0126",
+      "problem": "-120170 times 82",
+      "answer": "-9853940",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0127",
+      "problem": "3 * -193.724",
+      "answer": "-581.172",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0128",
+      "problem": "What is the product of -12 and 83.29?",
+      "answer": "-999.48",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0129",
+      "problem": "What is the product of -6 and 20903?",
+      "answer": "-125418",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0130",
+      "problem": "Calculate 711*-606.",
+      "answer": "-430866",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0131",
+      "problem": "-1444917783 * 0.3",
+      "answer": "-433475334.9",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0132",
+      "problem": "What is 0.4 times 135?",
+      "answer": "54",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0133",
+      "problem": "What is the product of -156.9 and 5?",
+      "answer": "-784.5",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0134",
+      "problem": "653480 times -5",
+      "answer": "-3267400",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0135",
+      "problem": "Work out 0.5 * 161.",
+      "answer": "80.5",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0136",
+      "problem": "What is -706 times 1815?",
+      "answer": "-1281390",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0137",
+      "problem": "426 times 2",
+      "answer": "852",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0138",
+      "problem": "-7798.17 times -24",
+      "answer": "187156.08",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0139",
+      "problem": "-1438*-4",
+      "answer": "5752",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0140",
+      "problem": "Calculate -0.5*-47009.",
+      "answer": "23504.5",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0141",
+      "problem": "-26.6*0",
+      "answer": "0",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0142",
+      "problem": "What is -10.9774 times 16?",
+      "answer": "-175.6384",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0143",
+      "problem": "-0.0595 * -32",
+      "answer": "1.904",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0144",
+      "problem": "Multiply -9702671 and -0.3.",
+      "answer": "2910801.3",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0145",
+      "problem": "Work out 3.53 * -5.",
+      "answer": "-17.65",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0146",
+      "problem": "What is the product of 0.3 and 79?",
+      "answer": "23.7",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0147",
+      "problem": "-7 * 67",
+      "answer": "-469",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0148",
+      "problem": "Calculate 1*-29417755.",
+      "answer": "-29417755",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0149",
+      "problem": "Multiply -3211 and 1139.",
+      "answer": "-3657329",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0150",
+      "problem": "What is 0.14665192 times 1?",
+      "answer": "0.14665192",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0151",
+      "problem": "-36*5",
+      "answer": "-180",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0152",
+      "problem": "Calculate -1289*0.5.",
+      "answer": "-644.5",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0153",
+      "problem": "Work out 0.8 * 234081.",
+      "answer": "187264.8",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0154",
+      "problem": "What is -0.42 times 0.5?",
+      "answer": "-0.21",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0155",
+      "problem": "What is the product of 2 and -2.7?",
+      "answer": "-5.4",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0156",
+      "problem": "Calculate -19*8.",
+      "answer": "-152",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0157",
+      "problem": "What is the product of -2.1 and 0.4?",
+      "answer": "-0.84",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0158",
+      "problem": "-0.05 * 0.9",
+      "answer": "-0.045",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0159",
+      "problem": "Calculate -0.02*-1011.",
+      "answer": "20.22",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0160",
+      "problem": "Calculate 6*0.04.",
+      "answer": "0.24",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0161",
+      "problem": "-60*-0.32591",
+      "answer": "19.5546",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0162",
+      "problem": "What is -17.43 times -5?",
+      "answer": "87.15",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0163",
+      "problem": "Calculate -0.2*-836.98.",
+      "answer": "167.396",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0164",
+      "problem": "Calculate -0.209*4.",
+      "answer": "-0.836",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0165",
+      "problem": "-0.025*-640.9873",
+      "answer": "16.0246825",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0166",
+      "problem": "Calculate -30980*-4.401.",
+      "answer": "136342.98",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0167",
+      "problem": "232.76 * 0.4",
+      "answer": "93.104",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0168",
+      "problem": "What is the product of 1.4 and -77.7041?",
+      "answer": "-108.78574",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0169",
+      "problem": "What is the product of 14037 and 0.2?",
+      "answer": "2807.4",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0170",
+      "problem": "Work out -0.889 * 2.",
+      "answer": "-1.778",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0171",
+      "problem": "Calculate -0.06*0.103.",
+      "answer": "-0.00618",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0172",
+      "problem": "9.92*218",
+      "answer": "2162.56",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0173",
+      "problem": "0 * 7.906",
+      "answer": "0",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0174",
+      "problem": "-2.7 * -0.16",
+      "answer": "0.432",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0175",
+      "problem": "Product of 9 and 0.42.",
+      "answer": "3.78",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0176",
+      "problem": "Multiply -153 and -5.",
+      "answer": "765",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0177",
+      "problem": "What is -86 times 8095638?",
+      "answer": "-696224868",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0178",
+      "problem": "Product of -79 and 780.",
+      "answer": "-61620",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0179",
+      "problem": "Product of -1 and 12.87.",
+      "answer": "-12.87",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0180",
+      "problem": "What is the product of 396 and -1046?",
+      "answer": "-414216",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0181",
+      "problem": "9 * -19",
+      "answer": "-171",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0182",
+      "problem": "Work out -24296 * -1.",
+      "answer": "24296",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0183",
+      "problem": "Work out -0.443 * -541599.",
+      "answer": "239928.357",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0184",
+      "problem": "What is the product of 52.93 and -0.19?",
+      "answer": "-10.0567",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0185",
+      "problem": "What is -3 times 0.167410546?",
+      "answer": "-0.502231638",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0186",
+      "problem": "1 times -9922",
+      "answer": "-9922",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0187",
+      "problem": "Work out -256 * 0.007.",
+      "answer": "-1.792",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0188",
+      "problem": "Calculate -5*-97.",
+      "answer": "485",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0189",
+      "problem": "-574*1.3427",
+      "answer": "-770.7098",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0190",
+      "problem": "-0.5 times -1.69",
+      "answer": "0.845",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0191",
+      "problem": "What is the product of 10328 and 82?",
+      "answer": "846896",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0192",
+      "problem": "Work out -12.7041 * -43.4.",
+      "answer": "551.35794",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0193",
+      "problem": "Calculate 2.67*3.",
+      "answer": "8.01",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0194",
+      "problem": "Product of -0.08 and -26.1.",
+      "answer": "2.088",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0195",
+      "problem": "Multiply 0.16 and 59719.",
+      "answer": "9555.04",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0196",
+      "problem": "Product of 29.19 and 0.9.",
+      "answer": "26.271",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0197",
+      "problem": "3.443 times -0.02",
+      "answer": "-0.06886",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0198",
+      "problem": "What is 3.3 times -764467?",
+      "answer": "-2522741.1",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0199",
+      "problem": "-0.2 times -470",
+      "answer": "94",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-mul.q0200",
+      "problem": "155.803101 * -0.3",
+      "answer": "-46.7409303",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__mul",
+      "hint": "DeepMind multiplication",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__mul"
+      ]
+    }
+  ]
+}

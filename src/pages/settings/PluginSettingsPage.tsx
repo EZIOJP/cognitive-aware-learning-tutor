@@ -3,6 +3,8 @@ import { usePlugins } from "../../plugins/registry";
 import { Card } from "../../app/components/ui/card";
 import { Settings2, Power, PowerOff, Sparkles } from "lucide-react";
 import { HardwareReadinessCard } from "../../components/HardwareReadinessCard";
+import { Esp32LedPlay } from "../../components/hardware/Esp32LedPlay";
+import { Esp32SnapCheck } from "../../components/hardware/Esp32SnapCheck";
 
 export function PluginSettingsPage() {
   const { allPlugins, enabledIds, togglePlugin, isLoaded, syncError } = usePlugins();
@@ -33,6 +35,8 @@ export function PluginSettingsPage() {
       </div>
 
       <HardwareReadinessCard />
+      <Esp32LedPlay />
+      <Esp32SnapCheck />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {allPlugins.map((plugin) => {

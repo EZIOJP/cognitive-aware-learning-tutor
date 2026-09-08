@@ -71,7 +71,12 @@ export function TodayPanel({
   const [showBlockForm, setShowBlockForm] = useState(false);
   const [busyId, setBusyId] = useState<number | null>(null);
   const [morning, setMorning] = useState<MorningGate | null>(null);
-  const [browserMode, setBrowserMode] = useState<{ mode?: string; label?: string } | null>(null);
+  const [browserMode, setBrowserMode] = useState<{
+    mode?: string;
+    label?: string;
+    incubation?: boolean;
+    incubationSec?: number;
+  } | null>(null);
   const isToday = startOfDay(day).getTime() === startOfDay(new Date()).getTime();
 
   const load = useCallback(async () => {
@@ -100,6 +105,8 @@ export function TodayPanel({
         setBrowserMode({
           mode: g.browser?.mode || g.browser_mode,
           label: g.browser?.mode_label || (g.browser?.mode || g.browser_mode || "").toUpperCase(),
+          incubation: Boolean(g.incubation?.active || g.browser?.incubation_active),
+          incubationSec: g.incubation?.remaining_sec,
         });
       })
       .catch(() => {
@@ -262,17 +269,24 @@ export function TodayPanel({
         <p className="text-[11px] text-foreground/90">
           <span
             className={`inline-flex rounded px-1.5 py-0.5 font-semibold tracking-wide ${
+              browserMode.incubation ||
               ["bible", "planning", "study"].includes(String(browserMode.mode || "").toLowerCase())
                 ? "bg-amber-500/20 text-amber-100 border border-amber-400/30"
                 : "bg-teal-500/15 text-teal-100 border border-teal-400/25"
             }`}
           >
-            Browser: {browserMode.label}
+            Browser: {browserMode.incubation ? "INCUBATION" : browserMode.label}
           </span>
           <span className="text-muted-foreground ml-2">
-            {["bible", "planning", "study"].includes(String(browserMode.mode || "").toLowerCase())
-              ? "YouTube blocked until daily focus goal — then FREE (distractions still filtered)"
-              : "FREE — YouTube OK · distractions still filtered"}
+            {browserMode.incubation
+              ? `Break · entertainment blocked${
+                  browserMode.incubationSec
+                    ? ` · ~${Math.max(1, Math.round(browserMode.incubationSec / 60))}m left`
+                    : ""
+                } · CALT Desktop · Focus`
+              : ["bible", "planning", "study"].includes(String(browserMode.mode || "").toLowerCase())
+                ? "YouTube blocked until daily focus goal — then FREE (distractions still filtered)"
+                : "FREE — YouTube OK · distractions still filtered"}
           </span>
         </p>
       )}

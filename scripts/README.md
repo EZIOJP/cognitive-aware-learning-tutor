@@ -18,7 +18,11 @@ Launch helpers for Windows (`.bat`) and Linux/macOS (`.sh`). All scripts run fro
 | `run_frontend.bat` | Windows | Vite dev server |
 | `device_block_apply.bat` | Windows (admin) | Device-wide porn/YouTube block via hosts file (all apps) |
 | `device_block_remove.bat` | Windows (admin) | Remove CALT hosts block |
-| `desktop_tracker\run_calt_desktop.bat` | Windows | **CALT Desktop** (PySide6) — tracker + hub + productivity UI |
+| `desktop_tracker\run_calt_desktop.bat` | Windows | Opens web **Focus** + prefers `CALTEnforcer` service (console fallback) |
+| `desktop_tracker\run_native_enforcer_console.bat` | Windows | Zero-Python kill/track console |
+| `desktop_tracker\install_native_enforcer.ps1` | Windows Admin | Windows Service stay-alive |
+| `desktop_tracker\install_enforcer_service.ps1` | Windows | Task Scheduler keep-alive (**native required**; `-AllowPythonFallback` legacy only) |
+| `desktop_tracker\build_native_enforcer.bat` | Windows | Build `calt_enforcer.exe` |
 
 ### Linux/macOS first-time setup
 

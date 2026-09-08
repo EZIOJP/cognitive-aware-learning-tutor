@@ -9,8 +9,10 @@ from backend.behavior.study_mode_nudge import arm_study_mode_nudge, study_nudge_
 
 
 def test_scheduled_mode_when_enabled(tmp_path, monkeypatch):
-    path = tmp_path / "gate_schedules.json"
-    monkeypatch.setattr("backend.behavior.gate_schedules._SCHEDULE_PATH", path)
+    monkeypatch.setattr("backend.behavior.softland_policy._PATH", tmp_path / "softland_policy.json")
+    monkeypatch.setattr("backend.behavior.softland_policy._LEGACY_SITE", tmp_path / "site.json")
+    monkeypatch.setattr("backend.behavior.softland_policy._LEGACY_SCHEDULES", tmp_path / "gate_schedules.json")
+    monkeypatch.setattr("backend.behavior.gate_schedules._SCHEDULE_PATH", tmp_path / "gate_schedules.json")
     save_gate_schedules({
         "enabled": True,
         "windows": [{
@@ -22,7 +24,8 @@ def test_scheduled_mode_when_enabled(tmp_path, monkeypatch):
             "mode": "study",
         }],
     })
-    dt = datetime(2026, 8, 18, 10, 0, tzinfo=timezone.utc)
+    # 2026-08-18 is Tuesday → weekday 1
+    dt = datetime(2026, 8, 18, 10, 0, tzinfo=timezone.utc).astimezone()
     assert scheduled_mode(dt) == "study"
 
 

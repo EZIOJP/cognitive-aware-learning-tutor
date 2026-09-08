@@ -1,0 +1,817 @@
+{
+  "schema_version": 1,
+  "kind": "math",
+  "topic": {
+    "topic_id": "math.aptitude.saket-gfg-practice-sets",
+    "title": "Programming aptitude — GFG Practice Sets",
+    "stage": "foundations",
+    "path": [
+      "Aptitude",
+      "SAKET",
+      "GFG Practice Sets"
+    ],
+    "track": "aptitude",
+    "prerequisites": [],
+    "note_topic_ids": [
+      "MT1-T13"
+    ],
+    "description": "Interview coding aptitude from GFG Practice Sets."
+  },
+  "questions": [
+    {
+      "id": "math.aptitude.saket-gfg-practice-sets.q0001",
+      "problem": "**GFG Practice Sets · Counting Inversions**\n\nGiven an array of integers. Find the Inversion Count in the array. \n\nInversion Count: For an array, inversion count indicates how far (or close) the array is from being sorted. If array is already sorted then the inversion count is 0. If an array is sorted in the reverse order then the inversion count is the maximum. \nFormally, two elements a[i] and a[j] form an inversion if a[i] > a[j] and i < j.\n \n\nExample 1:\n\nInput: N = 5, arr[] = {2, 4, 1, 3, 5}\nOutput: 3\nExplanation: The sequence 2, 4, 1, 3, 5 \nhas three inversions (2, 1), (4, 1), (4, 3).\nExample 2:\n\nInput: N = 5\narr[] = {2, 3, 4, 5, 6}\nOutput: 0\nExplanation: As the sequence is already \nsorted so there is no inversion count.\nExample 3:\n\nInput: N = 3, arr[] = {10, 10, 10}\nOutput: 0\nExplanation: As all the elements of array \nare same, so there is no inversion count.\nYour Task:\nYou don't need to read input or print anything. Your task is to complete the function inversionCount() which takes the array arr[] and the size of the array as inputs and returns the inversion count of the given array.\n\nExpected Time Complexity: O(NLogN).\nExpected Auxiliary Space: O(N).\n\nConstraints:\n1 ≤ N ≤ 5*10^5\n1 ≤ arr[i] ≤ 10^18\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "3",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: N = 5, arr[] = {2, 4, 1, 3, 5}",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "gfg-practice-sets"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-gfg-practice-sets.q0002",
+      "problem": "**GFG Practice Sets · Karatsuba Algorithm**\n\nGiven two binary strings A and B that represent value of two integers, find the product of two strings in Decimal Value.\n\n \n\nExample 1:\n\nInput:\nA = \"1100\" , B = \"01\"\nOutput:\n12\nExplanation:\nDecimal representation of A is 12 and\nthat of B is 1. So, A*B gives the\noutput 12.\nExample 2:\n\nInput:\nA = \"01\" , B = \"01\"\nOutput:\n1\nExplanation:\nDecimal representation of both A and \nB is 1. So, A*B gives the output 1.\n \n\nYour Task:\nYou don't need to read input or print anything. Your task is to complete the function karatsubaAlgo() which takes Strings A and B as input and returns the answer.\n\n \n\nExpected Time Complexity: O(Length of Binary String)\nExpected Auxiliary Space: O(1)\n\n \n\nConstraints:\n1 <= |A|,|B| <= 25\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "12",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: A = \"1100\" , B = \"01\"",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "gfg-practice-sets"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-gfg-practice-sets.q0003",
+      "problem": "**GFG Practice Sets · Painter's Partition Problem**\n\nDilpreet wants to paint his dog's home that has n boards with different lengths. The length of ith board is given by arr[i] where arr[] is an array of n integers. He hired k painters for this work and each painter takes 1 unit time to paint 1 unit of the board. \n\nThe problem is to find the minimum time to get this job done if all painters start together with the constraint that any painter will only paint continuous boards, say boards numbered {2,3,4} or only board {1} or nothing but not boards {2,4,5}.\n\n\nExample 1:\n\nInput:\nn = 5\nk = 3\narr[] = {5,10,30,20,15}\nOutput: 35\nExplanation: The most optimal way will be:\nPainter 1 allocation : {5,10}\nPainter 2 allocation : {30}\nPainter 3 allocation : {20,15}\nJob will be done when all painters finish\ni.e. at time = max(5+10, 30, 20+15) = 35\nExample 2:\n\nInput:\nn = 4\nk = 2\narr[] = {10,20,30,40}\nOutput: 60\nExplanation: The most optimal way to paint:\nPainter 1 allocation : {10,20,30}\nPainter 2 allocation : {40}\nJob will be complete at time = 60\n\nYour task:\nYour task is to complete the function minTime() which takes the integers n and k and the array arr[] as input and returns the minimum time required to paint all partitions.\n\n\nExpected Time Complexity: O(n log m) , m = sum of all boards' length\nExpected Auxiliary Space: O(1)\n\n\nConstraints:\n1 ≤ n ≤ 10^5\n1 ≤ k ≤ 10^5\n1 ≤ arr[i] ≤ 10^5\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "35",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: n = 5 | k = 3 | arr[] = {5,10,30,20,15}",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "gfg-practice-sets"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-gfg-practice-sets.q0004",
+      "problem": "**GFG Practice Sets · Power of Numbers**\n\nGiven a number and its reverse. Find that number raised to the power of its own reverse.\nNote: As answers can be very large, print the result modulo 10^9 + 7.\n\nExample 1:\n\nInput:\nN = 2\nOutput: 4\nExplanation: The reverse of 2 is 2\nand after raising power of 2 by 2 \nwe get 4 which gives remainder as \n4 by dividing 1000000007.\nExample 2:\n\nInput:\nN = 12\nOutput: 864354781\nExplanation: The reverse of 12 is 21\nand 1221 , when divided by 1000000007 \ngives remainder as 864354781.\nYour Task:\nYou don't need to read input or print anything. You just need to complete the function pow() that takes two parameters N and R denoting the input number and its reverse and returns power of (N to R)mod(109 + 7).\n\nExpected Time Complexity: O(LogN).\nExpected Auxiliary Space: O(LogN).\n\nConstraints:\n1 <= N <= 10^9\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "4",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: N = 2",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "gfg-practice-sets"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-gfg-practice-sets.q0005",
+      "problem": "**GFG Practice Sets · Activity Selection**\n\nGiven N activities with their start and finish day given in array start[ ] and end[ ]. Select the maximum number of activities that can be performed by a single person, assuming that a person can only work on a single activity at a given day.\nNote : Duration of the activity includes both starting and ending day.\n\n\nExample 1:\n\nInput:\nN = 2\nstart[] = {2, 1}\nend[] = {2, 2}\nOutput: \n1\nExplanation:\nA person can perform only one of the\ngiven activities.\nExample 2:\n\nInput:\nN = 4\nstart[] = {1, 3, 2, 5}\nend[] = {2, 4, 3, 6}\nOutput: \n3\nExplanation:\nA person can perform activities 1, 2\nand 4.\n\nYour Task :\nYou don't need to read input or print anything. Your task is to complete the function activityselection() which takes array start[ ], array end[ ] and integer N as input parameters and returns the maximum number of activities that can be done.\n\n\nExpected Time Complexity : O(N * Log(N))\nExpected Auxilliary Space : O(N)\n\nConstraints:\n1 ≤ N ≤ 2*10^5\n1 ≤ start[i] ≤ end[i] ≤ 10^9\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "1",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: N = 2 | start[] = {2, 1} | end[] = {2, 2}",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "gfg-practice-sets"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-gfg-practice-sets.q0006",
+      "problem": "**GFG Practice Sets · Fractional Knapsack**\n\nGiven weights and values of N items, we need to put these items in a knapsack of capacity W to get the maximum total value in the knapsack.\nNote: Unlike 0/1 knapsack, you are allowed to break the item. \n\n \n\nExample 1:\n\nInput:\nN = 3, W = 50\nvalues[] = {60,100,120}\nweight[] = {10,20,30}\nOutput:\n240.00\nExplanation:Total maximum value of item\nwe can have is 240.00 from the given\ncapacity of sack. \nExample 2:\n\nInput:\nN = 2, W = 50\nvalues[] = {60,100}\nweight[] = {10,20}\nOutput:\n160.00\nExplanation:\nTotal maximum value of item\nwe can have is 160.00 from the given\ncapacity of sack.\n \n\nYour Task :\nComplete the function fractionalKnapsack() that receives maximum capacity , array of structure/class and size n and returns a double value representing the maximum value in knapsack.\nNote: The details of structure/class is defined in the comments above the given function.\n\n\nExpected Time Complexity : O(NlogN)\nExpected Auxilliary Space: O(1)\n\n\nConstraints:\n1 <= N <= 10^5\n1 <= W <= 10^5\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "240.00",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: N = 3, W = 50 | values[] = {60,100,120} | weight[] = {10,20,30}",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "gfg-practice-sets"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-gfg-practice-sets.q0007",
+      "problem": "**GFG Practice Sets · Largest Number with Given Sum**\n\nGeek lost the password of his super locker. He remembers the number of digits N as well as the sum S of all the digits of his password. He know that his password is the largest number of N digits that can be made with given sum S. As he is busy doing his homework, help him retrieving his password.\n\nExample 1:\n\nInput:\nN = 5, S = 12\nOutput:\n93000\nExplanation:\nSum of elements is 12. Largest possible \n5 digit number is 93000 with sum 12.\nExample 2:\n\nInput:\nN = 3, S = 29\nOutput:\n-1\nExplanation:\nThere is no such three digit number \nwhose sum is 29.\nYour Task : \nYou don't need to read input or print anything. Your task is to complete the function largestNumber() which takes 2 integers N and S as input parameters and returns the password in the form of string, else return \"-1\" in the form of string.\n\nConstraints:\n1 ≤ N ≤ 10^4\n0 ≤ S ≤ 9*10^4\n\nExpected Time Complexity : O(N)\nExpected Auxilliary Space : O(1)\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "93000",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: N = 5, S = 12",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "gfg-practice-sets"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-gfg-practice-sets.q0008",
+      "problem": "**GFG Practice Sets · N Meetings in a Room**\n\nThere is one meeting room in a firm. There are N meetings in the form of (start[i], end[i]) where start[i] is start time of meeting i and end[i] is finish time of meeting i.\nWhat is the maximum number of meetings that can be accommodated in the meeting room when only one meeting can be held in the meeting room at a particular time?\n\nNote: Start time of one chosen meeting can't be equal to the end time of the other chosen meeting.\n\n\nExample 1:\n\nInput:\nN = 6\nstart[] = {1,3,0,5,8,5}\nend[] =  {2,4,6,7,9,9}\nOutput: \n4\nExplanation:\nMaximum four meetings can be held with\ngiven start and end timings.\nThe meetings are - (1, 2),(3, 4), (5,7) and (8,9)\nExample 2:\n\nInput:\nN = 3\nstart[] = {10, 12, 20}\nend[] = {20, 25, 30}\nOutput: \n1\nExplanation:\nOnly one meetings can be held\nwith given start and end timings.\n\nYour Task :\nYou don't need to read inputs or print anything. Complete the function maxMeetings() that takes two arrays start[] and end[] along with their size N as input parameters and returns the maximum number of meetings that can be held in the meeting room.\n\n\nExpected Time Complexity : O(N*LogN)\nExpected Auxilliary Space : O(N)\n\n\nConstraints:\n1 ≤ N ≤ 10^5\n0 ≤ start[i] < end[i] ≤ 10^5\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "4",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: N = 6 | start[] = {1,3,0,5,8,5} | end[] =  {2,4,6,7,9,9}",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "gfg-practice-sets"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-gfg-practice-sets.q0009",
+      "problem": "**GFG Practice Sets · Add two Fractions**\n\nYou are given four numbers num1, den1, num2, and den2. You need to find (num1/den1)+(num2/den2) and output the result in the form of (numx/denx).\n\nInput Format:\nThe first line of input contains an integer T denoting the number of test cases . Then T test cases follow . Each test case contains four integers num1, den1, num2, den2 respectively .\n\nOutput Format:\nFor each test case, in a new line,  output will be the fraction in the form a/b where the fraction denotes the sum of the two given fractions in reduced form.\n\nYour Task:\nSince this is a function problem, you don't need to worry about the testcases. Your task is to complete the function addFraction  which adds the two fractions and prints the resulting fraction. The function takes four arguments num1, den1, num2, den2 where num1, num2 denotes the numerators of two fractions and den1, den2 denotes their denominators.\n\nConstraints:\n1 <= T <= 100\n1 <= den1,den2,num1,num2 <= 1000\n\nExample:\nInput\n1\n1 500 2 500\nOutput\n3/500\n\nExplanation:\nIn above test case 1/500+2/500=3/500\n\n \n\nNote:The Input/Ouput format and Example given are used for system's internal purpose, and should be used by a user for Expected Output only. As it is a function problem, hence a user should not read any input from stdin/console. The task is to complete the function specified, and not to write the full code.\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "the result in the form of (numx/denx).",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: Format: | The first line of input contains an integer T denoting the number of test cases . Then T test cases follow . Each test case contains four integers nu…",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "gfg-practice-sets"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-gfg-practice-sets.q0010",
+      "problem": "**GFG Practice Sets · Armstrong Number**\n\nFor a given 3 digit number, find whether it is armstrong number or not. An Armstrong number of three digits is an integer such that the sum of the cubes of its digits is equal to the number itself. Return \"Yes\" if it is a armstrong number else return \"No\".\nNOTE: 371 is an Armstrong number since 3^3 + 7^3 + 1^3 = 371\n\nExample 1:\n\nInput: N = 153\nOutput: \"Yes\"\nExplanation: 153 is an Armstrong number\nsince 1^3 + 5^3 + 3^3 = 153.\nHence answer is \"Yes\".\nExample 2:\n\nInput: N = 370\nOutput: \"Yes\"\nExplanation: 370 is an Armstrong number\nsince 3^3 + 7^3 + 0^3 = 370.\nHence answer is \"Yes\".\n\nYour Task:  \nYou dont need to read input or print anything. Complete the function armstrongNumber() which takes n as input parameter and returns \"Yes\" if it is a armstrong number else returns \"No\"..\n\nExpected Time Complexity: O(1)\nExpected Auxiliary Space: O(1)\n\nConstraints:\n100 ≤ n <1000\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "\"Yes\"",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: N = 153",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "gfg-practice-sets"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-gfg-practice-sets.q0011",
+      "problem": "**GFG Practice Sets · Binary to Decimal**\n\nGiven a Binary Number B, find its decimal equivalent.\n \n\nExample 1:\n\nInput: B = 10001000\nOutput: 136\nExample 2:\n\nInput: B = 101100\nOutput: 44\n \n\nYour Task:\nYou don't need to read or print anything. Your task is to complete the function binary_to_decimal() which takes the binary number as string input parameter and returns its decimal equivalent.\n \n\nExpected Time Complexity: O(K * Log(K)) where K is number of bits in binary number.\nExpected Space Complexity: O(1)\n \n\nConstraints:\n1 <= number of bits in binary number  <= 16\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "136",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: B = 10001000",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "gfg-practice-sets"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-gfg-practice-sets.q0012",
+      "problem": "**GFG Practice Sets · Calculate nCr Combination**\n\nGiven two integers n and r, find nCr. Since the answer may be very large, calculate the answer modulo 109+7.\n\nExample 1:\n\nInput: n = 3, r = 2\nOutput: 3\nExplaination: 3C2 = 3. \n\nExample 2:\n\nInput: n = 2, r = 4\nOutput: 0\nExplaination: r is greater than n.\n\nYour Task:\nYou do not need to take input or print anything. Your task is to complete the function nCr() which takes n and r as input parameters and returns nCr modulo 109+7..\n\n\nExpected Time Complexity: O(n*r)\nExpected Auxiliary Space: O(r)\n\n\nConstraints:\n1 ≤ n ≤ 1000\n1 ≤ r ≤ 800\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "3",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: n = 3, r = 2",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "gfg-practice-sets"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-gfg-practice-sets.q0013",
+      "problem": "**GFG Practice Sets · Calculate Permuation nPr**\n\nWrite a program to calculate nPr. nPr represents n permutation r and value of nPr is (n!) / (n-r)!.\n\nExample 1:\n\nInput: n = 2, r = 1\nOutput: 2\nExplaination: 2!/(2-1)! = 2!/1! = (2*1)/1 = 2.\nExample 2:\n\nInput: n = 3, r = 3\nOutput: 6\nExplaination: 3!/(3-3)! = 3!/0! = 6/1 = 6.\nYour Task:\nYou do not need to read input or print anything. Your task is to complete the function nPr() which takes n and r as input parameters and returns nPr .\n\nExpected Time Complexity: O(n)\nExpected Auxiliary Space: O(1)\n\nConstraints:\n1 ≤ n, r ≤ 20\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "2",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: n = 2, r = 1",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "gfg-practice-sets"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-gfg-practice-sets.q0014",
+      "problem": "**GFG Practice Sets · Closest Number**\n\nGiven non-zero two integers N and M. The problem is to find the number closest to N and divisible by M. If there are more than one such number, then output the one having maximum absolute value.\n\n \n\nExample 1:\n\nInput:\nN = 13 , M = 4\nOutput:\n12\nExplanation:\n12 is the Closest Number to\n13 which is divisible by 4.\nExample 2:\n\nInput:\nN = -15 , M = 6\nOutput:\n-18\nExplanation:\n-12 and -18 are both similarly close to\n-15 and divisible by 6. but -18 has\nthe maximum absolute value.\nSo, Output is -18\n \n\nYour Task:\nYou don't need to read input or print anything. Your task is to complete the function closestNumber() which takes an Integer n as input and returns the answer.\n\n \n\nExpected Time Complexity: O(1)\nExpected Auxiliary Space: O(1)\n\n \n\nConstraints:\n-10^5 <= N <= 10^5\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "the one having maximum absolute value.",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: N = 13 , M = 4",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "gfg-practice-sets"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-gfg-practice-sets.q0015",
+      "problem": "**GFG Practice Sets · Digital Sum Palindrome**\n\nGiven a number N.Find if the digit sum(or sum of digits) of N is a Palindrome number or not.\nNote:A Palindrome number is a number which stays the same when reversed.Example- 121,131,7 etc.\n\nExample 1:\n\nInput:\nN=56\nOutput:\n1\nExplanation:\nThe digit sum of 56 is 5+6=11.\nSince, 11 is a palindrome number.Thus,\nanswer is 1.\nExample 2:\n\nInput:\nN=98\nOutput:\n0\nExplanation:\nThe digit sum of 98 is 9+8=17.\nSince 17 is not a palindrome,thus, answer\nis 0.\n\nYour Task:\nYou don't need to read input or print aything.Your Task is to complete the function isDigitSumPalindrome() which takes a number N as input parameter and returns 1 if the Digit sum of N is a palindrome.Otherwise it returns 0.\n\n\nExpected Time Complexity:O(LogN)\nExpected Auxillary Space:O(1)\n\nConstraints:\n1<=N<=10^9\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "1",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: N=56",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "gfg-practice-sets"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-gfg-practice-sets.q0016",
+      "problem": "**GFG Practice Sets · Factorial**\n\nGiven a positive integer, N. Find the factorial of N.\n \n\nExample 1:\n\nInput:\nN = 5\nOutput:\n120\nExplanation:\n5*4*3*2*1 = 120\nExample 2:\n\nInput:\nN = 4\nOutput:\n24\nExplanation:\n4*3*2*1 = 24\n\nYour Task:\nYou don't need to read input or print anything. Your task is to complete the function factorial() which takes an integer N as input parameters and returns an integer, the factorial of N.\n \n\nExpected Time Complexity: O(N)\nExpected Space Complexity: O(1)\n \n\nConstraints:\n0 <= N <= 18\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "120",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: N = 5",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "gfg-practice-sets"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-gfg-practice-sets.q0017",
+      "problem": "**GFG Practice Sets · GCD**\n\nGiven two positive integers A and B, find GCD of A and B.\n\n\nExample 1:\n\nInput: A = 3, B = 6\nOutput: 3\nExplanation: GCD of 3 and 6 is 3\n\nExample 2:\n\nInput: A = 1, B = 1\nOutput: 1\nExplanation: GCD of 1 and 1 is 1\n\nYour Task:  \nYou don't need to read input or print anything. Complete the function gcd() which takes two positive integers as input parameters and returns an integer.\n\n\nExpected Time Complexity: O(log(min(A, B)))\nExpected Auxiliary Space: O(1)\n\n\nConstraints:\n1 ≤ A, B ≤ 10^9\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "3",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: A = 3, B = 6",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "gfg-practice-sets"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-gfg-practice-sets.q0018",
+      "problem": "**GFG Practice Sets · GCD of Array**\n\nGiven an array of N positive integers, find GCD of all the array elements.\n\n\nExample 1:\n\nInput: N = 3, arr[] = {2, 4, 6}\nOutput: 2\nExplanation: GCD of 2,4,6 is 2.\n\nExample 2:\n\nInput: N = 1, arr[] = {1}\nOutput: 1\nExplanation: Greatest common divisor of\nall the numbers is 1.\n\nYour Task:  \nYou don't need to read input or print anything. Complete the function gcd()which takes N and array as input parameters and returns the gcd.\n\n\nExpected Time Complexity: O(N logN)\nExpected Auxiliary Space: O(1)\n\n\nConstraints:\n1 ≤ N, arr[i] ≤ 10^5\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "2",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: N = 3, arr[] = {2, 4, 6}",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "gfg-practice-sets"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-gfg-practice-sets.q0019",
+      "problem": "**GFG Practice Sets · Jumping Numbers**\n\nGiven a positive number X. Find the largest Jumping Number smaller than or equal to X. \nJumping Number: A number is called Jumping Number if all adjacent digits in it differ by only 1. All single digit numbers are considered as Jumping Numbers. For example 7, 8987 and 4343456 are Jumping numbers but 796 and 89098 are not.\n\n \n\nExample 1:\n\nInput:\nX = 10\nOutput:\n10\nExplanation:\n10 is the largest Jumping Number\npossible for X = 10.\nExample 2:\n\nInput:\nX = 50\nOutput:\n45\nExplanation:\n45 is the largest Jumping Number\npossible for X = 50.\n \n\nYour Task:\nYou don't need to read input or print anything. Your task is to complete the function jumpingNums() which takes an Integer X as input and returns the largest Jumping Number less than or equal to X.\n\n \n\nExpected Time Complexity: O(k), where k is no of jumping numbers\nExpected Auxiliary Space: O(k), where k is no of jumping numbers\n\n \n\nConstraints:\n1 <= X <= 10^9\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "10",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: X = 10",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "gfg-practice-sets"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-gfg-practice-sets.q0020",
+      "problem": "**GFG Practice Sets · Largest Prime Factor**\n\nGiven a number N, the task is to find the largest prime factor of that number.\n \n\nExample 1:\n\nInput:\nN = 5\nOutput:\n5\nExplanation:\n5 has 1 prime factor \ni.e 5 only.\nExample 2:\n\nInput:\nN = 24\nOutput:\n3\nExplanation:\n24 has 2 prime factors \n3 and 2 in which 3 is \ngreater\n\nYour Task:\nYou don't need to read input or print anything. Your task is to complete the function largestPrimeFactor() which takes an integer N as input parameters and returns an integer, largest prime factor of N.\n \n\nExpected Time Complexity: O(sqrt(N))\nExpected Space Complexity: O(1)\n \n\nConstraints:\n1 <= N <= 10^5\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "5",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: N = 5",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "gfg-practice-sets"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-gfg-practice-sets.q0021",
+      "problem": "**GFG Practice Sets · LCM**\n\nGiven two numbers A and B. The task is to find out their LCM and GCD.\n\n \n\nExample 1:\n\nInput:\nA = 5 , B = 10\nOutput:\n10 5\nExplanation:\nLCM of 5 and 10 is 10, while\nthier GCD is 5.\nExample 1:\n\nInput:\nA = 14 , B = 8\nOutput:\n56 2\nExplanation:\nLCM of 14 and 8 is 56, while\nthier GCD is 2.\n \n\nYour Task:\nYou don't need to read input or print anything. Your task is to complete the function lcmAndGcd() which takes an Integer N as input and returns a List of two Integers, the required LCM and GCD.\n\n \n\nExpected Time Complexity: O(log(min(A, B))\nExpected Auxiliary Space: O(1)\n\n \n\nConstraints:\n1 <= A,B <= 10^18\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "10 5",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: A = 5 , B = 10",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "gfg-practice-sets"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-gfg-practice-sets.q0022",
+      "problem": "**GFG Practice Sets · Multiplication Table**\n\nPrint the multiplication table of a given number N. \n\n\nExample 1:\n\nInput:\nN = 9\n\nOutput:\n9 18 27 36 45 54 63 72 81 90\n\nExplanation:\nThe table of 9 is the output whose 1st \nterm is 9 and the 10th term is 90.\n\nExample 2:\n\nInput:\nN = 2\n\nOutput:\n2 4 6 8 10 12 14 16 18 20\n\n\nYour Task:  \nYou don't need to read input. Your task is to complete the function getTable() which takes an integer N as input parameter and returns a list of integers denoting the multiplication of table of N from 1 to 10. \n\nExpected Time Complexity: O(1)\nExpected Auxiliary Space: O(1)\n\n\nConstraints: \n1 <= N <= 10^6\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "9 18 27 36 45 54 63 72 81 90",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: N = 9",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "gfg-practice-sets"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-gfg-practice-sets.q0023",
+      "problem": "**GFG Practice Sets · Nth root of M**\n\nYou are given 2 numbers (n , m); the task is to find n√m (nth root of m).\n \n\nExample 1:\n\nInput: n = 2, m = 9\nOutput: 3\nExplanation: 32 = 9\nExample 2:\n\nInput: n = 3, m = 9\nOutput: -1\nExplanation: 3rd root of 9 is not\ninteger.\n \n\nYour Task:\nYou don't need to read or print anyhting. Your task is to complete the function NthRoot() which takes n and m as input parameter and returns the nth root of m. If the root is not integer then returns -1.\n \n\nExpected Time Complexity: O(n* log(m))\nExpected Space Complexity: O(1)\n \n\nConstraints:\n1 <= n <= 30\n1 <= m <= 10^9\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "3",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: n = 2, m = 9",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "gfg-practice-sets"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-gfg-practice-sets.q0024",
+      "problem": "**GFG Practice Sets · Pair Cube Count**\n\nGiven N, count all ‘a’(>=1) and ‘b’(>=0) that satisfy the condition a^3 + b^3 = N.\n\n \n\nExample 1:\n\nInput:\nN = 9 \nOutput:\n2\nExplanation:\nThere are two solutions: (a=1, b=2)\nand (a=2, b=1).\n\nExample 2:\n\nInput:\nN = 27\nOutput:\n1\nExplanation:\nThereis only one solution: (a=3, b=0)\n \n\nYour Task:\nYou don't need to read input or print anything. Your task is to complete the function pairCubeCount() which takes an Integer N as input and returns the answer.\n\n \n\nExpected Time Complexity: O(cbrt(N))\nExpected Auxiliary Space: O(1)\n\n \n\nConstraints:\n1 <= N <= 10^5\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "2",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: N = 9",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "gfg-practice-sets"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-gfg-practice-sets.q0025",
+      "problem": "**GFG Practice Sets · Pairs of Primes**\n\nFind all pairs (sets) of prime numbers (p,q) such that p*q <= n, where n is given number.\n \n\nExample 1:\n\nInput: n = 4\nOutput: 2 2\nExplanation: Pair (2, 2) which has both prime \nnumbers as well as satisfying the condition \n2*2 <= 4.\nExample 2:\n\nInput: n = 8\nOutput: 2 2 2 3 3 2\nExplanation: Pairs(2, 2), (2, 3) and (3, 2)\nwhich has both prime numbers and satisfying\nthe given condition.\n \n\nYour Task:\nYou don't need to read or print anything. Your task is to complete the function prime_pairs() which takes n as input parameter and returns a list of pairs in ascending order.\n \n\nExpected Time Complexity: O(n2* sqrt(n))\nExpected Space Complexity: O(1)\n \n\nConstraints:\n1 <= n <= 400\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "2 2",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: n = 4",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "gfg-practice-sets"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-gfg-practice-sets.q0026",
+      "problem": "**GFG Practice Sets · Perfect Number**\n\nGiven a number N, check if a number is perfect or not. A number is said to be perfect if sum of all its factors excluding the number itself is equal to the number.\n\n \n\nExample 1:\n\nInput:\nN = 6\nOutput:\n1 \nExplanation:\nFactors of 6 are 1, 2, 3 and 6.\nExcluding 6 their sum is 6 which\nis equal to N itself. So, it's a\nPerfect Number.\nExample 2:\n\nInput:\nN = 10\nOutput:\n0\nExplanation:\nFactors of 10 are 1, 2, 5 and 10.\nExcluding 10 their sum is 8 which\nis not equal to N itself. So, it's\nnot a Perfect Number.\n \n\nYour Task:\nYou don't need to read input or print anything. Your task is to complete the function isPerfectNumber() which takes an Integer N as input and returns 1 if N is a Perfect number else returns 0.\n\n \n\nExpected Time Complexity: O(sqrt(N))\nExpected Auxiliary Space: O(1)\n\n \n\nConstraints:\n1 <= N <= 10^12\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "1",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: N = 6",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "gfg-practice-sets"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-gfg-practice-sets.q0027",
+      "problem": "**GFG Practice Sets · Prime Number**\n\nFor a given number N check if it is prime or not. A prime number is a number which is only divisible by 1 and itself.\n \n\nExample 1:\n\nInput:\nN = 5\nOutput:\n1\nExplanation:\n5 has 2 factors 1 and 5 only.\nExample 2:\n\nInput:\nN = 25\nOutput:\n0\nExplanation:\n25 has 3 factors 1, 5, 25\n\nYour Task:\nYou don't need to read input or print anything. Your task is to complete the function isPrime() which takes an integer N as input parameters and returns an integer, 1 if N is a prime number or 0 otherwise.\n \n\nExpected Time Complexity: O(sqrt(N))\nExpected Space Complexity: O(1)\n \n\nConstraints:\n1 <= N <= 10^9\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "1",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: N = 5",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "gfg-practice-sets"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-gfg-practice-sets.q0028",
+      "problem": "**GFG Practice Sets · Print Kth Digit**\n\nGiven two numbers A and B, find Kth digit from right of AB.\n \n\nExample 1:\n\nInput:\nA = 3\nB = 3\nK = 1\nOutput:\n7\nExplanation:\n3^3 = 27 and 1st\ndigit from right is \n7\nExample 2:\n\nInput:\nA = 5\nB = 2\nK = 2\nOutput:\n2\nExplanation:\n5^2 = 25 and second\ndigit from right is\n2.\n\nYour Task:\nYou don't need to read input or print anything. Your task is to complete the function kthDigit() which takes integers A, B, K as input parameters and returns Kth Digit of AB from right side.\n \n\nExpected Time Complexity: O(log AB)\nExpected Space Complexity: O(1)\n \n\nConstraints:\n1 <= A,B <= 15\n1 <=K<= digits in A^B\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "7",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: A = 3 | B = 3 | K = 1",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "gfg-practice-sets"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-gfg-practice-sets.q0029",
+      "problem": "**GFG Practice Sets · Print the Pattern**\n\nYou a given a number N. You need to print the pattern for the given value of N.\nfor N = 2 the pattern will be \n2 2 1 1\n2 1\nfor N = 3 the pattern will be \n3 3 3 2 2 2 1 1 1\n3 3 2 2 1 1\n3 2 1\nExample 1:\n\nInput: 2\nOutput:\n2 2 1 1 $2 1 $\n\nExample 2:\n\nInput: 3\nOutput:\n3 3 3 2 2 2 1 1 1 $3 3 2 2 1 1 $3 2 1 $\n \n\nYour Task:\nSince this is a function problem, you don't need to worry about the testcases. Your task is to complete the function printPat which takes one argument 'N' denoting the \nlength of the pattern.\nNote : Instead of printing new line print a \"$\" without quotes.\n\nConstraints:\n1 <= N <= 40\n\n\nNote:The Input/Ouput format and Example given are used for system's internal purpose, and should be used by a user for Expected Output only. \nAs it is a function problem, hence a user should not read any input from stdin/console. The task is to complete the function specified, and not to\nwrite the full code.\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "2 2 1 1 $2 1 $",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: 2",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "gfg-practice-sets"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-gfg-practice-sets.q0030",
+      "problem": "**GFG Practice Sets · Reverse the Digit**\n\nGiven N,  reverse the digits of N.\n \n\nExample 1:\n\nInput: 200\nOutput: 2\nExplanation: By reversing the digts of \nnumber, number will change into 2.\nExample 2:\n\nInput : 122\nOutput: 221\nExplanation: By reversing the digits of \nnumber, number will change into 221.\n \n\nYour Task:\nYou don't need to read or print anything. Your task is to complete the function reverse_digit() which takes N as input parameter and returns the reversed number.\n \n\nExpected Time Complexity: O(Log(N))\nExpected Space Complexity: O(1)\n \n\nConstraints:\n1 <= N <= 10^15\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "2",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: 200",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "gfg-practice-sets"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-gfg-practice-sets.q0031",
+      "problem": "**GFG Practice Sets · Series Arithmetic Progression**\n\nGiven the first 2 terms A1 and A2 of an Arithmetic Series.Find the Nth term of the series. \n\nExample 1:\n\nInput:\nA1=2\nA2=3\nN=4\nOutput:\n5\nExplanation:\nThe series is 2,3,4,5,6....\nThus,4th term is 5.\nExample 2:\n\nInput:\nA1=1\nA2=2\nN=10\nOutput:\n10\nExplanation:\nThe series is1,2,3,4,5,6,7,8,9,10,11..\nThus,10th term is 10.\n\nYour Task:\nYou don't need to read input or print anything.Your Task is to complete the function nthTermOfAP() which takes three integers A1,A2 and N as input parameters and returns the nth term of the AP that has A1 and A2 as the first and second terms respectively.\n\n\nExpected Time Complexity:O(1)\nExpected Auxillary Space:O(1)\n\n\nConstraints:\n-10^4<=A1,A2<=10^4\n1<=N<=10^3\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "5",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: A1=2 | A2=3 | N=4",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "gfg-practice-sets"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-gfg-practice-sets.q0032",
+      "problem": "**GFG Practice Sets · Series Geometric Progression**\n\nGiven the A and R i,e first term and common ratio of a GP series. Find the Nth term of the series.\n\nNote: As the answer can be rather large print its modulo 1000000007 (109 + 7).\n\nExample 1:\n\nInput: A = 2, R = 2, N = 4\nOutput: 16\nExplanation: The GP series is \n2, 4, 8, 16, 32,... in which 16 \nis th 4th term.\nExample 2:\n\nInput: A = 4, R = 3, N = 3\nOutput: 36\nExplanation: The GP series is\n4, 12, 36, 108,.. in which 36 is\nthe 3rd term.\n \n\nYour Task:\nYou don't need to read or print anything. Your task is to complete the function Nth_term() which takes A, R and N as input parameter ans returns Nth term of the GP series modulo 109 + 7.\n \n\nExpected Time Complexity: O(log2(N))\nExpected Space Complexity: O(1)\n\nConstraints:\n1 <= A, R, N <= 1000000\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "16",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: A = 2, R = 2, N = 4",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "gfg-practice-sets"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-gfg-practice-sets.q0033",
+      "problem": "**GFG Practice Sets · Sieve of Eratosthenes**\n\nGiven a number N, calculate the prime numbers up to N using Sieve of Eratosthenes.  \n\nExample 1:\n\nInput:\nN = 10\n\nOutput:\n2 3 5 7\n\nExplanation:\nPrime numbers less than equal to N \nare 2 3 5 and 7.\nExample 2:\n\nInput:\nN = 35\n\nOutput:\n2 3 5 7 11 13 17 19 23 29 31\n\nExplanation:\nPrime numbers less than equal to 35 are\n2 3 5 7 11 13 17 19 23 29 and 31.\nYour Task:  \nYou don't need to read input or print anything. Your task is to complete the function sieveOfEratosthenes() which takes an integer N as an input parameter and return the list of prime numbers less than equal to N.\n\nExpected Time Complexity: O(NloglogN)\nExpected Auxiliary Space: O(N)\n\nConstraints:\n1<= N <= 10^4\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "2 3 5 7",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: N = 10",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "gfg-practice-sets"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-gfg-practice-sets.q0034",
+      "problem": "**GFG Practice Sets · Sum of Primes from 1 to N**\n\nGiven a positive integer N, find the sum of all prime numbers between 1 and N(inclusive).\n \n\nExample 1:\n\nInput: N = 5\nOutput: 10\nExplanation: 2, 3, and 5 are prime\nnumbers between 1 and 5(inclusive).\nExample 2:\n\nInput: N = 10\nOutput: 17\nExplanation: 2, 3, 5 and 7 are prime\nnumbers between 1 and 10(inclusive).\n \n\nYour Task:\nYou don't need to read or print anyhting. Your task is to complete the function prime_Sum() which takes N as input parameter and returns the sum of all primes between 1 and N(inclusive).\n \n\nExpected Time Complexity: O(N*log(N))\nExpected Space Complexity: O(N)\n\nConstraints:\n1 <= N <= 1000000\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "10",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: N = 5",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "gfg-practice-sets"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-gfg-practice-sets.q0035",
+      "problem": "**GFG Practice Sets · 3 Divisors**\n\nYou have given a list of q queries and for every query, you are given an integer N.  The task is to find how many numbers(less than or equal to N) have number of divisors exactly equal to 3.\n\nExample 1:\n\nInput:\nq = 1\nquery[0] = 6\nOutput:\n1\nExplanation:\nThere is only one number 4 which has\nexactly three divisors 1, 2 and 4 and\nless than equal to 6.\nExample 2:\n\nInput:\nq = 2\nquery[0] = 6\nquery[1] = 10\nOutput:\n1\n2\nExplanation:\nFor query 1 it is covered in the\nexample 1.\nquery 2: There are two numbers 4 and 9\nhaving exactly 3 divisors and less than\nequal to 10.\nYour Task:  \nYou don't need to read input or print anything. Your task is to complete the function threeDivisors() which takes an integer q and a list of integer of size q as input parameter and returns the list containing the count of the numbers having exactly 3 divisors for each query.\n\nExpected Time Complexity: O(NlogN), \nExpected Auxiliary Space: O(N), where N is min(10^6,N)\n\nConstraints :\n1 <= q <= 103\n1 <= query[i] <= 10^12\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "1",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: q = 1 | query[0] = 6",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "gfg-practice-sets"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-gfg-practice-sets.q0036",
+      "problem": "**GFG Practice Sets · Angle Between Hands of the Clock**\n\nCalculate the angle between the hour hand and minute hand.\n\nNote: There can be two angles between hands; we need to print a minimum of two. Also, we need to print the floor of the final result angle. For example, if the final angle is 10.61, we need to print 10.\n\n\nExample 1:\n\nInput:\nH = 9 , M = 0\nOutput:\n90\nExplanation:\nThe minimum angle between hour and minute\nhand when the time is 9 is 90 degress.\nExample 2:\n\nInput:\nH = 3 , M = 30\nOutput:\n75\nExplanation:\nThe minimum angle between hour and minute\nhand when the time is 3:30 is 75 degress.\n\nYour Task:\nYou don't need to read, input, or print anything. Your task is to complete the function getAngle(), which takes 2 Integers H and M as input and returns the answer.\n\n\nExpected Time Complexity: O(1)\nExpected Auxiliary Space: O(1)\n\n\nConstraints:\n1 ≤ H ≤ 12\n0 ≤ M < 60\nH and M are Integers\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "90",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: H = 9 , M = 0",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "gfg-practice-sets"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-gfg-practice-sets.q0037",
+      "problem": "**GFG Practice Sets · Count Squares**\n\nConsider a sample space S consisting of all perfect squares starting from 1, 4, 9 and so on. You are given a number N, you have to output the number of integers less than N in the sample space S.\n\n \n\nExample 1:\n\nInput :\nN = 9\nOutput:\n2\nExplanation:\n1 and 4 are the only Perfect Squares\nless than 9. So, the Output is 2.\nExample 2:\n\nInput :\nN = 3\nOutput:\n1\nExplanation:\n1 is the only Perfect Square\nless than 3. So, the Output is 1.\n \n\nYour Task:\nYou don't need to read input or print anything. Your task is to complete the function countSquares() which takes an Integer N as input and returns the answer.\n\n \n\nExpected Time Complexity: O(sqrt(N))\nExpected Auxiliary Space: O(1)\n\n \n\nConstraints:\n1 <= N <= 10^8\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "the number of integers less than N in the sample space S.",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: N = 9",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "gfg-practice-sets"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-gfg-practice-sets.q0038",
+      "problem": "**GFG Practice Sets · Days of the Week**\n\nWrite a program that calculates the day of the week for any particular date in the past or future.\n\nExample 1:\n\nInput:\nd = 28, m = 12, y = 1995\nOutput:\nThursday\nExplanation:\n28 December 1995 was a Thursday.\nExample 2:\n\nInput:\nd = 30, m = 8, y = 2010\nOutput:\nMonday\nExplanation:\n30 August 2010 was a Monday.\nYour Task:\nYou don't need to read input or print anything. Your task is to complete the function getDayOfWeek() which takes 3 Integers d, m and y denoting day, month and year as input and return a String denoting the answer.\n\nExpected Time Complexity: O(1)\nExpected Auxiliary Space: O(1)\n\nConstraints:\n1 <= d <= 31\n1 <= m <= 12\n1990 <= y <= 2100\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "Thursday",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: d = 28, m = 12, y = 1995",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "gfg-practice-sets"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-gfg-practice-sets.q0039",
+      "problem": "**GFG Practice Sets · If power of another**\n\nGiven two positive numbers X and Y, check if Y is a power of X or not.\n\n \n\nExample 1:\n\nInput:\nX = 2, Y = 8\nOutput:\n1\nExplanation:\n2^3 is equal to 8.\n \n\nExample 2:\n\nInput:\nX = 1, Y = 3\nOutput:\n0\nExplanation:\nAny power of 1 is not \nequal to 8.\n \n\nYour Task:\n\nYou don't need to read input or print anything. Your task is to complete the function isPowerOfAnother() which takes an integer and returns 1 if y is the power of x, else return 0.\n\n \n\nExpected Time Complexity: O(N)\nExpected Auxiliary Space: O(1)\n\n \n\nConstraints: \n1 <= x <= 10^3\n1 <= y <= 10^8\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "1",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: X = 2, Y = 8",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "gfg-practice-sets"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-gfg-practice-sets.q0040",
+      "problem": "**GFG Practice Sets · Is Square**\n\nGiven four different points in space. Find whether these points can form a square or not.\n\n \n\nExample 1:\n\nInput:\nx1 = 20, y1 = 10, x2 = 10, y2 = 20, \nx3 = 20, y3 = 20, x4 = 10, y4 = 10 \nOutput:\nYes\nExplanation:\nThe points (20,10), (10,20), (20,20),\n(10,10) forms a square.\nExample 2:\n\nInput:\nx1 = 2, y1 = 1, x2 = 10, y2 = 20, \nx3 = 5, y3 = 6, x4 = 10, y4 = 10 \nOutput:\nNo\nExplanation:\nThe points (2,1), (10,20), (5,6),\n(10,10) doesn't form a square.\n \n\nYour Task:\nYou don't need to read input or print anything. Your task is to complete the function isSquare() which takes 8 Integers x1, y1, x2, y2, x3, y3, x4, and y4 as input and returns whether these points form a square.\n\n \n\nExpected Time Complexity: O(1)\nExpected Auxiliary Space: O(1)\n\n \n\nConstraints:\n-10^3 ≤ x1, y1, x2, y2, x3, y3, x4, y4 ≤ 10^3\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "Yes",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: x1 = 20, y1 = 10, x2 = 10, y2 = 20,  | x3 = 20, y3 = 20, x4 = 10, y4 = 10",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "gfg-practice-sets"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-gfg-practice-sets.q0041",
+      "problem": "**GFG Practice Sets · Last 2 Digits of Fibbonacci**\n\nGiven a number N. Find the last two digits of the Nth fibonacci number.\nNote: If the last two digits are 02, return 2.\n\nExample 1:\n\nInput:\nN = 13\nOutput:\n33\nExplanation:\nThe 13th Fibonacci number is 233.\nSo last two digits are 3 and 3.\nExample 2:\n\nInput:\nN = 255\nOutput:\n70\nExplanation:\nThe 255th fibonacci number is  875715953430-\n18854458033386304178158174356588264390370.\nThus, last two digits are 7 and 0.\n\nYour Task:\nYou don't need to read input or print anything.Your task is to complete the function fibonacciDigits() which takes a number N as input parameter and returns the last two digits of the Nth fibonacci number.\n\n\nExpected Time Complexity:O(K)\nExpected Auxillary Space:O(K)\nK is of the order 102.\n\n\nConstraints:\n1<=N<=10^18\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "33",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: N = 13",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "gfg-practice-sets"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-gfg-practice-sets.q0042",
+      "problem": "**GFG Practice Sets · Nth even Fibbonacci Number**\n\nGiven a positive integer N, find the Nth Even Fibonacci number. Since the answer can be very large, return the answer modulo 1000000007.\n\nExample 1:\n\nInput: n = 1\nOutput: 2 \nExplanation: 2 is the first even\nnumber in the fibonacci series.\nExample 2:\n\nInput: n = 2\nOutput: 8\nExplanation: 8 is the second even\nnumber in the fibonacci series.\n\nYour Task:  \nYou dont need to read input or print anything. Complete the function nthEvenFibonacci() which takes S as input parameter and returns the Nth even fibonacci number.\n\nExpected Time Complexity: O(n)\nExpected Auxiliary Space: O(n)\n\nConstraints:\n1<= n <=1000\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "2",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: n = 1",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "gfg-practice-sets"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-gfg-practice-sets.q0043",
+      "problem": "**GFG Practice Sets · Open Doors**\n\nConsider a long alley with a N number of doors on one side. All the doors are closed initially. You move to and fro in the alley changing the states of the doors as follows: you open a door that is already closed and you close a door that is already opened. You start at one end go on altering the state of the doors till you reach the other end and then you come back and start altering the states of the doors again.\nIn the first go, you alter the states of doors numbered 1, 2, 3, … , n.\nIn the second go, you alter the states of doors numbered 2, 4, 6…\nIn the third go, you alter the states of doors numbered 3, 6, 9 …\nYou continue this till the Nth go in which you alter the state of the door numbered N.\nYou have to find the number of open doors at the end of the procedure.\n\n \n\nExample 1:\n\nInput:\nN = 2\nOutput:\n1\nExplanation:\nInitially all doors are closed.\nAfter 1st go, all doors will be opened.\nAfter 2nd go second door will be closed.\nSo, Only 1st door will remain Open.\nExample 2:\n\nInput:\nN = 4\nOutput:\n2\nExplanation:\nFollowing the sequence 4 times, we can\nsee that only 1st and 4th doors will\nremain open.\n \n\nYour Task:\nYou don't need to read input or print anything. Your task is to complete the function noOfOpenDoors() which takes an Integer N as input and returns the answer.\n\n \n\nExpected Time Complexity: O(1)\nExpected Auxiliary Space: O(1)\n\n \n\nConstraints:\n1 <= N <= 10^12\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "1",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: N = 2",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "gfg-practice-sets"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-gfg-practice-sets.q0044",
+      "problem": "**GFG Practice Sets · Overlapping Rectangles**\n\nGiven two rectangles, find if the given two rectangles overlap or not. A rectangle is denoted by providing the x and y coordinates of two points: the left top corner and the right bottom corner of the rectangle. Two rectangles sharing a side are considered overlapping. (L1 and R1 are the extreme points of the first rectangle and L2 and R2 are the extreme points of the second rectangle).\n\nNote: It may be assumed that the rectangles are parallel to the coordinate axis.\n\nrectanglesOverlap\n\nExample 1:\n\nInput:\nL1=(0,10)\nR1=(10,0)\nL2=(5,5)\nR2=(15,0)\nOutput:\n1\nExplanation:\nThe rectangles overlap.\nExample 2:\n\nInput:\nL1=(0,2)\nR1=(1,1)\nL2=(-2,0)\nR2=(0,-3)\nOutput:\n0\nExplanation:\nThe rectangles do not overlap.\n\nYour Task:\nYou don't need to read input or print anything. Your task is to complete the function doOverlap() which takes the points L1, R1, L2, and R2 as input parameters and returns 1 if the rectangles overlap. Otherwise, it returns 0.\n\n\nExpected Time Complexity:O(1)\nExpected Auxillary Space:O(1)\n\n\nConstraints:\n-10^9<=x-coordinate,y-coordinate<=10^9\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "1",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: L1=(0,10) | R1=(10,0) | L2=(5,5) | R2=(15,0)",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "gfg-practice-sets"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-gfg-practice-sets.q0045",
+      "problem": "**GFG Practice Sets · Squares in a Matrix**\n\nGiven a mxn matrix, count the number of squares in the matrix.\nInput:\nm = 2, n = 2\nOutput:\n5\nExplanation:\nThere are a total of 5 squares in a 2*2\nmatrix. Four 1*1 squares and one 2*2 square.\nExample 2:\n\nInput:\nm = 4, n = 3\nOutput:\n20\nExplanation:\nThere are a total of 20 squares in a 4*3\nmatrix. It's explained clearly in the\ndiagram given in the problem statement.\n \n\nYour Task:\nYou don't need to read input or print anything. Your task is to complete the function squaresInMatrix() which takes 2 Integers m and n as input and returns the number of total squares in a m*n matrix.\n\n \n\nExpected Time Complexity: O(1)\nExpected Auxiliary Space: O(1)\n\n \n\nConstraints:\n1 <= m,n <= 10^4\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "5",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: m = 2, n = 2",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "gfg-practice-sets"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-gfg-practice-sets.q0046",
+      "problem": "**GFG Practice Sets · Trailing 0's in Factorial**\n\nFor an integer N find the number of trailing zeroes in N!.\n\nExample 1:\n\nInput:\nN = 5\nOutput:\n1\nExplanation:\n5! = 120 so the number of trailing zero is 1.\nExample 2:\n\nInput:\nN = 4\nOutput:\n0\nExplanation:\n4! = 24 so the number of trailing zero is 0.\nYour Task:  \nYou don't need to read input or print anything. Your task is to complete the function trailingZeroes() which take an integer N as an input parameter and returns the count of trailing zeroes in the N!.\n\nExpected Time Complexity: O(logN)\nExpected Auxiliary Space: O(1)\n\nConstraints:\n1 <= N <= 10^9\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "1",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: N = 5",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "gfg-practice-sets"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-gfg-practice-sets.q0047",
+      "problem": "**GFG Practice Sets · Triangular Numbers**\n\nGiven a number N.Check whether it is a triangular number or not.\nNote: A number is termed as a triangular number if we can represent it in the form of a triangular grid of points such that the points form an equilateral triangle and each row contains as many points as the row number, i.e., the first row has one point, the second row has two points, the third row has three points and so on.\nThe starting triangular numbers are 1, 3 (1+2), 6 (1+2+3), 10 (1+2+3+4).\n\nExample 1:\n\nInput:\nN=55\nOutput:\n1\nExplanation:\n55 is a triangular number.\nIt can be represented in 10 rows.\nExample 2:\n\nInput:\nN=56\nOutput:\n0\nExplanation:\n56 is not a triangular number.\n\nYour Task:\nYou don't need to read input or print anything. Your task is to complete the function isTriangular() that takes a number N as input parameter and returns 1 if it is a triangular number. Otherwise, it returns 0.\n\n\nExpected Time complexity:O(LogN)\nExpected Auxillary Space:O(1)\n \n\nConstraints:\n1<=N<=10^6\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "1",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: N=55",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "gfg-practice-sets"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-gfg-practice-sets.q0048",
+      "problem": "**GFG Practice Sets · Allocate Min. Pages**\n\nYou are given N number of books. Every ith book has Ai number of pages.\n\nYou have to allocate contiguous books to M number of students. There can be many ways or permutations to do so. In each permutation, one of the M students will be allocated the maximum number of pages. Out of all these permutations, the task is to find that particular permutation in which the maximum number of pages allocated to a student is the minimum of those in all the other permutations and print this minimum value.\n\nEach book will be allocated to exactly one student. Each student has to be allocated at least one book.\n\nNote: Return -1 if a valid assignment is not possible, and allotment should be in contiguous order (see the explanation for better understanding).\n\n \n\nExample 1:\n\nInput:\nN = 4\nA[] = {12,34,67,90}\nM = 2\nOutput:113\nExplanation:Allocation can be done in \nfollowing ways:{12} and {34, 67, 90} \nMaximum Pages = 191{12, 34} and {67, 90} \nMaximum Pages = 157{12, 34, 67} and {90} \nMaximum Pages =113. Therefore, the minimum \nof these cases is 113, which is selected \nas the output.\n\nExample 2:\n\nInput:\nN = 3\nA[] = {15,17,20}\nM = 2\nOutput:32\nExplanation: Allocation is done as\n{15,17} and {20}\nYour Task:\nYou don't need to read input or print anything. Your task is to complete the function findPages() which takes 2 Integers N, and m and an array A[] of length N as input and returns the expected answer.\n\n\nExpected Time Complexity: O(NlogN)\nExpected Auxilliary Space: O(1)\n\n\nConstraints:\n1 <= N <= 105\n1 <= A [ i ] <= 106\n1 <= M <= 105\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "113",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: N = 4 | A[] = {12,34,67,90} | M = 2",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "gfg-practice-sets"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-gfg-practice-sets.q0049",
+      "problem": "**GFG Practice Sets · Handshakes**\n\nWe have N persons sitting on a round table. Any person can do a handshake with any other person.\n\n     1\n2         3\n     4\n\nHandshake with 2-3 and 1-4 will cause cross.\n\nIn how many ways these N people can make handshakes so that no two handshakes cross each other. N would be even. \n \n\nExample 1:\n\nInput:\nN = 2\nOutput:\n1\nExplanation:\n{1,2} handshake is\npossible.\nExample 2:\n\nInput:\nN = 4\nOutput:\n2\nExplanation:\n{{1, 2}, {3, 4}} are the\ntwo handshakes possible.\n{{1, 3}, {2, 4}} is another\nset of handshakes possible.\n\nYour Task:\nYou don't need to read input or print anything. Your task is to complete the function count() which takes an integer N as input parameters and returns an integer, the total number of handshakes possible so that no two handshakes cross each other.\n \n\nExpected Time Complexity: O(2N)\nExpected Space Complexity: O(1)\n \n\nConstraints:\n1 <= N <= 30\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "1",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: N = 2",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "gfg-practice-sets"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-gfg-practice-sets.q0050",
+      "problem": "**GFG Practice Sets · Josephus Problem**\n\nGiven the total number of persons n and a number k which indicates that k-1 persons are skipped and kth person is killed in circle in a fixed direction.\n\nThe task is to choose the safe place in the circle so that when you perform these operations starting from 1st place in the circle, you are the last one remaining and survive.\n\nExample 1:\n\nInput:\nn = 3 k = 2\nOutput: 3\nExplanation: There are 3 persons so \nskipping 1 person i.e 1st person 2nd \nperson will be killed. Thus the safe \nposition is 3.\n \n\nExample 2:\n\nInput:\nn = 5 k = 3\nOutput: 4\nExplanation: There are 5 persons so \nskipping 2 person i.e 3rd person will \nbe killed. Thus the safe position is 4.\n \n\nYour Task:\nYou don't need to read input or print anything. You are required to complete the function josephus () that takes two parameters n and k and returns an integer denoting safe position. \n\nExpected Time Complexity: O(N).\nExpected Auxiliary Space: O(N).\n\nConstraints:\n1 <= k, n <= 20\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "3",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: n = 3 k = 2",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "gfg-practice-sets"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-gfg-practice-sets.q0051",
+      "problem": "**GFG Practice Sets · Print Pattern**\n\nPrint a sequence of numbers starting with N where A[0] = N, without using loop, in which  A[i+1] = A[i] - 5,  until A[i] > 0. After that A[i+1] = A[i] + 5  repeat it until A[i] = N.\n\nExample 1:\n\nInput: N = 16\nOutput: 16 11 6 1 -4 1 6 11 16\nExplaination: The value decreses until it \nis greater than 0. After that it increases \nand stops when it becomes 16 again.\nExample 2:\n\nInput: N = 10\nOutput: 10 5 0 5 10\nExplaination: It follows the same logic as \nper the above example.\nYour Task:\nYou do not need to read input or print anything. Your task is to complete the function pattern() which takes N as input parameters and returns a list containing the pattern.\n\nExpected Time Complexity: O(N)\nExpected Auxiliary Space: O(N)\n\nConstraints:\n1 ≤ N ≤ 10^4\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "16 11 6 1 -4 1 6 11 16",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: N = 16",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "gfg-practice-sets"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-gfg-practice-sets.q0052",
+      "problem": "**GFG Practice Sets · Remove Recursive Duplicates**\n\nGiven a string s, remove all its adjacent duplicate characters recursively. \n\nExample 1:\n\nInput:\nS = \"geeksforgeek\"\nOutput: \"gksforgk\"\nExplanation: \ng(ee)ksforg(ee)k -> gksforgkâ€‹\n\nExample 2:\n\nInput: \nS = \"acaaabbbacdddd\"\nOutput: \"acac\"\nExplanation: \nac(aaa)(bbb)ac(dddd) -> acac\n\nYour Task:\nYou don't need to read input or print anything. Your task is to complete the function remove() which takes the string S as input parameter and returns the resultant string.\nNote: For some test cases, the resultant string would be an empty string. For that case, the function should return the empty string only.\n\n\nExpected Time Complexity: O(|S|)\nExpected Auxiliary Space: O(|S|)\n\n\nConstraints:\n1<=|S|<=10^5\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "\"gksforgk\"",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: S = \"geeksforgeek\"",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "gfg-practice-sets"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-gfg-practice-sets.q0053",
+      "problem": "**GFG Practice Sets · Tower of Hanoi**\n\nThe tower of Hanoi is a famous puzzle where we have three rods and N disks. The objective of the puzzle is to move the entire stack to another rod. You are given the number of discs N. Initially, these discs are in the rod 1. You need to print all the steps of discs movement so that all the discs reach the 3rd rod. Also, you need to find the total moves.\nNote: The discs are arranged such that the top disc is numbered 1 and the bottom-most disc is numbered N. Also, all the discs have different sizes and a bigger disc cannot be put on the top of a smaller disc. Refer the provided link to get a better clarity about the puzzle.\n\nExample 1:\n\nInput:\nN = 2\nOutput:\nmove disk 1 from rod 1 to rod 2\nmove disk 2 from rod 1 to rod 3\nmove disk 1 from rod 2 to rod 3\n3\nExplanation: For N=2 , steps will be\nas follows in the example and total\n3 steps will be taken.\nExample 2:\n\nInput:\nN = 3\nOutput:\nmove disk 1 from rod 1 to rod 3\nmove disk 2 from rod 1 to rod 2\nmove disk 1 from rod 3 to rod 2\nmove disk 3 from rod 1 to rod 3\nmove disk 1 from rod 2 to rod 1\nmove disk 2 from rod 2 to rod 3\nmove disk 1 from rod 1 to rod 3\n7\nExplanation: For N=3 , steps will be\nas follows in the example and total\n7 steps will be taken.\nYour Task:\nYou don't need to read input or print anything. You only need to complete the function toh() that takes following parameters: N (number of discs), from (The rod number from which we move the disc), to (The rod number to which we move the disc), aux (The rod that is used as an auxiliary rod) and prints the required moves inside function body (See the example for the format of the output) as well as return the count of total moves made. The total number of moves are printed by the driver code.\nPlease take care of the case of the letters.\n\nExpected Time Complexity: O(2^N).\nExpected Auxiliary Space: O(N).\n\nConstraints:\n1 <= N <= 16\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "move disk 1 from rod 1 to rod 2",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: N = 2",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "gfg-practice-sets"
+      ]
+    }
+  ]
+}

@@ -18,9 +18,14 @@ function figmaAssetResolver() {
 
 export default defineConfig({
   server: {
-    host: true,
+    // 127.0.0.1 only — host:true (0.0.0.0) hangs on some Windows setups (ERR_CONNECTION_RESET)
+    host: '127.0.0.1',
     port: 5173,
-    allowedHosts: true,
+    strictPort: true,
+    // Pre-transform entry files at startup (helps dev mode on slow Windows cold starts)
+    warmup: {
+      clientFiles: ['./index.html', './src/main.tsx', './src/app/App.tsx'],
+    },
     proxy: {
       '/api': {
         target: 'http://127.0.0.1:8000',
@@ -29,7 +34,7 @@ export default defineConfig({
     },
   },
   preview: {
-    host: true,
+    host: '127.0.0.1',
     port: 5173,
   },
   plugins: [

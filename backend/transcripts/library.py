@@ -12,7 +12,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from backend.models.study import LectureNote
-from backend.paths import NOTES_DIR
+from backend.paths import NOTES_DIR, NOTES_RULES_DIRNAME
 from backend.transcripts.notes_generator import resolve_notes_path
 from backend.transcripts.path_utils import (
     build_relative_path,
@@ -23,22 +23,62 @@ from backend.transcripts.path_utils import (
 NoteKind = Literal["lecture", "textbook", "quiz", "exercise", "note"]
 VALID_KINDS = frozenset({"lecture", "textbook", "quiz", "exercise", "note"})
 
+# library/tree was timing out under poll storms — throttle disk sync + cache tree briefly.
+_SYNC_MIN_INTERVAL_S = 60.0
+_TREE_TTL_S = 15.0
+_last_sync_mono: dict[int, float] = {}
+_tree_cache: dict[int, tuple[float, dict[str, Any]]] = {}
+
+
+def invalidate_library_tree_cache(user_id: int | None = None) -> None:
+    if user_id is None:
+        _tree_cache.clear()
+        return
+    _tree_cache.pop(int(user_id), None)
+
 
 def note_storage_path(row: LectureNote) -> str:
     return (row.relative_path or row.filename or "").replace("\\", "/")
 
 
+def is_indexable_library_note(relative_path: str) -> bool:
+    """Lecture library UI/search — skip meta/rules folder under data/notes/rules/."""
+    rel = relative_path.replace("\\", "/").lstrip("/")
+    if not rel.lower().endswith(".md"):
+        return False
+    if rel.startswith(f"{NOTES_RULES_DIRNAME}/"):
+        return False
+    return True
+
+
 def list_disk_folders() -> list[str]:
+    folders, _mds = _scan_notes_disk()
+    return sorted(folders)
+
+
+def _scan_notes_disk() -> tuple[set[str], list[tuple[str, float]]]:
+    """One filesystem walk: folder paths + indexable markdown (rel, mtime)."""
     NOTES_DIR.mkdir(parents=True, exist_ok=True)
     folders: set[str] = set()
+    mds: list[tuple[str, float]] = []
     for p in NOTES_DIR.rglob("*"):
-        if p.is_dir() and p != NOTES_DIR:
-            rel = p.relative_to(NOTES_DIR).as_posix()
-            folders.add(rel)
-            parts = rel.split("/")
-            for i in range(1, len(parts)):
-                folders.add("/".join(parts[:i]))
-    return sorted(folders)
+        try:
+            if p.is_dir() and p != NOTES_DIR:
+                rel = p.relative_to(NOTES_DIR).as_posix()
+                if rel.split("/")[0] == NOTES_RULES_DIRNAME:
+                    continue
+                folders.add(rel)
+                parts = rel.split("/")
+                for i in range(1, len(parts)):
+                    folders.add("/".join(parts[:i]))
+            elif p.is_file() and p.suffix.lower() == ".md":
+                rel = p.relative_to(NOTES_DIR).as_posix()
+                if not is_indexable_library_note(rel):
+                    continue
+                mds.append((rel, p.stat().st_mtime))
+        except OSError:
+            continue
+    return folders, mds
 
 
 def _folder_from_relative(rel: str) -> str:
@@ -55,9 +95,8 @@ def _title_from_relative(rel: str) -> str:
 
 def merge_disk_files_into_tree(files_by_folder: dict[str, list[dict[str, Any]]], indexed: set[str]) -> None:
     """Show markdown on disk even when not indexed for the current user."""
-    NOTES_DIR.mkdir(parents=True, exist_ok=True)
-    for md in NOTES_DIR.rglob("*.md"):
-        rel = md.relative_to(NOTES_DIR).as_posix()
+    _folders, mds = _scan_notes_disk()
+    for rel, mtime in mds:
         if rel in indexed:
             continue
         folder = _folder_from_relative(rel)
@@ -68,14 +107,14 @@ def merge_disk_files_into_tree(files_by_folder: dict[str, list[dict[str, Any]]],
                 "kind": "lecture",
                 "topic": None,
                 "source": "disk",
-                "created_at": int(md.stat().st_mtime),
+                "created_at": int(mtime),
                 "read_scroll_top": 0,
                 "bookmark_scroll_top": None,
             }
         )
 
 
-def sync_disk_notes_for_user(db: Session, user_id: int) -> int:
+def sync_disk_notes_for_user(db: Session, user_id: int, *, force: bool = False) -> int:
     """Index unowned on-disk markdown into the current user's library."""
     from backend.transcripts.note_topics import remap_legacy_note_path
 
@@ -103,23 +142,23 @@ def sync_disk_notes_for_user(db: Session, user_id: int) -> int:
         row.folder_path = _folder_from_relative(new)
     db.commit()
 
+    now = time.monotonic()
+    last = _last_sync_mono.get(int(user_id), 0.0)
+    if not force and (now - last) < _SYNC_MIN_INTERVAL_S:
+        return 0
+
     indexed_global = {
         (r.relative_path or r.filename or "").replace("\\", "/")
         for r in db.query(LectureNote).all()
     }
     added = 0
-    NOTES_DIR.mkdir(parents=True, exist_ok=True)
-    for md in sorted(NOTES_DIR.rglob("*.md"), key=lambda p: p.stat().st_mtime, reverse=True):
-        rel = md.relative_to(NOTES_DIR).as_posix()
+    _folders, mds = _scan_notes_disk()
+    for rel, mtime in sorted(mds, key=lambda t: t[1], reverse=True):
         if rel in indexed_global:
             continue
-        try:
-            content = md.read_text(encoding="utf-8")
-        except OSError:
-            content = ""
         folder = _folder_from_relative(rel)
         title = _title_from_relative(rel)
-        section_count = content.count("\n## ") + (1 if content.startswith("## ") else 0)
+        # Avoid reading full file bodies on every sync — section_count is cheap later.
         row = LectureNote(
             user_id=user_id,
             filename=rel,
@@ -129,30 +168,39 @@ def sync_disk_notes_for_user(db: Session, user_id: int) -> int:
             title=title,
             topic=None,
             source="disk",
-            section_count=max(1, section_count),
-            created_at=int(md.stat().st_mtime),
+            section_count=1,
+            created_at=int(mtime),
         )
         db.add(row)
         indexed_global.add(rel)
         added += 1
     if added:
         db.commit()
+    _last_sync_mono[int(user_id)] = time.monotonic()
     return added
 
 
 def library_tree_for_user(db: Session, user_id: int) -> dict[str, Any]:
     """Sync disk notes then return the tree; never fail the library UI on remap collisions."""
+    uid = int(user_id)
+    now = time.monotonic()
+    hit = _tree_cache.get(uid)
+    if hit is not None and (now - hit[0]) < _TREE_TTL_S:
+        return hit[1]
     try:
         sync_disk_notes_for_user(db, user_id)
     except IntegrityError:
         db.rollback()
-    return build_library_tree(db, user_id)
+    tree = build_library_tree(db, user_id)
+    _tree_cache[uid] = (time.monotonic(), tree)
+    return tree
 
 
 def build_library_tree(db: Session, user_id: int) -> dict[str, Any]:
     rows = db.query(LectureNote).filter(LectureNote.user_id == user_id).all()
+    disk_folders, disk_mds = _scan_notes_disk()
     db_folders = {normalize_folder_path(r.folder_path or "") for r in rows}
-    db_folders.update(list_disk_folders())
+    db_folders.update(disk_folders)
 
     files_by_folder: dict[str, list[dict[str, Any]]] = {}
     indexed: set[str] = set()
@@ -173,9 +221,24 @@ def build_library_tree(db: Session, user_id: int) -> dict[str, Any]:
             }
         )
 
-    merge_disk_files_into_tree(files_by_folder, indexed)
+    for rel, mtime in disk_mds:
+        if rel in indexed:
+            continue
+        folder = _folder_from_relative(rel)
+        files_by_folder.setdefault(folder, []).append(
+            {
+                "relative_path": rel,
+                "title": _title_from_relative(rel),
+                "kind": "lecture",
+                "topic": None,
+                "source": "disk",
+                "created_at": int(mtime),
+                "read_scroll_top": 0,
+                "bookmark_scroll_top": None,
+            }
+        )
 
-    for folder in list_disk_folders():
+    for folder in disk_folders:
         db_folders.add(folder)
     for folder in files_by_folder:
         if folder:
@@ -257,6 +320,7 @@ def create_note_file(
     db.add(row)
     db.commit()
     db.refresh(row)
+    invalidate_library_tree_cache(user_id)
     return row
 
 
@@ -327,6 +391,7 @@ def delete_note(db: Session, *, user_id: int, relative_path: str) -> None:
     if row:
         db.delete(row)
         db.commit()
+    invalidate_library_tree_cache(user_id)
 
 
 def delete_folder(db: Session, *, user_id: int, folder_path: str) -> int:
@@ -346,6 +411,7 @@ def delete_folder(db: Session, *, user_id: int, folder_path: str) -> int:
             removed += 1
     shutil.rmtree(target)
     db.commit()
+    invalidate_library_tree_cache(user_id)
     return removed
 
 
@@ -438,6 +504,7 @@ def move_note(
         row.title = new_title.strip()
     db.commit()
     db.refresh(row)
+    invalidate_library_tree_cache(user_id)
     return row
 
 
@@ -470,6 +537,47 @@ def update_note_meta(
     db.commit()
     db.refresh(row)
     return row
+
+
+def search_library_notes(
+    db: Session,
+    user_id: int,
+    query: str,
+    *,
+    limit: int = 60,
+    kinds: set[str] | None = None,
+) -> list[dict[str, Any]]:
+    """Topic + function + text search across all library markdown."""
+    from backend.transcripts.note_search import search_all_notes
+    from backend.transcripts.library import note_storage_path
+
+    q = query.strip()
+    if not q:
+        return []
+
+    title_by_basename: dict[str, str] = {}
+    for row in db.query(LectureNote).filter(LectureNote.user_id == user_id).all():
+        rel = note_storage_path(row)
+        title_by_basename[Path(rel).name.lower()] = row.title or _title_from_relative(rel)
+
+    note_files: list[tuple[str, str, str]] = []
+    seen: set[str] = set()
+
+    NOTES_DIR.mkdir(parents=True, exist_ok=True)
+    for md in sorted(NOTES_DIR.rglob("*.md")):
+        name = md.name.lower()
+        if not name.endswith(".md") or name.startswith(".") or ".bak" in name:
+            continue
+        rel = md.relative_to(NOTES_DIR).as_posix()
+        if not is_indexable_library_note(rel):
+            continue
+        if rel in seen:
+            continue
+        seen.add(rel)
+        title = title_by_basename.get(md.name.lower()) or _title_from_relative(rel)
+        note_files.append((rel, title, "lecture"))
+
+    return search_all_notes(note_files, q, limit=limit, kinds=kinds)
 
 
 def save_note_content(

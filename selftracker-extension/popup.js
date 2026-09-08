@@ -44,10 +44,19 @@ function renderGate(gateCache, redirectsEnabled) {
   const browserGate = gateCache.browser || {};
   const modeRaw = String(browserGate.mode || "").toLowerCase();
   const mode = (browserGate.mode_label || modeRaw.toUpperCase() || "").trim();
-  const enforce = Boolean(gateCache.enforce || browserGate.enforce || gateCache.degraded);
+  const incubating = Boolean(
+    (gateCache.incubation && gateCache.incubation.active) || browserGate.incubation_active
+  );
+  const enforce = Boolean(
+    gateCache.enforce || browserGate.enforce || gateCache.degraded || incubating
+  );
   const ytBlocked =
-    Boolean(browserGate.block_watch_sites) || ["bible", "planning", "study"].includes(modeRaw);
-  if (ytBlocked && redirectsEnabled !== false) {
+    incubating ||
+    Boolean(browserGate.block_watch_sites) ||
+    ["bible", "planning", "study"].includes(modeRaw);
+  if (incubating && redirectsEnabled !== false) {
+    setBanner(true, "INCUBATION · ENTERTAINMENT BLOCKED");
+  } else if (ytBlocked && redirectsEnabled !== false) {
     setBanner(true, "THIS TAB · YT BLOCKED");
   } else if (modeRaw === "free") {
     setBanner(false);
@@ -66,7 +75,7 @@ function renderGate(gateCache, redirectsEnabled) {
     chip.className = "gate-chip open";
     chip.textContent = mode ? mode + " · gate soft" : "Hard-block off";
     meta.textContent =
-      "Arm hard-block in Productivity Policy for game kill; modes still filter sites when enforce is on.";
+      "App kills: CALT Desktop Enforcer. Site SoftLand: CALT Gate. Arm hard-block in Desktop Rules.";
     return;
   }
   if (mode) {
@@ -75,16 +84,25 @@ function renderGate(gateCache, redirectsEnabled) {
       : gateCache.locked || browserGate.block_other
         ? "gate-chip locked"
         : "gate-chip open";
-    chip.textContent = ytBlocked
-      ? "THIS TAB · " + mode + " · YT"
-      : mode + (enforce ? " · tab lock" : "");
+    chip.textContent = incubating
+      ? "INCUBATION"
+      : ytBlocked
+        ? "THIS TAB · " + mode + " · YT"
+        : mode + (enforce ? " · tab lock" : "");
     const bits = [];
-    if (ytBlocked) bits.push("blocked sites → this tab only");
-    if (browserGate.block_other) bits.push("allowlist only");
-    else if (browserGate.block_porn) bits.push("distraction filter");
-    if (gateCache.locked) bits.push("games locked");
-    const morning = (gateCache.morning && gateCache.morning.next) || browserGate.morning_next;
-    if (morning && morning !== "open") bits.push("next: " + morning);
+    if (incubating) {
+      const rem = (gateCache.incubation && gateCache.incubation.remaining_sec) || 0;
+      bits.push(rem > 0 ? "break " + rem + "s left" : "incubation");
+      bits.push("open CALT Desktop · Focus");
+    } else {
+      if (ytBlocked) bits.push("blocked sites → this tab only");
+      if (browserGate.block_other) bits.push("allowlist only");
+      else if (browserGate.block_porn) bits.push("distraction filter");
+      if (gateCache.locked) bits.push("games locked");
+      const morning = (gateCache.morning && gateCache.morning.next) || browserGate.morning_next;
+      if (morning && morning !== "open") bits.push("next: " + morning);
+      if (gateCache.desktop && gateCache.desktop.enforcer_owns_kills) bits.push("enforcer on");
+    }
     meta.textContent = bits.join(" · ") || "Mode from distraction-gate";
     return;
   }

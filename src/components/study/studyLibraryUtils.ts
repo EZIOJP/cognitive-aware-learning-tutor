@@ -1,6 +1,13 @@
 import type { DragEvent } from "react";
 import type { LibraryFile, LibraryFolderNode, LibraryTree } from "./StudyLibraryTree";
 
+export type LibraryExplorerSelection =
+  | { kind: "folder"; path: string }
+  | { kind: "file"; path: string }
+  | null;
+
+export type LibrarySortMode = "name-asc" | "name-desc";
+
 export function folderOf(relativePath: string): string {
   const parts = relativePath.split("/");
   return parts.length <= 1 ? "" : parts.slice(0, -1).join("/");
@@ -21,7 +28,7 @@ export function findNodeAt(tree: LibraryTree, folderPath: string): LibraryFolder
 }
 
 export function breadcrumbParts(folderPath: string): { label: string; path: string }[] {
-  const crumbs = [{ label: "Study notes", path: "" }];
+  const crumbs = [{ label: "All notes", path: "" }];
   if (!folderPath) return crumbs;
   const parts = folderPath.split("/");
   let acc = "";
@@ -47,6 +54,32 @@ export function collectAllFiles(node: LibraryFolderNode): LibraryFile[] {
 export function findLibraryFile(tree: LibraryTree | null, path: string): LibraryFile | undefined {
   if (!tree) return undefined;
   return collectAllFiles(tree.root).find((f) => f.relative_path === path);
+}
+
+export type FolderNoteNav = {
+  index: number;
+  total: number;
+  prevPath: string | null;
+  nextPath: string | null;
+};
+
+/** Sorted .md siblings in the same folder (non-recursive) for prev/next reading. */
+export function folderNoteNav(tree: LibraryTree | null, currentPath: string): FolderNoteNav | null {
+  if (!tree || !currentPath) return null;
+  const folder = folderOf(currentPath);
+  const node = findNodeAt(tree, folder);
+  const paths = node.files
+    .map((f) => f.relative_path)
+    .filter((p) => /\.md$/i.test(p))
+    .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
+  const index = paths.indexOf(currentPath);
+  if (index < 0 || paths.length <= 1) return null;
+  return {
+    index,
+    total: paths.length,
+    prevPath: index > 0 ? paths[index - 1]! : null,
+    nextPath: index < paths.length - 1 ? paths[index + 1]! : null,
+  };
 }
 
 export const DRAG_PATH_KEY = "study-library-path";

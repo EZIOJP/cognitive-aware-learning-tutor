@@ -78,7 +78,7 @@ TOOL_SPECS: list[dict[str, str]] = [
     {"name": "pc_lock", "desc": "Lock the Windows workstation (needs confirm)"},
     {"name": "pc_shutdown", "desc": "Schedule Windows shutdown in 30s (needs confirm)"},
     {"name": "pc_sleep", "desc": "Put PC to sleep (needs confirm)"},
-    {"name": "hard_block_arm", "desc": "Enable game hard-block policy (needs confirm)"},
+    {"name": "hard_block_arm", "desc": "Enable game hard-block (Desktop Focus / enforcer; needs confirm)"},
     {"name": "hard_block_disarm", "desc": "Disable game hard-block policy (needs confirm)"},
 ]
 
@@ -535,15 +535,34 @@ def _pc_sleep() -> str:
 
 
 def _set_hard_block(user_id: int, enabled: bool) -> str:
-    from backend.behavior.productivity_policy import update_policy
+    """Arm SoftLand game-bank policy AND native enforcer_policy.json kill list."""
+    from backend.behavior.enforcer_files import EnforcerLockError, read_policy_file, write_policy_file
+    from backend.behavior.productivity_policy import load_policy_dict, update_policy
     from backend.db.session import SessionLocal
 
     db = SessionLocal()
     try:
         update_policy(db, user_id, {"hard_block_enabled": enabled})
+        pol = load_policy_dict(db, user_id)
+        exes = list(pol.get("hard_block_exes") or [])
+        existing = read_policy_file() or {}
+        if not exes:
+            exes = list(existing.get("exes") or [])
+        try:
+            write_policy_file(
+                hard_block_armed=bool(enabled),
+                gate_locked=bool(enabled),
+                incubation_active=False,
+                exes=exes,
+                note="voice_hard_block",
+                provided_unlock="",
+                preserve_lock_fields=bool(enabled),
+            )
+        except EnforcerLockError as exc:
+            return f"SoftLand policy updated, but enforcer disarm blocked: {exc}"
     finally:
         db.close()
-    return f"Hard-block {'armed' if enabled else 'disarmed'}."
+    return f"Hard-block {'armed' if enabled else 'disarmed'} (Focus policy + SoftLand)."
 
 
 def execute_tool(user_id: int, name: str, args: dict[str, Any] | None = None) -> str:
@@ -602,7 +621,7 @@ def confirm_prompt(name: str) -> str:
         "pc_lock": "Lock the workstation now?",
         "pc_shutdown": "Shut down the PC in 30 seconds?",
         "pc_sleep": "Put the PC to sleep now?",
-        "hard_block_arm": "Arm game hard-block?",
-        "hard_block_disarm": "Disarm game hard-block?",
+        "hard_block_arm": "Arm OS hard-block (Focus policy + SoftLand)?",
+        "hard_block_disarm": "Disarm OS hard-block (Focus policy + SoftLand)?",
     }
     return prompts.get(name, f"Confirm {name}?")

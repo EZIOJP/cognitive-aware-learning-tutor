@@ -40,6 +40,16 @@ Or EAS: `npm run build:apk` (needs Expo account).
 Copy debug APK wherever you like; the **timetable** download card still uses
 `data/downloads/calt-android.apk` from the external project.
 
+## Health Connect (optional)
+
+Phone Health Connect can push sleep/steps/HR/workouts into the **same**
+`POST /api/wearables/zepp` sink (source `health_connect`). On the Tracker screen tap
+**Sync Health Connect**. Native reads need a prebuild APK with
+`react-native-health-connect`; Expo Go will explain if the module is missing.
+
+Enable Zepp (or Fit) → Health Connect sharing on the phone first. Design:
+`docs/superpowers/specs/2026-09-06-health-connect-wearables-design.md`.
+
 ## Amazfit alerts
 
 1. Phone shows a **local notification** when day-status mode/morning fingerprint changes

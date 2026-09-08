@@ -187,25 +187,25 @@ TASK_COMPLETE: tuple[str, ...] = (
 )
 
 PRODUCTIVITY_STATS_BRIEF: tuple[str, ...] = (
-    "Yesterday: {focus_min}m focus, {distracted_min}m drift, {blocks} sessions logged.",
-    "Quick stats — focus {focus_min} minutes; distracted about {distracted_min}; {blocks} blocks of activity.",
-    "Last day: {focus_min}m on-task, {distracted_min}m elsewhere, {blocks} sessions.",
-    "Rollup: {focus_min} focus minutes, {distracted_min} low-score, {blocks} slices.",
-    "Numbers — focus {focus_min}, drift {distracted_min}, activity chunks {blocks}.",
-    "Productivity sketch: {focus_min}m focused vs {distracted_min}m not; {blocks} sessions.",
-    "From the log: {focus_min} minutes productive, {distracted_min} less so, {blocks} entries.",
-    "Brief scoreboard — {focus_min}m focus / {distracted_min}m drift / {blocks} sessions.",
+    "Yesterday: {focus_hm} focus, {distracted_hm} drift, {blocks} sessions logged.",
+    "Quick stats — focus {focus_hm}; distracted about {distracted_hm}; {blocks} blocks of activity.",
+    "Last day: {focus_hm} on-task, {distracted_hm} elsewhere, {blocks} sessions.",
+    "Rollup: {focus_hm} focused, {distracted_hm} low-score, {blocks} slices.",
+    "Numbers — focus {focus_hm}, drift {distracted_hm}, activity chunks {blocks}.",
+    "Productivity sketch: {focus_hm} focused vs {distracted_hm} not; {blocks} sessions.",
+    "From the log: {focus_hm} productive, {distracted_hm} less so, {blocks} entries.",
+    "Brief scoreboard — {focus_hm} focus / {distracted_hm} drift / {blocks} sessions.",
 )
 
 PLAN_FROM_YESTERDAY: tuple[str, ...] = (
-    "Yesterday left {focus_min}m of real focus. Plan today around that energy.",
-    "With {focus_min} focused minutes yesterday, keep today's blocks realistic.",
-    "Prior day: {focus_min}m focus. Maybe fewer ambitious blocks today.",
-    "Build today's plan from yesterday's {focus_min} focused minutes — not wishful thinking.",
-    "You logged {focus_min}m on-task yesterday. Carry the wins forward.",
-    "Yesterday's focus was {focus_min} minutes. Protect a similar window today.",
-    "From last productivity: {focus_min}m focus, {distracted_min}m drift. Adjust the plan.",
-    "Plan hint — yesterday focus {focus_min}m across {blocks} sessions. Keep it honest.",
+    "Yesterday left {focus_hm} of real focus. Plan today around that energy.",
+    "With {focus_hm} focused yesterday, keep today's blocks realistic.",
+    "Prior day: {focus_hm} focus. Maybe fewer ambitious blocks today.",
+    "Build today's plan from yesterday's {focus_hm} of focus — not wishful thinking.",
+    "You logged {focus_hm} on-task yesterday. Carry the wins forward.",
+    "Yesterday's focus was {focus_hm}. Protect a similar window today.",
+    "From last productivity: {focus_hm} focus, {distracted_hm} drift. Adjust the plan.",
+    "Plan hint — yesterday {focus_hm} focus across {blocks} sessions. Keep it honest.",
 )
 
 IDLE_CHECKIN: tuple[str, ...] = (
@@ -379,6 +379,8 @@ CATEGORY_ALIASES: dict[str, str] = {
 _DEFAULT_FMT: dict[str, str] = {
     "focus_min": "0",
     "distracted_min": "0",
+    "focus_hm": "0 mins",
+    "distracted_hm": "0 mins",
     "blocks": "0",
 }
 
@@ -459,7 +461,10 @@ def lines_for(category: str) -> list[str]:
 
 
 def _safe_format(template: str, fmt: dict[str, Any]) -> str:
-    merged = {**_DEFAULT_FMT, **{k: str(v) for k, v in fmt.items()}}
+    from backend.behavior.time_fmt import enrich_duration_fmt
+
+    enriched = enrich_duration_fmt(fmt)
+    merged = {**_DEFAULT_FMT, **{k: str(v) for k, v in enriched.items()}}
 
     class _Map(dict):
         def __missing__(self, key: str) -> str:  # type: ignore[override]

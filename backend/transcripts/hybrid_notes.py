@@ -390,6 +390,9 @@ def _generate_hybrid_grounded_notes_impl(
         llm=llm,
         on_progress=progress,
     )
+    from backend.transcripts.note_topic_structure import ensure_quiz_topic_structure
+
+    body = ensure_quiz_topic_structure(body, note_path=f"{folder_path}/{note_title}")
     progress(f"Done — {count_mermaid_blocks(body)} mermaid, {count_code_blocks(body)} code blocks")
 
     notes_path = _write_note_file(body, title=note_title, folder_path=folder_path)

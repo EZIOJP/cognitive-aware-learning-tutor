@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import time
 from pathlib import Path
 
 from alembic.config import Config
@@ -14,6 +15,9 @@ from backend.db.base import engine
 
 log = logging.getLogger(__name__)
 
+_rev_cache: tuple[float, str | None, str | None] = (0.0, None, None)
+_REV_CACHE_S = 30.0
+
 
 def _alembic_config() -> Config:
     root = Path(__file__).resolve().parents[2]
@@ -22,14 +26,24 @@ def _alembic_config() -> Config:
     return cfg
 
 
-def get_revision_state() -> tuple[str | None, str | None]:
+def get_revision_state(*, use_cache: bool = True) -> tuple[str | None, str | None]:
     """Return (current_revision, head_revision)."""
+    global _rev_cache
+    now = time.monotonic()
+    if (
+        use_cache
+        and _rev_cache[1] is not None
+        and (now - _rev_cache[0]) < _REV_CACHE_S
+    ):
+        return _rev_cache[1], _rev_cache[2]
+
     cfg = _alembic_config()
     script = ScriptDirectory.from_config(cfg)
     head = script.get_current_head()
     with engine.connect() as conn:
         ctx = MigrationContext.configure(conn)
         current = ctx.get_current_revision()
+    _rev_cache = (now, current, head)
     return current, head
 
 
@@ -49,7 +63,7 @@ def ensure_at_head(*, strict: bool | None = None) -> None:
     if strict is None:
         strict = not settings.dev_mode
 
-    current, head = get_revision_state()
+    current, head = get_revision_state(use_cache=False)
     if current == head:
         return
 
@@ -63,7 +77,7 @@ def ensure_at_head(*, strict: bool | None = None) -> None:
                 head,
             )
             command.upgrade(_alembic_config(), "head")
-            current, head = get_revision_state()
+            current, head = get_revision_state(use_cache=False)
             if current == head:
                 log.info("Database schema upgraded to %r.", head)
                 return

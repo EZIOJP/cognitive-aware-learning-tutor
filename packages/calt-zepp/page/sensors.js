@@ -129,7 +129,9 @@ function collectSleep(full) {
   return {
     score: info.score,
     total_min: totalMin > 0 ? totalMin : null,
-    deep_min: info.deepTime,
+    deep_min: info.deepTime != null ? asInt(info.deepTime, null) : null,
+    light_min: info.lightTime != null ? asInt(info.lightTime, null) : null,
+    rem_min: info.remTime != null ? asInt(info.remTime, null) : null,
     start_min: info.startTime,
     end_min: info.endTime,
     stages,
@@ -147,9 +149,15 @@ function collectHeart(full) {
   }
   if (full) {
     const todayRaw = safe(() => (hr.getToday && hr.getToday()) || [], [])
-    out.today_min = downsample(todayRaw, 144)
+    out.today_min = downsample(todayRaw, 180)
     out.today_count = Array.isArray(todayRaw) ? todayRaw.length : 0
     out.daily_summary = safe(() => (hr.getDailySummary && hr.getDailySummary()) || null, null)
+    // Max / average from today's minute series when firmware exposes it
+    const nums = (todayRaw || []).filter((n) => typeof n === 'number' && n > 0)
+    if (nums.length) {
+      out.max = Math.max.apply(null, nums)
+      out.avg = Math.round(nums.reduce((a, b) => a + b, 0) / nums.length)
+    }
   }
   return out
 }
@@ -175,8 +183,71 @@ function collectSpo2(full) {
     out.last_day_avg = nums.length
       ? Math.round(nums.reduce((a, b) => a + b, 0) / nums.length)
       : null
+    out.last_day = downsample(nums, 24)
+    const few = safe(() => (bo.getLastFewHour && bo.getLastFewHour(6)) || [], []) || []
+    if (few.length) {
+      out.recent = few.slice(0, 48).map((s) => ({
+        spo2: s && s.spo2 != null ? s.spo2 : null,
+        time: s && s.time != null ? s.time : null,
+      }))
+    }
   }
   return out
+}
+
+/** Recent workouts / HR zones — absent when firmware lacks Workout API. */
+function collectWorkouts(full) {
+  if (!full) return { workouts: null, hr_zones: null, capabilities: { workouts: false } }
+  let workouts = null
+  let hr_zones = null
+  let ok = false
+  try {
+    let WorkoutCtor = null
+    try {
+      const mod = require('@zos/sensor')
+      WorkoutCtor = mod && mod.Workout ? mod.Workout : null
+    } catch (_) {
+      WorkoutCtor = null
+    }
+    if (!WorkoutCtor) {
+      return { workouts: null, hr_zones: null, capabilities: { workouts: false } }
+    }
+    const w = new WorkoutCtor()
+    const hist = safe(() => (w.getHistory && w.getHistory()) || [], []) || []
+    if (Array.isArray(hist) && hist.length) {
+      workouts = hist.slice(0, 24).map((item) => {
+        const it = item || {}
+        return {
+          type: it.type != null ? it.type : it.name != null ? it.name : it.sport != null ? it.sport : null,
+          start: it.start != null ? it.start : it.startTime != null ? it.startTime : null,
+          end: it.end != null ? it.end : it.endTime != null ? it.endTime : null,
+          duration_min:
+            it.duration_min != null
+              ? asInt(it.duration_min, null)
+              : it.duration != null
+                ? asInt(it.duration, null)
+                : it.minute != null
+                  ? asInt(it.minute, null)
+                  : null,
+          calories: it.calories != null ? asInt(it.calories, null) : null,
+          distance_m: it.distance != null ? asInt(it.distance, null) : null,
+        }
+      })
+      ok = workouts.length > 0
+    }
+    const zones = safe(() => (w.getUserHrZoneSettings && w.getUserHrZoneSettings()) || null, null)
+    if (zones && typeof zones === 'object') {
+      hr_zones = {
+        type: zones.type != null ? zones.type : null,
+        rest: zones.rest != null ? zones.rest : null,
+        range: Array.isArray(zones.range) ? zones.range.slice(0, 8) : null,
+      }
+    }
+  } catch (_) {
+    workouts = null
+    hr_zones = null
+  }
+  return { workouts, hr_zones, capabilities: { workouts: ok } }
 }
 
 /** Optional temperature — only if runtime exposes a sensor. Never invent values. */
@@ -287,13 +358,20 @@ export function buildHealthSnapshot(mode) {
   const stress = safe(() => collectStress(full), {})
   const spo2 = safe(() => collectSpo2(full), {})
   const tempPack = safe(collectTemperature, { temperature: null, capabilities: { temperature: false } })
+  const workoutPack = safe(() => collectWorkouts(full), {
+    workouts: null,
+    hr_zones: null,
+    capabilities: { workouts: false },
+  })
 
   const capabilities = {
     sleep: !!(sleep && (sleep.total_min != null || (sleep.naps && sleep.naps.length))),
     heart: !!(heart && (heart.last != null || heart.resting != null)),
+    heart_series: !!(heart && heart.today_min && heart.today_min.length),
     stress: stress && stress.value != null,
     spo2: spo2 && spo2.value != null && Number(spo2.value) > 0,
     temperature: !!(tempPack && tempPack.capabilities && tempPack.capabilities.temperature),
+    workouts: !!(workoutPack && workoutPack.capabilities && workoutPack.capabilities.workouts),
     steps: false,
     calorie: false,
     distance: false,
@@ -392,8 +470,13 @@ export function buildHealthSnapshot(mode) {
   } catch (_) {}
 
   const clock = watchClock()
+  const rich =
+    full &&
+    ((heart && heart.today_min && heart.today_min.length) ||
+      (workoutPack && workoutPack.workouts && workoutPack.workouts.length) ||
+      (sleep && sleep.stages && sleep.stages.length))
   const out = {
-    dump: full ? 'processed_v1' : 'lean_v1',
+    dump: full ? (rich ? 'processed_v2' : 'processed_v1') : 'lean_v1',
     captured_at: clock.captured_at,
     local_date: clock.local_date,
     tz_offset_min: clock.tz_offset_min,
@@ -413,6 +496,15 @@ export function buildHealthSnapshot(mode) {
   }
   if (tempPack && tempPack.temperature) {
     out.temperature = tempPack.temperature
+  }
+  if (workoutPack && workoutPack.workouts && workoutPack.workouts.length) {
+    out.workouts = workoutPack.workouts
+  }
+  if (workoutPack && workoutPack.hr_zones) {
+    out.hr_zones = workoutPack.hr_zones
+    if (out.heart && typeof out.heart === 'object') {
+      out.heart.hr_zones = workoutPack.hr_zones
+    }
   }
   if (full) {
     out.weather = safe(collectWeather, null)

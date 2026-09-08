@@ -444,6 +444,10 @@ def start_session(
         skill_id_s = str(skill_id).strip() if skill_id else None
         content_topic_id = str(config.get("topic_id") or "").strip() or None
         note_topic_id = str(config.get("note_topic_id") or "").strip() or None
+        if note_topic_id:
+            from backend.quiz import math_core as mc
+
+            note_topic_id = mc.canonical_tag(note_topic_id) or note_topic_id
         prefer_topic_ids = [
             str(t).strip()
             for t in (config.get("prefer_topic_ids") or [])
@@ -460,6 +464,41 @@ def start_session(
             or config.get("adaptive")
             or config.get("core_math_drill")
         )
+
+        # MT0 worksheet fluency drills (tables/squares/…) with coverage bias
+        from backend.quiz import math_core_drills as mcd
+
+        if note_topic_id and (
+            config.get("math_core_drill") or mcd.supports_worksheet_drills(note_topic_id)
+        ):
+            chunk = mcd.chunk_count()
+            items = mcd.generate_drill_items(
+                tag=note_topic_id,
+                count=min(int(count or chunk), chunk) if count else chunk,
+                user_id=int(user.id),
+            )
+            topic = note_topic_id
+            cov = mcd.coverage_stats(int(user.id), note_topic_id)
+            extra = {
+                "topic": topic,
+                "note_topic_id": note_topic_id,
+                "math_core_drill": True,
+                "math_core_chunk": True,
+                "coverage": cov,
+            }
+            if config.get("learning_tag"):
+                extra["learning_tag"] = str(config.get("learning_tag"))
+            payload = _build_session_payload(config, items=items, extra=extra)
+            session_id = create_global_session(db, user_id=user.id, domain="math", payload=payload)
+            q = _study_question_from_payload(items, 0, "", db, payload)
+            return {
+                "session_id": session_id,
+                "domain": "math",
+                "question": q,
+                "difficulty_level": None,
+                "coverage": cov,
+                "can_keep_going": bool(cov.get("can_keep_going")),
+            }
 
         # Hybrid bank:
         # 0) adaptive core aptitude → mathgenerator only, weighted by weak tags
@@ -502,20 +541,32 @@ def start_session(
         elif content_topic_id or note_topic_id or prefer_topic_ids:
             from backend.quiz import content_bank as cb
             from backend.quiz import math_generators as mg
+            from backend.quiz import topic_level as tl
+
+            difficulty_level = str(config.get("difficulty_level") or "").strip().lower() or None
+            allow_gen = config.get("allow_generators")
+            if allow_gen is None:
+                allow_gen = True if not difficulty_level else tl.allow_generators(difficulty_level)
+            if difficulty_level == "easy" and note_topic_id and not prefer_topic_ids:
+                prefer_topic_ids = tl.curriculum_prefer_ids(note_topic_id, level=difficulty_level)
 
             gathered: list[dict[str, Any]] = []
             # Generator topic_id alone
             if content_topic_id and content_topic_id.startswith("math.gen."):
-                gathered = mg.generate_quiz_items(
-                    db, topic_id=content_topic_id, count=count
-                )
+                if allow_gen:
+                    gathered = mg.generate_quiz_items(
+                        db, topic_id=content_topic_id, count=count
+                    )
             else:
                 if prefer_topic_ids:
                     for tid in prefer_topic_ids:
                         if tid.startswith("math.gen."):
-                            gathered.extend(
-                                mg.generate_quiz_items(db, topic_id=tid, count=max(2, count // 2))
-                            )
+                            if allow_gen:
+                                gathered.extend(
+                                    mg.generate_quiz_items(
+                                        db, topic_id=tid, count=max(2, count // 2)
+                                    )
+                                )
                         else:
                             gathered.extend(
                                 cb.build_quiz_items(kind="math", topic_id=tid, shuffle=True)
@@ -527,8 +578,20 @@ def start_session(
                         note_topic_id=note_topic_id,
                         shuffle=True,
                     )
-                # Fill shortfall from generators mapped to the same MT tag
-                if len(gathered) < count and note_topic_id:
+                if difficulty_level:
+                    filtered = tl.filter_items_for_level(gathered, difficulty_level)
+                    # Easy: curriculum prefer may already be easy; if empty, fall back
+                    # to all bank items at this level for the note tag.
+                    if not filtered and note_topic_id:
+                        filtered = tl.filter_items_for_level(
+                            cb.build_quiz_items(
+                                kind="math", note_topic_id=note_topic_id, shuffle=True
+                            ),
+                            difficulty_level,
+                        )
+                    gathered = filtered
+                # Fill shortfall from generators mapped to the same MT tag (easy only)
+                if len(gathered) < count and note_topic_id and allow_gen:
                     try:
                         extra_gen = mg.generate_quiz_items(
                             db,
@@ -539,18 +602,23 @@ def start_session(
                     except ValueError:
                         pass
             if not gathered:
-                # Last resort: generators for MT tag or any recipe
-                try:
-                    gathered = mg.generate_quiz_items(
-                        db,
-                        note_topic_id=note_topic_id,
-                        topic_id=content_topic_id,
-                        count=count,
-                    )
-                except ValueError as exc:
+                # Last resort: generators for MT tag (only when allowed) or any recipe
+                if allow_gen:
+                    try:
+                        gathered = mg.generate_quiz_items(
+                            db,
+                            note_topic_id=note_topic_id,
+                            topic_id=content_topic_id,
+                            count=count,
+                        )
+                    except ValueError as exc:
+                        raise ValueError(
+                            "No math questions for that topic in content bank or mathgenerator."
+                        ) from exc
+                else:
                     raise ValueError(
-                        "No math questions for that topic in content bank or mathgenerator."
-                    ) from exc
+                        f"No {difficulty_level or 'matching'} math questions for that topic yet."
+                    )
             items = gathered[: max(1, count)]
             topic = str(
                 items[0].get("topic_title")
@@ -559,6 +627,11 @@ def start_session(
                 or note_topic_id
                 or topic
             )
+            if difficulty_level:
+                # Persist gate on session for end-of-set unlock.
+                config = dict(config)
+                config["difficulty_level"] = difficulty_level
+                config["topic_level_tag"] = note_topic_id or content_topic_id
         elif skill_id_s:
             from backend.math.skills import generate_drill_items, get_node, node_status
 
@@ -602,10 +675,22 @@ def start_session(
             extra["topic_id"] = content_topic_id
         if note_topic_id:
             extra["note_topic_id"] = note_topic_id
+        if config.get("difficulty_level"):
+            extra["difficulty_level"] = str(config.get("difficulty_level"))
+            extra["topic_level_tag"] = str(
+                config.get("topic_level_tag") or note_topic_id or content_topic_id or ""
+            )
+            extra["level_gate_n"] = len(items)
+            extra["level_gate_ids"] = [str(it.get("id") or "") for it in items if it.get("id")]
         payload = _build_session_payload(config, items=items, extra=extra)
         session_id = create_global_session(db, user_id=user.id, domain="math", payload=payload)
         q = _study_question_from_payload(items, 0, "", db, payload)
-        return {"session_id": session_id, "domain": "math", "question": q}
+        return {
+            "session_id": session_id,
+            "domain": "math",
+            "question": q,
+            "difficulty_level": extra.get("difficulty_level"),
+        }
 
     if domain in ("study", "code", "mixed"):
         questions = [
@@ -1012,6 +1097,19 @@ def _submit_study(
             interaction_type="math_pass" if correct else "math_fail",
             value=1.0 if correct else 0.0,
         )
+        # Math Core drills: proficiency only on correct fact keys
+        if correct and sess["payload"].get("math_core_drill"):
+            fk = str(item.get("fact_key") or "").strip()
+            tag = str(
+                item.get("topic_id")
+                or item.get("topic")
+                or sess["payload"].get("note_topic_id")
+                or ""
+            ).strip()
+            if fk and tag:
+                from backend.quiz import math_core_drills as mcd
+
+                mcd.mark_practiced(int(user.id), tag, [fk])
     elif kind == "code" or "starter_code" in item:
         starter = str(item.get("starter_code") or "").strip()
         submitted = response.strip()
@@ -1211,7 +1309,44 @@ def _submit_study(
         if sess["index"] >= len(items)
         else _study_question_from_payload(items, sess["index"], note_path, db, sess["payload"])
     )
-    return {
+    level_advance = None
+    if next_q is None and domain == "math" and not sess["payload"].get("level_advance_done"):
+        tag = str(
+            sess["payload"].get("topic_level_tag")
+            or sess["payload"].get("note_topic_id")
+            or sess["payload"].get("learning_tag")
+            or ""
+        ).strip()
+        if tag and sess["payload"].get("difficulty_level"):
+            from backend.quiz import topic_level as tl
+
+            gate_ids = [str(x) for x in (sess["payload"].get("level_gate_ids") or []) if str(x)]
+            attempts = sess.get("attempts") or []
+            if gate_ids:
+                correct_n = 0
+                for gid in gate_ids:
+                    hit = False
+                    for a in attempts:
+                        iid = str(a.get("item_id") or "")
+                        if iid == gid or iid.startswith(f"{gid}-"):
+                            if a.get("correct"):
+                                hit = True
+                                break
+                    if hit:
+                        correct_n += 1
+                level_advance = tl.consider_advance(
+                    user.id, tag, correct=correct_n, total=len(gate_ids)
+                )
+            else:
+                correct_n = sum(1 for a in attempts if a.get("correct"))
+                level_advance = tl.consider_advance(
+                    user.id, tag, correct=correct_n, total=len(attempts)
+                )
+            sess["payload"]["level_advance_done"] = True
+            sess["payload"]["level_advance"] = level_advance
+            save_global_session(db, sess)
+
+    out: dict[str, Any] = {
         "correct": correct,
         "feedback": feedback,
         "mastery": mastery,
@@ -1219,6 +1354,76 @@ def _submit_study(
         "next_question": next_q,
         "added_to_review": eligible_for_review,
         "requeued": requeued,
+        "level_advance": level_advance,
+    }
+    if next_q is None and sess["payload"].get("math_core_drill"):
+        from backend.quiz import math_core_drills as mcd
+
+        tag = str(
+            sess["payload"].get("note_topic_id")
+            or sess["payload"].get("topic")
+            or sess["payload"].get("learning_tag")
+            or ""
+        ).strip()
+        cov = mcd.coverage_stats(int(user.id), tag) if tag else {}
+        out["can_keep_going"] = bool(tag and mcd.can_keep_going(int(user.id), tag))
+        out["coverage"] = cov
+        out["chunk_complete"] = True
+        sess["payload"]["coverage"] = cov
+        save_global_session(db, sess)
+    return out
+
+
+def keep_going_math_core(db: Session, *, user: User, session_id: str) -> dict[str, Any]:
+    """Append another Math Core drill chunk and return the next question."""
+    from backend.quiz import math_core_drills as mcd
+
+    sess = load_global_session(db, session_id, user.id)
+    if not sess:
+        raise ValueError("Quiz session not found.")
+    if not sess["payload"].get("math_core_drill"):
+        raise ValueError("Keep going is only available for Math Core drills.")
+    tag = str(
+        sess["payload"].get("note_topic_id")
+        or sess["payload"].get("topic")
+        or sess["payload"].get("learning_tag")
+        or ""
+    ).strip()
+    if not tag or not mcd.supports_worksheet_drills(tag):
+        raise ValueError("Questions are not present for this topic.")
+    if not mcd.can_keep_going(int(user.id), tag):
+        raise ValueError("No more drill combinations available.")
+
+    items = list(sess["payload"].get("items") or [])
+    exclude: set[str] = set()
+    for it in items:
+        fk = str(it.get("fact_key") or "").strip()
+        if fk:
+            exclude.add(fk)
+    extra = mcd.generate_drill_items(
+        tag=tag,
+        count=mcd.chunk_count(),
+        user_id=int(user.id),
+        exclude_keys=exclude,
+    )
+    if not extra:
+        raise ValueError("No more drill combinations available.")
+    # Continue from end of prior chunk
+    sess["index"] = len(items)
+    items.extend(extra)
+    sess["payload"]["items"] = items
+    cov = mcd.coverage_stats(int(user.id), tag)
+    sess["payload"]["coverage"] = cov
+    save_global_session(db, sess)
+    next_q = _study_question_from_payload(
+        items, sess["index"], sess["payload"].get("note_path", ""), db, sess["payload"]
+    )
+    return {
+        "session_id": session_id,
+        "domain": "math",
+        "question": next_q,
+        "coverage": cov,
+        "can_keep_going": True,
     }
 
 
@@ -1257,7 +1462,7 @@ def complete_session(db: Session, *, user: User, session_id: str) -> dict[str, A
         domain=(sess or {}).get("domain"),
         hub_session_id=hub_id,
     )
-    return {
+    result: dict[str, Any] = {
         "complete": True,
         "correct": correct,
         "total": len(attempts),
@@ -1268,6 +1473,19 @@ def complete_session(db: Session, *, user: User, session_id: str) -> dict[str, A
         "hub_session_id": hub_id,
         "next_step": compute_next_step(db, user_id=user.id),
     }
+    payload = (sess or {}).get("payload") or {}
+    if payload.get("math_core_drill"):
+        from backend.quiz import math_core_drills as mcd
+
+        tag = str(
+            payload.get("note_topic_id")
+            or payload.get("topic")
+            or payload.get("learning_tag")
+            or ""
+        ).strip()
+        if tag:
+            result["coverage"] = mcd.coverage_stats(int(user.id), tag)
+    return result
 
 
 def list_due_items(db: Session, *, user: User, limit: int = 40) -> list[dict[str, Any]]:

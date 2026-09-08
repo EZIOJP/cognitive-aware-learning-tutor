@@ -121,3 +121,12 @@ transcript-notes-studio.7z
 scripts/experiments/out/
 
 .worktrees/
+
+# Native enforcer / focus build artifacts
+native/calt_enforcer/build/
+native/calt_focus/build/
+native/calt_focus/third_party/webview2/
+dist-focus/
+scripts/desktop_tracker/installer_payload/bin/
+scripts/desktop_tracker/Output/
+

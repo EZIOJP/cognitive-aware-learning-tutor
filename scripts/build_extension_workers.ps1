@@ -1,8 +1,19 @@
 # Build Edge MV3 service workers as single files (avoids importScripts NetworkError).
 # Run:  powershell -File scripts\build_extension_workers.ps1
+# Seeds: python scripts\sync_gate_policy_seeds.py (invoked first unless -SkipSeedSync)
+
+param(
+  [switch]$SkipSeedSync
+)
 
 $ErrorActionPreference = "Stop"
 $Root = Split-Path -Parent $PSScriptRoot
+
+if (-not $SkipSeedSync) {
+  Write-Host "Syncing gate_policy.js seeds from Python..."
+  python (Join-Path $Root "scripts\sync_gate_policy_seeds.py")
+  if ($LASTEXITCODE -ne 0) { throw "sync_gate_policy_seeds.py failed" }
+}
 
 function Write-Bundle {
   param(

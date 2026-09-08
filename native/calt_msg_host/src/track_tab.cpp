@@ -1,0 +1,134 @@
+#include "track_tab.h"
+
+#include <windows.h>
+
+#include <cstdio>
+#include <fstream>
+#include <string>
+
+// Prefer amalgamation next to enforcer; fallback compile without if missing at link.
+#include "../../calt_enforcer/third_party/sqlite/sqlite3.h"
+
+namespace {
+
+std::string Narrow(const std::wstring& w) {
+  if (w.empty()) return {};
+  int n = WideCharToMultiByte(CP_UTF8, 0, w.c_str(), (int)w.size(), nullptr, 0, nullptr, nullptr);
+  std::string s(n, '\0');
+  WideCharToMultiByte(CP_UTF8, 0, w.c_str(), (int)w.size(), s.data(), n, nullptr, nullptr);
+  return s;
+}
+
+std::wstring DirOf(const std::wstring& path) {
+  size_t slash = path.find_last_of(L"\\/");
+  return (slash == std::wstring::npos) ? L"." : path.substr(0, slash);
+}
+
+std::wstring Join(const std::wstring& a, const std::wstring& b) {
+  if (a.empty()) return b;
+  if (a.back() == L'\\' || a.back() == L'/') return a + b;
+  return a + L"\\" + b;
+}
+
+std::string IsoUtcNow() {
+  SYSTEMTIME st;
+  GetSystemTime(&st);
+  char buf[40];
+  snprintf(buf, sizeof(buf), "%04u-%02u-%02uT%02u:%02u:%02u.000Z", st.wYear, st.wMonth, st.wDay,
+           st.wHour, st.wMinute, st.wSecond);
+  return buf;
+}
+
+int ResolveUserId(sqlite3* db) {
+  int uid = 0;
+  sqlite3_stmt* st = nullptr;
+  if (sqlite3_prepare_v2(db,
+                         "SELECT user_id FROM enforcer_runtime ORDER BY updated_at DESC LIMIT 1;",
+                         -1, &st, nullptr) == SQLITE_OK) {
+    if (sqlite3_step(st) == SQLITE_ROW) uid = sqlite3_column_int(st, 0);
+    sqlite3_finalize(st);
+  }
+  if (uid <= 0) {
+    if (sqlite3_prepare_v2(db, "SELECT id FROM users ORDER BY id LIMIT 1;", -1, &st, nullptr) ==
+        SQLITE_OK) {
+      if (sqlite3_step(st) == SQLITE_ROW) uid = sqlite3_column_int(st, 0);
+      sqlite3_finalize(st);
+    }
+  }
+  return uid;
+}
+
+}  // namespace
+
+std::wstring ResolveCaltDbPathW() {
+  wchar_t* env = _wgetenv(L"CALT_DB");
+  if (env && *env) return env;
+  wchar_t* repo = _wgetenv(L"CALT_REPO");
+  if (repo && *repo) {
+    std::wstring p = Join(repo, L"data\\vocab_app.db");
+    if (GetFileAttributesW(p.c_str()) != INVALID_FILE_ATTRIBUTES) return p;
+  }
+  wchar_t buf[MAX_PATH];
+  DWORD n = GetModuleFileNameW(nullptr, buf, MAX_PATH);
+  if (!n || n >= MAX_PATH) return L"";
+  std::wstring dir = DirOf(buf);
+  for (int i = 0; i < 8; ++i) {
+    std::wstring cand = Join(dir, L"data\\vocab_app.db");
+    if (GetFileAttributesW(cand.c_str()) != INVALID_FILE_ATTRIBUTES) return cand;
+    dir = DirOf(dir);
+  }
+  return L"";
+}
+
+bool TrackTabToSqlite(const std::string& url, const std::string& title, const std::string& domain) {
+  std::wstring dbPath = ResolveCaltDbPathW();
+  if (dbPath.empty()) return false;
+
+  sqlite3* db = nullptr;
+  std::string path = Narrow(dbPath);
+  if (sqlite3_open_v2(path.c_str(), &db, SQLITE_OPEN_READWRITE, nullptr) != SQLITE_OK) {
+    if (db) sqlite3_close(db);
+    return false;
+  }
+  sqlite3_busy_timeout(db, 5000);
+  sqlite3_exec(db, "PRAGMA journal_mode=WAL;", nullptr, nullptr, nullptr);
+
+  int uid = ResolveUserId(db);
+  if (uid <= 0) {
+    sqlite3_close(db);
+    return false;
+  }
+
+  const char* sql =
+      "INSERT INTO tracked_sessions "
+      "(session_id, user_id, task_id, start_time, end_time, source, category, "
+      " window_title, app_name, category_source, category_before_llm, override_productive) "
+      "VALUES (?, ?, NULL, ?, ?, 'selftracker', NULL, ?, ?, 'native_msg_host', NULL, NULL);";
+
+  sqlite3_stmt* st = nullptr;
+  if (sqlite3_prepare_v2(db, sql, -1, &st, nullptr) != SQLITE_OK) {
+    sqlite3_close(db);
+    return false;
+  }
+
+  std::string now = IsoUtcNow();
+  char sid[96];
+  snprintf(sid, sizeof(sid), "selftracker-%lu-%s", (unsigned long)GetTickCount(),
+           domain.empty() ? "tab" : domain.c_str());
+
+  std::string app = domain.empty() ? "msedge.exe" : ("msedge:" + domain);
+  std::string tit = title.empty() ? url : title;
+  if (tit.size() > 200) tit.resize(200);
+
+  sqlite3_bind_text(st, 1, sid, -1, SQLITE_TRANSIENT);
+  sqlite3_bind_int(st, 2, uid);
+  sqlite3_bind_text(st, 3, now.c_str(), -1, SQLITE_TRANSIENT);
+  sqlite3_bind_text(st, 4, now.c_str(), -1, SQLITE_TRANSIENT);
+  sqlite3_bind_text(st, 5, tit.c_str(), -1, SQLITE_TRANSIENT);
+  sqlite3_bind_text(st, 6, app.c_str(), -1, SQLITE_TRANSIENT);
+
+  bool ok = sqlite3_step(st) == SQLITE_DONE;
+  sqlite3_finalize(st);
+  sqlite3_close(db);
+  return ok;
+}

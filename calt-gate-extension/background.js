@@ -7,19 +7,22 @@
 /* global GATE_API_URL, GATE_ALERT_URL, GATE_EXT_LOG_URL, GATE_ALERT_GAP_MS, FORCE_WATCH_HOSTS,
    FORCE_PORN_HOSTS, isStrictDayMode, TEMP_ALLOW_STORAGE_KEY, TEMP_ALLOW_MS, pruneTempAllows,
    buildTempAllowGrant, upsertTempAllow, isTempAllowExcludedHost,
-   tempAllowUntilForHost, browserPolicyOrFallback, shouldBlockUrl,
+   tempAllowUntilForHost, browserPolicyOrFallback, shouldBlockUrl, dnrHostList, listMatch,
    redirectTargetUrl, isCaltSpaUrl, blockKindForUrl, hostnameFromUrl,
    isForceWatchHost, isForcePornHost, classifyHostCategory, isExtensionOrInternalUrl,
-   CALT_BIBLE_URL, CALT_PRODUCTIVITY_URL */
+   applyContentScoreFromPolicy, CALT_BIBLE_URL, CALT_PRODUCTIVITY_URL */
 
 // Shared helpers are prepended by scripts/build_extension_workers.ps1 into service_worker.js
 
 var DNR_WATCH_RULE_BASE = 9200;
-var MAX_DNR_WATCH_HOSTS = 8;
+/** Cap DNR rules — SoftLand covers any overflow from server watch_domains. */
+var MAX_DNR_WATCH_HOSTS = 16;
 /** Hard-block distraction hosts in every mode (including FREE). */
 var DNR_PORN_RULE_BASE = 9300;
 var MAX_DNR_PORN_HOSTS = 40;
-var GATE_POLL_MS = 12000;
+/** Default poll; overwritten from browser.intervals.extension_gate_poll_s. */
+var GATE_POLL_MS =
+  typeof GATE_POLL_ACTIVE_S === "number" ? Math.max(4000, GATE_POLL_ACTIVE_S * 1000) : 4000;
 var SOFTLAND_DEDUP_MS = 15000;
 
 var extAPI = typeof chrome !== "undefined" && chrome.runtime ? chrome : browser;
@@ -29,6 +32,9 @@ var redirectsEnabled = true;
 var lastGateFetchAt = 0;
 var lastDnrFingerprint = "";
 var lastDnrPornFingerprint = "";
+/** Hosts currently covered by active DNR — SoftLand skips these only. */
+var activeDnrWatchHosts = [];
+var activeDnrPornHosts = [];
 var gatePollTimer = null;
 var lastAlertAt = 0;
 var softLandDone = Object.create(null);
@@ -56,7 +62,7 @@ function lockedPageUrl() {
   return extAPI.runtime.getURL("locked.html");
 }
 
-function lockedPageUrlForBlocked(blockedUrl) {
+function lockedPageUrlForBlocked(blockedUrl, reason, untilIso) {
   var base = lockedPageUrl();
   var host = "";
   try {
@@ -64,16 +70,23 @@ function lockedPageUrlForBlocked(blockedUrl) {
   } catch (e) {
     host = "";
   }
-  if (!host) return base;
-  var q = "host=" + encodeURIComponent(host);
+  if (!host && !reason && !untilIso) return base;
+  var q = host ? "host=" + encodeURIComponent(host) : "";
   try {
     if (blockedUrl && String(blockedUrl).indexOf("http") === 0) {
-      q += "&from=" + encodeURIComponent(String(blockedUrl).slice(0, 500));
+      q += (q ? "&" : "") + "from=" + encodeURIComponent(String(blockedUrl).slice(0, 500));
+    }
+    if (reason) {
+      q += (q ? "&" : "") + "why=" + encodeURIComponent(String(reason).slice(0, 80));
+    }
+    // SoftLand get_mode until (ISO) — native path; not temp-allow until.
+    if (untilIso) {
+      q += (q ? "&" : "") + "until=" + encodeURIComponent(String(untilIso).slice(0, 40));
     }
   } catch (e2) {
     /* ignore */
   }
-  return base + "?" + q;
+  return q ? base + "?" + q : base;
 }
 
 function gateCacheForBlockCheck() {
@@ -146,9 +159,10 @@ function showBlockNotification(title, message) {
     extAPI.notifications.create("calt-gate-" + now, {
       type: "basic",
       iconUrl: "icon.png",
-      title: title || "CALT Gate",
-      message: message || "One tab redirected — Edge was not closed.",
-      priority: 1,
+      title: title || "CALT blocked a webpage",
+      message: message || "This site is SoftLand-blocked. Edge stayed open.",
+      priority: 2,
+      requireInteraction: false,
     });
   } catch (e) {
     /* ignore */
@@ -174,8 +188,14 @@ async function syncDeclarativeWatchBlock(opts) {
   if (!extAPI.declarativeNetRequest || !extAPI.declarativeNetRequest.updateDynamicRules) {
     return;
   }
-  var raw = typeof FORCE_WATCH_HOSTS !== "undefined" ? FORCE_WATCH_HOSTS : ["youtube.com", "youtu.be"];
-  var hosts = raw.slice(0, MAX_DNR_WATCH_HOSTS);
+  var pol =
+    typeof browserPolicyOrFallback === "function"
+      ? browserPolicyOrFallback(gateCache && gateCache.browser)
+      : {};
+  var hosts =
+    typeof dnrHostList === "function"
+      ? dnrHostList(pol.force_watch_hosts || pol.watch_domains, pol.watch_domains, MAX_DNR_WATCH_HOSTS)
+      : (pol.watch_domains || FORCE_WATCH_HOSTS || []).slice(0, MAX_DNR_WATCH_HOSTS);
   var active = watchBlockActive();
   var fingerprint = (active ? "1" : "0") + "|" + hosts.join(",");
   if (!opts.force && fingerprint === lastDnrFingerprint) return;
@@ -190,6 +210,7 @@ async function syncDeclarativeWatchBlock(opts) {
         addRules: [],
       });
       lastDnrFingerprint = fingerprint;
+      activeDnrWatchHosts = [];
       return;
     }
     var target = lockedPageUrl();
@@ -210,6 +231,7 @@ async function syncDeclarativeWatchBlock(opts) {
       addRules: addRules,
     });
     lastDnrFingerprint = fingerprint;
+    activeDnrWatchHosts = hosts.slice();
   } catch (e) {
     console.warn("CALT Gate: DNR watch sync failed", e);
   }
@@ -221,11 +243,14 @@ async function syncDeclarativePornBlock(opts) {
   if (!extAPI.declarativeNetRequest || !extAPI.declarativeNetRequest.updateDynamicRules) {
     return;
   }
-  var raw =
-    typeof FORCE_PORN_HOSTS !== "undefined" && FORCE_PORN_HOSTS.length
-      ? FORCE_PORN_HOSTS
-      : ["pornhub.com", "xvideos.com", "erome.com"];
-  var hosts = raw.slice(0, MAX_DNR_PORN_HOSTS);
+  var pol =
+    typeof browserPolicyOrFallback === "function"
+      ? browserPolicyOrFallback(gateCache && gateCache.browser)
+      : {};
+  var hosts =
+    typeof dnrHostList === "function"
+      ? dnrHostList(pol.force_porn_hosts || pol.porn_domains, pol.porn_domains, MAX_DNR_PORN_HOSTS)
+      : (pol.porn_domains || FORCE_PORN_HOSTS || []).slice(0, MAX_DNR_PORN_HOSTS);
   var active = redirectsEnabled !== false;
   var fingerprint = (active ? "1" : "0") + "|porn|" + hosts.join(",");
   if (!opts.force && fingerprint === lastDnrPornFingerprint) return;
@@ -240,6 +265,7 @@ async function syncDeclarativePornBlock(opts) {
         addRules: [],
       });
       lastDnrPornFingerprint = fingerprint;
+      activeDnrPornHosts = [];
       return;
     }
     var target = lockedPageUrl();
@@ -260,9 +286,20 @@ async function syncDeclarativePornBlock(opts) {
       addRules: addRules,
     });
     lastDnrPornFingerprint = fingerprint;
+    activeDnrPornHosts = hosts.slice();
   } catch (e) {
     console.warn("CALT Gate: DNR distraction sync failed", e);
   }
+}
+
+function hostCoveredByActiveDnr(host) {
+  if (!host) return false;
+  if (typeof listMatch === "function") {
+    if (activeDnrWatchHosts.length && listMatch(host, activeDnrWatchHosts)) return true;
+    if (activeDnrPornHosts.length && listMatch(host, activeDnrPornHosts)) return true;
+    return false;
+  }
+  return false;
 }
 
 function caltExtensionHeaders() {
@@ -286,14 +323,67 @@ function caltExtensionHeaders() {
   };
 }
 
-async function pollGate() {
+var gateFetchBackoffMs = 0;
+var gateNotifyWs = null;
+
+function noteGateFetchSuccess() {
+  gateFetchBackoffMs = 0;
+}
+
+function noteGateFetchFailure() {
+  if (!gateFetchBackoffMs) gateFetchBackoffMs = 30000;
+  else gateFetchBackoffMs = Math.min(300000, gateFetchBackoffMs * 2);
+  lastGateFetchAt = Date.now();
+}
+
+function connectGateNotifyWs() {
+  var url = typeof GATE_NOTIFY_WS_URL !== "undefined" ? GATE_NOTIFY_WS_URL : "ws://127.0.0.1:8000/ws/gate";
+  if (gateNotifyWs && (gateNotifyWs.readyState === WebSocket.OPEN || gateNotifyWs.readyState === WebSocket.CONNECTING)) {
+    return;
+  }
+  try {
+    gateNotifyWs = new WebSocket(url);
+    gateNotifyWs.onmessage = function (ev) {
+      try {
+        var msg = JSON.parse(ev.data);
+        if (msg && msg.type === "GATE_CHANGED") {
+          void pollGate({ force: true });
+        }
+      } catch (e) {
+        /* ignore */
+      }
+    };
+    gateNotifyWs.onclose = function () {
+      gateNotifyWs = null;
+      try {
+        extAPI.alarms.create("gate-ws-retry", { delayInMinutes: 1 });
+      } catch (e2) {
+        /* ignore */
+      }
+    };
+    gateNotifyWs.onerror = function () {
+      try {
+        gateNotifyWs.close();
+      } catch (e3) {
+        /* ignore */
+      }
+      gateNotifyWs = null;
+    };
+  } catch (e) {
+    console.warn("CALT Gate: notify WS unavailable", e);
+  }
+}
+
+async function pollGate(opts) {
+  opts = opts || {};
   var now = Date.now();
-  if (lastGateFetchAt && now - lastGateFetchAt < GATE_POLL_MS - 500) return;
+  if (!opts.force && lastGateFetchAt && now - lastGateFetchAt < desiredGatePollMs() - 500) return;
   try {
     var r = await fetch(GATE_API_URL, { cache: "no-store", headers: caltExtensionHeaders() });
     if (!r.ok) throw new Error("HTTP " + r.status);
     var g = await r.json();
     lastGateFetchAt = Date.now();
+    noteGateFetchSuccess();
     var morning = g.morning || {};
     var browser = g.browser || {};
     gateCache = {
@@ -301,6 +391,7 @@ async function pollGate() {
       stale: false,
       degraded: false,
       fetched_at: lastGateFetchAt,
+      policy_gen: g.policy_gen ?? null,
       locked: Boolean(g.locked),
       unlocked: Boolean(g.unlocked),
       enabled: Boolean(g.enabled),
@@ -326,6 +417,9 @@ async function pollGate() {
       enforce: Boolean(browser.enforce) || Boolean(g.locked),
     };
     await extAPI.storage.local.set({ gateCache: gateCache });
+    if (typeof applyContentScoreFromPolicy === "function") {
+      applyContentScoreFromPolicy(browserPolicyOrFallback(browser));
+    }
     var modeNow = String(browser.mode || "").toLowerCase();
     var freeNow =
       Boolean(g.day_unlimited) || Boolean(g.reward_day) || modeNow === "free";
@@ -339,9 +433,12 @@ async function pollGate() {
       Boolean(g.locked);
     var forceDnr = modeKey !== lastGateModeKey;
     if (forceDnr) lastGateModeKey = modeKey;
-    await syncDeclarativeWatchBlock({ force: forceDnr });
-    await syncDeclarativePornBlock({ force: forceDnr });
+    await syncDeclarativeWatchBlock({ force: forceDnr || opts.force });
+    await syncDeclarativePornBlock({ force: forceDnr || opts.force });
+    startPoll();
   } catch (e) {
+    noteGateFetchFailure();
+    startPoll();
     var err = String(e && e.message ? e.message : e);
     var prev = gateCache && typeof gateCache === "object" ? gateCache : null;
     var prevBrowser = (prev && prev.browser) || {};
@@ -399,29 +496,54 @@ async function pollGate() {
   }
 }
 
+function desiredGatePollMs() {
+  var s = typeof GATE_POLL_ACTIVE_S === "number" ? GATE_POLL_ACTIVE_S : 300;
+  try {
+    var iv = gateCache && gateCache.browser && gateCache.browser.intervals;
+    if (iv && Number(iv.extension_gate_poll_s) > 0) {
+      s = Number(iv.extension_gate_poll_s);
+    }
+  } catch (e) {
+    /* ignore */
+  }
+  var base = Math.max(4000, Math.min(600000, Math.round(s * 1000)));
+  if (gateFetchBackoffMs > base) return gateFetchBackoffMs;
+  return base;
+}
+
 function startPoll() {
-  if (gatePollTimer) return;
+  var ms = desiredGatePollMs();
+  if (gatePollTimer && GATE_POLL_MS === ms) return;
+  GATE_POLL_MS = ms;
+  if (gatePollTimer) {
+    clearInterval(gatePollTimer);
+    gatePollTimer = null;
+  }
   gatePollTimer = setInterval(function () {
     void pollGate();
   }, GATE_POLL_MS);
 }
 
-extAPI.alarms.create("gate-poll", { periodInMinutes: 1 });
+extAPI.alarms.create("gate-poll", { periodInMinutes: 5 });
 extAPI.alarms.onAlarm.addListener(function (alarm) {
-  if (alarm.name === "gate-poll") void pollGate();
+  if (alarm.name === "gate-poll") void pollGate({ force: true });
+  if (alarm.name === "gate-ws-retry") connectGateNotifyWs();
 });
 
 extAPI.runtime.onInstalled.addListener(function () {
   startPoll();
-  void pollGate();
+  connectGateNotifyWs();
+  void pollGate({ force: true });
 });
 extAPI.runtime.onStartup.addListener(function () {
   startPoll();
-  void pollGate();
+  connectGateNotifyWs();
+  void pollGate({ force: true });
 });
 
 startPoll();
-void pollGate();
+connectGateNotifyWs();
+void pollGate({ force: true });
 
 async function softLandBlockedTab(tabId, spaUrl, meta) {
   if (tabId == null || !redirectsEnabled || redirectsPausedByCircuit()) return false;
@@ -470,9 +592,11 @@ async function softLandBlockedTab(tabId, spaUrl, meta) {
       tab_id: tabId,
       notify: true,
     });
+    var why = meta.kind ? String(meta.kind) : "blocked";
+    var site = meta.host || blockedUrl.slice(0, 80) || "site";
     showBlockNotification(
-      "CALT Gate redirected this tab",
-      "Edge was not closed. Blocked: " + (meta.host || blockedUrl.slice(0, 80) || "site")
+      "CALT blocked a webpage",
+      site + " · " + why + " — SoftLand redirected this tab (browser stayed open)."
     );
     await extAPI.tabs.update(tabId, { url: target });
     softLandDone[tabId] = { target: target, at: Date.now() };
@@ -484,10 +608,67 @@ async function softLandBlockedTab(tabId, spaUrl, meta) {
   }
 }
 
+async function softlandNativeGetMode(url) {
+  // Prod P3: Gate → com.calt.msg_host → C++ SoftLand (softland_policy.json).
+  // Set storage caltSoftlandHttpFallback=true to skip native and use HTTP path only.
+  return new Promise(function (resolve) {
+    try {
+      extAPI.storage.local.get(["caltSoftlandHttpFallback"], function (st) {
+        if (st && st.caltSoftlandHttpFallback) {
+          resolve(null);
+          return;
+        }
+        if (!extAPI.runtime || typeof extAPI.runtime.connectNative !== "function") {
+          resolve(null);
+          return;
+        }
+        var port;
+        try {
+          port = extAPI.runtime.connectNative("com.calt.msg_host");
+        } catch (e) {
+          resolve(null);
+          return;
+        }
+        var done = false;
+        var timer = setTimeout(function () {
+          if (done) return;
+          done = true;
+          try {
+            port.disconnect();
+          } catch (e2) {}
+          resolve(null);
+        }, 900);
+        port.onMessage.addListener(function (msg) {
+          if (done) return;
+          done = true;
+          clearTimeout(timer);
+          try {
+            port.disconnect();
+          } catch (e3) {}
+          resolve(msg && typeof msg === "object" ? msg : null);
+        });
+        port.onDisconnect.addListener(function () {
+          if (done) return;
+          done = true;
+          clearTimeout(timer);
+          resolve(null);
+        });
+        port.postMessage({
+          type: "get_mode",
+          schema_version: 1,
+          url: String(url || ""),
+          tab_id: null,
+          now: null,
+        });
+      });
+    } catch (e) {
+      resolve(null);
+    }
+  });
+}
+
 async function maybeRedirectTab(tabId, url, title) {
   if (!redirectsEnabled) return false;
-  var gc = gateCacheForBlockCheck();
-  if (!gc || (!gc.ok && !gc.degraded)) return false;
   if (!url || (typeof isExtensionOrInternalUrl === "function" && isExtensionOrInternalUrl(url))) return false;
   if (url.indexOf("locked.html") >= 0) return false;
   if (typeof isCaltSpaUrl === "function" && isCaltSpaUrl(url)) return false;
@@ -498,24 +679,50 @@ async function maybeRedirectTab(tabId, url, title) {
   } catch (e) {
     host = "";
   }
-  // Watch / distraction hosts = DNR only — never also softLand (Edge double-hit crash).
-  if (host && typeof isForceWatchHost === "function" && isForceWatchHost(host) && watchBlockActive()) {
+  if (host && hostCoveredByActiveDnr(host)) {
     return false;
   }
-  if (host && typeof isForcePornHost === "function" && isForcePornHost(host)) {
+
+  // Prefer native SoftLand decide (works with uvicorn stopped).
+  var native = await softlandNativeGetMode(url);
+  if (native && native.ok !== false && native.action) {
+    if (native.action === "allow" || native.action === "none") return false;
+    if (native.action === "block" && native.enforce !== false) {
+      var kindN = native.reason || "blocked";
+      reportGateAlert(kindN, url.slice(0, 120));
+      var spaN = lockedPageUrlForBlocked(url, kindN, native.until || "");
+      return softLandBlockedTab(tabId, spaN, {
+        fromUrl: url,
+        kind: kindN,
+        host: host || native.matched || "",
+        until: native.until || "",
+      });
+    }
     return false;
   }
+
+  // Prod P4: SoftLand HTTP :8000 fallback is opt-in debug only (caltSoftlandHttpFallback=true).
+  var allowHttpFallback = await new Promise(function (resolve) {
+    try {
+      extAPI.storage.local.get(["caltSoftlandHttpFallback"], function (st) {
+        resolve(!!(st && st.caltSoftlandHttpFallback));
+      });
+    } catch (e) {
+      resolve(false);
+    }
+  });
+  if (!allowHttpFallback) {
+    return false;
+  }
+
+  // HTTP fallback (debug) when native host missing / failed AND flag set.
+  var gc = gateCacheForBlockCheck();
+  if (!gc || (!gc.ok && !gc.degraded)) return false;
   if (!shouldBlockUrl(url, gc, title || "")) return false;
-  var browser = gc.browser || {};
-  var cat =
-    typeof classifyHostCategory === "function"
-      ? classifyHostCategory(host, browserPolicyOrFallback(browser))
-      : "";
-  if (cat === "watch" && watchBlockActive()) return false;
 
   var kind = typeof blockKindForUrl === "function" ? blockKindForUrl(url, gc, title || "") : "blocked";
   reportGateAlert(kind, url.slice(0, 120));
-  var spa = redirectTargetUrl(gc, lockedPageUrlForBlocked(url));
+  var spa = redirectTargetUrl(gc, lockedPageUrlForBlocked(url, kind));
   if (spa && spa.indexOf("locked.html") >= 0) {
     var next = (gc.morning && gc.morning.next) || "";
     var mode = String((gc.browser && gc.browser.mode) || "").toLowerCase();
@@ -524,10 +731,10 @@ async function maybeRedirectTab(tabId, url, title) {
     } else if (next === "plan" || mode === "planning") {
       spa = (gc.browser && gc.browser.plan_url) || CALT_PRODUCTIVITY_URL;
     } else {
-      spa = lockedPageUrlForBlocked(url);
+      spa = lockedPageUrlForBlocked(url, kind);
     }
   } else if (!spa) {
-    spa = lockedPageUrlForBlocked(url);
+    spa = lockedPageUrlForBlocked(url, kind);
   }
   return softLandBlockedTab(tabId, spa, { fromUrl: url, kind: kind, host: host });
 }
@@ -567,16 +774,25 @@ extAPI.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
     }
     var lockUrl = String(msg.url || "");
     var tabId = sender && sender.tab && sender.tab.id;
-    reportGateAlert(
-      "distraction",
-      "content_score:" + String(msg.score || 0) + " " + lockUrl.slice(0, 100)
-    );
-    if (typeof tabId === "number") {
-      void softLandBlockedTab(tabId, lockedPageUrlForBlocked(lockUrl), {
-        fromUrl: lockUrl,
-        kind: "content_score",
-      });
-    }
+    // Prod P3: honor native SoftLand (off / free → do not SoftLand from content score alone).
+    void (async function () {
+      var native = await softlandNativeGetMode(lockUrl);
+      if (native && native.ok !== false) {
+        if (!native.softland_enabled || native.action === "allow" || native.mode === "free") {
+          return;
+        }
+      }
+      reportGateAlert(
+        "distraction",
+        "content_score:" + String(msg.score || 0) + " " + lockUrl.slice(0, 100)
+      );
+      if (typeof tabId === "number") {
+        void softLandBlockedTab(tabId, lockedPageUrlForBlocked(lockUrl), {
+          fromUrl: lockUrl,
+          kind: "content_score",
+        });
+      }
+    })();
     sendResponse({ ok: true });
     return false;
   }

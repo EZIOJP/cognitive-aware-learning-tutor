@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { BookOpen, Layers, Loader2, Play, RefreshCw, Sparkles } from "lucide-react";
-import { Button } from "../../../app/components/ui/button";
+import { Button } from "../../app/components/ui/button";
 import {
   fetchStudyLoopTags,
   fetchTagImportance,
@@ -12,7 +12,7 @@ import {
   type StudyLoopTag,
   type LowMasteryTag,
   type TagImportanceRow,
-} from "../../../api/globalQuizClient";
+} from "../../api/globalQuizClient";
 import type { QuizDeckSummary } from "../types";
 
 type GroupKey = "math" | "lecture" | "vocab" | "other" | "custom";
@@ -46,6 +46,20 @@ function groupOf(tag: StudyLoopTag): GroupKey {
   return "other";
 }
 
+/** Math Core worksheets (MT0 / legacy) keep their own drill topic id. */
+function mathFlashTopicId(id: string): string {
+  return id.trim();
+}
+
+function isMathCoreFluencyTag(id: string): boolean {
+  const u = id.trim().toUpperCase();
+  return (
+    u === "MT1-T01" ||
+    /^MT0-T0[1-9]$/.test(u) ||
+    /^MT1-T(1[6-9]|2[0-4])$/.test(u)
+  );
+}
+
 export function FlashDecksPanel({
   decks,
   timeOpts,
@@ -68,14 +82,17 @@ export function FlashDecksPanel({
     setLoading(true);
     setError(null);
     try {
-      const [res, imp, low] = await Promise.all([
+      const [res, imp] = await Promise.all([
         fetchStudyLoopTags({ q: q.trim() || undefined }),
         fetchTagImportance().catch(() => ({ tags: {} as Record<string, TagImportanceRow> })),
-        fetchLowMasteryTags().catch(() => ({ tags: [] as LowMasteryTag[] })),
       ]);
       setTags(res.tags || []);
       setImpMap(imp.tags || {});
-      setLowMastery(low.tags || []);
+      // Low-mastery is independent and was timing out the API (full catalog scan).
+      // Load after tags so Review Hub stays usable if it fails.
+      void fetchLowMasteryTags()
+        .then((low) => setLowMastery(low.tags || []))
+        .catch(() => setLowMastery([]));
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Failed to load tags");
     } finally {
@@ -84,7 +101,7 @@ export function FlashDecksPanel({
   }, [q]);
 
   useEffect(() => {
-    const t = window.setTimeout(() => void load(), 150);
+    const t = window.setTimeout(() => void load(), 400);
     return () => window.clearTimeout(t);
   }, [load]);
 
@@ -150,7 +167,11 @@ export function FlashDecksPanel({
     if (g === "math") {
       onPlay({
         domain: "math",
-        config: { note_topic_id: id, count: 15, ...timeOpts },
+        config: {
+          note_topic_id: mathFlashTopicId(id),
+          count: isMathCoreFluencyTag(id) ? 20 : 15,
+          ...timeOpts,
+        },
       });
       return;
     }
@@ -204,21 +225,33 @@ export function FlashDecksPanel({
                 {qCount ? `${qCount} questions` : null}
                 {qCount && vCount ? " · " : null}
                 {vCount ? `${vCount} words` : null}
-                {!qCount && !vCount ? "no items yet" : null}
+                {!qCount && !vCount && isMathCoreFluencyTag(id)
+                  ? "fluency drills · Math Core"
+                  : null}
+                {!qCount && !vCount && !isMathCoreFluencyTag(id) ? "no items yet" : null}
                 {files[0] ? ` · ${files[0]}` : null}
               </p>
             </div>
             <div className="flex items-center gap-2 shrink-0">
-              <label className="text-[11px] text-muted-foreground flex items-center gap-1">
+              <label
+                className="text-[11px] text-muted-foreground flex items-center gap-1"
+                title="Importance 1–5: bar 2/3/4/5/6 corrects to clear; higher = denser reviews"
+              >
                 Imp
                 <select
                   className="rounded border bg-background text-xs px-1 py-0.5"
                   value={impMap[id]?.importance ?? 3}
                   onChange={(e) => void setImportance(id, Number(e.target.value))}
                 >
-                  {[1, 2, 3, 4, 5].map((n) => (
+                  {[
+                    { n: 1, bar: 2 },
+                    { n: 2, bar: 3 },
+                    { n: 3, bar: 4 },
+                    { n: 4, bar: 5 },
+                    { n: 5, bar: 6 },
+                  ].map(({ n, bar }) => (
                     <option key={n} value={n}>
-                      {n}
+                      {n} (bar {bar})
                     </option>
                   ))}
                 </select>
@@ -232,7 +265,12 @@ export function FlashDecksPanel({
               </label>
               <Button
                 size="sm"
-                disabled={!qCount && !vCount && groupOf(tag) !== "vocab"}
+                disabled={
+                  !qCount &&
+                  !vCount &&
+                  groupOf(tag) !== "vocab" &&
+                  !isMathCoreFluencyTag(id)
+                }
                 onClick={() => playTag(tag)}
                 className="gap-1"
               >
@@ -255,6 +293,11 @@ export function FlashDecksPanel({
           <p className="text-xs text-muted-foreground mt-1 max-w-xl">
             Indexed from notes (L*/MT*), math packs, and GRE vocab groups — same stitch as Study
             Loop. Ordered by file / tag number (not custom MCQ-only decks).
+          </p>
+          <p className="text-[11px] text-muted-foreground mt-2 max-w-xl leading-relaxed">
+            <span className="font-medium text-foreground">Importance (Imp) 1–5:</span> mastery bar =
+            how many consecutive correct to clear a card (I1→2 … I3→4 … I5→6). Higher I also densifies
+            FSRS reviews. Default 3. Daily bite ranks unmastered tags by Imp × overdue.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">

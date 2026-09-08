@@ -195,14 +195,14 @@ export function LifeTrackerPage() {
 
   const { lifeScore, breakdown } = useMemo(() => computeScores(entry), [entry]);
 
-  const loadDay = useCallback(async (day: string, opts?: { silent?: boolean }) => {
+  const loadDay = useCallback(async (day: string, opts?: { silent?: boolean; skipWearable?: boolean }) => {
     if (!opts?.silent) setLoadError(null);
     const apiDay = day === todayKey ? "today" : day;
-    const [remote, watch] = await Promise.all([
-      fetchLifeDaily(apiDay),
-      fetchWearableDay(day).catch(() => null),
-    ]);
-    if (watch) setWearableDay(watch);
+    const remote = await fetchLifeDaily(apiDay);
+    if (!opts?.skipWearable) {
+      const watch = await fetchWearableDay(day).catch(() => null);
+      if (watch) setWearableDay(watch);
+    }
     if (!remote) {
       if (!opts?.silent) {
         setLoadError("Could not load that day from the API");
@@ -239,7 +239,11 @@ export function LifeTrackerPage() {
 
   useEffect(() => {
     if (!isToday) return;
-    const id = window.setInterval(() => void loadDay(selectedDay, { silent: true }), 10_000);
+    // Life row only — wearables are manual Dump→Send; do not poll /zepp/day.
+    const id = window.setInterval(
+      () => void loadDay(selectedDay, { silent: true, skipWearable: true }),
+      60_000,
+    );
     return () => window.clearInterval(id);
   }, [isToday, selectedDay, loadDay]);
 

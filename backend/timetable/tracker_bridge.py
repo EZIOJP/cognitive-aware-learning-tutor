@@ -140,8 +140,16 @@ def ingest_behavior_session(db: Session, *, user_id: int, payload: dict) -> Trac
 
     if source == "extension":
         category, category_source = _classify_extension_payload(payload)
-        exe = (domain or str(payload.get("exe") or ""))[:255]
-        # Richer label: page title + path (domain stays in app_name for site grouping).
+        # Prefer real browser exe (msedge.exe) so Edge counts as Edge in stats.
+        # Domain stays for site bucketing via window_title + payload domain.
+        browser_exe = str(payload.get("exe") or payload.get("browser_exe") or "").strip()
+        if not browser_exe:
+            browser_exe = "msedge.exe"
+        from backend.behavior.browser_labels import normalize_browser_exe
+
+        exe = normalize_browser_exe(browser_exe) or "msedge.exe"
+        # Richer label: page title + domain (active tab). Keep domain last so
+        # domain_from_window_title can recover it even when URL is also present.
         page = str(title).strip()
         path_hint = ""
         if url:
@@ -150,11 +158,13 @@ def ingest_behavior_session(db: Session, *, user_id: int, payload: dict) -> Trac
             except Exception:  # noqa: BLE001
                 path_hint = ""
         if not page:
-            page = url or domain or "Browser"
+            page = url or domain or "Tab"
+        if url and url not in page:
+            page = f"{page} · {url[:120]}"
+        if domain and domain.lower() not in page.lower():
+            page = f"{page} · {domain}"
         elif path_hint and path_hint != "/" and path_hint not in page:
             page = f"{page} · {path_hint}"
-        elif domain and domain.lower() not in page.lower():
-            page = f"{page} · {domain}"
         title = page
     elif source == "calt_spa":
         category = str(payload.get("category") or "Study (Browser)")

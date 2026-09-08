@@ -270,3 +270,70 @@ export async function requestRewardDay(confirm: string): Promise<{
 export function chapterKey(book: string, chapter: number): string {
   return `${book}|${chapter}`;
 }
+
+export type DevotionSlot = "morning" | "afternoon" | "evening";
+
+export type DevotionSlotInfo = {
+  slot: DevotionSlot;
+  note: string;
+  done?: boolean;
+  notes?: string;
+  lords_prayer?: string;
+  prayer?: string;
+  book?: string;
+  chapter?: number;
+  key?: string;
+  label?: string;
+  worship_title?: string;
+  worship_opening?: string;
+  worship_theme?: string;
+  hymn_id?: string;
+};
+
+export type DevotionTodayPayload = {
+  morning: DevotionSlotInfo;
+  afternoon: DevotionSlotInfo;
+  evening: DevotionSlotInfo;
+  today_chapter: TodayChapter;
+  morning_chapter: BibleChapter;
+  afternoon_chapter: BibleChapter | null;
+  evening_chapter: BibleChapter | null;
+  chapter_goal?: ChapterGoal;
+  gate?: Record<string, unknown>;
+  hymns_catalog?: { id: string; title: string; theme: string }[];
+};
+
+export async function fetchDevotionToday(version = "web"): Promise<DevotionTodayPayload> {
+  const res = await fetch(
+    resolveApiUrl(`/api/bible/devotion/today?version=${encodeURIComponent(version)}`),
+    { headers: authHeaders() },
+  );
+  if (!res.ok) throw new Error(`bible/devotion/today: ${res.status}`);
+  return res.json();
+}
+
+export async function markDevotionDone(
+  slot: DevotionSlot,
+  done = true,
+): Promise<DevotionTodayPayload | BibleState> {
+  const res = await fetch(resolveApiUrl(`/api/bible/devotion/${slot}/done`), {
+    method: "POST",
+    headers: authHeaders(),
+    body: JSON.stringify({ done }),
+  });
+  if (!res.ok) throw new Error(`bible/devotion/${slot}/done: ${res.status}`);
+  return res.json();
+}
+
+export async function saveDevotionNotes(
+  slot: DevotionSlot,
+  notes: string,
+): Promise<DevotionTodayPayload> {
+  const res = await fetch(resolveApiUrl("/api/bible/devotion/notes"), {
+    method: "PATCH",
+    headers: authHeaders(),
+    body: JSON.stringify({ slot, notes }),
+  });
+  if (!res.ok) throw new Error(`bible/devotion/notes: ${res.status}`);
+  return res.json();
+}

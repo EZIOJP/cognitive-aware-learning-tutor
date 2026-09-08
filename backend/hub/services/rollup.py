@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import math
+import time
 from datetime import UTC, date, datetime, timedelta
 from typing import Any
 
@@ -13,6 +14,10 @@ from sqlalchemy.orm import Session
 
 from backend.models import DailyRollup, LifeDailyLog, MathAttempt, WearableDaily, WordProgress
 from backend.models.timetable import TrackedSession
+
+# Poll storms (hub/daily every ~12s) must not rebuild from 38k+ sessions each time.
+_ROLLUP_TTL_S = 45.0
+_rollup_fresh_mono: dict[tuple[int, str], float] = {}
 
 # Litmus palette — readable at a glance on the 24h ring
 SEGMENT_COLORS = {
@@ -353,6 +358,32 @@ def _segments_from_tracker(db: Session, user_id: int, day: date) -> tuple[list[d
     return merged, int(productive_seconds // 60)
 
 
+def get_daily_rollup(
+    db: Session,
+    user_id: int,
+    day: date,
+    *,
+    force: bool = False,
+    max_age_s: float = _ROLLUP_TTL_S,
+) -> DailyRollup:
+    """Return cached DailyRollup when fresh; rebuild at most every max_age_s."""
+    key = (int(user_id), day.isoformat())
+    now = time.monotonic()
+    if not force:
+        last = _rollup_fresh_mono.get(key)
+        if last is not None and (now - last) < max_age_s:
+            row = (
+                db.query(DailyRollup)
+                .filter(DailyRollup.user_id == user_id, DailyRollup.date == day)
+                .first()
+            )
+            if row is not None:
+                return row
+    rollup = rebuild_daily_rollup(db, user_id, day)
+    _rollup_fresh_mono[key] = time.monotonic()
+    return rollup
+
+
 def rebuild_daily_rollup(db: Session, user_id: int, day: date) -> DailyRollup:
     """Build or refresh cached rollup for Life Clock + dashboard."""
     from backend.planner.service import local_tz
@@ -596,6 +627,7 @@ def rebuild_daily_rollup(db: Session, user_id: int, day: date) -> DailyRollup:
     rollup.stats_json = json.dumps(stats)
     db.commit()
     db.refresh(rollup)
+    _rollup_fresh_mono[(int(user_id), day.isoformat())] = time.monotonic()
     return rollup
 
 

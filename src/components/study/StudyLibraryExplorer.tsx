@@ -1,21 +1,9 @@
-import { useCallback, useMemo, useState } from "react";
-import {
-  ChevronRight,
-  FilePlus,
-  FileText,
-  Folder,
-  FolderOpen,
-  FolderPlus,
-  LayoutGrid,
-  List,
-  PanelLeftClose,
-  Sparkles,
-  Trash2,
-} from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { FileText, Folder, FolderOpen } from "lucide-react";
 import { cn } from "../../app/components/ui/utils";
 import type { LibraryTree } from "./StudyLibraryTree";
+import type { LibraryExplorerSelection, LibrarySortMode } from "./studyLibraryUtils";
 import {
-  breadcrumbParts,
   findNodeAt,
   folderOf,
   getDragPath,
@@ -24,30 +12,20 @@ import {
   setDragPath,
 } from "./studyLibraryUtils";
 
-type Selection =
-  | { kind: "folder"; path: string }
-  | { kind: "file"; path: string }
-  | null;
-
 type Props = {
   tree: LibraryTree;
   browsePath: string;
   selectedFile: string;
+  selection: LibraryExplorerSelection;
+  onSelectionChange: (selection: LibraryExplorerSelection) => void;
   comparePaths?: string[];
+  sortMode?: LibrarySortMode;
   onBrowsePath: (path: string) => void;
   onSelectFile: (path: string) => void;
   onToggleCompare?: (path: string) => void;
   onMoveFile?: (path: string, destFolder: string) => void;
   onImportFiles?: (files: File[], destFolder: string) => void;
-  onDeleteFile?: (path: string) => void;
-  onDeleteFolder?: (path: string) => void;
-  onSummarizeFolder?: (path: string) => void;
-  onNewFolder?: () => void;
-  onNewFile?: () => void;
   viewMode: "grid" | "list";
-  onViewModeChange: (mode: "grid" | "list") => void;
-  summarizingFolder?: string;
-  onCollapse?: () => void;
   importing?: boolean;
 };
 
@@ -63,11 +41,10 @@ function ExplorerFolderIcon({ open }: { open?: boolean }) {
   );
 }
 
-function ExplorerFileIcon({ kind }: { kind: string }) {
+function ExplorerFileIcon() {
   return (
     <div className="study-library-explorer-file-icon">
       <FileText className="w-9 h-9 text-slate-100" strokeWidth={1.5} />
-      <span className="study-library-explorer-file-kind">{kind.slice(0, 4)}</span>
     </div>
   );
 }
@@ -76,32 +53,49 @@ export function StudyLibraryExplorer({
   tree,
   browsePath,
   selectedFile,
+  selection,
+  onSelectionChange,
   comparePaths = [],
+  sortMode = "name-asc",
   onBrowsePath,
   onSelectFile,
   onToggleCompare,
   onMoveFile,
   onImportFiles,
-  onDeleteFile,
-  onDeleteFolder,
-  onSummarizeFolder,
-  onNewFolder,
-  onNewFile,
   viewMode,
-  onViewModeChange,
-  summarizingFolder,
-  onCollapse,
   importing,
 }: Props) {
-  const [selection, setSelection] = useState<Selection>(null);
   const [dropTarget, setDropTarget] = useState<string | null>(null);
   const [osDropActive, setOsDropActive] = useState(false);
 
   const current = useMemo(() => findNodeAt(tree, browsePath), [tree, browsePath]);
-  const crumbs = useMemo(() => breadcrumbParts(browsePath), [browsePath]);
 
-  const childFolders = current.folders;
-  const files = current.files;
+  useEffect(() => {
+    if (!selectedFile) return;
+    onSelectionChange({ kind: "file", path: selectedFile });
+  }, [selectedFile, onSelectionChange]);
+
+  const childFolders = useMemo(() => {
+    const folders = [...current.folders];
+    folders.sort((a, b) => {
+      const cmp = a.name.localeCompare(b.name, undefined, { sensitivity: "base" });
+      return sortMode === "name-desc" ? -cmp : cmp;
+    });
+    return folders;
+  }, [current.folders, sortMode]);
+
+  const files = useMemo(() => {
+    const list = [...current.files];
+    list.sort((a, b) => {
+      const cmp = (a.title || a.relative_path).localeCompare(
+        b.title || b.relative_path,
+        undefined,
+        { sensitivity: "base" },
+      );
+      return sortMode === "name-desc" ? -cmp : cmp;
+    });
+    return list;
+  }, [current.files, sortMode]);
 
   const clearDropState = useCallback(() => {
     setDropTarget(null);
@@ -147,21 +141,6 @@ export function StudyLibraryExplorer({
     [onImportFiles],
   );
 
-  const handleDeleteSelection = () => {
-    if (!selection) return;
-    if (selection.kind === "file") {
-      if (window.confirm("Delete this note?")) onDeleteFile?.(selection.path);
-    } else if (selection.kind === "folder") {
-      if (window.confirm("Delete this folder and everything inside?")) {
-        onDeleteFolder?.(selection.path);
-        if (browsePath === selection.path || browsePath.startsWith(`${selection.path}/`)) {
-          onBrowsePath("");
-        }
-      }
-    }
-    setSelection(null);
-  };
-
   const renderFolderTile = (folder: { path: string; name: string }, inGrid: boolean) => {
     const isSelected = selection?.kind === "folder" && selection.path === folder.path;
     const isDrop = dropTarget === folder.path;
@@ -172,10 +151,13 @@ export function StudyLibraryExplorer({
         role="button"
         tabIndex={0}
         draggable={false}
-        onClick={() => setSelection({ kind: "folder", path: folder.path })}
+        onClick={() => onSelectionChange({ kind: "folder", path: folder.path })}
         onDoubleClick={() => {
           onBrowsePath(folder.path);
-          setSelection(null);
+          onSelectionChange(null);
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") onBrowsePath(folder.path);
         }}
         onDragOver={(e) => allowDropOver(e, folder.path)}
         onDragLeave={() => clearDropState()}
@@ -193,8 +175,7 @@ export function StudyLibraryExplorer({
   };
 
   const renderFileTile = (file: { relative_path: string; title: string; kind: string }, inGrid: boolean) => {
-    const isSelected =
-      selection?.kind === "file" && selection.path === file.relative_path;
+    const isSelected = selection?.kind === "file" && selection.path === file.relative_path;
     const isOpen = selectedFile === file.relative_path;
     const inCompare = comparePaths.includes(file.relative_path);
 
@@ -210,21 +191,28 @@ export function StudyLibraryExplorer({
             onToggleCompare(file.relative_path);
             return;
           }
-          setSelection({ kind: "file", path: file.relative_path });
-          onSelectFile(file.relative_path);
+          onSelectionChange({ kind: "file", path: file.relative_path });
         }}
         onDoubleClick={() => onSelectFile(file.relative_path)}
-        title={onToggleCompare ? "Ctrl+click to add to compare" : undefined}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") onSelectFile(file.relative_path);
+        }}
+        title="Double-click to open · Ctrl+click to compare"
         className={cn(
           inGrid ? "study-library-explorer-tile" : "study-library-explorer-list-row",
           (isSelected || isOpen) && "study-library-explorer-selected",
           inCompare && "study-library-file-compare",
         )}
       >
-        <ExplorerFileIcon kind={file.kind} />
+        <ExplorerFileIcon />
         <span className="study-library-explorer-label" title={file.relative_path}>
           {file.title}
         </span>
+        {inCompare ? (
+          <span className="study-library-explorer-compare-pill" aria-label="In compare">
+            cmp
+          </span>
+        ) : null}
       </div>
     );
   };
@@ -233,86 +221,6 @@ export function StudyLibraryExplorer({
 
   return (
     <div className="study-library-explorer flex flex-col min-h-0 h-full">
-      <div className="study-library-explorer-toolbar">
-        {onCollapse ? (
-          <button
-            type="button"
-            className="study-library-explorer-tool-icon"
-            onClick={onCollapse}
-            title="Collapse file manager"
-            aria-label="Collapse file manager"
-          >
-            <PanelLeftClose className="w-4 h-4" />
-          </button>
-        ) : null}
-        <button type="button" className="study-library-explorer-tool" onClick={onNewFolder} title="New folder">
-          <FolderPlus className="w-4 h-4" />
-          <span>New</span>
-        </button>
-        <button type="button" className="study-library-explorer-tool" onClick={onNewFile} title="New file">
-          <FilePlus className="w-4 h-4" />
-          <span>File</span>
-        </button>
-        <button
-          type="button"
-          className="study-library-explorer-tool"
-          disabled={!selection}
-          onClick={handleDeleteSelection}
-          title="Delete"
-        >
-          <Trash2 className="w-4 h-4" />
-          <span>Delete</span>
-        </button>
-        {selection?.kind === "folder" && onSummarizeFolder && (
-          <button
-            type="button"
-            className="study-library-explorer-tool"
-            disabled={summarizingFolder === selection.path}
-            onClick={() => onSummarizeFolder(selection.path)}
-            title="Summarize folder"
-          >
-            <Sparkles className="w-4 h-4" />
-            <span>Summarize</span>
-          </button>
-        )}
-        <div className="ml-auto flex gap-1">
-          <button
-            type="button"
-            className={cn("study-library-explorer-tool-icon", viewMode === "grid" && "active")}
-            onClick={() => onViewModeChange("grid")}
-            title="Large icons"
-          >
-            <LayoutGrid className="w-4 h-4" />
-          </button>
-          <button
-            type="button"
-            className={cn("study-library-explorer-tool-icon", viewMode === "list" && "active")}
-            onClick={() => onViewModeChange("list")}
-            title="List"
-          >
-            <List className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
-
-      <div className="study-library-explorer-address">
-        {crumbs.map((c, i) => (
-          <span key={c.path} className="flex items-center min-w-0">
-            {i > 0 && <ChevronRight className="w-3 h-3 mx-0.5 shrink-0 opacity-50" />}
-            <button
-              type="button"
-              onClick={() => onBrowsePath(c.path)}
-              className={cn(
-                "truncate hover:underline text-[11px]",
-                i === crumbs.length - 1 ? "text-emerald-100" : "text-slate-400",
-              )}
-            >
-              {c.label}
-            </button>
-          </span>
-        ))}
-      </div>
-
       <div className="study-library-explorer-body flex flex-col flex-1 min-h-0">
         <div
           className={cn(
@@ -331,10 +239,8 @@ export function StudyLibraryExplorer({
           {childFolders.length === 0 && files.length === 0 ? (
             <div className="study-library-explorer-empty">
               <FolderOpen className="w-12 h-12 text-emerald-500/40 mb-2" />
-              <p className="text-sm text-slate-400">This folder is empty</p>
-              <p className="text-[10px] text-slate-500 mt-1">
-                Drop .md / .txt files here, or create a new file
-              </p>
+              <p className="text-sm text-slate-400">No notes here yet</p>
+              <p className="text-[10px] text-slate-500 mt-1">Use New or Import in the toolbar above</p>
             </div>
           ) : viewMode === "grid" ? (
             <div className="study-library-explorer-grid">
@@ -349,11 +255,16 @@ export function StudyLibraryExplorer({
           )}
         </div>
 
-        {comparePaths.length > 0 && (
+        {comparePaths.length > 0 ? (
           <div className="study-library-explorer-compare-hint shrink-0">
-            Comparing {comparePaths.length} file{comparePaths.length !== 1 ? "s" : ""} · Ctrl+click to toggle
+            Comparing {comparePaths.length} note{comparePaths.length !== 1 ? "s" : ""} · Ctrl+click to toggle
           </div>
-        )}
+        ) : selection ? (
+          <div className="study-library-explorer-selection-hint shrink-0">
+            <span className="truncate">{selection.path.split("/").pop()}</span>
+            <span className="text-muted-foreground">· double-click to open</span>
+          </div>
+        ) : null}
       </div>
     </div>
   );

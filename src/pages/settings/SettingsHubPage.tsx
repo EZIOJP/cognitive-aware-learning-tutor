@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router";
-import { Settings2, Palette, Puzzle, Sun, Moon } from "lucide-react";
+import { Settings2, Palette, Puzzle, Sun, Moon, Lightbulb } from "lucide-react";
 import { ThemeToggle } from "../../components/theme/ThemeToggle";
 import { Card } from "../../app/components/ui/card";
 import { Button } from "../../app/components/ui/button";
@@ -104,6 +104,22 @@ export default function SettingsHubPage() {
             <Card className="gloss-panel p-5">
               <CaltAndroidDownloadCardHeader />
               <CaltAndroidDownloadCard />
+            </Card>
+
+            <Card className="gloss-panel p-5">
+              <div className="flex items-center gap-2 mb-2">
+                <Lightbulb className="w-5 h-5 text-amber-400" />
+                <h2 className="font-medium">ESP32 LED</h2>
+              </div>
+              <p className="text-sm text-muted-foreground mb-3">
+                Play with the board RGB over USB — no mic needed.
+              </p>
+              <Link
+                to="/eeg"
+                className="inline-flex items-center rounded-xl bg-amber-500/20 px-3 py-2 text-sm font-medium text-amber-200 hover:bg-amber-500/30"
+              >
+                Open LED play →
+              </Link>
             </Card>
 
             <Card className="gloss-panel p-5">

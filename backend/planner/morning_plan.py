@@ -390,6 +390,8 @@ def morning_hint_for(
             f"Review goals & plan on Productivity, then Confirm (+10) when ready. "
             f"Usual window until {end_label}."
         )
+    if next_step == "study":
+        return "Plan confirmed — do today’s Study Loop (read, then questions)."
     if morning_on:
         if phase == "after_eod":
             return str(

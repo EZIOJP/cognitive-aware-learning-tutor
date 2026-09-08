@@ -19,8 +19,9 @@ def _normalize_row(raw: dict[str, Any], default_topic: str | None) -> MathQuesti
         item = MathQuestionIn.model_validate(merged)
     except Exception:
         return None
-    if not item.prompt or not item.expected_answer:
+    if not item.prompt:
         return None
+    # Empty expected_answer is allowed (open / proof-style problems).
     if not item.topic and default_topic:
         item.topic = default_topic
     if not item.topic:
@@ -69,9 +70,13 @@ def upsert_questions(db: Session, items: list[MathQuestionIn], *, default_source
         topic = (item.topic or "").strip()
         prompt = (item.prompt or "").strip()
         expected = (item.expected_answer or "").strip()
-        if not topic or not prompt or not expected:
+        if not topic or not prompt:
             skipped += 1
             continue
+        if not expected:
+            expected = ""
+            if not item.answer_format:
+                item.answer_format = "open"
 
         row: MathQuestion | None = None
         if item.external_id:

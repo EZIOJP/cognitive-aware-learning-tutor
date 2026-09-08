@@ -222,7 +222,18 @@ def _read_file(path: Path, root: Path) -> tuple[TopicEntry | None, dict[str, str
     return topic, None
 
 
-_cache: dict[str, Any] = {"stamp": None, "catalog": None}
+_cache: dict[str, Any] = {"stamp": None, "catalog": None, "checked_at": 0.0}
+# Hot paths (list_tags / gate / freeze) call load_catalog often. Full-tree
+# mtime walks are expensive on large data/questions trees — recheck at most
+# every few seconds unless refresh=True or invalidate_catalog_cache().
+_STAMP_RECHECK_S = 60.0
+
+
+def invalidate_catalog_cache() -> None:
+    """Drop cached catalog so the next load_catalog rebuilds from disk."""
+    _cache["stamp"] = None
+    _cache["catalog"] = None
+    _cache["checked_at"] = 0.0
 
 
 def _dir_stamp(root: Path) -> tuple:
@@ -235,9 +246,25 @@ def _dir_stamp(root: Path) -> tuple:
 
 def load_catalog(*, root: Path | None = None, refresh: bool = False) -> Catalog:
     """Walk ``data/questions/**``. Cached until a file's mtime or the file set changes."""
+    import time
+
     base = Path(root) if root else QUESTIONS_DIR
-    stamp = (base.as_posix(), _dir_stamp(base))
+    base_key = base.resolve().as_posix() if base.exists() else base.as_posix()
+    now = time.monotonic()
+    cached_stamp = _cache.get("stamp")
+    if (
+        not refresh
+        and _cache["catalog"] is not None
+        and isinstance(cached_stamp, tuple)
+        and len(cached_stamp) == 2
+        and cached_stamp[0] == base_key
+        and (now - float(_cache.get("checked_at") or 0.0)) < _STAMP_RECHECK_S
+    ):
+        return _cache["catalog"]
+
+    stamp = (base_key, _dir_stamp(base))
     if not refresh and _cache["stamp"] == stamp and _cache["catalog"] is not None:
+        _cache["checked_at"] = now
         return _cache["catalog"]
 
     catalog = Catalog()
@@ -279,6 +306,7 @@ def load_catalog(*, root: Path | None = None, refresh: bool = False) -> Catalog:
     catalog.topics.sort(key=lambda t: (t.kind, t.stage, t.topic_id))
     _cache["stamp"] = stamp
     _cache["catalog"] = catalog
+    _cache["checked_at"] = now
     return catalog
 
 

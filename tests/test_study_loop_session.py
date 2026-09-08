@@ -56,8 +56,19 @@ def test_resolve_l_tag_with_mcq_is_study_not_math(monkeypatch):
 def test_resolve_empty_l_tag_errors_not_math(monkeypatch):
     monkeypatch.setattr(sl, "list_bank_items_for_tag", lambda tag, kinds=None: [])
     monkeypatch.setattr(sl, "math_generators_for_tag", lambda tag: [])
+    monkeypatch.setattr(sl, "_vocab_word_ids_for_free_tag", lambda tag: [])
     with pytest.raises(ValueError, match="no_practice_content"):
         sl.resolve_practice_route("L5-T05")
+
+
+def test_resolve_free_vocab_tag_routes_to_vocab(monkeypatch):
+    monkeypatch.setattr(sl, "list_bank_items_for_tag", lambda tag, kinds=None: [])
+    monkeypatch.setattr(sl, "math_generators_for_tag", lambda tag: [])
+    monkeypatch.setattr(sl, "_vocab_word_ids_for_free_tag", lambda tag: [10, 20, 30])
+    route = sl.resolve_practice_route("gre-hard", count=5)
+    assert route.domain == "vocab"
+    assert route.config.get("word_ids") == [10, 20, 30]
+    assert route.reason == "vocab_free_tag"
 
 
 def test_resolve_coding_only_is_code(monkeypatch):
@@ -82,6 +93,14 @@ def test_resolve_math_only_is_math(monkeypatch):
     route = sl.resolve_practice_route("MT1-T02")
     assert route.domain == "math"
     assert route.config.get("note_topic_id") == "MT1-T02"
+
+
+def test_worksheet_companion_practices_math_core(monkeypatch):
+    """MT0 worksheets are math-route via built-in drills (sentinel generators)."""
+    route = sl.resolve_practice_route("MT0-T04", count=20)
+    assert route.domain == "math"
+    assert route.config.get("note_topic_id") == "MT0-T04"
+    assert route.config.get("math_core_drill") is True
 
 
 def test_resolve_mix_is_mixed(monkeypatch):

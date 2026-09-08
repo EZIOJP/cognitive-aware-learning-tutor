@@ -7,7 +7,8 @@ import re
 from backend.behavior.domain_classify import _BROWSER_SUFFIX, _TITLE_SITE_HINTS
 
 _BROWSER_EXE = re.compile(
-    r"chrome|msedge|firefox|brave|opera|arc|zen",
+    r"chrome|msedge|firefox|brave|opera|vivaldi|arc|zen|sidekick|librewolf|"
+    r"waterfox|floorp|thorium|chromium|iexplore",
     re.I,
 )
 

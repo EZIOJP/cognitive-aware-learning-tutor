@@ -93,6 +93,7 @@ class CodeRunBody(BaseModel):
     code: str
     item: dict[str, Any] | None = None
     item_id: str | None = None
+    session_id: str | None = None
 
 
 @router.get("/backlog")
@@ -375,12 +376,12 @@ def get_study_loop_read_card(
 def patch_study_loop_read_card(
     card_id: str,
     body: ReadCardPatchBody,
+    db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
     from backend.quiz import note_writeback as wb
     from backend.quiz.read_cards import parse_card_id
 
-    _ = user
     try:
         note_path, topic_id = parse_card_id(card_id)
         result = wb.patch_note_section(
@@ -389,6 +390,8 @@ def patch_study_loop_read_card(
             body_markdown=body.body_markdown,
             title=body.title,
             expected_mtime=body.expected_mtime,
+            user_id=int(user.id),
+            db=db,
         )
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
@@ -485,8 +488,52 @@ def _study_loop_http(exc: ValueError) -> HTTPException:
     if msg == "session_not_found":
         return HTTPException(status_code=404, detail=msg)
     if msg == "no_practice_content":
-        return HTTPException(status_code=400, detail=msg)
+        return HTTPException(
+            status_code=400,
+            detail="Questions are not present for this topic.",
+        )
+    if msg == "read_required":
+        return HTTPException(
+            status_code=400,
+            detail="Finish the flash cards for this topic first, then start questions.",
+        )
+    if msg == "no_candidates":
+        return HTTPException(status_code=400, detail="No daily path tags for today.")
+    if "No math questions" in msg:
+        return HTTPException(
+            status_code=400,
+            detail="Questions are not present for this topic.",
+        )
     return HTTPException(status_code=400, detail=msg)
+
+
+class TodayStartBody(BaseModel):
+    mark_read: bool = False
+
+
+@router.get("/study-loop/today")
+def get_study_loop_today(
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    from backend.quiz import daily_bite as dbite
+
+    return dbite.today_payload(db, user_id=user.id)
+
+
+@router.post("/study-loop/today/start")
+def post_study_loop_today_start(
+    body: TodayStartBody | None = None,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    from backend.quiz import daily_bite as dbite
+
+    payload = body or TodayStartBody()
+    try:
+        return dbite.start_today(db, user=user, mark_read=payload.mark_read)
+    except ValueError as exc:
+        raise _study_loop_http(exc) from exc
 
 
 @router.post("/study-loop/sessions")
@@ -554,15 +601,26 @@ def post_study_loop_start_practice(
 
 
 @router.post("/code/run")
-def post_code_run(body: CodeRunBody, user: User = Depends(get_current_user)):
+def post_code_run(
+    body: CodeRunBody,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
     from backend.quiz import code_runner as cr
     from backend.quiz import content_bank as cb
+    from backend.quiz.store import load_global_session
 
-    _ = user
     item = body.item
     if item is None and body.item_id:
         found = cb.get_questions(question_ids=[body.item_id])
         item = found[0] if found else None
+    if item is None and body.session_id and body.item_id:
+        sess = load_global_session(db, body.session_id, int(user.id))
+        if sess:
+            for it in (sess.get("payload") or {}).get("items") or []:
+                if str(it.get("id") or "") == str(body.item_id):
+                    item = it
+                    break
     if not item:
         raise HTTPException(status_code=400, detail="item or item_id required")
     correct, feedback, payload = cr.grade_submission(item, body.code)
@@ -615,13 +673,12 @@ def get_low_mastery(
     user: User = Depends(get_current_user),
 ):
     from backend.quiz import importance as imp
-    from backend.quiz import tag_index as ti
     from backend.models.review_card import ReviewCard
 
     store = imp.load_store()
+    # Only cards matter — do NOT walk the full question catalog via list_tags().
     cards = db.query(ReviewCard).filter(ReviewCard.user_id == user.id).all()
-    tag_ids = [str(t["id"]) for t in ti.list_tags()]
-    return {"tags": imp.list_low_mastery(cards, tag_ids, store)}
+    return {"tags": imp.list_low_mastery(cards, None, store)}
 
 
 @router.post("/importance/low-mastery/start")
@@ -769,6 +826,19 @@ def post_quiz_answer(
             response=body.response,
             time_taken_ms=body.time_taken_ms,
         )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.post("/{session_id}/keep-going")
+def post_quiz_keep_going(
+    session_id: str,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Append another Math Core drill chunk (Keep going)."""
+    try:
+        return handler.keep_going_math_core(db, user=user, session_id=session_id)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 

@@ -1,0 +1,101 @@
+{
+  "schema_version": 1,
+  "kind": "math",
+  "topic": {
+    "topic_id": "math.aptitude.saket-tcs-ninja",
+    "title": "Programming aptitude — TCS - NINJA",
+    "stage": "foundations",
+    "path": [
+      "Aptitude",
+      "SAKET",
+      "TCS - NINJA"
+    ],
+    "track": "aptitude",
+    "prerequisites": [],
+    "note_topic_ids": [
+      "MT1-T13"
+    ],
+    "description": "Interview coding aptitude from TCS - NINJA."
+  },
+  "questions": [
+    {
+      "id": "math.aptitude.saket-tcs-ninja.q0001",
+      "problem": "**TCS - NINJA · Que 1**\n\nOne programming language has the following keywords that cannot be used as identifiers:\n\nbreak, case, continue, default, defer, else, for, func, goto, if, map, range, return, struct, type, var\n\nWrite a program to find if the given word is a keyword or not\n\nTest cases\nCase 1\nInput – defer\nExpected Output – defer is a keyword\nCase 2\nInput – While\nExpected Output – while is not a keyword\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "– defer is a keyword",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: – defer | Expected Output – defer is a keyword | Case 2 | Input – While | Expected Output – while is not a keyword",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "tcs---ninja"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-tcs-ninja.q0002",
+      "problem": "**TCS - NINJA · Que 2**\n\nGiven a maximum of four digit to the base 17 (10 – A, 11 – B, 12 – C, 13 – D … 16 – G} as input, output its decimal value.\n\nTest Cases\nCase 1\nInput – 1A\nExpected Output – 27\nCase 2\nInput – 23GF\nExpected Output – 10980\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "its decimal value.",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: , output its decimal value. |  | Test Cases | Case 1 | Input – 1A | Expected Output – 27 | Case 2 | Input – 23GF | Expected Output – 10980",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "tcs---ninja"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-tcs-ninja.q0003",
+      "problem": "**TCS - NINJA · Que 3**\n\nGiven a maximum of 100 digit numbers as input, find the difference between the sum of odd and even position digits\n\nTest Cases\nCase 1\nInput: 4567\nExpected Output: 2\nExplanation : Odd positions are 4 and 6 as they are pos: 1 and pos: 3, both have sum 10. Similarly, 5 and 7 are at even positions pos: 2 and pos: 4 with sum 12. Thus, difference is 12 – 10 = 2\n\nCase 2\nInput: 5476\nExpected Output: 2\nCase 3\nInput: 9834698765123\nExpected Output: 1\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "2",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: , find the difference between the sum of odd and even position digits |  | Test Cases | Case 1 | Input: 4567 | Expected",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "tcs---ninja"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-tcs-ninja.q0004",
+      "problem": "**TCS - NINJA · Que 4**\n\nQues. Write a code to check whether no is prime or not. Condition use function check() to find whether entered no is positive or negative ,if negative then enter the no, And if yes pas no as a parameter to prime() and check whether no is prime or not?\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "",
+      "answer_format": "open",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Trace the sample carefully; watch null / edge cases.",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "tcs---ninja",
+        "no-answer",
+        "open"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-tcs-ninja.q0005",
+      "problem": "**TCS - NINJA · Que 5**\n\nProgram to check if a year is Leap Year or not 💖\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "",
+      "answer_format": "open",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Trace the sample carefully; watch null / edge cases.",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "tcs---ninja",
+        "no-answer",
+        "open"
+      ]
+    }
+  ]
+}

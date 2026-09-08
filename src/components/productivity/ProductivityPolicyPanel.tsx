@@ -6,6 +6,7 @@ import {
   fetchProductivityPolicy,
   saveCategoryScores,
   saveProductivityPolicy,
+  saveStudyLoopGate,
   type DistractionGate,
   type ProductivityPolicy,
 } from "../../api/behaviorClient";
@@ -75,7 +76,8 @@ export function ProductivityPolicyPanel({ onSaved }: Props) {
       ]);
       setPolicy({
         ...p,
-        hard_block_enabled: p.hard_block_enabled ?? false,
+        softland_enabled: p.softland_enabled ?? p.hard_block_enabled ?? false,
+        hard_block_enabled: p.softland_enabled ?? p.hard_block_enabled ?? false,
         daily_goal_minutes: p.daily_goal_minutes ?? 240,
         hard_block_gaming: p.hard_block_gaming ?? true,
         hard_block_exes: p.hard_block_exes ?? [],
@@ -121,8 +123,28 @@ export function ProductivityPolicyPanel({ onSaved }: Props) {
     setError(null);
     setHint(null);
     try {
-      const saved = await saveProductivityPolicy(policy);
-      setPolicy(saved);
+      const saved = await saveProductivityPolicy({
+        ...policy,
+        softland_enabled: policy.softland_enabled ?? policy.hard_block_enabled ?? false,
+      });
+      // Prefer native SoftLand SoT when Focus bridge is available (Phase 2 gateway).
+      try {
+        const { enforcerNativeCmd, isFocusEnforcerBridgeAvailable } = await import(
+          "../../lib/enforcerNativeCmd"
+        );
+        if (isFocusEnforcerBridgeAvailable()) {
+          await enforcerNativeCmd("softland.set_enabled", {
+            enabled: Boolean(saved.softland_enabled ?? saved.hard_block_enabled),
+          });
+        }
+      } catch {
+        /* HTTP save already applied; gateway optional */
+      }
+      setPolicy({
+        ...saved,
+        softland_enabled: saved.softland_enabled ?? saved.hard_block_enabled ?? false,
+        hard_block_enabled: saved.softland_enabled ?? saved.hard_block_enabled ?? false,
+      });
       await saveCategoryScores(scores);
       const hours = goalMinutesToFocusHours(saved.daily_goal_minutes ?? 240);
       const local = loadProductivityGoals();
@@ -204,31 +226,37 @@ export function ProductivityPolicyPanel({ onSaved }: Props) {
       <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 space-y-3">
         <div className="flex items-start justify-between gap-2">
           <div>
-            <p className="text-xs font-semibold text-amber-100">Hard-block until daily goal</p>
+            <p className="text-xs font-semibold text-amber-100">SoftLand / game-bank until daily goal</p>
             <p className="text-[11px] text-muted-foreground mt-0.5">
-              CALT hard-block = <strong className="text-foreground/80">games only</strong> (Steam/Epic
-              + custom game exes). Cursor, VS Code, and Edge are never killed. Distraction{" "}
-              <strong className="text-foreground/80">sites</strong> (Netflix/YouTube) are redirected by
-              SelfTracker on Edge (`selftracker-extension/`) while this gate is Armed and locked. Cold
-              Turkey remains an optional backup if the API is down.
+              This toggle is SoftLand + game-bank only — it does <strong className="text-foreground/80">not</strong>{" "}
+              control OS process kills.               For kills use{" "}
+              <a className="underline text-amber-200/90" href="#focus">
+                Settings → Focus / Enforcer
+              </a>{" "}
+              or{" "}
+              <a className="underline text-amber-200/90" href="#rules">
+                Blocking rules
+              </a>{" "}
+              (<code className="text-foreground/70">enforcer_policy.json</code>). Site SoftLand ={" "}
+              <strong className="text-foreground/80">CALT Gate</strong> on Edge.
             </p>
           </div>
           <label className="flex items-center gap-2 text-xs shrink-0">
             <input
               type="checkbox"
-              checked={Boolean(policy.hard_block_enabled)}
+              checked={Boolean(policy.softland_enabled ?? policy.hard_block_enabled)}
               onChange={(e) => {
                 const on = e.target.checked;
-                if (!on && policy.hard_block_enabled) {
+                if (!on && (policy.softland_enabled ?? policy.hard_block_enabled)) {
                   const ok = window.prompt(
-                    'Type UNLOCK to turn off hard-block (breaks your commitment device):',
+                    "Type UNLOCK to turn off SoftLand game-bank commitment:",
                   );
                   if (ok !== "UNLOCK") return;
                 }
-                setPolicy({ ...policy, hard_block_enabled: on });
+                setPolicy({ ...policy, softland_enabled: on, hard_block_enabled: on });
               }}
             />
-            Armed
+            SoftLand on
           </label>
         </div>
         <p className="text-[11px] text-muted-foreground">
@@ -239,6 +267,61 @@ export function ProductivityPolicyPanel({ onSaved }: Props) {
             Open Bible reader
           </a>
         </p>
+        <div className="rounded-md border border-white/10 bg-black/20 p-2.5 space-y-2">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <p className="text-xs font-medium text-foreground/90">Require daily Study Loop</p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">
+                When on, SoftLand stays on study until today’s path is done. Off = optional (Review
+                Hub still works). Currently paused by default.
+              </p>
+            </div>
+            <label className="text-xs flex items-center gap-2 shrink-0">
+              <input
+                type="checkbox"
+                checked={Boolean(gate?.morning?.study_loop_gate?.enabled ?? gate?.morning?.config?.study_loop_required)}
+                onChange={(e) => {
+                  const on = e.target.checked;
+                  void (async () => {
+                    try {
+                      setHint(null);
+                      const saved = await saveStudyLoopGate(on);
+                      setGate((g) =>
+                        g
+                          ? {
+                              ...g,
+                              morning: g.morning
+                                ? {
+                                    ...g.morning,
+                                    study_loop_gate: saved,
+                                    config: {
+                                      ...(g.morning.config || {}),
+                                      study_loop_required: saved.enabled,
+                                    },
+                                  }
+                                : g.morning,
+                            }
+                          : g,
+                      );
+                      setHint(
+                        saved.enabled
+                          ? "Study Loop gate ON — SoftLand will require today’s path after plan."
+                          : "Study Loop gate OFF — SoftLand will not force study.",
+                      );
+                      const refreshed = await fetchDistractionGate().catch(() => null);
+                      if (refreshed) setGate(refreshed);
+                    } catch (err: unknown) {
+                      setError(err instanceof Error ? err.message : "Could not save Study Loop gate");
+                    }
+                  })();
+                }}
+              />
+              {gate?.morning?.study_loop_gate?.enabled || gate?.morning?.config?.study_loop_required
+                ? "Required"
+                : "Off"}
+            </label>
+          </div>
+        </div>
         <div className="rounded-md border border-white/10 bg-black/20 p-2.5 space-y-2">
           <p className="text-[11px] text-muted-foreground">
             Controlled skip: <strong className="text-foreground/80">2 day-passes per week</strong>{" "}
@@ -468,7 +551,18 @@ export function ProductivityPolicyPanel({ onSaved }: Props) {
         </div>
         <div>
           <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">
-            Custom blocked exes
+            SoftLand game-bank exes (not OS kill list)
+          </p>
+          <p className="text-[11px] text-muted-foreground mb-2">
+            OS kill list lives on{" "}
+            <a className="underline text-amber-200/90" href="#focus">
+              Focus
+            </a>{" "}
+            /{" "}
+            <a className="underline text-amber-200/90" href="#rules">
+              Blocking rules
+            </a>
+            . This list only feeds SoftLand / game-bank scoring.
           </p>
           <div className="flex flex-wrap gap-1.5 mb-2">
             {(policy.hard_block_exes || []).map((exe) => (

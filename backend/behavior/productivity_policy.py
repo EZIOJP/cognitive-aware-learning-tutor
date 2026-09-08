@@ -85,7 +85,9 @@ def default_policy_dict() -> dict[str, Any]:
         "blocked_categories": list(DEFAULT_BLOCKED_CATEGORIES),
         "app_overrides": {},
         "threshold": PRODUCTIVE_THRESHOLD,
+        # softland_enabled preferred; hard_block_enabled = legacy SoftLand column (not OS kills)
         "hard_block_enabled": False,
+        "softland_enabled": False,
         "daily_goal_minutes": 240,
         "hard_block_gaming": True,
         "hard_block_exes": list(DEFAULT_HARD_BLOCK_EXES),
@@ -105,12 +107,21 @@ def serialize_policy(row: ProductivityPolicy | None) -> dict[str, Any]:
     for must in ("Study (Browser)", "Coursework (Browser)"):
         if must not in productive:
             productive.append(must)
+    softland = bool(getattr(row, "hard_block_enabled", False))
+    try:
+        from backend.behavior.softland_policy import softland_policy_path, softland_enabled_from_policy
+
+        if softland_policy_path().is_file():
+            softland = softland_enabled_from_policy()
+    except Exception:
+        pass
     return {
         "productive_categories": productive,
         "blocked_categories": _loads_list(row.blocked_categories),
         "app_overrides": _loads_dict(row.app_overrides),
         "threshold": int(row.threshold or PRODUCTIVE_THRESHOLD),
-        "hard_block_enabled": bool(getattr(row, "hard_block_enabled", False)),
+        "hard_block_enabled": softland,  # legacy SoftLand flag — not OS armed
+        "softland_enabled": softland,
         "daily_goal_minutes": int(getattr(row, "daily_goal_minutes", None) or 240),
         "hard_block_gaming": bool(getattr(row, "hard_block_gaming", True)),
         "hard_block_exes": exes,
@@ -172,13 +183,29 @@ def update_policy(db: Session, user_id: int, body: dict[str, Any]) -> dict[str, 
         if thr < 1 or thr > 100:
             raise ValueError("threshold must be 1–100")
         row.threshold = thr
-    if "hard_block_enabled" in body:
-        row.hard_block_enabled = bool(body["hard_block_enabled"])
+    if "hard_block_enabled" in body or "softland_enabled" in body:
+        # softland_enabled preferred; hard_block_enabled = legacy SoftLand column (not OS kills)
+        if "softland_enabled" in body:
+            row.hard_block_enabled = bool(body["softland_enabled"])
+        else:
+            row.hard_block_enabled = bool(body["hard_block_enabled"])
+        try:
+            from backend.behavior.softland_policy import set_softland_enabled
+
+            set_softland_enabled(bool(row.hard_block_enabled))
+        except Exception:
+            pass
     if "daily_goal_minutes" in body:
         mins = int(body["daily_goal_minutes"])
         if mins < 15 or mins > 16 * 60:
             raise ValueError("daily_goal_minutes must be 15–960")
         row.daily_goal_minutes = mins
+        try:
+            from backend.behavior.softland_policy import patch_softland_policy
+
+            patch_softland_policy({"goals": {"daily_focus_minutes": mins}})
+        except Exception:
+            pass
     if "hard_block_gaming" in body:
         row.hard_block_gaming = bool(body["hard_block_gaming"])
     if "hard_block_exes" in body:

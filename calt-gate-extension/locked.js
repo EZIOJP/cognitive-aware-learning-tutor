@@ -47,11 +47,18 @@ function renderStats(g) {
   const block = g.current_block;
   const inFocusMode = modeLc === "study" || modeLc === "bible" || modeLc === "planning";
   const dayMet = Boolean(g.day_unlimited || g.reward_day || g.unlocked);
+  const incubating = Boolean((g.incubation && g.incubation.active) || (g.browser && g.browser.incubation_active));
 
   // "Games unlocked" under "Time left to unlock" was confusing when STUDY still blocks YouTube.
   let unlockKey = "Time left to unlock";
   let unlockVal = "Locked";
-  if (dayMet && inFocusMode) {
+  if (incubating) {
+    unlockKey = "Incubation break";
+    const rem = (g.incubation && g.incubation.remaining_sec) || 0;
+    unlockVal = rem > 0
+      ? Math.round(rem / 60) + " min left · entertainment blocked"
+      : "Entertainment blocked — open CALT Desktop · Focus";
+  } else if (dayMet && inFocusMode) {
     unlockKey = "Daily goal";
     unlockVal = block && block.title
       ? "Met — still locked for this study block"
@@ -141,21 +148,28 @@ function applyGate(g, fromCache) {
     title.textContent = "Distraction site blocked";
     const modeLc = String(browser.mode_label || browser.mode || "").toLowerCase();
     const dayMet = Boolean(g.day_unlimited || g.reward_day || g.unlocked);
-    if (modeLc === "free" || (dayMet && modeLc !== "bible" && modeLc !== "planning")) {
+    const incubating = Boolean((g.incubation && g.incubation.active) || browser.incubation_active);
+    if (incubating) {
+      title.textContent = "Incubation break";
       body.textContent =
-        "Odd redirect in free mode — reload SelfTracker on Edge. Distractions stay blocked; YouTube should work after today's focus goal.";
+        "Mandatory rest — entertainment stays blocked. Stretch or walk. Manage timers in CALT Desktop · Focus (Windows enforcer owns app kills).";
+    } else if (modeLc === "free" || (dayMet && modeLc !== "bible" && modeLc !== "planning")) {
+      body.textContent =
+        "Odd redirect in free mode — reload CALT Gate on Edge. Distractions stay blocked; YouTube should work after today's focus goal.";
     } else if (dayMet && (modeLc === "study" || modeLc === "bible" || modeLc === "planning")) {
       body.textContent =
-        "Daily focus goal is met on the server, but this tab still sees study rules — reload SelfTracker on Edge so mode updates to FREE. Distractions stay blocked.";
+        "Daily focus goal is met on the server, but this tab still sees study rules — reload CALT Gate on Edge so mode updates to FREE. Distractions stay blocked.";
     } else {
       body.textContent =
-        "This tab was redirected. Other Edge tabs stay open. YouTube stays blocked until today's focus goal; distractions are always blocked.";
+        "This tab was redirected. Control blocks in CALT Desktop · Focus. YouTube stays blocked until today's focus goal; distractions are always blocked.";
     }
   }
   const mode = (browser.mode_label || browser.mode || "").toUpperCase();
   const bits = ["Mode: " + (mode || "—")];
+  if ((g.incubation && g.incubation.active) || browser.incubation_active) bits.push("incubation");
   if (g.locked) bits.push("games locked");
   bits.push("tab-local lock");
+  if (g.desktop && g.desktop.enforcer_owns_kills) bits.push("enforcer on");
   if (fromCache) bits.push("cached");
   if (g.stale || g.degraded) bits.push("stale");
   status.textContent = bits.join(" · ");
@@ -168,6 +182,8 @@ function parseBlockedHost() {
     const params = new URLSearchParams(window.location.search || "");
     let host = (params.get("host") || "").toLowerCase().replace(/^www\./, "");
     const from = params.get("from") || "";
+    const why = (params.get("why") || "").trim();
+    const until = (params.get("until") || "").trim();
     if (!host && from) {
       try {
         host = new URL(from).hostname.toLowerCase().replace(/^www\./, "");
@@ -175,9 +191,9 @@ function parseBlockedHost() {
         host = "";
       }
     }
-    return { host: host, from: from };
+    return { host: host, from: from, why: why, until: until };
   } catch (e) {
-    return { host: "", from: "" };
+    return { host: "", from: "", why: "", until: "" };
   }
 }
 
@@ -189,10 +205,16 @@ function showRedirectDialog(parsed) {
   if (!dlg || !hostEl || !detailEl || !btn) return;
   const host = parsed.host || "unknown site";
   const from = parsed.from || "";
+  const why = parsed.why || "";
+  const until = parsed.until || "";
   hostEl.textContent = host;
-  detailEl.textContent = from
-    ? "Blocked URL logged to data/logs/gate_extension.log"
-    : "Redirect logged to data/logs/gate_extension.log";
+  const whyLabel = why ? "Reason: " + why + ". " : "";
+  const untilLabel = until ? " Until: " + until + "." : "";
+  detailEl.textContent =
+    whyLabel +
+    "CALT SoftLand blocked this webpage. Your browser stayed open — open Focus to change SoftLand rules." +
+    untilLabel +
+    (from ? " Logged for your history." : "");
   dlg.classList.remove("hidden");
   btn.onclick = function () {
     dlg.classList.add("hidden");

@@ -1,0 +1,2107 @@
+{
+  "schema_version": 1,
+  "kind": "math",
+  "topic": {
+    "topic_id": "math.aptitude.sat-algebra",
+    "title": "SAT Algebra",
+    "stage": "foundations",
+    "path": [
+      "Aptitude",
+      "SAT",
+      "Algebra"
+    ],
+    "track": "aptitude",
+    "prerequisites": [],
+    "note_topic_ids": [
+      "MT1-T04"
+    ],
+    "description": "College Readiness / SAT-style items (Algebra)."
+  },
+  "questions": [
+    {
+      "id": "math.aptitude.sat-algebra.q0001",
+      "problem": "A savings account starts with \\$300 and gains a fixed amount of \\$25 interest each week. No more money was deposited into the account while the interest was being . If the balance is represented by the function $B(w) = 25w + 300$, where $w$ represents the number of weeks, after how many weeks will the balance reach \\$600?\n\nOptions:\nA) 8 weeks\nB) 12 weeks\nC) 24 weeks\nD) 30 weeks",
+      "answer": "12 weeks",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "I changed the wording to indicate that the $25 was a fixed amount of interest and also added language to indicate no additional deposits were made (it's important for the reader to know that no additional money was added during the time frame). I also changed the \"is\" when defining $w$ to say, \"represents.\" \nI also want to note that students may not be inspired to read the prompt since you can just plug in any of the answers into the equation and get the correct answer without knowing anything …",
+      "hint": "Skill: Linear functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0002",
+      "problem": "An elevator starts at the ground floor and moves between floors at a constant rate. The equation $y = -2x + 10$ models the floor number $y$ of the elevator $x$ seconds after it begins descending from the 10th floor. What does the slope of the line represent?\n\nOptions:\nA) The number of floors the elevator ascends per second\nB) The total number of floors the elevator descends\nC) The number of floors the elevator descends per second\nD) The number of seconds it takes to descend one floor",
+      "answer": "The number of floors the elevator descends per second",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "The negative slope means that as time passes, the elevator is descending. If they wanted a number of floors per second, it should say the number, or modify the choices to address just the negative sign of the slope. Also, the \"when graphed in the xy-plane\" is irrelevant. I took that part out.",
+      "hint": "Skill: Linear functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0003",
+      "problem": "A community pool starts with 2500 gallons of water, but loses 4 gallons of water per day due to evaporation. Which linear function represents the amount of water, $W(d)$, in gallons remaining in the pool after d days?\n\nOptions:\nA) W(d) = (2500 - 4)d\nB) W(d) = 2500 - 4d\nC) W(d) = 2500 + 4d\nD) W(d) = -4d + 2500",
+      "answer": "W(d) = 2500 - 4d",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Changed the order of the starting amount and the losing amount to make it read more easily.",
+      "hint": "Skill: Linear functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0004",
+      "problem": "A theater company's profit decreases linearly as the number of rows get farther from the stage. Seats that are 5 rows from the stage generate \\$80 profit for each seat in that row, while seats 15 rows from the stage generate \\$50 profit for each seat in that row. Which equation represents the company's profit $p(r)$, in dollars, for a seat that is $r$ rows from the stage?\n\nOptions:\nA) $p(r) = 3r + 65$\nB) $p(r) = -3r + 75$\nC) $p(r) = 3r + 30$\nD) $p(r) = -3r + 95$",
+      "answer": "$p(r) = -3r + 95$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Updated the language slightly to make it less robot-like. I also changed option (c) because it is much more complicated-looking. If students are confused, they'd probably choose that one since it's so different.",
+      "hint": "Skill: Linear functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0005",
+      "problem": "A taxi service charges a base fare plus a fee per mile traveled. The equation $y = 3.50 + 2.25x$ represents the total cost $y$, in dollars, for traveling $x$ miles. What does the y-intercept for the given equation represent?\n\nOptions:\nA) The base fare charged before the trip begins\nB) The cost per mile charged during the trip\nC) The total cost of the trip when completed\nD) The number of miles traveled in the trip",
+      "answer": "The base fare charged before the trip begins",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Graphing isn't necessary for this question, therefore I'm not sure the task topic is correct. Revised question stem.",
+      "hint": "Skill: Linear functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0006",
+      "problem": "A restaurant's daily revenue can be modeled by the equation $R = 800 + 45c$, where $R$ is the revenue in dollars and $c$ is the number of customers served. How many customers must the restaurant serve to reach a daily revenue of \\$1,610?\n\nOptions:\nA) 16\nB) 18\nC) 19\nD) 36",
+      "answer": "18",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "This question is more of an inequality than an equation. Revision to equation made to fit the assigned task topic (equations). Answer choices left the same.",
+      "hint": "Skill: Linear functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0007",
+      "problem": "A machine produces widgets at a constant rate throughout the day. After 3 hours of operation, it has produced 180 widgets, and after 7 hours, it has produced 420 widgets. Which function represents the number of widgets, $W(h)$, produced after $h$ hours of operation?\n\nOptions:\nA) $W(h) = 40h$\nB) $W(h) = 60h$\nC) $W(h) = 60h + 60$\nD) $W(h) = 240h$",
+      "answer": "$W(h) = 60h$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Replaced \"equation\" with \"function.\"",
+      "hint": "Skill: Linear functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0008",
+      "problem": "A sculpture studio rents workspace for \\$75 per week plus \\$12 per square foot of storage. If an artist's monthly bill is \\$480 and there are 4 weeks in a month, how many square feet of storage is the artist renting?\n\nOptions:\nA) 10\nB) 15\nC) 20\nD) 26.25",
+      "answer": "15",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Original question would have had option A be the correct answer at 1.25 sqft for storage. Adjusted the question stem to have an equation that allowed for option B to be correct, and changed option A to be more in line with the other answer options.",
+      "hint": "Skill: Linear functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0009",
+      "problem": "A local store offers movies for rental. The total rental cost in dollars is given by $C = 1.99 + 0.35t$, where $t$ represents the rental time in days. What does $0.35$ represent in this equation?\n\nOptions:\nA) The cost in dollars charged per hour of renting\nB) The cost in dollars charged per day of renting\nC) The cost in dollars charged per movie rented\nD) The fixed cost in dollars charged per rental",
+      "answer": "The cost in dollars charged per day of renting",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "I'm not 100% comfortable saying that \"streaming service\" is common enough for students that they would understand this context.  Perhaps it could be updated as suggested above.",
+      "hint": "Skill: Linear functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0010",
+      "problem": "A machine produces widgets at a constant rate throughout the day. After 3 hours of operation, it has produced 180 widgets, and after 7 hours, it has produced 420 widgets. Which equation represents the number of widgets, $W(h)$, produced after $h$ hours of operation?\n\nOptions:\nA) $W(h) = 40h$\nB) $W(h) = 60h$\nC) $W(h) = 60h + 60$\nD) $W(h) = 240h$",
+      "answer": "$W(h) = 60h$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "I hate the use of the term \"widgets\". The problem might as well say \"stuff\" or \"things\". One can be more specific while still ensuring the reader knows what it is. The idea behind this task is really to be able to create a rule that has both a rate and a constant (other than 0 because otherwise you are just finding rate). This problem does not require the student to find the rate using the slope formula since they get the rate by dividing widgets/hours and it's the same for both.",
+      "hint": "Skill: Linear functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0011",
+      "problem": "The population of a small town can be modeled by the equation $P = 5000 + 250t$, where $P$ represents the population and $t$ represents the number of years since 2010. What does the value 5000 represent in this context?\n\nOptions:\nA) The annual increase in population\nB) The current population\nC) The initial population in 2010\nD) The maximum population capacity",
+      "answer": "The initial population in 2010",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "The wording of the task seems incomplete; it uses the term \"between\" but does not list two things that one is looking to connect. \nAlso, population very rarely grows linearly, so this may not reflect \"real life\"",
+      "hint": "Skill: Linear functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0012",
+      "problem": "A phone company charges a monthly fee of \\$40 plus \\$0.15 per text. Which linear function represents the total monthly bill, $B(t)$, in dollars, for $t$ texts?\n\nOptions:\nA) $B(t) = 0.15t$\nB) $B(t) = 40t + 0.15$\nC) $B(t) = 40.15t$\nD) $B(t) = 0.15t + 40$",
+      "answer": "$B(t) = 0.15t + 40$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "I don't know if \"long-distance\" is a thing that exists or that high school students understand. Also updated answers with LaTex",
+      "hint": "Skill: Linear functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0013",
+      "problem": "The linear function $h(x) = 2x + 5$ is reflected across the line $y = x$ and then shifted up 3 units. What is the y-intercept of the resulting function?\n\nOptions:\nA) 2\nB) 5\nC) $-5/2$\nD) 8",
+      "answer": "8",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Still don't understand this task \"\nMake connections between an algebraic representation of a linear function not in context.\" Make connections between an algebraic representation and WHAT???\nEither way, if this did match the task, the answer is incorrect and the correct answer does not even appear.",
+      "hint": "Skill: Linear functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0014",
+      "problem": "Two linear functions $f(x)$ and $h(x)$ are given such that $f(x) - h(x) = 4x + 2$ and $f(x) + h(x) = 2x - 6$. What is the value of $f(0)?$\n\nOptions:\nA) $-6$\nB) $-2$\nC) $-1$\nD) $2$",
+      "answer": "$-2$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Not approving any questions with this task since I do not understand it and there are words missing.",
+      "hint": "Skill: Linear functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0015",
+      "problem": "A community pool loses 4 gallons of water per day due to evaporation and starts with 2500 gallons. Which linear function represents the amount of water, $W(d)$, in gallons remaining in the pool after d days?\n\nOptions:\nA) W(d) = (2500 - 4)d\nB) W(d) = 2500 - 4d\nC) W(d) = 2500 + 4d\nD) W(d) = -4d - 2500",
+      "answer": "W(d) = 2500 - 4d",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "B and D are the same answers. Revised option D to be incorrect",
+      "hint": "Skill: Linear functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0016",
+      "problem": "A streaming service offers movies for rental. The total rental cost in dollars is given by $C = 1.99 + 0.35t$, where $t$ represents the viewing time in hours. What does $0.35$ represent in this equation?\n\nOptions:\nA) The cost in dollars charged per day of viewing\nB) The cost in dollars charged per hour of viewing\nC) The cost in dollars charged per movie rented\nD) The fixed cost in dollars charged per rental",
+      "answer": "The cost in dollars charged per hour of viewing",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "I commented on this one before recommending changing streaming service, but if others think this term is not distracting or unknown, it's fine as is. I think students know what Netflix is, but don't necessarily think what it's generically called. Also this cost model doesn't exist and doesn't make a ton of sense.",
+      "hint": "Skill: Linear functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0017",
+      "problem": "A student saves money each week. The equation $S = 200 + 15t$ models the total savings, $S$, in dollars, $t$ weeks after the student starts saving. What does the value 200 represent in this context?\n\nOptions:\nA) The amount the student start with\nB) The amount saved each week\nC) The increase in savings each week\nD) The total savings after one week",
+      "answer": "The amount the student start with",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Removed unnecessary ' ' in prompt. Updated wording in answers.",
+      "hint": "Skill: Linear functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0018",
+      "problem": "The distance a drone flies from its starting point can be modeled by the equation $d = 12 + 40t$, where $d$ is the distance in meters and $t$ is the time in minutes. What does the value 12 represent in this context?\n\nOptions:\nA) The distance the drone travels each minute, in meters\nB) The distance the drone travels in $0.3$ minutes, in meters\nC) The total distance flown by the drone after $t$ minutes, in meters\nD) The initial distance, in meters, of the drone from its starting point",
+      "answer": "The initial distance, in meters, of the drone from its starting point",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "I tried to rewrite this one a few times but the idea wasn't clear enough. In this problem it is very confusing that the \"starting point\" is not actually the starting point, it's actually 12 meters away.  I tried to make it clear that it's 12 meters away at 0 minutes but again that would be the starting point (unless the problem made clear the timer started when it hit 12 meters).",
+      "hint": "Skill: Linear functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0019",
+      "problem": "The linear function $f(x) = ax + b$ is transformed by first replacing $x$ with $(x - 3)$, and then taking the reciprocal of the result. If the slope of the final transformed function is $-1/4$ and the original function has a y-intercept of 2, what is the value of a?\n\nOptions:\nA) 1\nB) -4\nC) -1\nD) 4",
+      "answer": "1",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Adjusted answer choices to keep the correct choice at option A. Also - this is a calculus topic... are we giving this to students who will have taken calculus already? If not, it would not be worth giving the question.",
+      "hint": "Skill: Linear functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0020",
+      "problem": "A savings account earns interest at a fixed rate. The equation $y = 1000 + 60x$ represents the account balance $y$, in dollars, $x$ months after an initial deposit. When graphed in the $xy$-plane, what does the slope of the line represent?\n\nOptions:\nA) The account balance after $x$ months\nB) The initial deposit in dollars\nC) The monthly interest earned in dollars\nD) The monthly interest rate percentage",
+      "answer": "The monthly interest earned in dollars",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "A fixed rate for interest is usually in the decimal format of the percent (like 0.05 = 5%). Having the slope be 60 is very strange for an interest problem. There's no graph, so that part is irrelevant to the problem stem, and the choices don't imply a rate (which usually includes the word, \"per\"). The Task also states students should interpret a graph, which does not match this problem.",
+      "hint": "Skill: Linear functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0021",
+      "problem": "The linear function $f(x) = ax + b$ is transformed by first replacing $x$ with $(x - 3)$, and then taking the reciprocal of the result. If the slope of the final transformed function is $-1/4$ and the original function has a y-intercept of 2, what is the value of a?\n\nOptions:\nA) 4\nB) -4\nC) 4-Jan\nD) 1",
+      "answer": "4",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "If you take the reciprocal of a linear function, it is no longer linear, making the question asking about the new slope meaningless. And the wording is super confusing. The answers have \"January\" as one of the choices.",
+      "hint": "Skill: Linear functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0022",
+      "problem": "If the composition of two linear functions f and g results in the identity function, such that $f(g(x)) = x$, what must be true about the slopes of f and g?\n\nOptions:\nA) Their product is $1$\nB) Their product is $-1$\nC) Their sum is $0$\nD) Both slopes are $1$",
+      "answer": "Their product is $1$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Compositions do not fall under this task",
+      "hint": "Skill: Linear functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0023",
+      "problem": "A student starts a savings account with \\$50 and adds \\$15 each week. Which linear function models the total savings, $S(w)$, in dollars after $w$ weeks?\n\nOptions:\nA) $S(w)=15w$\nB) $S(w)=15 +50w$\nC) $S(w)=50 +15w$\nD) $S(w)=65w$",
+      "answer": "$S(w)=50 +15w$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Prompt simplified. Answers updated to represent functions, not expressions.",
+      "hint": "Skill: Linear functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0024",
+      "problem": "A scientist cools a substance at a constant rate. After 2 hours, the substance's temperature is $200$°C. After 5 hours, the temperature is $140$°C. What was the initial temperature of the substance before cooling began?\n\nOptions:\nA) $240$°C\nB) $160$°C\nC) $220$°C\nD) $300$°C",
+      "answer": "$240$°C",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "It would be nice to add what substance it is. After 2 hours to be nearly 400º F is still pretty hot. I don't know what that would be.",
+      "hint": "Skill: Linear functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0025",
+      "problem": "A car's fuel tank is being drained while the engine is running. The equation \\( F = 15 - 0.8h \\) models the remaining fuel in gallons after \\( h \\) hours. What does the coefficient -0.8 represent in this equation?\n\nOptions:\nA) The rate at which fuel is drained per hour\nB) The total amount of fuel that can be drained\nC) The number of hours until the tank is empty\nD) The amount of fuel remaining after one hour",
+      "answer": "The rate at which fuel is drained per hour",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "If this is universal, should liters be used instead of gallons?",
+      "hint": "Skill: Linear functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0026",
+      "problem": "A swimming pool with a flat bottom is being filled with water. The equation $d = 3 + 0.8t$ represents the depth ($d$) of water in feet after $t$ minutes of filling. What does the value $3$ represent in this context?\n\nOptions:\nA) The initial depth of water in the pool, in feet\nB) The maximum depth of water in the pool, in feet\nC) The rate at which the water depth increases, in feet per minute\nD) The width of the pool, in feet",
+      "answer": "The initial depth of water in the pool, in feet",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Adding that the pool has a flat bottom.",
+      "hint": "Skill: Linear functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0027",
+      "problem": "Two linear functions $f(x)$ and $h(x)$ are given, where $f(x) = 2x + 3$. If $f(h(x)) = 6x - 5$, what is $h(x)?$\n\nOptions:\nA) $2x -4$\nB) $3x -14$\nC) $3x -4$\nD) $3x -1$",
+      "answer": "$3x -4$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "I don't think composite functions fall under this task.",
+      "hint": "Skill: Linear functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0028",
+      "problem": "The linear function $h(x) = 2x + 5$ is reflected across the x-axis and then shifted up 3 units. What is the y-intercept of the resulting function?\n\nOptions:\nA) 2\nB) 5\nC) $-5/2$\nD) 8",
+      "answer": "8",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "I'm not 100% sure these type of transformations match the task, but I updated it to be correct.",
+      "hint": "Skill: Linear functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0029",
+      "problem": "Two linear functions $f(x)$ and $h(x)$ are given, where $f(x) = 2x + 3$. If $f(h(x)) = 6x - 5$, what is $h(x)?$\n\nOptions:\nA) $2x -4$\nB) $3x -14$\nC) $3x -4$\nD) $3x -1$",
+      "answer": "$3x -4$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "I think the label/task might need to be updated to something like function manipulation or combining functions or composition of functions.",
+      "hint": "Skill: Linear functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0030",
+      "problem": "A phone company charges a monthly fee of \\$40 plus \\$0.15 per text message. Which linear function represents the total monthly bill, $B(m)$, in dollars, for $m$ text messages?\n\nOptions:\nA) $B(m) = 0.15m$\nB) $B(m) = 40m + 0.15$\nC) $B(m) = 40.15m$\nD) $B(m) = 0.15m + 40$",
+      "answer": "$B(m) = 0.15m + 40$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Long distance phone calls??? Did they also use a telephone book. lol. I updated it to be more relevant in 2025 and added formatting for the answers",
+      "hint": "Skill: Linear functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0031",
+      "problem": "A candle burns linearly over time. The equation \\( L = 20 - 0.5t \\) models the candle's remaining length (\\( L \\)) in centimeters \\( t \\) hours after being lit. What does the coefficient $-0.5$ represent in this context?\n\nOptions:\nA) The time taken to burn 1 centimeter\nB) The initial length of the candle\nC) The time taken to burn the candle completely\nD) The length burned each hour",
+      "answer": "The length burned each hour",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "updated formatting in prompt",
+      "hint": "Skill: Linear functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0032",
+      "problem": "A tutor charges a one-time base fee of \\$30 plus \\$25 per hour of tutoring. Which of the following linear functions represents the total cost $C$, in dollars, for $h$ hours of tutoring?\n\nOptions:\nA) $C = 25 + 30h$\nB) $C = 25h$\nC) $C = 30 + 25h$\nD) $C = 55h$",
+      "answer": "$C = 30 + 25h$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "updated answers because two were equivalent",
+      "hint": "Skill: Linear functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0033",
+      "problem": "Plan A  charges an annual membership fee of \\$75 and \\$12 per delivery for a food delivery service. Plan B charges \\$18 per delivery with no membership fee. If someone plans to use food delivery regularly, how many deliveries would make Plan A a better deal?\n\nOptions:\nA) 12\nB) 13\nC) 14\nD) 15",
+      "answer": "13",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Named plans and made question clearer.",
+      "hint": "Skill: Linear functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0034",
+      "problem": "A taxi service charges a base fare of \\$3.25 plus \\$2.10 per mile traveled. Which linear function represents the total cost, C(m), in dollars for a ride of m miles?\n\nOptions:\nA) $C(m) = 2.10(m + 3.25)$\nB) $C(m) = 3.25m + 2.10$\nC) $C(m) = 5.35m$\nD) $C(m) = 2.10m + 3.25$",
+      "answer": "$C(m) = 2.10m + 3.25$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Updated answers",
+      "hint": "Skill: Linear functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0035",
+      "problem": "A12-inch candle burns at a constant rate of 0.75 inches per hour. The equation \\( H = 12 - 0.75t \\) models the candle's height \\( H \\) after \\( t \\) hours. After how many hours will the candle's height be 6 inches?\n\nOptions:\nA) $6$\nB) $7.5$\nC) $8$\nD) $16$",
+      "answer": "$8$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Updated prompt and answers with different variable (not the same variable in a different case).",
+      "hint": "Skill: Linear functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0036",
+      "problem": "A printing company charges customers by page length. One customer paid \\$45 for 150 pages, while another paid \\$75 for 300 pages. Based on this linear pricing model, how much would a customer pay for 400 pages?\n\nOptions:\nA) \\$65\nB) \\$95\nC) \\$120\nD) \\$83",
+      "answer": "\\$95",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "better distractors",
+      "hint": "Skill: Linear functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0037",
+      "problem": "A student earns money tutoring at a constant hourly rate. After working 3 hours, they have earned \\$27. If their total earnings, \\(E(h)\\), increase linearly with hours worked, \\(h\\), which equation represents their earnings?\n\nOptions:\nA) $E(h) = 3h + 27$\nB) $E(h) = h/9$\nC) $E(h) = 9h$\nD) $E(h) = 27h$",
+      "answer": "$E(h) = 9h$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Updated formatting in answers. Option B needs to look like a fraction",
+      "hint": "Skill: Linear functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0038",
+      "problem": "If the sum of the linear functions $f(x) = mx + 4$ and $g(x) = nx - 2$ is a constant function, what must be true about $m$ and $n$?\n\nOptions:\nA) $m = -n$\nB) $m = n$\nC) $m + n = 2$\nD) $m = -4 and n = 2$",
+      "answer": "$m = -n$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "I don't think this matches the task 100% but it's not awful. Updated formatting on answers and better distractor",
+      "hint": "Skill: Linear functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0039",
+      "problem": "At a rental shop at a lake, a paddle board rents for \\$12 per hour and a kayak rents for \\$8 per hour. In one afternoon, the shop rented out 15 total items and collected \\$156 in rental fees. How many paddle boards were rented?\n\nOptions:\nA) 9\nB) 7\nC) 10\nD) 13",
+      "answer": "9",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "I added \"at a lake\" to make it more clear that paddle boards and kayaks are watercraft, just in case some students have never seen or been on one. Also, the answer is 9 not 8.",
+      "hint": "Skill: Systems of two linear equations in two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "systems-of-two-linear-equations-in-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0040",
+      "problem": "If the system of equations\\n\\n$px + y = 8$\\n$x + py = 8$\\n\\nhas infinitely many solutions, which condition must be true?\n\nOptions:\nA) $p = -1$\nB) $p = 0$\nC) $p = 1$\nD) $p = 8$",
+      "answer": "$p = 1$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Revised question for clarity, and changed \"Which of the following\" language. Removed the part of the question stem that refers to p as a constant to avoid misleading students. In this case, p IS a constant, but only because it equals 1. Usually, we'd call it a coefficient. Labeling it as a constant might confuse students, or tip them off to the answer too soon.",
+      "hint": "Skill: Systems of two linear equations in two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "systems-of-two-linear-equations-in-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0041",
+      "problem": "A rental car company charges a daily rental rate plus a fee for every mile driven. For a 2-day rental and 150 miles driven, the total cost is \\$190. For a 3-day rental and 200 miles driven, the total cost is \\$270. What is the daily rental rate in dollars?\n\nOptions:\nA) \\$50 per day\nB) \\$70 per day\nC) \\$80 per day\nD) \\$90 per day",
+      "answer": "\\$50 per day",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "The language is inconsistent using \"fixed daily rate\" in the beginning and \"daily rental rate\" at the end. I changed it to be more consistent. Also, students taking this test may not have any experience renting a car. I question the context as being relevant to the audience. The answer was incorrect as well, and I added context to each answer.",
+      "hint": "Skill: Systems of two linear equations in two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "systems-of-two-linear-equations-in-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0042",
+      "problem": "A theater sells two types of combos at the concession stand during intermission. The regular combo has 2 snacks and 1 drink, while the deluxe combo has 3 snacks and 2 drinks. If 50 total combos were sold and 115 total items (snacks and drinks combined) were sold during intermission, which system of equations can be used to find the number of regular combos ($r$) and deluxe combos ($d$)?\n\nOptions:\nA) $r + d = 50 \\ 3r + 5d = 115$\nB) $r + d = 50 \\ 1r + 2d = 115$\nC) $r + d = 50 \\ 2r + 3d = 115$\nD) $r + d = 50 \\ 5r + 3d = 115$",
+      "answer": "$r + d = 50 \\ 3r + 5d = 115$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Modified the structure of the sentences a tiny bit. The numbers need to be changed, too, since the solution is to have 67.5 regular combo means, and –17.5 deluxe combo means. Clearly the solution is not taking the context into account and instead just created a system of two linear equations.",
+      "hint": "Skill: Systems of two linear equations in two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "systems-of-two-linear-equations-in-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0043",
+      "problem": "Currently, the sum of Esme's age and twice Byron's age is 30. In five years, Esme's age will be three times Byron's age at that time. What is Byron's current age?\n\nOptions:\nA) $7$\nB) $5$\nC) $4$\nD) $2$",
+      "answer": "$5$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "I think the names of the people could be \"less white.\" Also, the answer is incorrect. It should be Ben = 5 years, Alice = 25 (so their sum is 30, and in five years, Ben will be 10 and Alice will be 30, so Alice's age will be 3x Ben's). I changed it below.",
+      "hint": "Skill: Systems of two linear equations in two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "systems-of-two-linear-equations-in-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0044",
+      "problem": "A jar contains only nickels and dimes. The total number of coins is 50, and their total value is \\$3.25. Which system of equations can be used to determine the number of nickels, $n$, and dimes, $d$?\n\nOptions:\nA) $n + d = 50; 0.05n + 0.10d = 3.25$\nB) $n + d = 50; 0.10n + 0.05d = 3.25$\nC) $n + d = 50; 5n + 10d = 3.25$\nD) $n + d = 3.25; 0.05n + 0.10d = 50$",
+      "answer": "$n + d = 50; 0.05n + 0.10d = 3.25$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "If this is a universal math exam, only U.S. based students would connect with and possibly know the value of a nickel and a dime, and the symbol of \"$.\" The value of these coins is not given in the prompt, nor is the symbol of the dollar sign.",
+      "hint": "Skill: Systems of two linear equations in two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "systems-of-two-linear-equations-in-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0045",
+      "problem": "A system of linear equations is represented by $5x - 2y = 10$ and $mx + ny = 20$. If these lines are parallel, which of the following must be true?\n\nOptions:\nA) $m/n =–5/2$\nB) $m/n =–2/5$\nC) $m/n =2/5$\nD) $m/n =5/2$",
+      "answer": "$m/n =–5/2$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "The choices are difficult to read. I tried to write the LaTeX code of \\dfrac{numerator}{denominator} in the preview tool, but it gives me an error, even though I'm following the guidelines. The question is good, but the answers need to be formatted for easier reading.",
+      "hint": "Skill: Systems of two linear equations in two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "systems-of-two-linear-equations-in-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0046",
+      "problem": "A jar contains only nickels and dimes. The total number of coins is 50, and their total value is \\$3.25. Which system of equations can be used to determine the number of nickels, $n$, and dimes, $d$?\n\nOptions:\nA) $n + d = 50; 0.05n + 0.10d = 3.25$\nB) $n + d = 50; 0.10n + 0.05d = 3.25$\nC) $n + d = 50; 5n + 10d = 3.25$\nD) $n + d = 3.25; 0.05n + 0.10d = 50$",
+      "answer": "$n + d = 50; 0.05n + 0.10d = 3.25$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Recommend separating answer choice equations to one per line for ease in reading.",
+      "hint": "Skill: Systems of two linear equations in two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "systems-of-two-linear-equations-in-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0047",
+      "problem": "The system of equations $3x + 2y = 12$ and $px + qy = 24$ has exactly one solution at $(4, 0)$. Which of the following represents the values of $p$ and $q$?\n\nOptions:\nA) $p = 6$ and $q = 0\nB) $p = 3$ and $q = 2\nC) $p = 4$ and $q = 0\nD) $p = 6$ and $q = 4",
+      "answer": "$p = 6$ and $q = 0",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "The system needs contexts (not a gym, a car rental, or a theatre! Too many of these questions) so students can connect to the problem at hand. The solution is actually p = 6 and q can be any real number. Every number for q works. (Side note: the formatting for the q=value needs a '$' at the end of it as well.)",
+      "hint": "Skill: Systems of two linear equations in two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "systems-of-two-linear-equations-in-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0048",
+      "problem": "The system of equations $3x + 2y = 12$ and $px + qy = 24$ has exactly one solution at $(4, 0)$. Which of the following represents the values of $p$ and $q$?\n\nOptions:\nA) $p = 6$ and $q$ = 0\nB) $p = 3$ and $q$ = 2\nC) $p = 4$ and $q$ = 0\nD) $p = 6$ and $q$ = 4",
+      "answer": "$p = 6$ and $q$ = 0",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "The task reads: \"Make connections between an algebraic representation and a graph of a system of linear equations in two variables not in context\" \nThere is no graph provided. But the bigger issue is that the second equation is not in two variables. While the first one is, I do not think this matches the intent of the task. You could easily have found a better 2nd equation for this problem. I'm not 100% sure exactly how this problem could be improved with a graph though. Overall, toss it.",
+      "hint": "Skill: Systems of two linear equations in two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "systems-of-two-linear-equations-in-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0049",
+      "problem": "For the system of equations\\n\\n$kx + 3y = 12$\\n$2x + my = 8$\\n\\nIf k and m are constants and the system has exactly one solution, which of the following must be true?\n\nOptions:\nA) $3k\\neq2m$\nB) $km\\neq6$\nC) $2m\\neq3k$\nD) $k\\neq2$ and $m\\neq3$",
+      "answer": "$3k\\neq2m$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "My understanding is that we are eliminating questions that are posed liked this (\"which of the following must be true\". Also, there appears to be more than 1 correct answer.",
+      "hint": "Skill: Systems of two linear equations in two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "systems-of-two-linear-equations-in-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0050",
+      "problem": "For the system of equations\\n\\n$kx + 3y = 12$\\n$2x + my = 8$\\n\\nIf k and m are constants and the system has exactly one solution, which of the following must be true?\n\nOptions:\nA) $km\\neq6$\nB) $3k\\neq2m$\nC) $2m\\neq3k$\nD) $k\\neq2$ and $m\\neq3$",
+      "answer": "$km\\neq6$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Updated incorrect answer",
+      "hint": "Skill: Systems of two linear equations in two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "systems-of-two-linear-equations-in-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0051",
+      "problem": "For the system of equations\\n\\n$kx + 3y = 12$\\n$2x + my = 8$\\n\\nIf k and m are constants and the system has exactly one solution, which statement must be true?\n\nOptions:\nA) $km\\neq6$\nB) $3k\\neq2m$\nC) $k\\neq3$ and $m\\neq2$\nD) $k\\neq2$ and $m\\neq3$",
+      "answer": "$km\\neq6$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Options A and C are the same, the text for B is the correct answer. Revised stem away from \"which of the following,\" revised option C to be incorrect and different, and revised the answer wording to keep A as the correct selection.",
+      "hint": "Skill: Systems of two linear equations in two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "systems-of-two-linear-equations-in-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0052",
+      "problem": "For the system of equations\\n\\n$kx + 3y = 12$\\n$2x + my = 8$\\n\\nIf k and m are constants and the system has exactly one solution, which of the following must be true?\n\nOptions:\nA) $3k\\neq2m$\nB) $km\\neq6$\nC) $2m\\neq3k$\nD) $k\\neq2$ and $m\\neq3$",
+      "answer": "$3k\\neq2m$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Choices A and C are the same. B is the correct answer.",
+      "hint": "Skill: Systems of two linear equations in two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "systems-of-two-linear-equations-in-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0053",
+      "problem": "The system of equations $3x + 2y = 12$ and $px + qy = 24$ has exactly one solution at $(4, 0)$. Which of the following represents the values of $p$ and $q$?\n\nOptions:\nA) $p = 6$ and $q = 0$\nB) $p = 3$ and $q = 2$\nC) $p = 4$ and $q = 0$\nD) $p = 6$ and $q = 4$",
+      "answer": "$p = 6$ and $q = 0$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Updated LaTex on answers",
+      "hint": "Skill: Systems of two linear equations in two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "systems-of-two-linear-equations-in-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0054",
+      "problem": "A system of equations has $x + y = 4$ as one of its equations. If the system has no solution, which of the following could be the second equation?\n\nOptions:\nA) $x - y = 4$\nB) $2x + 2y = 8$\nC) $x + y = 6$\nD) $x + 2y = 6$",
+      "answer": "$x + y = 6$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "This problem cannot be answered without the answer choices.",
+      "hint": "Skill: Systems of two linear equations in two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "systems-of-two-linear-equations-in-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0055",
+      "problem": "A system of two linear equations is given by $ax + by = c$ and $dx + ey = f$, where a, b, d, and e are non-zero. Which of the following conditions guarantees that the system has exactly one solution?\n\nOptions:\nA) $a/b \\neq d/e$\nB) $a/d = b/e$\nC) $a/d \\neq b/e$\nD) $ae \\neq bd$",
+      "answer": "$a/d \\neq b/e$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "This topic can be assessed is a FAR better, less confusing way. The formatting alone is just awful.",
+      "hint": "Skill: Systems of two linear equations in two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "systems-of-two-linear-equations-in-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0056",
+      "problem": "A factory uses two machines, A and B, to produce components. Machine A makes \\(x\\) components per hour, and Machine B makes \\(y\\) components per hour. After running both machines for 4 hours, a total of 1000 components are produced. When Machine A runs for 2 hours and Machine B runs for 5 hours, they produce 950 components. How many components per hour does Machine A produce?\n\nOptions:\nA) $100$\nB) $50$\nC) $150$\nD) $200$",
+      "answer": "$100$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "updated with correct answer",
+      "hint": "Skill: Systems of two linear equations in two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "systems-of-two-linear-equations-in-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0057",
+      "problem": "A bakery sells two sizes of muffins. A customer buys 5 large muffins and 3 small muffins for \\$27. Another customer buys 2 large muffins and 6 small muffins for \\$24. What is the price, in dollars, of one large muffin?\n\nOptions:\nA) \\$2.75\nB) \\$3.75\nC) \\$4\nD) \\$5",
+      "answer": "\\$3.75",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Adjusted values of answer choices",
+      "hint": "Skill: Systems of two linear equations in two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "systems-of-two-linear-equations-in-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0058",
+      "problem": "You and a friend bought some souvenirs for yourself and some friends. You bought 3 shirts and 2 hats for \\$59. Your friend bought 1 shirt and 5 hats for \\$45. Let \\(s\\) represent the cost of a shirt and \\(h\\) represent the cost of a hat. Which system of equations models this scenario?\n\nOptions:\nA) $3s + 2h = 45$ and $s + 5h = 59$\nB) $2s + 3h = 59$ and $s + 5h = 45$\nC) $3s + 2h = 59$ and $5s + h = 45$\nD) $3s + 2h = 59$ and $s + 5h = 45$",
+      "answer": "$3s + 2h = 59$ and $s + 5h = 45$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Added a little more context to switch from a generic, \"a customer...\" since the current language makes it seem like a made up textbook problem.",
+      "hint": "Skill: Systems of two linear equations in two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "systems-of-two-linear-equations-in-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0059",
+      "problem": "A factory uses two machines, A and B, to produce two types of candy. Machine A makes \\(x\\) yellow sticky candies per hour, and Machine B makes \\(y\\)  green sticky candies per hour. After running both machines for 4 hours, a total of 1000 candies were produced. When Machine A runs for 2 hours and Machine B runs for 5 hours, they produce 950 candies. How many yellow sticky candies does Machine A produce per hour?\n\nOptions:\nA) $100$\nB) $150$\nC) $50$\nD) $200$",
+      "answer": "$100$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Giving context. It's boring when this prompt uses \"Machine A.\" Also, the answer was incorrect.",
+      "hint": "Skill: Systems of two linear equations in two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "systems-of-two-linear-equations-in-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0060",
+      "problem": "The system of equations\\n\\n$ax + y = 5$\\n$3x + (a + 2)y = 10$\\n\\nhas no solution. Which statement must be true about a?\n\nOptions:\nA) $a = 3$\nB) Both $a = 1$ and $a = -3$\nC) $a = 1$\nD) $a = -3$",
+      "answer": "Both $a = 1$ and $a = -3$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Changed stem to revise \"which of the following\" language.",
+      "hint": "Skill: Systems of two linear equations in two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "systems-of-two-linear-equations-in-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0061",
+      "problem": "A jar contains only nickels and dimes. The total number of coins is 50, and their total value is \\$3.25. Which system of equations can be used to determine the number of nickels, $n$, and dimes, $d$?\n\nOptions:\nA) $n + d = 50\n0.05n + 0.10d = 3.25$\nB) $n + d = 50\n0.10n + 0.05d = 3.25$\nC) $n + d = 50\n5n + 10d = 3.25$\nD) $n + d = 3.25\n0.05n + 0.10d = 50$",
+      "answer": "$n + d = 50\n0.05n + 0.10d = 3.25$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Adjusted options to have one equation per line",
+      "hint": "Skill: Systems of two linear equations in two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "systems-of-two-linear-equations-in-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0062",
+      "problem": "A bakery sells two sizes of muffins. A customer buys 5 large muffins and 4 small muffins for \\$27. Another customer buys 2 large muffins and 6 small muffins for \\$24. What is the price, in dollars, of one large muffin?\n\nOptions:\nA) \\$2\nB) \\$3\nC) \\$4\nD) \\$5",
+      "answer": "\\$3",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Changed the prompt to make $3 correct. As written, the answer would have been $3.75.",
+      "hint": "Skill: Systems of two linear equations in two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "systems-of-two-linear-equations-in-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0063",
+      "problem": "A student buys 3 pens and 2 notebooks for a total of \\$14. Another student buys 2 pens and 4 notebooks for \\$20. What is the price, in dollars, of one pen?\n\nOptions:\nA) \\$5 for one pen\nB) \\$4 for one pen\nC) \\$2 for one pen\nD) \\$3 for one pen",
+      "answer": "\\$2 for one pen",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Adding a \"$\" to the answers.",
+      "hint": "Skill: Systems of two linear equations in two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "systems-of-two-linear-equations-in-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0064",
+      "problem": "What is the value of the x-coordinate that solves this system of linear equations? $3x + 2y = 19$ and $x = y + 3$. What is the value of $x$?\n\nOptions:\nA) $2$\nB) $4$\nC) $5$\nD) $6$",
+      "answer": "$5$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "The prompt just needs to ask what the solution is.",
+      "hint": "Skill: Systems of two linear equations in two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "systems-of-two-linear-equations-in-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0065",
+      "problem": "A college library has two rooms that can be reserved for study. Large rooms can hold up to 8 students, and small rooms can hold up to 4 students. If there are 12 rooms in total and space for exactly 72 students, which system of equations can be used to find the number of large rooms ($L$) and small rooms ($S$)?\n\nOptions:\nA) L + S = 12\\n6L + 6S = 72$\nB) L + S = 12\\n4L + 8S = 72\nC) L + S = 12\\n8L + 4S = 12\nD) L + S = 12\\n8L + 4S = 72",
+      "answer": "L + S = 12\\n8L + 4S = 72",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "There's a random dollar sign in front of each of the equations.",
+      "hint": "Skill: Systems of two linear equations in two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "systems-of-two-linear-equations-in-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0066",
+      "problem": "A store sells two types of notebooks: standard and deluxe. The store sold 3 times as many standard notebooks $(s)$ as deluxe notebooks $(d)$. The total revenue from all notebooks sold was \\$420. A standard notebook costs \\$8 and a deluxe notebook costs \\$12. Which system of equations models this scenario?\n\nOptions:\nA) $d = 3s; 8s + 12d = 420$\nB) $s = 3d; 12s + 8d = 420$\nC) $s + 3d = 420; 8s + 12d = 420$\nD) $s = 3d; 8s + 12d = 420$",
+      "answer": "$s = 3d; 8s + 12d = 420$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "The answers need to be listed on two separate lines so the equations themselves are clear. A semi-colon is unnecessary. If it can't be on two different lines, it should say \"and\" which is clearer and easier to physically read.\nAlso, I defined the variables in the prompt.",
+      "hint": "Skill: Systems of two linear equations in two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "systems-of-two-linear-equations-in-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0067",
+      "problem": "A factory produces widgets at a cost of \\$2 per unit and has monthly overhead expenses of \\$3000. The inequality $3000 + 2x \\le 5000$ represents the maximum number of widgets, x, that can be produced within a monthly budget. What does the number 2 represent in this inequality?\n\nOptions:\nA) The cost in dollars to produce each widget\nB) The selling price in dollars for each widget\nC) The monthly overhead cost per widget in dollars\nD) The total cost in dollars to produce each widget",
+      "answer": "The cost in dollars to produce each widget",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "I'm not sure all students will know what a widget is or understand the term, \"overhead.\"",
+      "hint": "Skill: Linear inequalities in one or two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-inequalities-in-one-or-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0068",
+      "problem": "A gym charges a \\$10 monthly membership fee plus \\$5 per class attended. Assume Maya wants to spend no more than \\$60 per month and to meet her fitness goals, she figures she needs to attend at least 5 classes in a single month. Which set of inequalities represents the number of classes ($c$) she can attend?\n\nOptions:\nA) $5c + 10 \\le 60, c \\ge 5$\nB) $5c \\le 60, c \\ge 5$\nC) $5c + 10 \\ge 60, c \\ge 5$\nD) $10c + 5 \\le 60, c \\ge 5$",
+      "answer": "$5c + 10 \\le 60, c \\ge 5$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "The prompt does not indicate this is only for 1 month. Also, the prompt says, \"which inequality\" when really there are a set of inequalities. I changed the language a bit. A realistic side note: I'm not sure why a gym would change a monthly fee AND a per-class fee. What's the monthly fee for? This question is not realistic, in my humble opinion. I changed the numbers to reflect a more realistic amount of money, since no one I know would sign up for that gym.",
+      "hint": "Skill: Linear inequalities in one or two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-inequalities-in-one-or-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0069",
+      "problem": "A factory produces widgets at a cost of \\$2 per unit and has monthly overhead expenses of \\$3000. The inequality $3000 + 2x \\le 5000$ represents the maximum number of widgets, x, that can be produced within a monthly budget. What does the number 2 represent in this inequality?\n\nOptions:\nA) The cost in dollars to produce each widget\nB) The selling price in dollars for each widget\nC) The monthly overhead cost per widget in dollars\nD) The total cost in dollars to produce each widget",
+      "answer": "The cost in dollars to produce each widget",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "I hate the use of \"widgets\" but more importantly this question is way too easy.",
+      "hint": "Skill: Linear inequalities in one or two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-inequalities-in-one-or-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0070",
+      "problem": "A gym charges a \\$30 monthly membership fee plus \\$8 per class attended. If Maya wants to spend no more than \\$150 per month and must attend at least 5 classes to maintain her fitness goals, which system of inequalities represents the number of classes (c) she can attend?\n\nOptions:\nA) $8c + 30 \\le 150, c \\ge 5$\nB) $8c \\le 150, c \\ge 5$\nC) $8c + 30 \\ge 150, c \\ge 5$\nD) $30c + 8 \\le 150, c \\ge 5$",
+      "answer": "$8c + 30 \\le 150, c \\ge 5$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "This is a system of inequalities, not a single inequality. Answer choices need to have one equation per line. Also, not sure if fitness classes are well-known enough across multiple cultures.",
+      "hint": "Skill: Linear inequalities in one or two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-inequalities-in-one-or-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0071",
+      "problem": "A concert venue charges \\$15 per ticket and has a seating capacity of 400. The inequality $15t \\le 5000$ represents the number of tickets, $t$, that can be sold within a budget. What does the number 5000 represent in this inequality?\n\nOptions:\nA) The maximum revenue in dollars from ticket sales\nB) The total budget in dollars for organizing the concert\nC) The total cost in dollars of selling the tickets\nD) The maximum profit in dollars from ticket sales",
+      "answer": "The maximum revenue in dollars from ticket sales",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Why are we maximizing the selling of tickets on a budget? I think it should be \"bought\" on a budget, and I think the correct answer is actually B. But $5000 is not connected to the capacity of 400 seats, so it seems like there's too much information, and it is not clearly written for anyone to clearly understand the scenario in question.",
+      "hint": "Skill: Linear inequalities in one or two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-inequalities-in-one-or-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0072",
+      "problem": "John is at least three times as old as his younger brother. The sum of their ages is less than 50. Let \\( J \\) represent John's age and \\( B \\) represent his brother's age. Which system of inequalities models this situation?\n\nOptions:\nA) $J \\ge 3B$\\n$J + B < 50$\nB) $J = 3B$\\n$J + B < 50$\nC) $J \\le 3B$\\n$J + B < 50$\nD) $J \\ge 3B$\\n$J + B \\le 50$",
+      "answer": "$J \\ge 3B$\\n$J + B < 50$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "First - I would NEVER recommend using B and J together as your variables for secondary students. Second and perhaps more importantly, not only does this problem not actually solve any inequality related problems, but it would be a system of equations type problem. That is a completely different type of task.",
+      "hint": "Skill: Linear inequalities in one or two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-inequalities-in-one-or-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0073",
+      "problem": "A student starts the semester with 500 points in a class. For each late assignment, points are deducted. The inequality $500 - 10l \\ge 400$ models the number of late assignments, $l$, the student can have without falling below 400 points. What does the number 10 represent in this inequality?\n\nOptions:\nA) The number of points lost per late assignment\nB) The maximum number of late assignments allowed without falling below 400 points\nC) The total number of points lost for all late assignments\nD) The number of points earned per late assignment",
+      "answer": "The number of points lost per late assignment",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "updated LaTex so the font matches and the \"l\" looks like an \"l\", not a one (1) or capital I",
+      "hint": "Skill: Linear inequalities in one or two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-inequalities-in-one-or-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0074",
+      "problem": "A gym charges a \\$30 monthly membership fee plus \\$8 per class attended. If Maya wants to spend no more than \\$150 per month and must attend at least 5 classes to maintain her fitness goals, which inequality represents the number of classes (c) she can attend?\n\nOptions:\nA) $8c + 30 \\le 150, c \\ge 5$\nB) $8c \\le 150, c \\ge 5$\nC) $8c + 30 \\ge 150, c \\ge 5$\nD) $30c + 8 \\le 150, c \\ge 5$",
+      "answer": "$8c + 30 \\le 150, c \\ge 5$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "I recommend giving one line to each equation in the answer choices",
+      "hint": "Skill: Linear inequalities in one or two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-inequalities-in-one-or-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0075",
+      "problem": "A gym charges a \\$30 monthly membership fee plus \\$8 per class attended. If Maya wants to spend no more than \\$150 per month, which inequality represents the number of classes ($c$) she can attend?\n\nOptions:\nA) $8c + 30 \\le 150\nB) $8c \\le 150\nC) $8c + 30 \\ge 150\nD) $30c + 8 \\le 150",
+      "answer": "$8c + 30 \\le 150",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "If all the answers contain the correct second constraint about the 5 classes, why even include it?",
+      "hint": "Skill: Linear inequalities in one or two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-inequalities-in-one-or-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0076",
+      "problem": "A student works two part-time jobs. Job M pays \\$9 per hour and Job N pays \\$12 per hour. The student needs to earn at least \\$150 each week. Which inequality represents this situation, where \\(m\\) is the number of hours worked at Job M and \\(n\\) is the number of hours worked at Job N?\n\nOptions:\nA) $9m + 12n \\geq 150$\nB) $9m + 12n \\leq 150$\nC) $12m + 9n \\geq 150$\nD) $21(m + n) \\geq 150$",
+      "answer": "$9m + 12n \\geq 150$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Something is wrong with the formatting in the answers but I couldn't fix it. There should only be 1 line under the inequality symbol, not two",
+      "hint": "Skill: Linear inequalities in one or two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-inequalities-in-one-or-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0077",
+      "problem": "A factory is packaging cereal in two different box sizes. The small box requires 2 square feet of cardboard and the large box requires 3 square feet. The supplier can provide at most 600 square feet of cardboard per day. Due to storage constraints, the total number of boxes produced must be at least 100. If $s$ represents the number of small boxes and $l$ represents the number of large boxes produced daily, which system of inequalities represents these constraints?\n\nOptions:\nA) $2s + 3l \\le 600$ and $s + l \\ge 100$\nB) $3s + 2l \\le 600$ and $s + l \\ge 100$\nC) $2s + 3l \\ge 600$ and $s + l \\ge 100$\nD) $2s + 3l \\le 600$ and $s + l \\le 100$",
+      "answer": "$2s + 3l \\le 600$ and $s + l \\ge 100$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "I added LaTeX formatting around the variables for better readability.",
+      "hint": "Skill: Linear inequalities in one or two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-inequalities-in-one-or-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0078",
+      "problem": "A student works two part-time jobs, one at a technology store (Job T) and the other washing windows for neighbors (Job W). Job T pays \\$9 per hour and Job W pays \\$12 per hour. The student needs to earn at least \\$150 each week for vehicle maintenance. Which inequality represents this situation, where \\(t\\) is the number of hours worked at Job T and \\(w\\) is the number of hours worked at Job W?\n\nOptions:\nA) $9t + 12w \\ge 150$\nB) $9t + 12w \\le 150$\nC) $12t + 9w \\ge 150$\nD) $21(t + w) \\ge 150$",
+      "answer": "$9t + 12w \\ge 150$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "giving some context to the prompt, and reformatting the answer choices since usually there's not a full \"=\" written under the inequality symbol.",
+      "hint": "Skill: Linear inequalities in one or two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-inequalities-in-one-or-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0079",
+      "problem": "A recycling center processes paper ($x$ tons) and plastic ($y$ tons) daily. The data shows combinations where the processing cost equals \\$800: $(4, 8), (8, 6), (12, 4), (16, 2)$. Which inequality represents all combinations where the processing cost is at most \\$800?\n\nOptions:\nA) $50x + 75y \\ge 800$\nB) $75x + 50y \\le 800$\nC) $50x + 75y \\le 800$\nD) $40x + 80y \\le 800$",
+      "answer": "$40x + 80y \\le 800$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "C was the correct choice so I flipped the text options",
+      "hint": "Skill: Linear inequalities in one or two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-inequalities-in-one-or-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0080",
+      "problem": "A student has \\$30 to spend on spiral and composition notebooks. Each spiral notebook costs \\$2, and each composition notebook costs \\$1. There is a \\$5 shipping fee. Which inequality represents the total cost, where $s$ is the number of spiral notebooks and $c$ is the number of composition notebooks?\n\nOptions:\nA) $2s + c + 5\\le 30$\nB) $s + 2c > 25$\nC) $2s + c + 5 \\geq 30$\nD) $2s + c < 25$",
+      "answer": "$2s + c + 5\\le 30$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "The original prompt feels purposefully misleading with its final question. I updated the question and the answer. I also created better distractors",
+      "hint": "Skill: Linear inequalities in one or two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-inequalities-in-one-or-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0081",
+      "problem": "Which point does NOT satisfy both $y \\ge -2x + 1$ and $2y + x < 4$?\n\nOptions:\nA) (0, 0)\nB) (1, 0)\nC) (0, 1)\nD) (2, 0)",
+      "answer": "(0, 0)",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "The only answer choice that doesn't work is (0, 0). Revised the stem and changed answer choices around.",
+      "hint": "Skill: Linear inequalities in one or two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-inequalities-in-one-or-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0082",
+      "problem": "Which point is included in the solution set for the system of inequalities $x > 2$ and $y < 3$?\n\nOptions:\nA) $(2, 2)$\nB) $(3, 2)$\nC) $(3, 3)$\nD) $(4, 3)$",
+      "answer": "$(3, 2)$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Starts with \"Which of the following...\"",
+      "hint": "Skill: Linear inequalities in one or two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-inequalities-in-one-or-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0083",
+      "problem": "An athlete's recovery time ($y$ minutes) after exercise depends on the workout intensity ($x$). The data shows that when $x = 1$, $y = 15$; when $x = 2$, $y = 25$; when $x = 3$, $y = 35$; and when $x = 4$, $y = 45$. Which inequality represents all recovery times that exceed the predicted value based on intensity?\n\nOptions:\nA) y > 5x + 10\nB) y > 10x\nC) y > 10x + 5\nD) y < 10x + 5",
+      "answer": "y > 10x + 5",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "The only thing I have reservations about in this problem is that the data (which theoretically was collected from somewhere) is exact, but the model provided is not. That might prove problematic, but also, it might be fine with the rest of the group.",
+      "hint": "Skill: Linear inequalities in one or two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-inequalities-in-one-or-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0084",
+      "problem": "A student is mixing two types of soil for a garden. Premium soil costs \\$6 per pound and contains 30% organic matter, while standard soil costs \\$3 per pound and contains 15% organic matter. The mixture must contain at least 20% organic matter and cost no more than \\$40. If x represents the pounds of premium soil and y represents the pounds of standard soil, which system of inequalities represents these constraints?\n\nOptions:\nA) $0.30x + 0.15y \\ge 0.20(x + y)$ and $6x + 3y \\le 40$\nB) $0.30x + 0.15y \\le 0.20(x + y)$ and $6x + 3y \\ge 40$\nC) $0.30x + 0.15y \\le 0.20x + 0.20y$ and $6x + 3y \\le 40$\nD) $0.30(x + y) + 0.15(x + y) \\ge 0.20(x + y)$ and $6x + 3y \\le 40$",
+      "answer": "$0.30x + 0.15y \\ge 0.20(x + y)$ and $6x + 3y \\le 40$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Choices A and C are the same. Revised C to be incorrect",
+      "hint": "Skill: Linear inequalities in one or two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-inequalities-in-one-or-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0085",
+      "problem": "A student is mixing two types of soil for a garden. Premium soil costs \\$6 per pound and contains 30% organic matter, while standard soil costs \\$3 per pound and contains 15% organic matter. The mixture must contain at least 20% organic matter and cost no more than \\$40. If $x$ represents the pounds of premium soil and $y$ represents the pounds of standard soil, which system of inequalities represents these constraints?\n\nOptions:\nA) $0.30x + 0.15y \\ge 0.20(x + y)$  and  $6x + 3y \\le 40$\nB) $0.30x + 0.15y \\le 0.20(x + y)$  and  $6x + 3y \\ge 40$\nC) $0.30x + 0.15y \\ge 0.20$  and  $6x + 3y \\ge 40$\nD) $0.30(x + y) + 0.15(x + y) \\ge 0.20$  and  $6x + 3y \\le 40$",
+      "answer": "$0.30x + 0.15y \\ge 0.20(x + y)$  and  $6x + 3y \\le 40$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Updated formatting in prompt and answers (and replaced 2nd right answer and modified other for better distractor)",
+      "hint": "Skill: Linear inequalities in one or two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-inequalities-in-one-or-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0086",
+      "problem": "A manufacturing plant must maintain its daily production between 200 and 350 units. Each worker can produce 25 units per day, and labor regulations require at least 2 supervisors for every 5 workers. If w represents the number of workers and s represents the number of supervisors, which system of inequalities correctly models these requirements?\n\nOptions:\nA) $200 \\le 25w \\le 350$ and $2s \\ge 5w$\nB) $200 \\le 25w \\le 350$ and $2w \\ge 5s$\nC) $25w \\le 200$ and $w \\le 350$ and $2s \\ge 5w$\nD) $350 \\ge 25w \\ge 200$ and $5s \\ge 2w$",
+      "answer": "$200 \\le 25w \\le 350$ and $2s \\ge 5w$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Updated prompt format and updated answers to reflect problem with unnecessary (and incorrect) simplification and better distractors",
+      "hint": "Skill: Linear inequalities in one or two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-inequalities-in-one-or-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0087",
+      "problem": "A student is mixing two types of soil for a garden. Premium soil costs \\$6 per pound and contains 30% organic matter, while standard soil costs \\$3 per pound and contains 15% organic matter. The mixture must contain at least 20% organic matter and cost no more than \\$40. If x represents the pounds of premium soil and y represents the pounds of standard soil, which system of inequalities represents these constraints?\n\nOptions:\nA) $0.30x + 0.15y \\ge 0.20(x + y)$ \n$6x + 3y \\le 40$\nB) $0.30x + 0.15y \\le 0.20(x + y)$ \n$6x + 3y \\ge 40$\nC) $0.30x + 0.15y \\ge 0.20x + 0.20y$ \n$6x + 3y \\le 40$\nD) $0.30(x + y) + 0.15(x + y) \\ge 0.20(x + y)$ \n$6x + 3y \\le 40$",
+      "answer": "$0.30x + 0.15y \\ge 0.20(x + y)$ \n$6x + 3y \\le 40$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Equations should be on their own line",
+      "hint": "Skill: Linear inequalities in one or two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-inequalities-in-one-or-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0088",
+      "problem": "A food truck sells burritos and tacos. Each burrito requires 8 minutes to prepare, and each taco requires 5 minutes. The food truck can operate for a maximum of 4 hours each day, and aims to sell at least 30 items daily. If b represents the number of burritos and t represents the number of tacos sold daily, which system of inequalities represents these constraints?\n\nOptions:\nA) $8b + 5t \\ge 240$ and $b + t \\ge 30$\nB) $8b + 5t \\le 240$ and $b + t \\le 30$\nC) $8b + 5t \\le 240$ and $b + t \\ge 30$\nD) $5b + 8t \\le 240$ and $b + t \\ge 30$",
+      "answer": "$8b + 5t \\le 240$ and $b + t \\ge 30$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Simplified wording (health regulations?!?).",
+      "hint": "Skill: Linear inequalities in one or two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-inequalities-in-one-or-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0089",
+      "problem": "A car rental company charges a \\$25 base fee plus \\$0.15 per mile driven. The inequality $25 + 0.15m \\le 50$ represents the maximum miles, $m$, that can be driven within a budget. What does the 0.15 represent in this inequality?\n\nOptions:\nA) The total cost for miles driven\nB) The maximum charge allowed per mile\nC) The base fee for renting the car\nD) The cost per mile driven",
+      "answer": "The cost per mile driven",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "We're basically giving the answer in the opening sentence of the stem. It's fine, but... it's really more a question that tests whether or not the student can regurgitate what they read.",
+      "hint": "Skill: Linear inequalities in one or two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-inequalities-in-one-or-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0090",
+      "problem": "A company manufactures product X requiring 2 units of a resource and product Y requiring 3 units. The table shows possible combinations of X and Y: $(0, 30)$, $(10, 20)$, $(20, 10)$, $(30, 0)$. Which inequality represents all combinations where the total resource used does not exceed the available amount?\n\nOptions:\nA) 3X + 2Y ≥ 90\nB) 2X + 3Y = 90\nC) 2X + 3Y ≥ 90\nD) 2X + 3Y ≤ 90",
+      "answer": "2X + 3Y ≤ 90",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Revised answer choices",
+      "hint": "Skill: Linear inequalities in one or two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-inequalities-in-one-or-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0091",
+      "problem": "At an electronics store, the price of a laptop computer after a 20% discount and then an additional \\$50 off coupon is \\$590. What was the original price of the laptop computer?\n\nOptions:\nA) \\$758\nB) \\$768\nC) \\$800\nD) \\$850",
+      "answer": "\\$800",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "I added the word, \"computer\" because I think it makes it more clear for those who may not have encountered a laptop. Maybe some students only know their phones or chromebooks by those names. I also gave this a 2 because I didn't create an equation to solve – I just plugged in the answers, multiplied by 0.8, and then subtracted 50 until I got $590.",
+      "hint": "Skill: Linear equations in one variable",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-equations-in-one-variable"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0092",
+      "problem": "A movie streaming service offers two subscription plans: Basic and Premium. The Basic plan costs \\$8 per month plus \\$2 per movie watched, while the Premium plan is just \\$20 per month for unlimited movies. If a customer spent the same amount on either plan last month, how many movies did they watch?\n\nOptions:\nA) 6 movies\nB) 2 movies\nC) 7 movies\nD) 10 movies",
+      "answer": "6 movies",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "The label needs to be changed, in my opinion to be a system of equations. Even though one equation can solve it since it's only one month, they're discussing two plans to compare how many movies they can watch so the costs are the same. \nI added the context of \"movie\" in the beginning and added context to the solutions.",
+      "hint": "Skill: Linear equations in one variable",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-equations-in-one-variable"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0093",
+      "problem": "A car rental service charges a daily rental rate of \\$40 plus \\$12 for each hour the car is used. Which equation can be used to determine the number of hours, $h$, that a car can be rented so the total cost ends up being \\$160?\n\nOptions:\nA) $12h +40=160$\nB) $40h +12=160$\nC) $12h=160$\nD) $12(h +40)=160$",
+      "answer": "$12h +40=160$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "I have found the use of the phrase \"flat fee\" is confusing for students. I am changing it to say \"daily rental rate. I also italicized 'h'.",
+      "hint": "Skill: Linear equations in one variable",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-equations-in-one-variable"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0094",
+      "problem": "A parking garage charges a \\$5 entrance fee plus \\$3 per hour. What equation best models the total price, $P$, Eduardo would pay after $x$ hours?\n\nOptions:\nA) $P=5x+3$\nB) $P=8x$\nC) $P=3x+5$\nD) $P=5x$",
+      "answer": "$P=3x+5$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "The question allows students to plug in the answers until they get a number that works without knowing how to write an equation to model the situation. I modified the question and answers to model a more robust assessment of the task identified.",
+      "hint": "Skill: Linear equations in one variable",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-equations-in-one-variable"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0095",
+      "problem": "A delivery service charges \\$12 for the first item and \\$3 less for each additional item. If a customer's total charge was \\$36, how many items were delivered?\n\nOptions:\nA) 3 items\nB) 4 items\nC) 5 items\nD) 6 items",
+      "answer": "6 items",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Am I missing something? Wouldn't this be adding (in $) 12 + 9 + 6 + 3 + 0 + –3, etc.? The 5th item is free and after that the delivery service gives money back? Not sure how they got $36.",
+      "hint": "Skill: Linear equations in one variable",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-equations-in-one-variable"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0096",
+      "problem": "In 5 years, Maria will be twice as old as she was 10 years ago. How old is Maria now?\n\nOptions:\nA) $5$\nB) $15$\nC) $20$\nD) $25$",
+      "answer": "$25$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "I gave this a 2 because I want to note that you don't need to create a linear equation to solve this. You could plug the answers in and get yours. That's the only reason.",
+      "hint": "Skill: Linear equations in one variable",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-equations-in-one-variable"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0097",
+      "problem": "For which value of m does the equation $(2m - 1)(x + 3) = 4mx - 8$ have a unique solution?\n\nOptions:\nA) $-0.5$\nB) $-1$\nC) $2$\nD) $4$",
+      "answer": "$4$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Choices B, C and D are all correct options.",
+      "hint": "Skill: Linear equations in one variable",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-equations-in-one-variable"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0098",
+      "problem": "A bookstore membership costs \\$10 initially. Members save \\$3 on each book purchased. Which equation can be used to determine the number of books, $b$, a member needs to buy to save a total of \\$40?\n\nOptions:\nA) $3b - 10 = 40\nB) $3b = 40\nC) $3b + 10 = 40\nD) $40 - 10 = 3b",
+      "answer": "$3b = 40",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "I believe this question only focuses on the amount of money saved. Therefore, the $10 is irrelevant. I believe the answer is choice A. And if the answer is actually choice B, then the wording is really not clear.",
+      "hint": "Skill: Linear equations in one variable",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-equations-in-one-variable"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0099",
+      "problem": "For which value of k does the equation $(k+2)(x-1) - 3 = (2k-1)x + 4$ have infinitely many solutions?\n\nOptions:\nA) $-9$\nB) $-3$\nC) $3$\nD) $9$",
+      "answer": "$3$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "While this questions requires students know what \"infinitely many\" solutions means when comparing two equations, this question allows students to plug in the choices. I also think these equations would need to be separated into two equations so it seems like you're trying to find a system where the equations are the same as each other. But k = 3 isn't correct, so I'm throwing it out.",
+      "hint": "Skill: Linear equations in one variable",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-equations-in-one-variable"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0100",
+      "problem": "What is the solution to the equation \\(0.5(4x + 8) − 3 = 0.6x + 2(0.2x − 5)\\)?\n\nOptions:\nA) $-15$\nB) $-11$\nC) $-9$\nD) $-6$",
+      "answer": "$-11$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "This relatively straight forward. I recommend updating one of the answers to -10 as it is the solution a student would get if they did not distribute correctly.",
+      "hint": "Skill: Linear equations in one variable",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-equations-in-one-variable"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0101",
+      "problem": "The total price of an oil change can be determined by a constant labor charge plus the cost of the amount of oil replaced. The total cost, T, in dollars, for an oil change using x quarts of oil is modeled by the equation $T = 35 + 8x$. What does the number 8 represent in this equation?\n\nOptions:\nA) The cost in dollars per quart of oil\nB) The labor charge for each quart of oil\nC) The number of quarts of oil needed\nD) The total cost of the oil",
+      "answer": "The cost in dollars per quart of oil",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "I think the context might be a little non-standard for some high school students, so I've tried to clean it up a little to make it easier to understand what's going on.",
+      "hint": "Skill: Linear equations in one variable",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-equations-in-one-variable"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0102",
+      "problem": "A gardener charges \\$40 for equipment rental and \\$25 per hour for labor. The total cost, $T$, in dollars, for $h$ hours of work is modeled by $T = 40 + 25h$. What does the number 40 represent in this equation?\n\nOptions:\nA) The hourly labor rate\nB) The number of hours worked\nC) The total cost for one hour of work\nD) The initial equipment rental fee",
+      "answer": "The initial equipment rental fee",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "updated LaTex. This problem is kind of easy but meets all the criteria.",
+      "hint": "Skill: Linear equations in one variable",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-equations-in-one-variable"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0103",
+      "problem": "A theater manager can purchase popcorn at \\$10 per box or \\$8.50 per box when buying at least $x$ boxes. If the total cost is the same for buying 12 boxes at the regular price or 15 boxes at the discount price, what is the value of $x$?\n\nOptions:\nA) 12\nB) 14\nC) 15\nD) 16",
+      "answer": "15",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "This was just confusing.",
+      "hint": "Skill: Linear equations in one variable",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-equations-in-one-variable"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0104",
+      "problem": "For which value of m does the equation $(2m - 1)(x + 3) = 4mx - 8$ \\textbf{not} have a unique solution?\n\nOptions:\nA) $4$\nB) $-1$\nC) $2$\nD) $-0.5$",
+      "answer": "$-0.5$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "This equation has unique solutions for all values of m EXCEPT for -1/2. Recommend adjusting the stem to reflect this, by using the adjusted stem above. Answer choices have been adjusted.",
+      "hint": "Skill: Linear equations in one variable",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-equations-in-one-variable"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0105",
+      "problem": "For which value of $a$ does the equation $3(a - 2)x + 5 = 6x - 10$ have no solution?\n\nOptions:\nA) $0$\nB) $2$\nC) $4$\nD) $5$",
+      "answer": "$4$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "fixed unnecessary extra parentheses around variable and equation",
+      "hint": "Skill: Linear equations in one variable",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-equations-in-one-variable"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0106",
+      "problem": "A car rental company charges \\$30 per day plus \\$0.20 per mile. Another company charges \\$25 per day plus \\$0.25 per mile. For how many miles driven will the total cost from both companies be the same?\n\nOptions:\nA) 10 miles\nB) 20 miles\nC) 100 miles\nD) 200 miles",
+      "answer": "100 miles",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Adding units to the answers. Also want to note that the car rental context is overused.",
+      "hint": "Skill: Linear equations in one variable",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-equations-in-one-variable"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0107",
+      "problem": "A student has 200 pages left to read in a novel. The pages remaining, $P$, after $d$ days is modeled by the equation $P = 200 – 18d$. What does the coefficient $–18$ represent in this equation?\n\nOptions:\nA) The number of days needed to complete the book\nB) The number of pages remaining in the book\nC) The number of pages read each day\nD) The total number of pages that will be read",
+      "answer": "The number of pages read each day",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "500 pages left?? What book is this kid reading? Since the 500 is irrelevant to the question itself, it seems like making the number of pages left a little more realistic would be good, and maybe the number of pages, too. Changed those in the prompt.",
+      "hint": "Skill: Linear equations in one variable",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-equations-in-one-variable"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0108",
+      "problem": "What is the solution to the equation $\\frac{3x - 1}{5} - \\frac{2x + 3}{2} = 4$?\n\nOptions:\nA) $-57/4$\nB) $-12$\nC) $-27/4$\nD) $-21/4$",
+      "answer": "$-57/4$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Flipped choices A and B to keep A as the correct answer",
+      "hint": "Skill: Linear equations in one variable",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-equations-in-one-variable"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0109",
+      "problem": "A salesperson earns a monthly base salary of \\$400 plus a 6% bonus of the total sales, $x$. If the salesperson earned \\$1,240 last month, what was the total sales amount? Use the following equation $1240 = 400 + 0.06x$\n\nOptions:\nA) \\$14,000\nB) \\$20,667\nC) \\$74,000\nD) \\$840",
+      "answer": "\\$14,000",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Updated language in prompt as well as providing the equation so it aligns with the Task.",
+      "hint": "Skill: Linear equations in one variable",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-equations-in-one-variable"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0110",
+      "problem": "For which value of k does the equation $(k+2)(x-1) - 3 = (2k-1)x + 4$ have no many solution?\n\nOptions:\nA) $-9$\nB) $-3$\nC) $3$\nD) $9$",
+      "answer": "$3$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "This value of k creates an equation with no solution, so I revised the stem to reflect that. This equation does not have a value of k that gives infinitely many solutions.",
+      "hint": "Skill: Linear equations in one variable",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-equations-in-one-variable"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0111",
+      "problem": "A printing service charges a \\$3 setup fee plus \\$0.50 per page. If a student's total charge was \\$15, how many pages did they print?\n\nOptions:\nA) 12\nB) 24\nC) 27\nD) 30",
+      "answer": "24",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Another favorite. Short, sweet, something students can likely relate to, and the numbers are accessible and reasonable.",
+      "hint": "Skill: Linear equations in one variable",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-equations-in-one-variable"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0112",
+      "problem": "What is the solution to the equation $\\frac{3x - 1}{5} - \\frac{2x + 3}{2} = 4$?\n\nOptions:\nA) $-57/4$\nB) $-12$\nC) $-27/4$\nD) $-21/4$",
+      "answer": "$-57/4$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Students can plug the answers into the equation and find which is correct, which is actually –57/4 rather than –12. I switched the answers so choice A is still correct in case others liked this question.",
+      "hint": "Skill: Linear equations in one variable",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-equations-in-one-variable"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0113",
+      "problem": "A salesperson earns a monthly base salary of \\$400 plus a 6% commission on total sales of snacks to convenience stores. The salesperson earned \\$1,240 total last month. How many total snacks did the salesperson sell?\n\nOptions:\nA) \\14,000 snacks\nB) \\20,667 snacks\nC) \\74,000 snacks\nD) \\840 snacks",
+      "answer": "\\14,000 snacks",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "It's helpful to let the reader know what the person is selling. And asking in terms of sales with all of the values being dollar amounts might be confusing. Additionally, the US dollar is not universal, so I am questioning the value of this question. I have missed many questions with US dollars, but I just remembered with this one. Maybe change it to how many units of whatever is being sold rather than sales?",
+      "hint": "Skill: Linear equations in one variable",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-equations-in-one-variable"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0114",
+      "problem": "A delivery service charges \\$12 for the first item and \\$3 less for each additional item. If a customer's total charge was \\$36, how many items were delivered?\n\nOptions:\nA) 3 items\nB) 4 items\nC) 5 items\nD) 6 items",
+      "answer": "6 items",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "By the 6th item, would the company charge –$6?",
+      "hint": "Skill: Linear equations in one variable",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-equations-in-one-variable"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0115",
+      "problem": "A plumber charges \\$85 for a service call plus \\$45 per hour of labor. If a customer's total bill was \\$265, how many hours did the plumber work?\n\nOptions:\nA) 2\nB) 4\nC) 5\nD) 6",
+      "answer": "4",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "This problem is fine but I don't believe it meets the essence of the task since it does not require a linear equation or variable to solve.",
+      "hint": "Skill: Linear equations in one variable",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-equations-in-one-variable"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0116",
+      "problem": "A theater manager can purchase popcorn at \\$10 per box or \\$8.50 per box when buying at least $x$ boxes. If the total cost is the same for buying 12 boxes at the regular price or 15 boxes at the discount price, what is the value of $x$?\n\nOptions:\nA) 12\nB) 14\nC) 15\nD) 16",
+      "answer": "15",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "I'm not sure I understand what is happening in this problem. I read it 5 times and still don't understand how to set it up.",
+      "hint": "Skill: Linear equations in one variable",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-equations-in-one-variable"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0117",
+      "problem": "A painter has 3 cans of paint. Each can covers 50 square feet. The painter uses 2 additional cans each day to continue a project. Which equation can be used to determine the number of days, d, needed to paint a total of 1000 square feet?\n\nOptions:\nA) $3 + 2d = 1000$\nB) $150 + 2d = 1000$\nC) $2d = 1000$\nD) $150 + 100d = 1000$",
+      "answer": "$150 + 100d = 1000$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Rewrote answers in more intuitive, equivalent form.",
+      "hint": "Skill: Linear equations in one variable",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-equations-in-one-variable"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0118",
+      "problem": "A painter charges \\$40 for travel plus \\$35 per hour, while a handyman charges \\$25 for travel plus \\$42 per hour. After approximately how many hours of work will their total charges be equal?\n\nOptions:\nA) 5\nB) 3\nC) 4\nD) 2",
+      "answer": "2",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Updated prompt including \"approximately\" and adjusted to the correct answer",
+      "hint": "Skill: Linear equations in one variable",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-equations-in-one-variable"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0119",
+      "problem": "A line passes through the points (-2, 5) and (3, -1). A second line is perpendicular to this line and contains the point (0, 4). What is the equation of the second line in standard form?\n\nOptions:\nA) $5x - 6y = -24$\nB) $3x + 5y = 4$\nC) $3x + 5y = 20$\nD) $6x + 5y = 20$",
+      "answer": "$5x - 6y = -24$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "The answer was incorrect. I moved the correct answer to the option A slot.",
+      "hint": "Skill: Linear equations in two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-equations-in-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0120",
+      "problem": "A theater sells adult tickets for \\$12 and student tickets for \\$8. One evening, the theater collected \\$584 in ticket sales from 62 total tickets. How many adult tickets were sold?\n\nOptions:\nA) 34\nB) 48\nC) 62\nD) 22",
+      "answer": "22",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "The answer is incorrect. Also, the Label is incorrect. This question is about Systems of two linear equations in two variables. I fixed choice D to reflect the correct solution.",
+      "hint": "Skill: Linear equations in two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-equations-in-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0121",
+      "problem": "A fitness instructor creates personalized workout plans starting with 15 minutes on day 1 and increasing the workout time by 3 minutes each day. The total workout time T in minutes after d days is given by $T = 15 + 3d$. If a client has completed 60 minutes of total workout time, how many days have they been following the plan?\n\nOptions:\nA) $19$\nB) $15$\nC) $20$\nD) $16$",
+      "answer": "$15$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Students can plug in the answers to get the correct answer. If this is ok, then leave the question alone.",
+      "hint": "Skill: Linear equations in two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-equations-in-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0122",
+      "problem": "A theater sells adult tickets for \\$20 and student tickets for \\$15. For a particular performance, the theater needs to sell exactly \\$4,800 in total ticket revenue and must sell a combined total of 280 tickets. Which system of equations represents these conditions, where a is the number of adult tickets and s is the number of student tickets?\n\nOptions:\nA) $20a + 15s = 280$ and $a + s = 4,800$\nB) $35a + 35s = 4,800$ and $a + s = 280$\nC) $15a + 20s = 4,800$ and $a + s = 280$\nD) $20a + 15s = 4,800$ and $a + s = 280$",
+      "answer": "$20a + 15s = 4,800$ and $a + s = 280$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Consider revising answer choices to have one equation per line",
+      "hint": "Skill: Linear equations in two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-equations-in-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0123",
+      "problem": "A botanist measures the height of a plant over several weeks. The table below shows the height $h$ in centimeters at different weeks $w$. Which equation represents the relationship shown in the table?\\n\\nWeeks $(w)$ | Height $(h)$\\n0 | 10\\n3 | 16\\n6 | 22\\n9 | 28\n\nOptions:\nA) $h = 0.5w + 10$\nB) $h = 2w$\nC) $h = 6w + 10$\nD) $h = 2w + 10$",
+      "answer": "$h = 2w + 10$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "removed unnecessary parentheses in prompt",
+      "hint": "Skill: Linear equations in two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-equations-in-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0124",
+      "problem": "Which of the following best describes the graph of the equation $-2x + 3y = 9$?\n\nOptions:\nA) The slope is negative and the y-intercept is 3\nB) The slope is positive and the y-intercept is \\frac{2}{3}\nC) The slope is negative and the y-intercept is 9\nD) The slope is positive and the y-intercept is -3",
+      "answer": "The slope is negative and the y-intercept is 3",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "in the original, two of the answers describe the same correct phenomenon. Updated prompt and answers for better quality",
+      "hint": "Skill: Linear equations in two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-equations-in-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0125",
+      "problem": "A student sells bracelets for \\$2 each and necklaces for \\$5 each. Her earnings from sales last week totaled \\$60. If the number of necklaces sold was twice the number of bracelets sold, how many bracelets and necklaces were sold?\n\nOptions:\nA) 4 bracelets and 8 necklaces\nB) 5 bracelets and 10 necklaces\nC) 13 bracelets and 6.5 necklaces\nD) 10 bracelets and 20 necklaces",
+      "answer": "5 bracelets and 10 necklaces",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "The original prompt does not match the topic (it uses inequalities). I have updated it to match the prompt as well as the answer options",
+      "hint": "Skill: Linear equations in two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-equations-in-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0126",
+      "problem": "A delivery service charges a flat fee plus a rate per mile. The table below shows the total cost for different distances. Which equation represents the relationship between the miles $(m)$ and the total cost $(C)$?\\n\\nMiles $(m)$ | Total Cost $(C)$\\n5 | 14.50\\n10 | 19.00\\n15 | 23.50\n\nOptions:\nA) $C =0.90m +9$\nB) $C =0.90m +10$\nC) $C =0.90m$\nD) $C =10m +0.90$",
+      "answer": "$C =0.90m +10$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "The table could look better, and the context has been used a lot.",
+      "hint": "Skill: Linear equations in two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-equations-in-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0127",
+      "problem": "A food delivery membership service charges \\$15 for initial registration and \\$8 per month for access, including the first month. The total cost C in dollars after $m$ months is given by $C = 15 + 8m$. If a customer has paid \\$95 in total, for how many months have they had the food delivery membership?\n\nOptions:\nA) $5$\nB) $6$\nC) $10$\nD) $12$",
+      "answer": "$10$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Added that the monthly membership starts at the first month, and what the membership was for. Also added italics around the variable, m.",
+      "hint": "Skill: Linear equations in two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-equations-in-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0128",
+      "problem": "A chemist needs to create 20 liters of a 45% saline solution by mixing a 30% saline solution with a 60% saline solution. How many liters of the 30% solution must be used?\n\nOptions:\nA) 4\nB) 9\nC) 10\nD) 7",
+      "answer": "10",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "I actually like this question the best so far. If a student struggled to create a system of equations, they could reason their way through it by noticing that 45% is the average of 30% and 60%, meaning that there would have to half of each to create the 45%. This question allows multiple solution pathways, which is the main goal, in my mind.",
+      "hint": "Skill: Linear equations in two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-equations-in-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0129",
+      "problem": "Alek starts saving with \\$50 and adds \\$10 each week and doesn't withdraw any money. Ruth starts with \\$20 and adds \\$15 each week and doesn't withdraw any money. After how many weeks will their savings be equal?\n\nOptions:\nA) 2\nB) 4\nC) 6\nD) 8",
+      "answer": "6",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Making it more clear that there are no withdrawals. I also recommend changing the names to be more global. The choices are misleading as well, since if a student defines the first week to have $50, then the second week will have $60. If the zeroth week has $50, the 1st week will have $60. Defining it the first way yields answer choice D. Defining it the second way yields answer choice C, so I changed choice D to be 8 in case they defined the weeks differently.",
+      "hint": "Skill: Linear equations in two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-equations-in-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0130",
+      "problem": "A student sells bracelets for \\$2 each and necklaces for \\$5 each. Her earnings from sales last week totaled \\$90. If the number of necklaces sold was at least twice the number of bracelets sold, how many bracelets and necklaces could have been sold?\n\nOptions:\nA) 4 bracelets and 18 necklaces\nB) 5 bracelets and 16 necklaces\nC) 8 bracelets and 10 necklaces\nD) 14 bracelets and 10 necklaces",
+      "answer": "5 bracelets and 16 necklaces",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Revised Answer D (it is also a correct solution) and removed \"which of the following\" language",
+      "hint": "Skill: Linear equations in two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-equations-in-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0131",
+      "problem": "A pottery studio charges a materials fee plus an hourly rate for class sessions. The table shows the total cost for different class lengths.\\n\\nHours (h) | Total Cost (\\$\\)\\n1 | 45\\n3 | 85\\n5 | 125\\n\\nWhich equation represents the relationship between the hours (h) and the total cost (C)?\n\nOptions:\nA) C = 20h + 45\nB) C = 20h + 25\nC) C = 40h + 5\nD) C = 15h + 30",
+      "answer": "C = 20h + 25",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Switched options A and B to keep option B the correct answer.",
+      "hint": "Skill: Linear equations in two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-equations-in-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0132",
+      "problem": "A swimming pool is being filled at a constant rate, starting with some initial water. The table shows the depth of water ($d$) in feet at different times ($t$) in hours:\\n\\nTime ($t$) | Depth ($d$)\\n2 | 3.5\\n4 | 4.5\\n6 | 5.5\\n\\nWhich equation represents the relationship between time ($t$) and depth ($d$)?\n\nOptions:\nA) $d = 0.5t + 2.5$\nB) $d = t + 3.5$\nC) $d = t + 2.5$\nD) $d = 0.5t + 3$",
+      "answer": "$d = 0.5t + 2.5$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Answers updated with better distractors",
+      "hint": "Skill: Linear equations in two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-equations-in-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0133",
+      "problem": "A pottery studio charges a materials fee plus an hourly rate for class sessions. The table shows the total cost for different class lengths.\\n\\nHours (h) | Total Cost (\\$\\)\\n1 | 45\\n3 | 85\\n5 | 125\\n\\nWhich equation represents the relationship between the hours (h) and the total cost (C)?\n\nOptions:\nA) C = 20h + 45\nB) C = 20h + 25\nC) C = 40h + 5\nD) C = 15h + 30",
+      "answer": "C = 20h + 25",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "The answer is actually choice A. Switching A and B. Also noting the table is terribly formatted.",
+      "hint": "Skill: Linear equations in two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-equations-in-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0134",
+      "problem": "A construction company uses two types of cement mixers. A standard mixer can pour 8 cubic yards per hour, and a high-capacity mixer can pour 12 cubic yards per hour. If the company needs to pour exactly 300 cubic yards of cement in total, which equation represents the relationship between $s$, the number of hours the standard mixers are used, and $h$, the number of hours the high-capacity mixers are used?\n\nOptions:\nA) $8 + 12 = 300$\nB) $8s + 12h = 300$\nC) $12s + 8h = 300$\nD) $300 = s + h$",
+      "answer": "$8s + 12h = 300$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "If looking to improve this question, changing the volume from cubic yards to cubic meters would suffice.",
+      "hint": "Skill: Linear equations in two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-equations-in-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0135",
+      "problem": "A bakery sells cupcakes for \\$2 each and cookies for \\$1.50 each. The total revenue from selling $c$ cupcakes and $k$ cookies is given by $R = 2c + 1.5k$. If the bakery sold 40 cupcakes and the total revenue was \\$230, how many cookies were sold?\n\nOptions:\nA) 85 cookies\nB) 100 cookies\nC) 153 cookies\nD) 207 cookies",
+      "answer": "100 cookies",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Adding context to the answer choices",
+      "hint": "Skill: Linear equations in two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-equations-in-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0136",
+      "problem": "A fitness instructor creates personalized workout plans starting with 15 minutes on day 1 and increasing the workout time by 3 minutes each day. The total workout time T in minutes after d days is given by $T = 15 + 3d$. If a client has completed 60 minutes of total workout time, how many days have they been following the plan?\n\nOptions:\nA) $19$ days\nB) $16$ days\nC) $20$ days\nD) $15$ days",
+      "answer": "$16$ days",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "If the 1st day (d = 1) is 15 minutes, then the equation should be 15 + 3(d -1), which makes d = 16 the correct answer. Also adding context to the answer choices.",
+      "hint": "Skill: Linear equations in two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-equations-in-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0137",
+      "problem": "A concert venue charges an admission fee for each ticket purchased, and a one-time service charge for tickets sold online. If $t$ represents the number of tickets purchased, the total cost $C$ in dollars is given by the equation $C = 8.50t + 35$. What does the coefficient $8.50$ represent in this context?\n\nOptions:\nA) The base admission fee per ticket in dollars\nB) The combined admission fee and service charge per ticket in dollars\nC) The service charge per ticket in dollars\nD) The total cost per ticket in dollars",
+      "answer": "The base admission fee per ticket in dollars",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Revised language in stem to add clarity",
+      "hint": "Skill: Linear equations in two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-equations-in-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0138",
+      "problem": "A recipe requires a total of 2 kilograms of a mixture using two ingredients. Each cup of the first ingredient contributes 200 grams and each cup of the other ingredient contributes 150 grams. Which equation models the total weight of the mixture in terms of $x$, the number of cups of the first ingredient, and $y$, the number of cups of the other ingredient?\n\nOptions:\nA) $200x + 150y = 2000$\nB) $150x + 200y = 2000$\nC) $200x + 150y = 2$\nD) $150x + 200y = 2$",
+      "answer": "$200x + 150y = 2000$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Cleaned up prompt to limit confusion and replaced equivalent answer (D).",
+      "hint": "Skill: Linear equations in two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-equations-in-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-algebra.q0139",
+      "problem": "A table of values for a linear equation is shown below.\\n\\nx | y\\n-4 | -1\\n-1 | 8\\n2 | 17\\n\\nWhich equation represents the relationship between $x$ and $y$?\n\nOptions:\nA) $y=3x + 11$\nB) $y=(1/3)x + 1/3$\nC) $y=3x - 13$\nD) $y=11x + 3$",
+      "answer": "$y=3x + 11$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "The fractions in option B need to look like fractions",
+      "hint": "Skill: Linear equations in two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "linear-equations-in-two-variables"
+      ]
+    }
+  ]
+}

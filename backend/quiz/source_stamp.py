@@ -42,10 +42,28 @@ def questions_stamp() -> float:
 def bump_notes() -> float:
     global _notes_stamp
     _notes_stamp = time.time()
+    try:
+        from backend.quiz.tag_index import invalidate_tag_list_cache
+
+        invalidate_tag_list_cache()
+    except Exception:
+        pass
     return _notes_stamp
 
 
 def bump_questions() -> float:
     global _questions_stamp
     _questions_stamp = time.time()
+    try:
+        from backend.quiz.content_bank import invalidate_catalog_cache
+
+        invalidate_catalog_cache()
+    except Exception:
+        pass
+    try:
+        from backend.quiz.tag_index import invalidate_tag_list_cache
+
+        invalidate_tag_list_cache()
+    except Exception:
+        pass
     return _questions_stamp

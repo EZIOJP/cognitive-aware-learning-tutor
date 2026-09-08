@@ -624,6 +624,54 @@ def upsert_wearable_daily(
             client_event_id=hub_id("stand_hours"),
         )
 
+    # Richer categories (Health Connect / Sync extras) — only when present
+    hrv = merged_body.get("hrv") if isinstance(merged_body.get("hrv"), dict) else {}
+    hrv_ms = hrv.get("rmssd_ms")
+    if hrv_ms is not None:
+        _safe_reading(
+            db,
+            user_id=user.id,
+            slug="hrv_rmssd",
+            value=float(hrv_ms),
+            source=src,
+            client_event_id=hub_id("hrv_rmssd"),
+        )
+    temp = merged_body.get("temperature") if isinstance(merged_body.get("temperature"), dict) else {}
+    temp_c = temp.get("celsius")
+    if temp_c is None:
+        temp_c = temp.get("value")
+    if temp_c is not None:
+        _safe_reading(
+            db,
+            user_id=user.id,
+            slug="temperature_c",
+            value=float(temp_c),
+            source=src,
+            client_event_id=hub_id("temperature_c"),
+        )
+    active = merged_body.get("active_minutes") if isinstance(merged_body.get("active_minutes"), dict) else {}
+    act_m = active.get("minutes")
+    if act_m is not None:
+        _safe_reading(
+            db,
+            user_id=user.id,
+            slug="active_minutes",
+            value=float(act_m),
+            source=src,
+            client_event_id=hub_id("active_minutes"),
+        )
+    resp = merged_body.get("respiratory") if isinstance(merged_body.get("respiratory"), dict) else {}
+    resp_rate = resp.get("rate")
+    if resp_rate is not None:
+        _safe_reading(
+            db,
+            user_id=user.id,
+            slug="respiratory_rate",
+            value=float(resp_rate),
+            source=src,
+            client_event_id=hub_id("respiratory_rate"),
+        )
+
     for d in (day - timedelta(days=1), day, day + timedelta(days=1)):
         try:
             rebuild_daily_rollup(db, user.id, d)

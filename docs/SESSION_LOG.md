@@ -6,6 +6,20 @@ Running checklist for Cursor sessions.
 
 ---
 
+## 2026-09-04 — Daily-use hard fixes (notes / review / loop / home)
+
+**Done:**
+- [x] Slim `/api/quiz/review/due` payloads (was ~28MB → ~20KB) so Review Hub loads
+- [x] Study Loop practice client never resumes with loop UUID; free vocab tags route to practice
+- [x] Note write-back: canonical heading match + Lecture Notes index touch; code Run tests resolve via `session_id`
+- [x] Home dashboard recovers when all widgets are hidden
+- [x] Stack up: API `:8000` schema_ok · FE `:5173` · tracker hub `:8765`
+- [x] Verified: review due queue, lecture notes, study-loop practice, vocab/math start, productivity calendar, `npm run build`, 17 study-loop pytest
+
+**Try:** `/review?tab=due` · `/review?tab=loop` · `/lecture-notes` · `/productivity` · Home Customize if widgets still empty once
+
+---
+
 ## 2026-09-03 — Study Loop / Daily Learn (Tasks 1–9)
 
 **Done:**

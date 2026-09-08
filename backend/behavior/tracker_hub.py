@@ -212,6 +212,7 @@ def _build_app():
                 chunk_size=b.get("chunk_size"),
                 total_chunks=b.get("total_chunks"),
                 sha=b.get("sha"),
+                gain=b.get("gain"),
             )
         except (ValueError, TypeError, KeyError) as e:
             return _voice_note_error(e, 400)

@@ -1,0 +1,96 @@
+{
+  "title": "CALT Desktop Tracker — file manifest",
+  "date": "2026-09-06",
+  "legal": "CALT original only. No Cold Turkey code.",
+  "product": "CALT Desktop Focus + native enforcer + SelfTracker",
+  "db": "data/vocab_app.db",
+  "tables": ["tracked_sessions", "enforcer_runtime", "productivity_policies"],
+  "control_ui": "/productivity/focus",
+  "stats_ui": "/productivity",
+  "architecture_summary": "Python policy+ingest; SelfTracker Edge tabs; C++ kills+non-browser track; React Focus control UI",
+  "files": {
+    "exports": [
+      "docs/superpowers/exports/2026-09-06-calt-desktop-tracker-README.md",
+      "docs/superpowers/exports/2026-09-06-desktop-tracker-architecture-export.md",
+      "docs/superpowers/exports/2026-09-06-calt-desktop-tracker-overview.md",
+      "docs/superpowers/exports/2026-09-06-desktop-tracker-backend-export.md",
+      "docs/superpowers/exports/2026-09-06-desktop-tracker-frontend-export.md",
+      "docs/superpowers/exports/2026-09-06-desktop-tracker-native-export.md",
+      "docs/superpowers/exports/2026-09-06-desktop-tracker-file-manifest.json",
+      "docs/superpowers/exports/2026-09-06-native-enforcer-export.md",
+      "docs/superpowers/exports/suggested_further_changes.json"
+    ],
+    "architecture_docs": [
+      "AGENTS.md",
+      "docs/superpowers/specs/2026-09-06-calt-native-enforcer-design.md",
+      "docs/superpowers/plans/2026-09-06-calt-native-enforcer.md",
+      "docs/superpowers/plans/2026-09-06-calt-gap-checklist.md",
+      "docs/superpowers/specs/2026-09-06-calt-feature-section-bars-design.md"
+    ],
+    "backend_core": [
+      "backend/timetable/tracker_bridge.py",
+      "backend/behavior/stats_aggregate.py",
+      "backend/behavior/browser_labels.py",
+      "backend/behavior/tracker_ignore.py",
+      "backend/behavior/session_merge.py",
+      "backend/behavior/session_key.py",
+      "backend/behavior/router.py",
+      "backend/behavior/distraction_gate.py",
+      "backend/behavior/enforcer_runtime_publish.py",
+      "backend/behavior/enforcer_ownership.py",
+      "backend/behavior/native_enforcer_status.py",
+      "backend/behavior/native_session_backfill.py",
+      "backend/behavior/productivity_policy.py",
+      "backend/behavior/calt_desktop/dashboard_bridge.py",
+      "backend/models/timetable.py",
+      "backend/models/enforcer_runtime.py",
+      "alembic/versions/0034_enforcer_runtime.py"
+    ],
+    "frontend": [
+      "src/pages/FocusPage.tsx",
+      "src/pages/ProductivityPage.tsx",
+      "src/components/productivity/FocusControlPanel.tsx",
+      "src/api/behaviorClient.ts",
+      "src/layout/AppSidebar.tsx",
+      "src/layout/navSections.ts",
+      "src/layout/AppTopBar.tsx",
+      "src/plugins/productivity_plugin.tsx",
+      "src/plugins/types.ts"
+    ],
+    "extensions": [
+      "selftracker-extension/background.js",
+      "selftracker-extension/service_worker.js",
+      "selftracker-extension/manifest.json",
+      "calt-gate-extension/background.js",
+      "calt-gate-extension/service_worker.js",
+      "scripts/build_extension_workers.ps1"
+    ],
+    "native": [
+      "native/calt_enforcer/README.md",
+      "native/calt_enforcer/src/main.cpp",
+      "native/calt_enforcer/src/kill.cpp",
+      "native/calt_enforcer/src/session_db.cpp",
+      "native/calt_enforcer/src/policy_db.cpp",
+      "native/calt_enforcer/src/owner_lock.cpp",
+      "native/calt_enforcer/src/win_service.cpp",
+      "native/calt_enforcer/src/foreground.cpp"
+    ],
+    "scripts": [
+      "scripts/desktop_tracker/run_calt_desktop.bat",
+      "scripts/desktop_tracker/run_calt_desktop_qt.bat",
+      "scripts/desktop_tracker/build_native_enforcer.bat",
+      "scripts/desktop_tracker/run_native_enforcer_console.bat",
+      "scripts/desktop_tracker/install_enforcer_service.ps1",
+      "scripts/desktop_tracker/install_native_enforcer.ps1",
+      "scripts/desktop_tracker/uninstall_native_enforcer.bat",
+      "scripts/desktop_tracker/compile_installer.bat",
+      "scripts/desktop_tracker/install_calt_desktop.iss",
+      "scripts/desktop_tracker/INSTALLER.md"
+    ],
+    "tests": [
+      "tests/test_edge_tab_tracking.py",
+      "tests/test_native_session_backfill.py",
+      "tests/test_desktop_tracker.py"
+    ]
+  }
+}

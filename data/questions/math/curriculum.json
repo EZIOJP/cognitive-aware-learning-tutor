@@ -1,0 +1,251 @@
+{
+  "schema_version": 1,
+  "name": "Math Daily Path — scratch to graduate",
+  "pass_accuracy": 0.8,
+  "session_size": 15,
+  "levels": [
+    {
+      "id": "L0",
+      "title": "Warm-up",
+      "weeks": "1-2",
+      "steps": [
+        {
+          "order": 1,
+          "note_topic_id": "MT1-T01",
+          "title": "Number systems & divisibility",
+          "prefer_topic_ids": [
+            "math.aptitude.dm-add-sub",
+            "math.aptitude.dm-mul",
+            "math.aptitude.dm-div",
+            "math.aptitude.dm-root",
+            "math.aptitude.gen-prime-factors",
+            "math.aptitude.mathqa-other"
+          ]
+        },
+        {
+          "order": 2,
+          "note_topic_id": "MT1-T02",
+          "title": "LCM & HCF",
+          "prefer_topic_ids": [
+            "math.aptitude.dm-gcd",
+            "math.aptitude.dm-lcm",
+            "math.aptitude.gen-lcm",
+            "math.aptitude.gen-gcd",
+            "math.aptitude.gen-common-factors"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "L1",
+      "title": "Interview quant core",
+      "weeks": "3-5",
+      "steps": [
+        {
+          "order": 3,
+          "note_topic_id": "MT1-T03",
+          "title": "Percentages",
+          "prefer_topic_ids": [
+            "math.aptitude.mathqa-general",
+            "math.aptitude.gen-percentage"
+          ]
+        },
+        {
+          "order": 4,
+          "note_topic_id": "MT1-T04",
+          "title": "Ratio & proportion",
+          "prefer_topic_ids": [
+            "math.aptitude.sat-algebra"
+          ]
+        },
+        {
+          "order": 5,
+          "note_topic_id": "MT1-T05",
+          "title": "Averages & mixtures",
+          "prefer_topic_ids": [
+            "math.aptitude.sat-data"
+          ]
+        },
+        {
+          "order": 6,
+          "note_topic_id": "MT1-T06",
+          "title": "Time, speed & distance",
+          "prefer_topic_ids": [
+            "math.aptitude.mathqa-physics"
+          ]
+        },
+        {
+          "order": 7,
+          "note_topic_id": "MT1-T07",
+          "title": "Time & work",
+          "prefer_topic_ids": [
+            "math.aptitude.gen-time-work"
+          ]
+        },
+        {
+          "order": 8,
+          "note_topic_id": "MT1-T08",
+          "title": "Profit, loss & discount",
+          "prefer_topic_ids": [
+            "math.aptitude.mathqa-gain",
+            "math.aptitude.gen-profit-loss"
+          ]
+        },
+        {
+          "order": 9,
+          "note_topic_id": "MT1-T09",
+          "title": "Simple & compound interest",
+          "prefer_topic_ids": [
+            "math.aptitude.gen-simple-interest",
+            "math.aptitude.gen-compound-interest"
+          ]
+        },
+        {
+          "order": 10,
+          "note_topic_id": "MT1-T10",
+          "title": "Permutations & combinations",
+          "prefer_topic_ids": [
+            "math.aptitude.gen-combinations",
+            "math.aptitude.gen-permutations"
+          ]
+        },
+        {
+          "order": 11,
+          "note_topic_id": "MT1-T11",
+          "title": "Probability",
+          "prefer_topic_ids": [
+            "math.aptitude.mathqa-probability",
+            "math.aptitude.dm-prob",
+            "math.aptitude.gen-dice-prob"
+          ]
+        },
+        {
+          "order": 12,
+          "note_topic_id": "MT1-T12",
+          "title": "Progressions",
+          "prefer_topic_ids": [
+            "math.aptitude.gen-ap-term",
+            "math.aptitude.gen-ap-sum",
+            "math.aptitude.gen-gp"
+          ]
+        },
+        {
+          "order": 13,
+          "note_topic_id": "MT1-T14",
+          "title": "Geometry & mensuration",
+          "prefer_topic_ids": [
+            "math.aptitude.sat-geometry",
+            "math.aptitude.mathqa-geometry"
+          ]
+        },
+        {
+          "order": 14,
+          "note_topic_id": "MT1-T13",
+          "title": "Programming aptitude",
+          "prefer_topic_ids": [
+            "math.aptitude.saket-coding"
+          ],
+          "optional": true
+        }
+      ]
+    },
+    {
+      "id": "L2",
+      "title": "Algebra bridge",
+      "weeks": "2-3",
+      "steps": [
+        {
+          "order": 15,
+          "note_topic_id": "MT2-T01",
+          "title": "Linear & quadratic",
+          "prefer_topic_ids": [
+            "math.aptitude.sat-advanced",
+            "math.aptitude.dm-linear-1d",
+            "math.aptitude.gen-basic-algebra",
+            "math.aptitude.gen-linear-eq",
+            "math.aptitude.gen-quadratic"
+          ]
+        },
+        {
+          "order": 16,
+          "note_topic_id": "MT2-T02",
+          "title": "Competition algebra",
+          "prefer_topic_ids": [
+            "math.competition.algebra",
+            "math.olympiad.mathnet-algebra"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "L3",
+      "title": "AI/ML math entry",
+      "weeks": "ongoing",
+      "steps": [
+        {
+          "order": 17,
+          "note_topic_id": "MT3-T01",
+          "title": "Vectors for ML",
+          "prefer_topic_ids": [
+            "math.aiml.gen-vector-dot",
+            "math.aiml.gen-vector-cross"
+          ]
+        },
+        {
+          "order": 18,
+          "note_topic_id": "MT4-T01",
+          "title": "Calculus for ML",
+          "prefer_topic_ids": [
+            "math.olympiad.mathnet-calculus"
+          ],
+          "notes_first": true
+        }
+      ]
+    },
+    {
+      "id": "L4",
+      "title": "Olympiad stretch",
+      "weeks": "optional",
+      "steps": [
+        {
+          "order": 19,
+          "note_topic_id": "MT1-T14",
+          "title": "Olympiad geometry",
+          "prefer_topic_ids": [
+            "math.olympiad.mathnet-geometry"
+          ],
+          "optional": true
+        },
+        {
+          "order": 20,
+          "note_topic_id": "MT1-T01",
+          "title": "Number theory / prealgebra stretch",
+          "prefer_topic_ids": [
+            "math.competition.prealgebra",
+            "math.competition.number-theory",
+            "math.olympiad.mathnet-number"
+          ],
+          "optional": true
+        },
+        {
+          "order": 21,
+          "note_topic_id": "MT1-T11",
+          "title": "Competition counting & probability",
+          "prefer_topic_ids": [
+            "math.competition.counting-probability"
+          ],
+          "optional": true
+        },
+        {
+          "order": 22,
+          "note_topic_id": "MT2-T02",
+          "title": "MathNet mixed",
+          "prefer_topic_ids": [
+            "math.olympiad.mathnet-mixed"
+          ],
+          "optional": true
+        }
+      ]
+    }
+  ]
+}

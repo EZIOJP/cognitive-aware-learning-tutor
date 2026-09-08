@@ -15,6 +15,7 @@ from backend.transcripts.library import (
     delete_folder,
     delete_note,
     move_note,
+    search_library_notes,
     sync_disk_notes_for_user,
     update_reading_state,
 )
@@ -27,6 +28,7 @@ def db(tmp_path, monkeypatch):
     notes_dir.mkdir()
     monkeypatch.setattr("backend.transcripts.library.NOTES_DIR", notes_dir)
     monkeypatch.setattr("backend.paths.NOTES_DIR", notes_dir)
+    monkeypatch.setattr("backend.transcripts.note_search.paths.NOTES_DIR", notes_dir)
 
     engine = create_engine("sqlite:///:memory:")
     Base.metadata.create_all(engine)
@@ -150,7 +152,7 @@ def test_sync_skips_legacy_remap_when_canonical_filename_occupied(db):
 def test_sync_remaps_legacy_when_canonical_unoccupied(db):
     import backend.transcripts.library as lib
 
-    canonical = "data_foundations/lecture_2/numpy_lecture_notes.md"
+    canonical = "L02_numpy_operations_notes.md"
     legacy = "lecture_2/numpy_lecture_notes.md"
     dest = lib.NOTES_DIR / canonical
     dest.parent.mkdir(parents=True, exist_ok=True)
@@ -188,3 +190,22 @@ def test_library_tree_for_user_rolls_back_integrity_error(db, monkeypatch):
     monkeypatch.setattr("backend.transcripts.library.sync_disk_notes_for_user", boom)
     tree = library_tree_for_user(db, 1)
     assert tree["root"]["name"] == "Library"
+
+
+def test_search_library_notes_title_and_body(db):
+    body = "# NumPy arrays\n\nFancy indexing uses boolean masks."
+    row = create_note_file(
+        db,
+        user_id=1,
+        title="NumPy lecture",
+        folder_path="data_foundations",
+        kind="lecture",
+        content=body,
+    )
+    rel = row.relative_path or row.filename
+    hits = search_library_notes(db, 1, "boolean masks")
+    assert len(hits) >= 1
+    assert hits[0]["relative_path"] == rel
+    assert hits[0]["match_kind"] in ("text", "topic")
+    assert "boolean" in hits[0]["snippet"].lower()
+    assert search_library_notes(db, 1, "   ") == []

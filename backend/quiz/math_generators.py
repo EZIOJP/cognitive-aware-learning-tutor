@@ -264,7 +264,7 @@ def recipe_by_topic_id(topic_id: str) -> GeneratorRecipe | None:
 
 def recipes_for_note_topic(note_topic_id: str) -> list[GeneratorRecipe]:
     tag = (note_topic_id or "").strip().upper()
-    return [r for r in list_recipes() if r.note_topic_id == tag]
+    return [r for r in list_recipes() if (r.note_topic_id or "").strip().upper() == tag]
 
 
 def aptitude_recipes() -> list[GeneratorRecipe]:

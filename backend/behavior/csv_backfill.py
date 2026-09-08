@@ -5,6 +5,7 @@ from __future__ import annotations
 import csv
 import logging
 import os
+import time
 from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 
@@ -20,6 +21,9 @@ log = logging.getLogger(__name__)
 
 _STAMP_DIR = Path(os.environ.get("LOCALAPPDATA", Path.home() / "AppData" / "Local")) / "CognitiveAwareTutor"
 _BATCH_SIZE = 100
+# Tracker appends to CSV continuously — do not full-scan on every stats poll.
+_BACKFILL_COOLDOWN_S = 45.0
+_last_backfill_mono: dict[tuple[int, str], float] = {}
 
 
 def _csv_path(day: date) -> Path:
@@ -188,8 +192,15 @@ def backfill_desktop_csv_to_db(
 
 
 def maybe_backfill_day(db: Session, user_id: int, day: date) -> int:
-    """Cheap no-op when CSV and DB are already in sync."""
-    return backfill_desktop_csv_to_db(db, user_id, day, force=False)
+    """Cheap no-op when CSV and DB are already in sync (cooldown under live CSV writes)."""
+    key = (int(user_id), day.isoformat())
+    now = time.monotonic()
+    last = _last_backfill_mono.get(key, 0.0)
+    if (now - last) < _BACKFILL_COOLDOWN_S:
+        return 0
+    n = backfill_desktop_csv_to_db(db, user_id, day, force=False)
+    _last_backfill_mono[key] = time.monotonic()
+    return n
 
 
 def backfill_range(db: Session, user_id: int, start: datetime, end: datetime, *, force: bool = False) -> int:

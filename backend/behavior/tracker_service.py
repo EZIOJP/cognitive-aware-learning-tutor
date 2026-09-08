@@ -169,6 +169,10 @@ class TrackerService:
         self._last_comms_tick: float = 0.0
         self._nsfw_inactive_spoken: bool = False
         self._nsfw_status_line: str | None = None
+        # Break/reward hooks (v2c Task 6)
+        self._prev_plan_was_study: bool = False
+        self._last_study_block_key: str | None = None
+        self._productive_streak_sec: float = 0.0
 
     @property
     def paused(self) -> bool:
@@ -226,8 +230,86 @@ class TrackerService:
         try:
             self._plan_context = fetch_plan_context(self._user_id)
             self._plan_updated_at = now
+            self._maybe_incubation_on_study_block_end()
         except Exception as exc:  # noqa: BLE001
             log.debug("Plan context refresh failed: %s", exc)
+
+    def _maybe_incubation_on_study_block_end(self) -> None:
+        """Q1 A4 — planner study-category block end → start_incubation."""
+        if not self._user_id:
+            return
+        try:
+            from backend.behavior.browser_gate_policy import is_study_block
+            from backend.behavior.break_reward_hooks import (
+                maybe_start_incubation_after_focus,
+            )
+
+            cur = self._plan_context.current if self._plan_context else None
+            is_study = bool(
+                cur
+                and is_study_block(
+                    getattr(cur, "category", None), getattr(cur, "title", None)
+                )
+            )
+            key = None
+            if is_study and cur is not None:
+                key = f"{cur.start_at.isoformat()}|{cur.title}"
+            if self._prev_plan_was_study and not is_study:
+                maybe_start_incubation_after_focus(
+                    self._user_id,
+                    trigger="study_block_end",
+                    source_session_id=self._last_study_block_key,
+                )
+            self._prev_plan_was_study = is_study
+            if is_study:
+                self._last_study_block_key = key
+            elif not is_study:
+                self._last_study_block_key = None
+        except Exception as exc:  # noqa: BLE001
+            log.debug("study-block incubation hook skipped: %s", exc)
+
+    def _tick_productive_streak(self, exe: str, title: str, dt_sec: float) -> None:
+        """Q1 A4 — productive streak ≥ work_minutes → incubation."""
+        if not self._user_id or dt_sec <= 0:
+            return
+        try:
+            from backend.behavior.break_reward_hooks import (
+                maybe_start_incubation_after_focus,
+            )
+            from backend.behavior.break_reward import load_config
+            from backend.behavior.category_scores import PRODUCTIVE_THRESHOLD
+
+            _cat, score = classify_app(exe, title)
+            threshold = int(
+                (self._gate_policy or {}).get("threshold") or PRODUCTIVE_THRESHOLD
+            )
+            if int(score) >= threshold:
+                self._productive_streak_sec += float(dt_sec)
+            else:
+                self._productive_streak_sec = 0.0
+                return
+
+            cfg = load_config()
+            work = max(1, int(cfg.get("work_minutes") or 45))
+            streak_min = self._productive_streak_sec / 60.0
+            if streak_min < work:
+                return
+            started = maybe_start_incubation_after_focus(
+                self._user_id,
+                trigger="productive_streak",
+                productive_streak_min=streak_min,
+                source_session_id=f"streak:{int(streak_min)}",
+                config=cfg,
+            )
+            # Reset whether started or rate-limited — avoid hammering every poll.
+            self._productive_streak_sec = 0.0
+            if started:
+                log.info(
+                    "[break_reward] incubation from productive streak ~%.0fm",
+                    streak_min,
+                )
+        except Exception as exc:  # noqa: BLE001
+            log.debug("productive-streak incubation hook skipped: %s", exc)
 
     def _refresh_stack_health_if_due(self) -> None:
         """Probe API/Vite (cached ~20s). Jarvis one-liner on down transition."""
@@ -302,6 +384,16 @@ class TrackerService:
                 sync_voice_with_browser_gate(g, user_id=self._user_id)
             except Exception as exc:  # noqa: BLE001
                 log.debug("voice free-mode sync skipped: %s", exc)
+            try:
+                from backend.behavior.break_reward_hooks import maybe_earn_daily_goal
+
+                maybe_earn_daily_goal(
+                    self._user_id,
+                    g.get("productive_minutes"),
+                    g.get("daily_goal_minutes"),
+                )
+            except Exception as exc:  # noqa: BLE001
+                log.debug("daily_goal earn hook skipped: %s", exc)
             if g.get("enabled"):
                 log.info(
                     "[hard_block] gate locked=%s productive=%s/%s remaining=%s",
@@ -357,7 +449,19 @@ class TrackerService:
                 log.debug("porn hosts sync skipped: %s", exc)
 
     def _maybe_hard_block(self, exe: str, title: str, pid: int) -> bool:
-        """Kill blocked apps while gate is locked. Returns True if killed."""
+        """Kill blocked apps while gate is locked. Returns True if killed.
+
+        DESKTOP TRACKER RULE: native calt_enforcer owns kills. Python skips
+        termination unless CALT_UI_KILLS=1 (legacy escape hatch).
+        """
+        try:
+            from backend.behavior.enforcer_ownership import enforcer_owns_kills
+
+            if enforcer_owns_kills():
+                return False
+        except Exception:  # noqa: BLE001
+            return False
+
         gate = self._gate or {}
         policy = self._gate_policy or {}
         if not policy.get("hard_block_enabled"):
@@ -818,12 +922,26 @@ class TrackerService:
             end = end_at if end_at is not None else time.time()
             ev = self._current.to_event(reason, end_at=end)
             if ev["duration_seconds"] >= 2 and self._user_id:
-                # CSV immediately; SQLite via timed bulk flush
-                enqueue_event(
-                    self._user_id,
-                    ev,
-                    bulk_flush_s=self.config.bulk_flush_s,
-                )
+                skip_persist = False
+                try:
+                    from backend.behavior.enforcer_ownership import enforcer_owns_tracking
+
+                    skip_persist = enforcer_owns_tracking()
+                except Exception:  # noqa: BLE001
+                    skip_persist = False
+                if skip_persist:
+                    log.debug(
+                        "[%s] skip SQLite persist — native enforcer owns tracking (%s)",
+                        reason,
+                        self._current.exe,
+                    )
+                else:
+                    # CSV immediately; SQLite via timed bulk flush
+                    enqueue_event(
+                        self._user_id,
+                        ev,
+                        bulk_flush_s=self.config.bulk_flush_s,
+                    )
                 try:
                     self._ws_queue.put_nowait(ev)
                 except queue.Full:
@@ -864,8 +982,16 @@ class TrackerService:
             end_at = cp.last_poll_at
             ev = session.to_event("recovery", end_at=end_at)
             if ev["duration_seconds"] >= 2 and self._user_id:
-                persist_event(self._user_id, ev)
-                log.info("[recovery] closed orphan session %s", session.exe)
+                skip = False
+                try:
+                    from backend.behavior.enforcer_ownership import enforcer_owns_tracking
+
+                    skip = enforcer_owns_tracking()
+                except Exception:  # noqa: BLE001
+                    skip = False
+                if not skip:
+                    persist_event(self._user_id, ev)
+                    log.info("[recovery] closed orphan session %s", session.exe)
         SessionCheckpoint().clear()
 
     def _handle_force_flush_request(self) -> None:
@@ -919,6 +1045,7 @@ class TrackerService:
             if not self._was_idle:
                 self._was_idle = True
                 self._idle_since_at = now - idle_s
+            self._productive_streak_sec = 0.0
             if self._current:
                 self.flush_current("idle", end_at=now - idle_s)
             self._last_poll_at = now
@@ -981,6 +1108,12 @@ class TrackerService:
         self._maybe_unauthorized_browser(exe)
         self._maybe_title_keyword_block(exe, title)
         self._maybe_watch_title_leak(exe, title)
+
+        # Focus streak → incubation (cheap; uses classify score vs policy threshold)
+        try:
+            self._tick_productive_streak(exe, title, max(0.0, min(gap, 5.0)))
+        except Exception:  # noqa: BLE001
+            pass
 
         group_key, site = session_identity(exe, title)
 

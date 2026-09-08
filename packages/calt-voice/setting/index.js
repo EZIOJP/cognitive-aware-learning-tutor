@@ -74,6 +74,26 @@ AppSettingsPage({
           value: get('ingest_token', 'calt-local-wearables'),
           onChange: (val) => storage.setItem('ingest_token', val),
         }),
+        TextInput({
+          label: 'Voice recording gain (1.0–4.0, speech ≈ 2.5)',
+          value: get('voice_gain', '2.5'),
+          onChange: (val) => storage.setItem('voice_gain', String(val || '').trim()),
+        }),
+        Text(
+          {
+            style: {
+              fontSize: '12px',
+              color: '#444',
+              marginTop: '6px',
+              marginBottom: '8px',
+              lineHeight: '1.45',
+            },
+          },
+          [
+            'Boosts quiet speech on the PC after upload (watch mic has no official gain API). ' +
+              'Re-open CALT Voice on the watch after changing this. 1.0 = off, 2.5 = normal voice.',
+          ],
+        ),
 
         Text(
           {

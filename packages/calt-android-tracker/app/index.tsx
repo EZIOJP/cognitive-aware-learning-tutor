@@ -116,7 +116,15 @@ export default function TrackerScreen() {
           <Text style={styles.mode}>{status.browser_mode_label || status.browser_mode || "—"}</Text>
           <Text style={styles.sub}>
             Next: {m?.next || "—"} · Tracker {status.tracker_alive || tr?.alive ? "alive" : tr?.status || "off"}
+            {status.incubation?.active ? " · incubation" : ""}
+            {status.desktop?.enforcer_owns_kills ? " · PC enforcer" : ""}
           </Text>
+          {status.incubation?.active ? (
+            <Text style={styles.hint}>
+              Incubation break — entertainment blocked on PC. Control: CALT Desktop · Focus
+            </Text>
+          ) : null}
+          {status.desktop?.hint ? <Text style={styles.muted}>{status.desktop.hint}</Text> : null}
 
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Morning checklist</Text>
@@ -194,6 +202,37 @@ export default function TrackerScreen() {
           </View>
 
           <View style={styles.card}>
+            <Text style={styles.cardTitle}>Health Connect → PC</Text>
+            <Text style={styles.muted}>
+              Pulls phone Health Connect (Zepp/Fit if shared) into the same wearable DB. Needs a
+              prebuild APK for native reads; Expo Go falls back to a clear error.
+            </Text>
+            <Pressable
+              style={styles.btn}
+              onPress={async () => {
+                setHint(null);
+                setError(null);
+                try {
+                  const { syncHealthConnectToPc } = await import("../lib/healthSync");
+                  const r = await syncHealthConnectToPc();
+                  if (r.ok) {
+                    setHint(
+                      `${r.detail}${r.categories?.length ? ` · ${r.categories.join(", ")}` : ""}`
+                    );
+                    await refresh();
+                  } else {
+                    setError(r.detail);
+                  }
+                } catch (e) {
+                  setError(e instanceof Error ? e.message : String(e));
+                }
+              }}
+            >
+              <Text style={styles.btnText}>Sync Health Connect</Text>
+            </Pressable>
+          </View>
+
+          <View style={styles.card}>
             <Text style={styles.cardTitle}>Comms</Text>
             <Text style={styles.body}>
               Extension {c?.extension?.status || "unknown"}
@@ -209,6 +248,7 @@ export default function TrackerScreen() {
               {c?.extension?.calt_gate_age_s != null
                 ? ` (${Math.round(c.extension.calt_gate_age_s)}s)`
                 : " (never)"}
+              {" · "}PC: CALT Desktop · Focus
             </Text>
             {c?.current_issue?.why ? (
               <Text style={styles.hint}>Why: {c.current_issue.why}</Text>

@@ -50,6 +50,21 @@ Opening **Files** pings the hub first: `Receiver up: …` or `No receiver: …`.
 
 With no fallback URL, clips stay on the watch until the PC is back.
 
+## Recording level (human voice)
+
+Zepp OS records **16 kHz mono Opus** — there is no official mic gain API. CALT Voice uses two layers:
+
+| Layer | Setting | Default |
+|---|---|---|
+| Phone → hub | **Voice recording gain** in CALT Voice phone settings | **2.5×** |
+| PC publish | Digital boost when the clip lands (`opuslib` optional) | same gain |
+
+- **1.0** = no boost · **2.5** = good for normal speech · **4.0** = max (may clip if you shout)
+- Change gain in the Zepp app → CALT Voice settings, then **re-open the watch app** so it syncs.
+- For PC amplification: `pip install opuslib` (needs libopus). Without it, files store at watch level; gain still applies if opuslib is installed.
+
+Hold the watch **8–15 cm from your mouth** when recording — the T-Rex mic is on the case edge.
+
 ## Integrity
 
 | Step | Guarantee |

@@ -382,7 +382,7 @@ export function LifeClockWidget({
       };
     }
     const pollMs = () =>
-      typeof document !== "undefined" && document.visibilityState === "visible" ? 15_000 : 60_000;
+      typeof document !== "undefined" && document.visibilityState === "visible" ? 60_000 : 120_000;
     let poll = window.setInterval(load, pollMs());
     const onRefresh = () => load();
     const onVis = () => {

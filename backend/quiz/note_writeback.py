@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+import time
 from pathlib import Path
 from typing import Any
 
@@ -11,10 +12,31 @@ from backend.quiz.atomic_io import atomic_write_text
 from backend.quiz.read_cards import make_card_id
 from backend.quiz.source_stamp import bump_notes
 from backend.transcripts.note_lint import sanitize_note_content
-from backend.transcripts.note_topics import canonicalize_topic_id
+from backend.transcripts.note_topics import (
+    canonicalize_topic_id,
+    remap_legacy_note_path,
+    _parse_heading_identity,
+)
 
 _HEADING_RE = re.compile(r"^(#{2,4})\s+(.*)$")
 _FENCE_RE = re.compile(r"^```")
+
+
+def _heading_matches_tid(heading: str, tid: str) -> bool:
+    """Match canonical `` `TID` `` / structured heading — not bare substring."""
+    tid_key = (tid or "").strip()
+    if not tid_key:
+        return False
+    ident = _parse_heading_identity(heading)
+    if ident is not None:
+        parsed_id = canonicalize_topic_id(ident[0]) or ident[0]
+        want = canonicalize_topic_id(tid_key) or tid_key.upper()
+        if parsed_id.upper() == want.upper():
+            return True
+    # Exact backtick token: `L5-T05`
+    if re.search(rf"`{re.escape(tid_key)}`", heading, flags=re.IGNORECASE):
+        return True
+    return False
 
 
 def _find_section_bounds(lines: list[str], tid: str) -> tuple[int, int, int]:
@@ -22,7 +44,6 @@ def _find_section_bounds(lines: list[str], tid: str) -> tuple[int, int, int]:
     start: int | None = None
     end: int | None = None
     start_level = 2
-    tid_key = tid.lower()
     for i, line in enumerate(lines):
         stripped = line.rstrip("\n")
         if _FENCE_RE.match(stripped):
@@ -35,7 +56,7 @@ def _find_section_bounds(lines: list[str], tid: str) -> tuple[int, int, int]:
             continue
         level = len(m.group(1))
         heading = m.group(2)
-        if start is None and tid_key in heading.lower().replace("`", ""):
+        if start is None and _heading_matches_tid(heading, tid):
             start = i
             start_level = level
             continue
@@ -49,6 +70,31 @@ def _find_section_bounds(lines: list[str], tid: str) -> tuple[int, int, int]:
     return start, end, start_level
 
 
+def _touch_library_index(
+    *,
+    db: Session,
+    user_id: int,
+    rel: str,
+    content: str,
+) -> None:
+    """Keep Lecture Notes DB row in sync after Approach A disk write."""
+    from backend.transcripts import library as lib
+
+    row = lib._find_note_row(db, user_id, rel)
+    if row is None:
+        try:
+            lib.index_note_from_disk(db, user_id, rel)
+            row = lib._find_note_row(db, user_id, rel)
+        except Exception:
+            return
+    if row is None:
+        return
+    section_count = content.count("\n## ") + (1 if content.startswith("## ") else 0)
+    row.section_count = max(1, section_count)
+    row.updated_at = int(time.time())
+    db.commit()
+
+
 def patch_note_section(
     *,
     note_path: str,
@@ -60,10 +106,14 @@ def patch_note_section(
     user_id: int | None = None,
     db: Session | None = None,
 ) -> dict[str, Any]:
-    _ = user_id, db
     base = Path(root) if root else paths.NOTES_DIR
     rel = note_path.replace("\\", "/").lstrip("/")
-    path = (base / rel).resolve()
+    remapped = remap_legacy_note_path(rel)
+    path = (base / remapped).resolve()
+    if not path.is_file():
+        path = (base / rel).resolve()
+    else:
+        rel = remapped
     if not path.is_relative_to(base.resolve()):
         raise ValueError("Invalid note path.")
     if not path.is_file():
@@ -108,6 +158,17 @@ def patch_note_section(
     updated = sanitize_note_content(updated)
     atomic_write_text(path, updated)
     bump_notes()
+    if db is not None and user_id is not None and root is None:
+        try:
+            _touch_library_index(db=db, user_id=int(user_id), rel=rel, content=updated)
+        except Exception:
+            pass
+    try:
+        from backend.quiz.topic_stub_flags import mark_real_edit
+
+        mark_real_edit(tid)
+    except Exception:
+        pass
     return {
         "card_id": make_card_id(rel, tid),
         "note_path": rel,

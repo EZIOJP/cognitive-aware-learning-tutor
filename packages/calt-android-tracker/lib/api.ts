@@ -36,6 +36,16 @@ export type DayStatus = {
     remaining_minutes?: number;
     remaining_label?: string;
   };
+  incubation?: {
+    active?: boolean;
+    remaining_sec?: number;
+    total_sec?: number;
+  };
+  desktop?: {
+    control?: string;
+    enforcer_owns_kills?: boolean;
+    hint?: string;
+  };
   tracker?: {
     alive?: boolean;
     status?: string;

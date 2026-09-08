@@ -4,6 +4,48 @@ let initialized = false;
 let renderChain: Promise<unknown> = Promise.resolve();
 let runCounter = 0;
 
+const FONT_SIZE_STORAGE_KEY = "study-mermaid-font-size";
+
+/** Presets for Mermaid label text — affects layout on next render. */
+export const MERMAID_FONT_SIZE_OPTIONS = [
+  { label: "S", value: "11px" },
+  { label: "M", value: "13px" },
+  { label: "L", value: "15px" },
+] as const;
+
+export const MERMAID_NOTE_DEFAULTS = {
+  fontSize: "13px",
+  nodeSpacing: 48,
+  rankSpacing: 48,
+  padding: 16,
+} as const;
+
+function readStoredFontSize(): string {
+  if (typeof localStorage === "undefined") return MERMAID_NOTE_DEFAULTS.fontSize;
+  const stored = localStorage.getItem(FONT_SIZE_STORAGE_KEY);
+  if (stored && MERMAID_FONT_SIZE_OPTIONS.some((o) => o.value === stored)) return stored;
+  return MERMAID_NOTE_DEFAULTS.fontSize;
+}
+
+let noteFontSize = readStoredFontSize();
+
+export function getMermaidNoteFontSize(): string {
+  return noteFontSize;
+}
+
+/** Changes global note font size; call reset + re-render affected blocks. */
+export function setMermaidNoteFontSize(size: string): void {
+  if (!MERMAID_FONT_SIZE_OPTIONS.some((o) => o.value === size)) return;
+  if (noteFontSize === size) return;
+  noteFontSize = size;
+  try {
+    localStorage.setItem(FONT_SIZE_STORAGE_KEY, size);
+  } catch {
+    /* private browsing */
+  }
+  resetMermaidInitialized();
+}
+
 /** Allow HMR / config changes to re-initialize Mermaid. */
 export function resetMermaidInitialized(): void {
   initialized = false;
@@ -27,13 +69,24 @@ export function ensureMermaidInitialized(): void {
     securityLevel: "loose",
     maxTextSize: 100_000,
     fontFamily: "ui-sans-serif, system-ui, sans-serif",
+    fontSize: noteFontSize,
     logLevel: "fatal",
     suppressErrorRendering: true,
     flowchart: {
-      useMaxWidth: true,
+      // Natural SVG dimensions — CSS viewport handles fit/zoom (avoids double-shrink).
+      useMaxWidth: false,
       htmlLabels: false,
       curve: "basis",
-      padding: 12,
+      padding: MERMAID_NOTE_DEFAULTS.padding,
+      nodeSpacing: MERMAID_NOTE_DEFAULTS.nodeSpacing,
+      rankSpacing: MERMAID_NOTE_DEFAULTS.rankSpacing,
+    },
+    sequence: {
+      diagramMarginX: 16,
+      diagramMarginY: 12,
+      actorMargin: 40,
+      boxMargin: 8,
+      messageMargin: 28,
     },
     themeVariables: {
       darkMode: true,
@@ -45,6 +98,7 @@ export function ensureMermaidInitialized(): void {
       secondaryColor: "#1c3f35",
       tertiaryColor: "#102820",
       fontFamily: "ui-sans-serif, system-ui, sans-serif",
+      fontSize: noteFontSize,
     },
   });
   initialized = true;

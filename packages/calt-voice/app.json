@@ -5,12 +5,12 @@
     "appId": 1088803,
     "appType": "app",
     "version": {
-      "code": 5,
-      "name": "1.1.2"
+      "code": 8,
+      "name": "1.2.2"
     },
     "icon": "icon.png",
     "vender": "calt",
-    "description": "Black-screen voice notes — auto-record on open, recording indicator, send clips to PC"
+    "description": "Clock screen voice notes — tap to record, send clips to PC"
   },
   "permissions": [
     "data:os.device.info",

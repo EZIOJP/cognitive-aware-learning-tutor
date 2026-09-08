@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.orm import relationship
 
 from backend.db.base import Base
@@ -32,6 +32,10 @@ class TimetableTask(Base):
 
 class TrackedSession(Base):
     __tablename__ = "tracked_sessions"
+    __table_args__ = (
+        Index("ix_tracked_sessions_user_start", "user_id", "start_time"),
+        Index("ix_tracked_sessions_user_end", "user_id", "end_time"),
+    )
 
     session_id = Column(String, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)

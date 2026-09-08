@@ -1,0 +1,1927 @@
+{
+  "schema_version": 1,
+  "kind": "math",
+  "topic": {
+    "topic_id": "math.aptitude.sat-advanced",
+    "title": "SAT Advanced Math",
+    "stage": "foundations",
+    "path": [
+      "Aptitude",
+      "SAT",
+      "Advanced Math"
+    ],
+    "track": "aptitude",
+    "prerequisites": [],
+    "note_topic_ids": [
+      "MT2-T01"
+    ],
+    "description": "College Readiness / SAT-style items (Advanced Math)."
+  },
+  "questions": [
+    {
+      "id": "math.aptitude.sat-advanced.q0001",
+      "problem": "A biologist models the population of bacteria in a petri dish as $P(t) = 1200 - 900(0.6)^t$, where $t$ is the time in hours. What does the horizontal asymptote of the graph of $P(t)$ represent in this context?\n\nOptions:\nA) The initial population of bacteria in the petri dish\nB) The minimum population the petri dish can sustain\nC) The average population of bacteria over the first 10 hours\nD) The maximum population the petri dish can sustain",
+      "answer": "The maximum population the petri dish can sustain",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "I think I remember in the training that if the prompt asks students about something graphical, we should give it a 1. While students may be able to discern what a horizontal asymptote is, or maybe they have a graphing calculator to graph it, this question is referring to a graph that is not included. Also, this refers to a petri dish, something not all students may be familiar with.",
+      "hint": "Skill: Nonlinear Functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0002",
+      "problem": "The function f is defined by $f(x) = 5 \\times 3^{x-3} + 2$. For what value of x does $f(x) = 47$?\n\nOptions:\nA) 2\nB) 4\nC) 5\nD) 6",
+      "answer": "5",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Students will plug in the solutions until they find the correct one.",
+      "hint": "Skill: Nonlinear Functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0003",
+      "problem": "The table below shows selected values for a quadratic function $f(x)$. Which of the following equations defines $f(x)$?\\n\\nx | f(x)\\n2 | 3\\n3 | 4\\n4 | 7\\n5 | 12\n\nOptions:\nA) $-x^2 + 4x + 7$\nB) $x^2 - 4x + 7$\nC) $x^2 + 4x + 7$\nD) $2x^2 - 4x + 3$",
+      "answer": "$x^2 - 4x + 7$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "The format of the table is confusing, and students can plug the answers in until they find their solution. The answer choices should also have an \"f(x)\" in them, but I don't think this question is worth modifying since the look of the table is very confusing.",
+      "hint": "Skill: Nonlinear Functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0004",
+      "problem": "A cup of coffee cools in a room. Its temperature is modeled by $C(t) = 24 + 90(0.88)^t$, where $C(t)$ is in degrees Celsius and $t$ is time in minutes. What does the horizontal asymptote of the graph of $C(t)$ represent in this context?\n\nOptions:\nA) The temperature the coffee approaches, $0^{\\circ}C$\nB) The room temperature\nC) The temperature after one hour\nD) The initial temperature of the coffee",
+      "answer": "The room temperature",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "The prompt relies on a graph, and it mentioned room temperature in the responses but does not mention room temperature anywhere in the prompt. This is relying on students' knowledge of physics (biology?) of something hot cools until it reaches the temperature of the room. I guess it could be modified to provide information about how something hot cools in a room, but I think it would take a lot to modify.",
+      "hint": "Skill: Nonlinear Functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0005",
+      "problem": "The height of an arch bridge above the ground is modeled by the function $h(x) = -0.04x^2 + 4x$, where $x$ is the horizontal distance in meters from the base of the bridge. What information does the value of $h(x)$ \n provide when $x$ is 25 in this context?\n\nOptions:\nA) The height of the bridge 25 meters from its base\nB) The maximum height of the bridge 25 meters from its base\nC) The horizontal distance from the base 25 meters from its base\nD) The minimum height of the bridge 25 meters from its base",
+      "answer": "The height of the bridge 25 meters from its base",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "I don't know what the \"base\" of a bridge is. I can guess it's where the arch starts? Not sure how to modify so it makes more sense, but I suspect teenagers won't know what the \"base\" of the bridge is, either. The choices are also very different in complexity since some of the options mention both values for x and y while others mention only one of the values. I attempted to equalize their cognitive expectation and reworded the prompt, but I'm not happy with choices C or D.",
+      "hint": "Skill: Nonlinear Functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0006",
+      "problem": "A cup of coffee cools in a room at 25°C. Its temperature is modeled by $T(t) = (T_0 - 25)(0.9)^t + 25$, where $T_0$ is the initial temperature in °C. If the temperature is 70°C after $t$ = 3 hours, what was the initial temperature, $T_0$?\n\nOptions:\nA) 87\nB) 62\nC) 89\nD) 96",
+      "answer": "87",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "All variables are defined except lowercase t. I added this definition, and I also wonder if having two of the same letter, upper and lower case, could be confusing for students. Consider changing one of the variable letters.",
+      "hint": "Skill: Nonlinear Functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0007",
+      "problem": "The concentration of a medication in a patient's bloodstream is modeled by $M(t) = 50(0.8)^t + 20$, where $t$ is the number of hours after administration. What does the horizontal asymptote of the graph of $M(t)$ represent in this context?\n\nOptions:\nA) The maximum concentration the medication reaches in the bloodstream\nB) The rate at which the concentration decreases each hour\nC) The base concentration before the medication was administered\nD) The minimum concentration the medication approaches in the bloodstream",
+      "answer": "The minimum concentration the medication approaches in the bloodstream",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "M(t) is not defined in terms of its units of measure. Is it ppm? Or per liter? I'm also not a fan of implying that the medicine will never exit the bloodstream. If the minimum is 20 (whatever the units are), then it will be there forever? Doesn't seem like an appropriate model for medicine in the blood. There's also no graph.",
+      "hint": "Skill: Nonlinear Functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0008",
+      "problem": "A radioactive substance has a half-life of 8 years. A scientist models the remaining mass of the substance with an exponential function. Which form of the equation best displays the initial mass and the annual decay rate?\n\nOptions:\nA) $M = M0(0.125)^t$\nB) $M = M0(0.5)^t$\nC) $M = M0(0.917)^t$\nD) $M = M0(8)^t$",
+      "answer": "$M = M0(0.917)^t$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Too many things to fix about this to make it worthwhile. Mo isn't defined, the formatting is all wrong, the time frame isn't defined to know how often the substance mass is cut in half, and I think the answer is incorrect.",
+      "hint": "Skill: Nonlinear Functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0009",
+      "problem": "The table below shows selected values for a function f(x). Which of the following equations defines f(x)?\\n\\nx | f(x)\\n-2 | 0\\n-1 | 1\\n0 | 4\\n1 | 9\\n2 | 16\n\nOptions:\nA) f(x) = $(x - 2)^2$\nB) f(x) = $x^2 + 4$\nC) f(x) = $x^2 + 2x$\nD) f(x) = $(x + 2)^2$",
+      "answer": "f(x) = $(x + 2)^2$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "I could throw this out due to the table being so confusing and nearly unreadable. I also think a student could plug in the x-values and figure out which equation it is. Although they'd be reasoning about the equations.",
+      "hint": "Skill: Nonlinear Functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0010",
+      "problem": "The height \\( h(d) \\), in meters, of a soccer ball above the ground as it travels horizontally is modeled by \\( h(d) = -0.5d^2 + 4d + 1.5 \\), where \\( d \\) is the horizontal distance in meters from where it was kicked. Which of the following describes the y-intercept and the positive x-intercept of the graph of \\( h(d) \\)?\n\nOptions:\nA) The y-intercept is the initial height when kicked, and the x-intercept is the horizontal distance when the ball hits the ground.\nB) The y-intercept is the maximum height of the ball, and the x-intercept is the horizontal distance when the ball hits the ground.\nC) The y-intercept is the horizontal distance when the ball was kicked, and the x-intercept is the initial height when it was kicked.\nD) The y-intercept is the initial height when kicked, and the x-intercept is the horizontal distance when the ball reaches maximum height.",
+      "answer": "The y-intercept is the initial height when kicked, and the x-intercept is the horizontal distance when the ball hits the ground.",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "It's confusing why a ball would be kicked from any other height except the ground. I know sometimes soccer players kick it from the air, but mostly from the ground. This equation is saying that a ball was kicked 1.5 meters above the ground (roughly 5 feet off the ground) which seems dangerous and not realistic. Also, in the U.S., we call it soccer, but the rest of the world calls it futbol. The context is not universal when it's called 'soccer.'  I can see revising it to include a more universa…",
+      "hint": "Skill: Nonlinear Functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0011",
+      "problem": "The concentration of a medication in a patient's bloodstream is modeled by $M(t) = 50(0.8)^t + 20$, where $t$ is the number of hours after administration. What does the horizontal asymptote of the graph of $M(t)$ represent in this context?\n\nOptions:\nA) The maximum concentration the medication reaches in the bloodstream\nB) The rate at which the concentration decreases each hour\nC) The base concentration before the medication was administered\nD) The minimum concentration the medication approaches in the bloodstream",
+      "answer": "The minimum concentration the medication approaches in the bloodstream",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "I think this requires specialized knowledge and could be assessed through a more accessible problem with a more commonly understood context.",
+      "hint": "Skill: Nonlinear Functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0012",
+      "problem": "The height of a bouncing ball can be modeled by the quadratic function $h(t) = -16t^2 + 48t + 64$, where $h$ is the height in feet and $t$ is the time in seconds. Which form of the equation would be most useful for determining when the ball hits the ground?\n\nOptions:\nA) Standard form: $h(t) = -16t² +48t +64$\nB) Vertex form: $h(t) = -16(t - 1.5)² + 100$\nC) Factored form: $h(t) = -16(t -4)(t +1)$\nD) Factored form: $h(t) = -16(t)(t - 3)$",
+      "answer": "Factored form: $h(t) = -16(t -4)(t +1)$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Flipped C and D",
+      "hint": "Skill: Nonlinear Functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0013",
+      "problem": "A tree's height was recorded each year for four years. The table shows the height, $f(x)$, in feet, $x$ years after planting. Which of the following equations best models the tree's height?\\n\\nx | f(x)\\n0 | 6\\n1 | 3\\n2 | 2\\n3 | 3\n\nOptions:\nA) f(x) = −3x +6\nB) f(x) = −x² + 2x +6\nC) f(x) = −x² +4x +6\nD) f(x) = x² −4x +6",
+      "answer": "f(x) = −x² +4x +6",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "This question DOES involve a transformation, but the topic says it doesn't. I also don't understand why a tree would follow a quadratic growth pattern, decreasing in height after being planted. It also indicates that the height was tracked each year, for 4 years, but only gives 3 years of measurement beyond the initial height. The correct answer choice is actually the equation found in option D, which is the only positive equation. This can be fixed, but might not be worth the time.",
+      "hint": "Skill: Nonlinear Functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0014",
+      "problem": "A company's profit is modeled by the function $P(x) = -x^2 + 30x - 125$, where $P(x)$ is measured in thousands of dollars, and the price of their product, \\(x\\), is measured in dollars. What does the point (10, 75) represent in this context?\n\nOptions:\nA) When the product is priced at \\$10, the profit is \\$75\nB) When the product is priced at \\$10, the profit is \\$75,000\nC) When the product is priced at \\$75, the profit is \\$10,000\nD) When the product is priced at \\$10,000, the profit is \\$75,000",
+      "answer": "When the product is priced at \\$10, the profit is \\$75,000",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Revised stem for clarity",
+      "hint": "Skill: Nonlinear Functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0015",
+      "problem": "The volume $V(r)$, in cubic centimeters, of a spherical balloon as it deflates is modeled by $V(r) = -r^2 + 8r + 15$, where $r$ is the radius in centimeters. Which of the following correctly describes what the vertical intercept and the horizontal intercept of $V(r)$ represent in this context?\n\nOptions:\nA) The vertical intercept represents the maximum volume of 31 cubic centimeters, and the horizontal intercept represents a radius at which the balloon has no volume\nB) The vertical intercept represents the initial volume of 15 cubic centimeters, and the horizontal intercept represents a radius at which the balloon has no volume\nC) The vertical intercept represents the initial volume of 15 cubic centimeters, and the horizontal intercept represents the radius at which deflation begins\nD) The vertical intercept represents the volume when the balloon is fully deflated, and the horizontal intercept represents the initial radius of 9.57 centimeters",
+      "answer": "The vertical intercept represents the initial volume of 15 cubic centimeters, and the horizontal intercept represents a radius at which the balloon has no volume",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "no x,y intercepts with V and r.    Also, the domain is r >= 0 since radius can't be negative, therefore there's only one horizontal intercept relevant to this scenario.",
+      "hint": "Skill: Nonlinear Functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0016",
+      "problem": "A chemical reaction produces heat according to the function $H(t) = -2t^2 + 12t + H_0$, where $H(t)$ is the heat produced in kilojoules $t$ minutes after the reaction starts, and $H_0$ is the initial heat. If 22 kilojoules of heat are present after 4 minutes, what is the value of $H_0$?\n\nOptions:\nA) 6\nB) -18\nC) -10\nD) 14",
+      "answer": "6",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "The indicated answer was incorrect.",
+      "hint": "Skill: Nonlinear Functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0017",
+      "problem": "The area, \\( A(w) \\), in square meters, of a rectangular garden with a fixed perimeter is modeled by \\( A(w) = -w^2 + 12w \\), where \\( w \\) is the width in meters. Which of the following statements correctly describes the A-intercept and the w-intercept of the graph of this function?\n\nOptions:\nA) The A-intercept represents the area when the width is $0$ meters, and the w-intercept represents the maximum possible area of the garden.\nB) The A-intercept represents the maximum possible area of the garden, and the w-intercept represents when the width is $6$ meters.\nC) The A-intercept represents the area when the width is $0$ meters, and the w-intercept represents the width $12$ meters at which the area becomes $0$.\nD) The A-intercept represents the width when the area is $0$ meters, and the w-intercept represents when the area is $12$ square meters.",
+      "answer": "The A-intercept represents the area when the width is $0$ meters, and the w-intercept represents the width $12$ meters at which the area becomes $0$.",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "It looks like there might be a glitch with the answer choices",
+      "hint": "Skill: Nonlinear Functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0018",
+      "problem": "A population of bacteria which starts at 250 doubles every 3 hours under laboratory conditions. A scientist models the population with an exponential function. Which form of the equation best displays the initial population and the doubling time?\n\nOptions:\nA) $P(t) = 250 \\cdot 2^{t/3}$\nB) $P(t) = 250 \\cdot 2^3$\nC) $P(t) = 250 \\cdot 2^{3/t}$\nD) $P(t) = 250 \\cdot e^{t/2}$",
+      "answer": "$P(t) = 250 \\cdot 2^{t/3}$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Added necessary information to answer the question without the answers. It did not previously state what the starting population was.",
+      "hint": "Skill: Nonlinear Functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0019",
+      "problem": "A chemical reaction produces heat according to the function $H(t) = -2t^2 + 12t + H_0$, where $H(t)$ is the heat produced in kilojoules $t$ minutes after the reaction starts, and $H_0$ is the initial heat. If 22 kilojoules of heat are present after 4 minutes, what is the value of $H_0$?\n\nOptions:\nA) 6\nB) -18\nC) -10\nD) 14",
+      "answer": "6",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Adjusted LaTex in stem. Answer choice D is the correct answer, so I switched A and D to keep A correct.",
+      "hint": "Skill: Nonlinear Functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0020",
+      "problem": "A biologist models the population of bacteria in a petri dish as $P(t) = 1200 - 900(0.6)^t$, where $t$ is the time in hours. What does the horizontal asymptote of the graph of $P(t)$ represent in this context?\n\nOptions:\nA) The initial population of bacteria in the petri dish\nB) The minimum population the petri dish can sustain\nC) The average population of bacteria over the first 10 hours\nD) The maximum population the petri dish can sustain",
+      "answer": "The maximum population the petri dish can sustain",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "I think this problem requires too much specialized knowledge",
+      "hint": "Skill: Nonlinear Functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0021",
+      "problem": "The table below shows selected values for a quadratic function $f(x)$. Which of the following equations represents this data?\\n\\nx | f(x)\\n2 | 3\\n3 | 4\\n4 | 7\\n5 | 12\n\nOptions:\nA) $f(x)=-x^2 + 4x + 7$\nB) $f(x)=x^2 - 4x + 7$\nC) $f(x)=x^2 + 4x + 7$\nD) $f(x)=2x^2 - 4x + 3$",
+      "answer": "$f(x)=x^2 - 4x + 7$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "can an actual table be inserted here?",
+      "hint": "Skill: Nonlinear Functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0022",
+      "problem": "The height of a ball above the ground is modeled by $h(t) = -5t^2 + 20t + 1.5$, where $t$ is the time in seconds. What does the constant term $1.5$ represent in this model?\n\nOptions:\nA) The initial height of the ball when thrown\nB) The maximum height of the ball\nC) The height of the ball after 1 second\nD) The height of the ball when it hits the ground",
+      "answer": "The initial height of the ball when thrown",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "I provided feedback on this item already",
+      "hint": "Skill: Nonlinear Functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0023",
+      "problem": "A species of fish is introduced into a lake, and its population grows over time toward a maximum sustainable population. The population is modeled by an exponential function. Which form of the equation best displays the maximum population the species approaches over time?\n\nOptions:\nA) $P(t) = 1200 - 800e^{-0.2t}$\nB) $P(t) = 1200 + 800e^{-0.2t}$\nC) $P(t) = 800 + 1200e^{-0.2t}$\nD) $P(t) = 1200 - 800e^{0.2t}$",
+      "answer": "$P(t) = 1200 - 800e^{-0.2t}$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Problem cannot be solved without the answer choices. Also, variable is not defined.",
+      "hint": "Skill: Nonlinear Functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0024",
+      "problem": "The table below shows selected values for an exponential function $f(x)$.\\n\\nx | f(x)\\n0 | 3\\n1 | 9\\n2 | 27\\n3 | 81\\n\\nWhich of the following equations represents the function $f(x)$?\n\nOptions:\nA) $f(x) = 3^x$\nB) $f(x) = 9(3^x)$\nC) $f(x) = 3(9^x)$\nD) $f(x) = 3(3^x)$",
+      "answer": "$f(x) = 3(3^x)$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Updated prompt",
+      "hint": "Skill: Nonlinear Functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0025",
+      "problem": "A cup of coffee cools in a room at 20°C. The temperature difference between the coffee and the room decreases by 10% each hour. If the coffee initially has a temperature of 90°C, which function models its temperature $T(h)$, in degrees Celsius, $h$ hours after cooling begins?\n\nOptions:\nA) $T(h) = 20 + 70(0.9)^h$\nB) $T(h) = 20 + 70(0.1)^h$\nC) $T(h) = 20 + 90(0.9)^h$\nD) $T(h) = 70(0.9)^h$",
+      "answer": "$T(h) = 20 + 70(0.9)^h$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Using the same variable in different capitalization is just confusing. Updated to use h for hours.",
+      "hint": "Skill: Nonlinear Functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0026",
+      "problem": "The pressure in a helium tank, measured in PSI, decreases according to the model $P(t) = P_0(0.7)^{(t/2)} + 30$, where $P_0$ is the initial excess pressure above atmospheric pressure, and $t$ is time in days. If the pressure reading is 79 PSI after 4 days, what was the initial pressure $P_0$, in PSI?\n\nOptions:\nA) 50\nB) 70\nC) 140\nD) 100",
+      "answer": "100",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "The answer is incorrect. I changed the PSI after 4 days to make the answer of 100 correct.",
+      "hint": "Skill: Nonlinear Functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0027",
+      "problem": "A firework's visual brightness $B(t)$, measured in candela, is modeled by $B(t) = 2000(0.7)^t$, where $t$ represents time in seconds after the firework's peak explosion. What does the point $(2, 980)$ represent in this context?\n\nOptions:\nA) The firework needs 980 seconds to reach a brightness of 2 candela after the peak explosion\nB) The firework takes 2 seconds to reach its peak explosion with a brightness of 980 candela\nC) The firework's brightness is 980 candela when 2 seconds have passed since the peak explosion\nD) The firework's brightness decreases by 980 candela every 2 seconds after the peak explosion",
+      "answer": "The firework's brightness is 980 candela when 2 seconds have passed since the peak explosion",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "I do not love \"candela\" and find it distracting I cannot think of a better alternative and there does need to be a unit of measurement",
+      "hint": "Skill: Nonlinear Functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0028",
+      "problem": "The power output of a solar panel is modeled by $P(x) = -0.5x^2 + 8x$, where $P(x)$ represents the power in watts and $x$ represents the hours after sunrise. After how many hours will the power output \\textit{first} be 24 watts?\n\nOptions:\nA) 6\nB) 4\nC) 8\nD) 12",
+      "answer": "4",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Updated prompt to ask for the first time the output is at 24 (there are two times) and updated the correct answer.",
+      "hint": "Skill: Nonlinear Functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0029",
+      "problem": "A student recorded the position of a robot moving along a track at different times. The table shows the position, $f(x)$, in meters, $x$ seconds after starting. Which of the following equations best models the robot's position?\\n\\n$x$ | $f(x)$\\n0 | -2\\n1 | 0\\n2 | 4\\n3 | 10\n\nOptions:\nA) $f(x) = x^2 + x - 2$\nB) $f(x) = 2x - 2$\nC) $f(x) = x^2 - 2$\nD) $f(x) = 2^x - 2$",
+      "answer": "$f(x) = x^2 + x - 2$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Answer option modified for better distractor.",
+      "hint": "Skill: Nonlinear Functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0030",
+      "problem": "A species of fish is introduced into a lake, and its population grows over time toward a maximum sustainable population. The population can be modeled by an exponential function. Which equation could be used to best determine the maximum population the species approaches over time?\n\nOptions:\nA) $P(t) = 1200 - 800e^{-0.2t}$\nB) $P(t) = 1200 + 800e^{-0.2t}$\nC) $P(t) = 800 + 1200e^{-0.2t}$\nD) $P(t) = 1200 - 800e^{0.2t}$",
+      "answer": "$P(t) = 1200 - 800e^{-0.2t}$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Edited for clarity.",
+      "hint": "Skill: Nonlinear Functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0031",
+      "problem": "A cup of coffee cools in a room. The temperature difference between the coffee and the room decreases by 10% each hour. If the coffee initially has a temperature of 90°C, and the room  has a temperature of 20°C, which function models its temperature $T(t)$, in degrees Celsius, $t$ hours after cooling begins?\n\nOptions:\nA) $T(t) = 20 + 70(0.9)^t$\nB) $T(t) = 20 + 70(0.1)^t$\nC) $T(t) = 20 + 90(0.9)^t$\nD) $T(t) = 70(0.9)^t$",
+      "answer": "$T(t) = 20 + 70(0.9)^t$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Revised stem language for added clarity",
+      "hint": "Skill: Nonlinear Functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0032",
+      "problem": "A patient takes a 400 mg dose of medication that decays exponentially at a rate of 15% per hour. How many hours will it take for the remaining medication in the patient's system to reach 50 mg? (Round to the nearest hour.)\n\nOptions:\nA) 1\nB) 6\nC) 14\nD) 13",
+      "answer": "13",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "My answer disagreed with the AI that disagreed with the other AI. Throw it out.",
+      "hint": "Skill: Nonlinear Functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0033",
+      "problem": "Which form of the equation $y = x^2 - 2x - 8$ best identifies the x-intercepts of its graph?\n\nOptions:\nA) $y = (x + 4)(x - 2)$\nB) $y = (x - 1)^2 - 9$\nC) $y = (x - 8)(x + 1)$\nD) $y = (x - 4)(x + 2)$",
+      "answer": "$y = (x - 4)(x + 2)$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "updated Latex on answers (though the exponent on option B might need to be fixed) and simplified prompt.",
+      "hint": "Skill: Nonlinear Functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0034",
+      "problem": "A meteorologist tracked the air pressure at different altitudes during a weather balloon's ascent. The table shows the pressure, $f(x)$, in kilopascals, $x$ kilometers above sea level:\\n\\nx | f(x)\\n0 | 100\\n1 | 90\\n2 | 82\\n3 | 75\\n\\nWhich of the following equations best models the air pressure?\n\nOptions:\nA) $f(x) = 100 - 8x$\nB) $f(x) = 100(0.1)^x$\nC) $f(x) = 100 + 0.9x$\nD) $f(x) = 100(0.9)^x$",
+      "answer": "$f(x) = 100(0.9)^x$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Doesn't ascent mean going up? I also don't like that the correct answer the \"best\" choice because A and D are pretty close.",
+      "hint": "Skill: Nonlinear Functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0035",
+      "problem": "A company's revenue R(x) from producing x units of a product is modeled by $R(x) = -2x^2 + 60x$. What is the least amount of units that can be produced to generate a revenue of 400?\n\nOptions:\nA) $10$\nB) $20$\nC) $15$\nD) $5$",
+      "answer": "$10$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Prompt rewritten so there is only one right answer and the language was simplified.",
+      "hint": "Skill: Nonlinear Functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0036",
+      "problem": "The table below shows selected values for an exponential function $f(x)$.\\n\\nx | f(x)\\n0 | 3\\n1 | 9\\n2 | 27\\n3 | 81\\n\\nWhich of the following equations defines $f(x)$?\n\nOptions:\nA) $f(x) = 3^x$\nB) $f(x) = 9(3^x)$\nC) $f(x) = 3(9^x)$\nD) $f(x) = 3(3^x)$",
+      "answer": "$f(x) = 3(3^x)$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "The tables need work. They are difficult to recognize as a table and might stump students.",
+      "hint": "Skill: Nonlinear Functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0037",
+      "problem": "The height \\(h(t)\\), in meters, that a diver's feet is above the water \\(t\\) seconds after jumping from a platform is modeled by $h(t) = –4.9t^2 + 8t + 10$. What is the meaning of the y-intercept of \\(h(t)\\) in this context?\n\nOptions:\nA) The acceleration due to gravity\nB) The height of the platform\nC) The starting velocity of the diver\nD) The height of the water level",
+      "answer": "The height of the platform",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Adding where on the diver this is being measured, adding formatting, and changed the wording slightly of the prompt and choice D.",
+      "hint": "Skill: Nonlinear Functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0038",
+      "problem": "The table below shows selected values for the function $f(x)$. Which of the following equations defines $f(x)$?\\n\\nx | f(x)\\n0 | -1\\n1 | 2\\n2 | 8\\n3 | 20\n\nOptions:\nA) $f(x) = 3(2)^x - 4$\nB) $f(x) = 2(3)^x - 4$\nC) $f(x) = 3(2)^x$\nD) $f(x) = x^3 - 1$",
+      "answer": "$f(x) = 3(2)^x - 4$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "The tables need improvement. I'm also adding the f(x) notation to the answer choices, although a student can plug in any of the table entries x-value into any of the choices and figure out which equation is it. But I think it's an ok question.",
+      "hint": "Skill: Nonlinear Functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0039",
+      "problem": "The table below shows selected values for an exponential function $f(x)$. Which of the following equations defines $f(x)$?\\n\\nx | f(x)\\n-2 | 8\\n-1 | 4\\n0 | 2\\n1 | 1\\n2 | 0.5\n\nOptions:\nA) f(x) = 2^x\nB) f(x) = (1/2)^(x + 1)\nC) f(x) = 2^(-x)\nD) f(x) = (1/2)^(x - 1)",
+      "answer": "f(x) = 2^(-x)",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "I'm not confident this type of prompt meets the requirements of the task but it's ok.",
+      "hint": "Skill: Nonlinear Functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0040",
+      "problem": "The monthly number of active subscribers to a streaming service $t$ months after a new feature launch is modeled by $A(t) = (A0 - 5000)(0.75)^t + 5000$, where $A0$ is the initial number of subscribers. If there are 6,125 active subscribers after 2 months, what was the value of $A0$?\n\nOptions:\nA) 7,000\nB) 9,000\nC) 5,000\nD) 12,000",
+      "answer": "7,000",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Flipped answer options to keep A the correct option",
+      "hint": "Skill: Nonlinear Functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0041",
+      "problem": "The height of an object being thrown upward is modeled by $h(t) = -4t^2 + 20t + h_0$, where $h_0$ is the initial height in meters and $t$ is the time the object is in flight, measured in seconds. If the object is 30 meters high after 3 seconds, what is the initial height, $h_0$?\n\nOptions:\nA) -18\nB) 6\nC) 30\nD) -6",
+      "answer": "6",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Revised language to make it more straightforward. A drone is not usually thought of as descending, and if it were, the function given does not lend itself to that nature.",
+      "hint": "Skill: Nonlinear Functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0042",
+      "problem": "A student's retention of learned material is modeled by \\( R(t) = 20 + 80(0.75)^t \\), where \\( R(t) \\) is the percentage retained \\( t \\) days after learning. What does the horizontal asymptote of the graph of \\( R(t) \\) represent in this context?\n\nOptions:\nA) The percentage retained immediately after learning\nB) The daily percentage decrease in retention\nC) The percentage retained as time continues indefinitely\nD) The percentage of material forgotten as time continues indefinitely",
+      "answer": "The percentage retained as time continues indefinitely",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "While there's nothing \"wrong\" with this question or its answer choices, this question is potentially not student-friendly.",
+      "hint": "Skill: Nonlinear Functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0043",
+      "problem": "The amount of a medication in a patient's bloodstream is modeled by $M(t) = M0(0.85)^t$, where $t$ is the number of hours since the medication was administered. In this context, what does $M0$ represent?\n\nOptions:\nA) The initial dose of medication administered\nB) The amount of medication remaining after one hour\nC) The rate at which the medication decreases per hour\nD) The amount of medication eliminated each hour",
+      "answer": "The initial dose of medication administered",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "The additional context of (3, 52.2) is not necessary for the question. Removed it for added clarity.",
+      "hint": "Skill: Nonlinear Functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0044",
+      "problem": "The population of a colony of ants is modeled by $P(t) = P0(1.5)^t$, where $t$ is the number of months since observation began. In this context, what does $P0$ represent?\n\nOptions:\nA) Population after 1 month when $t = 1$\nB) Population after 4 months when $t = 4$\nC) Monthly growth rate when $t = 0$\nD) Initial population when $t = 0$",
+      "answer": "Initial population when $t = 0$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Information regarding (4, 20250) is unnecessary. Revised for clarity.",
+      "hint": "Skill: Nonlinear Functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0045",
+      "problem": "A chemical reaction was monitored in a laboratory, and the concentration of a product, $f(x)$, in moles per liter, was recorded at $x$ minutes after the reaction began. The data is shown in the table below:\\n\\n$x$ | $f(x)$\\n0 | 0.5\\n1 | 2.0\\n2 | 8.0\\n3 | 32.0\\nWhich equation best models the concentration of the product?\n\nOptions:\nA) $f(x) = 0.5 + 4^x$\nB) $f(x) = 0.5(2)^x$\nC) $f(x) = 4(0.5)^x$\nD) $f(x) = 0.5(4)^x$",
+      "answer": "$f(x) = 0.5(4)^x$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "All answer options need to be exponential. Also revised language to remove \"which of the following\"",
+      "hint": "Skill: Nonlinear Functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0046",
+      "problem": "An investment of \\$2,000 earns interest at an annual rate of 3%, compounded continuously. How many years will it take for the investment to double in value? (Use the formula $A = Pe^{rt}$ and round to the nearest year.)\n\nOptions:\nA) 23\nB) 24\nC) 33\nD) 67",
+      "answer": "23",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Yes, the stem indicates \"Round to the nearest year,\" but technically 23 years isn't enough years, and many students will pick 24 instead. Recommend changing 24 to something like 27 or 30.",
+      "hint": "Skill: Nonlinear Functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0047",
+      "problem": "The attendance $A(w)$, in hundreds of people, at a weekly outdoor concert series is modeled by $A(w) = -0.5w^2 + 6w + 12$, where $w$ represents the number of weeks since the concert series began. Which of the following correctly describes what the y-intercept and the positive x-intercept represent in this context?\n\nOptions:\nA) The y-intercept represents 30 hundred people attending at week 6 when attendance is highest, and the x-intercept represents the start of the concert series\nB) The y-intercept represents 12 hundred people attending at the start, and the x-intercept represents 6 weeks when attendance is highest\nC) The y-intercept represents approximately 13.7 hundred people attending when attendance reaches zero, and the x-intercept represents 0 weeks when the series began\nD) The y-intercept represents 12 hundred people attending at the start, and the x-intercept represents approximately 13.7 weeks when attendance reaches zero",
+      "answer": "The y-intercept represents 12 hundred people attending at the start, and the x-intercept represents approximately 13.7 weeks when attendance reaches zero",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "8.7 plays no part in this equation and should be replaced with \"Approximately 13.7\" in all answer choices.",
+      "hint": "Skill: Nonlinear Functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0048",
+      "problem": "A physicist observed the intensity of light passing through a special filter at different distances. The table shows the intensity, $f(x)$, in watts per square meter, at $x$ centimeters from the source:\\n\\nx | f(x)\\n0 | 64\\n1 | 32\\n2 | 16\\n3 | 8\\nWhich of the following equations best models the light intensity?\n\nOptions:\nA) $f(x) = 32(0.5)^x$\nB) $f(x) = 64(0.5)^x$\nC) $f(x) = 64(0.25)^x$\nD) $f(x) = 64 - 32x$",
+      "answer": "$f(x) = 64(0.5)^x$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Updated LaTex in answers",
+      "hint": "Skill: Nonlinear Functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0049",
+      "problem": "A tree's height was recorded each year for four years. The table shows the height, $f(x)$, in feet, $x$ years after planting. Which of the following equations best models the tree's height?\\n\\nx | f(x)\\n0 | 6\\n1 | 3\\n2 | 2\\n3 | 3\n\nOptions:\nA) f(x) = −3x +6\nB) f(x) = −x² + 2x +6\nC) f(x) = x² −4x +6\nD) f(x) = −x² +4x +6",
+      "answer": "f(x) = x² −4x +6",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Not sure why the height of a tree would shrink and then grow, unless it's being chopped, but I left the equation alone and only flipped the the answer choices so the correct answer is the correct choice.",
+      "hint": "Skill: Nonlinear Functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0050",
+      "problem": "The table below shows selected values for an exponential function $f(x)$. Which of the following equations defines $f(x)$?\\n\\nx | f(x)\\n-1 | 12.5\\n0 | 5\\n1 | 2\\n2 | 0.8\n\nOptions:\nA) $f(x) = 5(0.4)^x$\nB) $f(x) = 5(0.16)^x$\nC) $f(x) = 5(2.5)^x$\nD) $f(x) = 12.5(0.4)^x$",
+      "answer": "$f(x) = 5(0.4)^x$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Noting that the table needs work. The answers also don't have a y-variable.",
+      "hint": "Skill: Nonlinear Functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0051",
+      "problem": "The monthly number of active subscribers to a streaming service $t$ months after a new feature launch is modeled by $A(t) = (A_0 – 5000)(0.75)^t + 5000$, where $A_0$ is the initial number of subscribers. If there are 6,125 active subscribers after 2 months, what was the value of $A_0$?\n\nOptions:\nA) 7,000\nB) 9,000\nC) 5,000\nD) 12,000",
+      "answer": "7,000",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "The answer is 7,000 not 9,000, so I changed the answer choices to match choice A to be correct. I also added LaTeX formatting so the subscript is actually a subscript.",
+      "hint": "Skill: Nonlinear Functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0052",
+      "problem": "A student recorded the position of a robot moving along a track at different times. The table shows the position, $f(x)$, in meters, $x$ seconds after starting. Which of the following equations best models the robot's position?\\n\\n$x$ | $f(x)$\\n0 | -2\\n1 | 0\\n2 | 4\\n3 | 10\n\nOptions:\nA) $f(x) = x^2 + x - 2$\nB) $f(x) = 2x - 2$\nC) $f(x) = x^2 - 2$\nD) $f(x) = x^2 + 2x - 2$",
+      "answer": "$f(x) = x^2 + x - 2$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Table needs work. I also think it needs to be stated that this is a linear track or something. I don't know what kind of robot would not go in all four directions, and the prompt doesn't specify where the student is measuring from. From the starting position? Is the robot moving in the same direction the whole time (like away from the student)? Or does it swivel? It's confusing. I also don't know why there's a measurement of –2 meters. What does that mean?",
+      "hint": "Skill: Nonlinear Functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0053",
+      "problem": "The table below shows selected values for an exponential function $f(x)$.\\n\\nx | f(x)\\n0 | 8\\n1 | 16\\n2 | 32\\n3 | 64\\nWhich of the following equations defines $f(x)$?\n\nOptions:\nA) $f(x) = 8x$\nB) $f(x) = 2(8^x)$\nC) $f(x) = 2^{x+3}$\nD) $f(x) = 8(2^x)$",
+      "answer": "$f(x) = 8(2^x)$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "The table needs work.",
+      "hint": "Skill: Nonlinear Functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0054",
+      "problem": "A quadratic function is defined by $y = x^2 - 2x - 8$. Which form of the equation most efficiently identifies the x-intercepts of its graph?\n\nOptions:\nA) $y = (x + 4)(x - 2)$\nB) y = (x - 1)^2 - 9\nC) y = (x - 8)(x + 1)\nD) y = (x - 4)(x + 2)",
+      "answer": "y = (x - 4)(x + 2)",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "The word, \"best,\" could be interpreted differently by different students. Perhaps \"most efficiently\" will work. Also, Choice B might need to be formatted. When I copy/paste what's there into the viewer, the exponent shows as an exponent. But it's not showing as an exponent in the choices above.",
+      "hint": "Skill: Nonlinear Functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0055",
+      "problem": "A meteorologist tracked the air pressure at different altitudes during a weather balloon's ascent. The table shows the pressure, $f(x)$, in kilopascals, $x$ kilometers above sea level:\\n\\nx | f(x)\\n0 | 100\\n1 | 90\\n2 | 81\\n3 | 73.9\\n\\nWhich of the following equations best models the air pressure?\n\nOptions:\nA) $f(x) = 100 - 8x$\nB) $f(x) = 100(0.1)^x$\nC) $f(x) = 100 + 0.9x$\nD) $f(x) = 100(0.9)^x$",
+      "answer": "$f(x) = 100(0.9)^x$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "What's a kilopascal? Aside from that, the model in choice D does not fit the table. I changed the values in the table to fit the model, if it helps. Also noting the table is not good.",
+      "hint": "Skill: Nonlinear Functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0056",
+      "problem": "A student's retention of learned material is modeled by \\( R(t) = 20 + 80(0.75)^t \\), where \\( R(t) \\) is the percentage retained \\( t \\) days after learning. What does the horizontal asymptote of the graph of \\( R(t) \\) represent in this context?\n\nOptions:\nA) The percentage retained immediately after learning\nB) The daily percentage decrease in retention\nC) The percentage retained as time continues indefinitely\nD) The percentage of material forgotten as time continues indefinitely",
+      "answer": "The percentage retained as time continues indefinitely",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Without a graph, this question is more challenging than it needs to be.",
+      "hint": "Skill: Nonlinear Functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0057",
+      "problem": "The population of a colony of ants is modeled by $P(t) = P_0(1.5)^t$, where $t$ is the number of months since observation began. If the population is 20,250 after 4 months, what does $P_0$ represent?\n\nOptions:\nA) Population after 1 month when $t = 1$\nB) Population after 4 months when $t = 4$\nC) Monthly growth rate when $t = 0$\nD) Initial population when $t = 0$",
+      "answer": "Initial population when $t = 0$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "P-naught needs to be formatted, and the \"what does P-naught\" represent language is confusing. I get why they gave a time and final population so they could have answer choices to throw the student off, but you could just ask what p-naught represents without the extra fluff of information.",
+      "hint": "Skill: Nonlinear Functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0058",
+      "problem": "A chemical reaction was monitored in a laboratory, and the concentration of a product, $f(x)$, in moles per liter, was recorded at $x$ minutes after the reaction began. The data is shown in the table below:\\n\\n$x$ | $f(x)$\\n0 | 0.5\\n1 | 2.0\\n2 | 8.0\\n3 | 32.0\\nWhich of the following equations best models the concentration of the product?\n\nOptions:\nA) $f(x) = 0.5 + 4x$\nB) $f(x) = 0.5(2)^x$\nC) $f(x) = 4(0.5)^x$\nD) $f(x) = 0.5(4)^x$",
+      "answer": "$f(x) = 0.5(4)^x$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "What chemical needs to be included. Generic questions like this do not help students connect to the problem. Noting that the table needs work on its formatting, and the answers need to have the x as an exponent.",
+      "hint": "Skill: Nonlinear Functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0059",
+      "problem": "An investment of \\$2,000 earns interest at an annual rate of 3%, compounded continuously. How many years will it take for the investment to double in value? (Use the formula $A = Pe^{rt}$ and round to the nearest year.)\n\nOptions:\nA) 23\nB) 24\nC) 33\nD) 67",
+      "answer": "23",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "I think this question is ok and written in a clear way. Logarithms, however, are not included in the SAT framework. They are included in the ACT, so I'm not sure how to rate this question.",
+      "hint": "Skill: Nonlinear Functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0060",
+      "problem": "The attendance $A(w)$, in hundreds of people, at a weekly outdoor concert series is modeled by $A(w) = -0.5w^2 + 6w + 12$, where $w$ represents the number of weeks since the concert series began. Which of the following correctly describes what the y-intercept and the positive x-intercept represent in this context?\n\nOptions:\nA) The y-intercept represents 30 hundred people attending at week 6 when attendance is highest, and the x-intercept represents the start of the concert series\nB) The y-intercept represents 12 hundred people attending at the start, and the x-intercept represents 6 weeks when attendance is highest\nC) The y-intercept represents 8.7 hundred people attending when attendance reaches zero, and the x-intercept represents 0 weeks when the series began\nD) The y-intercept represents 12 hundred people attending at the start, and the x-intercept represents 8.7 weeks when attendance reaches zero",
+      "answer": "The y-intercept represents 12 hundred people attending at the start, and the x-intercept represents 8.7 weeks when attendance reaches zero",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "While \"30 hundred\" is awkward, \"12 hundred\" isn't. I'm debating whether to just say 3,000 or 1,200 would be better.",
+      "hint": "Skill: Nonlinear Functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0061",
+      "problem": "A radioactive substance has a half-life of 8 years. A scientist models the remaining mass of the substance with an exponential function. Which form of the equation best displays the initial mass ($M_0$) and the \\textit{annual} decay rate?\n\nOptions:\nA) $M = M_0(0.125)^t$\nB) $M = M_0(0.5)^t$\nC) $M = M_0(0.917)^t$\nD) $M = M_0(8)^t$",
+      "answer": "$M = M_0(0.917)^t$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "the subscripts need to be formatted in the answer choices",
+      "hint": "Skill: Nonlinear Functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0062",
+      "problem": "A cup of coffee cools in a room. Its temperature is modeled by $C(t) = 24 + 90(0.88)^t$, where $C(t)$ is in degrees Celsius and $t$ is time in minutes. What does the horizontal asymptote of the graph of $C(t)$ represent in this context?\n\nOptions:\nA) The temperature the coffee approaches, $0^{\\circ}C$\nB) The room temperature\nC) The temperature after one hour\nD) The initial temperature of the coffee",
+      "answer": "The room temperature",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Without a graph, this question is more challenging than it needs to be.",
+      "hint": "Skill: Nonlinear Functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0063",
+      "problem": "The height \\( h(d) \\), in meters, of a soccer ball above the ground as it travels is modeled by \\( h(d) = -0.5d^2 + 4d + 0.3 \\), where \\( d \\) is the horizontal distance in meters from where it was kicked. What is a correct interpretation of the y-intercept and positive x-intercept for f \\( h(d) \\)?\n\nOptions:\nA) The y-intercept is the initial height when kicked, and the x-intercept is the horizontal distance when the ball hits the ground.\nB) The y-intercept is the maximum height of the ball, and the x-intercept is the horizontal distance when the ball hits the ground.\nC) The y-intercept is the horizontal distance when the ball was kicked, and the x-intercept is the initial height when it was kicked.\nD) The y-intercept is the initial height when kicked, and the x-intercept is the horizontal distance when the ball reaches maximum height.",
+      "answer": "The y-intercept is the initial height when kicked, and the x-intercept is the horizontal distance when the ball hits the ground.",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "a y-intercept of 1.5 meters is pretty high for an initial height for a ball to be kicked (I think I already had this question?). Changing that number to be more realistic. As I commented before, if this is international, we might want to say futbol. This also has \"which of the following...\"",
+      "hint": "Skill: Nonlinear Functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0064",
+      "problem": "The height of a projectile launched from a platform is modeled by $h(t) = -16t^2 + 64t + 25$, where $h(t)$ is the height in feet and $t$ is the time in seconds. What does the number 25 represent in this context?\n\nOptions:\nA) The height in feet after 25 seconds\nB) The height of the platform in feet\nC) The initial velocity in feet per second\nD) The maximum height reached in feet",
+      "answer": "The height of the platform in feet",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Saying \"initial\" for a height of platform implies the height of the platform can change, which it might be able to do, but it feels better to take the word, 'initial' out of the phrase",
+      "hint": "Skill: Nonlinear Functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0065",
+      "problem": "The concentration of a chemical solution $C(t)$, measured in grams per liter, during a reaction is modeled by $C(t) = 80(0.75)^t$, where $t$ represents time in minutes after the reaction begins. What does the point $(2, 45)$ represent in this context?\n\nOptions:\nA) After 2 minutes, the concentration is 45 grams per liter\nB) After 45 minutes, the concentration is 2 grams per liter\nC) The concentration decreased by 2 grams per liter until reaching 45 grams per liter\nD) The concentration decreased 45 grams per liter during the first 2 seconds",
+      "answer": "After 2 minutes, the concentration is 45 grams per liter",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "The point (4,15) from the original problem does is not a point on this function.",
+      "hint": "Skill: Nonlinear Functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0066",
+      "problem": "The volume $V(r)$, in cubic centimeters, of a spherical balloon as it deflates is modeled by $V(r) = -r^2 + 8r + 15$, where $r$ is the radius in centimeters. Which of the following correctly describes what the y-intercept and one of the x-intercepts of $V(r)$ represent in this context?\n\nOptions:\nA) The y-intercept represents the maximum volume of 31 cubic centimeters, and a positive x-intercept represents a radius at which the balloon has no volume\nB) The y-intercept represents the initial volume of 15 cubic centimeters, and a positive x-intercept represents a radius at which the balloon has no volume\nC) The y-intercept represents the initial volume of 15 cubic centimeters, and a positive x-intercept represents the radius at which deflation begins\nD) The y-intercept represents the volume when the balloon is fully deflated, and a positive x-intercept represents the initial radius of 9.57 centimeters",
+      "answer": "The y-intercept represents the initial volume of 15 cubic centimeters, and a positive x-intercept represents a radius at which the balloon has no volume",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "This graph does not make sense if it is supposed to model how a balloon deflates.",
+      "hint": "Skill: Nonlinear Functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0067",
+      "problem": "A tree's height was recorded each year for four years. The table shows the height, $f(x)$, in feet, $x$ years after planting. Which of the following equations best models the tree's height?\\n\\nx | f(x)\\n0 | 6\\n1 | 3\\n2 | 2\\n3 | 3\n\nOptions:\nA) f(x) = −3x +6\nB) f(x) = −x² + 2x +6\nC) f(x) = −x² +4x +6\nD) f(x) = x² −4x +6",
+      "answer": "f(x) = −x² +4x +6",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "A tree's height cannot be modeled by a quadratic in this way. The values make no real world sense. Plus the wrong answer is provided for the table itself.",
+      "hint": "Skill: Nonlinear Functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0068",
+      "problem": "The area, \\( A(w) \\), in square meters, of a rectangular garden with a fixed perimeter is modeled by \\( A(w) = -w^2 + 12w \\), where \\( w \\) is the width in meters. Which of the following statements correctly describes the y-intercept and one of the x-intercepts of the graph of this function?\n\nOptions:\nA) The y-intercept represents the area when the width is $0$ meters, and one x-intercept represents the maximum possible area of the garden.\nB) The y-intercept represents the maximum possible area of the garden, and one x-intercept represents when the width is $6$ meters.\nC) The y-intercept represents the area when the width is $0$ meters, and one x-intercept represents the width ($12$ meters) at which the area becomes $0$.\nD) The y-intercept represents the width when the area is $0$ meters, and one x-intercept represents when the area is $12$ square meters.",
+      "answer": "The y-intercept represents the area when the width is $0$ meters, and one x-intercept represents the width ($12$ meters) at which the area becomes $0$.",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "This is fine as long as the formatting of the answers is not a mess like it currently shows.",
+      "hint": "Skill: Nonlinear Functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0069",
+      "problem": "The height \\( h(d) \\), in meters, of a soccer ball above the ground as it travels horizontally is modeled by \\( h(d) = -0.5d^2 + 4d + 1.5 \\), where \\( d \\) is the horizontal distance in meters from where it was kicked. Which of the following describes the h-intercept and the d-intercept of the graph of \\( h(d) \\)?\n\nOptions:\nA) The h-intercept is the initial height when kicked, and the d-intercept is the horizontal distance when the ball hits the ground.\nB) The h-intercept is the maximum height of the ball, and the d-intercept is the horizontal distance when the ball hits the ground.\nC) The h-intercept is the horizontal distance when the ball was kicked, and the d-intercept is the initial height when it was kicked.\nD) The h-intercept is the initial height when kicked, and the d-intercept is the horizontal distance when the ball reaches maximum height.",
+      "answer": "The h-intercept is the initial height when kicked, and the d-intercept is the horizontal distance when the ball hits the ground.",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "no need to say the positive x-intercept since the domain is restricted to only the positive values here.",
+      "hint": "Skill: Nonlinear Functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0070",
+      "problem": "A student recorded the population of bacteria in a lab experiment over several hours. The table shows the population, $f(x)$, at hour $x$. Which of the following equations best models the bacteria population?\\n\\n$x$ | $f(x)$\\n0 | 120\\n1 | 180\\n2 | 270\\n3 | 405\n\nOptions:\nA) $f(x) = 120(1.5)^x$\nB) $f(x) = 180(1.5)^x$\nC) $f(x) = 15x^2 +45x +120$\nD) $f(x) = 120 + 60x$",
+      "answer": "$f(x) = 120(1.5)^x$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Updated weird formatting in answers",
+      "hint": "Skill: Nonlinear Functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0071",
+      "problem": "A concert venue determines that when tickets are priced at \\$40, they sell 500 tickets. Their market research shows that for every \\$5 increase in price, 50 fewer tickets are sold. At what ticket price, to the nearest dollar, will the venue maximize their revenue?\n\nOptions:\nA) \\$40\nB) \\$65\nC) \\$70\nD) \\$90",
+      "answer": "\\$70",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "This problem is challenging and I'm not even 100% sure I did it correctly  because I got a different answer.",
+      "hint": "Skill: Nonlinear Functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0072",
+      "problem": "A mining company measures the depth of a tunnel at specific points during drilling. The table shows the depth, $f(x)$, in meters, $x$ hours after drilling began:\\n\\n$x$ | $f(x)$\\n0 | 4\\n1 | 12\\n2 | 36\\n3 | 108\\nWhich of the following equations best models the tunnel's depth?\n\nOptions:\nA) $f(x) = 4(3)^x$\nB) $f(x) = 3(4)^x$\nC) $f(x) = 4(x)^3$\nD) $f(x) = 4+3x$",
+      "answer": "$f(x) = 4(3)^x$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Better distractors",
+      "hint": "Skill: Nonlinear Functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0073",
+      "problem": "The temperature \\( T(h) \\), in degrees Celsius, \\( h\\) hours after noon is modeled by \\( T(h) = -0.3h^2 + 3t + 20 \\). Which of the following describes the y-intercept and one of the x-intercepts of the graph of \\( T(h) \\)?\n\nOptions:\nA) The y-intercept is 20°C, representing the temperature at noon, and an x-intercept is the time when the temperature reaches 0°C.\nB) The y-intercept is 20°C, representing the temperature at midnight, and an x-intercept is the time when the temperature reaches 0°C.\nC) The y-intercept is 27.5°C, representing the maximum temperature, and an x-intercept is the time when the temperature returns to 20°C.\nD) The y-intercept is 20°C, representing the temperature at noon, and an x-intercept is the time when the temperature reaches its maximum value.",
+      "answer": "The y-intercept is 20°C, representing the temperature at noon, and an x-intercept is the time when the temperature reaches 0°C.",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Updated prompt to two different variables",
+      "hint": "Skill: Nonlinear Functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0074",
+      "problem": "The distance $d(t)$ in feet of a skydiver from the ground $t$ seconds after jumping can be modeled by the quadratic function $d(t) = -16t^2 + 1200t + 8000$. Which form of the equation would be most useful for determining when the skydiver reaches the ground?\n\nOptions:\nA) Factored form: $d(t) = -16(t - p)(t - q)$\nB) Vertex form: $d(t) = -16(t - h)^2 + k$\nC) Standard form: $d(t) = -16t^2 + 1200t + 8000$\nD) Slope-intercept form: $d(t) = mt + b$",
+      "answer": "Factored form: $d(t) = -16(t - p)(t - q)$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Formatting on Option C updated",
+      "hint": "Skill: Nonlinear Functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0075",
+      "problem": "The function h is defined by $h(x) = 4^{x-2} - 15$. For what value of x does $h(x) = 1$?\n\nOptions:\nA) $2$\nB) $3$\nC) $4$\nD) $6$",
+      "answer": "$4$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Prompt and answers updated to be correct",
+      "hint": "Skill: Nonlinear Functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0076",
+      "problem": "A chemical reaction's energy output, in joules, over time $t$ minutes is modeled by $E(t) = E_0(1.5)^t - 100$, where $E0$ is the initial energy output. If the energy output is $575$ joules after $2$ minutes, what was the value of $E_0$?\n\nOptions:\nA) 211\nB) 256\nC) 300\nD) 450",
+      "answer": "300",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Formatting of initial output",
+      "hint": "Skill: Nonlinear Functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0077",
+      "problem": "A quadratic function is given in vertex form. Which form of the equation most clearly identifies the $x$-intercepts of its graph?\n\nOptions:\nA) Factored form\nB) Vertex form\nC) Slope-intercept form\nD) Standard form",
+      "answer": "Factored form",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "The names of functions are different depending on where you're from.  Some people  call it intercept form and others call it factored form.   Same with vertex form versus standard form.     And other call general form standard form.",
+      "hint": "Skill: Nonlinear Functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0078",
+      "problem": "The table below shows selected values for the function $f(x)$. Which of the following equations defines $f(x)$?\\n\\nx | f(x)\\n-2 | 9\\n-1 | 3\\n0 | 1\\n1 | 1/3\\n2 | 1/9\n\nOptions:\nA) $(x) = 3^{x}$\nB) $f(x) =\\frac{3}{x}$\nC) $f(x) = 3^{-x}$\nD) $f(x) = \\frac{1}{3}^{-x}$",
+      "answer": "$f(x) = 3^{-x}$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Answers C & D yield the same function.",
+      "hint": "Skill: Nonlinear Functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0079",
+      "problem": "A bank account balance is modeled by $A(t) = 1200(1.06)^{t/5}$, where $t$ is the number of years. What does the number 5 represent in this model?\n\nOptions:\nA) The number of years it takes for the interest to increase by 106%\nB) The number of years it takes for the balance to triple\nC) The number of years it takes for interest to double\nD) The number of years it takes for the interest to be compounded",
+      "answer": "The number of years it takes for the interest to be compounded",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Answer choices are definitely not great. You could adjust them, but... I don't know that I would, given the fact that they'd all need to be revised. (I gave it my best shot, but I don't think my choices are great, honestly.)",
+      "hint": "Skill: Nonlinear Functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0080",
+      "problem": "The intensity of a solar panel's power output, $I(t)$, measured in watts per square meter, is modeled by $I(t) = 800(0.6)^{(t/4)}$, where t represents time in hours after solar noon. What does the point (8, 288) represent in this context?\n\nOptions:\nA) After 8 hours, the solar panel's power output is 288 watts per square meter\nB) After 288 hours, the solar panel's power output is 8 watts per square meter\nC) After 8 hours, the solar panel has used a total of 288 watts\nD) The solar panel's power output takes 8 hours to reach its maximum of 288 watts per square meter",
+      "answer": "After 8 hours, the solar panel's power output is 288 watts per square meter",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "I'm not convinced options A and C are different enough to not cause confusion. Recommend revising option C (potential revision made).",
+      "hint": "Skill: Nonlinear Functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0081",
+      "problem": "A tennis ball is launched straight up from a rooftop garden, and its height above street level is modeled by $h(t) = -16t^2 + 40t + 80$, where $h(t)$ is the height in feet and $t$ is the time in seconds. What does the vertex of the graph of $h(t)$ represent in this context?\n\nOptions:\nA) The starting height of the ball and the time it was launched\nB) The height when the ball hits the ground and the time it lands\nC) The lowest point reached by the ball and the time it was launched\nD) The maximum height of the ball and the time at which it occurs",
+      "answer": "The maximum height of the ball and the time at which it occurs",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Revised option C to be more incorrect (it overlaps with option D in a potentially confusing way)",
+      "hint": "Skill: Nonlinear Functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0082",
+      "problem": "The height of a projectile, in feet, is modeled by the function $h(t) = -16t^2 + 80t + 6$, where $t$ is the time in seconds. What does the axis of symmetry of the graph of $h(t)$ represent in this context?\n\nOptions:\nA) The minimum height of the projectile\nB) The time at which the projectile hits the ground\nC) The time at which the projectile is launched\nD) The time at which the projectile reaches its maximum height",
+      "answer": "The time at which the projectile reaches its maximum height",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Revised option A to be more incorrect and prevent confusion",
+      "hint": "Skill: Nonlinear Functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0083",
+      "problem": "The table below shows selected values for a quadratic function $f(x)$. Which of the following equations defines $f(x)$?\\n\\nx | f(x)\\n0 | -1\\n1 | 2\\n2 | 3\\n3 | 2\\n4 | -1\n\nOptions:\nA) -(x + 2)2 + 3\nB) -(x - 1)2 + 2\nC) -(x - 2)2 + 3\nD) (x - 2)2 + 3",
+      "answer": "-(x - 2)2 + 3",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "LaTex formatting needs adjusting in all choices",
+      "hint": "Skill: Nonlinear Functions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-functions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0084",
+      "problem": "A nonlinear system of equations is given by $y = x^2 - 4$ and $xy = 8$. What is the product of the x-coordinates of all real solutions to this system?\n\nOptions:\nA) $8$\nB) $-8$\nC) $-4$\nD) $4$",
+      "answer": "$-4$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "The solution to this system is (2.64944, 3.01951). There's only one solution, and the product of x-coordinates for all real solutions would be 2.65^2, none of the answers. The prompt doesn't make any sense.",
+      "hint": "Skill: Nonlinear equations in one variable and systems of equations in two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-equations-in-one-variable-and-systems-of-equations-in-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0085",
+      "problem": "A system of equations consists of a hyperbola given by $\\frac{y^2}{16} - \\frac{x^2}{9} = 1$ and a line given by $y = kx + 1$. For which value of $k$ does the system have exactly two real solutions?\n\nOptions:\nA) \\frac{1}{2}\nB) 1\nC) 2\nD) \\frac{4}{3}",
+      "answer": "2",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "All original answer choices were correct. I've given possible answer choices.",
+      "hint": "Skill: Nonlinear equations in one variable and systems of equations in two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-equations-in-one-variable-and-systems-of-equations-in-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0086",
+      "problem": "What are all solutions to the equation $|2x + 7| = x + 4$?\n\nOptions:\nA) $x = -4$\nB) $x = -3$\nC) $x = -11/3$\nD) $x = 1$",
+      "answer": "$x = -3$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Students can plug in the choices and get their answer, which makes the question not able to meet the task goal of use algebraic structure.",
+      "hint": "Skill: Nonlinear equations in one variable and systems of equations in two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-equations-in-one-variable-and-systems-of-equations-in-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0087",
+      "problem": "Given the equation $\\frac{1}{t} + kt = m$, where $k$ and $m$ are constants, which expression gives all possible values of $t$ in terms of $k$ and $m$?\n\nOptions:\nA) $\\frac{m + \\sqrt{m^2 - 4k}}{2k}$\nB) $\\frac{m \\pm \\sqrt{m^2 - 4}}{2k}$\nC) $\\frac{m \\pm \\sqrt{m^2 - 4k}}{2k}$\nD) $\\frac{m \\pm \\sqrt{m^2 + 4k}}{2k}$",
+      "answer": "$\\frac{m \\pm \\sqrt{m^2 - 4k}}{2k}$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Revised \"which of the following\" language",
+      "hint": "Skill: Nonlinear equations in one variable and systems of equations in two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-equations-in-one-variable-and-systems-of-equations-in-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0088",
+      "problem": "To solve for $x$ in the equation $\\frac{m}{x} + x = n$, where $m$ and $n$ are constants, which of the following gives all possible values of $x$ in terms of $m$ and $n$?\n\nOptions:\nA) $b ± \\sqrt{b² - a}$\nB) $(b + \\sqrt{b² - 4a})/2$\nC) $(b ± \\sqrt{b² - 4a})/2$\nD) $(b ± \\sqrt{b² - 4ac})/2$",
+      "answer": "$(b + \\sqrt{b² - 4a})/2$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Using 'a' and 'b' in a way that creates a generic equation but the 'a' and 'b' are in different spots than in the generic quadratic equation constants where a, b, and c are used in that order for the squared, linear, and constant terms, respectively. This will mess with kids' heads and be unnecessarily complicated. The letters need to change (I changed in prompt). Also, the answer choices suddenly have greek letters (gamma and eta) out of nowhere. Too much to modify.",
+      "hint": "Skill: Nonlinear equations in one variable and systems of equations in two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-equations-in-one-variable-and-systems-of-equations-in-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0089",
+      "problem": "The equation $ax^2 + bx + c = 0$ has coefficients that satisfy $a + b + c = 10$ and $a > 0$. For which value of the discriminant ($b^2 - 4ac$) will this quadratic equation have exactly one real solution?\n\nOptions:\nA) -4ac\nB) 0\nC) 10\nD) b²",
+      "answer": "0",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "None of the setup matters if a student knows the classifications of the discriminant.",
+      "hint": "Skill: Nonlinear equations in one variable and systems of equations in two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-equations-in-one-variable-and-systems-of-equations-in-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0090",
+      "problem": "For which values of x is the equation $4x^2 + 3x - (2x + 7) = 0$ satisfied?\n\nOptions:\nA) x = -2 and x = 1\nB) x = -7/4 and x = 1\nC) x = 1 and x = -1/4\nD) x = -2 and x = -7/4",
+      "answer": "x = -2 and x = 1",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "The wording on this question is just weird. The correct answer indicated is NOT the correct answer, nor are any of the other possible answers correct.",
+      "hint": "Skill: Nonlinear equations in one variable and systems of equations in two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-equations-in-one-variable-and-systems-of-equations-in-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0091",
+      "problem": "To solve for $x$ in the equation $x^2 + px + q = rx^2$, where $p$, $q$, and $r$ are constants and $r \\neq 1$, which of the following gives all possible values of $x$ in terms of $p$, $q$, and $r$?\n\nOptions:\nA) x = -p/(1-r)\nB) x = p/(1-r)\nC) x = -p/(r-1)\nD) x = q/(1-r)",
+      "answer": "x = -p/(1-r)",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Try as I might, I cannot get any of the answer choices provided. Perhaps you've stumped me, but I think the question is not asking the right thing...",
+      "hint": "Skill: Nonlinear equations in one variable and systems of equations in two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-equations-in-one-variable-and-systems-of-equations-in-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0092",
+      "problem": "A nonlinear system of equations is given by $y = x^2 - 4$ and $xy = 8$. What is the product of the x-coordinates of all real solutions to this system?\n\nOptions:\nA) $8$\nB) $-8$\nC) $-4$\nD) $4$",
+      "answer": "$-4$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "This system only has one solution; asking for the product of x-coordinates does not make sense.",
+      "hint": "Skill: Nonlinear equations in one variable and systems of equations in two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-equations-in-one-variable-and-systems-of-equations-in-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0093",
+      "problem": "A system of equations consists of a hyperbola given by $\\frac{y^2}{16} - \\frac{x^2}{9} = 1$ and a line given by $y = kx + 1$. For which value of $k$ does the system have exactly two real solutions?\n\nOptions:\nA) -2\nB) 3-Apr\nC) 2\nD) 3",
+      "answer": "2",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "All answer choices are correct.",
+      "hint": "Skill: Nonlinear equations in one variable and systems of equations in two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-equations-in-one-variable-and-systems-of-equations-in-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0094",
+      "problem": "Given the equation $\\frac{1}{t} + kt = m$, where $k$ and $m$ are constants, which expression gives all possible values of $t$ in terms of $k$ and $m$?\n\nOptions:\nA) $\\frac{m + \\sqrt{m^2 - 4k}}{2k}$\nB) $\\frac{m \\pm \\sqrt{m^2 - 4}}{2k}$\nC) $\\frac{m \\pm \\sqrt{m^2 - 4k}}{2k}$\nD) $\\frac{m \\pm \\sqrt{m^2 + 4k}}{2k}$",
+      "answer": "$\\frac{m \\pm \\sqrt{m^2 - 4k}}{2k}$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Revised \"which of the following\" language. Also - I suggest a different answer choice for option A as a false negative is highly likely to occur if a student doesn't see the minus sign is missing from the +/- symbol.",
+      "hint": "Skill: Nonlinear equations in one variable and systems of equations in two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-equations-in-one-variable-and-systems-of-equations-in-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0095",
+      "problem": "For which values of x is the equation $4x^2 + 3x - (2x + 7) = 0$ satisfied?\n\nOptions:\nA) x = -2 and x = 1\nB) x = -7/4 and x = 1\nC) x = 1 and x = -1/4\nD) x = -2 and x = -7/4",
+      "answer": "x = -2 and x = 1",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "No answer choice is correct",
+      "hint": "Skill: Nonlinear equations in one variable and systems of equations in two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-equations-in-one-variable-and-systems-of-equations-in-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0096",
+      "problem": "For which values of x is the equation $4x^2 + 3x - (2x + 7) = 0$ satisfied?\n\nOptions:\nA) x = -2 and x = 1\nB) x = -7/4 and x = 1\nC) x = 1 and x = -1/4\nD) x = -2 and x = -7/4",
+      "answer": "x = -2 and x = 1",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "The wording of this question is weird, it does not match the task (solve quadratic in standard form - this is not), and the answer provided is incorrect.\nALSO - fractions need to look like fractions so LaTex would also need to be updated for the fractional answer choices",
+      "hint": "Skill: Nonlinear equations in one variable and systems of equations in two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-equations-in-one-variable-and-systems-of-equations-in-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0097",
+      "problem": "A nonlinear system of equations is given by $y = x^2 - 4$ and $xy = 8$. What is the product of the x-coordinates of all real solutions to this system?\n\nOptions:\nA) $8$\nB) $-8$\nC) $-4$\nD) $4$",
+      "answer": "$-4$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Even if this is solved graphically (which is not the intent of the task), this problem makes no sense and does give the answer provided.",
+      "hint": "Skill: Nonlinear equations in one variable and systems of equations in two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-equations-in-one-variable-and-systems-of-equations-in-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0098",
+      "problem": "What is the solution to the equation $|3x - 6| + 5 = 2x + 1$?\n\nOptions:\nA) $x = 0$\nB) $x = 3$\nC) $x = 4$\nD) $x = 2$",
+      "answer": "$x = 2$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Simplified question and provided correct answer",
+      "hint": "Skill: Nonlinear equations in one variable and systems of equations in two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-equations-in-one-variable-and-systems-of-equations-in-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0099",
+      "problem": "What is the solution to the equation $|3x - 6| + 5 = 2x + 1$?\n\nOptions:\nA) $x = 0$\nB) $x = 3$\nC) $x = 4$\nD) $x = 2$",
+      "answer": "$x = 2$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "There's no \"set\" for the solution - only one value of x works, and only single values of x are provided in the answer choices. Also, I flipped option B and D to keep D as the correct choice.",
+      "hint": "Skill: Nonlinear equations in one variable and systems of equations in two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-equations-in-one-variable-and-systems-of-equations-in-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0100",
+      "problem": "What are the solutions to the equation $3x^2 - 4x = 2(x + 5)$?\n\nOptions:\nA) 1 ± √13\nB) $1 + \\sqrt{39}/3$\nC) $1 \\pm \\sqrt{41}/3$\nD) $1 \\pm \\sqrt{39}/3$",
+      "answer": "$1 + \\sqrt{39}/3$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "This equation is not written in standard form and the answer is incorrect, or at least not totally correct because it is missing the - of the +/-. Also the formatting is weird on the answers. Fractions need to look like fractions especially with answers like this.",
+      "hint": "Skill: Nonlinear equations in one variable and systems of equations in two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-equations-in-one-variable-and-systems-of-equations-in-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0101",
+      "problem": "What is the solution to the equation $|x + 1| = 2x - 3$?\n\nOptions:\nA) $\\frac{2}{3}$\nB) $2$\nC) No solution\nD) $4$",
+      "answer": "$4$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Two main things I don't like about this question. First, you can plug in the answers, making the only real challenge whether you know what an absolute value is and means based on the symbols. Second, answer (a) is a \"gotcha\" because if students don't plug in the numbers and instead solve the equation using their rote procedure they learned, they'll get both x = 4 and x = 2/3. But x = 2/3 is extraneous. The choices would give students distress, and causing distress shouldn't be the goal of the q…",
+      "hint": "Skill: Nonlinear equations in one variable and systems of equations in two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-equations-in-one-variable-and-systems-of-equations-in-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0102",
+      "problem": "What is the solution to the equation $\\frac{x + 5}{x - 1} = 3$?\n\nOptions:\nA) $-2$\nB) $3$\nC) $4$\nD) $1$",
+      "answer": "$4$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "I don't think the topic/task is correct. This is really just solving an equation in one variable, not quadratic at all.",
+      "hint": "Skill: Nonlinear equations in one variable and systems of equations in two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-equations-in-one-variable-and-systems-of-equations-in-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0103",
+      "problem": "A system of equations consists of the parabola $x = y^2$ and the line $y = \\frac{1}{2}x + k$. For which value of $k$ does this system have exactly two real solutions?\n\nOptions:\nA) -1\nB) 0\nC) \\frac{1}{2}\nD) 1",
+      "answer": "0",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Option C has correct LaTex formatting, but it isn't showing up properly?",
+      "hint": "Skill: Nonlinear equations in one variable and systems of equations in two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-equations-in-one-variable-and-systems-of-equations-in-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0104",
+      "problem": "The equation $|2x - 5| + x = 3x + 1$ is given. What is the solution to this equation?\n\nOptions:\nA) $2$\nB) $3/2$\nC) $1$\nD) No solution",
+      "answer": "$1$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Flipped options A and C to keep C as the correct answer.",
+      "hint": "Skill: Nonlinear equations in one variable and systems of equations in two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-equations-in-one-variable-and-systems-of-equations-in-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0105",
+      "problem": "A system of equations consists of the parabola $x = y^2$ and the line $y = \\frac{1}{2}x + k$. For which value of $k$ does this system have exactly one real solution?\n\nOptions:\nA) -1\nB) \\frac{1}{2}\nC) 0\nD) 1",
+      "answer": "\\frac{1}{2}",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Updated the prompt so there is only one correct answer and updated that correct answer",
+      "hint": "Skill: Nonlinear equations in one variable and systems of equations in two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-equations-in-one-variable-and-systems-of-equations-in-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0106",
+      "problem": "What are the solutions to the equation $3x^2 - 4x = 2(x + 5)$?\n\nOptions:\nA) $x = 1 \\pm \\sqrt{13}$\nB) $x = 1 \\pm \\frac{\\sqrt{39}}{3}$\nC) $x = 1 \\pm \\frac{\\sqrt{41}}{3}$\nD) $x = 1 \\pm \\frac{\\sqrt{39}}{\\sqrt{3}}$",
+      "answer": "$x = 1 \\pm \\frac{\\sqrt{39}}{3}$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Choice B is missing the plus and minus symbol (it only has a plus), and while choice D has the correct answer, it would be pretty mean to have both options. There also needs to be a variable that those numbers are representing, and the fractions should probably be fractions. Choice A is weird. Fixing.",
+      "hint": "Skill: Nonlinear equations in one variable and systems of equations in two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-equations-in-one-variable-and-systems-of-equations-in-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0107",
+      "problem": "What is the solution to the equation $\\frac{x + 5}{x - 1} = 3$?\n\nOptions:\nA) $-2$\nB) $3$\nC) $4$\nD) $1$",
+      "answer": "$4$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Students can plug in the answer choices and find the answer, which honestly, I'm ok with.",
+      "hint": "Skill: Nonlinear equations in one variable and systems of equations in two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-equations-in-one-variable-and-systems-of-equations-in-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0108",
+      "problem": "A system of equations is given by $y = x + 2$ and $x^2 + 2xy + y^2 = 25$. What is the sum of the x-coordinates of all real solutions to the system?\n\nOptions:\nA) -1.5\nB) 0\nC) 1.5\nD) -2",
+      "answer": "-2",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "I want to ask the question about whether an online graphing calculator that everyone knows how to use is provided. If not, this type of question is highly inequitable. Those with physical graphing calculators can solve this quite quickly, which those without will need to know a lot more algebra, algebraic moves for solving, and then pay attention to remembering to add the x-coordinates. I don't know how I feel about the \"sum of x-coordinates\" type questions when one of the x-coordinates is one …",
+      "hint": "Skill: Nonlinear equations in one variable and systems of equations in two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-equations-in-one-variable-and-systems-of-equations-in-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0109",
+      "problem": "A system of equations consists of a circle given by \\((x - 1)^2 + (y - 2)^2 = 9\\) and a line given by \\(3x + 4y = k\\). For which value of \\(k\\) does the system have exactly two real solutions?\n\nOptions:\nA) $0$\nB) $-4$\nC) $26$\nD) $26$",
+      "answer": "$0$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "There are two correct answers among the choices: Choice A and choice D. Changing choice D to be a value that does not work.",
+      "hint": "Skill: Nonlinear equations in one variable and systems of equations in two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-equations-in-one-variable-and-systems-of-equations-in-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0110",
+      "problem": "A system of equations consists of a circle given by \\((x - 1)^2 + (y - 2)^2 = 9\\) and a line given by \\(3x + 4y = k\\). For which values of \\(k\\) does the system have exactly one real solution?\n\nOptions:\nA) $-4 and 26$\nB) $-10$\nC) $-5 and 27$\nD) $1$",
+      "answer": "$-4 and 26$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Updated question and answers. AI is not great at systems :(",
+      "hint": "Skill: Nonlinear equations in one variable and systems of equations in two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-equations-in-one-variable-and-systems-of-equations-in-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0111",
+      "problem": "A system of equations consists of an ellipse given by $ \\frac{x^2}{9} + \\frac{y^2}{4} = 1 $ and a line given by $ y = 2x + k $. For which value of $ k $ does the system have exactly two real solutions?\n\nOptions:\nA) $6$\nB) $-6$\nC) $4$\nD) $3$",
+      "answer": "$6$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "As it was originally written, every answer choice is correct. I played around to try to update it so it asked about 1 solution, but couldn't find a \"nice\" pair linear equation.",
+      "hint": "Skill: Nonlinear equations in one variable and systems of equations in two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-equations-in-one-variable-and-systems-of-equations-in-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0112",
+      "problem": "For which values of $m$ does the equation $x^2 + mx + (m + 3) = 0$ have two distinct real solutions?\n\nOptions:\nA) $m < -2$ or $m > 6$\nB) $m > -2$ or $m < 6$\nC) $-2 < m < 6$\nD) $-6 < m < 2$",
+      "answer": "$m < -2$ or $m > 6$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "removed extra ''",
+      "hint": "Skill: Nonlinear equations in one variable and systems of equations in two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-equations-in-one-variable-and-systems-of-equations-in-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0113",
+      "problem": "What are the solutions to the equation $5x^2 + 10x - 3 = 0$?\n\nOptions:\nA) \\frac{-10 ± 2√10}{2}\nB) \\frac{-5 ± √10}{5}\nC) \\frac{-5 ± 2√15}{5}\nD) \\frac{-5 ± 2√10}{5}",
+      "answer": "\\frac{-5 ± 2√10}{5}",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "updated answers. these NEED to look like fractions",
+      "hint": "Skill: Nonlinear equations in one variable and systems of equations in two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-equations-in-one-variable-and-systems-of-equations-in-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0114",
+      "problem": "The equation $(x^2 - 25)(4x - 3) = 0$ is given. Which of the following list contains all the solutions to the equation?\n\nOptions:\nA) $-5, 5$\nB) $\\-5, (\\frac{3}{4}\\), 5$\nC) $5$\nD) $\\(\\frac{3}{4}\\), 5$",
+      "answer": "$\\-5, (\\frac{3}{4}\\), 5$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "In the original list of answers, 3/4 were solutions.",
+      "hint": "Skill: Nonlinear equations in one variable and systems of equations in two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-equations-in-one-variable-and-systems-of-equations-in-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0115",
+      "problem": "What are the solutions to the equation $(x + 2)(x - 1) = 4$?\n\nOptions:\nA) $-3$ and $2$\nB) $-2$ and $1$\nC) $2$ and $4$\nD) $-3$ and $4$",
+      "answer": "$-3$ and $2$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "better distractors",
+      "hint": "Skill: Nonlinear equations in one variable and systems of equations in two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-equations-in-one-variable-and-systems-of-equations-in-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0116",
+      "problem": "The equation $\\frac{2t}{t - r} = 3r$ relates the variables $t$ and $r$. Which of the following expresses $t$ in terms of $r$?\n\nOptions:\nA) $\\dfrac{3r^2}{3r - 2}$\nB) $\\dfrac{r}{3r - 2}$\nC) $\\dfrac{3r^2}{2 - 3r}$\nD) $\\dfrac{-3r^2}{2 + 3r}$",
+      "answer": "$\\dfrac{3r^2}{3r - 2}$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "I changed the variable s to t. When students write s, it can sometimes look like a 5 and with a problem like this, moving many terms around, students will not make that mistake.",
+      "hint": "Skill: Nonlinear equations in one variable and systems of equations in two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-equations-in-one-variable-and-systems-of-equations-in-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0117",
+      "problem": "For which values of \\(k\\) does the equation \\(x^2 + 2kx + (k + 2) = 0\\) have two distinct real solutions?\n\nOptions:\nA) k = -1 or k = 2\nB) k = 1 or k = -2\nC) k > -1 or k < 2\nD) k < -1 or k > 2",
+      "answer": "k < -1 or k > 2",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Need to do something about C. Gave it my best shot.",
+      "hint": "Skill: Nonlinear equations in one variable and systems of equations in two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-equations-in-one-variable-and-systems-of-equations-in-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0118",
+      "problem": "What are the solutions to the equation $x^2 + 6x - 4 = 3(2x - 1)$?\n\nOptions:\nA) x = -7 and x = -1\nB) x = 1 and x = -1\nC) x = -7 and x = 1\nD) x = 7 and x = 1",
+      "answer": "x = 1 and x = -1",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Flipped B and C",
+      "hint": "Skill: Nonlinear equations in one variable and systems of equations in two variables",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "nonlinear-equations-in-one-variable-and-systems-of-equations-in-two-variables"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0119",
+      "problem": "A student first multiplies $(2x + 3)(x - 4)$ and then adds the product of $(x + 1)(x - 2)$. Which of the following is equivalent to the resulting expression?\n\nOptions:\nA) $3x^2 -9x -14$\nB) $3x^2 -6x -14$\nC) $3x^2 -6x -10$\nD) $3x^2 -6x +10$",
+      "answer": "$3x^2 -6x -14$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "The answer choices have the greek symbol meaning, \"an element of\" instead of an exponent.",
+      "hint": "Skill: Equivalent expressions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "equivalent-expressions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0120",
+      "problem": "A student first multiplies $(2x + 3)(x - 4)$ and then adds the product of $(x + 1)(x - 2)$. Which of the following is equivalent to the resulting expression?\n\nOptions:\nA) $3x^{2 }-4x -14$\nB) $3x^{2} -6x -14$\nC) $3x^{2} -6x -10$\nD) $3x^{2} -6x +10$",
+      "answer": "$3x^{2} -6x -14$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Corrected weird LaTex formatting in answers.",
+      "hint": "Skill: Equivalent expressions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "equivalent-expressions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0121",
+      "problem": "A student multiplies $(3x - 1)(x + 2)$, subtracts the product of $(x - 4)(2x + 1)$, and then adds $5x$ to the result. Which of the following is equivalent to this expression?\n\nOptions:\nA) $x^2+3x -6$\nB) $x^2+12x +2$\nC) $x^2+17x +2$\nD) $x^2+18x +2$",
+      "answer": "$x^2+17x +2$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Updated weird formatting in answers",
+      "hint": "Skill: Equivalent expressions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "equivalent-expressions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0122",
+      "problem": "A student expands $(2x + 3)(x - 4)$ and $(x + 2)(3x + 1)$, then adds the results. Which of the following is equivalent to this sum?\n\nOptions:\nA) $5x^2 - 2x - 10$\nB) $5x^2 + 2x - 10$\nC) $5x^2 + 2x + 10$\nD) $6x^2 + 2x - 10$",
+      "answer": "$5x^2 + 2x - 10$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Updated weird formatting in answers",
+      "hint": "Skill: Equivalent expressions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "equivalent-expressions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0123",
+      "problem": "A student expands $(2x + 3)(x^2 - x + 4)$ and then adds $5x^2 - 3x$ to the result. Which expression is equivalent to this final sum?\n\nOptions:\nA) $2x^3+ x^2 + 5x + 12$\nB) $2x^3 + 10x^2 + 14x + 12$\nC) $2x^3 + 6x^2 + 8x + 12$\nD) $2x^3 + 6x^2 + 2x + 12$",
+      "answer": "$2x^3 + 6x^2 + 2x + 12$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Answers' formatting updated and correct answer is updated",
+      "hint": "Skill: Equivalent expressions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "equivalent-expressions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0124",
+      "problem": "A student multiplies $(2x - 5)(3x + 1)$, adds the product of $(x - 3)(x + 4)$, and then subtracts $x(2x + 7)$. Which of the following is equivalent to this expression?\n\nOptions:\nA) $5x^2 - 19x - 17$\nB) $5x^2 -5x - 17$\nC) $9x^2 - 5x -17$\nD) $6x^2 - 13x - 5$",
+      "answer": "$5x^2 - 19x - 17$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Updated answers to be correct and better distractors",
+      "hint": "Skill: Equivalent expressions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "equivalent-expressions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0125",
+      "problem": "A student multiplies $(2x + 1)(x - 3)$, adds the product of $(x + 2)(3x - 4)$, and then subtracts the product of $(x - 1)(x + 5)$. Which of the following is equivalent to this expression?\n\nOptions:\nA) $2x^2 -5x -3$\nB) $4x^2 -7x -6$\nC) $4x^2 +x -16$\nD) $6x^2 +x -16$",
+      "answer": "$4x^2 -7x -6$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Updated formatting on answers and updated better distractor",
+      "hint": "Skill: Equivalent expressions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "equivalent-expressions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0126",
+      "problem": "A student multiplies $(x + 4)(2x - 3)$, subtracts the product of $(x - 1)(x + 2)$, and then adds the product of $3x$ and $(x - 5)$. Which of the following is equivalent to the resulting expression?\n\nOptions:\nA) $4x² -16x -10$\nB) $4x² -11x -10$\nC) $4x² -9x -14$\nD) $4x² +4x -10$",
+      "answer": "$4x² -11x -10$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Adjust LaTex formatting for the answer choices to have correct exponentiation",
+      "hint": "Skill: Equivalent expressions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "equivalent-expressions"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-advanced.q0127",
+      "problem": "A student multiplies $(2x - 5)(3x + 2)$, adds the product of $(x + 3)(x - 1)$, and then subtracts the quantity $(x + 4)(2x - 3)$. Which of the following is equivalent to the resulting expression?\n\nOptions:\nA) $5x^2 - 14x - 1$\nB) $6x^2 - 13x - 18$\nC) $7x^2 - 9x - 13$\nD) $9x^2 - 4x - 25$",
+      "answer": "$5x^2 - 14x - 1$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Flipped A and B",
+      "hint": "Skill: Equivalent expressions",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "equivalent-expressions"
+      ]
+    }
+  ]
+}

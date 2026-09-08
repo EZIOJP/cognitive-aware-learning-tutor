@@ -48,6 +48,7 @@ def _row_fields(
     scores: dict[str, int],
     policy: dict[str, Any] | None = None,
 ) -> tuple[str, str | None, str | None, str, int]:
+    from backend.behavior.browser_labels import domain_from_window_title, normalize_browser_exe
     from backend.behavior.productivity_policy import (
         resolve_category_with_overrides,
         resolve_session_score,
@@ -65,9 +66,20 @@ def _row_fields(
         domain = None
         category = row.category or "Other"
         source = getattr(row, "source", None)
-    # Extension stores domain in app_name — expose as domain for site bucketing.
+
+    exe_norm = normalize_browser_exe(str(exe))
+    if exe_norm.endswith(".exe") and is_browser_exe(exe_norm):
+        exe = exe_norm
+
+    # Extension used to store domain in app_name; now app_name is msedge.exe.
     if not domain and (source == "extension" or looks_like_domain(exe)):
-        domain = exe
+        if looks_like_domain(exe):
+            domain = exe
+        else:
+            domain = domain_from_window_title(title)
+    if not domain:
+        domain = domain_from_window_title(title)
+
     if policy is not None:
         category = resolve_category_with_overrides(
             category, app_name=exe, window_title=title, policy=policy
@@ -85,6 +97,8 @@ def aggregate_session_rows(
     policy: dict[str, Any] | None = None,
 ) -> tuple[dict[str, AppBucket], int]:
     """Group tracked rows into app buckets; browsers get nested site buckets."""
+    from backend.behavior.browser_labels import browser_display_name
+
     buckets: dict[str, AppBucket] = {}
     total = 0
 
@@ -100,13 +114,24 @@ def aggregate_session_rows(
             continue
 
         exe, title, domain, category, score = _row_fields(row, scores, policy)
-        if is_ignored_app(exe, title or ""):
+        if isinstance(row, dict):
+            row_source = row.get("source")
+        else:
+            row_source = getattr(row, "source", None)
+        # Extension Edge (msedge.exe + active tab) must count; bare desktop Edge stays ignored.
+        if is_ignored_app(exe, title or "", source=str(row_source or "") or None):
             continue
         total += dur
 
-        if is_browser_exe(exe) or looks_like_domain(exe) or domain:
-            # Extension: group under Browser (extension); desktop: under browser exe.
-            bucket_key = exe if is_browser_exe(exe) else "Browser (Web)"
+        if is_browser_exe(exe) or looks_like_domain(str(exe)) or domain:
+            # Edge/Chrome/Firefox under their own exe — never generic "Browser (Web)"
+            # when we know the browser. Extension domains alone → Browser (Web).
+            if is_browser_exe(exe):
+                bucket_key = exe
+            elif looks_like_domain(str(exe)):
+                bucket_key = "Browser (Web)"
+            else:
+                bucket_key = exe
             if bucket_key not in buckets:
                 buckets[bucket_key] = AppBucket(category=category, productivity_score=score)
             bucket = buckets[bucket_key]
@@ -133,9 +158,12 @@ def aggregate_session_rows(
 
 def desktop_sessions_payload(buckets: dict[str, AppBucket], *, limit: int = 20) -> list[dict]:
     """Build desktop-stats session list with browser site breakdown."""
+    from backend.behavior.browser_labels import browser_display_name
+
     entries: list[dict] = []
 
     for exe, bucket in buckets.items():
+        display = browser_display_name(exe) if is_browser_exe(exe) else exe
         if bucket.sites:
             sites = [
                 {
@@ -151,6 +179,7 @@ def desktop_sessions_payload(buckets: dict[str, AppBucket], *, limit: int = 20) 
             entries.append({
                 "kind": "browser",
                 "exe": exe,
+                "display_name": display,
                 "seconds": bucket.seconds,
                 "category": bucket.category,
                 "productivity_score": bucket.productivity_score,
@@ -160,12 +189,13 @@ def desktop_sessions_payload(buckets: dict[str, AppBucket], *, limit: int = 20) 
             entries.append({
                 "kind": "app",
                 "exe": exe,
+                "display_name": display,
                 "seconds": bucket.seconds,
                 "category": bucket.category,
                 "productivity_score": bucket.productivity_score,
             })
 
-    entries.sort(key=lambda x: x["seconds"], reverse=True)
+    entries.sort(key=lambda e: e["seconds"], reverse=True)
     return entries[:limit]
 
 

@@ -1,0 +1,457 @@
+{
+  "schema_version": 1,
+  "kind": "math",
+  "topic": {
+    "topic_id": "math.aptitude.saket-cognizant",
+    "title": "Programming aptitude — Cognizant",
+    "stage": "foundations",
+    "path": [
+      "Aptitude",
+      "SAKET",
+      "Cognizant"
+    ],
+    "track": "aptitude",
+    "prerequisites": [],
+    "note_topic_ids": [
+      "MT1-T13"
+    ],
+    "description": "Interview coding aptitude from Cognizant."
+  },
+  "questions": [
+    {
+      "id": "math.aptitude.saket-cognizant.q0001",
+      "problem": "**Cognizant · Que 1**\n\nProblem Statement – Write a program to calculate the fuel consumption of your truck.The program should ask the user to enter the quantity of diesel to fill up the tank and the distance covered till the tank goes dry.Calculate the fuel consumption and display it in the format (liters per 100 kilometers).\n\nConvert the same result to the U.S. style of miles per gallon and display the result. If the quantity or distance is zero or negative display ” is an Invalid Input”.\n\n[Note: The US approach of fuel consumption calculation (distance / fuel) is the inverse of the European approach (fuel / distance ). Also note that 1 kilometer is 0.6214 miles, and 1 liter is 0.2642 gallons.]\n\nThe result should be with two decimal place.To get two decimal place refer the below-mentioned print statement :\n\nfloat cost=670.23;\n\nSystem.out.printf(“You need a sum of Rs.%.2f to cover the trip”,cost);\n\nSample Input 1:\n\nEnter the no of liters to fill the tank\n           20\n\nEnter the distance covered\n           150\n\nSample Output 1:\n\nLiters/100KM\n          13.33\n\nMiles/gallons\n          17.64\n\nExplanation: \n\nFor 150 KM fuel consumption is 20 liters, \nThen for 100 KM fuel consumption would be (20/150)*100=13.33,\nDistance is given in KM, we have to convert it to miles (150*0.6214)=93.21,\nFuel consumption is given in liters, we have to convert it to gallons (20*0.2642)=5.284, \nThen find (miles/gallons)=(93.21/5.284)=17.64\nSample Input 2:\n\nEnter the no of liters to fill the tank\n         -5\n\nSample Output 2:\n\n-5 is an Invalid Input\nSample Input 3:\n\nEnter the no of liters to fill the tank\n           25\n\nEnter the distance covered\n          -21\n\nSample Output 3:\n\n-21 is an Invalid Input\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "1:",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: ”. |  | [Note: The US approach of fuel consumption calculation (distance / fuel) is the inverse of the European approach (fuel / distance ). Also note that 1 k…",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "cognizant"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-cognizant.q0002",
+      "problem": "**Cognizant · Que 10**\n\nProblem Statement – Chaman planned to choose a four digit lucky number for his car. His lucky numbers are 3,5 and 7. Help him find the number, whose sum is divisible by  3 or 5 or 7. Provide a valid car number, Fails to provide a valid input then display that number is not a valid car number. \n\nNote : The input other than 4 digit positive number[includes negative and 0] is considered as invalid.\n\nRefer the samples, to read and display the data.\n\nSample Input 1:\n\nEnter the car no:1234\nSample Output 1:\n\nLucky Number\nSample Input 2:\n\nEnter the car no:1214\nSample Output 2:\n\nSorry its not my lucky number\nSample Input 3:\n\nEnter the car no:14\nSample Output 3:\n\n14 is not a valid car number\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "1:",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: then display that number is not a valid car number.  |  | Note : The input other than 4 digit positive number[includes negative and 0] is considered as invalid…",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "cognizant"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-cognizant.q0003",
+      "problem": "**Cognizant · Que 11**\n\nProblem Statement –\n\nIIHM institution is offering a variety of courses to students. Students have a facility to check whether a particular course is available in the institution. Write a program to help the institution accomplish this task. If the number is less than or equal to zero display “Invalid Range”.\n\nAssume maximum number of courses is 20.\n\nSample Input 1:\n\nEnter no of course:\n5\n\nEnter course names:\nJava\n\nOracle\n\nC++\n\nMysql\n\nDotnet\n\nEnter the course to be searched:\nC++\n\nSample Output 1:\n\nC++ course is available\n\nSample Input 2: \n\nEnter no of course:\n3\n\nEnter course names:\nJava\n\nOracle\n\nDotnet\n\nEnter the course to be searched:\nC++\n\nSample Output 2:\n\nC++ course is not available\n\nSample Input 3:\n\nEnter no of course:\n0\n\nSample Output 3:\n\nInvalid Range\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "1:",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: 1: |  | Enter no of course: | 5 |  | Enter course names: | Java |  | Oracle |  | C++ |  | Mysql |  | Dotnet |  | Enter the course to be searched: | C++ |  | Sa…",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "cognizant"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-cognizant.q0004",
+      "problem": "**Cognizant · Que 12**\n\nProblem Statement – Mayuri buys “N” no of products from a shop. The shop offers a different percentage of discount on each item. She wants to know the item that has the minimum discount offer, so that she can avoid buying that and save money.\n[Input Format: The first input refers to the no of items; the second input is the item name, price and discount percentage separated by comma(,)]\nAssume the minimum discount offer is in the form of Integer.\n\nNote: There can be more than one product with a minimum discount.\n\nSample Input 1:\n\n4\n\nmobile,10000,20\n\nshoe,5000,10\n\nwatch,6000,15\n\nlaptop,35000,5\n\nSample Output 1:\n\nshoe\n\nExplanation: The discount on the mobile is 2000, the discount on the shoe is 500, the discount on the watch is 900 and the discount on the laptop is 1750. So the discount on the shoe is the minimum.\n\nSample Input 2:\n\n4\n\nMobile,5000,10\n\nshoe,5000,10\n\nWATCH,5000,10\n\nLaptop,5000,10\n\nSample Output 2:\n\nMobile \n\nshoe \n\nWATCH \n\nLaptop\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "1:",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: Format: The first input refers to the no of items; the second input is the item name, price and discount percentage separated by comma(,)] | Assume the minimum…",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "cognizant"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-cognizant.q0005",
+      "problem": "**Cognizant · Que 13**\n\nProblem Statement – Raj wants to know the maximum marks scored by him in each semester. The mark should be between 0 to 100 ,if goes beyond the range display “You have entered invalid mark.”\n\nSample Input 1:\n\nEnter no of semester:\n3\n\nEnter no of subjects in 1 semester:\n3\n\nEnter no of subjects in 2 semester:\n4\n\nEnter no of subjects in 3 semester:\n2\n\nMarks obtained in semester 1:\n50\n60\n70\n\nMarks obtained in semester 2:\n90\n98\n76\n67\n\nMarks obtained in semester 3:\n89\n76\n\n \n\nSample Output 1:\n\nMaximum mark in 1 semester:70\nMaximum mark in 2 semester:98\nMaximum mark in 3 semester:89\nSample Input 2:\n\nEnter no of semester:\n3\n\nEnter no of subjects in 1 semester:\n3\n\nEnter no of subjects in 2 semester:\n4\n\nEnter no of subjects in 3 semester:\n2\n\nMarks obtained in semester 1:\n55\n67\n98\n\nMarks obtained in semester 2:\n67\n-98\n\nSample Output 2:\n\nYou have entered invalid mark.\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "1:",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: 1: |  | Enter no of semester: | 3 |  | Enter no of subjects in 1 semester: | 3 |  | Enter no of subjects in 2 semester: | 4 |  | Enter no of subjects in 3 seme…",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "cognizant"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-cognizant.q0006",
+      "problem": "**Cognizant · Que 14**\n\nProblem Statement – Bela  teaches her daughter  to find the factors of a given number.  When she provides a number to her daughter, she should tell the factors of that number.  Help her to do this, by writing a program.  Write a class FindFactor.java and write the main method in it.\nNote : \n\nIf the input provided is negative, ignore the sign and provide the output. If the input is zero\nIf the input is zero the output should be “No Factors”.\n \n\nSample Input 1 :\n\n54\n\nSample Output 1 :\n\n1, 2, 3, 6, 9, 18, 27, 54\n\nSample Input 2 :\n\n-1869\n\nSample Output 2 :\n\n1, 3, 7, 21, 89, 267, 623, 1869\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": ". If the input is zero",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: provided is negative, ignore the sign and provide the output. If the input is zero | If the input is zero the output should be “No Factors”. |   |  | Sample In…",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "cognizant"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-cognizant.q0007",
+      "problem": "**Cognizant · Que 15**\n\nHere the user should give you two numbers for that you have to find the LCM of them,\n\nWhere LCM is Lowest Common factor of two numbers is the smallest number that divides both of them.\n\nSample Input 1:\n\n10 15\n\nSample Output 1:\n\n30\n\nSample Input 2:\n\n60 20\n\nSample Output 2:\n\n60\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "1:",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: 1: |  | 10 15 |  | Sample Output 1: |  | 30 |  | Sample Input 2: |  | 60 20 |  | Sample Output 2: |  | 60",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "cognizant"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-cognizant.q0008",
+      "problem": "**Cognizant · Que 16**\n\nAnanya Pandey’s professor has suggested her to prepare well for the lesson on seasons. While her professor says a month, she needs to tell the season corresponding to that month. Write a program to solve the above task.\n\nSpring – March to May,\nSummer – June to August,\nAutumn – September to November and,\nWinter – December to February.\nThe month should be in the range of 1 to 12. If not the output should be “Invalid month”.\nSample Input 1:\n\nEnter the month: 08\nSample Output 1:\n\nSeason: Summer\nSample Input 2:\n\nEnter the month: 14\nSample Output 2:\n\nInvalid month\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "should be “Invalid month”.",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: 1: |  | Enter the month: 08 | Sample Output 1: |  | Season: Summer | Sample Input 2: |  | Enter the month: 14 | Sample Output 2: |  | Invalid month",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "cognizant"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-cognizant.q0009",
+      "problem": "**Cognizant · Que 17**\n\nThere is a scheme declared in theatre, in which one ticket gets a 10% discount on the total cost of tickets if there is a bulk booking which is more than 20 tickets, and if there is a special coupon card then there is 2% discount on total the cost. Also, customer can buy Refreshments which additional cost of Rs. 50 per person.\n\nThe cost of the K class Rs. 75 and the Q class is Rs. 150.\n\nWrite a program to find the total cost as per the scheme.\n\nNote: In-class K and class Q, you have to buy at a time the minimum of 5 tickets and a maximum of 40. If this condition fails then display the message “Minimum of 5 and Maximum of 40 Tickets”.  \n\nIf the user is given a value other than class ‘K’ or ‘Q’ the output should be “Invalid Input”.\n\nThe cost should be printed correctly to the two decimal places.\n\nSample Input 1:\n\nEnter the no of ticket:35\nDo you want refreshment:y\nDo you have coupon code:y\nEnter the circle:k\nSample Output 1:\n\nTicket cost:4065.25\nSample Input 2:\n\nEnter the no of ticket:1\nSample Output 2:\n\nMinimum of 5 and Maximum of 40 Tickets\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "should be “Invalid Input”.",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: ”. |  | The cost should be printed correctly to the two decimal places. |  | Sample Input 1: |  | Enter the no of ticket:35 | Do you want refreshment:y | Do yo…",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "cognizant"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-cognizant.q0010",
+      "problem": "**Cognizant · Que 18**\n\nPrint the prime numbers from 1 to N, where N is an input.\n\nSample Input 1:\n\n15\n\nSample Output 1:\n\n2       3       5       7       11      13\n\nSample Input 2:\n\n5\n\nSample Output 2:\n\n2       3       5\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "1:",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: . |  | Sample Input 1: |  | 15 |  | Sample Output 1: |  | 2       3       5       7       11      13 |  | Sample Input 2: |  | 5 |  | Sample Output 2: |  | 2  …",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "cognizant"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-cognizant.q0011",
+      "problem": "**Cognizant · Que 19**\n\nBela teaches his son to find the factors of the given numbers. When he provides a number to his son, he should tell the factors of that number. Help him to do this, by writing a program. \n\nNote:\n\nIf the input is zero (0) then the output will be \"No Factors\".\nIf the input is any negative number, then first convert it positive solve.\nSample Input 1:\n\n54\n\nSample Output 1:\n\nFactors for 56 are:\n\n1\n\n2\n\n4\n\n7\n\n8\n\n14\n\n28\n\n56\n\n \n\nSample Input 2:\n\n-256\n\nSample Output 2:\n\nFactors of 256 are:\n\n1\n\n2\n\n4\n\n8\n\n16\n\n32\n\n64\n\n128\n\n256\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "will be \"No Factors\".",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: is zero (0) then the output will be \"No Factors\". | If the input is any negative number, then first convert it positive solve. | Sample Input 1: |  | 54 |  | S…",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "cognizant"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-cognizant.q0012",
+      "problem": "**Cognizant · Que 2**\n\nProblem Statement – Vohra went to a movie with his friends in a Wave theatre and during  break time he bought pizzas, puffs and cool drinks. Consider   the following prices : \n\nRs.100/pizza\nRs.20/puffs\nRs.10/cooldrink\nGenerate a bill for What Vohra has bought.\n\nSample Input 1:\n\nEnter the no of pizzas bought:10\nEnter the no of puffs bought:12\nEnter the no of cool drinks bought:5\nSample Output 1:\n\nBill Details\n\nNo of pizzas:10\nNo of puffs:12\nNo of cooldrinks:5\nTotal price=1290\nENJOY THE SHOW!!!\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "1:",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: 1: |  | Enter the no of pizzas bought:10 | Enter the no of puffs bought:12 | Enter the no of cool drinks bought:5 | Sample Output 1: |  | Bill Details |  | No …",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "cognizant"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-cognizant.q0013",
+      "problem": "**Cognizant · Que 20**\n\nProblem statement-: Elliot made a KeyLogger for his friend Romero, so that he can see the passwords of his friend. Keylogger is a software that can tell you the buttons pressed in the keyboard without the consent of the user, and hence unethical. Elliot made it to hack Romero’s passwords. The one problem is, Romero writes the passwords in lowercase characters only, and the keylogger only takes the values of the keys. Like, for a it takes 1, for b 2, and for z 26. For a given number Elliot produces all combinations of passwords in a dictionary and starts a dictionary based password attack. For a given number, print all the possible passwords in a lexicographic order.\n\nInput Format:\n\nOne line, denoting the value given by the keylogger\nOutput Format:\n\nAll possible combinations of keyloggers in new lines are lexicographically ordered.\nConstraints:\n\n2<=Number of digit in input<=1000\nSample Input:\n\n1234\n\nSample Output:\n\nabcd\n\nawd\n\nlcd\n\nExplanation:\n\nFor 12, you can take 1,2 that is ab, or you can take l.\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "Format:",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: Format: |  | One line, denoting the value given by the keylogger | Output Format: |  | All possible combinations of keyloggers in new lines are lexicographical…",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "cognizant"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-cognizant.q0014",
+      "problem": "**Cognizant · Que 21**\n\nProblem Statement- Ramesh went to a bookshop to buy books. There is a list of books with their value and price. Now Ramesh has limited money but he wants maximum value possible. Now there are 2 kinds of books, one is denoted with 1, that is independent, another one is denoted as 2, which you have to buy in double, that means you can not buy a single or odd number of those books. \n\nPrint the maximum value Ramesh can extract from the books. \n\n \n\nInput Format:\n\nFirst line contains two integers, n (Number of books) and T, total money he has.\nThen n lines, 4 variables in each line, \nThe serial number of the book\nThe value of the book\nThe price of the book\nThe marking (1 or 2)\n \n\nOutput Format:\n\nMaximum value possible to be bought.\n \n\nConstraints:\n\nNumber of books: <=100\nMaximum Money with Ramesh <=1000\nMax price of a book<=1000\n \n\nSample Input:\n\n5 20\n\n1 3 7 0\n\n3 9 10 1\n\n2 4 3 1\n\n7 3 2 0\n\n22 7 7 0\n\nSample Output:\n\n20\n\n \n\nExplanation:\n\nIt will be the 1st book,2nd and the third book\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "Format:",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: Format: |  | First line contains two integers, n (Number of books) and T, total money he has. | Then n lines, 4 variables in each line,  | The serial number of…",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "cognizant"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-cognizant.q0015",
+      "problem": "**Cognizant · Que 22**\n\nProblem Statement-  A taxi can take multiple passengers to the railway station at the same time.On the way back to the starting point,the taxi driver may pick up additional passengers for his next trip to the airport.A map of passenger location has been created,represented as a square matrix.\n\nThe Matrix is filled with cells,and each cell will have an initial value as follows:\n\nA value greater than or equal to zero represents a path.\nA value equal to 1 represents a passenger.\nA value equal to -1 represents an obstruction.\nThe rules of motion of taxi are as follows:\n\nThe Taxi driver starts at (0,0) and the railway station is at (n-1,n-1).Movement towards the railway station is right or down,through valid path cells.\nAfter reaching (n-1,n-1) the taxi driver travels back to (0,0) by travelling left or up through valid path cells.\nWhen passing through a path cell containing a passenger,the passenger is picked up.once the rider is picked up the cell becomes an empty path cell. \nIf there is no valid path between (0,0) and (n-1,n-1),then no passenger can be picked.\nThe goal is to collect as many passengers as possible so that the driver can maximize his earnings.\n \n\nSample Input 0\n\n4  \n\n4 \n\n0 0 0 1\n\n1 0 0 0\n\n0 0 0 0\n\n0 0 0 0\n\nSample Output 0\n\n2\n\nExplanation 0\n\nThe driver can contain a maximum of 2 passengers by taking the following path (0,0) → (0,1) → (0,2) → (0,3) → (1,3) → (2,3) → (3,3) → (3,2) → (3,1) → (3,0) → (2,0) → (1,0)  → (0,0)\n\nSample Input 1\n\n   3   \n\n   3    \n\n   0 1 -1 \n\n   1 0 -1\n\n   1 1 1\n\nSample Output 1\n\n5\n\nExplanation 1\n\nThe driver can contain a maximum of 5 passengers by taking the following path (0,0) → (0,1) → (1,1) → (2,1) → (2,2) → (2,1) → (2,0) → (1,0) → (0,0)\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "0",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: 0 |  | 4   |  | 4  |  | 0 0 0 1 |  | 1 0 0 0 |  | 0 0 0 0 |  | 0 0 0 0 |  | Sample Output 0 |  | 2 |  | Explanation 0 |  | The driver can contain a maximum of …",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "cognizant"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-cognizant.q0016",
+      "problem": "**Cognizant · Que 23**\n\nProblem Statement – Ratan is a crazy rich person. And he is blessed with luck, so he always made the best profit possible with the shares he bought. That means he bought a share at a low price and sold it at a high price to maximize his profit. Now you are an income tax officer and you need to calculate the profit he made with the given values of stock prices each day. You have to calculate only the maximum profit Ratan earned.\n\nNote that:\n\nRatan never goes into loss.\n \n\nExample 1\n\nPrice=[1,6,2]\nRatan buys it on the first day and sells it on the second. \nExample 2\n\nPrice=[9,8,6] \nThe Price always went down, Ratan never bought it.\n\n \n\nInput Format:\n\nFirst line with an integer n, denoting the number days with the value of the stack\nNext n days, telling the price of the stock on that very day.\n \n\nOutput Format:\n\nMaximum profit done by Ratan in a single line.\n \n\nConstraints:\n\nNumber of days <=10^8\n \n\nSample Input for Custom Testing\n\n \n\n STDIN              \n\n———–       \n\n7\n\n1 \n\n9 \n\n2 \n\n11\n\n1 \n\n9 \n\n2\n\n\n\n\nSample Output\n\n  10\n\n \n\n Explanation\n\nThe maximum profit possible is when Ratan buys it in 1 rupees and sells it in 11.\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "Format:",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: Format: |  | First line with an integer n, denoting the number days with the value of the stack | Next n days, telling the price of the stock on that very day.…",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "cognizant"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-cognizant.q0017",
+      "problem": "**Cognizant · Que 24**\n\nProblem Statement – Codu is given a string and he thinks the letters that are repeated do have more power. He gathers only the repeating characters and keeps them as the most powerful to least powerful manner. Now it is your turn to write a code that will help Codu to do that.\n\nNote that: only lowercase alphabets are accepted in input.\n\n \n\nInput Format:\n\nA string in a single line\n \n\nOutput Format:\n\nA string made of only the repeated characters as sorted their frequency reducin, if the same the lower ascii value comes before.\n \n\nConstraints:\n\nLength of string<=10^5\n \n\nSample Input:\n\nabcdefghaabca\n\n \n\nSample Output:\n\nabc\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "Format:",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: . |  |   |  | Input Format: |  | A string in a single line |   |  | Output Format: |  | A string made of only the repeated characters as sorted their frequency…",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "cognizant"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-cognizant.q0018",
+      "problem": "**Cognizant · Que 25**\n\nProblem Statement – How will we represent a binary tree? We can use a bracket structure for all of the edges, like (Parentnode , Childnode). Now if we use a node in a child node more than once, the tree can not be valid. Same for the parent node, a node can not be taken more than twice in  a graph as a parent node.\n\nSuppose we see this one graph\n\n(P,Q)(P,R)(Q,T)(R,W)(U,V)(Q,S)(R,U)(U,Z)(S,I)(W,Y)\n\nA tree with those edges may be illustrated in many ways.Here are two:\n\n                   P                            P\n\n                /    \\                        /     \\\n\n              Q      R                   Q      R\n\n            /   \\     /    \\               /   \\    /  \\\n\n          S   T   U   W           S    T  U  W\n\n            \\        / \\     \\          /          / \\      \\\n\n             I     V  Z    Y      I         Z  V    Y\n\nThe following is a recursive definition for the S-expression of a tree.\n\nS-exp(node)=(node->val(S-exp(node->first_child))(S-exp(node->second_child))),if node\n\n!NULL=””,node= =NULL\n\n         Where first_child->val<second _child->val(first_child->val is lexicographically than second_child->val)\n\nThis tree can be represented in S-expression in multiple ways.The lexicographically smallest way of expressing it as follows:\n\nP(Q(S(I))(T))(R(U(V)(Z))(W(Y))))\n\n \n\nTranslate the node-pair representation into its lexicographically smallest S-expression or report any errors that do not conform to the definition of the binary tree.\n\nThe List of errors with their codes is as follows: \n\n \n\nError                               Reason\n\nCode Stopped1                More than 2 children\n\nCode Stopped2                Duplicate Edges\n\nCode Stopped3                Cycle Present(node is direct descendant of more than one node)\n\nCode Stopped4                Multiple Roots\n\nCode Stopped5                Any other error\n\n \n\nFunctional Description\n\n \n\nComplete the function sExpression in the editor below.\n\nThe function must return either the lexicographically lowest S-expression or the lexicographically lowest error code as a string.\n \n\nsExpression has the following parameter(s):\n\nNodes:a string of space-separated parenthetical elements,each of which contains the name of two nodes connected by a comma.\n \n\nConstraints:\n\nAll node names are single characters in the range ascii[A-Z].\nThe maximum node count is 26.\nThere is no specific order to the input (parent,child) pairs.\n \n\n>Input Format for Custom Testing\n\n>Sample Case 0\n\nSample Input 0\n\n(B,D) (D,E) (A,B) (C,F) (E,G) (A,C)\n\nSample output 0\n\n(A(B(D(E(G))))(C(F)))\n\nExplanation 0\n\nA representation of tree is as follows:\n\n \n\n             A\n\n           /    \\\n\n         B      C\n\n         /         \\\n\n       D           F\n\n      /\n\n     E\n\n    /\n\n  G\n\n>Sample Case 1\n\nInput:\n\n(C,E)(D,F)(A,B)(A,C)(B,K)\n\nOutput:\n\nA(B(K))(C(E)))D(F))\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "0",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: (parent,child) pairs. |   |  | >Input Format for Custom Testing |  | >Sample Case 0 |  | Sample Input 0 |  | (B,D) (D,E) (A,B) (C,F) (E,G) (A,C) |  | Sample ou…",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "cognizant"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-cognizant.q0019",
+      "problem": "**Cognizant · Que 26**\n\nProblem Statement – Sahil watches TV all day and gets bored. He started playing this dumb game of identifying minimum number of inputs needed to reach a channel. As his cousin, you have to help him, but you live far from his house. So you decide to write a code that will ask Sahil for some inputs and give outputs respectively.\n\nHere are the problems you need to keep in mind,\n\nThere are 13 buttons on his remote: 10 buttons for the numbers (0-9) to form integers denoting respective channel index, “Up channel” button and  “ Down channel” button for going i +1th channel and i-1th channel from i respectively, and  a “Last viewed” button to see what’s the last channel before it. \nThe number buttons allow you to jump directly to a specific channel  (Ex: to go to channel 172 by typing 1,7,2).\nIf the channel which you are in is ith and that is the max channel index possible, by Up channel, you will reach the first channel possible. Same goes for the down channel button. You can go to the highest channel possible if you go down from the lowest channel possible.\n\n\n\nSahil can get from one channel to the next in one of the two ways.\n\nSahil’s parents have set some parental control on some channels on Aniruth’s television. The “Up Channel “ and “Down buttons” buttons skip these channels as these channels are not viewable.\n\nGiven a list of channels to view, the lowest channel, the highest channel, and a list of blocked channels, your program should return the minimum number of clicks necessary to get through all the shows that Anirudh would like to match.\n\n \n\nInput Format\n\nFirst line is the lowest Channel\nSecond-line is the highest Channel\nFollowed by a number of blocked channels B, \nand the next B lines contain the actual blocked channels.\nFollowed by the number of Channels to view V, and the next V lines contain the actual channels to view.\n \n\nConstraints \n\nThe lowest channel on the television will be greater than 0. and less than or equal to 10,000.\nThe highest channel on the television will be greater than or equal to the lowest channel. and less than or equal to 10.000. \nThe list of channels that are blocked on Anirudh’s television. All the channels in this list will be valid channels (greater than or equal to lowest channel, less than or equal 1 to highest channel). Duplicates may be Ignored. The blocked list can be a maximum of 40 channels.  \nThe sequence that Sahil must view contains between 1 and 50 elements. inclusive. All channels in this sequence are not in the blocked list and are between lowest channel and highest channel. Inclusive.\n \n\nSample Input 0:\n\n1\n\n20\n\n2\n\n18\n\n19\n\n5\n\n15\n\n14\n\n17\n\n1\n\n17\n\nSample output 0:\n\n7\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "s respectively.",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: s needed to reach a channel. As his cousin, you have to help him, but you live far from his house. So you decide to write a code that will ask Sahil for some i…",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "cognizant"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-cognizant.q0020",
+      "problem": "**Cognizant · Que 27**\n\nProblem Statement –  A company has a list of jobs to perform. Each job has a start time, end time and profit value. The manager has asked his employee Anirudh to pick jobs of his choice. Anirudh being greedy wants to select jobs for him in such a way that would maximize his earnings. \n\nGiven a list of jobs how many jobs and total earning are left for other employees once Anirudh\n\nPicks jobs of his choice.\n\nNote: Anirudh can perform only one job at a time.\n\n \n\nInput format:\n\nEach Job has 3 pieces of info – Start Time,End Time and Profit\nThe first line contains the number of Jobs for the day. Say ‘n’. So there will be ‘3n lines following as each job has 3 lines.\nEach of the next ‘3n’ lines contains jobs in the following format:\nstart_time\nend-time\nProfit\nstart-time and end-time are in HHMM 24HRS format i.e. 9am is 0900 and 9PM is 2100\n\n \n\nConstraints\n\nThe number of jobs in the day i.e’ is less than 10000\n0<_n<_10000\nstart-time is always less than end time.\n \n\nOutput format :-\n\nProgram should return an array of 2 integers where\n1st one is number of jobs left and earnings of other employees\n\n\n\nSample Input 1 :\n\n4\n\n0200\n\n0300\n\n10\n\n0400\n\n0700\n\n20\n\n0300\n\n0800\n\n30\n\n0900\n\n1000\n\n50\n\n \n\nSample Output 1:\n\n1\n\n20\n\n \n\nSample Explanation 1\n\nChooses 1st, 3rd and 4th job cause they don’t overlap. So only second job is remaining.\n\n \n\nSample Input 2:\n\n5\n\n0805\n\n0830\n\n100\n\n0835\n\n0900\n\n100\n\n0905\n\n0930\n\n100\n\n0935\n\n1000\n\n100\n\n1005\n\n1030\n\n100\n\n \n\nSample output 2:\n\n0\n\n0\n\n \n\nSample Explanation 2:\n\nAnirudh can work on all appointments as there are none overlapping.\n\nHence 0 appointments and 0 earnings for other employees.\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "format :-",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: format: |  | Each Job has 3 pieces of info – Start Time,End Time and Profit | The first line contains the number of Jobs for the day. Say ‘n’. So there will be…",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "cognizant"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-cognizant.q0021",
+      "problem": "**Cognizant · Que 28**\n\nProblem Statement : Given two integers, the task is to find the hamming distance between two integers. Hamming Distance between two integers is the number of bits that are different at the same position in both numbers.\n\nExample :\n\nInput 1:\n\na= 10 , b =8\n\nOutput 1:\n\n1\n\nExplanation: 10= 1010 , 8=1000 , No of different bits=1.\n\nInput 2:\n\na=9, b=14\n\nOutput 2:\n\n3\n\nExplanation: 9=1001 , 14=1110  , No. of different bits=3.\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "1:",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: 1: |  | a= 10 , b =8 |  | Output 1: |  | 1 |  | Explanation: 10= 1010 , 8=1000 , No of different bits=1. |  | Input 2: |  | a=9, b=14 |  | Output 2: |  | 3 |  …",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "cognizant"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-cognizant.q0022",
+      "problem": "**Cognizant · Que 29**\n\nProblem Statement: Given boolean 2D matrix , find the number of islands. A group of connected 1s form an island. For example, the below matrix contains 5 islands.\n\nExample :\n\nm =5, n=5\n\n1  1  0  0  0 \n\n0  1  0  0  1 \n\n1  0  0  1  1 \n\n0  0  0  0  0 \n\n1  0  1  0  1 \n\nOutput :\n\n5\n\nExplanation:  There are total 5 island in the matrix.\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "5",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Trace the sample carefully; watch null / edge cases.",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "cognizant"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-cognizant.q0023",
+      "problem": "**Cognizant · Que 3**\n\nProblem Statement – Ritik wants a magic board, which displays a character for a corresponding number for his science project. Help him to develop such an application.\nFor example when the digits 65,66,67,68 are entered, the alphabet ABCD are to be displayed.\n[Assume the number of inputs should be always 4 ]\n\nSample Input 1:\n\nEnter the digits:\n65\n66\n67\n68\nSample Output 1:\n\n65-A\n66-B\n67-C\n68-D\n\nSample Input 2:\n\nEnter the digits:\n115\n116\n101\n112\nSample Output 2:\n\n115-s\n116-t\n101-e\n112-p\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "1:",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: s should be always 4 ] |  | Sample Input 1: |  | Enter the digits: | 65 | 66 | 67 | 68 | Sample Output 1: |  | 65-A | 66-B | 67-C | 68-D |  | Sample Input 2: |…",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "cognizant"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-cognizant.q0024",
+      "problem": "**Cognizant · Que 4**\n\nProblem Statement – FOE college wants to recognize the department which has succeeded in getting the maximum number of placements for this academic year. The departments that have participated in the recruitment drive are CSE,ECE, MECH. Help the college find the department getting maximum placements. Check for all the possible output given in the sample snapshot\n\nNote : If any input is negative, the output should be “Input is Invalid”.  If all department has equal number of placements, the output should be “None of the department has got the highest placement”.\n\nSample Input 1:\n\nEnter the no of students placed in CSE:90\nEnter the no of students placed in ECE:45\nEnter the no of students placed in MECH:70\nSample Output 1:\n\nHighest placement\nCSE\n\nSample Input 2:\n\nEnter the no of students placed in CSE:55\nEnter the no of students placed in ECE:85\nEnter the no of students placed in MECH:85\nSample Output 2:\n\nHighest placement\nECE\n\nMECH\n\nSample Input 3:\n\nEnter the no of students placed in CSE:0\nEnter the no of students placed in ECE:0\nEnter the no of students placed in MECH:0\nSample Output 3:\n\nNone of the department has got the highest placement\nSample Input 4:\n\nEnter the no of students placed in CSE:10\nEnter the no of students placed in ECE:-50\nEnter the no of students placed in MECH:40\nSample Output 4:\n\nInput is Invalid\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "given in the sample snapshot",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: is negative, the output should be “Input is Invalid”.  If all department has equal number of placements, the output should be “None of the department has got t…",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "cognizant"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-cognizant.q0025",
+      "problem": "**Cognizant · Que 5**\n\nProblem Statement  – In a theater, there is a discount scheme announced where one gets a 10% discount on the total cost of tickets when there is a bulk booking of more than 20 tickets, and a discount of 2% on the total cost of tickets if a special coupon card is submitted. Develop a program to find the total cost as per the scheme. The cost of the k class ticket is Rs.75 and q class is Rs.150. Refreshments can also be opted by paying an additional of Rs. 50 per member.\n\nHint: k and q and You have to book minimum of 5 tickets and maximum of 40 at a time. If fails display “Minimum of 5 and Maximum of 40 Tickets”.  If circle is given a value other than ‘k’ or ‘q’ the output should be “Invalid Input”.\n\nThe ticket cost should be printed exactly to two decimal places.\n\nSample Input 1:\n\nEnter the no of ticket:35\nDo you want refreshment:y\nDo you have coupon code:y\nEnter the circle:k\nSample Output 1:\n\nTicket cost:4065.25\nSample Input 2:\n\nEnter the no of ticket:1\nSample Output 2:\n\nMinimum of 5 and Maximum of 40 Tickets\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "should be “Invalid Input”.",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: ”. |  | The ticket cost should be printed exactly to two decimal places. |  | Sample Input 1: |  | Enter the no of ticket:35 | Do you want refreshment:y | Do y…",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "cognizant"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-cognizant.q0026",
+      "problem": "**Cognizant · Que 6**\n\nProblem Statement – Rhea Pandey’s teacher has asked her to prepare well for the lesson on seasons. When her teacher tells a month, she needs to say the season corresponding to that month. Write a program to solve the above task.\n\nSpring – March to May,\nSummer – June to August,\nAutumn – September to November and,\nWinter – December to February.\nMonth should be in the range 1 to 12.  If not the output should be “Invalid month”.\n\nSample Input 1:\n\nEnter the month:11\nSample Output 1:\n\nSeason:Autumn\nSample Input 2:\n\nEnter the month:13\nSample Output 2:\n\nInvalid month\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "should be “Invalid month”.",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: 1: |  | Enter the month:11 | Sample Output 1: |  | Season:Autumn | Sample Input 2: |  | Enter the month:13 | Sample Output 2: |  | Invalid month",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "cognizant"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-cognizant.q0027",
+      "problem": "**Cognizant · Que 7**\n\nProblem Statement – To speed up his composition of generating unpredictable rhythms, Blue Bandit wants the list of prime numbers available in a range of numbers.Can you help him out?\n\nWrite a java program to print all prime numbers in the interval [a,b] (a and b, both inclusive).\n\nNote\n\nInput 1 should be lesser than Input 2. Both the inputs should be positive. \nRange must always be greater than zero.\nIf any of the condition mentioned above fails, then display “Provide valid input”\nUse a minimum of one for loop and one while loop\nSample Input 1:\n\n2\n\n15\n\nSample Output 1:\n\n2 3 5 7 11 13\n\nSample Input 2:\n\n8\n\n5\n\nSample Output 2:\n\nProvide valid input\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "1:",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: 1 should be lesser than Input 2. Both the inputs should be positive.  | Range must always be greater than zero. | If any of the condition mentioned above fails…",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "cognizant"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-cognizant.q0028",
+      "problem": "**Cognizant · Que 8**\n\nProblem Statement – Goutam and  Tanul plays  by  telling numbers.  Goutam says a number to Tanul.  Tanul should first reverse the number and check if it is same as the original.  If yes,  Tanul should say “Palindrome”.  If not, he should say “Not a Palindrome”.  If the number is negative, print “Invalid Input”.  Help Tanul by writing a program.\n\nSample Input 1 :\n\n21212\n\nSample Output 1 :\n\nPalindrome\n\nSample Input 2 :\n\n6186\n\nSample Output 2 :\n\nNot a Palindrome\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "1 :",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: ”.  Help Tanul by writing a program. |  | Sample Input 1 : |  | 21212 |  | Sample Output 1 : |  | Palindrome |  | Sample Input 2 : |  | 6186 |  | Sample Output…",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "cognizant"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-cognizant.q0029",
+      "problem": "**Cognizant · Que 9**\n\nXYZ Technologies is in the process of increment the salary of the employees.  This increment is done based on their salary and their performance appraisal rating.\n\nIf the appraisal rating is between 1 and 3, the increment is 10% of the salary.\nIf the appraisal rating is between 3.1 and 4, the increment is  25% of the salary.\nIf the appraisal rating is between 4.1 and 5, the increment is  30% of the salary.\nHelp them to do this,  by writing a program that displays the incremented salary. Write a class “IncrementCalculation.java” and write the main method in it.\n\nNote   :   If either the salary is 0 or negative  (or) if the appraisal rating is not in the range 1 to 5 (inclusive), then the output should be “Invalid Input”.\n\nSample Input 1 :\n\nEnter the salary\n8000\n\nEnter the Performance appraisal rating\n3\n\nSample Output  1 :\n\n8800\n\nSample Input  2 :\n\nEnter the salary\n7500\n\nEnter the Performance appraisal rating\n4.3\n\nSample Output  2 :\n\n9750\n\nSample Input  3 :\n\nEnter the salary\n-5000\n\nEnter the Performance appraisal rating\n6\n\nSample Output  3 :\n\nInvalid Input\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "should be “Invalid Input”.",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: ”. |  | Sample Input 1 : |  | Enter the salary | 8000 |  | Enter the Performance appraisal rating | 3 |  | Sample Output  1 : |  | 8800 |  | Sample Input  2 : …",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "cognizant"
+      ]
+    }
+  ]
+}

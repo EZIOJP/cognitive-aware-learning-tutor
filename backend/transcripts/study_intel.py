@@ -763,19 +763,20 @@ def _mcq_quality_key(question: dict[str, Any]) -> str:
 
 
 def _is_low_quality_mcq(question: dict[str, Any]) -> bool:
+    from backend.transcripts.generation_rules import (
+        banned_option_prefixes_for_lint,
+        banned_stems_for_lint,
+    )
+
     prompt = str(question.get("question") or "").casefold()
     options = [str(option).casefold().strip() for option in question.get("options") or []]
-    banned_stems = (
-        "which statement best matches",
-        "which statement best describes the note section",
-        "what topic is covered",
-        "completes this claim",
-        "____",
-        "note section",
-    )
+    banned_stems = banned_stems_for_lint()
     if any(stem in prompt for stem in banned_stems):
         return True
-    if any(option.startswith(("it relates to:", "mainly about:")) for option in options):
+    banned_prefixes = banned_option_prefixes_for_lint()
+    if any(option.startswith(banned_prefixes) for option in options):
+        return True
+    if "____" in prompt:
         return True
     if any(option in _JUNK_OPTION_LABELS for option in options):
         return True
@@ -892,21 +893,14 @@ def _quiz_role_prompt(
     material: str,
     section_title: str = "",
 ) -> str:
-    shared_rules = """Hard rules:
-- Ground EVERY question and the correct option ONLY in the material. No invented APIs or facts.
-- Ban bland stems: "What is X?", "Which of the following is true about X?", "completes this claim".
-- Distractors must be plausible near-misses (wrong API names, off-by-one indexes, swapped args).
-- Each item: 4 option strings; answer_index is 0-based.
-- Set "concept" to a short topic label (e.g. "Fancy indexing", "df.to_csv", "NumPy speed").
-- Set "hint" to one short coaching tip for that concept (shown when the learner is stuck / wrong).
-- Set "explanation" to teach why the correct option wins.
-- Do NOT ask about classroom logistics or the speaker.
-"""
-    section_line = (
-        f'\nTHIS TOPIC ONLY ({section_title}) — do not quiz other lecture sections.\n'
-        if section_title
-        else ""
-    )
+    from backend.transcripts.generation_rules import quiz_prompt_rules_block
+
+    shared_rules = quiz_prompt_rules_block(section_title=section_title)
+    section_line = ""
+    if section_title:
+        section_line = (
+            f'\nTHIS TOPIC ONLY ({section_title}) — do not quiz other lecture sections.\n'
+        )
     if role == "coding":
         focus_block = f"""Create exactly {n} CODING / API practice MCQs from the libraries and examples in the notes
 (NumPy, Pandas, Matplotlib, etc. — only what appears in the material).
@@ -997,83 +991,10 @@ def _collect_quiz_from_raw(
 
 
 def parse_pasted_mcq_quiz(text: str) -> list[dict[str, Any]]:
-    """
-    Parse copy-pasted web/book quizzes (GeeksforGeeks-style Question N / A B C D blocks).
-    """
-    blob = (text or "").replace("\r\n", "\n").strip()
-    if not blob:
-        return []
+    """Parse imported quiz text (delegates to quiz_import)."""
+    from backend.transcripts.quiz_import import parse_smart_quiz_import
 
-    # Split on "Question N" headers when present
-    parts = re.split(r"(?i)(?:^|\n)\s*question\s+(\d+)\s*", blob)
-    blocks: list[str] = []
-    if len(parts) > 1:
-        # parts: [preamble, num, body, num, body, ...]
-        for i in range(2, len(parts), 2):
-            blocks.append(parts[i].strip())
-    else:
-        blocks = [blob]
-
-    letter_re = re.compile(r"(?m)^\s*([A-Da-d])\s*[\).\:\-]\s*(.+?)\s*$")
-    questions: list[dict[str, Any]] = []
-    for bi, block in enumerate(blocks):
-        lines = [ln.rstrip() for ln in block.splitlines() if ln.strip()]
-        if not lines:
-            continue
-        # Drop noise lines
-        cleaned: list[str] = []
-        for ln in lines:
-            low = ln.casefold()
-            if low in {"discuss", "comments"} or low.startswith("last updated"):
-                continue
-            if re.match(r"(?i)^question\s*:?\s*$", ln.strip()):
-                continue
-            cleaned.append(ln)
-        if not cleaned:
-            continue
-
-        option_matches = list(letter_re.finditer("\n".join(cleaned)))
-        if len(option_matches) < 2:
-            continue
-        first_opt_line = option_matches[0].group(0)
-        # Prompt = text before first option line
-        joined = "\n".join(cleaned)
-        prompt = joined.split(first_opt_line, 1)[0].strip()
-        prompt = re.sub(r"(?i)^question\s*:?\s*", "", prompt).strip()
-        if len(prompt) < 8:
-            continue
-        options: list[str] = []
-        for m in option_matches[:6]:
-            options.append(m.group(2).strip())
-        if len(options) < 2:
-            continue
-        # Default correct = A unless "Answer:" found
-        answer_index = 0
-        ans = re.search(r"(?i)answer\s*[:\-]\s*([A-D])\b", block)
-        if ans:
-            answer_index = ord(ans.group(1).upper()) - ord("A")
-            answer_index = max(0, min(answer_index, len(options) - 1))
-        concept = ""
-        # Light topic guess from keywords
-        low_p = prompt.casefold()
-        if "numpy" in low_p or "np." in low_p:
-            concept = "NumPy"
-        elif "pandas" in low_p or "dataframe" in low_p or "df." in low_p:
-            concept = "Pandas"
-        questions.append(
-            {
-                "id": f"paste-{bi + 1}",
-                "question": _clip(prompt, 420),
-                "options": [_clip(o, 160) for o in options],
-                "answer_index": answer_index,
-                "explanation": "",
-                "hint": f"Review topic: {concept}" if concept else "Review this imported question",
-                "concept": concept or "Imported",
-                "source_chunk_id": "",
-                "citation": "pasted",
-            }
-        )
-    return questions
+    return parse_smart_quiz_import(text)
 
 
 def generate_quiz_items(
@@ -1198,7 +1119,12 @@ def generate_quiz_items(
     empty_streak = 0
     TOPIC_BODY_CAP = 3500
 
-    def _tag_item(item: dict[str, Any], section_title: str = "") -> dict[str, Any]:
+    def _tag_item(
+        item: dict[str, Any],
+        section_title: str = "",
+        *,
+        body_excerpt: str = "",
+    ) -> dict[str, Any]:
         out = dict(item)
         tid = ""
         title = section_title.strip()
@@ -1231,6 +1157,9 @@ def generate_quiz_items(
         out["tags"] = tags
         if not out.get("hint") and (tid or concept):
             out["hint"] = f"Review topic: {tid or concept}"
+        excerpt = (body_excerpt or "").strip()
+        if excerpt:
+            out["reading_excerpt"] = excerpt[:800]
         return out
 
     HARD_CAP = 160
@@ -1274,7 +1203,7 @@ def generate_quiz_items(
             limit=need,
         )
         for item in batch:
-            questions.append(_tag_item(item, section_title))
+            questions.append(_tag_item(item, section_title, body_excerpt=material_s[:800]))
         got = len(questions) - before
         call_log.append(
             {

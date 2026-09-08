@@ -1,0 +1,3022 @@
+{
+  "schema_version": 1,
+  "kind": "math",
+  "topic": {
+    "topic_id": "math.aptitude.dm-div",
+    "title": "DeepMind division",
+    "stage": "foundations",
+    "path": [
+      "Aptitude",
+      "DeepMind",
+      "arithmetic__div"
+    ],
+    "track": "aptitude",
+    "prerequisites": [],
+    "note_topic_ids": [
+      "MT1-T01"
+    ],
+    "description": "google-deepmind/mathematics_dataset (arithmetic__div)."
+  },
+  "questions": [
+    {
+      "id": "math.aptitude.dm-div.q0001",
+      "problem": "1016 divided by -127",
+      "answer": "-8",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0002",
+      "problem": "What is -31496220 divided by 14?",
+      "answer": "-2249730",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0003",
+      "problem": "172960 divided by -34592",
+      "answer": "-5",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0004",
+      "problem": "Divide 84669336 by 3.",
+      "answer": "28223112",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0005",
+      "problem": "Calculate 105 divided by 35.",
+      "answer": "3",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0006",
+      "problem": "Divide 189822 by 11166.",
+      "answer": "17",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0007",
+      "problem": "What is 1529784 divided by 2?",
+      "answer": "764892",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0008",
+      "problem": "-16285 divided by -9",
+      "answer": "16285/9",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0009",
+      "problem": "255510 divided by 3006",
+      "answer": "85",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0010",
+      "problem": "What is 2 divided by 80?",
+      "answer": "1/40",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0011",
+      "problem": "What is 39 divided by 3?",
+      "answer": "13",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0012",
+      "problem": "285 divided by -2896",
+      "answer": "-285/2896",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0013",
+      "problem": "0 divided by -1160",
+      "answer": "0",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0014",
+      "problem": "What is -18 divided by -2551?",
+      "answer": "18/2551",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0015",
+      "problem": "Calculate -27290 divided by 11.",
+      "answer": "-27290/11",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0016",
+      "problem": "Calculate -9426603 divided by -19.",
+      "answer": "496137",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0017",
+      "problem": "Calculate 190 divided by -308.",
+      "answer": "-95/154",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0018",
+      "problem": "What is -9608180 divided by -2?",
+      "answer": "4804090",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0019",
+      "problem": "What is 0 divided by 5757117?",
+      "answer": "0",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0020",
+      "problem": "Calculate 1035015 divided by 1035015.",
+      "answer": "1",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0021",
+      "problem": "-16232 divided by -6",
+      "answer": "8116/3",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0022",
+      "problem": "Divide 31810242 by 30038.",
+      "answer": "1059",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0023",
+      "problem": "13778886 divided by 23",
+      "answer": "599082",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0024",
+      "problem": "Divide 13976184 by -6.",
+      "answer": "-2329364",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0025",
+      "problem": "19 divided by 130",
+      "answer": "19/130",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0026",
+      "problem": "What is 114 divided by 18?",
+      "answer": "19/3",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0027",
+      "problem": "755272525 divided by -7",
+      "answer": "-107896075",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0028",
+      "problem": "55 divided by -16",
+      "answer": "-55/16",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0029",
+      "problem": "Calculate 8 divided by 626.",
+      "answer": "4/313",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0030",
+      "problem": "What is 180 divided by 90?",
+      "answer": "2",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0031",
+      "problem": "Calculate -4 divided by -917594.",
+      "answer": "2/458797",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0032",
+      "problem": "127664 divided by -63832",
+      "answer": "-2",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0033",
+      "problem": "Calculate 3076 divided by 161.",
+      "answer": "3076/161",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0034",
+      "problem": "Calculate -5647713 divided by -853.",
+      "answer": "6621",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0035",
+      "problem": "What is -129 divided by -63?",
+      "answer": "43/21",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0036",
+      "problem": "Calculate 2 divided by 62.",
+      "answer": "1/31",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0037",
+      "problem": "Calculate 10408662 divided by -946242.",
+      "answer": "-11",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0038",
+      "problem": "13088174 divided by 11",
+      "answer": "1189834",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0039",
+      "problem": "Calculate 780 divided by 3.",
+      "answer": "260",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0040",
+      "problem": "Divide -3874 by -149.",
+      "answer": "26",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0041",
+      "problem": "What is 205 divided by -4341?",
+      "answer": "-205/4341",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0042",
+      "problem": "Divide -1308570 by 261714.",
+      "answer": "-5",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0043",
+      "problem": "-345 divided by 69",
+      "answer": "-5",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0044",
+      "problem": "What is 2 divided by 5222827?",
+      "answer": "2/5222827",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0045",
+      "problem": "Divide 62945046 by 2619.",
+      "answer": "24034",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0046",
+      "problem": "Calculate -3 divided by -9497697.",
+      "answer": "1/3165899",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0047",
+      "problem": "Calculate -2508165 divided by 501633.",
+      "answer": "-5",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0048",
+      "problem": "4 divided by -121003",
+      "answer": "-4/121003",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0049",
+      "problem": "-9203 divided by -3",
+      "answer": "9203/3",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0050",
+      "problem": "What is -1119540 divided by -5?",
+      "answer": "223908",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0051",
+      "problem": "Divide -182 by -101.",
+      "answer": "182/101",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0052",
+      "problem": "What is 1182738 divided by 145?",
+      "answer": "1182738/145",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0053",
+      "problem": "Calculate -144799 divided by -7621.",
+      "answer": "19",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0054",
+      "problem": "Calculate -5 divided by 734.",
+      "answer": "-5/734",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0055",
+      "problem": "Divide 55 by 5.",
+      "answer": "11",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0056",
+      "problem": "What is -80 divided by -16?",
+      "answer": "5",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0057",
+      "problem": "Divide 0 by 33.",
+      "answer": "0",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0058",
+      "problem": "What is 4 divided by 1796093?",
+      "answer": "4/1796093",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0059",
+      "problem": "Divide 1994435 by 231.",
+      "answer": "1994435/231",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0060",
+      "problem": "Divide 493 by -17.",
+      "answer": "-29",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0061",
+      "problem": "Divide 176593 by 222.",
+      "answer": "176593/222",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0062",
+      "problem": "What is 84 divided by -3?",
+      "answer": "-28",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0063",
+      "problem": "Divide 2 by -1000.",
+      "answer": "-1/500",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0064",
+      "problem": "Divide -80 by -20.",
+      "answer": "4",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0065",
+      "problem": "What is 0 divided by -10022?",
+      "answer": "0",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0066",
+      "problem": "What is 59233539 divided by 4?",
+      "answer": "59233539/4",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0067",
+      "problem": "Calculate 33637189 divided by 5.",
+      "answer": "33637189/5",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0068",
+      "problem": "Calculate 102456340 divided by 5122817.",
+      "answer": "20",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0069",
+      "problem": "Divide 28 by 1417936.",
+      "answer": "7/354484",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0070",
+      "problem": "What is 17 divided by 3275?",
+      "answer": "17/3275",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0071",
+      "problem": "16 divided by -1088963",
+      "answer": "-16/1088963",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0072",
+      "problem": "Divide -50 by -50.",
+      "answer": "1",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0073",
+      "problem": "What is -351368 divided by 8?",
+      "answer": "-43921",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0074",
+      "problem": "What is 41280 divided by -13760?",
+      "answer": "-3",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0075",
+      "problem": "Divide -49429972 by -8.",
+      "answer": "12357493/2",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0076",
+      "problem": "Calculate 2581 divided by 1.",
+      "answer": "2581",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0077",
+      "problem": "What is -3440 divided by 29676?",
+      "answer": "-860/7419",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0078",
+      "problem": "What is 20224737 divided by -9?",
+      "answer": "-2247193",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0079",
+      "problem": "What is 170 divided by 5?",
+      "answer": "34",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0080",
+      "problem": "Calculate -305 divided by -5.",
+      "answer": "61",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0081",
+      "problem": "Calculate 7825851 divided by 237147.",
+      "answer": "33",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0082",
+      "problem": "2813664 divided by 28",
+      "answer": "100488",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0083",
+      "problem": "-4 divided by -10346",
+      "answer": "2/5173",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0084",
+      "problem": "264 divided by -1006",
+      "answer": "-132/503",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0085",
+      "problem": "Calculate -474 divided by -2.",
+      "answer": "237",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0086",
+      "problem": "What is -65113526 divided by -2?",
+      "answer": "32556763",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0087",
+      "problem": "Calculate 531500 divided by -132875.",
+      "answer": "-4",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0088",
+      "problem": "6 divided by 69",
+      "answer": "2/23",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0089",
+      "problem": "Calculate -7046 divided by 5.",
+      "answer": "-7046/5",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0090",
+      "problem": "Divide -3 by -25879608.",
+      "answer": "1/8626536",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0091",
+      "problem": "What is 6182807 divided by -10?",
+      "answer": "-6182807/10",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0092",
+      "problem": "Calculate -8943144 divided by -21.",
+      "answer": "425864",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0093",
+      "problem": "Divide 3669905 by 2.",
+      "answer": "3669905/2",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0094",
+      "problem": "39930 divided by -11",
+      "answer": "-3630",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0095",
+      "problem": "What is -5312 divided by -1328?",
+      "answer": "4",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0096",
+      "problem": "What is -2 divided by 124397365?",
+      "answer": "-2/124397365",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0097",
+      "problem": "Calculate 117557026 divided by 139.",
+      "answer": "845734",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0098",
+      "problem": "What is -463 divided by 908?",
+      "answer": "-463/908",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0099",
+      "problem": "Calculate 1123047 divided by 5.",
+      "answer": "1123047/5",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0100",
+      "problem": "233613116 divided by -1578467",
+      "answer": "-148",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0101",
+      "problem": "-48 divided by -24",
+      "answer": "2",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0102",
+      "problem": "Divide -35621469 by 39.",
+      "answer": "-913371",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0103",
+      "problem": "What is 3267 divided by -63055?",
+      "answer": "-3267/63055",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0104",
+      "problem": "What is 698 divided by -1281?",
+      "answer": "-698/1281",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0105",
+      "problem": "Divide -1305 by 5.",
+      "answer": "-261",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0106",
+      "problem": "Divide -1592 by 796.",
+      "answer": "-2",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0107",
+      "problem": "Calculate -1 divided by -2338.",
+      "answer": "1/2338",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0108",
+      "problem": "What is 141340708 divided by 548?",
+      "answer": "257921",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0109",
+      "problem": "What is -29607 divided by -5?",
+      "answer": "29607/5",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0110",
+      "problem": "What is -551895 divided by 5?",
+      "answer": "-110379",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0111",
+      "problem": "461649652 divided by 46",
+      "answer": "10035862",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0112",
+      "problem": "Divide 1 by -237.",
+      "answer": "-1/237",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0113",
+      "problem": "What is 1737 divided by 9?",
+      "answer": "193",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0114",
+      "problem": "What is 32641 divided by 7?",
+      "answer": "4663",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0115",
+      "problem": "Divide -3 by 87.",
+      "answer": "-1/29",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0116",
+      "problem": "-6 divided by 56",
+      "answer": "-3/28",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0117",
+      "problem": "Divide -1 by 1267.",
+      "answer": "-1/1267",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0118",
+      "problem": "Calculate -1615 divided by 323.",
+      "answer": "-5",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0119",
+      "problem": "What is -1107015 divided by -10543?",
+      "answer": "105",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0120",
+      "problem": "-283437 divided by -3",
+      "answer": "94479",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0121",
+      "problem": "-4372662 divided by 10486",
+      "answer": "-417",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0122",
+      "problem": "572315 divided by -114463",
+      "answer": "-5",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0123",
+      "problem": "Divide 56 by 56.",
+      "answer": "1",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0124",
+      "problem": "-19570 divided by -3914",
+      "answer": "5",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0125",
+      "problem": "5 divided by 106046249",
+      "answer": "5/106046249",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0126",
+      "problem": "What is 167122155 divided by 3?",
+      "answer": "55707385",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0127",
+      "problem": "What is -1083453980 divided by 154779140?",
+      "answer": "-7",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0128",
+      "problem": "What is -646894 divided by 323447?",
+      "answer": "-2",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0129",
+      "problem": "Calculate -13800 divided by 25.",
+      "answer": "-552",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0130",
+      "problem": "Calculate 1828323 divided by -7.",
+      "answer": "-261189",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0131",
+      "problem": "Calculate 16265 divided by 238.",
+      "answer": "16265/238",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0132",
+      "problem": "Calculate 7 divided by 28119839.",
+      "answer": "7/28119839",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0133",
+      "problem": "Calculate 62933 divided by 611.",
+      "answer": "103",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0134",
+      "problem": "Divide -27 by -23.",
+      "answer": "27/23",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0135",
+      "problem": "-14352 divided by -276",
+      "answer": "52",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0136",
+      "problem": "What is 9829 divided by 626?",
+      "answer": "9829/626",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0137",
+      "problem": "Calculate 2 divided by -222.",
+      "answer": "-1/111",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0138",
+      "problem": "Divide 29 by -3.",
+      "answer": "-29/3",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0139",
+      "problem": "309729 divided by -21",
+      "answer": "-14749",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0140",
+      "problem": "Divide -26421 by -148.",
+      "answer": "26421/148",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0141",
+      "problem": "Calculate -8958 divided by -4.",
+      "answer": "4479/2",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0142",
+      "problem": "What is 0 divided by 91?",
+      "answer": "0",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0143",
+      "problem": "Divide 10396 by -4.",
+      "answer": "-2599",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0144",
+      "problem": "What is -5576 divided by -4?",
+      "answer": "1394",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0145",
+      "problem": "Calculate -758 divided by 65.",
+      "answer": "-758/65",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0146",
+      "problem": "-315 divided by 815580",
+      "answer": "-7/18124",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0147",
+      "problem": "Calculate -225 divided by 45.",
+      "answer": "-5",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0148",
+      "problem": "Calculate -2916734 divided by 3.",
+      "answer": "-2916734/3",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0149",
+      "problem": "Divide -245128 by -2357.",
+      "answer": "104",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0150",
+      "problem": "13 divided by -45",
+      "answer": "-13/45",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0151",
+      "problem": "Calculate 2 divided by 4244.",
+      "answer": "1/2122",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0152",
+      "problem": "-2 divided by 44541",
+      "answer": "-2/44541",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0153",
+      "problem": "What is 20910965 divided by -3?",
+      "answer": "-20910965/3",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0154",
+      "problem": "What is -2397444 divided by -114164?",
+      "answer": "21",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0155",
+      "problem": "448 divided by -4",
+      "answer": "-112",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0156",
+      "problem": "Calculate 476 divided by 4.",
+      "answer": "119",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0157",
+      "problem": "What is -52481648 divided by -26240824?",
+      "answer": "2",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0158",
+      "problem": "-883539513 divided by 3",
+      "answer": "-294513171",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0159",
+      "problem": "Calculate 4 divided by -5779.",
+      "answer": "-4/5779",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0160",
+      "problem": "Divide 13 by 14.",
+      "answer": "13/14",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0161",
+      "problem": "Calculate 1112 divided by 278.",
+      "answer": "4",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0162",
+      "problem": "What is -5588 divided by -209?",
+      "answer": "508/19",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0163",
+      "problem": "Divide -1520995 by 29.",
+      "answer": "-1520995/29",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0164",
+      "problem": "What is 35313926 divided by -17656963?",
+      "answer": "-2",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0165",
+      "problem": "Divide 346 by 2.",
+      "answer": "173",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0166",
+      "problem": "Calculate 629 divided by 10.",
+      "answer": "629/10",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0167",
+      "problem": "Divide -513 by 3.",
+      "answer": "-171",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0168",
+      "problem": "What is 37023 divided by 21?",
+      "answer": "1763",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0169",
+      "problem": "0 divided by 13096",
+      "answer": "0",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0170",
+      "problem": "Calculate -9324 divided by -942.",
+      "answer": "1554/157",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0171",
+      "problem": "-8283 divided by -3",
+      "answer": "2761",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0172",
+      "problem": "What is 1 divided by 148?",
+      "answer": "1/148",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0173",
+      "problem": "What is 2948324 divided by -439?",
+      "answer": "-6716",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0174",
+      "problem": "Calculate 96782805 divided by 13826115.",
+      "answer": "7",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0175",
+      "problem": "Calculate -9 divided by -1186.",
+      "answer": "9/1186",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0176",
+      "problem": "What is 2 divided by -175225?",
+      "answer": "-2/175225",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0177",
+      "problem": "Divide -642 by 3080.",
+      "answer": "-321/1540",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0178",
+      "problem": "Calculate -6 divided by 19.",
+      "answer": "-6/19",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0179",
+      "problem": "Calculate -502 divided by 366.",
+      "answer": "-251/183",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0180",
+      "problem": "Calculate -28017576 divided by 1556532.",
+      "answer": "-18",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0181",
+      "problem": "Divide -23518 by -696.",
+      "answer": "11759/348",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0182",
+      "problem": "What is 222 divided by -6?",
+      "answer": "-37",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0183",
+      "problem": "What is 10365 divided by 15?",
+      "answer": "691",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0184",
+      "problem": "Calculate 383218 divided by 191609.",
+      "answer": "2",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0185",
+      "problem": "Calculate 87 divided by -87.",
+      "answer": "-1",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0186",
+      "problem": "What is 41 divided by 125?",
+      "answer": "41/125",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0187",
+      "problem": "What is 86871892 divided by -4?",
+      "answer": "-21717973",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0188",
+      "problem": "-2448473 divided by -13",
+      "answer": "2448473/13",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0189",
+      "problem": "-143 divided by -238183",
+      "answer": "13/21653",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0190",
+      "problem": "55 divided by 55",
+      "answer": "1",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0191",
+      "problem": "What is 3 divided by -432498?",
+      "answer": "-1/144166",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0192",
+      "problem": "Calculate -18645110 divided by -5.",
+      "answer": "3729022",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0193",
+      "problem": "Calculate 145 divided by 108000.",
+      "answer": "29/21600",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0194",
+      "problem": "Calculate -1 divided by 816443.",
+      "answer": "-1/816443",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0195",
+      "problem": "Calculate -409638 divided by -77.",
+      "answer": "409638/77",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0196",
+      "problem": "Divide 2422245 by 484449.",
+      "answer": "5",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0197",
+      "problem": "What is 875 divided by 125?",
+      "answer": "7",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0198",
+      "problem": "Calculate -218 divided by 3118.",
+      "answer": "-109/1559",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0199",
+      "problem": "-106057238 divided by -8953",
+      "answer": "11846",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-div.q0200",
+      "problem": "Divide -336595 by 163.",
+      "answer": "-2065",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__div",
+      "hint": "DeepMind division",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__div"
+      ]
+    }
+  ]
+}

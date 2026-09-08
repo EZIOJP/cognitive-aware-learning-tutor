@@ -19,6 +19,7 @@ All project docs live here. Use with the file kernel at repo root.
 | [PROJECT_STATUS.md](PROJECT_STATUS.md) | What works now (cape-time / daily-use snapshot) |
 | [TASKS.md](TASKS.md) | Kanban-style tasks |
 | [CURRENT_ARCHITECTURE.md](CURRENT_ARCHITECTURE.md) | Short architecture summary (today) |
+| [BLOCKING_RULES.md](BLOCKING_RULES.md) | **How blocking actually works** — SoftLand ladder, Arm kills, modes, goals/unlocks, sharp edges (read before touching Settings) |
 | [HLD.md](HLD.md) | **High-level design** — system context, study loops, gaps (code-grounded) |
 | [LLD.md](LLD.md) | **Low-level design** — algorithms, schemas, config, file map |
 | [COMPLETION_SPRINT.md](COMPLETION_SPRINT.md) | **Cape-time board** — Sprints 1–3 done; verify (4) then polish (5) |

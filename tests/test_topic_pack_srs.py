@@ -10,13 +10,14 @@ from backend.quiz.review_cards import (
 
 def test_group_items_into_topic_packs_preserves_order():
     items = [
-        {"id": "a", "topic_id": "L5-T02", "question": "Q2", "concept": "Indexing"},
+        {"id": "a", "topic_id": "L5-T02", "question": "Q2", "concept": "Indexing", "reading_excerpt": "Fancy indexing copies."},
         {"id": "b", "topic_id": "L5-T01", "question": "Q1", "concept": "Memory"},
         {"id": "c", "topic_id": "L5-T02", "question": "Q2b", "concept": "Indexing"},
         {"id": "d", "question": "untagged"},
     ]
     packs = group_items_into_topic_packs(items)
     assert [p["topic_id"] for p in packs] == ["L5-T02", "L5-T01"]
+    assert packs[0]["reading_excerpt"] == "Fancy indexing copies."
     assert len(packs[0]["questions"]) == 2
     assert len(packs[1]["questions"]) == 1
 

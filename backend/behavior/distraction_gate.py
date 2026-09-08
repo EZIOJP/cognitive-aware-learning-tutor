@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-import os
+import time
 from datetime import UTC, datetime
 from typing import Any
 
@@ -12,6 +12,13 @@ from sqlalchemy.orm import Session
 from backend.behavior.time_fmt import format_hours_mins
 
 log = logging.getLogger("calt.distraction_gate")
+
+# Short TTL caches — concurrent extension/SPA polls share one payload.
+_GATE_TTL_S = 8.0
+_GATE_STALE_MAX_S = 180.0
+_NUDGE_TTL_S = 60.0
+_gate_payload_cache: dict[int, tuple[float, dict[str, Any]]] = {}
+_nudge_cache: dict[int, tuple[float, dict[str, Any]]] = {}
 
 # Seed list — common launchers / clients / desktop distractions
 # (user can extend via hard_block_exes). Browsers are never seeded here.
@@ -620,7 +627,49 @@ def _suggested_wake_note(
 
 def compute_distraction_gate(db: Session, user_id: int) -> dict[str, Any]:
     """Games locked unless: day unlimited (study goal + 1 chapter) or day pass."""
+    now_m = time.monotonic()
+    cached = _gate_payload_cache.get(int(user_id))
+    if cached is not None and (now_m - cached[0]) < _GATE_TTL_S:
+        return cached[1]
+
+    from backend.behavior.gate_notify import has_inflight, run_singleflight
+
+    # Another compute already running — prefer recent stale over waiting (or timing out).
+    if (
+        cached is not None
+        and (now_m - cached[0]) < _GATE_STALE_MAX_S
+        and has_inflight(int(user_id))
+    ):
+        return cached[1]
+
+    def _compute() -> dict[str, Any]:
+        # Re-check cache inside singleflight (another waiter may have filled it).
+        now2 = time.monotonic()
+        hit = _gate_payload_cache.get(int(user_id))
+        if hit is not None and (now2 - hit[0]) < _GATE_TTL_S:
+            return hit[1]
+        return _compute_distraction_gate_uncached(db, user_id)
+
+    def _stale() -> dict[str, Any] | None:
+        hit = _gate_payload_cache.get(int(user_id))
+        if hit is None:
+            return None
+        if (time.monotonic() - hit[0]) > _GATE_STALE_MAX_S:
+            return None
+        return hit[1]
+
+    return run_singleflight(
+        int(user_id),
+        _compute,
+        stale_fallback=_stale,
+        waiter_timeout=8.0,
+    )
+
+
+def _compute_distraction_gate_uncached(db: Session, user_id: int) -> dict[str, Any]:
+    """Full gate compute (caller holds singleflight / cache miss)."""
     from backend.behavior.category_scores import load_score_map
+    from backend.behavior.gate_notify import current_policy_gen
     from backend.behavior.demo_clock import is_demo, now_local, status as demo_status
     from backend.behavior.productivity_policy import load_policy_dict, resolve_session_score
     from backend.bible import store as bible_store
@@ -629,6 +678,14 @@ def compute_distraction_gate(db: Session, user_id: int) -> dict[str, Any]:
 
     policy = load_policy_dict(db, user_id)
     enabled = bool(policy.get("hard_block_enabled"))
+    try:
+        from backend.behavior.softland_policy import softland_policy_path, softland_enabled_from_policy
+
+        # Phase 2 dual-read: softland_policy.json wins when present.
+        if softland_policy_path().is_file():
+            enabled = softland_enabled_from_policy()
+    except Exception:
+        pass
     goal = max(1, int(policy.get("daily_goal_minutes") or 240))
     threshold = int(policy.get("threshold") or 60)
 
@@ -774,6 +831,14 @@ def compute_distraction_gate(db: Session, user_id: int) -> dict[str, Any]:
         next_step = "bible"
     elif plan_done:
         next_step = "open"
+        try:
+            from backend.quiz import study_loop_gate as sl_gate
+            from backend.quiz.daily_bite import bite_unfinished
+
+            if sl_gate.is_required() and bite_unfinished(db, user_id=user_id, today=day_date):
+                next_step = "study"
+        except Exception:
+            pass
     elif plan_window.get("phase") == "after_eod":
         # Past EOD without confirm — don't force plan for today; resets next calendar day
         next_step = "open"
@@ -793,6 +858,8 @@ def compute_distraction_gate(db: Session, user_id: int) -> dict[str, Any]:
         allow_paths = ["/bible", "/profile"]
     elif next_step == "plan":
         allow_paths = ["/bible", "/productivity", "/profile"]
+    elif next_step == "study":
+        allow_paths = ["/bible", "/productivity", "/profile", "/review"]
     else:
         allow_paths = ["*"]
 
@@ -841,7 +908,13 @@ def compute_distraction_gate(db: Session, user_id: int) -> dict[str, Any]:
         try:
             from backend.quiz.daily_practice import build_daily_practice_nudge
 
-            daily_practice = build_daily_practice_nudge(db, user_id=user_id)
+            nudge_hit = _nudge_cache.get(int(user_id))
+            now_n = time.monotonic()
+            if nudge_hit is not None and (now_n - nudge_hit[0]) < _NUDGE_TTL_S:
+                daily_practice = nudge_hit[1]
+            else:
+                daily_practice = build_daily_practice_nudge(db, user_id=user_id)
+                _nudge_cache[int(user_id)] = (now_n, daily_practice)
         except Exception as exc:  # noqa: BLE001
             log.debug("daily_practice nudge skipped: %s", exc)
 
@@ -867,7 +940,13 @@ def compute_distraction_gate(db: Session, user_id: int) -> dict[str, Any]:
         "bible_url": bible_url,
         "plan_url": plan_url,
         "redirect_url": (
-            bible_url if next_step == "bible" else plan_url if next_step == "plan" else None
+            bible_url
+            if next_step == "bible"
+            else plan_url
+            if next_step == "plan"
+            else "/review?tab=loop"
+            if next_step == "study"
+            else None
         ),
         "rewards": rewards,
         "plan_window": plan_window,
@@ -883,8 +962,17 @@ def compute_distraction_gate(db: Session, user_id: int) -> dict[str, Any]:
             "plan_eod": morning_store.plan_eod_hhmm(),
             "auto_plan": auto_plan_cfg_on,
             "auto_plan_confirm": auto_plan_confirm_on,
+            "study_loop_required": False,
         },
     }
+    try:
+        from backend.quiz import study_loop_gate as sl_gate
+
+        morning["config"]["study_loop_required"] = sl_gate.is_required()
+        morning["study_loop_gate"] = sl_gate.serialize()
+    except Exception:
+        morning["config"]["study_loop_required"] = False
+        morning["study_loop_gate"] = {"enabled": False}
 
     browser = build_browser_gate_section(
         enabled=enabled,
@@ -917,7 +1005,7 @@ def compute_distraction_gate(db: Session, user_id: int) -> dict[str, Any]:
     except Exception as exc:  # noqa: BLE001
         log.debug("locked screen extras skipped: %s", exc)
 
-    return {
+    result = {
         "enabled": enabled,
         "locked": locked_flag,
         "unlocked": unlocked,
@@ -960,4 +1048,51 @@ def compute_distraction_gate(db: Session, user_id: int) -> dict[str, Any]:
         "demo": demo_status(),
         "suggested_links": list(locked_extras.get("suggested_links") or []),
         "current_block": locked_extras.get("current_block"),
+        "policy_gen": current_policy_gen(user_id),
     }
+    # Extension + Desktop Focus: incubation / enforcer ownership (additive).
+    try:
+        from backend.behavior.break_reward import incubation_status
+        from backend.behavior.browser_gate_policy import mode_label
+        from backend.behavior.enforcer_ownership import enforcer_owns_kills
+
+        inc = incubation_status(int(user_id), db=db) or {}
+        result["incubation"] = {
+            "active": bool(inc.get("active")),
+            "remaining_sec": int(inc.get("remaining_sec") or 0),
+            "total_sec": int(inc.get("total_sec") or 480),
+        }
+        if result["incubation"]["active"] and isinstance(result.get("browser"), dict):
+            result["browser"] = dict(result["browser"])
+            result["browser"]["incubation_active"] = True
+            result["browser"]["enforce"] = True
+            result["browser"]["mode"] = "study"
+            result["browser"]["mode_label"] = mode_label("study")
+            result["browser_mode"] = "study"
+        result["desktop"] = {
+            "control": "CALT Desktop · Focus",
+            "enforcer_owns_kills": bool(enforcer_owns_kills()),
+            "hint": "Manage blocks in CALT Desktop Dashboard; Edge SoftLand via this gate.",
+        }
+    except Exception as exc:  # noqa: BLE001
+        log.debug("incubation/desktop gate enrich skipped: %s", exc)
+        result["incubation"] = {"active": False, "remaining_sec": 0, "total_sec": 480}
+        result["desktop"] = {
+            "control": "CALT Desktop · Focus",
+            "enforcer_owns_kills": False,
+            "hint": "Manage blocks in CALT Desktop Dashboard.",
+        }
+    try:
+        from backend.behavior.enforcer_runtime_publish import publish_enforcer_runtime
+        from backend.behavior.productivity_policy import load_policy_dict
+
+        publish_enforcer_runtime(
+            db,
+            int(user_id),
+            gate=result,
+            policy=load_policy_dict(db, int(user_id)),
+        )
+    except Exception as exc:  # noqa: BLE001
+        log.debug("enforcer_runtime publish skipped: %s", exc)
+    _gate_payload_cache[int(user_id)] = (time.monotonic(), result)
+    return result

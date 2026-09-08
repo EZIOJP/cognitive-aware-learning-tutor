@@ -63,6 +63,11 @@ Goals:
 - Keep existing code/mermaid fences intact; do not add new diagrams here.
 - Output markdown ONLY — no preamble about what you changed.
 
+Quiz-ready structure (required for per-topic quiz generation):
+- Add ## 🗂️ Topic Index (quiz-gen lookup table) with columns: ID | Topic | One-line scope
+- Use ## `L{n}-Txx` — Title headings for each teachable section (Lecture n from folder/title when known)
+- Skip meta sections from the index (Quick Lookup, Cheat-Sheet, Recap)
+
 {body}
 """
 
@@ -613,6 +618,12 @@ def _generate_notes_from_text_unwrapped(
         enrich_visuals=enrich_visuals if enrich_visuals is not None else not fast_mode,
         llm=llm,
         on_progress=progress,
+    )
+    from backend.transcripts.note_topic_structure import ensure_quiz_topic_structure
+
+    body = ensure_quiz_topic_structure(
+        body,
+        note_path=f"{folder_path}/{title}" if folder_path else title,
     )
     progress(
         f"Done — {count_mermaid_blocks(body)} mermaid, {count_code_blocks(body)} code blocks"

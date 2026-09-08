@@ -1,5 +1,6 @@
 /**
- * Manual health dumper — Dump captures, Send flushes queue. No autosync.
+ * Manual health dumper — Dump captures, Send flushes queue.
+ * No autosync. PC / desktop / web never pull the watch on a timer.
  */
 import { createWidget, widget, align, text_style, prop } from '@zos/ui'
 import { push } from '@zos/router'
@@ -64,7 +65,7 @@ function fmtSyncError(err, result) {
   }
   if (d.includes('413')) return 'Dump too large · retry Send (resumes chunk)'
   if (d.includes('network') || d.includes('-2') || (d.includes('fail') && d.includes('fetch'))) {
-    return 'Phone cannot reach PC · same Wi-Fi, hub :8765'
+    return 'Phone cannot reach PC · same Wi-Fi, hub :8765 or API :8000'
   }
   const short = raw.replace(/\s+/g, ' ').trim()
   return (short || 'Send failed · swipe to log').slice(0, 96)
@@ -237,6 +238,23 @@ Page({
       normal_color: 0x2a4a6a,
       press_color: 0x1e364d,
       click_func: () => this.doDump(),
+    })
+    y += btnH + gap
+
+    createWidget(widget.BUTTON, {
+      x: pad,
+      y,
+      w: contentW,
+      h: btnH,
+      radius: Math.round(btnH * 0.22),
+      text: 'Dump & Send',
+      text_size: Math.round(width * 0.045),
+      normal_color: 0x3d5a80,
+      press_color: 0x2c4160,
+      click_func: () => {
+        this.doDump()
+        this.doSend(messageBuilder)
+      },
     })
     y += btnH + gap
 

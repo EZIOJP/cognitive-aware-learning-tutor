@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CALT Desktop · Focus</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --panel: rgba(30, 41, 59, 0.92);
+      --border: rgba(255, 255, 255, 0.1);
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --accent: #10b981;
+      --accent-dim: rgba(16, 185, 129, 0.18);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      background: radial-gradient(1200px 600px at 10% -10%, #1e293b 0%, var(--bg) 55%);
+      color: var(--text);
+      padding: 20px 22px 28px;
+    }
+    h1 {
+      margin: 0 0 4px;
+      font-size: 1.35rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+    .sub {
+      margin: 0 0 18px;
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+    .grid {
+      display: grid;
+      gap: 14px;
+      grid-template-columns: 1fr;
+      max-width: 720px;
+    }
+    @media (min-width: 700px) {
+      .grid { grid-template-columns: 1.2fr 0.8fr; }
+    }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px 18px;
+    }
+    .card h2 {
+      margin: 0 0 10px;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      font-weight: 600;
+    }
+    .mode {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: #ecfdf5;
+      margin-bottom: 6px;
+    }
+    .why {
+      font-size: 1.05rem;
+      line-height: 1.45;
+      margin: 8px 0 4px;
+    }
+    .until {
+      color: var(--accent);
+      font-size: 0.95rem;
+      margin-top: 8px;
+    }
+    .pill {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      background: var(--accent-dim);
+      border: 1px solid rgba(16, 185, 129, 0.35);
+      color: #a7f3d0;
+      margin-right: 6px;
+    }
+    .pill.off {
+      background: rgba(100, 116, 139, 0.25);
+      border-color: rgba(148, 163, 184, 0.3);
+      color: var(--muted);
+    }
+    ul.blocked {
+      margin: 0;
+      padding-left: 1.15rem;
+      line-height: 1.55;
+      color: #cbd5e1;
+    }
+    #incubation.hidden, #earned .stub { }
+    #incubation.hidden { display: none; }
+    .meta {
+      margin-top: 16px;
+      font-size: 0.75rem;
+      color: #64748b;
+    }
+    .earned-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin-top: 4px;
+    }
+    .earned-row strong { color: var(--text); }
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 0 0 16px;
+      max-width: 720px;
+    }
+    .actions a {
+      display: inline-block;
+      padding: 8px 14px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: rgba(30, 41, 59, 0.92);
+      color: var(--text);
+      text-decoration: none;
+      font-size: 0.85rem;
+    }
+    .actions a.primary {
+      background: var(--accent-dim);
+      border-color: rgba(16, 185, 129, 0.45);
+      color: #a7f3d0;
+    }
+    .actions a.disabled {
+      opacity: 0.45;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <h1>CALT Desktop · Focus</h1>
+  <p class="sub">Control panel — Windows enforcer owns blocks. Closing this window does not stop kills.</p>
+
+  <nav class="actions" id="actions">
+    <a href="calt://rules">Rules</a>
+    <a href="calt://schedules">Schedules</a>
+    <a href="calt://device">Device</a>
+    <a class="primary" href="calt://free" id="btn-free">Free time (PIN)…</a>
+    <a class="primary disabled" href="calt://spend" id="btn-spend">Spend earned…</a>
+  </nav>
+
+  <div class="grid">
+    <section class="card" id="active-card">
+      <h2>Active</h2>
+      <div class="mode" id="mode">…</div>
+      <div>
+        <span class="pill" id="armed">…</span>
+        <span class="pill off" id="morning">…</span>
+      </div>
+      <p class="why" id="why">Loading…</p>
+      <p class="until" id="until"></p>
+    </section>
+
+    <section class="card">
+      <h2>Blocked</h2>
+      <ul class="blocked" id="blocked"></ul>
+    </section>
+
+    <section class="card hidden" id="incubation">
+      <h2>Incubation break</h2>
+      <p class="why" id="incubation-copy">Walk / stretch — entertainment stays blocked.</p>
+      <p class="until" id="incubation-time"></p>
+    </section>
+
+    <section class="card" id="earned">
+      <h2>Earned free time</h2>
+      <div class="earned-row"><span>Balance</span><strong id="bal">0 min</strong></div>
+      <div class="earned-row"><span>Earned today</span><strong id="daily">0 / 60</strong></div>
+    </section>
+
+    <section class="card" id="enforcer-card">
+      <h2>Native enforcer</h2>
+      <div class="earned-row"><span>Status</span><strong id="enf-status">…</strong></div>
+      <p class="why" id="enf-kill" style="font-size:0.9rem;color:var(--muted)">No kills logged yet.</p>
+    </section>
+  </div>
+
+  <p class="meta" id="stamp">Waiting for bridge…</p>
+
+  <script>
+    function applySnapshot(s) {
+      if (!s || !s.active) return;
+      var a = s.active;
+      document.getElementById("mode").textContent = a.browser_mode_label || "—";
+      var armed = document.getElementById("armed");
+      armed.textContent = a.hard_block_armed ? "Hard block armed" : "Hard block off";
+      armed.className = a.hard_block_armed ? "pill" : "pill off";
+      document.getElementById("morning").textContent = "Next: " + (a.morning_next || "—");
+      document.getElementById("why").textContent = a.why || "";
+      var until = a.until || {};
+      document.getElementById("until").textContent = until.label || "";
+      var ul = document.getElementById("blocked");
+      ul.innerHTML = "";
+      (a.blocked_summary || []).forEach(function (line) {
+        var li = document.createElement("li");
+        li.textContent = line;
+        ul.appendChild(li);
+      });
+      var inc = s.incubation || {};
+      var box = document.getElementById("incubation");
+      if (inc.active) {
+        box.classList.remove("hidden");
+        document.getElementById("incubation-time").textContent =
+          Math.max(0, inc.remaining_sec || 0) + "s left of " + (inc.total_sec || 0) + "s";
+      } else {
+        box.classList.add("hidden");
+      }
+      var e = s.earned || {};
+      document.getElementById("bal").textContent = (e.balance_minutes || 0) + " min";
+      document.getElementById("daily").textContent =
+        (e.daily_earned || 0) + " / " + (e.daily_cap || 60);
+      document.getElementById("stamp").textContent =
+        "Updated " + new Date().toLocaleTimeString();
+      var act = s.actions || {};
+      var free = document.getElementById("btn-free");
+      var canPin = !!act.can_pin_free && !act.incubation_blocks_pin;
+      if (free) {
+        if (canPin) free.classList.remove("disabled");
+        else free.classList.add("disabled");
+        free.title = act.incubation_blocks_pin
+          ? "Incubation blocks PIN free time"
+          : canPin
+            ? "Grant temporary free browse (PIN)"
+            : "Unavailable right now";
+      }
+      var spend = document.getElementById("btn-spend");
+      var canSpend = !!act.can_spend_earned && (e.balance_minutes || 0) > 0;
+      if (spend) {
+        if (canSpend) spend.classList.remove("disabled");
+        else spend.classList.add("disabled");
+        spend.title = canSpend
+          ? "Spend earned free minutes (PIN)"
+          : "Earn via Bible / plan / daily goal first";
+      }
+      var enf = s.enforcer || {};
+      var enfStatus = document.getElementById("enf-status");
+      var enfKill = document.getElementById("enf-kill");
+      if (enfStatus) {
+        if (enf.owns) enfStatus.textContent = "owns kills + tracking";
+        else if (enf.service_running === true) enfStatus.textContent = "service up (lock stale?)";
+        else if (enf.exe_built) enfStatus.textContent = "built — run/install";
+        else enfStatus.textContent = "not built";
+      }
+      if (enfKill) {
+        enfKill.textContent = enf.last_kill
+          ? ("Last kill: " + enf.last_kill)
+          : "No kills logged yet.";
+      }
+    }
+    window.__caltApplySnapshot = applySnapshot;
+  </script>
+</body>
+</html>

@@ -78,6 +78,12 @@ def ensure_note_stubs(
             block = f"## `{mt}` — {title}\n\nTODO: fill notes\n"
             additions.append(block)
             stubs_created += 1
+            try:
+                from backend.quiz.topic_stub_flags import set_stub
+
+                set_stub(mt, True, overwrite_false=False)
+            except Exception:
+                pass
 
         if additions:
             new_text = text.rstrip() + ("\n\n" if text.strip() else "") + "\n\n".join(additions)

@@ -72,6 +72,7 @@ def test_cached_status_respects_interval(monkeypatch):
 
     monkeypatch.setattr(sh, "probe_stack", fake_probe)
     monkeypatch.setattr(sh, "PROBE_INTERVAL_S", 30.0)
+    monkeypatch.setattr(sh, "PROBE_DOWN_INTERVAL_S", 30.0)
 
     t = {"now": 1000.0}
     monkeypatch.setattr(sh.time, "monotonic", lambda: t["now"])
@@ -86,6 +87,33 @@ def test_cached_status_respects_interval(monkeypatch):
     assert calls["n"] == 1
 
     t["now"] = 1031.0
+    sh.get_stack_health()
+    assert calls["n"] == 2
+
+
+def test_cached_status_backs_off_when_web_down(monkeypatch):
+    sh.reset_cache_for_tests()
+    calls = {"n": 0}
+
+    def fake_probe(**_kw):
+        calls["n"] += 1
+        return sh.StackHealth(api_up=True, web_up=False)
+
+    monkeypatch.setattr(sh, "probe_stack", fake_probe)
+    monkeypatch.setattr(sh, "PROBE_INTERVAL_S", 20.0)
+    monkeypatch.setattr(sh, "PROBE_DOWN_INTERVAL_S", 60.0)
+
+    t = {"now": 2000.0}
+    monkeypatch.setattr(sh.time, "monotonic", lambda: t["now"])
+
+    sh.get_stack_health(force=True)
+    assert calls["n"] == 1
+
+    t["now"] = 2030.0  # would re-probe at 20s if web were up
+    sh.get_stack_health()
+    assert calls["n"] == 1
+
+    t["now"] = 2061.0  # past 60s down-interval
     sh.get_stack_health()
     assert calls["n"] == 2
 

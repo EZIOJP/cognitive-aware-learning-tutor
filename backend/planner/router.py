@@ -395,7 +395,7 @@ def _adherence_for_day(db: Session, user: User, day: datetime) -> dict:
         for s in sessions
         if s.start_time
         and s.end_time
-        and not is_ignored_app(s.app_name or "", s.window_title or "")
+        and not is_ignored_app(s.app_name or "", s.window_title or "", source=s.source)
     ]
 
     scores = load_score_map(db)

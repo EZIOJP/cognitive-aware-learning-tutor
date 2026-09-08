@@ -2,8 +2,8 @@
 
 **Project:** Cognitive-Aware Learning Tutor  
 **Route:** `http://localhost:5173/lecture-notes`  
-**Updated:** 2026-06-24  
-**Companion:** [MERMAID_CODE_REFERENCE.md](./MERMAID_CODE_REFERENCE.md) (code excerpts) · [STUDY_LIBRARY_MERMAID_FILE_MAP.md](./STUDY_LIBRARY_MERMAID_FILE_MAP.md) (one-line file index)
+**Updated:** 2026-09-02  
+**Companion:** [MERMAID_CODE_REFERENCE.md](./MERMAID_CODE_REFERENCE.md) (code excerpts) · [STUDY_LIBRARY_MERMAID_FILE_MAP.md](./STUDY_LIBRARY_MERMAID_FILE_MAP.md) (one-line file index) · [MERMAID_VIEWER_UX.md](./MERMAID_VIEWER_UX.md) (zoom/font controls & limits)
 
 ---
 

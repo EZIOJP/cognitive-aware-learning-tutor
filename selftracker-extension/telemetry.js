@@ -198,6 +198,57 @@ async function maybePostBrowserTelemetry(api, gateCache, opts) {
     var payload = await buildBrowserTelemetryPayload(api, gateCache);
     if (!payload) return;
     _telemetryLastPost = now;
+
+    // Solo-pack: prefer native msg_host track_tab (works with :8000 stopped).
+    var nativeOk = await new Promise(function (resolve) {
+      try {
+        if (!api.runtime || typeof api.runtime.connectNative !== "function") {
+          resolve(false);
+          return;
+        }
+        var port = api.runtime.connectNative("com.calt.msg_host");
+        var done = false;
+        var timer = setTimeout(function () {
+          if (done) return;
+          done = true;
+          try {
+            port.disconnect();
+          } catch (e) {}
+          resolve(false);
+        }, 900);
+        port.onMessage.addListener(function (msg) {
+          if (done) return;
+          done = true;
+          clearTimeout(timer);
+          try {
+            port.disconnect();
+          } catch (e2) {}
+          resolve(Boolean(msg && msg.ok));
+        });
+        port.onDisconnect.addListener(function () {
+          if (done) return;
+          done = true;
+          clearTimeout(timer);
+          resolve(false);
+        });
+        var active = payload.active || {};
+        port.postMessage({
+          type: "track_tab",
+          schema_version: 1,
+          url: active.url || "",
+          title: active.title || "",
+          domain: active.domain || "",
+          focused: true,
+          ts: payload.ts || Date.now(),
+        });
+      } catch (e) {
+        resolve(false);
+      }
+    });
+
+    if (nativeOk) return;
+
+    // HTTP fallback when host missing / failed.
     fetch(TELEMETRY_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },

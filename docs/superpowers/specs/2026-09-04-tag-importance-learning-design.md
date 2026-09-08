@@ -2,7 +2,7 @@
 
 **Date:** 2026-09-04  
 **Status:** approved for implementation  
-**Related:** ADR-001 · `backend/quiz/srs.py` · `docs/superpowers/specs/2026-09-03-study-loop-design.md`
+**Related:** ADR-001 · `backend/quiz/srs.py` · `docs/superpowers/specs/2026-09-03-study-loop-design.md` · [Speed fluency (parallel debt)](./2026-09-04-speed-fluency-quiz.md) (`speed_reps_owed` — does not reuse `owes_corrects`)
 
 ## Goal
 

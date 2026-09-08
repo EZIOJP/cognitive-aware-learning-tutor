@@ -27,10 +27,26 @@ from backend.wearables.ingest_service import (
     upsert_wearable_daily,
 )
 from backend.wearables.day_stamp import resolve_ingest_day, tz_from_payload
+from backend.wearables.health_connect_map import coerce_ingest_body, inventory_categories
+
+_LIFE_WRITE_SOURCES = frozenset(
+    {
+        "mini_program",
+        "zepp",
+        "amazfit",
+        "health_connect",
+        "hc",
+        "google_fit",
+        "bridge_export",
+        "zeppbridge",
+    }
+)
 
 router = APIRouter(prefix="/api/wearables/zepp", tags=["wearables"])
 
 _SYNC_STATE_PATH = ROOT / "data" / "wearables_last_sync.json"
+_STATUS_CACHE: tuple[float, dict[str, Any]] | None = None
+_STATUS_TTL_S = 20.0
 
 
 def _read_sync_state() -> dict[str, Any]:
@@ -282,8 +298,15 @@ def wearable_sync_status(
     db: Session = Depends(get_db),
     _: None = Depends(require_wearable_key),
 ):
+    import time
+
     from backend.behavior.time_fmt import optional_hours_label, optional_minutes_label
     from backend.planner.service import local_tz
+
+    global _STATUS_CACHE
+    now = time.monotonic()
+    if _STATUS_CACHE is not None and (now - _STATUS_CACHE[0]) < _STATUS_TTL_S:
+        return _STATUS_CACHE[1]
 
     state = _read_sync_state()
     user = _owner(db)
@@ -358,12 +381,23 @@ def wearable_sync_status(
         ),
     }
 
-    return {
+    raw_payload: dict[str, Any] = {}
+    if wrow and wrow.payload_json:
+        try:
+            parsed = json.loads(wrow.payload_json)
+            if isinstance(parsed, dict):
+                raw_payload = parsed
+        except json.JSONDecodeError:
+            raw_payload = {}
+    categories = inventory_categories(raw_payload)
+
+    payload = {
         "ok": True,
         "reachable": True,
         "last_sync": state or None,
         "applied_to_life": applied,
         "wearable_day": serialize_wearable_daily(wrow),
+        "categories": categories,
         "authentic": authentic,
         "estimates": {
             "steps_to_exercise": "floor(steps / 100) minutes, capped at 180",
@@ -373,12 +407,15 @@ def wearable_sync_status(
             "sleep_quality": "watch score 0–100 → quality 1–5",
         },
         "storage": {
-            "wearable_daily": "SQLite wearable_daily (full snapshot)",
+            "wearable_daily": "SQLite wearable_daily (full snapshot + raw categories)",
             "life_daily_log": "sleep, exercise, outdoor, stress, life_score",
-            "hub_readings": "sleep_hours, steps, calories, heart_rate, spo2, stress, pai, distance_m",
+            "hub_readings": "sleep_hours, steps, calories, heart_rate, spo2, stress, pai, distance_m, hrv, temperature",
             "sync_mirror": "data/wearables_last_sync.json",
+            "ingest_sources": sorted(_LIFE_WRITE_SOURCES),
         },
     }
+    _STATUS_CACHE = (time.monotonic(), payload)
+    return payload
 
 
 @router.get("/today")
@@ -428,28 +465,39 @@ def ingest_zepp(
 
     user = _owner(db)
     host_today = datetime.now(local_tz()).date()
+    # Preserve extras (hrv, workouts, HC records, bridge daily, …) then normalize.
+    raw_in = body.model_dump(by_alias=True, exclude_none=False)
+    coerced = coerce_ingest_body(raw_in)
+    source = str(coerced.get("source") or body.source or "mini_program").strip()
+    source_l = source.lower()
+
     day = resolve_ingest_day(
         {
-            "local_date": body.local_date,
-            "source": body.source,
-            "meta": body.meta or {},
+            "local_date": coerced.get("local_date") or body.local_date,
+            "source": source,
+            "meta": coerced.get("meta") if isinstance(coerced.get("meta"), dict) else (body.meta or {}),
         },
         host_today=host_today,
     )
 
-    apply_to_life = (body.source or "").strip().lower() in ("mini_program", "zepp", "amazfit")
-    meta = dict(body.meta or {})
+    apply_to_life = source_l in _LIFE_WRITE_SOURCES
+    meta = dict(coerced.get("meta") or body.meta or {})
     tz_off = meta.get("tz_offset_min")
+    if tz_off is None:
+        tz_off = coerced.get("tz_offset_min")
     if tz_off is None:
         tz_off = body.tz_offset_min
     if tz_off is not None:
         meta["tz_offset_min"] = tz_off
-    if body.local_date and not meta.get("watch_local_date"):
-        meta["watch_local_date"] = body.local_date[:10]
-    if body.dump_id and not meta.get("dump_id"):
-        meta["dump_id"] = body.dump_id
-    if body.checksum and not meta.get("checksum"):
-        meta["checksum"] = body.checksum
+    watch_local = coerced.get("local_date") or body.local_date
+    if watch_local and not meta.get("watch_local_date"):
+        meta["watch_local_date"] = str(watch_local)[:10]
+    dump_id = coerced.get("dump_id") or body.dump_id
+    checksum = coerced.get("checksum") or body.checksum
+    if dump_id and not meta.get("dump_id"):
+        meta["dump_id"] = dump_id
+    if checksum and not meta.get("checksum"):
+        meta["checksum"] = checksum
     # Manual dump / chunk identity validation (soft — missing is OK for web tests)
     chunk = meta.get("chunk") if isinstance(meta.get("chunk"), dict) else {}
     if chunk:
@@ -462,40 +510,30 @@ def ingest_zepp(
             except (TypeError, ValueError) as e:
                 raise HTTPException(status_code=400, detail="Invalid chunk part/total") from e
 
-    payload = {
-        "dump": body.dump,
-        "dump_id": body.dump_id or meta.get("dump_id"),
-        "checksum": body.checksum or meta.get("checksum"),
-        "sleep": body.sleep.model_dump() if body.sleep else None,
-        "heart": body.heart.model_dump() if body.heart else None,
-        "activity": body.activity.model_dump() if body.activity else None,
-        "calorie": body.calorie.model_dump() if body.calorie else None,
-        "distance": body.distance.model_dump() if body.distance else None,
-        "spo2": body.spo2.model_dump() if body.spo2 else None,
-        "stress": body.stress.model_dump() if body.stress else None,
-        "pai": body.pai.model_dump() if body.pai else None,
-        "stand": body.stand.model_dump() if body.stand else None,
-        "sitting": body.sitting.model_dump() if body.sitting else None,
-        "battery": body.battery.model_dump() if body.battery else None,
-        "fat_burn": body.fat_burn.model_dump() if body.fat_burn else None,
-        "temperature": body.temperature.model_dump() if body.temperature else None,
-        "weather": body.weather.model_dump() if body.weather else None,
-        "meta_device": body.meta_device or None,
-        "capabilities": body.capabilities or None,
-        "device": body.device.model_dump() if body.device else None,
-        "meta": meta,
-        "captured_at": body.captured_at,
-        "local_date": day.isoformat(),
-        "tz_offset_min": tz_off,
-        "source": body.source,
+    # Start from coerced dump (includes hrv/workouts/…), overlay known fields.
+    payload: dict[str, Any] = {
+        k: v
+        for k, v in coerced.items()
+        if v is not None and k not in ("health_connect_records", "records", "daily")
     }
-    # drop Nones for cleaner JSON
+    payload.update(
+        {
+            "dump": coerced.get("dump") or body.dump,
+            "dump_id": dump_id or meta.get("dump_id"),
+            "checksum": checksum or meta.get("checksum"),
+            "meta": meta,
+            "captured_at": coerced.get("captured_at") or body.captured_at,
+            "local_date": day.isoformat(),
+            "tz_offset_min": tz_off,
+            "source": source,
+        }
+    )
     payload = {k: v for k, v in payload.items() if v is not None}
 
     applied = None
     if apply_to_life and payload:
         try:
-            applied = upsert_wearable_daily(db, user, day, payload, source=body.source)
+            applied = upsert_wearable_daily(db, user, day, payload, source=source)
         except PayloadTooLarge as e:
             raise HTTPException(status_code=413, detail=str(e)) from e
 
@@ -530,14 +568,14 @@ def ingest_zepp(
     try:
         from backend.behavior.comms_health import note_watch_ingest
 
-        note_watch_ingest(source=str(body.source or "mini_program"))
+        note_watch_ingest(source=str(source or "mini_program"))
     except Exception:
         pass
     _write_sync_state(
         {
             "last_ingest_at": datetime.now(timezone.utc).isoformat(),
-            "last_source": body.source,
-            "last_is_watch": apply_to_life,
+            "last_source": source,
+            "last_is_watch": apply_to_life and source_l in ("mini_program", "zepp", "amazfit"),
             "last_wrote_life": bool(apply_to_life and applied and not duplicate),
             "last_local_date": day.isoformat(),
             "last_watch_local_date": watch_local,
@@ -586,12 +624,13 @@ def ingest_zepp(
     return {
         "ok": True,
         "schema": body.schema_version,
-        "source": body.source,
+        "source": source,
         "local_date": day.isoformat(),
         "watch_local_date": watch_local,
         "tz_offset_min": tz_echo,
-        "captured_at": body.captured_at,
+        "captured_at": coerced.get("captured_at") or body.captured_at,
         "progress": progress,
+        "categories": inventory_categories(payload),
         "sleep_hours": sleep_hours,
         "sleep_label": optional_hours_label(sleep_hours),
         "sitting_min": sitting_min,

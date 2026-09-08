@@ -1,5 +1,5 @@
 import React from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router";
+import { BrowserRouter, HashRouter, Routes, Route, Navigate } from "react-router";
 import { ThemeProvider } from "../context/ThemeContext";
 import { StudySessionProvider } from "../context/StudySessionContext";
 import { PomodoroProvider } from "../context/PomodoroContext";
@@ -21,6 +21,13 @@ import { PluginRegistryProvider, usePlugins } from "../plugins/registry";
 import { FeatureStudioPage } from "../pages/settings/FeatureStudioPage";
 import { EasterProvider } from "../easter";
 import { AppErrorBoundary } from "../components/layout/AppErrorBoundary";
+import { EegSnapTestPage } from "../pages/EegSnapTestPage";
+import { isFocusDesktopShell } from "../utils/focusDesktopShell";
+
+/** Prebuilt Focus shell: HashRouter for file://, calt.app virtual host, or :5174 static serve. */
+function useDesktopShellRouter(): boolean {
+  return isFocusDesktopShell();
+}
 
 function AppRoutes() {
   const { getRoutes, isLoaded } = usePlugins();
@@ -32,7 +39,16 @@ function AppRoutes() {
   return (
     <Routes>
       <Route element={<AppShell />}>
-        <Route index element={<HomePage />} />
+        <Route
+          index
+          element={
+            isFocusDesktopShell() ? (
+              <Navigate to="/productivity" replace />
+            ) : (
+              <HomePage />
+            )
+          }
+        />
         <Route path="login" element={<Navigate to="/profile" replace />} />
         <Route path="admin" element={<AdminPanelPage />} />
         <Route path="profile" element={<ProfilePage />} />
@@ -41,6 +57,8 @@ function AppRoutes() {
         <Route path="settings/theme" element={<ThemeSettingsPage />} />
         <Route path="settings/plugins" element={<PluginSettingsPage />} />
         <Route path="settings/features" element={<FeatureStudioPage />} />
+        {/* Always available — LED play / ESP32 bring-up (also under EEG plugin) */}
+        <Route path="eeg" element={<EegSnapTestPage />} />
         <Route path="gre-vocab/add-words" element={<AddWordsPage />} />
         <Route path="hub" element={<Navigate to="/" replace />} />
         {/* Removed product lanes — bookmarks redirect home */}
@@ -54,7 +72,12 @@ function AppRoutes() {
           <Route key={i} path={route.path} element={route.element} />
         ))}
 
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route
+          path="*"
+          element={
+            <Navigate to={isFocusDesktopShell() ? "/productivity" : "/"} replace />
+          }
+        />
       </Route>
     </Routes>
   );
@@ -75,6 +98,9 @@ function DynamicProviders({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
+  const shell = useDesktopShellRouter();
+  const Router = shell ? HashRouter : BrowserRouter;
+
   return (
     <ThemeProvider>
       <AuthProvider>
@@ -82,13 +108,13 @@ export default function App() {
         <PluginRegistryProvider>
           <PomodoroProvider>
             <StudySessionProvider>
-              <BrowserRouter>
+              <Router>
                 <DynamicProviders>
                   <AppErrorBoundary>
                     <AppRoutes />
                   </AppErrorBoundary>
                 </DynamicProviders>
-              </BrowserRouter>
+              </Router>
             </StudySessionProvider>
           </PomodoroProvider>
         </PluginRegistryProvider>

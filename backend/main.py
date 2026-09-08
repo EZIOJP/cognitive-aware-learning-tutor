@@ -120,7 +120,8 @@ async def lifespan(app: FastAPI):
 
     _install_windows_disconnect_filter()
     ensure_at_head()
-    seed_reading_definitions(SessionLocal())
+    with SessionLocal() as db:
+        seed_reading_definitions(db)
     with SessionLocal() as db:
         from backend.core.auth import merge_demo_planner_into_solo
 
@@ -229,9 +230,11 @@ app.include_router(classification_router)
 app.include_router(app_router)
 
 try:
+    from backend.eeg.router import legacy_router as eeg_ws_router
     from backend.eeg.router import router as eeg_router
 
     app.include_router(eeg_router)
+    app.include_router(eeg_ws_router)
 except ImportError:
     pass
 
@@ -242,6 +245,14 @@ def health():
 
     current, head = get_revision_state()
     route_paths = {getattr(r, "path", "") for r in app.routes if hasattr(r, "path")}
+    eeg_info = {"enabled": bool(settings.eeg_enabled), "status": "disabled", "ok": True}
+    if settings.eeg_enabled:
+        try:
+            from backend.eeg import service as eeg_service
+
+            eeg_info = eeg_service.status_payload()
+        except Exception:
+            eeg_info = {"enabled": True, "status": "error", "ok": True}
     return {
         "status": "ok",
         "database": str(engine.url),
@@ -250,6 +261,7 @@ def health():
         "schema_ok": current == head,
         "app_env": settings.app_env,
         "eeg_enabled": settings.eeg_enabled,
+        "eeg": eeg_info,
         "ollama_enabled": settings.ollama_enabled,
         "dev_mode": settings.dev_mode,
         "features": {

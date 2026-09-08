@@ -1,0 +1,3022 @@
+{
+  "schema_version": 1,
+  "kind": "math",
+  "topic": {
+    "topic_id": "math.aptitude.dm-prob",
+    "title": "DeepMind probability",
+    "stage": "foundations",
+    "path": [
+      "Aptitude",
+      "DeepMind",
+      "probability__swr_p_level_set"
+    ],
+    "track": "aptitude",
+    "prerequisites": [],
+    "note_topic_ids": [
+      "MT1-T11"
+    ],
+    "description": "google-deepmind/mathematics_dataset (probability__swr_p_level_set)."
+  },
+  "questions": [
+    {
+      "id": "math.aptitude.dm-prob.q0001",
+      "problem": "Three letters picked without replacement from {m: 4, w: 1, g: 4, c: 1, z: 1, y: 1}. What is prob of picking 1 c, 1 g and 1 w?",
+      "answer": "1/55",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0002",
+      "problem": "What is prob of picking 1 j and 1 e when two letters picked without replacement from {j: 1, n: 1, k: 3, e: 2}?",
+      "answer": "2/21",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0003",
+      "problem": "What is prob of picking 2 e when two letters picked without replacement from {e: 9, k: 9}?",
+      "answer": "4/17",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0004",
+      "problem": "Four letters picked without replacement from {e: 1, p: 3, y: 1}. What is prob of picking 3 p and 1 y?",
+      "answer": "1/5",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0005",
+      "problem": "Calculate prob of picking 1 y and 1 t when two letters picked without replacement from {x: 2, t: 3, h: 2, b: 1, s: 1, y: 3}.",
+      "answer": "3/22",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0006",
+      "problem": "Two letters picked without replacement from ssppspsssps. What is prob of picking 2 p?",
+      "answer": "6/55",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0007",
+      "problem": "Three letters picked without replacement from mmmmmmmmummmumu. Give prob of picking 3 u.",
+      "answer": "1/455",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0008",
+      "problem": "Three letters picked without replacement from {j: 12, u: 2, v: 5}. What is prob of picking 1 u and 2 v?",
+      "answer": "20/969",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0009",
+      "problem": "What is prob of picking 3 y when three letters picked without replacement from {y: 5, g: 3}?",
+      "answer": "5/28",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0010",
+      "problem": "What is prob of picking 1 f and 1 u when two letters picked without replacement from erfuk?",
+      "answer": "1/10",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0011",
+      "problem": "What is prob of picking 2 l and 1 t when three letters picked without replacement from lptptllttettltptlp?",
+      "answer": "5/51",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0012",
+      "problem": "Two letters picked without replacement from oaaxggaxcabaxxabga. Give prob of picking 1 g and 1 b.",
+      "answer": "2/51",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0013",
+      "problem": "Four letters picked without replacement from {n: 10, a: 4}. Give prob of picking 2 a and 2 n.",
+      "answer": "270/1001",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0014",
+      "problem": "Two letters picked without replacement from wwywywwwwwwwyw. Give prob of picking 1 w and 1 y.",
+      "answer": "33/91",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0015",
+      "problem": "Three letters picked without replacement from pkkpkppppppppp. What is prob of picking 2 k and 1 p?",
+      "answer": "33/364",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0016",
+      "problem": "Calculate prob of picking 2 l and 2 b when four letters picked without replacement from lllllbllllllllllbll.",
+      "answer": "2/57",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0017",
+      "problem": "Four letters picked without replacement from {v: 3, y: 1, x: 1, r: 1, q: 3, d: 2}. Give prob of picking 1 y, 2 q and 1 v.",
+      "answer": "3/110",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0018",
+      "problem": "Two letters picked without replacement from axaiiiti. What is prob of picking 1 t and 1 a?",
+      "answer": "1/14",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0019",
+      "problem": "Two letters picked without replacement from {o: 6, q: 3, n: 1, b: 1, s: 1, w: 1}. What is prob of picking 1 b and 1 n?",
+      "answer": "1/78",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0020",
+      "problem": "What is prob of picking 1 v, 1 e and 1 b when three letters picked without replacement from {d: 2, v: 3, b: 6, n: 1, s: 2, e: 4}?",
+      "answer": "3/34",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0021",
+      "problem": "Three letters picked without replacement from {r: 4, c: 1, m: 4, t: 1}. What is prob of picking 1 r and 2 m?",
+      "answer": "1/5",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0022",
+      "problem": "What is prob of picking 3 g and 1 c when four letters picked without replacement from {c: 4, g: 3}?",
+      "answer": "4/35",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0023",
+      "problem": "Four letters picked without replacement from {t: 3, w: 6, x: 5, q: 1, d: 1, u: 1}. What is prob of picking 1 q, 1 u and 2 x?",
+      "answer": "1/238",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0024",
+      "problem": "Two letters picked without replacement from {m: 10}. What is prob of picking 2 m?",
+      "answer": "1",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0025",
+      "problem": "Calculate prob of picking 2 b when two letters picked without replacement from bbqqqqobqoqkobqb.",
+      "answer": "1/12",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0026",
+      "problem": "Two letters picked without replacement from pezectftcfpt. Give prob of picking 1 z and 1 c.",
+      "answer": "1/33",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0027",
+      "problem": "Two letters picked without replacement from {f: 2, r: 2, q: 3, g: 2}. What is prob of picking 1 f and 1 g?",
+      "answer": "1/9",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0028",
+      "problem": "What is prob of picking 1 m and 1 x when two letters picked without replacement from {x: 1, g: 2, w: 1, m: 1, v: 1, n: 1}?",
+      "answer": "1/21",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0029",
+      "problem": "What is prob of picking 1 d and 3 a when four letters picked without replacement from yydyaygakka?",
+      "answer": "1/330",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0030",
+      "problem": "What is prob of picking 2 o and 2 i when four letters picked without replacement from ooiisoisi?",
+      "answer": "1/7",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0031",
+      "problem": "Calculate prob of picking 1 p, 1 y and 1 h when three letters picked without replacement from {y: 3, x: 5, h: 4, p: 4}.",
+      "answer": "3/35",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0032",
+      "problem": "Four letters picked without replacement from {t: 2, u: 14, f: 2, d: 1}. What is prob of picking 1 t, 1 u and 2 f?",
+      "answer": "7/969",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0033",
+      "problem": "Calculate prob of picking 1 l, 2 o and 1 h when four letters picked without replacement from hcioicln.",
+      "answer": "0",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0034",
+      "problem": "What is prob of picking 2 h when two letters picked without replacement from hhhhhihihihhiiphii?",
+      "answer": "5/17",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0035",
+      "problem": "Two letters picked without replacement from {z: 3, x: 5, r: 2, q: 3}. What is prob of picking 1 x and 1 q?",
+      "answer": "5/26",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0036",
+      "problem": "Two letters picked without replacement from svtsqsvftvvvsq. Give prob of picking 2 v.",
+      "answer": "10/91",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0037",
+      "problem": "Four letters picked without replacement from madeeaejmmeeej. What is prob of picking 2 m and 2 a?",
+      "answer": "3/1001",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0038",
+      "problem": "Three letters picked without replacement from {a: 2, v: 6, e: 2, s: 3, n: 1}. Give prob of picking 3 v.",
+      "answer": "5/91",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0039",
+      "problem": "Four letters picked without replacement from efqykefl. Give prob of picking 1 l, 1 e, 1 q and 1 k.",
+      "answer": "1/35",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0040",
+      "problem": "What is prob of picking 2 i and 1 r when three letters picked without replacement from ioiaiooriiiw?",
+      "answer": "3/44",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0041",
+      "problem": "What is prob of picking 1 b, 1 q and 1 t when three letters picked without replacement from ttbbttqttqawbgqq?",
+      "answer": "9/70",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0042",
+      "problem": "What is prob of picking 2 x and 1 w when three letters picked without replacement from {a: 5, x: 3, w: 1}?",
+      "answer": "1/28",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0043",
+      "problem": "Three letters picked without replacement from {x: 1, q: 1, a: 2, f: 2, c: 2}. What is prob of picking 1 f, 1 a and 1 x?",
+      "answer": "1/14",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0044",
+      "problem": "Three letters picked without replacement from {q: 6, f: 2, x: 9}. What is prob of picking 2 q and 1 x?",
+      "answer": "27/136",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0045",
+      "problem": "Three letters picked without replacement from {h: 2, d: 3, x: 3, t: 3, y: 1, z: 1}. What is prob of picking 1 t, 1 y and 1 x?",
+      "answer": "9/286",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0046",
+      "problem": "Three letters picked without replacement from {v: 3, y: 3, j: 7}. Give prob of picking 2 j and 1 y.",
+      "answer": "63/286",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0047",
+      "problem": "Three letters picked without replacement from {o: 2, j: 6}. Give prob of picking 3 j.",
+      "answer": "5/14",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0048",
+      "problem": "What is prob of picking 1 r and 1 j when two letters picked without replacement from {j: 4, r: 4, d: 8, f: 1, a: 1, n: 2}?",
+      "answer": "8/95",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0049",
+      "problem": "What is prob of picking 1 c and 1 a when two letters picked without replacement from jcpccja?",
+      "answer": "1/7",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0050",
+      "problem": "Calculate prob of picking 1 z and 1 y when two letters picked without replacement from {y: 5, o: 1, w: 1, z: 3}.",
+      "answer": "1/3",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0051",
+      "problem": "Calculate prob of picking 1 b and 3 d when four letters picked without replacement from vdvbdbdv.",
+      "answer": "1/35",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0052",
+      "problem": "What is prob of picking 3 v when three letters picked without replacement from {b: 4, v: 6}?",
+      "answer": "1/6",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0053",
+      "problem": "Three letters picked without replacement from {c: 1, g: 2, y: 1}. What is prob of picking 1 g, 1 c and 1 y?",
+      "answer": "1/2",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0054",
+      "problem": "Three letters picked without replacement from ttcctcctcc. Give prob of picking 2 t and 1 c.",
+      "answer": "3/10",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0055",
+      "problem": "Four letters picked without replacement from {b: 2, z: 3, g: 7, s: 3, w: 2, l: 1}. Give prob of picking 1 g, 1 b, 1 w and 1 l.",
+      "answer": "7/765",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0056",
+      "problem": "What is prob of picking 2 u when two letters picked without replacement from {u: 13, a: 3}?",
+      "answer": "13/20",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0057",
+      "problem": "Four letters picked without replacement from eyeyyyeeeeeeeeeeeee. Give prob of picking 4 e.",
+      "answer": "455/1292",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0058",
+      "problem": "What is prob of picking 2 y and 2 n when four letters picked without replacement from {t: 5, y: 4, n: 8}?",
+      "answer": "6/85",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0059",
+      "problem": "Three letters picked without replacement from hhhhjhhjjhhhhj. What is prob of picking 1 h and 2 j?",
+      "answer": "15/91",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0060",
+      "problem": "Three letters picked without replacement from vsvwlwu. What is prob of picking 1 u, 1 s and 1 w?",
+      "answer": "2/35",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0061",
+      "problem": "Calculate prob of picking 2 j when two letters picked without replacement from {j: 2, x: 10}.",
+      "answer": "1/66",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0062",
+      "problem": "Two letters picked without replacement from qqqgqgq. Give prob of picking 1 q and 1 g.",
+      "answer": "10/21",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0063",
+      "problem": "Two letters picked without replacement from eagnenggexy. What is prob of picking 1 n and 1 e?",
+      "answer": "6/55",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0064",
+      "problem": "Four letters picked without replacement from oodfdggfood. What is prob of picking 3 o and 1 f?",
+      "answer": "4/165",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0065",
+      "problem": "Two letters picked without replacement from {t: 1, l: 4, c: 4, n: 4, p: 5, x: 2}. Give prob of picking 1 c and 1 n.",
+      "answer": "8/95",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0066",
+      "problem": "What is prob of picking 3 f and 1 m when four letters picked without replacement from {m: 1, r: 5, f: 12}?",
+      "answer": "11/153",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0067",
+      "problem": "What is prob of picking 1 q and 1 g when two letters picked without replacement from ccqcgcccccgcpcg?",
+      "answer": "1/35",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0068",
+      "problem": "What is prob of picking 1 w, 2 x and 1 j when four letters picked without replacement from xxwxwjjj?",
+      "answer": "9/35",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0069",
+      "problem": "What is prob of picking 2 d when two letters picked without replacement from jojqodojjjoy?",
+      "answer": "0",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0070",
+      "problem": "Four letters picked without replacement from {h: 1, w: 3, v: 4}. What is prob of picking 1 h and 3 v?",
+      "answer": "2/35",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0071",
+      "problem": "What is prob of picking 1 h and 2 g when three letters picked without replacement from ggiiyygggiiihihghig?",
+      "answer": "21/323",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0072",
+      "problem": "Two letters picked without replacement from hhqnh. What is prob of picking 1 n and 1 q?",
+      "answer": "1/10",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0073",
+      "problem": "What is prob of picking 1 y and 1 u when two letters picked without replacement from yhu?",
+      "answer": "1/3",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0074",
+      "problem": "Two letters picked without replacement from xxjrrrr. What is prob of picking 1 r and 1 j?",
+      "answer": "4/21",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0075",
+      "problem": "Four letters picked without replacement from {r: 3, u: 6, f: 4, b: 2, c: 1}. Give prob of picking 2 b, 1 u and 1 f.",
+      "answer": "6/455",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0076",
+      "problem": "Three letters picked without replacement from {g: 16, j: 4}. What is prob of picking 2 j and 1 g?",
+      "answer": "8/95",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0077",
+      "problem": "Three letters picked without replacement from jjujuujuujjitj. Give prob of picking 1 t, 1 j and 1 i.",
+      "answer": "1/52",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0078",
+      "problem": "Two letters picked without replacement from {b: 1, n: 9, x: 5, u: 1, v: 1}. Give prob of picking 2 x.",
+      "answer": "5/68",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0079",
+      "problem": "What is prob of picking 2 b and 1 a when three letters picked without replacement from mmvvmsamb?",
+      "answer": "0",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0080",
+      "problem": "Three letters picked without replacement from {k: 2, o: 1, m: 1}. Give prob of picking 2 k and 1 o.",
+      "answer": "1/4",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0081",
+      "problem": "What is prob of picking 1 q, 1 d and 1 w when three letters picked without replacement from {n: 3, d: 2, q: 5, w: 2}?",
+      "answer": "1/11",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0082",
+      "problem": "Three letters picked without replacement from qkmumekq. Give prob of picking 1 u, 1 k and 1 m.",
+      "answer": "1/14",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0083",
+      "problem": "Three letters picked without replacement from yyyyyyyayay. What is prob of picking 2 y and 1 a?",
+      "answer": "24/55",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0084",
+      "problem": "Calculate prob of picking 4 k when four letters picked without replacement from {k: 5, m: 2}.",
+      "answer": "1/7",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0085",
+      "problem": "Calculate prob of picking 1 g and 1 h when two letters picked without replacement from gtkgthatjjg.",
+      "answer": "3/55",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0086",
+      "problem": "Two letters picked without replacement from zkkkttktckkckt. What is prob of picking 2 c?",
+      "answer": "1/91",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0087",
+      "problem": "Four letters picked without replacement from bjtgctcs. What is prob of picking 1 c, 2 s and 1 g?",
+      "answer": "0",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0088",
+      "problem": "Three letters picked without replacement from {x: 2, y: 11, e: 1, k: 1, w: 1}. What is prob of picking 1 x, 1 w and 1 y?",
+      "answer": "11/280",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0089",
+      "problem": "What is prob of picking 1 r, 1 w and 1 q when three letters picked without replacement from {r: 3, w: 8, q: 6}?",
+      "answer": "18/85",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0090",
+      "problem": "What is prob of picking 3 m when three letters picked without replacement from {j: 3, m: 15}?",
+      "answer": "455/816",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0091",
+      "problem": "Calculate prob of picking 2 l and 1 y when three letters picked without replacement from {y: 1, p: 4, g: 1, l: 2}.",
+      "answer": "1/56",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0092",
+      "problem": "Three letters picked without replacement from {e: 10, v: 9}. Give prob of picking 3 v.",
+      "answer": "28/323",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0093",
+      "problem": "What is prob of picking 2 f and 1 w when three letters picked without replacement from {g: 7, c: 2, w: 1, f: 4}?",
+      "answer": "3/182",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0094",
+      "problem": "Four letters picked without replacement from {f: 2, h: 5, a: 3, s: 2}. What is prob of picking 2 s and 2 a?",
+      "answer": "1/165",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0095",
+      "problem": "What is prob of picking 1 m and 1 f when two letters picked without replacement from dmdfllfdofldlgd?",
+      "answer": "1/35",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0096",
+      "problem": "Three letters picked without replacement from ovaooooaoavavvoooooo. What is prob of picking 1 a and 2 o?",
+      "answer": "22/95",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0097",
+      "problem": "Three letters picked without replacement from jjimvvlllvk. What is prob of picking 3 v?",
+      "answer": "1/165",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0098",
+      "problem": "Two letters picked without replacement from {m: 4, r: 3}. Give prob of picking 2 r.",
+      "answer": "1/7",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0099",
+      "problem": "What is prob of picking 3 c when three letters picked without replacement from {k: 2, c: 4, p: 5}?",
+      "answer": "4/165",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0100",
+      "problem": "Two letters picked without replacement from yyuyuy. What is prob of picking 2 y?",
+      "answer": "2/5",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0101",
+      "problem": "Calculate prob of picking 3 l when three letters picked without replacement from llllllllll.",
+      "answer": "1",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0102",
+      "problem": "Three letters picked without replacement from {s: 3, u: 1, a: 5, j: 1}. Give prob of picking 3 a.",
+      "answer": "1/12",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0103",
+      "problem": "What is prob of picking 2 q when two letters picked without replacement from qtqqqqqtqqqqqtqtqq?",
+      "answer": "91/153",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0104",
+      "problem": "Four letters picked without replacement from {v: 1, d: 1, n: 2, i: 3, c: 4}. What is prob of picking 2 n and 2 c?",
+      "answer": "1/55",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0105",
+      "problem": "What is prob of picking 1 n and 1 a when two letters picked without replacement from anbjf?",
+      "answer": "1/10",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0106",
+      "problem": "Calculate prob of picking 1 f and 1 c when two letters picked without replacement from sqqssqqqqscsqqqqqsf.",
+      "answer": "1/171",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0107",
+      "problem": "Four letters picked without replacement from {c: 4, l: 2, q: 4}. Give prob of picking 2 q, 1 l and 1 c.",
+      "answer": "8/35",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0108",
+      "problem": "Calculate prob of picking 3 b when three letters picked without replacement from bbbbvbbvbb.",
+      "answer": "7/15",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0109",
+      "problem": "Four letters picked without replacement from zqqqbxrzxxq. What is prob of picking 2 x, 1 q and 1 z?",
+      "answer": "4/55",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0110",
+      "problem": "Three letters picked without replacement from yjuuueyuyu. Give prob of picking 1 j, 1 u and 1 e.",
+      "answer": "1/24",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0111",
+      "problem": "Four letters picked without replacement from {j: 4, g: 3, b: 5}. What is prob of picking 4 b?",
+      "answer": "1/99",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0112",
+      "problem": "Two letters picked without replacement from {s: 2, j: 1, u: 1, t: 1, x: 1, n: 2}. Give prob of picking 1 x and 1 s.",
+      "answer": "1/14",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0113",
+      "problem": "Two letters picked without replacement from {h: 2, u: 3, s: 2, d: 2, c: 2, o: 5}. Give prob of picking 1 d and 1 u.",
+      "answer": "1/20",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0114",
+      "problem": "Three letters picked without replacement from bbnbcacabnab. Give prob of picking 2 n and 1 c.",
+      "answer": "1/110",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0115",
+      "problem": "Calculate prob of picking 2 k when two letters picked without replacement from kokakcoookdcc.",
+      "answer": "1/13",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0116",
+      "problem": "Four letters picked without replacement from zzzzzzzzzzzjzzz. Give prob of picking 3 z and 1 j.",
+      "answer": "4/15",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0117",
+      "problem": "What is prob of picking 1 a, 1 o and 2 l when four letters picked without replacement from {o: 1, a: 1, l: 2, t: 1}?",
+      "answer": "1/5",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0118",
+      "problem": "Four letters picked without replacement from tzttztt. What is prob of picking 3 t and 1 z?",
+      "answer": "4/7",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0119",
+      "problem": "What is prob of picking 1 s and 2 h when three letters picked without replacement from {h: 6, s: 6}?",
+      "answer": "9/22",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0120",
+      "problem": "Three letters picked without replacement from {c: 2, l: 1, y: 1, o: 1}. Give prob of picking 1 l, 1 o and 1 c.",
+      "answer": "1/5",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0121",
+      "problem": "What is prob of picking 1 q and 2 f when three letters picked without replacement from xfvviqf?",
+      "answer": "1/35",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0122",
+      "problem": "Two letters picked without replacement from dsssyqdsdypss. What is prob of picking 1 y and 1 p?",
+      "answer": "1/39",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0123",
+      "problem": "Calculate prob of picking 1 t and 1 x when two letters picked without replacement from {t: 2, x: 4, s: 3, u: 2, a: 2, q: 2}.",
+      "answer": "8/105",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0124",
+      "problem": "Three letters picked without replacement from qqeekoopqq. Give prob of picking 2 e and 1 o.",
+      "answer": "1/60",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0125",
+      "problem": "Two letters picked without replacement from {r: 5, w: 1, x: 1, d: 3, p: 2}. What is prob of picking 1 d and 1 x?",
+      "answer": "1/22",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0126",
+      "problem": "Calculate prob of picking 2 v and 1 r when three letters picked without replacement from {r: 5, v: 3}.",
+      "answer": "15/56",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0127",
+      "problem": "Calculate prob of picking 1 n and 1 s when two letters picked without replacement from nnnnss.",
+      "answer": "8/15",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0128",
+      "problem": "What is prob of picking 3 k when three letters picked without replacement from {q: 1, k: 6, c: 8, t: 3, r: 1}?",
+      "answer": "20/969",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0129",
+      "problem": "What is prob of picking 2 h when two letters picked without replacement from {h: 2, w: 5, p: 2, g: 2, a: 2}?",
+      "answer": "1/78",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0130",
+      "problem": "Two letters picked without replacement from {n: 12, i: 6}. Give prob of picking 1 n and 1 i.",
+      "answer": "8/17",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0131",
+      "problem": "Four letters picked without replacement from rrprprprrprrrrrprrrr. What is prob of picking 4 p?",
+      "answer": "1/969",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0132",
+      "problem": "What is prob of picking 1 z and 1 u when two letters picked without replacement from bmqzmmmuu?",
+      "answer": "1/18",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0133",
+      "problem": "Calculate prob of picking 1 p and 1 q when two letters picked without replacement from qppfqfppqfq.",
+      "answer": "16/55",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0134",
+      "problem": "Four letters picked without replacement from qzqqqzq. Give prob of picking 4 q.",
+      "answer": "1/7",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0135",
+      "problem": "Two letters picked without replacement from {p: 2, e: 1, n: 1, b: 3, k: 3, o: 5}. What is prob of picking 1 k and 1 b?",
+      "answer": "3/35",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0136",
+      "problem": "What is prob of picking 1 g and 1 n when two letters picked without replacement from {n: 1, g: 1, o: 1}?",
+      "answer": "1/3",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0137",
+      "problem": "Two letters picked without replacement from {g: 2, r: 1, d: 2, e: 1, k: 1}. Give prob of picking 1 k and 1 d.",
+      "answer": "2/21",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0138",
+      "problem": "Four letters picked without replacement from sssnsjjcnjssscc. What is prob of picking 1 s and 3 j?",
+      "answer": "1/195",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0139",
+      "problem": "Four letters picked without replacement from {f: 17, l: 1}. What is prob of picking 4 f?",
+      "answer": "7/9",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0140",
+      "problem": "Two letters picked without replacement from {v: 6}. Give prob of picking 2 v.",
+      "answer": "1",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0141",
+      "problem": "Two letters picked without replacement from zzzz. Give prob of picking 2 z.",
+      "answer": "1",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0142",
+      "problem": "Three letters picked without replacement from ttvvvvvvvlaav. Give prob of picking 1 l and 2 t.",
+      "answer": "1/286",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0143",
+      "problem": "Calculate prob of picking 1 e and 1 k when two letters picked without replacement from {h: 3, k: 2, e: 7}.",
+      "answer": "7/33",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0144",
+      "problem": "What is prob of picking 1 z, 1 x and 1 d when three letters picked without replacement from {x: 2, z: 1, d: 1, q: 3}?",
+      "answer": "2/35",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0145",
+      "problem": "Calculate prob of picking 1 m and 1 g when two letters picked without replacement from {s: 1, i: 5, x: 1, r: 2, m: 3, g: 1}.",
+      "answer": "1/26",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0146",
+      "problem": "Four letters picked without replacement from {y: 9, p: 1, x: 4}. Give prob of picking 1 y and 3 x.",
+      "answer": "36/1001",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0147",
+      "problem": "What is prob of picking 1 w and 3 y when four letters picked without replacement from hwwyqyhqiquiuyhq?",
+      "answer": "1/910",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0148",
+      "problem": "Four letters picked without replacement from vqvvvvvvvvvvvqvqvqq. What is prob of picking 4 q?",
+      "answer": "5/3876",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0149",
+      "problem": "What is prob of picking 1 w and 2 j when three letters picked without replacement from {j: 2, w: 4}?",
+      "answer": "1/5",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0150",
+      "problem": "What is prob of picking 1 k and 3 d when four letters picked without replacement from deeudeedddeeddedked?",
+      "answer": "7/323",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0151",
+      "problem": "Four letters picked without replacement from {n: 4, g: 2, q: 2, t: 2}. What is prob of picking 1 n, 1 g, 1 t and 1 q?",
+      "answer": "16/105",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0152",
+      "problem": "Calculate prob of picking 1 n and 1 k when two letters picked without replacement from {s: 3, k: 1, h: 2, y: 5, n: 4, r: 5}.",
+      "answer": "2/95",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0153",
+      "problem": "Two letters picked without replacement from {i: 2, d: 9}. What is prob of picking 2 i?",
+      "answer": "1/55",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0154",
+      "problem": "Three letters picked without replacement from ifirrmmrirrfrmfrfmr. Give prob of picking 3 f.",
+      "answer": "4/969",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0155",
+      "problem": "Calculate prob of picking 1 p and 1 a when two letters picked without replacement from {p: 11, a: 3}.",
+      "answer": "33/91",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0156",
+      "problem": "Three letters picked without replacement from {a: 5, d: 5, b: 1, g: 6}. Give prob of picking 3 a.",
+      "answer": "1/68",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0157",
+      "problem": "Three letters picked without replacement from {w: 5, p: 13}. Give prob of picking 3 p.",
+      "answer": "143/408",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0158",
+      "problem": "Calculate prob of picking 1 q and 2 d when three letters picked without replacement from qbbvqqddvjqqkqqvjd.",
+      "answer": "7/272",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0159",
+      "problem": "Calculate prob of picking 3 p when three letters picked without replacement from {p: 4, m: 14}.",
+      "answer": "1/204",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0160",
+      "problem": "Calculate prob of picking 3 k when three letters picked without replacement from {k: 6}.",
+      "answer": "1",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0161",
+      "problem": "Calculate prob of picking 3 a when three letters picked without replacement from {a: 3, h: 1, i: 2, p: 1, d: 4, f: 1}.",
+      "answer": "1/220",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0162",
+      "problem": "Two letters picked without replacement from {q: 1, j: 1, g: 1, z: 1, d: 2, v: 1}. What is prob of picking 2 g?",
+      "answer": "0",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0163",
+      "problem": "Calculate prob of picking 2 h when two letters picked without replacement from {w: 10, u: 4, o: 1, h: 2}.",
+      "answer": "1/136",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0164",
+      "problem": "What is prob of picking 1 u and 1 b when two letters picked without replacement from ouocbbbub?",
+      "answer": "2/9",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0165",
+      "problem": "What is prob of picking 3 t when three letters picked without replacement from {t: 11, y: 9}?",
+      "answer": "11/76",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0166",
+      "problem": "Calculate prob of picking 1 r, 1 b and 1 a when three letters picked without replacement from {b: 1, a: 2, h: 8, t: 1, l: 1, r: 1}.",
+      "answer": "1/182",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0167",
+      "problem": "Calculate prob of picking 4 v when four letters picked without replacement from wwwwwwwwwvwwvvvwwvww.",
+      "answer": "1/969",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0168",
+      "problem": "Two letters picked without replacement from gpmgpmgfapfegppgg. What is prob of picking 1 m and 1 p?",
+      "answer": "5/68",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0169",
+      "problem": "Two letters picked without replacement from {f: 7, x: 9, g: 2}. Give prob of picking 2 g.",
+      "answer": "1/153",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0170",
+      "problem": "Three letters picked without replacement from {w: 3, p: 5, o: 1, t: 4}. What is prob of picking 1 p and 2 t?",
+      "answer": "15/143",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0171",
+      "problem": "What is prob of picking 3 v when three letters picked without replacement from {i: 11, v: 1}?",
+      "answer": "0",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0172",
+      "problem": "Two letters picked without replacement from {n: 1, q: 3, m: 1}. What is prob of picking 1 m and 1 q?",
+      "answer": "3/10",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0173",
+      "problem": "Three letters picked without replacement from kkifkfkiekfekeikk. Give prob of picking 1 k, 1 e and 1 i.",
+      "answer": "9/85",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0174",
+      "problem": "Four letters picked without replacement from zwmhmnzmnmhmwzh. Give prob of picking 1 h, 2 m and 1 w.",
+      "answer": "4/91",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0175",
+      "problem": "Calculate prob of picking 1 n, 1 h and 1 y when three letters picked without replacement from ynzhh.",
+      "answer": "1/5",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0176",
+      "problem": "Three letters picked without replacement from {b: 2, q: 1, n: 1, d: 2}. What is prob of picking 2 b and 1 d?",
+      "answer": "1/10",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0177",
+      "problem": "What is prob of picking 1 d and 1 r when two letters picked without replacement from {h: 2, d: 1, r: 1, y: 1}?",
+      "answer": "1/10",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0178",
+      "problem": "Calculate prob of picking 2 m when two letters picked without replacement from ymmmmymymyyy.",
+      "answer": "5/22",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0179",
+      "problem": "Three letters picked without replacement from uluouwtlitiiuto. What is prob of picking 2 o and 1 t?",
+      "answer": "3/455",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0180",
+      "problem": "Two letters picked without replacement from {a: 2, j: 2, f: 4, d: 2, m: 4}. Give prob of picking 2 m.",
+      "answer": "6/91",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0181",
+      "problem": "Four letters picked without replacement from bbaaiiabaibabai. Give prob of picking 2 b and 2 i.",
+      "answer": "4/91",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0182",
+      "problem": "Two letters picked without replacement from {j: 3, y: 4, u: 1}. What is prob of picking 1 j and 1 u?",
+      "answer": "3/28",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0183",
+      "problem": "What is prob of picking 2 h when two letters picked without replacement from hhhwwwhhwwhwh?",
+      "answer": "7/26",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0184",
+      "problem": "What is prob of picking 2 o and 1 h when three letters picked without replacement from hhxoxppo?",
+      "answer": "1/28",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0185",
+      "problem": "Calculate prob of picking 1 o and 1 c when two letters picked without replacement from tptotacct.",
+      "answer": "1/18",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0186",
+      "problem": "What is prob of picking 4 q when four letters picked without replacement from kqkqkqqkgqqqgqqkaaa?",
+      "answer": "21/646",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0187",
+      "problem": "Two letters picked without replacement from {p: 2, q: 1, m: 6, t: 8, d: 2, y: 1}. What is prob of picking 1 y and 1 d?",
+      "answer": "1/95",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0188",
+      "problem": "Four letters picked without replacement from {q: 3, p: 7}. What is prob of picking 4 p?",
+      "answer": "1/6",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0189",
+      "problem": "What is prob of picking 2 z, 1 h and 1 o when four letters picked without replacement from {o: 1, p: 1, h: 1, z: 2}?",
+      "answer": "1/5",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0190",
+      "problem": "Calculate prob of picking 1 b, 1 x and 1 p when three letters picked without replacement from byxypxxsxyxxpbxxxby.",
+      "answer": "18/323",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0191",
+      "problem": "What is prob of picking 1 x, 1 h and 1 u when three letters picked without replacement from qqjjxjjujhhqj?",
+      "answer": "1/143",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0192",
+      "problem": "Calculate prob of picking 3 f and 1 p when four letters picked without replacement from ppfffpffppfffpt.",
+      "answer": "16/65",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0193",
+      "problem": "Calculate prob of picking 2 r when two letters picked without replacement from {r: 15, x: 3}.",
+      "answer": "35/51",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0194",
+      "problem": "Calculate prob of picking 1 w and 1 y when two letters picked without replacement from yjwwywwwjwjwwwwjjjw.",
+      "answer": "22/171",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0195",
+      "problem": "What is prob of picking 1 f and 2 i when three letters picked without replacement from iiflliivlfriivivgii?",
+      "answer": "24/323",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0196",
+      "problem": "Two letters picked without replacement from xxcffsfcxxxcccxxccr. Give prob of picking 1 r and 1 f.",
+      "answer": "1/57",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0197",
+      "problem": "Calculate prob of picking 2 e and 1 t when three letters picked without replacement from etttteeteeteettt.",
+      "answer": "27/80",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0198",
+      "problem": "Calculate prob of picking 1 i and 1 p when two letters picked without replacement from {p: 1, q: 1, i: 1, g: 10}.",
+      "answer": "1/78",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0199",
+      "problem": "Calculate prob of picking 2 f when two letters picked without replacement from fffefefeffeeff.",
+      "answer": "36/91",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-prob.q0200",
+      "problem": "Two letters picked without replacement from {v: 1, d: 1, o: 1, q: 1, e: 2, n: 1}. Give prob of picking 1 q and 1 v.",
+      "answer": "1/21",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · probability__swr_p_level_set",
+      "hint": "DeepMind probability",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "probability__swr_p_level_set"
+      ]
+    }
+  ]
+}

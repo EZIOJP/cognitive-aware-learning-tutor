@@ -209,8 +209,18 @@ AppSideService({
       })
 
       if (method === 'VN_BEGIN') {
+        body.gain = settingsGet('voice_gain', '2.5')
         // Unpinned: picks a receiver and reports which one in `dest`.
         reply(callHub('/api/hub/voice-note/begin', 'POST', body, 3, null))
+        return
+      }
+      if (method === 'VN_GET_CONFIG') {
+        ctx.response({
+          data: {
+            ok: true,
+            gain: settingsGet('voice_gain', '2.5'),
+          },
+        })
         return
       }
       if (method === 'VN_CHUNK') {
@@ -218,7 +228,7 @@ AppSideService({
         return
       }
       if (method === 'VN_FINISH') {
-        reply(callHub('/api/hub/voice-note/finish', 'POST', body, 3, pinned))
+        reply(callHub('/api/hub/voice-note/finish', 'POST', body, 5, pinned))
         return
       }
       if (method === 'VN_PING') {

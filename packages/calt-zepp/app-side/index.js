@@ -5,7 +5,7 @@ import { MessageBuilder } from '../shared/message-side'
 
 const messageBuilder = new MessageBuilder()
 const MAX_LOG = 20
-const APP_VER = '4.1.3'
+const APP_VER = '4.2.0'
 
 function settingsGet(key, fallback = '') {
   try {
@@ -68,12 +68,75 @@ function networkHint(detail, host) {
     return [
       `Phone cannot reach ${host || 'PC'}.`,
       '1) Same Wi‑Fi as PC',
-      '2) Base URL = http://<PC-LAN-IP>:8765',
-      '3) Desktop tracker running',
-      '4) Open http://<IP>:8765/health in phone browser',
+      '2) Base URL = http://<PC-LAN-IP>:8765 (hub) or :8000 (API)',
+      '3) Desktop tracker OR run.bat API up',
+      '4) Open http://<IP>:8765/health or :8000/health in phone browser',
     ].join(' ')
   }
   return ''
+}
+
+/** Hub :8765 first, then same-host FastAPI :8000 (or explicit api_url). */
+function candidateBases() {
+  const seen = {}
+  const out = []
+  const push = (norm, label) => {
+    if (!norm || !norm.ok || !norm.base) return
+    if (seen[norm.base]) return
+    seen[norm.base] = true
+    out.push({ ...norm, label: label || 'hub' })
+  }
+
+  push(resolveBase(), 'hub')
+
+  const apiRaw = String(settingsGet('api_url', '')).trim()
+  if (apiRaw) {
+    push(normalizeBaseUrl(apiRaw), 'api')
+  } else {
+    const hub = resolveBase()
+    if (hub.ok && hub.host) {
+      const hostOnly = String(hub.host).replace(/:\d+$/, '')
+      if (hostOnly && !/localhost|127\.0\.0\.1/i.test(hostOnly)) {
+        push(normalizeBaseUrl(`http://${hostOnly}:8000`), 'api')
+      }
+    }
+  }
+  return out
+}
+
+async function postWithFallback(path, opts) {
+  const bases = candidateBases()
+  if (!bases.length) {
+    return {
+      ok: false,
+      status: 'ERR',
+      url: '',
+      data: null,
+      error: 'Base URL empty — set in phone CALT Sync settings',
+      host: '',
+      base: '',
+      label: '',
+      tried: [],
+    }
+  }
+  const tried = []
+  let last = null
+  for (let i = 0; i < bases.length; i++) {
+    const b = bases[i]
+    const url = `${b.base}${path}`
+    last = await doFetchRetry(opts.label || path, { ...opts, url }, opts.attempts || 2)
+    tried.push(`${b.label}:${b.host}:${last.ok ? 'ok' : last.status}`)
+    if (last.ok) {
+      return { ...last, host: b.host, base: b.base, label: b.label, tried }
+    }
+  }
+  return {
+    ...(last || {}),
+    host: bases[0].host,
+    base: bases[0].base,
+    label: bases[0].label,
+    tried,
+  }
 }
 
 function appendLog(entry) {
@@ -178,22 +241,22 @@ async function doFetchRetry(label, opts, attempts) {
 }
 
 async function pingHealth() {
-  const norm = resolveBase()
+  const bases = candidateBases()
   const token = String(settingsGet('ingest_token', 'calt-local-wearables'))
   const at = new Date().toISOString()
   const out = {
     ok: false,
-    base: norm.base,
-    host: norm.host,
+    base: bases[0] ? bases[0].base : '',
+    host: bases[0] ? bases[0].host : '',
     healthOk: false,
     errors: [],
     diag: '',
     at,
   }
 
-  if (!norm.ok || !norm.base) {
-    out.errors = norm.issues
-    out.diag = norm.issues.join(' | ')
+  if (!bases.length) {
+    out.errors = ['Base URL empty — set in phone CALT Sync settings']
+    out.diag = out.errors.join(' | ')
     appendLog({
       at,
       ok: false,
@@ -212,30 +275,31 @@ async function pingHealth() {
     return out
   }
 
-  const h = await doFetchRetry(
-    'health',
-    {
-      url: `${norm.base}/api/wearables/zepp/health`,
-      method: 'GET',
-      headers: authHeaders(token, false),
-    },
-    2,
-  )
+  const h = await postWithFallback('/api/wearables/zepp/health', {
+    label: 'health',
+    method: 'GET',
+    headers: authHeaders(token, false),
+    attempts: 2,
+  })
   out.healthOk = !!(h.ok && h.data && h.data.ok)
+  out.base = h.base || out.base
+  out.host = h.host || out.host
   if (!h.ok || !out.healthOk) {
     const msg = h.error
       ? `health ${h.error}`
       : `health HTTP ${h.status}`
     out.errors.push(msg)
-    const hint = networkHint(h.error || '', norm.host)
+    const hint = networkHint(h.error || '', out.host)
     if (hint) out.errors.push(hint)
+    if (h.tried && h.tried.length) out.errors.push(`tried ${h.tried.join(' → ')}`)
   }
 
   out.ok = out.healthOk
   out.diag = [
-    `host=${norm.host}`,
+    `host=${out.host}`,
+    `via=${h.label || '?'}`,
     `health=${out.healthOk ? 'OK' : 'FAIL'}`,
-    ...(norm.issues || []),
+    ...(h.tried || []),
     ...out.errors.slice(0, 2),
   ].join(' · ')
 
@@ -246,21 +310,21 @@ async function pingHealth() {
   appendLog({
     at,
     ok: out.ok,
-    summary: out.ok ? `TEST OK · ${norm.host}` : `TEST FAIL · ${out.errors[0] || 'error'}`,
+    summary: out.ok ? `TEST OK · ${out.host} (${h.label || 'hub'})` : `TEST FAIL · ${out.errors[0] || 'error'}`,
     errors: out.errors,
     steps: null,
     sleep_min: null,
     hr: null,
     wrote_life: false,
-    base: norm.base,
-    host: norm.host,
+    base: out.base,
+    host: out.host,
     diag: out.diag,
   })
   return out
 }
 
 async function syncAll(health, opts) {
-  const norm = resolveBase()
+  const bases = candidateBases()
   const token = String(settingsGet('ingest_token', 'calt-local-wearables'))
   const now = new Date()
   const at = now.toISOString()
@@ -282,6 +346,9 @@ async function syncAll(health, opts) {
   let wroteLife = false
   let serverEcho = null
   let duplicate = false
+  let usedHost = bases[0] ? bases[0].host : ''
+  let usedBase = bases[0] ? bases[0].base : ''
+  let usedLabel = bases[0] ? bases[0].label : ''
 
   const steps = health && health.activity ? health.activity.steps : null
   const sleepMain = health && health.sleep ? health.sleep.total_min : null
@@ -293,8 +360,8 @@ async function syncAll(health, opts) {
   const hr = health && health.heart ? health.heart.last : null
   const chunk = (opts && opts.chunk) || null
 
-  if (!norm.ok || !norm.base) {
-    const msg = (norm.issues || ['no base url']).join(' | ')
+  if (!bases.length) {
+    const msg = 'Base URL empty — set in phone CALT Sync settings'
     appendLog({
       at,
       ok: false,
@@ -331,6 +398,8 @@ async function syncAll(health, opts) {
           score: health.sleep.score,
           total_min: health.sleep.total_min,
           deep_min: health.sleep.deep_min,
+          light_min: health.sleep.light_min,
+          rem_min: health.sleep.rem_min,
           start_min: health.sleep.start_min,
           end_min: health.sleep.end_min,
           stages: health.sleep.stages || [],
@@ -351,7 +420,9 @@ async function syncAll(health, opts) {
   const body = {
     schema: 2,
     source: 'mini_program',
-    dump: (health && health.dump) || 'processed_v1',
+    dump: (health && health.dump) || 'processed_v2',
+    dump_id: dumpId,
+    checksum,
     captured_at: (health && health.captured_at) || at,
     local_date: resolvedDate,
     tz_offset_min: tzOffset,
@@ -369,15 +440,17 @@ async function syncAll(health, opts) {
     fat_burn: health && health.fat_burn ? health.fat_burn : undefined,
     temperature: health && health.temperature ? health.temperature : undefined,
     weather: health && health.weather ? health.weather : undefined,
+    workouts: health && health.workouts ? health.workouts : undefined,
+    hr_zones: health && health.hr_zones ? health.hr_zones : undefined,
     meta_device: health && health.meta_device ? health.meta_device : undefined,
     capabilities: health && health.capabilities ? health.capabilities : undefined,
     device: { model: 'zepp', os: '6' },
     meta: {
       app: 'calt-zepp',
-      host: norm.host,
+      host: usedHost,
       ver: APP_VER,
       os: 6,
-      dump: (health && health.dump) || 'processed_v1',
+      dump: (health && health.dump) || 'processed_v2',
       dump_id: dumpId,
       chunk_id: chunkId,
       checksum,
@@ -385,13 +458,14 @@ async function syncAll(health, opts) {
       tz_offset_min: tzOffset,
       queued_sleep_snapshot: isQueued,
       manual_dump: true,
+      rich: true,
       chunk: chunk
         ? {
             day: chunk.day || resolvedDate,
             part: chunk.part,
             total: chunk.total,
             label: chunk.label,
-            dump: 'processed_v1',
+            dump: (health && health.dump) || 'processed_v2',
             chunk_id: chunkId,
             dump_id: dumpId,
             checksum,
@@ -400,16 +474,17 @@ async function syncAll(health, opts) {
     },
   }
 
-  const post = await doFetchRetry(
-    'ingest',
-    {
-      url: `${norm.base}/api/wearables/zepp`,
-      method: 'POST',
-      headers,
-      body: JSON.stringify(body),
-    },
-    3,
-  )
+  const post = await postWithFallback('/api/wearables/zepp', {
+    label: 'ingest',
+    method: 'POST',
+    headers,
+    body: JSON.stringify(body),
+    attempts: 3,
+  })
+  usedHost = post.host || usedHost
+  usedBase = post.base || usedBase
+  usedLabel = post.label || usedLabel
+
   if (post.ok && post.data && post.data.ok) {
     healthOk = true
     wroteLife = !!post.data.wrote_life_tracker
@@ -418,26 +493,27 @@ async function syncAll(health, opts) {
   } else {
     const msg = post.error ? `ingest ${post.error}` : `ingest HTTP ${post.status}`
     softErrors.push(msg)
-    const hint = networkHint(post.error || '', norm.host)
+    const hint = networkHint(post.error || '', usedHost)
     if (hint) softErrors.push(hint)
+    if (post.tried && post.tried.length) softErrors.push(`tried ${post.tried.join(' → ')}`)
   }
 
   const chunkLabel = chunk && chunk.label ? `${chunk.label} ${chunk.part}/${chunk.total}` : ''
   const diag = [
-    `host=${norm.host}`,
+    `host=${usedHost}`,
+    `via=${usedLabel}`,
     `steps=${steps != null ? steps : '?'}`,
     `sleepMin=${sleepMin != null ? sleepMin : '?'}`,
     `ingest=${healthOk ? (duplicate ? 'DUP' : 'OK') : 'FAIL'}`,
     `life=${wroteLife ? 'yes' : 'no'}`,
-    ...(norm.issues || []),
     ...softErrors.slice(0, 2),
   ]
     .filter(Boolean)
     .join(' · ')
 
   const summary = healthOk
-    ? `${chunkLabel || 'OK'}${duplicate ? ' (replay)' : ''} →${norm.host}`
-    : `FAIL ${norm.host} · ${softErrors[0] || 'error'}`
+    ? `${chunkLabel || 'OK'}${duplicate ? ' (replay)' : ''} →${usedHost}/${usedLabel}`
+    : `FAIL ${usedHost} · ${softErrors[0] || 'error'}`
 
   const logs = appendLog({
     at,
@@ -448,14 +524,15 @@ async function syncAll(health, opts) {
     sleep_min: sleepMin,
     hr,
     wrote_life: wroteLife,
-    base: norm.base,
-    host: norm.host,
+    base: usedBase,
+    host: usedHost,
     diag,
   })
 
-  if (healthOk && norm.host) {
-    settingsSet('last_good_host', norm.host)
-    settingsSet('last_good_base', norm.base)
+  if (healthOk && usedHost) {
+    settingsSet('last_good_host', usedHost)
+    settingsSet('last_good_base', usedBase)
+    settingsSet('last_good_via', usedLabel)
   }
 
   return {
@@ -470,8 +547,9 @@ async function syncAll(health, opts) {
     sleepMin,
     hr,
     summary,
-    base: norm.base,
-    host: norm.host,
+    base: usedBase,
+    host: usedHost,
+    via: usedLabel,
     diag,
     logs,
     localDate: resolvedDate,
@@ -487,6 +565,7 @@ async function syncAll(health, opts) {
           local_date: serverEcho.local_date,
           applied: serverEcho.applied || null,
           duplicate: serverEcho.duplicate,
+          categories: serverEcho.categories || null,
         }
       : null,
   }

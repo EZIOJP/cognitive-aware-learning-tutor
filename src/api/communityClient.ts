@@ -67,7 +67,10 @@ export async function saveCommunitySettings(body: {
 }
 
 export async function fetchCommunityRanks(): Promise<CommunityRanks> {
-  const res = await fetch(resolveApiUrl("/api/community/ranks"), { headers: headers() });
+  const res = await fetch(resolveApiUrl("/api/community/ranks"), {
+    headers: headers(),
+    signal: AbortSignal.timeout(8_000),
+  });
   if (!res.ok) throw new Error(`community ranks ${res.status}`);
   return res.json();
 }

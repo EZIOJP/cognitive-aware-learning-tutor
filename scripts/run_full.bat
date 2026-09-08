@@ -18,10 +18,10 @@ if errorlevel 1 (
   exit /b 1
 )
 
-call "%~dp0desktop_tracker\run_desktop_tracker_headless.bat"
+call "%~dp0desktop_tracker\run\run_native_enforcer_console.bat"
 
 echo.
-echo Full stack ready. Tracker logs: data\logs\desktop_tracker.log
+echo Full stack ready. Native tracking: calt_enforcer ^(console^).
 echo Stop servers: scripts\stop_servers.bat
-echo Stop tracker ^(PIN^): scripts\admin_only\stop_desktop_tracker.bat
+echo Stop enforcer: Ctrl+C in console, or Task Manager ^(calt_enforcer^).
 endlocal

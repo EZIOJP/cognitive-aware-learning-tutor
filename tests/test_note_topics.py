@@ -75,21 +75,21 @@ meta only
 def test_remap_legacy_note_path_string():
     assert (
         remap_legacy_note_path("lecture5/lecture5_pandas_operations_notes.md")
-        == "data_foundations/lecture_5/lecture5_pandas_operations_notes.md"
+        == "L05_pandas_operations_notes.md"
     )
     assert (
         remap_legacy_note_path("lecture_2/numpy_lecture_notes.md")
-        == "data_foundations/lecture_2/numpy_lecture_notes.md"
+        == "L02_numpy_operations_notes.md"
     )
 
 
 def test_canonical_library_path_only_when_exists():
     from backend.transcripts.note_topics import canonical_library_path
 
-    # Real moved file
+    # Legacy lecture5 path → flat L05 file on disk
     assert canonical_library_path(
         "lecture5/lecture5_pandas_operations_notes.md"
-    ).startswith("data_foundations/lecture_5/")
+    ) == "L05_pandas_operations_notes.md"
     # Fake legacy path must stay unchanged (tests / new notes)
     assert canonical_library_path("lecture_2/short.md") == "lecture_2/short.md"
 
@@ -121,3 +121,29 @@ def test_topics_as_sections_labels():
     sections = topics_as_sections(topics)
     assert sections[0][0].startswith("L5-T05")
     assert "unique()" in sections[0][1].lower() or "unique" in sections[0][1].lower()
+
+
+def test_lt_shorthand_headings():
+    from backend.transcripts.note_topics import normalize_topic_shorthand
+
+    assert normalize_topic_shorthand("LT1.1") == "1.1"
+    assert normalize_topic_shorthand("lt.2") == "2"
+    assert normalize_topic_shorthand("L5-T05") == "L5-T05"
+
+    sample = """
+# Lecture 2
+
+## LT2.2 — Vectorization recap
+
+Vectorization means operating on whole arrays without Python loops.
+This paragraph is long enough to count as a real topic body for quizzes.
+
+## lt.3 — Broadcasting
+
+Broadcasting rules align array shapes for element-wise ops.
+Another paragraph with enough content to pass the minimum threshold.
+"""
+    topics = parse_note_topics(sample)
+    ids = {t.topic_id for t in topics}
+    assert "2.2" in ids
+    assert "3" in ids

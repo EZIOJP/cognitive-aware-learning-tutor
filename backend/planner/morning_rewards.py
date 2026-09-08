@@ -122,6 +122,16 @@ def grant(user_id: int, kind: str, day: date | None = None) -> dict[str, Any]:
         int(a.get("points") or 0) for a in awards.values() if a.get("granted")
     )
     _write_day(user_id, d, rec)
+    # Desktop Tracker v2c — earned free-time ledger (idempotent once/day).
+    try:
+        from backend.behavior import break_reward_hooks as br_hooks
+
+        if kind == "bible":
+            br_hooks.on_bible_done(int(user_id))
+        elif kind == "plan":
+            br_hooks.on_plan_confirm(int(user_id))
+    except Exception:
+        pass
     return summary(user_id, d)
 
 

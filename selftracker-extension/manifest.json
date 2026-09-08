@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "CALT SelfTracker (Edge / Chrome)",
-  "version": "1.5.25",
-  "description": "Active-tab browse tracking / telemetry / Jarvis. Site blocking lives in CALT Gate. Skips localhost (CALT SPA).",
+  "version": "1.5.27",
+  "description": "Browse tracking / telemetry (Edge as Edge + active tab URL). SoftLand = CALT Gate. Control = web Focus.",
   "permissions": [
     "tabs",
     "activeTab",
@@ -11,7 +11,8 @@
     "alarms",
     "idle",
     "history",
-    "webNavigation"
+    "webNavigation",
+    "nativeMessaging"
   ],
   "host_permissions": [
     "<all_urls>",

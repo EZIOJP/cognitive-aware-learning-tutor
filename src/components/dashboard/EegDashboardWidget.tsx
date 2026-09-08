@@ -15,8 +15,8 @@ export function EegDashboardWidget() {
   if (!isConnected) {
     return (
       <p className="text-xs text-muted-foreground">
-        Starting simulation… No ESP32 needed. After you buy boards, set{" "}
-        <code className="text-[10px]">EEG_ENABLED=1</code> — see docs/firmware/EEG_ESP32.md.
+        EEG lane idle (simulation or waiting for stream). Study features stay available — see{" "}
+        <code className="text-[10px]">docs/firmware/EEG_ESP32.md</code>.
       </p>
     );
   }

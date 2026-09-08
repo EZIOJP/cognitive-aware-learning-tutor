@@ -73,6 +73,10 @@ echo   extensions    Rebuild MV3 service workers + open edge://extensions
 echo   full          Extensions + stack + tracker
 echo   status        Show API / frontend / tracker
 echo.
+echo   Desktop tray also has:
+echo     Force restart API + web
+echo     Force rebuild + restart everything  ^(npm run build + stack + tracker^)
+echo.
 goto END
 
 :STATUS

@@ -46,7 +46,6 @@ export function WearablesSyncPanel() {
   > | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [watching, setWatching] = useState(true);
   const [flash, setFlash] = useState(false);
   const [lastSeenAt, setLastSeenAt] = useState<string | null>(null);
   const [showRaw, setShowRaw] = useState(true);
@@ -78,15 +77,11 @@ export function WearablesSyncPanel() {
     }
   }, [lastSeenAt]);
 
+  // One-shot when the panel opens — no live polling. Watch Dump → Send is the source of truth.
   useEffect(() => {
     void refresh();
-  }, [refresh]);
-
-  useEffect(() => {
-    if (!watching) return;
-    const id = window.setInterval(() => void refresh(), 2500);
-    return () => window.clearInterval(id);
-  }, [watching, refresh]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional mount-only
+  }, []);
 
   useEffect(() => {
     if (!flash) return;
@@ -146,21 +141,12 @@ export function WearablesSyncPanel() {
             CALT Sync health dump
           </h3>
           <p className="mt-1 text-xs text-muted-foreground">
-            On the watch: <strong>Dump today</strong> → <strong>Send queue</strong> (Settings →{" "}
-            <strong>Test PC</strong> first). Send fills forward from the last synced day; the
-            watermark advances only after all four chunks of a day are ACKed. Dump daily — sensors
-            do not backfill days the app never ran.
+            <strong>Manual only</strong> — open the watch, <strong>Dump today</strong> →{" "}
+            <strong>Send queue</strong> (Settings → <strong>Test PC</strong> first). This page does
+            not poll; use <strong>Refresh</strong> after a dump. Sensors do not backfill days the
+            app never ran.
           </p>
         </div>
-        <label className="inline-flex items-center gap-2 text-xs text-muted-foreground">
-          <input
-            type="checkbox"
-            checked={watching}
-            onChange={(e) => setWatching(e.target.checked)}
-            className="rounded border-white/20"
-          />
-          Live watch (2.5s)
-        </label>
       </div>
 
       <div
@@ -173,9 +159,9 @@ export function WearablesSyncPanel() {
         }`}
       >
         <p className="text-[11px] text-amber-200/90 leading-relaxed">
-          Replays are idempotent — sending the same chunk twice will not duplicate Life Tracker /
-          hub rows. Status on this page updates when ingest hits the main API (
-          <code className="text-foreground">:8000</code>); the watch sends to the tracker hub (
+          Manual sync: the watch POSTs when you Send. Replays are idempotent. Status here updates
+          on <strong>Refresh</strong> or after you trigger a dump (main API{" "}
+          <code className="text-foreground">:8000</code>; watch → hub{" "}
           <code className="text-foreground">:8765</code>).
         </p>
         <div className="flex flex-wrap gap-x-4 gap-y-1 items-center">
@@ -232,6 +218,18 @@ export function WearablesSyncPanel() {
               .slice(0, 12)
               .map(([k, v]) => `${k}:${v ? "ok" : "n/a"}`)
               .join(" · ") || "—"}
+          </div>
+        ) : null}
+        {status?.categories?.present?.length ? (
+          <div className="text-[11px]">
+            Raw categories ({status.categories.count}):{" "}
+            <span className="text-foreground">
+              {status.categories.present.join(" · ")}
+            </span>
+            <span className="text-muted-foreground">
+              {" "}
+              — Health Connect / Sync extras land here (hrv, workouts, …)
+            </span>
           </div>
         ) : null}
         <WatchDayDumpCard

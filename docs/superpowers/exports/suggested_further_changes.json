@@ -1,0 +1,75 @@
+{
+  "title": "CALT native enforcer — suggested further changes",
+  "date": "2026-09-06",
+  "legal": "No Cold Turkey code. Filename-role mapping only.",
+  "done_this_pass": [
+    "native_enforcer_status.py",
+    "system_status native checklist",
+    "run_native_enforcer_console.bat",
+    "uninstall_native_enforcer.bat",
+    "install uninstall clears Machine env + lock",
+    "F2 native_session_backfill.py + dashboard + desktop-stats hook",
+    "F3 Dashboard / Focus last_kill",
+    "F4 KillLogToastWatcher tray toasts",
+    "F5 Inno bundles calt_enforcer.exe + Register Native helper",
+    "install_enforcer_service.ps1 prefers native",
+    "Edge active-tab tracking as Microsoft Edge",
+    "Native session_db skips browsers"
+  ],
+  "suggestions": [
+    {
+      "id": "F1",
+      "priority": "high",
+      "title": "Install native Windows service (Admin)",
+      "why": "CT-like stay-alive after reboot / UI close",
+      "action": "powershell -File scripts/desktop_tracker/install_native_enforcer.ps1",
+      "owner": "you",
+      "status": "pending_owner"
+    },
+      {
+      "id": "F2",
+      "priority": "high",
+      "title": "Category backfill for native tracked_sessions",
+      "status": "parked",
+      "owner": "agent",
+      "note": "Module exists; Focus path intentionally JSON-only without backfill (Z4). Revisit as QoL later."
+    },
+    {
+      "id": "F3",
+      "priority": "high",
+      "title": "Dashboard last-kill line",
+      "status": "done",
+      "owner": "agent"
+    },
+    {
+      "id": "F4",
+      "priority": "medium",
+      "title": "Toast when a process is killed",
+      "status": "done",
+      "owner": "agent"
+    },
+    {
+      "id": "F5",
+      "priority": "medium",
+      "title": "v2d installer bundles calt_enforcer.exe",
+      "why": "Double-click install without terminal",
+      "action": "Install Inno Setup 6 then scripts/desktop_tracker/compile_installer.bat",
+      "owner": "agent_code_done_owner_compile",
+      "status": "code_done"
+    },
+    {
+      "id": "F6",
+      "priority": "low",
+      "title": "Finish VS Build Tools VCTools",
+      "owner": "you",
+      "status": "pending_owner"
+    },
+    {
+      "id": "F7",
+      "priority": "never",
+      "title": "Import or decompile ZXCazsd / Cold Turkey",
+      "status": "rejected",
+      "owner": "none"
+    }
+  ]
+}

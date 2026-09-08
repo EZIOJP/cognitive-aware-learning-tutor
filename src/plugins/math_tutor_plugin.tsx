@@ -25,7 +25,7 @@ export const MathTutorPlugin: PluginDef = {
     { path: "math-tutor/train", element: <TrainPlaygroundPage /> },
     { path: "math-tutor/training-data", element: <OcrTrainingDataPage /> },
   ],
-  navItems: [{ to: "/math-tutor", label: "Math Tutor", icon: Brain, end: false }],
+  navItems: [{ to: "/math-tutor", label: "Math Tutor", icon: Brain, end: false, category: "study" }],
 };
 
 registerPlugin(MathTutorPlugin);

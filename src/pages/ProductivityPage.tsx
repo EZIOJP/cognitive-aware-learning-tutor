@@ -15,6 +15,12 @@ import { ConfirmPlanButton } from "../components/productivity/ConfirmPlanButton"
 import { TimetablePanel } from "../components/productivity/TimetablePanel";
 import { PlanningSettingsPanel } from "../components/productivity/PlanningSettingsPanel";
 import { DemoModePanel } from "../components/productivity/DemoModePanel";
+import FocusControlPanel from "../components/productivity/FocusControlPanel";
+import ProductivityPolicyPanel from "../components/productivity/ProductivityPolicyPanel";
+import GateSchedulesPanel from "../components/productivity/GateSchedulesPanel";
+import AppKillRulesPanel from "../components/productivity/AppKillRulesPanel";
+import SoftLandSiteRulesPanel from "../components/productivity/SoftLandSiteRulesPanel";
+import { WearablesSyncPanel } from "../components/productivity/WearablesSyncPanel";
 import { RoutinesPanel } from "../components/productivity/RoutinesPanel";
 import { ProposeStepPanel, applyRangeForHorizon } from "../components/productivity/ProposeStepPanel";
 import { proposeBlockStatKind, blockDurationMinutes } from "../components/productivity/proposeBlockStats";
@@ -285,7 +291,9 @@ function AppRow({
       </div>
       <div className="flex items-center gap-2 w-36 min-w-0">
         <span className="text-muted-foreground">{categoryIcon(session.category)}</span>
-        <span className="text-sm font-medium truncate" title={session.exe}>{session.exe}</span>
+        <span className="text-sm font-medium truncate" title={session.exe}>
+          {session.display_name || session.exe}
+        </span>
       </div>
       <div className="flex-1 relative h-5 rounded-full bg-white/5 overflow-hidden">
         <div
@@ -429,8 +437,6 @@ export function ProductivityPage() {
   const [trackerHealth, setTrackerHealth] = useState<TrackerHealth | null>(null);
   const [timeline, setTimeline] = useState<DesktopTimeline | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [loadErrors, setLoadErrors] = useState<string[]>([]);
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
   const [adherence, setAdherence] = useState<AdherenceSummary | null>(null);
   const [dueReviews, setDueReviews] = useState(0);
@@ -691,20 +697,8 @@ export function ProductivityPage() {
       fetchDesktopStatsForRange(statsRange.from, statsRange.to),
       fetchTrackerHealth(),
     ]);
-    const failures: string[] = [];
     if (results[0].status === "fulfilled") setDesktop(results[0].value);
-    else {
-      failures.push(
-        `desktop-stats: ${results[0].reason instanceof Error ? results[0].reason.message : "failed"}`,
-      );
-    }
     if (results[1].status === "fulfilled") setTrackerHealth(results[1].value);
-    else {
-      failures.push(
-        `tracker-health: ${results[1].reason instanceof Error ? results[1].reason.message : "failed"}`,
-      );
-    }
-    return failures;
   }, [statsRange.from.getTime(), statsRange.to.getTime()]);
 
   /** Screen-time extras — KPIs detail + timeline for the focused day. */
@@ -714,33 +708,16 @@ export function ProductivityPage() {
       fetchBrowserStatsForRange(statsRange.from, statsRange.to),
       fetchDesktopTimeline(timelineDay),
     ]);
-    const failures: string[] = [];
     if (results[0].status === "fulfilled") setBrowser(results[0].value);
-    else {
-      failures.push(
-        `browser stats: ${results[0].reason instanceof Error ? results[0].reason.message : "failed"}`,
-      );
-    }
     if (results[1].status === "fulfilled") setTimeline(results[1].value);
-    else {
-      failures.push(
-        `desktop-timeline: ${results[1].reason instanceof Error ? results[1].reason.message : "failed"}`,
-      );
-    }
-    return failures;
   }, [plannerDay.getTime(), statsRange.from.getTime(), statsRange.to.getTime()]);
 
   /** Full refresh (Sync / Refresh button) — core + screen-time extras. */
   const load = useCallback(async () => {
     setLoading(true);
-    setError(null);
-    setLoadErrors([]);
-    const failures = [...(await loadCore()), ...(await loadScreenTime())];
-    if (failures.length >= 4) {
-      setError(failures[0] ?? "Failed to load stats");
-    } else if (failures.length > 0) {
-      setLoadErrors(failures);
-    }
+    // Partial failures are silent — keep last good data; no amber "Failed to fetch" banners.
+    await loadCore();
+    await loadScreenTime();
     setLastRefresh(new Date());
     setLoading(false);
   }, [loadCore, loadScreenTime]);
@@ -1034,20 +1011,11 @@ export function ProductivityPage() {
     const tick = async () => {
       if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
       setLoading(true);
-      setError(null);
-      const failures = [...(await loadCore())];
+      await loadCore();
       if (!cancelled && (tab === "calendar" || tab === "settings")) {
-        failures.push(...(await loadScreenTime()));
+        await loadScreenTime();
       }
       if (cancelled) return;
-      if (failures.length > 0) {
-        const coreOnly = tab === "plan";
-        if (!coreOnly && failures.length >= 4) setError(failures[0] ?? "Failed to load stats");
-        else if (coreOnly && failures.length >= 2) setError(failures[0] ?? "Failed to load stats");
-        else setLoadErrors(failures);
-      } else {
-        setLoadErrors([]);
-      }
       setLastRefresh(new Date());
       setLoading(false);
     };
@@ -1191,62 +1159,7 @@ export function ProductivityPage() {
         </div>
       </div>
 
-      {/* Compact setup help only when tracker needs attention */}
-      {!trackerRunning && (
-        <div className={`flex items-start gap-2.5 rounded-xl border px-3 py-2.5 text-xs ${
-          trackerStale
-            ? "border-yellow-500/25 bg-yellow-500/5 text-yellow-200/90"
-            : "border-orange-500/25 bg-orange-500/5 text-orange-200/90"
-        }`}>
-          {trackerStale ? (
-            <Clock size={13} className="mt-0.5 shrink-0 text-yellow-400" />
-          ) : (
-            <AlertCircle size={13} className="mt-0.5 shrink-0 text-orange-400" />
-          )}
-          <div className="min-w-0 space-y-1">
-            {trackerStale ? (
-              <p>
-                Last activity{" "}
-                {trackerHealth?.last_event_at
-                  ? new Date(trackerHealth.last_event_at).toLocaleString()
-                  : "unknown"}
-                . Try Update tracker or{" "}
-                <code className="rounded bg-black/40 px-1 font-mono">
-                  scripts\desktop_tracker\run_desktop_tracker_headless.bat
-                </code>
-                {trackerHealth?.hint ? ` · ${trackerHealth.hint}` : ""}
-              </p>
-            ) : (
-              <p>
-                Run once:{" "}
-                <code className="rounded bg-black/40 px-1 font-mono">scripts\install_tracker_startup.bat</code>
-                {" "}or{" "}
-                <code className="rounded bg-black/40 px-1 font-mono">
-                  scripts\desktop_tracker\run_desktop_tracker_headless.bat
-                </code>
-              </p>
-            )}
-          </div>
-        </div>
-      )}
-
-      {error && (
-        <div className="flex items-center gap-2 p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-300 text-sm">
-          <AlertCircle size={14} />
-          {error}
-        </div>
-      )}
-
-      {loadErrors.length > 0 && !error && (
-        <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-sm">
-          <AlertCircle size={14} className="shrink-0 mt-0.5" />
-          <ul className="list-disc list-inside space-y-0.5">
-            {loadErrors.map((msg) => (
-              <li key={msg}>{msg}</li>
-            ))}
-          </ul>
-        </div>
-      )}
+      {/* Tracker setup / partial-fetch banners removed — data still loads; status chip remains. */}
 
       {tab === "calendar" && (
       <div className="space-y-6">
@@ -1882,19 +1795,103 @@ export function ProductivityPage() {
 
       {tab === "settings" && (
       <div className="space-y-8">
-        <div className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-muted-foreground">
-          <p className="font-medium text-foreground text-xs uppercase tracking-wider mb-1">Settings</p>
-          Planning prefs, tracker scoring, wearables, reminders, and exports — grouped below.
-          <p className="text-[11px] mt-2">
-            <a href="#demo-mode" className="text-amber-200 underline underline-offset-2 hover:text-white">
-              Demo mode
+        <div className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-muted-foreground space-y-2">
+          <p className="font-medium text-foreground text-xs uppercase tracking-wider">Settings</p>
+          <p>
+            SoftLand = sites in Edge (CALT Gate). Arm Enforcer = OS process kills (
+            <code className="text-foreground/80">calt_enforcer</code>
+            ). SoftLand ON does <strong className="text-foreground/85">not</strong> kill Steam.
+            Arm does <strong className="text-foreground/85">not</strong> SoftLand sites by itself.
+          </p>
+          <p className="text-[11px] flex flex-wrap gap-x-3 gap-y-1">
+            <a href="#focus" className="text-sky-300 underline underline-offset-2 hover:text-white">
+              Focus
             </a>
-            {" "}
-            (time travel for Soft-land / blocking demos) is further down this tab.
+            <a href="#policy" className="text-sky-300 underline underline-offset-2 hover:text-white">
+              SoftLand policy
+            </a>
+            <a href="#rules" className="text-sky-300 underline underline-offset-2 hover:text-white">
+              Blocking rules
+            </a>
+            <a href="#planning" className="text-sky-300 underline underline-offset-2 hover:text-white">
+              Planning
+            </a>
+            <a href="#demo-mode" className="text-amber-200 underline underline-offset-2 hover:text-white">
+              Demo
+            </a>
+            <a href="#watch" className="text-sky-300 underline underline-offset-2 hover:text-white">
+              Watch
+            </a>
+            <a href="#reminders" className="text-sky-300 underline underline-offset-2 hover:text-white">
+              Reminders
+            </a>
+            <a href="#scoring" className="text-sky-300 underline underline-offset-2 hover:text-white">
+              Scoring
+            </a>
+            <a href="#export" className="text-sky-300 underline underline-offset-2 hover:text-white">
+              Export
+            </a>
+            <a href="#setup" className="text-sky-300 underline underline-offset-2 hover:text-white">
+              Setup
+            </a>
           </p>
         </div>
 
-        <section className="space-y-3">
+        <section id="focus" className="space-y-3 scroll-mt-24">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Focus / Enforcer
+          </h2>
+          <p className="text-[11px] text-muted-foreground px-1">
+            Edit full kill list, SoftLand domains, and schedules in{" "}
+            <a href="#rules" className="underline text-sky-300/90">
+              Blocking rules
+            </a>
+            .
+          </p>
+          <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-4 sm:p-6">
+            <FocusControlPanel />
+          </div>
+        </section>
+
+        <section id="policy" className="space-y-3 scroll-mt-24">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            SoftLand / productivity policy
+          </h2>
+          <p className="text-[11px] text-muted-foreground px-1">
+            Site allow/watch/block extras and gate windows:{" "}
+            <a href="#rules" className="underline text-sky-300/90">
+              Edit full rules → #rules
+            </a>
+            .
+          </p>
+          <ProductivityPolicyPanel
+            onSaved={() => {
+              setPlannerRefresh((n) => n + 1);
+              void load();
+            }}
+          />
+        </section>
+
+        <section id="rules" className="space-y-3 scroll-mt-24">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Blocking rules
+          </h2>
+          <p className="text-[11px] text-muted-foreground px-1">
+            Gate schedules (SoftLand mode by time), OS kill list (Arm), and SoftLand site extras.
+            SoftLand ≠ Arm.
+          </p>
+          <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-4 sm:p-6">
+            <GateSchedulesPanel />
+          </div>
+          <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-4 sm:p-6">
+            <AppKillRulesPanel />
+          </div>
+          <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-4 sm:p-6">
+            <SoftLandSiteRulesPanel />
+          </div>
+        </section>
+
+        <section id="planning" className="space-y-3 scroll-mt-24">
           <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Planning
           </h2>
@@ -1938,14 +1935,17 @@ export function ProductivityPage() {
           </div>
         </section>
 
-        <section className="space-y-3">
+        <section id="watch" className="space-y-3 scroll-mt-24">
           <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Watch ↔ PC
           </h2>
           <DesktopManagedBanner feature="Watch sync and voice notes" />
+          <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6">
+            <WearablesSyncPanel />
+          </div>
         </section>
 
-        <section className="space-y-3">
+        <section id="reminders" className="space-y-3 scroll-mt-24">
           <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Plan reminders
           </h2>
@@ -1954,11 +1954,23 @@ export function ProductivityPage() {
           </div>
         </section>
 
-        <section className="space-y-3">
+        <section id="scoring" className="space-y-3 scroll-mt-24">
           <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Scoring & classification
           </h2>
           <DesktopManagedBanner feature="Rules, hard block, gate schedules, and device block" />
+          <p className="text-xs text-muted-foreground px-1">
+            Session override / classification below stay on the web for calendar cleanup. SoftLand
+            policy:{" "}
+            <a href="#policy" className="underline">
+              #policy
+            </a>
+            . OS kills:{" "}
+            <a href="#focus" className="underline">
+              #focus
+            </a>
+            .
+          </p>
           <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6">
             <SessionOverridePanel
               timeline={timeline}
@@ -1980,7 +1992,7 @@ export function ProductivityPage() {
           </div>
         </section>
 
-        <section className="space-y-3">
+        <section id="export" className="space-y-3 scroll-mt-24">
           <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Export data</h2>
           <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6 space-y-5">
             <div className="flex flex-wrap items-start justify-between gap-3">
@@ -2199,22 +2211,27 @@ export function ProductivityPage() {
           </div>
         </section>
 
-        <section className="space-y-3">
+        <section id="setup" className="space-y-3 scroll-mt-24">
           <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Tracker setup</h2>
           <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6 space-y-3">
             <h3 className="font-semibold flex items-center gap-2 text-sm">
               <Terminal size={15} className="text-sky-400" />
-              Edge SelfTracker
+              Edge SelfTracker + Gate
             </h3>
             <p className="text-[11px] text-muted-foreground leading-relaxed">
-              Study browsing is <strong className="text-foreground/85">Microsoft Edge only</strong>. Load the
-              extension, then keep Policy Armed / day mode STUDY so YouTube and other browsers soft-lock.
+              Study browsing is <strong className="text-foreground/85">Microsoft Edge only</strong>. Load
+              SelfTracker + CALT Gate, then use{" "}
+              <a href="#focus" className="underline text-sky-300/90">
+                Focus → Enforcer
+              </a>{" "}
+              for OS kills and SoftLand mode for sites.
             </p>
             <ol className="space-y-2 text-sm text-muted-foreground list-decimal list-inside">
               <li>
                 Open <code className="bg-black/40 px-1.5 py-0.5 rounded text-xs font-mono">edge://extensions</code>{" "}
                 → Developer mode → Load unpacked →{" "}
-                <code className="bg-black/40 px-1.5 py-0.5 rounded text-xs font-mono">selftracker-extension/</code>
+                <code className="bg-black/40 px-1.5 py-0.5 rounded text-xs font-mono">selftracker-extension/</code>{" "}
+                and <code className="bg-black/40 px-1.5 py-0.5 rounded text-xs font-mono">calt-gate-extension/</code>
               </li>
               <li>
                 Or run{" "}
@@ -2223,22 +2240,39 @@ export function ProductivityPage() {
                 </code>
               </li>
               <li>
-                After code updates: <strong className="text-foreground/85">Reload</strong> the extension (v1.5.3+)
-              </li>
-              <li>
-                Chrome / Firefox / installers → soft-lock + Jarvis while enforcing (never killed)
+                After code updates: <strong className="text-foreground/85">Reload</strong> both extensions
               </li>
             </ol>
           </div>
           <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6 space-y-3">
             <h3 className="font-semibold flex items-center gap-2 text-sm">
               <Terminal size={15} className="text-green-400" />
-              Desktop tracker
+              Native enforcer (OS kills)
             </h3>
             <ol className="space-y-2 text-sm text-muted-foreground list-decimal list-inside">
-              <li>Install at logon: <code className="bg-black/40 px-1.5 py-0.5 rounded text-xs font-mono">scripts\install_tracker_startup.bat</code></li>
-              <li>Headless now: <code className="bg-black/40 px-1.5 py-0.5 rounded text-xs font-mono">scripts\desktop_tracker\run_desktop_tracker_headless.bat</code></li>
+              <li>
+                Daily:{" "}
+                <code className="bg-black/40 px-1.5 py-0.5 rounded text-xs font-mono">
+                  scripts\desktop_tracker\run\run_calt_desktop.bat
+                </code>{" "}
+                (opens Focus; prefers Windows service)
+              </li>
+              <li>
+                Console smoke:{" "}
+                <code className="bg-black/40 px-1.5 py-0.5 rounded text-xs font-mono">
+                  scripts\desktop_tracker\run\run_native_enforcer_console.bat
+                </code>
+              </li>
+              <li>
+                Stay-alive (Admin once):{" "}
+                <code className="bg-black/40 px-1.5 py-0.5 rounded text-xs font-mono">
+                  scripts\desktop_tracker\install\install_native_enforcer.ps1
+                </code>
+              </li>
             </ol>
+            <p className="text-[11px] text-muted-foreground">
+              Prefer C++ enforcer + Focus — do not use legacy Python tracker scripts for kills.
+            </p>
           </div>
         </section>
       </div>

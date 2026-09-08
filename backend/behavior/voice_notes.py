@@ -27,19 +27,23 @@ import logging
 import os
 import re
 import threading
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from backend.paths import ROOT
+
 log = logging.getLogger("desktop_tracker.voice_notes")
 
-NOTES_DIR = Path("data/voice_notes")
+NOTES_DIR = ROOT / "data" / "voice_notes"
 PARTIAL_DIR = NOTES_DIR / ".partial"
+SYNC_STATE_PATH = ROOT / "data" / "behavior" / "voice_last_sync.json"
 
 MAX_NOTE_BYTES = 32 * 1024 * 1024
 MAX_CHUNK_BYTES = 64 * 1024
 _NAME_RE = re.compile(r"^[A-Za-z0-9_.-]{1,80}\.opus$")
 
-_lock = threading.Lock()
+_lock = threading.RLock()
 
 
 def fnv1a32(data: bytes) -> str:
@@ -107,6 +111,109 @@ def _discard(upload_id: str) -> None:
             pass
 
 
+def _final_is_valid(final: Path, *, size: int, sha: str) -> bool:
+    """True only when the published file matches declared size and whole-file hash."""
+    try:
+        if not final.is_file() or final.stat().st_size != size:
+            return False
+        return fnv1a32(final.read_bytes()) == str(sha)
+    except OSError:
+        return False
+
+
+def _remove_final_if_invalid(final: Path, *, size: int, sha: str) -> None:
+    """Drop a stale or corrupt published clip so a fresh upload can replace it."""
+    if not final.exists():
+        return
+    if _final_is_valid(final, size=size, sha=sha):
+        return
+    try:
+        final.unlink()
+        log.warning("Removed invalid voice note on disk: %s", final.name)
+    except OSError as exc:
+        log.debug("voice note unlink failed: %s", exc)
+
+
+def _finish_upload_locked(manifest: dict[str, Any], upload_id: str) -> dict[str, Any]:
+    """Verify the reassembled file and publish it atomically (lock must be held)."""
+    size = int(manifest["size"])
+    total_chunks = int(manifest["total_chunks"])
+    received = set(int(i) for i in manifest.get("received") or [])
+    missing = sorted(set(range(total_chunks)) - received)
+    if missing:
+        return {
+            "ok": False,
+            "error": "incomplete",
+            "missing": missing[:64],
+            "missing_count": len(missing),
+        }
+
+    part = _part_path(upload_id)
+    try:
+        blob = part.read_bytes()
+    except OSError as exc:
+        raise LookupError("part_missing") from exc
+
+    if len(blob) != size:
+        _discard(upload_id)
+        return {"ok": False, "error": "size_mismatch", "restart": True}
+
+    actual = fnv1a32(blob)
+    if actual != str(manifest.get("sha")):
+        _discard(upload_id)
+        return {"ok": False, "error": "file_checksum_mismatch", "restart": True}
+
+    gain = _normalize_gain(manifest.get("gain"))
+    from backend.behavior.voice_opus_gain import amplify_zepp_opus
+
+    published = amplify_zepp_opus(blob, gain)
+
+    final = NOTES_DIR / str(manifest["name"])
+    tmp = final.with_suffix(f"{final.suffix}.tmp")
+    try:
+        tmp.write_bytes(published)
+        os.replace(tmp, final)
+    except OSError:
+        try:
+            tmp.unlink(missing_ok=True)
+        except OSError:
+            pass
+        raise
+
+    try:
+        part.unlink()
+    except OSError:
+        pass
+    try:
+        _manifest_path(upload_id).unlink()
+    except OSError:
+        pass
+
+    log.info(
+        "Voice note stored: %s (%d bytes, gain=%.2f)",
+        final.name,
+        len(published),
+        gain,
+    )
+    _write_sync_state(name=final.name, size=len(published))
+    return {
+        "ok": True,
+        "stored": True,
+        "name": final.name,
+        "size": len(published),
+        "gain": gain,
+        "path": str(final),
+    }
+
+
+def _normalize_gain(raw: Any) -> float:
+    try:
+        g = float(raw)
+    except (TypeError, ValueError):
+        return 1.0
+    return max(0.25, min(8.0, g))
+
+
 def begin_upload(
     *,
     name: str,
@@ -114,6 +221,7 @@ def begin_upload(
     chunk_size: int,
     total_chunks: int,
     sha: str,
+    gain: float | None = None,
 ) -> dict[str, Any]:
     """Open (or resume) an upload and report which chunks are already held."""
     safe = _safe_name(name)
@@ -130,14 +238,17 @@ def begin_upload(
         raise ValueError("chunk_count_mismatch")
 
     upload_id = _upload_id(safe, size, str(sha))
+    record_gain = _normalize_gain(gain if gain is not None else 1.0)
 
     with _lock:
         NOTES_DIR.mkdir(parents=True, exist_ok=True)
         PARTIAL_DIR.mkdir(parents=True, exist_ok=True)
 
         final = NOTES_DIR / safe
-        if final.exists() and final.stat().st_size == size:
-            # Already published by an earlier run; let the watch delete its copy.
+        _remove_final_if_invalid(final, size=size, sha=str(sha))
+        if _final_is_valid(final, size=size, sha=str(sha)):
+            # Already published and verified; let the watch delete its copy.
+            _write_sync_state(name=safe, size=size)
             return {
                 "ok": True,
                 "upload_id": upload_id,
@@ -160,16 +271,34 @@ def begin_upload(
                 "chunk_size": chunk_size,
                 "total_chunks": total_chunks,
                 "sha": str(sha),
+                "gain": record_gain,
                 "received": [],
             }
             _write_manifest(upload_id, manifest)
+        else:
+            manifest["gain"] = record_gain
+            _write_manifest(upload_id, manifest)
 
         received = sorted(int(i) for i in manifest.get("received") or [])
+        complete = len(received) == total_chunks
+        if complete:
+            # All chunks are present but VN_FINISH may have failed mid-flight.
+            finished = _finish_upload_locked(manifest, upload_id)
+            if finished.get("ok") and finished.get("stored"):
+                finished.setdefault("upload_id", upload_id)
+                finished.setdefault("received", received)
+                finished.setdefault("complete", True)
+                return finished
+            finished.setdefault("upload_id", upload_id)
+            finished.setdefault("received", received)
+            finished.setdefault("complete", True)
+            return finished
+
         return {
             "ok": True,
             "upload_id": upload_id,
             "received": received,
-            "complete": len(received) == total_chunks,
+            "complete": complete,
             "stored": False,
         }
 
@@ -216,6 +345,8 @@ def accept_chunk(
         with open(part, "r+b") as fh:
             fh.seek(offset)
             fh.write(raw)
+            fh.flush()
+            os.fsync(fh.fileno())
 
         received = set(int(i) for i in manifest.get("received") or [])
         received.add(index)
@@ -238,51 +369,7 @@ def finish_upload(*, upload_id: str) -> dict[str, Any]:
         manifest = _read_manifest(upload_id)
         if manifest is None:
             raise LookupError("unknown_upload")
-
-        size = int(manifest["size"])
-        total_chunks = int(manifest["total_chunks"])
-        received = set(int(i) for i in manifest.get("received") or [])
-        missing = sorted(set(range(total_chunks)) - received)
-        if missing:
-            return {
-                "ok": False,
-                "error": "incomplete",
-                "missing": missing[:64],
-                "missing_count": len(missing),
-            }
-
-        part = _part_path(upload_id)
-        try:
-            blob = part.read_bytes()
-        except OSError as exc:
-            raise LookupError("part_missing") from exc
-
-        if len(blob) != size:
-            _discard(upload_id)
-            return {"ok": False, "error": "size_mismatch", "restart": True}
-
-        actual = fnv1a32(blob)
-        if actual != str(manifest.get("sha")):
-            # Chunks each passed, but the whole does not. Force a clean restart
-            # rather than publishing a file that will not decode.
-            _discard(upload_id)
-            return {"ok": False, "error": "file_checksum_mismatch", "restart": True}
-
-        final = NOTES_DIR / str(manifest["name"])
-        os.replace(part, final)
-        try:
-            _manifest_path(upload_id).unlink()
-        except OSError:
-            pass
-
-        log.info("Voice note stored: %s (%d bytes)", final.name, size)
-        return {
-            "ok": True,
-            "stored": True,
-            "name": final.name,
-            "size": size,
-            "path": str(final),
-        }
+        return _finish_upload_locked(manifest, upload_id)
 
 
 def upload_status(*, upload_id: str) -> dict[str, Any]:
@@ -301,6 +388,58 @@ def upload_status(*, upload_id: str) -> dict[str, Any]:
             "total_chunks": total,
             "complete": len(received) == total,
         }
+
+
+def list_pending_uploads() -> list[dict[str, Any]]:
+    """In-progress chunked uploads waiting for watch chunks."""
+    out: list[dict[str, Any]] = []
+    try:
+        if not PARTIAL_DIR.is_dir():
+            return out
+        for path in sorted(PARTIAL_DIR.glob("*.json")):
+            try:
+                data = json.loads(path.read_text(encoding="utf-8"))
+            except (OSError, ValueError):
+                continue
+            if not isinstance(data, dict):
+                continue
+            received = sorted(int(i) for i in data.get("received") or [])
+            total = int(data.get("total_chunks") or 0)
+            out.append(
+                {
+                    "upload_id": data.get("upload_id") or path.stem,
+                    "name": data.get("name"),
+                    "received_count": len(received),
+                    "total_chunks": total,
+                    "complete": total > 0 and len(received) == total,
+                }
+            )
+    except OSError:
+        pass
+    return out
+
+
+def _write_sync_state(*, name: str, size: int) -> None:
+    payload = {
+        "last_upload_at": datetime.now(timezone.utc).isoformat(),
+        "last_name": str(name),
+        "last_size": int(size),
+    }
+    try:
+        SYNC_STATE_PATH.parent.mkdir(parents=True, exist_ok=True)
+        SYNC_STATE_PATH.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    except OSError as exc:
+        log.debug("voice sync state write failed: %s", exc)
+
+
+def read_sync_state() -> dict[str, Any]:
+    try:
+        if SYNC_STATE_PATH.is_file():
+            data = json.loads(SYNC_STATE_PATH.read_text(encoding="utf-8"))
+            return data if isinstance(data, dict) else {}
+    except (OSError, ValueError):
+        pass
+    return {}
 
 
 def list_notes() -> list[dict[str, Any]]:

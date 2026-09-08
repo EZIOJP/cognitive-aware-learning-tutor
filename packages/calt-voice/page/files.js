@@ -33,6 +33,7 @@ import {
   FNV_INIT,
 } from './notes'
 import { hubFromSide } from '../shared/sidePayload'
+import { brightForSend, keepAppOnWake } from '../shared/displayKeep'
 
 const logger = log.getLogger('calt-voice-files')
 const MAX_ROWS = 4
@@ -158,6 +159,8 @@ Page({
     })
 
     this.render()
+    keepAppOnWake()
+    brightForSend()
     if (this.state.notes.length) this.probe()
   },
 
@@ -240,6 +243,7 @@ Page({
     }
 
     this.state.busy = true
+    brightForSend()
     this.setStatus(`Hashing ${fmtSize(note.size)}…`, COLOR_BUSY)
 
     let sha
@@ -295,6 +299,12 @@ Page({
         .then((res) => {
           const { env, body } = hubFromSide(res)
           if (!env.ok || !body.ok) {
+            if (body.restart) {
+              self.setStatus('Retrying transfer…', COLOR_BUSY)
+              self.state.busy = false
+              self.send(note)
+              return
+            }
             fail(`Verify: ${body.error || env.error || 'failed'}`)
             return
           }
@@ -328,6 +338,7 @@ Page({
       }
 
       self.setStatus(`${host || 'Sending'} ${index + 1}/${total}`, COLOR_BUSY)
+      brightForSend()
 
       mb.request({
         method: 'VN_CHUNK',
@@ -336,6 +347,12 @@ Page({
         .then((res) => {
           const { env, body } = hubFromSide(res)
           if (!env.ok || !body.ok) {
+            if (body.restart) {
+              self.setStatus('Retrying transfer…', COLOR_BUSY)
+              self.state.busy = false
+              self.send(note)
+              return
+            }
             fail(`Chunk ${index + 1}/${total}: ${body.error || env.error || 'failed'}`)
             return
           }
@@ -358,6 +375,12 @@ Page({
       .then((res) => {
         const { env, body } = hubFromSide(res)
         if (!env.ok || !body.ok) {
+          if (body.restart) {
+            self.setStatus('Retrying transfer…', COLOR_BUSY)
+            self.state.busy = false
+            self.send(note)
+            return
+          }
           fail(`Begin: ${body.error || env.error || 'failed'}`)
           return
         }
@@ -371,6 +394,10 @@ Page({
         ;(body.received || []).forEach((n) => {
           have[Number(n)] = true
         })
+        if (body.complete) {
+          finalize(body.upload_id, dest, host)
+          return
+        }
         try {
           fd = openSync({ path: note.name, flag: O_RDONLY })
         } catch (e) {

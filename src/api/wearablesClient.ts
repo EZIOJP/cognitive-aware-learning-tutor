@@ -127,6 +127,14 @@ export type WearableSyncStatus = {
     life_score?: number;
   } | null;
   wearable_day?: WearableDay | null;
+  categories?: {
+    present?: string[];
+    count?: number;
+    details?: Record<string, unknown>;
+    capabilities?: Record<string, unknown> | null;
+    source?: string;
+    dump?: string;
+  };
   authentic?: {
     watch_ingest?: boolean;
     wrote_life?: boolean;

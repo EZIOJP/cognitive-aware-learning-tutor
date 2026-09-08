@@ -1,0 +1,704 @@
+{
+  "schema_version": 1,
+  "kind": "math",
+  "topic": {
+    "topic_id": "math.aptitude.gen-time-work",
+    "title": "Time & work (authored)",
+    "stage": "foundations",
+    "path": [
+      "Aptitude",
+      "Interview",
+      "Time & work"
+    ],
+    "track": "aptitude",
+    "prerequisites": [
+      "math.aptitude.mathqa-physics"
+    ],
+    "note_topic_ids": [
+      "MT1-T07"
+    ],
+    "description": "Classic interview time & work / pipes & cisterns with expression answers."
+  },
+  "questions": [
+    {
+      "id": "math.aptitude.gen-time-work.q0001",
+      "problem": "A can finish a job in 10 days. How much of the job does A do in 1 day?",
+      "answer": "1/10",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [
+        "rate = 1/days"
+      ],
+      "explanation": "rate = 1/days",
+      "hint": "Work rate = 1 / time. Combined rates add (or subtract for emptying).",
+      "tags": [
+        "time-work",
+        "aptitude",
+        "authored"
+      ]
+    },
+    {
+      "id": "math.aptitude.gen-time-work.q0002",
+      "problem": "A finishes a job in 12 days and B in 18 days. In how many days do they finish together?",
+      "answer": "36/5",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [
+        "1/12+1/18"
+      ],
+      "explanation": "1/12+1/18",
+      "hint": "Work rate = 1 / time. Combined rates add (or subtract for emptying).",
+      "tags": [
+        "time-work",
+        "aptitude",
+        "authored"
+      ]
+    },
+    {
+      "id": "math.aptitude.gen-time-work.q0003",
+      "problem": "A finishes in 8 days, B in 12 days. Days together?",
+      "answer": "24/5",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [
+        "add rates"
+      ],
+      "explanation": "add rates",
+      "hint": "Work rate = 1 / time. Combined rates add (or subtract for emptying).",
+      "tags": [
+        "time-work",
+        "aptitude",
+        "authored"
+      ]
+    },
+    {
+      "id": "math.aptitude.gen-time-work.q0004",
+      "problem": "A can do a job in 15 days. B is twice as fast as A. Days for B alone?",
+      "answer": "15/2",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [
+        "twice as fast → half the time"
+      ],
+      "explanation": "twice as fast → half the time",
+      "hint": "Work rate = 1 / time. Combined rates add (or subtract for emptying).",
+      "tags": [
+        "time-work",
+        "aptitude",
+        "authored"
+      ]
+    },
+    {
+      "id": "math.aptitude.gen-time-work.q0005",
+      "problem": "A and B together finish in 6 days. A alone takes 10 days. Days for B alone?",
+      "answer": "15",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [
+        "1/B = 1/6 - 1/10"
+      ],
+      "explanation": "1/B = 1/6 - 1/10",
+      "hint": "Work rate = 1 / time. Combined rates add (or subtract for emptying).",
+      "tags": [
+        "time-work",
+        "aptitude",
+        "authored"
+      ]
+    },
+    {
+      "id": "math.aptitude.gen-time-work.q0006",
+      "problem": "A, B, C rates are 1/5, 1/10, 1/15 of a job per day. Days all three together?",
+      "answer": "30/11",
+      "answer_format": "expression",
+      "difficulty": "medium",
+      "solution_steps": [
+        "sum rates"
+      ],
+      "explanation": "sum rates",
+      "hint": "Work rate = 1 / time. Combined rates add (or subtract for emptying).",
+      "tags": [
+        "time-work",
+        "aptitude",
+        "authored"
+      ]
+    },
+    {
+      "id": "math.aptitude.gen-time-work.q0007",
+      "problem": "A does a job in 20 days. After 5 days B joins and they finish in 5 more days. Days for B alone?",
+      "answer": "20",
+      "answer_format": "expression",
+      "difficulty": "medium",
+      "solution_steps": [
+        "A works 10 days total"
+      ],
+      "explanation": "A works 10 days total",
+      "hint": "Work rate = 1 / time. Combined rates add (or subtract for emptying).",
+      "tags": [
+        "time-work",
+        "aptitude",
+        "authored"
+      ]
+    },
+    {
+      "id": "math.aptitude.gen-time-work.q0008",
+      "problem": "Pipe A fills a tank in 4 hours, pipe B in 6 hours. Hours to fill together?",
+      "answer": "12/5",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [
+        "filling rates add"
+      ],
+      "explanation": "filling rates add",
+      "hint": "Work rate = 1 / time. Combined rates add (or subtract for emptying).",
+      "tags": [
+        "time-work",
+        "aptitude",
+        "authored"
+      ]
+    },
+    {
+      "id": "math.aptitude.gen-time-work.q0009",
+      "problem": "Pipe A fills in 5 h, B empties in 10 h. Hours to fill if both open?",
+      "answer": "10",
+      "answer_format": "expression",
+      "difficulty": "medium",
+      "solution_steps": [
+        "1/5 - 1/10"
+      ],
+      "explanation": "1/5 - 1/10",
+      "hint": "Work rate = 1 / time. Combined rates add (or subtract for emptying).",
+      "tags": [
+        "time-work",
+        "aptitude",
+        "authored"
+      ]
+    },
+    {
+      "id": "math.aptitude.gen-time-work.q0010",
+      "problem": "Two pipes fill a tank in 10 and 15 minutes. Minutes together?",
+      "answer": "6",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [
+        "1/10+1/15"
+      ],
+      "explanation": "1/10+1/15",
+      "hint": "Work rate = 1 / time. Combined rates add (or subtract for emptying).",
+      "tags": [
+        "time-work",
+        "aptitude",
+        "authored"
+      ]
+    },
+    {
+      "id": "math.aptitude.gen-time-work.q0011",
+      "problem": "A is thrice as efficient as B. Together they finish in 12 days. Days for A alone?",
+      "answer": "16",
+      "answer_format": "expression",
+      "difficulty": "medium",
+      "solution_steps": [
+        "rates 3k and k"
+      ],
+      "explanation": "rates 3k and k",
+      "hint": "Work rate = 1 / time. Combined rates add (or subtract for emptying).",
+      "tags": [
+        "time-work",
+        "aptitude",
+        "authored"
+      ]
+    },
+    {
+      "id": "math.aptitude.gen-time-work.q0012",
+      "problem": "A and B together take 8 days; A alone takes 12. Days for B?",
+      "answer": "24",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [
+        "1/B=1/8-1/12"
+      ],
+      "explanation": "1/B=1/8-1/12",
+      "hint": "Work rate = 1 / time. Combined rates add (or subtract for emptying).",
+      "tags": [
+        "time-work",
+        "aptitude",
+        "authored"
+      ]
+    },
+    {
+      "id": "math.aptitude.gen-time-work.q0013",
+      "problem": "6 men finish a job in 10 days. Days for 15 men (same rate)?",
+      "answer": "4",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [
+        "man-days constant"
+      ],
+      "explanation": "man-days constant",
+      "hint": "Work rate = 1 / time. Combined rates add (or subtract for emptying).",
+      "tags": [
+        "time-work",
+        "aptitude",
+        "authored"
+      ]
+    },
+    {
+      "id": "math.aptitude.gen-time-work.q0014",
+      "problem": "12 women finish in 8 days. Days for 8 women?",
+      "answer": "12",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [
+        "man-days"
+      ],
+      "explanation": "man-days",
+      "hint": "Work rate = 1 / time. Combined rates add (or subtract for emptying).",
+      "tags": [
+        "time-work",
+        "aptitude",
+        "authored"
+      ]
+    },
+    {
+      "id": "math.aptitude.gen-time-work.q0015",
+      "problem": "A takes 5 days more than B; together 6 days. Days for B alone?",
+      "answer": "10",
+      "answer_format": "expression",
+      "difficulty": "hard",
+      "solution_steps": [
+        "1/(x+5)+1/x=1/6"
+      ],
+      "explanation": "1/(x+5)+1/x=1/6",
+      "hint": "Work rate = 1 / time. Combined rates add (or subtract for emptying).",
+      "tags": [
+        "time-work",
+        "aptitude",
+        "authored"
+      ]
+    },
+    {
+      "id": "math.aptitude.gen-time-work.q0016",
+      "problem": "A takes 4 days less than B; together 24/7 days. Days for A?",
+      "answer": "6",
+      "answer_format": "expression",
+      "difficulty": "hard",
+      "solution_steps": [
+        "let B=x, A=x-4"
+      ],
+      "explanation": "let B=x, A=x-4",
+      "hint": "Work rate = 1 / time. Combined rates add (or subtract for emptying).",
+      "tags": [
+        "time-work",
+        "aptitude",
+        "authored"
+      ]
+    },
+    {
+      "id": "math.aptitude.gen-time-work.q0017",
+      "problem": "Work done by A in 3 days equals B in 4 days. If A finishes alone in 20 days, days for B?",
+      "answer": "80/3",
+      "answer_format": "expression",
+      "difficulty": "medium",
+      "solution_steps": [
+        "rates proportional"
+      ],
+      "explanation": "rates proportional",
+      "hint": "Work rate = 1 / time. Combined rates add (or subtract for emptying).",
+      "tags": [
+        "time-work",
+        "aptitude",
+        "authored"
+      ]
+    },
+    {
+      "id": "math.aptitude.gen-time-work.q0018",
+      "problem": "A can do 1/3 of a job in 5 days. Days for full job alone?",
+      "answer": "15",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [
+        "scale up"
+      ],
+      "explanation": "scale up",
+      "hint": "Work rate = 1 / time. Combined rates add (or subtract for emptying).",
+      "tags": [
+        "time-work",
+        "aptitude",
+        "authored"
+      ]
+    },
+    {
+      "id": "math.aptitude.gen-time-work.q0019",
+      "problem": "B can do 40% of a job in 8 days. Days for full job?",
+      "answer": "20",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [
+        "0.4 in 8 → 1 in 20"
+      ],
+      "explanation": "0.4 in 8 → 1 in 20",
+      "hint": "Work rate = 1 / time. Combined rates add (or subtract for emptying).",
+      "tags": [
+        "time-work",
+        "aptitude",
+        "authored"
+      ]
+    },
+    {
+      "id": "math.aptitude.gen-time-work.q0020",
+      "problem": "A and B take 9 and 12 days. They work alternate days starting with A. Days to finish?",
+      "answer": "10",
+      "answer_format": "expression",
+      "difficulty": "hard",
+      "solution_steps": [
+        "2-day cycle = 1/9+1/12"
+      ],
+      "explanation": "2-day cycle = 1/9+1/12",
+      "hint": "Work rate = 1 / time. Combined rates add (or subtract for emptying).",
+      "tags": [
+        "time-work",
+        "aptitude",
+        "authored"
+      ]
+    },
+    {
+      "id": "math.aptitude.gen-time-work.q0021",
+      "problem": "3 taps fill a cistern in 12, 15, 20 minutes. Minutes all open?",
+      "answer": "5",
+      "answer_format": "expression",
+      "difficulty": "medium",
+      "solution_steps": [
+        "1/12+1/15+1/20"
+      ],
+      "explanation": "1/12+1/15+1/20",
+      "hint": "Work rate = 1 / time. Combined rates add (or subtract for emptying).",
+      "tags": [
+        "time-work",
+        "aptitude",
+        "authored"
+      ]
+    },
+    {
+      "id": "math.aptitude.gen-time-work.q0022",
+      "problem": "A leak empties a full tank in 20 h. Filling pipe alone fills empty tank in 5 h. Hours with both?",
+      "answer": "20/3",
+      "answer_format": "expression",
+      "difficulty": "medium",
+      "solution_steps": [
+        "1/5-1/20"
+      ],
+      "explanation": "1/5-1/20",
+      "hint": "Work rate = 1 / time. Combined rates add (or subtract for emptying).",
+      "tags": [
+        "time-work",
+        "aptitude",
+        "authored"
+      ]
+    },
+    {
+      "id": "math.aptitude.gen-time-work.q0023",
+      "problem": "20 workers finish in 15 days. After 5 days, 5 leave. Extra days for remaining?",
+      "answer": "40/3",
+      "answer_format": "expression",
+      "difficulty": "hard",
+      "solution_steps": [
+        "remaining work after 5 days"
+      ],
+      "explanation": "remaining work after 5 days",
+      "hint": "Work rate = 1 / time. Combined rates add (or subtract for emptying).",
+      "tags": [
+        "time-work",
+        "aptitude",
+        "authored"
+      ]
+    },
+    {
+      "id": "math.aptitude.gen-time-work.q0024",
+      "problem": "A+B=10 days, B+C=12 days, C+A=15 days. Days for A alone?",
+      "answer": "120/7",
+      "answer_format": "expression",
+      "difficulty": "hard",
+      "solution_steps": [
+        "2(A+B+C)=1/10+1/12+1/15"
+      ],
+      "explanation": "2(A+B+C)=1/10+1/12+1/15",
+      "hint": "Work rate = 1 / time. Combined rates add (or subtract for emptying).",
+      "tags": [
+        "time-work",
+        "aptitude",
+        "authored"
+      ]
+    },
+    {
+      "id": "math.aptitude.gen-time-work.q0025",
+      "problem": "A+B=10 days, B+C=12, C+A=15. Days for A+B+C together?",
+      "answer": "120/17",
+      "answer_format": "expression",
+      "difficulty": "hard",
+      "solution_steps": [
+        "half the sum of pairwise"
+      ],
+      "explanation": "half the sum of pairwise",
+      "hint": "Work rate = 1 / time. Combined rates add (or subtract for emptying).",
+      "tags": [
+        "time-work",
+        "aptitude",
+        "authored"
+      ]
+    },
+    {
+      "id": "math.aptitude.gen-time-work.q0026",
+      "problem": "A finishes 2/5 of work in 8 days. Remaining work by B in 9 days. Days A+B full job?",
+      "answer": "90/7",
+      "answer_format": "expression",
+      "difficulty": "medium",
+      "solution_steps": [
+        "find both rates"
+      ],
+      "explanation": "find both rates",
+      "hint": "Work rate = 1 / time. Combined rates add (or subtract for emptying).",
+      "tags": [
+        "time-work",
+        "aptitude",
+        "authored"
+      ]
+    },
+    {
+      "id": "math.aptitude.gen-time-work.q0027",
+      "problem": "Machine A produces 100 units/day, B 150. Days for 1000 units both running?",
+      "answer": "4",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [
+        "250/day"
+      ],
+      "explanation": "250/day",
+      "hint": "Work rate = 1 / time. Combined rates add (or subtract for emptying).",
+      "tags": [
+        "time-work",
+        "aptitude",
+        "authored"
+      ]
+    },
+    {
+      "id": "math.aptitude.gen-time-work.q0028",
+      "problem": "A does a job in 16 days. With B, in 10 days. Days B alone?",
+      "answer": "80/3",
+      "answer_format": "expression",
+      "difficulty": "medium",
+      "solution_steps": [
+        "1/B=1/10-1/16"
+      ],
+      "explanation": "1/B=1/10-1/16",
+      "hint": "Work rate = 1 / time. Combined rates add (or subtract for emptying).",
+      "tags": [
+        "time-work",
+        "aptitude",
+        "authored"
+      ]
+    },
+    {
+      "id": "math.aptitude.gen-time-work.q0029",
+      "problem": "4 painters finish a wall in 6 days. Days for 3 painters?",
+      "answer": "8",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [
+        "man-days"
+      ],
+      "explanation": "man-days",
+      "hint": "Work rate = 1 / time. Combined rates add (or subtract for emptying).",
+      "tags": [
+        "time-work",
+        "aptitude",
+        "authored"
+      ]
+    },
+    {
+      "id": "math.aptitude.gen-time-work.q0030",
+      "problem": "A works at 50% of B. Together 12 days. Days for B alone?",
+      "answer": "18",
+      "answer_format": "expression",
+      "difficulty": "medium",
+      "solution_steps": [
+        "rates k and 2k"
+      ],
+      "explanation": "rates k and 2k",
+      "hint": "Work rate = 1 / time. Combined rates add (or subtract for emptying).",
+      "tags": [
+        "time-work",
+        "aptitude",
+        "authored"
+      ]
+    },
+    {
+      "id": "math.aptitude.gen-time-work.q0031",
+      "problem": "Pipe fills in 8 h. After 3 h of filling, a leak empties remaining in 10 h. Leak empty-full hours?",
+      "answer": "16",
+      "answer_format": "expression",
+      "difficulty": "hard",
+      "solution_steps": [
+        "remaining 5/8 emptied in 10h"
+      ],
+      "explanation": "remaining 5/8 emptied in 10h",
+      "hint": "Work rate = 1 / time. Combined rates add (or subtract for emptying).",
+      "tags": [
+        "time-work",
+        "aptitude",
+        "authored"
+      ]
+    },
+    {
+      "id": "math.aptitude.gen-time-work.q0032",
+      "problem": "A,B together 5 days; A works alone for 3 days then B alone finishes rest in 6 days. Days A alone?",
+      "answer": "15/2",
+      "answer_format": "expression",
+      "difficulty": "hard",
+      "solution_steps": [
+        "system of rates"
+      ],
+      "explanation": "system of rates",
+      "hint": "Work rate = 1 / time. Combined rates add (or subtract for emptying).",
+      "tags": [
+        "time-work",
+        "aptitude",
+        "authored"
+      ]
+    },
+    {
+      "id": "math.aptitude.gen-time-work.q0033",
+      "problem": "A alone finishes in 9 days, B in 18. They work together for 3 days. What fraction of the job remains?",
+      "answer": "1/2",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [
+        "work done = 3/9+3/18=1/2"
+      ],
+      "explanation": "work done = 3/9+3/18=1/2",
+      "hint": "Work rate = 1 / time. Combined rates add (or subtract for emptying).",
+      "tags": [
+        "time-work",
+        "aptitude",
+        "authored"
+      ]
+    },
+    {
+      "id": "math.aptitude.gen-time-work.q0034",
+      "problem": "If 8 men or 12 women finish in 10 days, days for 4 men and 4 women?",
+      "answer": "12",
+      "answer_format": "expression",
+      "difficulty": "hard",
+      "solution_steps": [
+        "equate man=woman rates"
+      ],
+      "explanation": "equate man=woman rates",
+      "hint": "Work rate = 1 / time. Combined rates add (or subtract for emptying).",
+      "tags": [
+        "time-work",
+        "aptitude",
+        "authored"
+      ]
+    },
+    {
+      "id": "math.aptitude.gen-time-work.q0035",
+      "problem": "A can finish in 25 days. After working 10 days, remaining given to B who finishes in 20 days. Days B alone for full?",
+      "answer": "100/3",
+      "answer_format": "expression",
+      "difficulty": "medium",
+      "solution_steps": [
+        "B does 3/5 in 20"
+      ],
+      "explanation": "B does 3/5 in 20",
+      "hint": "Work rate = 1 / time. Combined rates add (or subtract for emptying).",
+      "tags": [
+        "time-work",
+        "aptitude",
+        "authored"
+      ]
+    },
+    {
+      "id": "math.aptitude.gen-time-work.q0036",
+      "problem": "Efficiency of A:B = 3:2. Together 20 days. Days A alone?",
+      "answer": "100/3",
+      "answer_format": "expression",
+      "difficulty": "medium",
+      "solution_steps": [
+        "rates 3k,2k"
+      ],
+      "explanation": "rates 3k,2k",
+      "hint": "Work rate = 1 / time. Combined rates add (or subtract for emptying).",
+      "tags": [
+        "time-work",
+        "aptitude",
+        "authored"
+      ]
+    },
+    {
+      "id": "math.aptitude.gen-time-work.q0037",
+      "problem": "A+B finish 60% in 9 days. Rest by A alone in 8 days. Days B alone for full job?",
+      "answer": "45",
+      "answer_format": "expression",
+      "difficulty": "hard",
+      "solution_steps": [
+        "find rates from partial"
+      ],
+      "explanation": "find rates from partial",
+      "hint": "Work rate = 1 / time. Combined rates add (or subtract for emptying).",
+      "tags": [
+        "time-work",
+        "aptitude",
+        "authored"
+      ]
+    },
+    {
+      "id": "math.aptitude.gen-time-work.q0038",
+      "problem": "Cistern has 2 inlet pipes 20 and 30 min and 1 outlet 15 min. Minutes to fill all open?",
+      "answer": "60",
+      "answer_format": "expression",
+      "difficulty": "hard",
+      "solution_steps": [
+        "1/20+1/30-1/15"
+      ],
+      "explanation": "1/20+1/30-1/15",
+      "hint": "Work rate = 1 / time. Combined rates add (or subtract for emptying).",
+      "tags": [
+        "time-work",
+        "aptitude",
+        "authored"
+      ]
+    },
+    {
+      "id": "math.aptitude.gen-time-work.q0039",
+      "problem": "A does half the work in 8 days, B does the other half in 8 days (sequential). Days if both from start?",
+      "answer": "8",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [
+        "each half → together full in 8"
+      ],
+      "explanation": "each half → together full in 8",
+      "hint": "Work rate = 1 / time. Combined rates add (or subtract for emptying).",
+      "tags": [
+        "time-work",
+        "aptitude",
+        "authored"
+      ]
+    },
+    {
+      "id": "math.aptitude.gen-time-work.q0040",
+      "problem": "10 diggers dig a trench in 12 days. Days for 15 diggers?",
+      "answer": "8",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [
+        "inverse proportion"
+      ],
+      "explanation": "inverse proportion",
+      "hint": "Work rate = 1 / time. Combined rates add (or subtract for emptying).",
+      "tags": [
+        "time-work",
+        "aptitude",
+        "authored"
+      ]
+    }
+  ]
+}

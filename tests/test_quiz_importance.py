@@ -136,6 +136,21 @@ def test_low_mastery_lists_weak_only():
     assert rows[0]["total"] == 2
 
 
+def test_low_mastery_skips_catalog_only_tags():
+    """Must not O(catalog_tags × cards) — only tags on cards matter."""
+    store = imp.empty_store()
+    weak = _card({"tags": ["MT1-T07"]}, mastery=1)
+    # Huge tag list that does not appear on any card should not create rows
+    # and must finish quickly without scanning each id against every card.
+    phantom = [f"PHANTOM-T{i:04d}" for i in range(500)]
+    rows = imp.list_low_mastery([weak], phantom + ["MT1-T07"], store)
+    assert len(rows) == 1
+    assert rows[0]["tag_id"] == "MT1-T07"
+    # None → infer tags from cards only
+    rows2 = imp.list_low_mastery([weak], None, store)
+    assert len(rows2) == 1
+
+
 def test_queue_sort_importance_overdue():
     now = datetime.now(UTC)
     a = _card({"tags": ["T"]}, mastery=0, item_key="a", due=now - timedelta(days=3))

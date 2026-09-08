@@ -11,6 +11,8 @@ export interface PluginNavItem {
   label: string;
   icon: any; // Lucide icon
   end?: boolean;
+  /** Sidebar / Focus section bar — study | focus | life | system */
+  category?: "study" | "focus" | "life" | "system";
 }
 
 export interface PluginWidget {

@@ -1,0 +1,426 @@
+{
+  "schema_version": 1,
+  "kind": "math",
+  "topic": {
+    "topic_id": "math.aptitude.saket-wipro-elite-nlth",
+    "title": "Programming aptitude — Wipro Elite NLTH",
+    "stage": "foundations",
+    "path": [
+      "Aptitude",
+      "SAKET",
+      "Wipro Elite NLTH"
+    ],
+    "track": "aptitude",
+    "prerequisites": [],
+    "note_topic_ids": [
+      "MT1-T13"
+    ],
+    "description": "Interview coding aptitude from Wipro Elite NLTH."
+  },
+  "questions": [
+    {
+      "id": "math.aptitude.saket-wipro-elite-nlth.q0001",
+      "problem": "**Wipro Elite NLTH · Que 1**\n\nPrepsters Wipro NLTH Coding Question -1 :\nNOTE:- Please comment down the code in other languages as well below –\n\nQues:  C Program to check if two given matrices are identical\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "",
+      "answer_format": "open",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Trace the sample carefully; watch null / edge cases.",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "wipro-elite-nlth",
+        "no-answer",
+        "open"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-wipro-elite-nlth.q0002",
+      "problem": "**Wipro Elite NLTH · Que 10 - Matrix Multiply**\n\nMatrix Multiplication in Java\nWe can multiply two matrices in java using binary * operator. In case of matrix multiplication, one row element of first matrix is multiplied by all columns of second matrix. In this article, we will discuss about the multiplication of matrix in java\n\nMatrix Multiplication in java\nMatrix Multiplication in Java\nObtaining a single matrix from the entries of two matrices by using a binary operation is known as Matrix multiplication. In simpler terms, if two matrices matrix1 and matrix2 of order a*b and b*c are multiplied, the matrix obtained is of the order a*c. \n\nFirst Matrix :\n1 1 1 \n2 2 2 \n3 3 3 \n4 4 4 \n\nSecond Matrix :\n1 1 1 1 \n2 2 2 2 \n3 3 3 3 \n\nResultant Matrix:\n6 6 6 6 \n12 12 12 12 \n18 18 18 18 \n24 24 24 24\n \n\nApproach\nTake the two matrices as input to be multiplies.\nCreate the new matrix mat3 to store the product of two matrices.\nTraverse each element of the two metrices and multiply them.\nStore this product in the new matrix at the corresponding index.\nPrint the Resultant matrix.\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "",
+      "answer_format": "open",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: to be multiplies. | Create the new matrix mat3 to store the product of two matrices. | Traverse each element of the two metrices and multiply them. | Store thi…",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "wipro-elite-nlth",
+        "no-answer",
+        "open"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-wipro-elite-nlth.q0003",
+      "problem": "**Wipro Elite NLTH · Que 11 - Remove Vowels**\n\nRemove Vowels from a String \nIn this article we will learn how to code a Java program to remove vowels from a string. ‘A’, ‘E’, ‘I’, ‘O’, ‘U’ are five vowels out of 26 characters in English alphabet letters. Java programming is case sensitive, and hence lowercase and uppercase characters are considered differently, so we will have to check for both the cases and then we can remove the vowels from a string\n\nRemove the vowels from a String in java\nApproach\nStep 1: Take input str as a String.\nStep 2: Convert the string into character array.\nStep 3: Traverse the complete array and check if the character present at particular index is vowel or not.\nStep 4: If the character if vowel the continue the loop else concatenate the character into resultant string.\nStep 5: Print the resultant string.\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "",
+      "answer_format": "open",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: str as a String. | Step 2: Convert the string into character array. | Step 3: Traverse the complete array and check if the character present at particular inde…",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "wipro-elite-nlth",
+        "no-answer",
+        "open"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-wipro-elite-nlth.q0004",
+      "problem": "**Wipro Elite NLTH · Que 12 - Odd digit sum**\n\nSum of all odd digits of a Number\nJava program to print sum of all odd digits of a larger number is being explained in this article. Sum of all odd digits can be found by separating each digit from the number and checking whether the digit is odd or not, if odd then add that digit.\n\nSample Input : 1234567\nSample Output : 16\nSum of odd digits of a number in java\nApproach\nStep 1: Take a long number as input from the user.\nStep 2: Extract a single digit from a number.\nStep 3: Check if digit is odd or not.\nStep 4: If digit is odd, then add the digit to variable sum.\nStep 5: Print the sum.\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "16",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: 1234567",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "wipro-elite-nlth"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-wipro-elite-nlth.q0005",
+      "problem": "**Wipro Elite NLTH · Que 13 - Transpose**\n\nTranspose of a Matrix\nIn this article, we will discuss the java program to print the transpose of a matrix. Converting rows of matrix into columns and columns of a matrix into rows is called transpose of a matrix. In other words, transpose of matrix[][] is obtained by changing matrix[i][j] to matrix[j][i].\n\nTranspose of matrix in java\nTranspose of a Matrix in Java\nA transpose of a matrix is the matrix flipped over its diagonal i.e. the row and column indices of the matrix are switched. An example of this is given as follows −\n\nMatrix = \n1 2 3\n4 5 6\n7 8 9\n\nTranspose of Matrix  = \n1 4 7\n2 5 8\n3 6 9\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "",
+      "answer_format": "open",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Trace the sample carefully; watch null / edge cases.",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "wipro-elite-nlth",
+        "no-answer",
+        "open"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-wipro-elite-nlth.q0006",
+      "problem": "**Wipro Elite NLTH · Que 14 - Largest element 2D Array**\n\nDisplay Largest Element in 2-D Array\nIn this article, we will discuss about largest element in each row in 2-D Array. Array has n-rows and m-columns , here our task is to write a program to Display the largest element in each row in a 2-D Array in Java.\n\nSample input: a=[[1,2,3],[6,5,4],[8,9,7]]\nSample output: 3 6 9\nLargest element in 2-D Array in java\nApproach\nTake the row and column of a matrix as input.\nTake  row*column space separated elements as input.\nDeclare max variable and initialize it with the Minimum value of Integer.\nTraverse each element of a row and print it.\nAt the end all the max element of each row get printed.\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "3 6 9",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: a=[[1,2,3],[6,5,4],[8,9,7]]",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "wipro-elite-nlth"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-wipro-elite-nlth.q0007",
+      "problem": "**Wipro Elite NLTH · Que 15 - Balanced Parenthesis**\n\nBalanced Parenthesis\nTo check balanced parenthesis is a basic interview question where we are asked to find whether the given string(of brackets) is balanced or not. To do this , the traditional way of doing is using stacks but we can also find by using normal programming techniques. Different brackets are  ( ) , [ ] , { }. Question can be asked on any type of bracket or of all types of brackets.\n\nSample input: ()(())\nSample output: True\nBalanced Parenthesis in Java\nAlgorithm\nDeclare a character stack.\nNow traverse the expression string exp. \nIf the current character is a starting bracket (‘(‘ or ‘{‘ or ‘[‘) then push it to stack.\nIf the current character is a closing bracket (‘)’ or ‘}’ or ‘]’) then pop from stack and if the popped character is the matching starting bracket then fine else brackets are not balanced.\nAfter complete traversal, if there is some starting bracket left in stack then “not balanced”\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "True",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: ()(())",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "wipro-elite-nlth"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-wipro-elite-nlth.q0008",
+      "problem": "**Wipro Elite NLTH · Que 16**\n\nWipro’s client eBay wants to run a campaign on their website, which will have the following parameters, eBay wants that on certain x products, they want to calculate the final price, for each product on eBay there will be a stock unit parameter, this parameter will denote, how many items are their in their fulfillment center\n\nNow, while these numbers if are positive means product x is available in the fulfillment center and if not than the product is not available and cannot be shipped to the customer \n\nNow the price on for each product varies based on the distance of the customer from the fulfillment center. Now, each product is in different fulfillment zone. Now, these values are 00’s kms for each centurion km. The price available would further increase by factor distance.\n\nYou’ve to find the maximum discount price for each product if the product can be shipped.\n\nFollowing are the input/output parameters :\n\nInput\n\n The first line of the input will contain number of products.\nThe second line will contain price for each of these products.\nThe third line contains shipping distance in 00’s kms\nThe fourth line contains SKU’s\nOutput\n\nIt will contain the final price for each deliverable item in SKU’s\nExample :\n\nInput:\n\n6\n87 103 229 41 8 86\n3 1 9 2 1 2\n7 -21 30 0 -4 -3\nOutput\n\n261 2061\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "parameters :",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: /output parameters : |  | Input |  |  The first line of the input will contain number of products. | The second line will contain price for each of these produ…",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "wipro-elite-nlth"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-wipro-elite-nlth.q0009",
+      "problem": "**Wipro Elite NLTH · Que 17**\n\nProblem: in this first line you are required to take the value of m and n as the number of rows and columns of matrix, then you are required to take the input elements of array.\nAs an output you are required to print the sum of each row then the row having the maximum sum.\nTest Case :\nInput : 3 3\n1 2 3\n4 5 6\n7 8 9\nOutput :\nRow 1 : 6\nRow 2 : 15\nRow 3 : 24\nRow 3 is having the maximum sum : 24\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "you are required to print the sum of each row then the row having the maximum sum.",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: elements of array. | As an output you are required to print the sum of each row then the row having the maximum sum. | Test Case : | Input : 3 3 | 1 2 3 | 4 5 …",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "wipro-elite-nlth"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-wipro-elite-nlth.q0010",
+      "problem": "**Wipro Elite NLTH · Que 18**\n\nProblem: You are required to count the number of words in a sentence.\nYou are required to pass all the test cases\n\nTest Cases :\nTest Case : 1\nInput : welcome to the world\nOutput : 4\n\nTest Case : 2\nInput : [space] say hello\nOutput : 2\n\nTest Case : 3\nInput : To get pass you need to study hard [space] [space]\nOutput : 8\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "4",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: welcome to the world",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "wipro-elite-nlth"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-wipro-elite-nlth.q0011",
+      "problem": "**Wipro Elite NLTH · Que 19**\n\nProblem: First of all you need to input a whole sentence in the string, then you need to enter the target\nword.\nAs an output you need to find the number of times that particular target word is repeated in the\nsentence.\n\nTest Cases :\n\nTest Case : 1\nInput : welcome world to the new world\nworld\nOutput : 2\n\nTest Case : 2\nInput : working hard and working smart both are different ways of working\nworking\nOutput : 3\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "you need to find the number of times that particular target word is repeated in the",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: a whole sentence in the string, then you need to enter the target | word. | As an output you need to find the number of times that particular target word is re…",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "wipro-elite-nlth"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-wipro-elite-nlth.q0012",
+      "problem": "**Wipro Elite NLTH · Que 2**\n\nPrepSter Wipro NLTH Coding Question – 2\nPrint a given matrix in spiral form\n\nQues: Given a 2D array, print it in spiral form. See the following examples.\n\nNOTE:-  Please comment down the code in other languages as well below .\n\nInput:\n        1    2   3   4\n        5    6   7   8\n        9   10  11  12\n        13  14  15  16\nOutput: \n1 2 3 4 8 12 16 15 14 13 9 5 6 7 11 10 \nInput:\n        1   2   3   4  5   6\n        7   8   9  10  11  12\n        13  14  15 16  17  18\nOutput: \n1 2 3 4 5 6 12 18 17 16 15 14 13 7 8 9 10 11\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "1 2 3 4 8 12 16 15 14 13 9 5 6 7 11 10",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: 1    2   3   4 |         5    6   7   8 |         9   10  11  12 |         13  14  15  16",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "wipro-elite-nlth"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-wipro-elite-nlth.q0013",
+      "problem": "**Wipro Elite NLTH · Que 20**\n\nProblem Statement\n\nYou are required to implement the following function:\nInt SumNumberDivisible(int m, int n);\n\nThe function accepts 2 positive integer ‘m’ and ‘n’ as its arguments.\nYou are required to calculate the sum of numbers divisible both by 3 and 5, between ‘m’ and ‘n’ both inclusive and return the same.\n\nNote\n0 < m <= n\n\nExample\nInput:\nm : 12\nn : 50\nOutput   90\n\nExplanation:\nThe numbers divisible by both 3 and 5, between 12 and 50 both inclusive are\n{15, 30, 45} and their sum is 90.\n\nSample Input\n\nm : 100\nn : 160\n\nSample Output\n\n510\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "90",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: m : 12 | n : 50 | Output   90 |  | Explanation: | The numbers divisible by both 3 and 5, between 12 and 50 both inclusive are | {15, 30, 45} and their sum is 9…",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "wipro-elite-nlth"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-wipro-elite-nlth.q0014",
+      "problem": "**Wipro Elite NLTH · Que 21**\n\nInput\nThe first line of input consists of three space separated integers. Num, start and end representing the size of list [N], the starting value of the range and the ending value of the range respectively.\nThe second line of input consists N space separated integers representing the distances of the employee from the company.\n\nOutput\nPrint space separated integers representing the ID’s of the employee whose distance liew within the given range else return -1.\n\nExample\nInput\n6 30 50\n29 38 12 48 39 55\n\nOutput\n1 3 4\n\nExplanation :\nThere are 3 employees with id 1, 3, 4 whose distance from the office lies within the given range.\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "Print space separated integers representing the ID’s of the employee whose distance liew within the given range else return -1.",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: The first line of input consists of three space separated integers. Num, start and end representing the size of list [N], the starting value of the range and t…",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "wipro-elite-nlth"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-wipro-elite-nlth.q0015",
+      "problem": "**Wipro Elite NLTH · Que 22**\n\nWrite a code for the following functions\nFunction 1 : sortArray\nIt’s function is to sort the passed array with a particular length, there are 2 parameters passed into it first is the length of array and next is the elements of list.\nFunction 2 : findMaxElement\nIt’s function is to get the 2 array with their own particular elements and length, and find the maximum element from both the array and print it.\n\nInput\n12\n2 5 1 3 9 8 4 6 5 2 3 11\n11\n11 13 2 4 15 17 67 44 2 100 23\n\nOutput\n100\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "100",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: 12 | 2 5 1 3 9 8 4 6 5 2 3 11 | 11 | 11 13 2 4 15 17 67 44 2 100 23 |  | Output | 100",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "wipro-elite-nlth"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-wipro-elite-nlth.q0016",
+      "problem": "**Wipro Elite NLTH · Que 23**\n\nProblem: you are given a number, and you have to extract the key by finding the difference between the sum of the even and odd numbers of the input.\n\nTest Case :\n\nInput : 24319587\n\nOutput :  11\n\nExplanation : odd terms : 3 + 1 + 9 + 5 + 7 = 25\n\n                              even terms : 2 + 4 + 8 = 14\n\n                              output : 11 (25-14)\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "11",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: . |  | Test Case : |  | Input : 24319587",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "wipro-elite-nlth"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-wipro-elite-nlth.q0017",
+      "problem": "**Wipro Elite NLTH · Que 24**\n\nProblem:  in this first line you are required to take the value of m and n as the number of rows and columns of matrix, then you are required to take the input elements of array.\n\nAs an output you are required to print the sum of each row then the row having the maximum sum.\n\nTest Case :\n\nInput : 3 3\n\n               1 2 3\n\n               4 5 6\n\n               7 8 9\n\nOutput :  \n\n               Row 1 : 6\n               Row 2 : 15\n               Row 3 : 24\n\n               Row 3 is having the maximum sum : 24\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "you are required to print the sum of each row then the row having the maximum sum.",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: elements of array. |  | As an output you are required to print the sum of each row then the row having the maximum sum. |  | Test Case : |  | Input : 3 3 |  | …",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "wipro-elite-nlth"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-wipro-elite-nlth.q0018",
+      "problem": "**Wipro Elite NLTH · Que 25**\n\nProblem:  in this first line you are required to take the input that set the number of elements to be inserted, the next line takes the elements as input.\n\nYou are required to print the sum of maximum and minimum element of the list\n\nTest Case :\n\nInput : 6\n\n               55 87 46 21 34 79\n\nOutput :  \n\n               108 \n\nExplanation : \n\n               21 + 87 = 108\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "108",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: that set the number of elements to be inserted, the next line takes the elements as input. |  | You are required to print the sum of maximum and minimum elemen…",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "wipro-elite-nlth"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-wipro-elite-nlth.q0019",
+      "problem": "**Wipro Elite NLTH · Que 26**\n\nProblem:  in this first line you are required to take the input of an integer number, and in the second line you are required to input the target element \n\nYou are required to print the number of time target element occured in the integer\n\nTest Case :\n\nInput : 734139\n\n               3\n\nOutput :  \n\n               2 \n\nExplanation : \n\n               3 occured 2 times in the integer.\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "2",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: of an integer number, and in the second line you are required to input the target element  |  | You are required to print the number of time target element occ…",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "wipro-elite-nlth"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-wipro-elite-nlth.q0020",
+      "problem": "**Wipro Elite NLTH · Que 3**\n\nPrepSter Wipro NLTH Coding Question – 3\nQues:  Given an n-by-n matrix of 0’s and 1’s where all 1’s in each row come before all 0’s, find the most efficient way to return the row with the maximum number of 0’s.\n\n{1,1,1,1},\n{1,1,0,0},\n{1,0,0,0},\n{1,1,0,0},\n\nNOTE:- Please comment down the code in other languages as well below –\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "",
+      "answer_format": "open",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Trace the sample carefully; watch null / edge cases.",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "wipro-elite-nlth",
+        "no-answer",
+        "open"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-wipro-elite-nlth.q0021",
+      "problem": "**Wipro Elite NLTH · Que 4**\n\nPrepSter Wipro NLTH Coding Question – 4\nQues: A Pythagorean triplet is a set of three integers a, b and c such that a2 + b2 = c2. Given a limit, generate all Pythagorean Triples with values smaller than given limit.\n\nInput : limit = 20\nOutput : 3 4 5\n         8 6 10\n         5 12 13\n         15 8 17\n         12 16 20\nA Simple Solution is to generate these triplets smaller than given limit using three nested loop. For every triplet, check if Pythagorean condition is true, if true, then print the triplet. Time complexity of this solution is O(limit3) where ‘limit’ is given limit.\n\nAn Efficient Solution can print all triplets in O(k) time where k is number of triplets printed. The idea is to use square sum relation of Pythagorean triplet, i.e., addition of squares of a and b is equal to square of c, we can write these number in terms of m and n such that,\n\n       a = m2 - n2\n       b = 2 * m * n\n       c  = m2 + n2\nbecause,\n       a2 = m4 + n4 – 2 * m2 * n2\n       b2 = 4 * m2 * n2\n       c2 = m4 + n4 + 2* m2 * n2\nWe can see that a2 + b2 = c2, so instead of iterating for a, b and c we can iterate for m and n and can generate these triplets\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "3 4 5",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: limit = 20",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "wipro-elite-nlth"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-wipro-elite-nlth.q0022",
+      "problem": "**Wipro Elite NLTH · Que 5 - GCD**\n\nProgram to calculate GCD of Two Numbers \nIn this article, we will discuss about GCD of Two Numbers in Java. GCD of Two Numbers or integers (where integers not equal to zero) is largest positive integer that divides each of the integers. For example, GCD of  12 and 16 is 4 , where factors of 12==>1,2,4,6,12\nfactors of 16==>1,2,4,8,16\ncommon factors are 1,2,4\ngreatest common factor is 4.\n\nProgram to check a number is prime or not in C++\nAlgorithm for GCD of Two Numbers:\nTake Two Numbers num1 and num2 as input.\nInitialize a variable i to minimum of num1 and num2 and loop until i is greater than or equal to 1.\nCheck if i divides num1 and num2 completely or not. If divides completely then break the loop.\nNow , print the value of i.\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "",
+      "answer_format": "open",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: . | Initialize a variable i to minimum of num1 and num2 and loop until i is greater than or equal to 1. | Check if i divides num1 and num2 completely or not. I…",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "wipro-elite-nlth",
+        "no-answer",
+        "open"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-wipro-elite-nlth.q0023",
+      "problem": "**Wipro Elite NLTH · Que 6 - GCD of 3 no**\n\nProgram to calculate GCD of three numbers\nIn this article we will discuss about GCD of three numbers. GCD of three integers (where integers not equal to zero) is largest positive integer that divides each of the three integers. For example GCD of 12 , 16 , 22 is 2 where factors of 12==>1,2,3,4,6,12\nfactors of 16==>1,2,4,8,16\nfactors of 22==>1,2,11,22\ncommon factors==>1,2\ngreatest common factor==>2\n\nGCD of three numbers in java\nAlgorithm for GCD of three numbers:\nTake Three Numbers num1, num2 and num3 as input.\nInitialize a variable i to minimum of num1 ,num2, num3 and loop until i is greater than or equal to 1.\nCheck if i divides num1, num2, num3 completely or not. If divides completely then break the loop.\nNow , print the value of i.\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "",
+      "answer_format": "open",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: . | Initialize a variable i to minimum of num1 ,num2, num3 and loop until i is greater than or equal to 1. | Check if i divides num1, num2, num3 completely or …",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "wipro-elite-nlth",
+        "no-answer",
+        "open"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-wipro-elite-nlth.q0024",
+      "problem": "**Wipro Elite NLTH · Que 7 - Prime**\n\nCheck if Number is Prime or Not\nA number is said to be Prime Number if and only if it is divisible by one and itself. In this article, we will discuss about the program to check if the given number is prime or not.\n\nSample Input : 17\nSample Output : 17 is a Prime Number\nPrime Number in java\nSteps to Check if the number is Prime or not\nStep 1: Take input as a function parameter.\nStep 2: Check if the number is less than to 1 or not. If it is less than 1, return false.\nStep 3: Check if no is less than or equal to 3 or not. If it is less than or equal to 3, return true.\nStep 4: Now, check if no is completely divisible by 2 or 3 or not. If it is complete divisible by 2 or 3 then return false.\nStep 5: Now, initialize  variable i to 5 and loop until i*i is less than or equal to or not and every time increment i with 6.\nStep 6: Check if the number if completely divisible by i or i+2 or not. If it is completely divisible then return false.\nStep 7: If the control reach to end then return true.\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "17 is a Prime Number",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: 17",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "wipro-elite-nlth"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-wipro-elite-nlth.q0025",
+      "problem": "**Wipro Elite NLTH · Que 8 - Distinct elements of Array**\n\nDistinct Elements of an Array in Java\nDistinct elements of are nothing but a unique (non-duplicate) elements present in the given array. In this article, we will discuss how to find the distinct elements of an array in java.\n\nSample Input  : 1, 3, 7 11, 3, 8, 11\nSample Output : 1, 3, 7, 11, 8 \nDistinct elements of an array in java\nSteps to find distinct elements of an array\nTake the size of array as input n.\nTake n space separated elements of an array as input.\nTraverse the array from the beginning.\nCheck if the current element is found in the array again. \nIf it is found, then do not print that element.\nElse, print that element and continue.\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "1, 3, 7, 11, 8",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: 1, 3, 7 11, 3, 8, 11",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "wipro-elite-nlth"
+      ]
+    },
+    {
+      "id": "math.aptitude.saket-wipro-elite-nlth.q0026",
+      "problem": "**Wipro Elite NLTH · Que 9 - Sort Half**\n\nSort array ascending and descending order in java\nIn this article we will learn how to write a java program for sorting first half in ascending order and second half in descending order. Although it sounds a bit difficult but we’ll try to make it as easy as possible. Let’s take an example for understanding what we have to perform\n\nInput array : [3, 5, 2, 7, 9, 1]\nOutput array : [1, 2, 3, 9, 7, 5]\n\nAlgorithm for Sorting first half in ascending order and second half in descending order (Sort array ascending and descending order)\nStep 1 – Initialize a variable len, for accepting the length of the array.\nStep 2 – Take the input from the user using a for loop.\nStep 3 – Sort the inputted array in the ascending order.\nStep 4 – Use two for loops for printing the array\nUse the first loop from 0 to len/2 for printing the first ascending part of the array.\nUse the second for loop from len-1 to len/2 for printing the second descending part of the array.\n\n(Programming aptitude — implement the described function / logic.)",
+      "answer": "array : [1, 2, 3, 9, 7, 5]",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Sourced from SAKET-SK/Programming-Aptitude-Interview-Prep.",
+      "hint": "Sample input: array : [3, 5, 2, 7, 9, 1] | Output array : [1, 2, 3, 9, 7, 5] |  | Algorithm for Sorting first half in ascending order and second half in descending order (So…",
+      "tags": [
+        "saket",
+        "programming-aptitude",
+        "wipro-elite-nlth"
+      ]
+    }
+  ]
+}

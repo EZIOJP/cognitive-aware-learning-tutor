@@ -25,6 +25,16 @@ export type GlobalQuizQuestion = {
   };
 };
 
+export type MathCoreCoverage = {
+  tag?: string;
+  label?: string;
+  practiced?: number;
+  total?: number;
+  remaining?: number;
+  pct?: number;
+  can_keep_going?: boolean;
+};
+
 export type GlobalQuizAnswerResult = {
   correct: boolean;
   feedback: string;
@@ -33,6 +43,10 @@ export type GlobalQuizAnswerResult = {
   next_question?: GlobalQuizQuestion | null;
   added_to_review?: boolean;
   requeued?: boolean;
+  /** Math Core drills: chunk ended; offer Keep going / End */
+  chunk_complete?: boolean;
+  can_keep_going?: boolean;
+  coverage?: MathCoreCoverage;
 };
 
 export type QuizNextStep = {
@@ -64,6 +78,7 @@ export type QuizSessionSummary = {
   }>;
   domain?: string;
   next_step?: QuizNextStep;
+  coverage?: MathCoreCoverage;
 };
 
 export type DueReviewItem = {

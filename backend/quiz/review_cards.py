@@ -170,14 +170,18 @@ def _weak_topic_labels(db: Session, user_id: int) -> set[str]:
     except ImportError:
         return set()
 
-    rows = (
-        db.query(KgObservation, KgNode)
-        .join(KgNode, KgObservation.node_id == KgNode.id)
-        .filter(KgObservation.user_id == user_id)
-        .order_by(KgObservation.timestamp.desc())
-        .limit(120)
-        .all()
-    )
+    try:
+        rows = (
+            db.query(KgObservation, KgNode)
+            .join(KgNode, KgObservation.node_id == KgNode.id)
+            .filter(KgObservation.user_id == user_id)
+            .order_by(KgObservation.timestamp.desc())
+            .limit(120)
+            .all()
+        )
+    except Exception:
+        # SQLite lock / missing KG tables — never block backlog/home.
+        return set()
     weak: set[str] = set()
     for obs, node in rows:
         if "fail" not in (obs.interaction_type or ""):
@@ -239,9 +243,50 @@ def backlog_summary(db: Session, *, user_id: int) -> dict[str, Any]:
     }
 
 
+def _slim_due_payload(payload: dict[str, Any]) -> dict[str, Any]:
+    """Drop embedded question banks from due-list payloads (can be multi-MB each)."""
+    if not isinstance(payload, dict):
+        return {}
+    slim: dict[str, Any] = {}
+    for key in (
+        "kind",
+        "id",
+        "topic_id",
+        "note_topic_id",
+        "tag",
+        "topic",
+        "title",
+        "note_path",
+        "hint",
+        "explanation",
+        "concept",
+        "format",
+        "domain",
+        "learning_tag",
+    ):
+        if key in payload and payload[key] is not None:
+            slim[key] = payload[key]
+    tags = payload.get("tags")
+    if isinstance(tags, list):
+        slim["tags"] = [str(t) for t in tags if str(t).strip()][:24]
+    questions = payload.get("questions")
+    if isinstance(questions, list):
+        slim["question_count"] = len(questions)
+    items = payload.get("items")
+    if isinstance(items, list):
+        slim["item_count"] = len(items)
+    # Keep a short reading teaser only — never the full pack body.
+    excerpt = payload.get("reading_excerpt")
+    if isinstance(excerpt, str) and excerpt.strip():
+        slim["reading_excerpt"] = excerpt.strip()[:400]
+    return slim
+
+
 def card_to_due_item(card: ReviewCard) -> dict[str, Any]:
     state = srs_mod.srs_from_metadata(json.loads(card.srs_json or "{}"))
     payload = json.loads(card.payload_json or "{}")
+    if not isinstance(payload, dict):
+        payload = {}
     return {
         "card_id": card.id,
         "domain": card.domain,
@@ -255,7 +300,7 @@ def card_to_due_item(card: ReviewCard) -> dict[str, Any]:
         "format": card.format,
         "note_path": card.note_path,
         "hint": payload.get("hint") or payload.get("explanation"),
-        "payload": payload,
+        "payload": _slim_due_payload(payload),
     }
 
 

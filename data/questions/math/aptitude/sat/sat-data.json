@@ -1,0 +1,1732 @@
+{
+  "schema_version": 1,
+  "kind": "math",
+  "topic": {
+    "topic_id": "math.aptitude.sat-data",
+    "title": "SAT Data Analysis",
+    "stage": "foundations",
+    "path": [
+      "Aptitude",
+      "SAT",
+      "Problem-Solving and Data Analysis"
+    ],
+    "track": "aptitude",
+    "prerequisites": [],
+    "note_topic_ids": [
+      "MT1-T05"
+    ],
+    "description": "College Readiness / SAT-style items (Problem-Solving and Data Analysis)."
+  },
+  "questions": [
+    {
+      "id": "math.aptitude.sat-data.q0001",
+      "problem": "A school club with 80 members, equally divided among freshmen, sophomores, juniors, and seniors, reported attendance at a workshop. 5 freshmen, 8 sophomores, 10 juniors, and 12 seniors attended. If a club member who attended the workshop is selected at random, what is the probability they are a senior?\n\nOptions:\nA) $\\frac{12}{80}$\nB) $\\frac{12}{35}$\nC) $\\frac{12}{23}$\nD) $\\frac{12}{20}$",
+      "answer": "$\\frac{12}{35}$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "I was between a 2 and a 3 because the \"equally divided...\" part is extraneous and therefore this question includes minor details that could distract the student.",
+      "hint": "Skill: Probability and conditional probability",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "probability-and-conditional-probability"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0002",
+      "problem": "A pet store has 60 cats and 90 dogs. Some cats and 36 dogs are vaccinated. A randomly selected vaccinated animal is selected at random. The probability the animal is a cat is $\\frac{1}{4}$. How many cats are vaccinated?\n\nOptions:\nA) 9\nB) 12\nC) 15\nD) 18",
+      "answer": "12",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Changed the wording to be more clear.",
+      "hint": "Skill: Probability and conditional probability",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "probability-and-conditional-probability"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0003",
+      "problem": "A survey of 45 students recorded their participation in art or music clubs and their class standing. The results are: 8 juniors in art, 12 seniors in art, 10 juniors in music, and 15 seniors in music. A student participating in the art club is selected at random. What is the probability they are a senior?\n\nOptions:\nA) $12/45$\nB) $3/5$\nC) $15/20$\nD) $27/45$",
+      "answer": "$3/5$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Removed the word, \"if.\"",
+      "hint": "Skill: Probability and conditional probability",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "probability-and-conditional-probability"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0004",
+      "problem": "A high school club has 80 members, and there are an equal number of members from each grade level (freshmen, sophomore, junior, senior). The club had 5 freshmen, 8 sophomores, 10 juniors, and 12 seniors attend a workshop. If a club member who attended the workshop is selected at random, what is the probability they are a senior?\n\nOptions:\nA) $\\frac{12}{80}$\nB) $\\frac{12}{35}$\nC) $\\frac{12}{23}$\nD) $\\frac{12}{20}$",
+      "answer": "$\\frac{12}{35}$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "problem setup originally unclear in wording. Also not convinced if this is truly a conditional probability problem, as the opening sentence is unnecessary to solve the problem correctly.",
+      "hint": "Skill: Probability and conditional probability",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "probability-and-conditional-probability"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0005",
+      "problem": "At a school event, 80 students attended the morning session, 60 attended the afternoon session, and 30 attended both. If a student who attended the morning session is chosen at random, what is the probability they also attended the afternoon session?\n\nOptions:\nA) $3/11$\nB) $3/8$\nC) $1/2$\nD) $3/4$",
+      "answer": "$3/8$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "While I think this question is a little *easy*, I don't think it's inherently awful.",
+      "hint": "Skill: Probability and conditional probability",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "probability-and-conditional-probability"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0006",
+      "problem": "A company produces 200 electronic devices and 300 furniture items. During quality checks, 15 electronic devices and 25 furniture items were found defective. If an item is selected at random, what is the probability it is a working (non-defective) device?\n\nOptions:\nA) $2/25$\nB) $18/25$\nC) $2/5$\nD) $3/5$",
+      "answer": "$18/25$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "The original problem did not require any deduction to find missing parts of the two-way table. This questions provides all the information, without actually doing work.",
+      "hint": "Skill: Probability and conditional probability",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "probability-and-conditional-probability"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0007",
+      "problem": "A survey of 45 students recorded their participation in art or music clubs and their class standing. The results are: 8 juniors in art, 12 seniors in art, 10 juniors in music, and 15 seniors in music. If a student participating in the art club is selected at random, what is the probability they are a senior?\n\nOptions:\nA) $12/45$\nB) $3/5$\nC) $15/20$\nD) $12/27$",
+      "answer": "$3/5$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Consider making all answer choices in simplest form. Option B, the correct answer, is the only one that is reduced to simplest form, which might lead to inflated false positive responses.",
+      "hint": "Skill: Probability and conditional probability",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "probability-and-conditional-probability"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0008",
+      "problem": "At a school event, 80 students attended the morning session, 60 attended the afternoon session, and 30 attended both. If a student who attended the morning session is chosen at random, what is the probability they only attended the morning session?\n\nOptions:\nA) $3/8$\nB) $5/8$\nC) $8/11$\nD) $5/11$",
+      "answer": "$5/8$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "I think I already reviewed this question but this time I had a different way to make it better. As is, it does not require using a data display to find the answer. I updated the question.",
+      "hint": "Skill: Probability and conditional probability",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "probability-and-conditional-probability"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0009",
+      "problem": "A company produces 200 electronic devices and 300 furniture items. During quality checks, 15 electronic devices and 25 furniture items were found defective. If a defective item is selected at random, what is the probability it is an electronic device?\n\nOptions:\nA) $3/100$\nB) $3/8$\nC) $2/5$\nD) $5/8$",
+      "answer": "$3/8$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "I reviewed this item already",
+      "hint": "Skill: Probability and conditional probability",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "probability-and-conditional-probability"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0010",
+      "problem": "A school club has 80 freshmen and 120 sophomores. Some freshmen and 25% of the sophomores are attending a workshop. If the probability that a randomly selected attendee is a freshman is \\(\\frac{1}{3}\\), how many freshmen are attending?\n\nOptions:\nA) $60$\nB) $32$\nC) $15$\nD) $20$",
+      "answer": "$15$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Adjusted question stem for LaTex formatting",
+      "hint": "Skill: Probability and conditional probability",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "probability-and-conditional-probability"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0011",
+      "problem": "A school club has 80 freshmen and 120 sophomores. Some freshmen and $25\\%$ of the sophomores decided to attend a music club. If the probability that a randomly selected freshman who is attending the club is \\frac{1}{3}, how many freshmen are attending?\n\nOptions:\nA) $60$\nB) $32$\nC) $15$\nD) $20$",
+      "answer": "$15$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Added formatting - the question is reading strangely. I also added what the workshop might be about. Do kids attend workshops?",
+      "hint": "Skill: Probability and conditional probability",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "probability-and-conditional-probability"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0012",
+      "problem": "A bookstore surveyed 120 customers about their most recent purchase type (fiction or non-fiction) and age group. The results are: 20 customers under 30 bought fiction, 10 bought non-fiction; 15 customers aged 30-50 bought fiction, 25 bought non-fiction; 5 customers over 50 bought fiction, 45 bought non-fiction. If a customer who purchased fiction is selected at random, what is the probability they are under 30?\n\nOptions:\nA) $1/6$\nB) $1/2$\nC) $2/3$\nD) $3/4$",
+      "answer": "$1/2$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "This is a little overwhelming, if the data could be displayed in a table the question would be better.",
+      "hint": "Skill: Probability and conditional probability",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "probability-and-conditional-probability"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0013",
+      "problem": "A local store displays 150 paintings and 100 sculptures. Some paintings and 45 sculptures are currently on sale. If the probability that a randomly selected item on sale is a painting is $\\frac{2}{5}$, how many paintings are on sale?\n\nOptions:\nA) 45\nB) 60\nC) 30\nD) 90",
+      "answer": "30",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "None of the options are correct. Revised the stem and answer choices to make it work out.",
+      "hint": "Skill: Probability and conditional probability",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "probability-and-conditional-probability"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0014",
+      "problem": "Company A offers a starting salary of \\$30,000 with a \\$2,000 raise each year. Company B offers a starting salary of \\$28,000 with a 10% annual increase. Which year will Company B's salary first exceed Company A's salary?\n\nOptions:\nA) Year 2\nB) Year 3\nC) Year 4\nD) Year 5",
+      "answer": "Year 3",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "The Domain and Label are not correct. This question instead seems to be in the Advanced Math domain under the Nonlinear equations in one variable and systems of equations in two variables label. Otherwise, the question is a 2 or 3, depending on whether this would be considered a \"plug in the answers\" type question. I rated the vocab a 3 because you'd have to create something to plug into or make a table, so the plugging in part would include a mathematical step created by the test taker.",
+      "hint": "Skill: Two-Variable Data - Models and Scatterplots",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "two-variable-data---models-and-scatterplots"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0015",
+      "problem": "A student tracks the balance of an investment earning annual compound interest over 10 years. The data shows the balance increasing gradually at first, then rapidly accelerating each year. Which model best represents the relationship between the amount of time the money has been invested and the balance of the account? (The $balance$ of an account means how much money is in the account at any moment in time.)\n\nOptions:\nA) Exponential\nB) Linear\nC) Polynomial\nD) Quadratic",
+      "answer": "Exponential",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "I added a definition of balance at the end and some context within the paragraph.\nAlso, the Domain, Label, and Task are incorrect. The Domain should be Advanced Algebra, the Label should be Nonlinear functions, and the Task should be something related to how \"Functions provide a framework for modeling real-world phenomena, and students interpret the characteristics of functions in the context of a problem\" (from ACT, p. 30) Or \"Identify the function based on a description of a contextual situat…",
+      "hint": "Skill: Two-Variable Data - Models and Scatterplots",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "two-variable-data---models-and-scatterplots"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0016",
+      "problem": "A student measures the height of a ball thrown vertically upward at different times until it lands. The recorded data points form a U-shaped curve. Which model best represents the relationship between time and height?\n\nOptions:\nA) Cubic\nB) Exponential\nC) Linear\nD) Quadratic",
+      "answer": "Quadratic",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Not sure how the time until landing would go back up again, or start from a small amount of time to a large and back down again. The model does not fit the context.",
+      "hint": "Skill: Two-Variable Data - Models and Scatterplots",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "two-variable-data---models-and-scatterplots"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0017",
+      "problem": "A researcher models the relationship between weekly exercise hours $(x)$ and resting heart rate $(y)$ using the linear regression equation $y = -2.5x + 80$. If an individual exercises 4 hours per week and has a resting heart rate of 68 beats per minute, what is the residual for this data point?\n\nOptions:\nA) $-22$\nB) $-4$\nC) $-2$\nD) $2$",
+      "answer": "$-2$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "The question is good as is, but the y needs a \"^\" over it to make it statistically correct. I don't know how to put it there in LaTex.",
+      "hint": "Skill: Two-Variable Data - Models and Scatterplots",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "two-variable-data---models-and-scatterplots"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0018",
+      "problem": "A student tracks study time and test scores, finding the line of best fit passes through $(2, 65)$ and $(4, 80)$. Which equation represents this line?\n\nOptions:\nA) $y = -7.5x + 80$\nB) $y = 7.5x + 50$\nC) $y = 7.5x + 80$\nD) $y = 15x + 35$",
+      "answer": "$y = 7.5x + 50$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "No scatter plot given\n\nCould reword:   A student tracks study time and test scores on the last two tests.   On the first test, the student studied for 2 hours and earned a $65%$.  On the second test, the student studied for 4 hours and earned an $80%$.  Write a linear equation that best fits this data.",
+      "hint": "Skill: Two-Variable Data - Models and Scatterplots",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "two-variable-data---models-and-scatterplots"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0019",
+      "problem": "A student tracks study time and test scores, finding the line of best fit passes through $(2, 65)$ and $(4, 80)$. Which equation represents this line?\n\nOptions:\nA) $y = -7.5x + 80$\nB) $y = 7.5x + 50$\nC) $y = 7.5x + 80$\nD) $y = 15x + 35$",
+      "answer": "$y = 7.5x + 50$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "The context is incompletely described and is unnecessary. Really this question is asking to find the equation passing through two points. The Domain, Label, and Task are inconsistent with the prompt.",
+      "hint": "Skill: Two-Variable Data - Models and Scatterplots",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "two-variable-data---models-and-scatterplots"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0020",
+      "problem": "A scatterplot shows the daily hours of sunlight exposure and the growth rate (in centimeters per week) of 20 plants. The data points are clustered in a loose, upward-sloping pattern with no clear outliers. Which statement is best supported by the scatterplot?\n\nOptions:\nA) There is no correlation between sunlight exposure and growth rate.\nB) There is a weak positive correlation between sunlight exposure and growth rate.\nC) There is a moderate positive correlation between sunlight exposure and growth rate.\nD) There is a strong positive correlation between sunlight exposure and growth rate.",
+      "answer": "There is a moderate positive correlation between sunlight exposure and growth rate.",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "This question would be better if a scatterplot was given.",
+      "hint": "Skill: Two-Variable Data - Models and Scatterplots",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "two-variable-data---models-and-scatterplots"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0021",
+      "problem": "A scatterplot displays the weekly hours spent practicing free throws and the corresponding free throw percentages for 25 basketball players. The line of best fit is given by the equation $y = 2.5x + 40$, where $y$ is the predicted percentage and $x$ is the number of practice hours. According to the model, what is the predicted percentage for a player who practices 8 hours per week?\n\nOptions:\nA) 20\nB) 50\nC) 60\nD) 64",
+      "answer": "60",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Add a \"^\" over the top of each y in the prompt.",
+      "hint": "Skill: Two-Variable Data - Models and Scatterplots",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "two-variable-data---models-and-scatterplots"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0022",
+      "problem": "A scatterplot shows the relationship between the number of hours 30 students studied for a biology exam and their exam scores. The line of best fit is modeled by \\( y = 4x + 60 \\), where \\( y \\) is the predicted score and \\( x \\) is the number of hours studied. The data points for hours studied range from 0 to 20. A student uses this model to predict the score for studying 25 hours. Which of the following best explains why this prediction might be unreliable?\n\nOptions:\nA) The predicted score of 160 is outside the range of the original data set.\nB) The linear model may not accurately predict scores beyond the observed hours studied.\nC) The sample size of 30 students is too small for making reliable predictions.\nD) The value 25 hours is outside the range of the original data set.",
+      "answer": "The value 25 hours is outside the range of the original data set.",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Relies on a graph that does not exist.",
+      "hint": "Skill: Two-Variable Data - Models and Scatterplots",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "two-variable-data---models-and-scatterplots"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0023",
+      "problem": "Company A offers a starting salary of \\$30,000 with a \\$2,400 raise each year. Company B offers a starting salary of \\$28,000 with a 10% annual increase. Which year will Company B's salary first exceed Company A's salary?\n\nOptions:\nA) Year 2\nB) Year 3\nC) Year 4\nD) Year 5",
+      "answer": "Year 3",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "This problem is not awful but I think the interpretation of the answer is confusing as one gets something like 2.096 (if you do a system of equations on Desmos); if you sub in the possible values it is clearly Year 3 (but I thought we were discouraging this type of process but of course it is still available). Since the answer is year 3 I recommend changing the increase for company A to $2400 each year. Using systems, you get 2.94 which I think is easier to interpret in the context of the probl…",
+      "hint": "Skill: Two-Variable Data - Models and Scatterplots",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "two-variable-data---models-and-scatterplots"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0024",
+      "problem": "A student tracks the balance of an investment earning annual compound interest over 10 years. The data shows the balance increasing gradually at first, then rapidly accelerating each year. Which model best represents the relationship between time and balance?\n\nOptions:\nA) Exponential\nB) Linear\nC) Polynomial\nD) Quadratic",
+      "answer": "Exponential",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "This does not fit the task description. I also think it is just too simple.",
+      "hint": "Skill: Two-Variable Data - Models and Scatterplots",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "two-variable-data---models-and-scatterplots"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0025",
+      "problem": "A scatterplot shows the relationship between daily minutes spent practicing a video game and the high score achieved. The line of best fit is given by $y = 1.2x + 30$, where $y$ is the predicted high score and $x$ is the practice time in minutes. According to the model, how much higher is the predicted high score for 45 minutes of practice compared to 30 minutes?\n\nOptions:\nA) $15$\nB) $18$\nC) $30$\nD) $48$",
+      "answer": "$18$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Could benefit from showing the actual scatterplot but it still works without it.",
+      "hint": "Skill: Two-Variable Data - Models and Scatterplots",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "two-variable-data---models-and-scatterplots"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0026",
+      "problem": "A company varies the price of a product and records the monthly revenue. The data shows revenue rising as the price increases to a certain point, beyond which revenue declines. Which model best represents the relationship between price and revenue?\n\nOptions:\nA) Cubic\nB) Exponential\nC) Linear\nD) Quadratic",
+      "answer": "Quadratic",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "This does not meet the task \"Fit quadratic and exponential models to data represented in a scatterplot\". Perhaps if there were an actual scatterplot shown.",
+      "hint": "Skill: Two-Variable Data - Models and Scatterplots",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "two-variable-data---models-and-scatterplots"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0027",
+      "problem": "A scatterplot displays the ages (in years) and corresponding resale values (as a percentage of original price) for 30 used cars. The points form a tight, downward-sloping pattern with no outliers. Which conclusion is best supported by the scatterplot?\n\nOptions:\nA) There is a strong negative linear association between car age and resale value.\nB) There is a strong positive linear association between car age and resale value.\nC) There is a weak negative linear association between car age and resale value.\nD) There is a strong negative non-linear association between car age and resale value.",
+      "answer": "There is a strong negative linear association between car age and resale value.",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Definitely needs a scatterplot for this.",
+      "hint": "Skill: Two-Variable Data - Models and Scatterplots",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "two-variable-data---models-and-scatterplots"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0028",
+      "problem": "A scatterplot shows the relationship between the number of hours 30 students studied for a biology exam and their exam scores. The line of best fit is modeled by \\( y = 4x + 60 \\), where \\( y \\) is the predicted score and \\( x \\) is the number of hours studied. The data points for hours studied range from 0 to 20. A student uses this model to predict the score for studying 25 hours. Which of the following best explains why this prediction might be unreliable?\n\nOptions:\nA) The predicted score of 160 is outside the range of the original data set.\nB) The linear model may not accurately predict scores beyond the observed hours studied.\nC) The sample size of 30 students is too small for making reliable predictions.\nD) The value 25 hours is outside the range of the original data set.",
+      "answer": "The value 25 hours is outside the range of the original data set.",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Options B and D are both correct because they are saying the same thing.",
+      "hint": "Skill: Two-Variable Data - Models and Scatterplots",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "two-variable-data---models-and-scatterplots"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0029",
+      "problem": "A student measures the height of a ball thrown vertically upward at different times until it lands. The recorded data points form an upside-down U-shaped curve. Which model best represents the relationship between time and height?\n\nOptions:\nA) Cubic\nB) Exponential\nC) Linear\nD) Quadratic",
+      "answer": "Quadratic",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Revised stem",
+      "hint": "Skill: Two-Variable Data - Models and Scatterplots",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "two-variable-data---models-and-scatterplots"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0030",
+      "problem": "A scatterplot shows the relationship between the number of hours 30 students studied for a biology exam and their exam scores. The line of best fit is modeled by \\( y = 4x + 60 \\), where \\( y \\) is the predicted score and \\( x \\) is the number of hours studied. The data points for hours studied range from 0 to 20. A student uses this model to predict the score for studying 25 hours. Which of the following best explains why this prediction might be unreliable?\n\nOptions:\nA) The predicted score of 160 is outside the range of the original data set.\nB) The linear model will not accurately predict scores within the observed hours studied.\nC) The sample size of 30 students is too small for making reliable predictions.\nD) The value 25 hours is outside the range of the original data set.",
+      "answer": "The value 25 hours is outside the range of the original data set.",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Option B and D are the same. Revised language to B to make it incorrect.",
+      "hint": "Skill: Two-Variable Data - Models and Scatterplots",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "two-variable-data---models-and-scatterplots"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0031",
+      "problem": "The relationship between the number of hours 30 students studied for a biology exam and their exam scores is modeled by \\( y = 4x + 60 \\), where \\( y \\) is the predicted score and \\( x \\) is the number of hours studied. The data points for hours studied range from 0 to 20. A student uses this model to predict the score for studying 25 hours. Which of the following best explains why this prediction might be unreliable?\n\nOptions:\nA) The predicted score of 160 is outside the range of the original data set.\nB) The linear model may not accurately predict scores beyond the observed hours studied.\nC) The sample size of 30 students is too small for making reliable predictions.\nD) The value 25 hours is outside the range of the original data set.",
+      "answer": "The value 25 hours is outside the range of the original data set.",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "no scatter plot given",
+      "hint": "Skill: Two-Variable Data - Models and Scatterplots",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "two-variable-data---models-and-scatterplots"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0032",
+      "problem": "The data between daily minutes spent practicing a video game and the high score achieved was analyzed and the line of best fit was found to be $y = 1.2x + 30$, where $y$ is the predicted high score and $x$ is the practice time in minutes. According to the model, how much higher is the predicted high score for 45 minutes of practice compared to 30 minutes?\n\nOptions:\nA) $15$\nB) $18$\nC) $30$\nD) $48$",
+      "answer": "$18$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "No scatter plot given",
+      "hint": "Skill: Two-Variable Data - Models and Scatterplots",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "two-variable-data---models-and-scatterplots"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0033",
+      "problem": "A researcher studies the population growth of bacteria in a petri dish, recording the number of bacteria colonies at regular intervals. The data shows minimal growth in the first few hours, followed by a rapid increase that eventually levels off as resources become limited. Which model best represents the relationship between time and the number of bacteria colonies?\n\nOptions:\nA) Exponential model\nB) Linear model\nC) Logistic model\nD) Quadratic model",
+      "answer": "Logistic model",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Logistic functions are introduced in pre-calculus or calculus, so this is an advanced topic, if not a topic that is not introduced at all to most students. That said, the topic and task are incorrect since this is about knowing what a function looks like based on its characteristics rather than fitting a curve model to data. I gave it a 1 because I don't think most students will know, and given the other choices, this would be a \"gotcha\" question due to exposure. Most kids would pick exponentia…",
+      "hint": "Skill: Two-Variable Data - Models and Scatterplots",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "two-variable-data---models-and-scatterplots"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0034",
+      "problem": "A real estate agent analyzes the relationship between a home's distance from the city center ($m$, in miles) and its monthly rental price ($P$, in dollars). The line of best fit is $P = -250m + 3000$. According to this model, what is the predicted change in monthly rental price for each additional mile from the city center?\n\nOptions:\nA) An increase of \\$250\nB) An increase of \\$3000\nC) A decrease of \\$3000\nD) A decrease of \\$250",
+      "answer": "A decrease of \\$250",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Question is good but under the current label/topic.  May be better with the following label/task:\n\nLabel:\nLinear equations in two variables\nTask:\nFor a linear equation in two variables that represents a context, interpret a solution, constant. variable, factor, or term based on the context, including situations where seeing structure provides an advantage.",
+      "hint": "Skill: Two-Variable Data - Models and Scatterplots",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "two-variable-data---models-and-scatterplots"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0035",
+      "problem": "A scatterplot displays the age of a car (in years) and its average annual maintenance cost (in dollars). The line of best fit is modeled by $y = 200x + 300$, where $y$ represents the maintenance cost and $x$ represents the car's age. What does the y-intercept of this equation represent?\n\nOptions:\nA) The maintenance cost for a brand new car\nB) The increase in maintenance cost each year\nC) The maintenance cost for a one-year-old car\nD) The total annual maintenance cost",
+      "answer": "The maintenance cost for a brand new car",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Updated 4th distractor",
+      "hint": "Skill: Two-Variable Data - Models and Scatterplots",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "two-variable-data---models-and-scatterplots"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0036",
+      "problem": "A scatterplot shows the daily hours of sunlight exposure and the growth rate (in centimeters per week) of 20 plants. The data points are clustered in a loose, upward-sloping pattern with no clear outliers. Which statement is best supported by the scatterplot?\n\nOptions:\nA) There is no correlation between sunlight exposure and growth rate.\nB) There is a weak positive correlation between sunlight exposure and growth rate.\nC) There is a moderate positive correlation between sunlight exposure and growth rate.\nD) There is a strong positive correlation between sunlight exposure and growth rate.",
+      "answer": "There is a moderate positive correlation between sunlight exposure and growth rate.",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "This needs an image in order to be given, to determine what makes it \"weak\" vs \"moderate\" vs \"strong\"",
+      "hint": "Skill: Two-Variable Data - Models and Scatterplots",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "two-variable-data---models-and-scatterplots"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0037",
+      "problem": "A scatterplot displays the ages (in years) and corresponding resale values (as a percentage of original price) for 30 used cars. The points form a tight, downward-sloping pattern with no outliers. Which conclusion is best supported by the scatterplot?\n\nOptions:\nA) There is a strong negative linear association between car age and resale value.\nB) There is a strong positive linear association between car age and resale value.\nC) There is a weak negative linear association between car age and resale value.\nD) There is a strong negative non-linear association between car age and resale value.",
+      "answer": "There is a strong negative linear association between car age and resale value.",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "This needs a visual to determine \"weak\" vs \"moderate\" vs \"strong,\" even with a \"tight cluster\" description",
+      "hint": "Skill: Two-Variable Data - Models and Scatterplots",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "two-variable-data---models-and-scatterplots"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0038",
+      "problem": "A scatterplot displays the weekly hours spent practicing free throws and the corresponding free throw percentages for 25 basketball players. The line of best fit is given by the equation $y = 2.5x + 40$, where $y$ is the predicted percentage and $x$ is the number of practice hours. According to the model, what is the predicted percentage for a player who practices 8 hours per week?\n\nOptions:\nA) 20%\nB) 50%\nC) 60%\nD) 64%",
+      "answer": "60%",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "There needs to be a \"^\" over the y in the equation. Also, it's common practice to use the variable name in the equation to further establish context. There's also a question of whether a linear model is a good fit since you can't go above 100%. Not sure how to fix that. The answer choices should be in context.",
+      "hint": "Skill: Two-Variable Data - Models and Scatterplots",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "two-variable-data---models-and-scatterplots"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0039",
+      "problem": "A scatterplot shows the daily hours of sunlight exposure and the growth rate (in centimeters per week) of 20 plants. The data points are clustered in a loose, upward-sloping pattern with no clear outliers. Which statement is best supported by the scatterplot?\n\nOptions:\nA) There is no correlation between sunlight exposure and growth rate.\nB) There is a weak positive correlation between sunlight exposure and growth rate.\nC) There is a moderate positive correlation between sunlight exposure and growth rate.\nD) There is a strong positive correlation between sunlight exposure and growth rate.",
+      "answer": "There is a moderate positive correlation between sunlight exposure and growth rate.",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Even with a scatterplot attached, the question would need to be rewritten to not include an actual description of the graph which defeats the purpose of the task.",
+      "hint": "Skill: Two-Variable Data - Models and Scatterplots",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "two-variable-data---models-and-scatterplots"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0040",
+      "problem": "A scatterplot displays the ages (in years) and corresponding resale values (as a percentage of original price) for 30 used cars. The points form a tight, downward-sloping pattern with no outliers. Which conclusion is best supported by the scatterplot?\n\nOptions:\nA) There is a strong negative linear association between car age and resale value.\nB) There is a strong positive linear association between car age and resale value.\nC) There is a weak negative linear association between car age and resale value.\nD) There is a strong negative non-linear association between car age and resale value.",
+      "answer": "There is a strong negative linear association between car age and resale value.",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Same issue as other scatterplot item. Even with a scatterplot shown, the question would need to be rewritten without the description of the scatterplot itself.",
+      "hint": "Skill: Two-Variable Data - Models and Scatterplots",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "two-variable-data---models-and-scatterplots"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0041",
+      "problem": "A student models the relationship between the number of hours spent studying for a math quiz $h$ and the quiz score $s$ using the equation $s = 4.5h + 72$. What does the slope of this model represent?\n\nOptions:\nA) The increase in the quiz score for each additional hour studied\nB) The quiz score when no hours are spent studying\nC) The number of hours needed to increase the quiz score by 1 point\nD) The total quiz score after studying `$h$` hours",
+      "answer": "The increase in the quiz score for each additional hour studied",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Formatting updated to remove random '' around variables and the equation. Also this would be improved with a graph.",
+      "hint": "Skill: Two-Variable Data - Models and Scatterplots",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "two-variable-data---models-and-scatterplots"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0042",
+      "problem": "A scatterplot shows the relationship between weekly hours spent reading and the number of books read annually by 50 students. The line of best fit is modeled by $y = 0.8x + 5$, where $y$ is the predicted number of books and $x$ is hours per week. According to the model, how many hours per week must a student read to predict reading 30 books in a year?\n\nOptions:\nA) 29\nB) 20\nC) 31\nD) 4",
+      "answer": "29",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Would be improved with a scatterplot. Updated so the input is not the same as the output. It's just unusual.",
+      "hint": "Skill: Two-Variable Data - Models and Scatterplots",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "two-variable-data---models-and-scatterplots"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0043",
+      "problem": "A botanist studies the relationship between daily sunlight exposure ($x$, in hours) and plant growth ($y$, in centimeters) for a specific species. The line of best fit equation is $y = 1.8x + 12.5$. If a plant receives 6 hours of daily sunlight and grows to 25 centimeters, what is its residual value in centimeters?\n\nOptions:\nA) $14.2$\nB) $-3.7$\nC) $-1.7$\nD) $1.7$",
+      "answer": "$1.7$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Flipped options B and D to keep D as the correct answer. Topic isn't really what we're asking students to do (they aren't fitting a line, they're calculating the residual).",
+      "hint": "Skill: Two-Variable Data - Models and Scatterplots",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "two-variable-data---models-and-scatterplots"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0044",
+      "problem": "A city planner models the relationship between a neighborhood's distance from downtown ($d$), in miles, and the average home price ($p$), in thousands of dollars, using the equation $p = -25d + 450$. According to this model, how much does the average home price change for each mile farther from downtown?\n\nOptions:\nA) Decreases by \\$25,000\nB) Increases by \\$25,000\nC) Decreases by \\$25\nD) Decreases by \\$450,000",
+      "answer": "Decreases by \\$25,000",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Topic/task should be interpreting linear equations, not scatterplots and graphs",
+      "hint": "Skill: Two-Variable Data - Models and Scatterplots",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "two-variable-data---models-and-scatterplots"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0045",
+      "problem": "A savings account begins with \\$15,000 and earns \\$800 in interest each year. An entrepreneurial venture starts with \\$12,000 and grows by 12% annually. After how many years will the venture's value first exceed the savings account?\n\nOptions:\nA) 2\nB) 5\nC) 4\nD) 6",
+      "answer": "4",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "The correct answer is ambiguous. The accounts will have the same amount in them after ~3.46 years, so technically it will be after 3 years, but before 4 years. I suggest making the adjustments to the answer choices below.",
+      "hint": "Skill: Two-Variable Data - Models and Scatterplots",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "two-variable-data---models-and-scatterplots"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0046",
+      "problem": "A scatterplot shows the monthly revenue (in thousands of dollars) and advertising budget (in thousands of dollars) for 40 small businesses in a retail district. The data points show a clear positive association, with most points falling close to each other except for three businesses that spent significantly more on advertising but showed similar revenue to the others. Which statement best describes the relationship shown in the data?\n\nOptions:\nA) The relationship between advertising and revenue is consistently strong and positive throughout all levels\nB) The relationship between advertising and revenue is moderately positive but weakens at higher advertising levels\nC) The relationship between advertising and revenue shows no clear pattern at higher advertising levels\nD) The relationship between advertising and revenue weakens due to insufficient data points",
+      "answer": "The relationship between advertising and revenue is moderately positive but weakens at higher advertising levels",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Need visualization, otherwise edit the stem to remove language indicating its inclusion",
+      "hint": "Skill: Two-Variable Data - Models and Scatterplots",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "two-variable-data---models-and-scatterplots"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0047",
+      "problem": "A can of paint can cover 400 square feet per gallon. How many liters of paint are needed to cover 60 square meters? (1 meter $\\approx$ 3.28 feet, 1 gallon $\\approx$ 3.79 liters)\n\nOptions:\nA) 1.6 liters\nB) 1.9 liters\nC) 5.3 liters\nD) 6.1 liters",
+      "answer": "6.1 liters",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "This question is direct and clear and the answer choices are all equivalent in terms of their complexity and relation to each other. The question itself is overly complicated in my opinion. While the conversion units are given, the test taker has to pay very close attention to the units or they'll play into the \"gotcha\" game. I was between a 1 and a 2 on this one.",
+      "hint": "Skill: Ratios, rates, proportional relationships, and units",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "ratios,-rates,-proportional-relationships,-and-units"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0048",
+      "problem": "A factory produces plastic sheets at a rate of $2.4$ square meters per minute. If the factory needs to maintain a daily production rate of $3000$ square feet during an 8-hour shift, by what percentage should they adjust their current production rate? (1 square meter ≈ $10.764$ square feet)\n\nOptions:\nA) -92%\nB) -8%\nC) 8%\nD) 124%",
+      "answer": "-8%",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "This question is overly complicated and very confusing. And I might be doing the problem incorrectly, but I got that they have to reduce their production by 76%. Reducing by 76% is the same as taking 24% of 2.4, which is 0.578 square meters per second. 0.578 m^2 per second produces 2976.03 square feet in 8 hours. Did I do the problem incorrectly?",
+      "hint": "Skill: Ratios, rates, proportional relationships, and units",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "ratios,-rates,-proportional-relationships,-and-units"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0049",
+      "problem": "A student's average score on history quizzes is 75, and their average on science quizzes is 85. If the overall average across all quizzes is 79, what is the ratio of history quizzes to science quizzes?\n\nOptions:\nA) 2:03\nB) 15:17\nC) 3:02\nD) 5:02",
+      "answer": "3:02",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "This is confusing in that the questions asks, \"what is the ratio of history quizzes to science quizzes?\" It does not specify what about the quizzes to pay attention to? Are we finding the ratio of the average history quiz scores to the average science quiz scores? Is it asking for the ratio of the number of quizzes in each subject?",
+      "hint": "Skill: Ratios, rates, proportional relationships, and units",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "ratios,-rates,-proportional-relationships,-and-units"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0050",
+      "problem": "A paint mixture requires 12 milliliters of colored paint per 1 liter of neutral mixing paint. How many liters of colored paint are needed for 15 liters of neutral mixing paint? (1 liter = 1,000 ml)\n\nOptions:\nA) $0.012$ liters\nB) $0.15$ liters\nC) $0.18$ liters\nD) $1.8$ liters",
+      "answer": "$0.18$ liters",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "I changed the language of 'pigment' and 'base' to be more descriptive. I also added the conversion in parentheses, and added more context to the choices.",
+      "hint": "Skill: Ratios, rates, proportional relationships, and units",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "ratios,-rates,-proportional-relationships,-and-units"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0051",
+      "problem": "A car travels at a constant speed of $60$ kilometers per hour for $3$ hours. The car's fuel efficiency is $15$ miles per gallon. Given that $1$ mile is approximately $1.6$ kilometers and $1$ gallon is approximately $4$ liters, how many liters of fuel does the car consume during this trip?\n\nOptions:\nA) $7.5$ liters\nB) $12$ liters\nC) $30$ liters\nD) $48$ liters",
+      "answer": "$30$ liters",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Added context to the choices.",
+      "hint": "Skill: Ratios, rates, proportional relationships, and units",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "ratios,-rates,-proportional-relationships,-and-units"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0052",
+      "problem": "A factory produces plastic sheets at a rate of $2.4$ square meters per minute. If the factory needs to maintain a daily production rate of $3000$ square feet during an 8-hour shift, by what percentage should they adjust their current production rate? (1 square meter ≈ $10.764$ square feet)\n\nOptions:\nA) -92%\nB) -8%\nC) 8%\nD) 124%",
+      "answer": "-8%",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "This question is garbage for multiple reasons. Trash it. Depending on how it's interpreted, the correct answer is not there. The idea of over production is just confusing.",
+      "hint": "Skill: Ratios, rates, proportional relationships, and units",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "ratios,-rates,-proportional-relationships,-and-units"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0053",
+      "problem": "A student mixes a $20\\%$ saline solution with a $50\\%$ saline solution to create a mixture that is $30\\%$ saline. What is the ratio of the volume of the $20\\%$ solution to the volume of the $50\\%$ solution used?\n\nOptions:\nA) 1:2\nB) 1:1\nC) 2:1\nD) 5:1",
+      "answer": "2:1",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Revised answer choices to be correct",
+      "hint": "Skill: Ratios, rates, proportional relationships, and units",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "ratios,-rates,-proportional-relationships,-and-units"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0054",
+      "problem": "A student's average score on history quizzes is 75, and their average on science quizzes is 85. If the overall average across all quizzes is 79, what is the ratio of history quizzes to science quizzes?\n\nOptions:\nA) 2:3\nB) 15:17\nC) 3:2\nD) 5:2",
+      "answer": "3:2",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "I think for the given task: \"Apply proportional relationships, ratios, and rates in a wide variety of contexts. Examples include, but are not limited to, scale drawings and problems in the natural and social sciences\", this problem would not provide an accurate reflection of a student's proficiency. Because this problem requires knowledge of the formula for mean, it can taint the results. *maybe* if the formula for mean was provided, it would not be assessing that knowledge but even then, there…",
+      "hint": "Skill: Ratios, rates, proportional relationships, and units",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "ratios,-rates,-proportional-relationships,-and-units"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0055",
+      "problem": "A factory produces widgets at a rate of 120 units per hour. If each widget requires 1.5 kilograms of raw material and the factory operates for 8 hours, how many metric tons of raw material are needed for the day's production? (1 metric ton = 1000 kilograms)\n\nOptions:\nA) 0.18 metric tons\nB) 1.44 metric tons\nC) 14.4 metric tons\nD) 1440 metric tons",
+      "answer": "1.44 metric tons",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Another \"widget\" question?!? Please just use a real item.",
+      "hint": "Skill: Ratios, rates, proportional relationships, and units",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "ratios,-rates,-proportional-relationships,-and-units"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0056",
+      "problem": "In a paint shop, Paint A costs \\$24 per gallon and covers 350 square feet, while Paint B costs \\$32 per gallon and covers 420 square feet. What is the ratio of the cost per square foot of Paint A to Paint B?\n\nOptions:\nA) 0.75 to 1\nB) 1.08 to 1\nC) 0.8 to 1\nD) 1.11 to 1",
+      "answer": "0.8 to 1",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "updated correct answer",
+      "hint": "Skill: Ratios, rates, proportional relationships, and units",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "ratios,-rates,-proportional-relationships,-and-units"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0057",
+      "problem": "A printer uses ink at a rate of $2.5$ milliliters per $100$ pages printed. How many milliliters of ink are needed to print $800$ pages?\n\nOptions:\nA) 3.2\nB) 8\nC) 20\nD) 2000",
+      "answer": "20",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "This is not a unit conversion problem. Proportions, yes? Does not match the task.",
+      "hint": "Skill: Ratios, rates, proportional relationships, and units",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "ratios,-rates,-proportional-relationships,-and-units"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0058",
+      "problem": "A photographer's printer uses 8 milliliters of ink to print 100 square centimeters of photos. How many milliliters of ink are needed to print 375 square centimeters?\n\nOptions:\nA) 24\nB) 28\nC) 30\nD) 32",
+      "answer": "30",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "This problem does not involve a one step conversion. Also the answers are not quality distractors.",
+      "hint": "Skill: Ratios, rates, proportional relationships, and units",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "ratios,-rates,-proportional-relationships,-and-units"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0059",
+      "problem": "A cyclist's speed is 12 meters per second. What is the cyclist's speed in kilometers per hour? (1 kilometer = 1000 meters)\n\nOptions:\nA) 3.333\nB) 43.2\nC) 0.72\nD) 0.012",
+      "answer": "43.2",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "updated with better distractor options",
+      "hint": "Skill: Ratios, rates, proportional relationships, and units",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "ratios,-rates,-proportional-relationships,-and-units"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0060",
+      "problem": "Machine X produces 120 units per hour, and Machine Y produces 150 units per hour. What is the ratio of the time taken by Machine X to the time taken by Machine Y to produce the same number of units?\n\nOptions:\nA) $3:4$\nB) $5:4$\nC) $4:5$\nD) $120:150$",
+      "answer": "$5:4$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Giving generic \"Machine X\" etc. is just not fun. I don't know of a context to change this to, but something students can relate to. Also, this question is very confusing. To produce the same number of units seems impossible since Machine A is slower, so it will never catch up, creating a \"gotcha\" scenario for students. Putting a ratio of time adds a layer of complexity that is solvable, but adds a layer of interpretation. On a standardized test, students only have a small fraction of time to th…",
+      "hint": "Skill: Ratios, rates, proportional relationships, and units",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "ratios,-rates,-proportional-relationships,-and-units"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0061",
+      "problem": "In a paint shop, Paint A costs \\$24 per gallon and covers 350 square feet, while Paint B costs \\$32 per gallon and covers 420 square feet. What is the ratio of the cost per square foot of Paint A to Paint B?\n\nOptions:\nA) 0.75 to 1\nB) 0.83 to 1\nC) 0.90 to 1\nD) 1.11 to 1",
+      "answer": "0.90 to 1",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "I believe the correct answer is 0.90 to 1... Adjusted Option C to reflect that",
+      "hint": "Skill: Ratios, rates, proportional relationships, and units",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "ratios,-rates,-proportional-relationships,-and-units"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0062",
+      "problem": "A map scale indicates that 2 centimeters represents 15 kilometers. If the distance between two towns on the map is 7.5 centimeters, what is the actual distance between the towns in kilometers?\n\nOptions:\nA) $4$ km\nB) $56.25$ km\nC) $52.5$ km\nD) $112.5$ km",
+      "answer": "$56.25$ km",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "The answer choices should include the context of the problem",
+      "hint": "Skill: Ratios, rates, proportional relationships, and units",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "ratios,-rates,-proportional-relationships,-and-units"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0063",
+      "problem": "A printer uses ink at a rate of $2.5$ milliliters per $100$ pages printed. How many milliliters of ink are needed to print $800$ pages?\n\nOptions:\nA) 3.2 mm\nB) 8 mm\nC) 20 mm\nD) 2000 mm",
+      "answer": "20 mm",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Added context to the choices",
+      "hint": "Skill: Ratios, rates, proportional relationships, and units",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "ratios,-rates,-proportional-relationships,-and-units"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0064",
+      "problem": "A student's average score on history quizzes is 75, and their average on science quizzes is 85. If the overall average across all quizzes is 79, what is the ratio of history quizzes to science quizzes?\n\nOptions:\nA) 2:03\nB) 15:17\nC) 3:02\nD) 5:02",
+      "answer": "3:02",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "I think this is unnecessarily confusing and the answer is wrong. There are far better contexts for this task.",
+      "hint": "Skill: Ratios, rates, proportional relationships, and units",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "ratios,-rates,-proportional-relationships,-and-units"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0065",
+      "problem": "A printer uses ink at a rate of $2.5$ milliliters per $100$ pages printed. How many liters of ink are needed to print $800$ pages?\n\nOptions:\nA) 20,000\nB) 2,000\nC) 0.02\nD) 20",
+      "answer": "0.02",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Updated prompt to actually require a conversion. updated subsequent answer choices as well.",
+      "hint": "Skill: Ratios, rates, proportional relationships, and units",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "ratios,-rates,-proportional-relationships,-and-units"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0066",
+      "problem": "Car A has a fuel efficiency of 24 miles per gallon, and Car B has a fuel efficiency of 32 miles per gallon. If both cars travel the same distance, what is the ratio of the amount of fuel used by Car A to the amount used by Car B?\n\nOptions:\nA) $3:4$\nB) $4:3$\nC) $24:32$\nD) $32:24$",
+      "answer": "$4:3$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "There is no \"application\" of a proportion or ratio here. I think it is unnecessarily tricky - testing students reading ability, not their math. If students got this wrong, it would be difficult to know why unless they chose A, confirming it's a reading issue, not a math issue.",
+      "hint": "Skill: Ratios, rates, proportional relationships, and units",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "ratios,-rates,-proportional-relationships,-and-units"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0067",
+      "problem": "A school club has eight members with ages $14$, $15$, $15$, $16$, $16$, $17$, $18$, and $20$. The $20$-year-old member graduates and leaves the club. How will the mean and median change, if at all?\n\nOptions:\nA) The mean decreases and the median increases.\nB) The mean decreases and the median remains the same.\nC) The mean decreases and the median decreases.\nD) The mean and the median both remain the same.",
+      "answer": "The mean decreases and the median remains the same.",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "This sentence includes, \"Which of the following...\" and it's easy to find the mean and median for both situations, making this a DOK 1 problem. That's ok, but want to point it out. I changed the language to eliminate the \"which of the following,\" although I'm not sure it's any better. Finally, 20 is not an outlier, so the task of figuring out the impact of an outlier is not met. The age of the student would have to 22 or higher, making the context of a \"school club\" curious about what kind of s…",
+      "hint": "Skill: One-variable data - Distributions and measures of center and spread",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "one-variable-data---distributions-and-measures-of-center-and-spread"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0068",
+      "problem": "Two classes took the same exam. Each student's score in Class B was 1.5 times their score in Class A. Which statement correctly compares the means and standard deviations of the scores in the two classes?\n\nOptions:\nA) The mean of Class B is 1.5 times the mean of Class A, and the standard deviation of Class B is equal to the standard deviation of Class A\nB) The mean of Class B is 1.5 times the mean of Class A, and the standard deviation of Class B is 1.5 times the standard deviation of Class A\nC) The mean of Class B is 1.5 times the mean of Class A, and the standard deviation of Class B is two-thirds the standard deviation of Class A\nD) The mean of Class B is twice the mean of Class A, and the standard deviation of Class B is 1.5 times the standard deviation of Class A",
+      "answer": "The mean of Class B is 1.5 times the mean of Class A, and the standard deviation of Class B is 1.5 times the standard deviation of Class A",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "You can't compare \"each student\" from class A to \"their\" score in class B. Throwing it out.",
+      "hint": "Skill: One-variable data - Distributions and measures of center and spread",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "one-variable-data---distributions-and-measures-of-center-and-spread"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0069",
+      "problem": "A school club has eight members with ages $14$, $15$, $15$, $16$, $16$, $17$, $18$, and $20$. The $20$-year-old member graduates and leaves the club. Which statement describes the effect on the mean and median age of the club's members?\n\nOptions:\nA) The mean decreases and the median increases.\nB) The mean decreases and the median remains the same.\nC) The mean decreases and the median decreases.\nD) The mean and the median both remain the same.",
+      "answer": "The mean decreases and the median remains the same.",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Revised \"Which of the following\" language",
+      "hint": "Skill: One-variable data - Distributions and measures of center and spread",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "one-variable-data---distributions-and-measures-of-center-and-spread"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0070",
+      "problem": "A student's daily study times (in minutes) over five days are 20, 30, 40, 50, and 60. If the student replaces their longest study time with 45 minutes, which statement describes the changes to the mean, median, and range of the data?\n\nOptions:\nA) The mean and range decrease, but the median stays the same\nB) The mean, median, and range all decrease\nC) Only the mean decreases\nD) The mean and median decrease, but the range stays the same",
+      "answer": "The mean, median, and range all decrease",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "revised \"which of the following\"",
+      "hint": "Skill: One-variable data - Distributions and measures of center and spread",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "one-variable-data---distributions-and-measures-of-center-and-spread"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0071",
+      "problem": "A student's daily study times (in minutes) over five days are 20, 30, 40, 50, and 60. If the student replaces their longest study time with 45 minutes, which of the following describes the changes to the mean, median, and range of the data?\n\nOptions:\nA) The mean and range decrease, but the median stays the same\nB) The mean, median, and range all decrease\nC) Only the mean decreases\nD) The mean and median decrease, but the range stays the same",
+      "answer": "The mean, median, and range all decrease",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "I like the idea, but a student wouldn't \"replace\" their longest study time. If they studied for 60 minutes, then they studied for 60 minutes. Replacing a time doesn't make any sense, unless the context explains that they were telling someone else how long they studied, and the person recorded it incorrectly or something. Also, the answer is actually option A not B.",
+      "hint": "Skill: One-variable data - Distributions and measures of center and spread",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "one-variable-data---distributions-and-measures-of-center-and-spread"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0072",
+      "problem": "A box plot summarizes the distribution of daily temperatures (°F) in a city over a year. The 25th percentile is $50$, the median is $65$, the 75th percentile is $80$, and the range is $20$ to $100$. What percentage of days had temperatures between $50$ and $80$?\n\nOptions:\nA) $25\\%$\nB) $30\\%$\nC) $50\\%$\nD) $75\\%$",
+      "answer": "$50\\%$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "This is definitely a problem that would benefit from having a box plot shown. Also RANGE IS A SINGLE VALUE. When we speak casually we talk about a range of numbers but in mathematics, range has a very specific definition. The range in this case would be 80 degrees (not 20 to 100).",
+      "hint": "Skill: One-variable data - Distributions and measures of center and spread",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "one-variable-data---distributions-and-measures-of-center-and-spread"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0073",
+      "problem": "Two siblings tracked their weekly savings (in dollars) for five weeks. Sibling X's data: 15, 20, 25, 30, 35. Sibling Y's data: 25, 30, 35, 40, 45. Which statement correctly compares the means and standard deviations of the two datasets?\n\nOptions:\nA) Sibling Y has a higher mean, and both have the same standard deviation.\nB) Sibling Y has a higher mean, and a higher standard deviation.\nC) Sibling Y has a lower mean, and a lower standard deviation.\nD) Sibling Y has a lower mean, and both have the same standard deviation.",
+      "answer": "Sibling Y has a higher mean, and both have the same standard deviation.",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "answers updated to be more parallel",
+      "hint": "Skill: One-variable data - Distributions and measures of center and spread",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "one-variable-data---distributions-and-measures-of-center-and-spread"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0074",
+      "problem": "Two groups of runners completed a race. The coach adjusted the times for Group B by subtracting 10 seconds from each runner's time. Which statement correctly compares the original mean and standard deviation of Group A's times to those of Group B's adjusted times?\n\nOptions:\nA) The mean and standard deviation are both 10 seconds less\nB) The mean of Group B is 10 seconds less, and the standard deviation is the same\nC) The mean stays the same, and the standard deviation is 10 seconds less\nD) The mean stays the same, and the standard deviation stays the same",
+      "answer": "The mean of Group B is 10 seconds less, and the standard deviation is the same",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "I don't think this is a great example of the task. There are FAR better ways to do this task, including showing actual distributions or providing the mean and standard deviation.",
+      "hint": "Skill: One-variable data - Distributions and measures of center and spread",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "one-variable-data---distributions-and-measures-of-center-and-spread"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0075",
+      "problem": "A box plot summarizes the distribution of daily temperatures (°F) in a city over a year. The 25th percentile is $50$, the median is $65$, the 75th percentile is $80$, and the range is $20$ to $100$. What percentage of days had temperatures between $50$ and $80$?\n\nOptions:\nA) $25\\%$\nB) $30\\%$\nC) $50\\%$\nD) $75\\%$",
+      "answer": "$50\\%$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "I already provided feedback on this item",
+      "hint": "Skill: One-variable data - Distributions and measures of center and spread",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "one-variable-data---distributions-and-measures-of-center-and-spread"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0076",
+      "problem": "A running coach records a student's mile times (in minutes) over six training sessions: 7.5, 8.0, 8.0, 8.5, 9.0, 10.0. If the student runs an additional session in 8.0 minutes, how does this seventh time affect the data?\n\nOptions:\nA) The mean and median both decrease, while the range remains 2.5\nB) The mean decreases and the median stays the same, while the range remains 2.5\nC) The mean stays the same and the median decreases, while the range remains 2.5\nD) The mean decreases and the median stays the same, while the range increases",
+      "answer": "The mean and median both decrease, while the range remains 2.5",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "It would really help to have the data on their own line for readability purposes. Also correct answer updated.",
+      "hint": "Skill: One-variable data - Distributions and measures of center and spread",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "one-variable-data---distributions-and-measures-of-center-and-spread"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0077",
+      "problem": "A student recorded the number of hours she studied each day last week: 3, 4, 4, 5, 6, 6, 7. If she studied 6 hours on the eighth day, which measure does NOT change?\n\nOptions:\nA) Range\nB) Mean\nC) Median\nD) Mode",
+      "answer": "Range",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Task is not aligned to question. This is about measures of center changing with additional data.",
+      "hint": "Skill: One-variable data - Distributions and measures of center and spread",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "one-variable-data---distributions-and-measures-of-center-and-spread"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0078",
+      "problem": "A student recorded the number of hours she studied each day last week: 1, 2.5, 2, 2, 1, 3, 2.5. If she studied 2.5 hours on the eighth day, which measure does NOT change?\n\nOptions:\nA) Range\nB) Mean\nC) Median\nD) Mode",
+      "answer": "Range",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Having the numbers in order seems strange, and the numbers themselves are not reasonable for a weekly number of hours. No way could she study for 6, 6, and 7 hours in a single day. I changed the prompt to have more reasonable hours, and not in order.",
+      "hint": "Skill: One-variable data - Distributions and measures of center and spread",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "one-variable-data---distributions-and-measures-of-center-and-spread"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0079",
+      "problem": "A student's daily study times (in minutes) over five days are 20, 30, 40, 50, and 60. If the student replaces their longest study time with 45 minutes, which of the following describes the changes to the mean, median, and range of the data?\n\nOptions:\nA) The mean, median, and range all decrease\nB) The mean and range decrease, but the median stays the same\nC) Only the mean decreases\nD) The mean and median decrease, but the range stays the same",
+      "answer": "The mean and range decrease, but the median stays the same",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Adjust the topic to reflect knowing how changing values impact the measures of center. Flipped options A and B to keep B the correct option.",
+      "hint": "Skill: One-variable data - Distributions and measures of center and spread",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "one-variable-data---distributions-and-measures-of-center-and-spread"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0080",
+      "problem": "Two groups of runners completed a race. The times for Group B were observed to be 10 seconds less than each runner's time in Group A. Which statement correctly compares the original mean and standard deviation of Group A's times to those of Group B's times?\n\nOptions:\nA) The mean and standard deviation are both 10 seconds less\nB) The mean of Group B is 10 seconds less, and the standard deviation is the same\nC) The mean stays the same, and the standard deviation is 10 seconds less\nD) The mean stays the same, and the standard deviation stays the same",
+      "answer": "The mean of Group B is 10 seconds less, and the standard deviation is the same",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Nothing is said about Group A, unless Group B's times are B=A - 10. If that's the case, the problem can be rewritten as edited above. It's poorly written in its original form.",
+      "hint": "Skill: One-variable data - Distributions and measures of center and spread",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "one-variable-data---distributions-and-measures-of-center-and-spread"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0081",
+      "problem": "A frequency table shows the number of hours 20 students spent studying last week. The data is summarized below:\\n\\nHours | 1 | 2 | 3 | 4 | 5\\nFrequency | 2 | 4 | 5 | 6 | 3\\n\\nWhat is the interquartile range of the data?\n\nOptions:\nA) 2\nB) 1\nC) 3\nD) 4",
+      "answer": "2",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "If something can be done to make the horizontal table readable, then it's a 3. But as is, I wouldn't expect any student to be able to make sense of the table. The problem would become about figuring out what the table means rather than the actual topic.",
+      "hint": "Skill: One-variable data - Distributions and measures of center and spread",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "one-variable-data---distributions-and-measures-of-center-and-spread"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0082",
+      "problem": "Two groups of runners completed a race and had the same mean and standard deviation for their race times (Group A and B). The coach adjusted the times for Group B by subtracting 10 seconds from each runner's time. Which statement correctly compares the original mean and standard deviation of Group A's times to those of Group B's adjusted times?\n\nOptions:\nA) The mean and standard deviation are both 10 seconds less\nB) The mean of Group B is 10 seconds less, and the standard deviation is the same\nC) The mean stays the same, and the standard deviation is 10 seconds less\nD) The mean stays the same, and the standard deviation stays the same",
+      "answer": "The mean of Group B is 10 seconds less, and the standard deviation is the same",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "It's not clear Group A's times were the same as Group B's to start.",
+      "hint": "Skill: One-variable data - Distributions and measures of center and spread",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "one-variable-data---distributions-and-measures-of-center-and-spread"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0083",
+      "problem": "A basketball team tracks points scored by two players over five games. Player A's points in ascending order were: 4, 5, 6, 7, 8. Player B's points in ascending order were: 2, 4, 6, 8, 15. Which statement is true about the mean, median, and range of the two datasets?\n\nOptions:\nA) The median is the same, but the mean and range are different.\nB) All three measures are different for the two datasets.\nC) The mean and median are the same, but the range is different.\nD) The median and range are different, but the mean is the same.",
+      "answer": "The median is the same, but the mean and range are different.",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "I added that the points were in ascending order. I wish I'd done that for the other problems where the data was already ordered.",
+      "hint": "Skill: One-variable data - Distributions and measures of center and spread",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "one-variable-data---distributions-and-measures-of-center-and-spread"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0084",
+      "problem": "A student's first five quiz scores are 80, 85, 85, 90, and 95. The student takes a sixth quiz and scores 85. How does the mean, median, and range from the first 5 quiz scores compare to the mean, median, and range for all 6 quiz scores?\n\nOptions:\nA) The median and range remain the same, but the mean decreases.\nB) The median and range remain the same, and the mean remains the same.\nC) The mean and median both decrease, but the range remains the same.\nD) The mean decreases, the range decreases, and the median remains the same.",
+      "answer": "The median and range remain the same, but the mean decreases.",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "I added language to make it more clear the question is comparing to the original 5. Also, this question has \"which of the following...\"",
+      "hint": "Skill: One-variable data - Distributions and measures of center and spread",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "one-variable-data---distributions-and-measures-of-center-and-spread"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0085",
+      "problem": "A student's daily study times (in minutes) over five days are 20, 30, 40, 50, and 60. If the student replaces their longest study time with 45 minutes, which of the following describes the changes to the mean, median, and range of the data?\n\nOptions:\nA) The mean, median, and range all decrease\nB) The mean and range decrease, but the median stays the same\nC) Only the range decreases\nD) The mean decreases, but the median and range stay the same",
+      "answer": "The mean and range decrease, but the median stays the same",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Updated correct answer and improved distractors",
+      "hint": "Skill: One-variable data - Distributions and measures of center and spread",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "one-variable-data---distributions-and-measures-of-center-and-spread"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0086",
+      "problem": "A teacher records the number of students who attended after-school tutoring each day for 15 days: 12, 12, 13, 13, 13, 14, 14, 14, 14, 15, 15, 15, 16, 16, 17. What is the ratio of the mean to the median for this data set?\n\nOptions:\nA) 1.01\nB) 0.93\nC) 1.07\nD) 1.14",
+      "answer": "1.01",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "I'm not sure this problem is really getting at the spirit of the task but the task itself is *fine* otherwise. Answers have been updated to be correct.",
+      "hint": "Skill: One-variable data - Distributions and measures of center and spread",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "one-variable-data---distributions-and-measures-of-center-and-spread"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0087",
+      "problem": "A researcher wants to study the average time college students spend on social media daily. She collects data by posting a survey link on Instagram and receives 500 responses from college students across the country. Which of the following is the primary limitation of using this sample to draw conclusions about all college students?\n\nOptions:\nA) The survey was only conducted on a single social media platform\nB) The survey was only accessible to volunteers who chose to participate\nC) The survey's sample size was too small to represent all college students\nD) The survey did not include college students who do not use any social media",
+      "answer": "The survey was only conducted on a single social media platform",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Choices A, B, and D are all equally problematic, although I don't think the problem is only one social media outlet (i.e. choice A is probably the 2nd least offensive with B and D being equally 1st). The choices are too similar in severity to discern which would be the best choice. If the researcher wants to generalize to all college students, then probably choice D is the answer.",
+      "hint": "Skill: Evaluating statistical claims - Observational studies and experiments",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "evaluating-statistical-claims---observational-studies-and-experiments"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0088",
+      "problem": "A high school wants to determine if students support a new dress code policy. The school surveyed all 50 members of the student council leadership team, and 45 responded. Which of the following is the primary reason the results might not accurately represent the opinions of all students at the school?\n\nOptions:\nA) The sample was not randomly selected from all students and therefore may not represent the entire student body\nB) The sample size was too small\nC) The sample was biased towards students who were not surveyed\nD) The sample was chosen out of convenience since the sample was taken when the student council was meeting",
+      "answer": "The sample was biased towards students who were not surveyed",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "I am concerned that not all students know what a student council is, but that's probably an ok thing to let pass. I modified the wording of the prompt to include a semi-definition of a student council. And there's no mention that there are several students (2? 200?) *not* on student council. I also think choices A and C are too similar to distinguish between as \"more\" correct than the other.  I'm also not sure what choice D means. I made a guess and modified it.",
+      "hint": "Skill: Evaluating statistical claims - Observational studies and experiments",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "evaluating-statistical-claims---observational-studies-and-experiments"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0089",
+      "problem": "A researcher investigates whether a new diet plan lowers cholesterol. They randomly assign half of 50 adults to follow the diet plan and 50 adults to maintain their current eating habits for three months. Why does random assignment strengthen the conclusion that the diet plan causes changes in cholesterol levels?\n\nOptions:\nA) It minimizes differences in potential confounding variables between the groups.\nB) It eliminates all potential confounding variables between the groups.\nC) It ensures the sample is representative of the population.\nD) It ensures both groups have an equal number of participants.",
+      "answer": "It minimizes differences in potential confounding variables between the groups.",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "My only change is that the 50 is unclear whether there are 50 per groups or 50 total, so 25 per group. In other words, it does not specify whether the groups are equal sized or not, an important component of the experimental design,",
+      "hint": "Skill: Evaluating statistical claims - Observational studies and experiments",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "evaluating-statistical-claims---observational-studies-and-experiments"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0090",
+      "problem": "A researcher wants to determine if consuming omega-3 supplements improves memory. They recruited 100 participants and allowed them to choose whether to take the supplements. After six months, the supplement group showed better memory test scores. Can the researcher conclude that omega-3 supplements improve memory?\n\nOptions:\nA) No, because the study did not use random assignment.\nB) No, because the study did not randomly select participants.\nC) No, because the study did not use a placebo.\nD) No, because the study did not control for other variables.",
+      "answer": "No, because the study did not use random assignment.",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "I think many of the answers are interrelated and do not allow for a clear \"best answer\".  For example, one would use random assignment because it can be one way to address confounding variables. I just don't think it's clear cut enough.",
+      "hint": "Skill: Evaluating statistical claims - Observational studies and experiments",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "evaluating-statistical-claims---observational-studies-and-experiments"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0091",
+      "problem": "A town council did a survey to determine support for building a new playground. They randomly selected 200 households from a registry of all 1,500 households located on the east side of the river in the town. The registry includes 1,200 households with children and 300 without children. \nIf 45% of the sampled households were in favor of building a new playground, to which population can the survey results be most appropriately generalized?\n\nOptions:\nA) All households in the town\nB) All households on the east side of the river\nC) All 1,200 households with children\nD) The 200 households surveyed",
+      "answer": "All households on the east side of the river",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "updated prompt for simplicity and clarity. Updated answer choices to match.",
+      "hint": "Skill: Evaluating statistical claims - Observational studies and experiments",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "evaluating-statistical-claims---observational-studies-and-experiments"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0092",
+      "problem": "A researcher wants to study the average time college students spend on social media daily. She collects data by posting a survey link on Instagram and receives 500 responses from college students across the country. What could be considered the \\textit{primary} limitation of using this sample to draw conclusions about all college students?\n\nOptions:\nA) The survey was conducted on a social media platform, excluding those who do not use social media\nB) The survey was only accessible to volunteers who chose to participate\nC) The survey's sample size was too small to represent all college students\nD) The survey was not posted on other social media platforms",
+      "answer": "The survey was conducted on a social media platform, excluding those who do not use social media",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "I'm not sure why this question has both the prompt and all answer choices centered, but that's a minor edit that I don't know how to do. Also the primary reason this survey isn't good isn't that it's on a single social platform, it's that it was posted on a social media platform at all, and that it was voluntary response biased. If the population is all college students, choice D is also correct. Changing the language a bit of the answer.",
+      "hint": "Skill: Evaluating statistical claims - Observational studies and experiments",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "evaluating-statistical-claims---observational-studies-and-experiments"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0093",
+      "problem": "A nutritionist wants to determine if drinking green tea causes improved athletic performance. They observed 300 college athletes, noting that those who regularly drank green tea performed better in endurance tests than those who didn't. Based on this study design, can the nutritionist conclude that drinking green tea causes improved athletic performance?\n\nOptions:\nA) Yes, because the study found a correlation between green tea consumption and athletic performance\nB) Yes, because the researcher observed that that the athletes who drank green tea had improved athletic performance.\nC) No, because the athletes were not randomly selected for the study\nD) No, because the athletes self-selected their green tea consumption",
+      "answer": "No, because the athletes self-selected their green tea consumption",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Updated answers so it was clearer what the correct one was. Some of true but related to the identified answer.",
+      "hint": "Skill: Evaluating statistical claims - Observational studies and experiments",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "evaluating-statistical-claims---observational-studies-and-experiments"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0094",
+      "problem": "A school counselor wants to determine if increasing nightly sleep causes higher math test scores. They randomly assigned 100 students to either a group instructed to extend their sleep by 1 hour nightly or a group with no instructions. After a month, the sleep extension group scored significantly higher on average. Can the counselor conclude that increased sleep causes higher scores?\n\nOptions:\nA) No, because other factors could influence test scores.\nB) No, because the students were not randomly sampled from the population.\nC) Yes, because the groups were randomly assigned.\nD) Yes, because the sleep group had higher scores.",
+      "answer": "Yes, because the groups were randomly assigned.",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "I have a problem with the conclusive nature of the language in this problem. While random assignment can help minimize the effects of confounding variables, it doesn't eliminate it altogether. I think you'll get a bunch of kids picking option A, which is a totally fair thing to pick (especially when you consider study habits, etc).",
+      "hint": "Skill: Evaluating statistical claims - Observational studies and experiments",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "evaluating-statistical-claims---observational-studies-and-experiments"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0095",
+      "problem": "A city wants to estimate the proportion of households that participate in recycling. The city randomly selects 200 households from a neighborhood that has a curbside recycling program and finds that 85% participate. Which of the following is the primary reason why this result should not be generalized to all households in the city?\n\nOptions:\nA) The sample size of 200 households is too small to accurately represent the entire city.\nB) The specific neighborhood surveyed may have different recycling access than other areas.\nC) The sample was not randomly selected from all households in the city.\nD) Non-response bias may have occurred if some selected households did not participate.",
+      "answer": "The specific neighborhood surveyed may have different recycling access than other areas.",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Revised answer to be more correct than D",
+      "hint": "Skill: Evaluating statistical claims - Observational studies and experiments",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "evaluating-statistical-claims---observational-studies-and-experiments"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0096",
+      "problem": "One year, a town’s population decreased by $25\\%$. The next year, it increased by $30\\%$. What was the overall percentage change in the town’s population over the two years?\n\nOptions:\nA) $5\\%$ increase\nB) $2.5\\%$ decrease\nC) $25\\%$ decrease\nD) $30\\%$ decrease",
+      "answer": "$2.5\\%$ decrease",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "\"Drought\" might not be a familiar term.",
+      "hint": "Skill: Percentages",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "percentages"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0097",
+      "problem": "A customer used a 20% discount coupon for their family's meal at a restaurant and then left a 15% tip on the discounted price. If the customer paid a total of \\$138, what was the original price of the meal?\n\nOptions:\nA) \\$120\nB) \\$145\nC) \\$150\nD) \\$200",
+      "answer": "\\$150",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "$138 is a lot for one person. I added that the bill was for their family.",
+      "hint": "Skill: Percentages",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "percentages"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0098",
+      "problem": "A town's population increased by $300\\%$ one year after being featured in a magazine article as a top ten best place to live. The next year, it decreased by $25\\%$ as people couldn't find housing. What is the overall percentage change in the town's population over the two-year period?\n\nOptions:\nA) $125\\%$ increase\nB) $225\\%$ increase\nC) $275\\%$ increase\nD) $300\\%$ increase",
+      "answer": "$225\\%$ increase",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Maybe I did the math incorrectly, but I got an overall percent change to be 225%. I also think a little more context could be added to make the question more meaningful.",
+      "hint": "Skill: Percentages",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "percentages"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0099",
+      "problem": "A town’s population decreased by $25\\%$ when a major business closed. The next year, it increased by $30\\%$ when a new company came to town. What was the overall percentage change in the town’s population over the two years?\n\nOptions:\nA) $5\\%$ increase\nB) $2.5\\%$ decrease\nC) $5\\%$ decrease\nD) $2.5\\%$ increase",
+      "answer": "$2.5\\%$ decrease",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Drought is a weird looking word students may not know. And did the population leave or did they die? That seems unnecessary to contemplate. My revision isn't great but it's not unfamiliar and it's not morbid. \nAnswers updated to be more parallel.",
+      "hint": "Skill: Percentages",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "percentages"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0100",
+      "problem": "A student organization sells 200 pens at \\$3 each and 150 notebooks at \\$8 each. Next year, the pen price will decrease by 10% and the notebook price will increase by 15%. What is the percent change in total revenue if quantities sold remain constant?\n\nOptions:\nA) 5% decrease\nB) 6.25% increase\nC) 5% increase\nD) 6.67% increase",
+      "answer": "6.67% increase",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Updated with correct answer and better distractors",
+      "hint": "Skill: Percentages",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "percentages"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0101",
+      "problem": "You and three friends go to a restaurant for dinner and you all agree to pay for your own portion of the bill. One of your friends just got paid and offered to pay the 15% tip that was automatically added to the cost of the meal! The cost of the meal plus the tip together was \\$92. How much was the cost of the meal before the tip so you can figure out what you owe?\n\nOptions:\nA) \\$78.20\nB) \\$80.00\nC) \\$83.64\nD) \\$105.80",
+      "answer": "\\$80.00",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Added more context so it's easier to understand what it's asking.",
+      "hint": "Skill: Percentages",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "percentages"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0102",
+      "problem": "A company's revenue increased by 180% this year, resulting in \\$560,000. What was the company's revenue last year?\n\nOptions:\nA) \\$200,000\nB) \\$311,111\nC) \\$448,000\nD) \\$560,000",
+      "answer": "\\$200,000",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "While $200,000 is correct, this question is very misleading. 200% of 200,000 is $400,000. So saying an amount increases by 180% can be interpreted as that you had 100% of what you originally had, plus the extra 80% to give you the total, or could be interpreted as you take 100% of what you had, add 80% more, then add that entire amount to what you started with. If you interpret it the first way, you get choice B since 180% of $311,111.11 gives you the final amount of $560,000. But if you take i…",
+      "hint": "Skill: Percentages",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "percentages"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0103",
+      "problem": "A student organization sells 200 pens at \\$3 each and 150 notebooks at \\$8 each. Next year, the pen price will decrease by 10% and the notebook price will increase by 15%. What is the percent change in total revenue if quantities sold remain constant?\n\nOptions:\nA) 5% decrease\nB) 6.67% increase\nC) 5% increase\nD) 6.67% increase",
+      "answer": "6.67% increase",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "No answer choice is correct. Revised Option D to be correct, and Option B so that D doesn't stand  out as different.",
+      "hint": "Skill: Percentages",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "percentages"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0104",
+      "problem": "A bacteria culture's optical density reading measures a decrease in its size of 30% at the end of the first day. At the end of the second day, the optical density measure showed an increased of 40% from the last measurement. What is the overall percentage change in the culture's size over the two days?\n\nOptions:\nA) 5% increase\nB) 10% increase\nC) 2% decrease\nD) 2% increase",
+      "answer": "2% decrease",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Added what it is that's decreasing (a culture can't, but a something measurable about it can), and that the 40% increase is based on the end of 1st day not its original population size.",
+      "hint": "Skill: Percentages",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "percentages"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0105",
+      "problem": "An investment fund grew by $150\\%$ one quarter, then by $120\\%$ the next quarter, and finally decreased by $60\\%$ in the third quarter. What was the total percentage increase from the initial value?\n\nOptions:\nA) $80\\%$\nB) $140\\%$\nC) $170\\%$\nD) $210\\%$",
+      "answer": "$140\\%$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "I just don't like these questions. It's confusing and I think it traps students into guessing and I don't think the context of investing in accounts that make 150% is realistic, nor is a context most students would understand.",
+      "hint": "Skill: Percentages",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "percentages"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0106",
+      "problem": "A house was valued at \\$250,000, and its value decreased by 8% during an economic downturn. If the value then increased by 12% during the recovery period, what was the total percentage change in the house's value from the original price?\n\nOptions:\nA) 3.04% increase\nB) 4% increase\nC) -10.4% decrease\nD) 0.96% increase",
+      "answer": "3.04% increase",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Not sure if many students would connect to homeownership, but maybe.",
+      "hint": "Skill: Percentages",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "percentages"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0107",
+      "problem": "A shoe store purchases a pair of designer boots for \\$120 and marks the price up by 20% to sell. Due to popularity, the store then marks the boots price up again by 15%. The store then has a sale and offers a 25% discount on the final marked-up price, what is the final selling price of the boots?\n\nOptions:\nA) \\$108.00\nB) \\$121.50\nC) \\$129.60\nD) \\$124.20",
+      "answer": "\\$124.20",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Changed the prompt a little to make it not seem like the store is just gouging customers (which they are if they marked up the price twice). I've also done this problem at least 5 times, and each time I keep getting choice C. Maybe I did it incorrectly, but I think their answer is incorrect.",
+      "hint": "Skill: Percentages",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "percentages"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0108",
+      "problem": "A town's population increased by $20\\%$ one year and then increased again by $15\\%$ the next. What is the total percentage increase in the population over the two-year period?\n\nOptions:\nA) $23\\%$\nB) $32\\%$\nC) $35\\%$\nD) $38\\%$",
+      "answer": "$38\\%$",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Adding that the second 15% was also an increase to make it more clear.",
+      "hint": "Skill: Percentages",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "percentages"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0109",
+      "problem": "A store increased the price of a jacket by 30% and then later decreased the new price by 20%. What is the overall percentage change in the price of the jacket?\n\nOptions:\nA) 20% decrease\nB) 4% increase\nC) 10% increase\nD) 24% increase",
+      "answer": "4% increase",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Removed unnecessary - on first answer",
+      "hint": "Skill: Percentages",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "percentages"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0110",
+      "problem": "After a 25% discount, a book costs \\$36. What was the original price of the book?\n\nOptions:\nA) \\$27.00\nB) \\$144\nC) \\$46.80\nD) \\$48.00",
+      "answer": "\\$48.00",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "updated with improved distractors",
+      "hint": "Skill: Percentages",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "percentages"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0111",
+      "problem": "A survey of 500 randomly selected high school students found that 65\\% support extending the lunch period. The survey's margin of error is $\\pm4$ percentage points. Which of the following statements best interprets this margin of error?\n\nOptions:\nA) Between 61\\% and 69\\% of the 500 surveyed students support extending the lunch period.\nB) 65\\% of all high school students support extending the lunch period, with a 4\\% chance of error.\nC) The true proportion of all high school students who support extending the lunch period is between 61\\% and 69\\%.\nD) We can be 96\\% certain that 65\\% of all high school students support extending the lunch period.",
+      "answer": "The true proportion of all high school students who support extending the lunch period is between 61\\% and 69\\%.",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "% symbol isn't showing up correctly",
+      "hint": "Skill: Inference from sample statistics and margin of error",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "inference-from-sample-statistics-and-margin-of-error"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0112",
+      "problem": "A university has 4,800 students. A random sample of 250 students reported spending an average of 8.2 hours per week studying, with a margin of error of 0.6 hours. Based on the sample, what is the estimated total number of hours all students at the university study each week?\n\nOptions:\nA) 2,050 hours\nB) 36,480 hours\nC) 39,360 hours\nD) 42,240 hours",
+      "answer": "39,360 hours",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "I'm not sure if the extra information in the problem about margin of error is necessary.",
+      "hint": "Skill: Inference from sample statistics and margin of error",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "inference-from-sample-statistics-and-margin-of-error"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0113",
+      "problem": "A university's sustainability committee surveyed 750 randomly selected students about a new composting initiative. 48\\% of those surveyed supported the initiative, with a margin of error of $\\pm4$ percentage points. Which of the following statements best interprets the margin of error?\n\nOptions:\nA) Exactly 48\\% of all students at the university support the initiative, with a 4\\% chance of error in either direction.\nB) Between 44\\% and 52\\% of the 750 surveyed students support the initiative.\nC) There is a 96\\% chance that exactly 48\\% of all students support the initiative.\nD) It is plausible that the true percentage of all students supporting the initiative is between 44\\% and 52\\%.",
+      "answer": "It is plausible that the true percentage of all students supporting the initiative is between 44\\% and 52\\%.",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "A lot of weird formatting. Some of the answers are extremely close and feel purposefully confusing.",
+      "hint": "Skill: Inference from sample statistics and margin of error",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "inference-from-sample-statistics-and-margin-of-error"
+      ]
+    },
+    {
+      "id": "math.aptitude.sat-data.q0114",
+      "problem": "A bookstore with 12,000 customers surveyed a random sample of 300 customers and found that 28% preferred science fiction books, with a margin of error of 3.5 percentage points. Which of the following represents the best estimate for the range of the percentage of all customers at the bookstore who prefer science fiction books?\n\nOptions:\nA) 21% to 35%\nB) 26.8% to 29.2%\nC) 27.0% to 29.0%\nD) 24.5% to 31.5%",
+      "answer": "24.5% to 31.5%",
+      "answer_format": "text",
+      "difficulty": "medium",
+      "solution_steps": [],
+      "explanation": "Not a hill to die on, but the opening info on customer numbers or sample size isn't necessary to answer the question. I suggest omitting it.",
+      "hint": "Skill: Inference from sample statistics and margin of error",
+      "tags": [
+        "sat",
+        "college-readiness",
+        "inference-from-sample-statistics-and-margin-of-error"
+      ]
+    }
+  ]
+}

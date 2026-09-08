@@ -101,9 +101,12 @@ This PC is the owner: open the frontend and use **Profile** for display name. Op
 | **Ollama LLM** | [ollama.com](https://ollama.com) + set `OLLAMA_ENABLED=1` in `.env` | `ollama pull llama3.2` |
 | **Huey LLM jobs** | `pip install huey` (in `backend/requirements.txt`) | **Required for “Test all route profiles”.** In a separate terminal: `python -m backend.core.llm_jobs_worker`. Without it, jobs stay `queued`/`pending` forever in `data/llm_jobs/`. Single-tier “Test chain” does **not** need Huey. |
 | **EEG hardware** | `EEG_ENABLED=1` in `.env` | `scripts\run_eeg.bat` (prototype) or main API |
-| **SelfTracker (Edge)** | Load unpacked `selftracker-extension/` (v1.5.3+) — or `scripts\launch_selftracker_edge.bat` | After code updates: **Reload** on `edge://extensions`. Fail-closed watch block; `browser.mode` bible/planning/study force-blocks YouTube. API :8000. Edge-only (Zen/Firefox support removed). |
+| **CALT Gate + SelfTracker (Edge)** | Load unpacked `calt-gate-extension/` + `selftracker-extension/` | SoftLand sites. After updates: **Reload** on `edge://extensions`. Incubation keeps leisure blocked. API :8000. |
 | **Desktop tracker persistence** | `scripts\install_tracker_persistence.bat` | Startup shortcut + logon task + keepalive (~5 min) + HKCU Run. Tray **Confirm exit…** and stop/restart/uninstall bats need `TRACKER_EXIT_PIN` or phrase `I AM DONE TRACKING`. Prefer `scripts\admin_only\stop_desktop_tracker.bat` / `restart_desktop_tracker.bat`. Legitimate uninstall: `scripts\uninstall_tracker_persistence.bat` (set `TRACKER_PERSIST_PROTECT=0` first if Protect rewrites Run). Not AppLocker / not Task Manager disable |
-| **CALT Desktop (PySide6)** | `pip install PySide6` (in `backend/requirements.txt`) | **Preferred:** `scripts\desktop_tracker\run_calt_desktop.bat` or `run_desktop_tracker.bat` (now launches Desktop). Autostart/keepalive use the same VBS. Legacy pystray: `set CALT_USE_LEGACY_TRAY=1`. Spec: `docs/superpowers/specs/2026-08-31-calt-desktop-pyside6-design.md` |
+| **CALT Focus (web)** | `run.bat` (API + Vite) | **Control UI:** open `/productivity/focus`. Launch helper: `scripts\desktop_tracker\run_calt_desktop.bat` (opens browser + native enforcer). No PySide6. |
+| **Native enforcer** | `build_native_enforcer.bat` | Kills + session track. Install: `install_native_enforcer.ps1`. Console: `run_native_enforcer_console.bat`. |
+| **Python enforcer (fallback only)** | `python -m backend.behavior.enforcer_service` | Only if native binary missing. |
+| **CALT Desktop Qt (legacy)** | `pip install PySide6` | Optional: `run_calt_desktop_qt.bat` — prefer web Focus. |
 | **Voice agent** | Runs inside desktop tracker | Tray → **Voice agent (chat)** · hotkey `Ctrl+Shift+Space` · TTS: `edge-tts` (`en-GB-RyanNeural`) → Piper → SAPI · `pip install edge-tts` · needs LM Studio/Ollama via AI handler |
 
 See [DEPENDENCIES.md](./DEPENDENCIES.md) for tiers, env vars, and troubleshooting.

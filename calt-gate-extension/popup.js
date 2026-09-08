@@ -7,11 +7,25 @@
     var b = g.browser || {};
     var mode = (b.mode_label || b.mode || "—").toUpperCase();
     var bits = ["Mode: " + mode];
+    var inc = g.incubation || {};
+    if (inc.active) {
+      bits.push("incubation " + Math.max(0, inc.remaining_sec || 0) + "s");
+    } else if (b.incubation_active) {
+      bits.push("incubation");
+    }
     if (g.reward_day) bits.push("reward day");
     else if (g.day_unlimited) bits.push("goal met");
     if (g.stale || g.degraded) bits.push("stale");
     if (res && res.redirectsEnabled === false) bits.push("redirects OFF");
-    status.textContent = bits.join(" · ");
+    var desk = g.desktop || {};
+    if (desk.enforcer_owns_kills) bits.push("enforcer on");
+    var html = bits.join(" · ");
+    if (inc.active) {
+      html =
+        '<div class="warn">Incubation — entertainment blocked. Open CALT Desktop · Focus.</div>' +
+        html;
+    }
+    status.innerHTML = html;
   }
 
   function refresh() {

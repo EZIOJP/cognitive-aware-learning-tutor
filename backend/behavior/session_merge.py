@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any, Sequence
 
 from backend.behavior.tracker_ignore import is_ignored_app
@@ -10,16 +10,26 @@ from backend.behavior.tracker_ignore import is_ignored_app
 CALENDAR_MERGE_GAP_SEC = 900  # 15 min — calendar overlay
 CALENDAR_MIN_DURATION_SEC = 120  # drop sub-2-min noise on calendar
 
+_SORT_EPOCH = datetime.min.replace(tzinfo=UTC)
+
+
+def _as_utc(dt: datetime) -> datetime:
+    """Normalize naive (treat as UTC) and aware datetimes for safe compare/sort."""
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=UTC)
+    return dt.astimezone(UTC)
+
 
 def _parse_dt(value: datetime | str | None) -> datetime | None:
     if value is None:
         return None
     if isinstance(value, datetime):
-        return value
+        return _as_utc(value)
     try:
-        return datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+        parsed = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
     except (TypeError, ValueError):
         return None
+    return _as_utc(parsed)
 
 
 def _same_merge_group(a: Any, b: Any) -> bool:
@@ -43,10 +53,12 @@ def filter_ignored_rows(rows: Sequence[Any]) -> list[Any]:
         if isinstance(row, dict):
             exe = row.get("app_name") or row.get("exe") or ""
             title = row.get("window_title") or row.get("title") or ""
+            source = row.get("source")
         else:
             exe = getattr(row, "app_name", None) or ""
             title = getattr(row, "window_title", None) or ""
-        if is_ignored_app(str(exe), str(title)):
+            source = getattr(row, "source", None)
+        if is_ignored_app(str(exe), str(title), source=str(source or "") or None):
             continue
         out.append(row)
     return out
@@ -56,7 +68,7 @@ def merge_tracked_rows(rows: Sequence[Any], *, gap_seconds: int = 5) -> list[Any
     """Merge consecutive TrackedSession ORM rows or interval dicts."""
     if not rows:
         return []
-    ordered = sorted(rows, key=lambda r: _get_times(r)[0] or datetime.min)
+    ordered = sorted(rows, key=lambda r: _get_times(r)[0] or _SORT_EPOCH)
     merged: list[Any] = [ordered[0]]
 
     for row in ordered[1:]:

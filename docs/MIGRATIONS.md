@@ -14,6 +14,10 @@
 | `0006_user_features` | User-defined features; per-user `reading_definitions` |
 | … | *(revisions `0007`–`0029` exist under `alembic/versions/` — chain continues)* |
 | `0030_study_loop_sessions` | `study_loop_sessions` table (Study Loop read-gate → practice) |
+| `0031_study_loop_days` | `study_loop_days` daily bite freeze |
+| `0032_tracked_session_day_indexes` | Indexes on `tracked_sessions` for day-overlap queries |
+| `0033_break_reward` | `break_sessions` + `reward_ledger` (incubation + earned free time) |
+| `0034_enforcer_runtime` | Snapshot for native C++ enforcer (shared SQLite with Python) |
 
 ## Everyday commands
 

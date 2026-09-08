@@ -9,12 +9,15 @@ Bonus credits can be granted (dev/admin) without inventing fake qualifying days.
 
 from __future__ import annotations
 
+import logging
 from datetime import datetime
 from typing import Any
 
 from backend.bible import store as bible_store
 from backend.bible.paths import bible_dir
 from backend.planner.service import local_tz
+
+logger = logging.getLogger(__name__)
 
 QUALIFYING_DAYS_PER_REWARD = 4
 CONFIRM_PHRASE = "REWARD"
@@ -100,11 +103,36 @@ def record_qualifying_day(user_id: int, *, qualified: bool) -> dict[str, Any]:
     return status(user_id)
 
 
+def _sync_reward_day_to_softland_policy() -> None:
+    """Native SoftLand reads softland_policy.json — keep reward day in sync."""
+    from datetime import timedelta
+
+    from backend.behavior.softland_policy import patch_softland_policy
+
+    now = datetime.now(local_tz())
+    end = now.replace(hour=23, minute=59, second=59, microsecond=0)
+    if end <= now:
+        end = now + timedelta(minutes=60)
+    patch_softland_policy(
+        {
+            "runtime": {
+                "reward_day_active": True,
+                "free_until": end.isoformat(),
+            }
+        }
+    )
+
+
 def claim_reward_day(user_id: int, *, confirm: str, already_unlocked: bool) -> dict[str, Any]:
     if (confirm or "").strip().upper() != CONFIRM_PHRASE:
         raise ValueError(f"Type {CONFIRM_PHRASE} to use an earned reward day")
     day = bible_store.load_day(user_id)
     if day.get("reward_day"):
+        # Re-sync even on idempotent claim (prior SoftLand write may have been skipped).
+        try:
+            _sync_reward_day_to_softland_policy()
+        except Exception as exc:
+            logger.warning("reward_day SoftLand policy sync failed (already active): %s", exc)
         return {**status(user_id), "ok": True, "message": "Reward day is already active until midnight"}
     if already_unlocked:
         raise ValueError("Today is already unlocked; save the reward day for another day")
@@ -121,6 +149,12 @@ def claim_reward_day(user_id: int, *, confirm: str, already_unlocked: bool) -> d
     _save(user_id, data)
     day["reward_day"] = True
     bible_store.save_day(user_id, day)
+    # Solo-pack: native SoftLand reads softland_policy.json (not Bible JSON).
+    # Without this, Gate prefers get_mode and still blocks YouTube on reward day.
+    try:
+        _sync_reward_day_to_softland_policy()
+    except Exception as exc:
+        logger.warning("reward_day SoftLand policy sync failed: %s", exc)
     # Belt-and-suspenders: also arm tray free-override until midnight so the
     # browser gate resolves mode=free even if clients cache poorly.
     try:
@@ -134,6 +168,6 @@ def claim_reward_day(user_id: int, *, confirm: str, already_unlocked: bool) -> d
             end = now + timedelta(minutes=60)
         mins = max(5, int((end - now).total_seconds() // 60))
         set_free_override(minutes=mins, now=now)
-    except Exception:
-        pass
+    except Exception as exc:
+        logger.warning("reward_day free-override arm failed: %s", exc)
     return {**status(user_id), "ok": True, "message": "Reward day active — free mode until midnight"}

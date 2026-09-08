@@ -1,0 +1,3022 @@
+{
+  "schema_version": 1,
+  "kind": "math",
+  "topic": {
+    "topic_id": "math.aptitude.dm-add-sub",
+    "title": "DeepMind add/sub",
+    "stage": "foundations",
+    "path": [
+      "Aptitude",
+      "DeepMind",
+      "arithmetic__add_or_sub"
+    ],
+    "track": "aptitude",
+    "prerequisites": [],
+    "note_topic_ids": [
+      "MT1-T01"
+    ],
+    "description": "google-deepmind/mathematics_dataset (arithmetic__add_or_sub)."
+  },
+  "questions": [
+    {
+      "id": "math.aptitude.dm-add-sub.q0001",
+      "problem": "Calculate -35674554107 - 0.107.",
+      "answer": "-35674554107.107",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0002",
+      "problem": "Sum -0.2 and 1603139.5492.",
+      "answer": "1603139.3492",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0003",
+      "problem": "What is 8.8 less than -67076277026?",
+      "answer": "-67076277034.8",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0004",
+      "problem": "Add 469 and -545514.",
+      "answer": "-545045",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0005",
+      "problem": "What is 1008.406 plus 131?",
+      "answer": "1139.406",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0006",
+      "problem": "Calculate 47866477 - 0.1.",
+      "answer": "47866476.9",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0007",
+      "problem": "Add -17792 and 0.3.",
+      "answer": "-17791.7",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0008",
+      "problem": "Calculate -0.1138 + -40.",
+      "answer": "-40.1138",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0009",
+      "problem": "What is -0.088 + 13007?",
+      "answer": "13006.912",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0010",
+      "problem": "What is the difference between 115 and -28.9?",
+      "answer": "143.9",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0011",
+      "problem": "What is -268 - -30716?",
+      "answer": "30448",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0012",
+      "problem": "Add together 11 and -2491.",
+      "answer": "-2480",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0013",
+      "problem": "Calculate -1290.2 - 39256.",
+      "answer": "-40546.2",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0014",
+      "problem": "What is 42314750 less than 27.3?",
+      "answer": "-42314722.7",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0015",
+      "problem": "Work out 43337707852 - -7.9.",
+      "answer": "43337707859.9",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0016",
+      "problem": "Subtract 5 from -462.2.",
+      "answer": "-467.2",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0017",
+      "problem": "Work out -4979675 - 3493.",
+      "answer": "-4983168",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0018",
+      "problem": "Total of 474 and 163.",
+      "answer": "637",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0019",
+      "problem": "Put together 3 and -240271.",
+      "answer": "-240268",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0020",
+      "problem": "0 + -1101",
+      "answer": "-1101",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0021",
+      "problem": "Subtract 453 from 3.6985.",
+      "answer": "-449.3015",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0022",
+      "problem": "What is 167 minus -0.025?",
+      "answer": "167.025",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0023",
+      "problem": "20810+5403",
+      "answer": "26213",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0024",
+      "problem": "Calculate 15.7057861458 - -198.",
+      "answer": "213.7057861458",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0025",
+      "problem": "What is the difference between -94714394.06 and -6?",
+      "answer": "94714388.06",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0026",
+      "problem": "Add together 330545.7 and 4.",
+      "answer": "330549.7",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0027",
+      "problem": "Total of -0.02802 and 0.04.",
+      "answer": "0.01198",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0028",
+      "problem": "Total of 67.3797 and 3.",
+      "answer": "70.3797",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0029",
+      "problem": "-332009425.74 + -2024",
+      "answer": "-332011449.74",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0030",
+      "problem": "What is 1.77 + 36.5338?",
+      "answer": "38.3038",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0031",
+      "problem": "Calculate -909 + 2.79.",
+      "answer": "-906.21",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0032",
+      "problem": "What is the distance between 5227 and -0.78348?",
+      "answer": "5227.78348",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0033",
+      "problem": "Add 3 and 396533928.",
+      "answer": "396533931",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0034",
+      "problem": "Work out -300.4 + 0.022379296673.",
+      "answer": "-300.377620703327",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0035",
+      "problem": "Put together 922 and 14.95708.",
+      "answer": "936.95708",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0036",
+      "problem": "Sum 0.1158 and 1.",
+      "answer": "1.1158",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0037",
+      "problem": "450 - -7.5331043",
+      "answer": "457.5331043",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0038",
+      "problem": "-328543+65632.57801",
+      "answer": "-262910.42199",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0039",
+      "problem": "21346 + 0.008931",
+      "answer": "21346.008931",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0040",
+      "problem": "Calculate -3 + 306.",
+      "answer": "303",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0041",
+      "problem": "11039+4",
+      "answer": "11043",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0042",
+      "problem": "-2+-1545691536",
+      "answer": "-1545691538",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0043",
+      "problem": "What is 0.182 plus 344710?",
+      "answer": "344710.182",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0044",
+      "problem": "Sum 11186942 and 23.",
+      "answer": "11186965",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0045",
+      "problem": "What is -1.043341 less than -2?",
+      "answer": "-0.956659",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0046",
+      "problem": "91984868+-8195.7",
+      "answer": "91976672.3",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0047",
+      "problem": "Add 0.2692502 and 439.",
+      "answer": "439.2692502",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0048",
+      "problem": "Put together 1 and -86.",
+      "answer": "-85",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0049",
+      "problem": "Work out 0.6 + -28389686412371.",
+      "answer": "-28389686412370.4",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0050",
+      "problem": "Calculate -247640951549 - 2.",
+      "answer": "-247640951551",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0051",
+      "problem": "Put together 12.759571 and -210239.",
+      "answer": "-210226.240429",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0052",
+      "problem": "Put together 45711.258 and 0.",
+      "answer": "45711.258",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0053",
+      "problem": "Subtract 6.1421 from -1.7.",
+      "answer": "-7.8421",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0054",
+      "problem": "0.152+-0.0392962",
+      "answer": "0.1127038",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0055",
+      "problem": "Calculate 5650918183 + 213.",
+      "answer": "5650918396",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0056",
+      "problem": "What is the difference between -296.08423 and 0.5?",
+      "answer": "296.58423",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0057",
+      "problem": "-0.12+-4.72",
+      "answer": "-4.84",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0058",
+      "problem": "Calculate -0.02 + 0.1248606458559.",
+      "answer": "0.1048606458559",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0059",
+      "problem": "What is -8.4565782 plus -0.006757?",
+      "answer": "-8.4633352",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0060",
+      "problem": "-765368 - -8",
+      "answer": "-765360",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0061",
+      "problem": "Add -20.58 and 4911.4.",
+      "answer": "4890.82",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0062",
+      "problem": "What is 395466 minus 1900?",
+      "answer": "393566",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0063",
+      "problem": "0.4 + -1.009969",
+      "answer": "-0.609969",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0064",
+      "problem": "What is -0.015 plus -3421932?",
+      "answer": "-3421932.015",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0065",
+      "problem": "Put together -30.75 and 96775470.",
+      "answer": "96775439.25",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0066",
+      "problem": "Calculate 2 - -1796396.3.",
+      "answer": "1796398.3",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0067",
+      "problem": "Total of -51673477344 and 0.002.",
+      "answer": "-51673477343.998",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0068",
+      "problem": "Put together 882206 and 5.",
+      "answer": "882211",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0069",
+      "problem": "What is 909.8 plus 0.351?",
+      "answer": "910.151",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0070",
+      "problem": "Calculate -1594258916 - 0.1.",
+      "answer": "-1594258916.1",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0071",
+      "problem": "What is -886666556.2 take away -3?",
+      "answer": "-886666553.2",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0072",
+      "problem": "Work out -0.3 - 0.667.",
+      "answer": "-0.967",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0073",
+      "problem": "Sum 2234 and 41.",
+      "answer": "2275",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0074",
+      "problem": "Total of -3 and 58.55.",
+      "answer": "55.55",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0075",
+      "problem": "What is -0.26866549 + -113605?",
+      "answer": "-113605.26866549",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0076",
+      "problem": "What is 0.09 + -4.747361615043?",
+      "answer": "-4.657361615043",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0077",
+      "problem": "Sum 14 and -34.8857.",
+      "answer": "-20.8857",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0078",
+      "problem": "What is the difference between 0.1 and 11?",
+      "answer": "10.9",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0079",
+      "problem": "What is -817.540677142 plus -7?",
+      "answer": "-824.540677142",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0080",
+      "problem": "Work out 235451699309 + -2.1.",
+      "answer": "235451699306.9",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0081",
+      "problem": "Work out -16.936 - -66.",
+      "answer": "49.064",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0082",
+      "problem": "What is the distance between -83.3 and -44.537694?",
+      "answer": "38.762306",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0083",
+      "problem": "Add -0.02998 and -0.3.",
+      "answer": "-0.32998",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0084",
+      "problem": "What is the difference between 3 and -3089.4?",
+      "answer": "3092.4",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0085",
+      "problem": "Add 3 and -323.",
+      "answer": "-320",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0086",
+      "problem": "What is 2.91 take away 667.17?",
+      "answer": "-664.26",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0087",
+      "problem": "Put together 152886210 and -0.2.",
+      "answer": "152886209.8",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0088",
+      "problem": "-1372 + -25300.1",
+      "answer": "-26672.1",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0089",
+      "problem": "Total of -9423205.48 and 337.",
+      "answer": "-9422868.48",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0090",
+      "problem": "What is the difference between 0.04 and 49101.6387?",
+      "answer": "49101.5987",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0091",
+      "problem": "Calculate -192 + 1916378.",
+      "answer": "1916186",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0092",
+      "problem": "What is -0.4 less than -26334253.65622?",
+      "answer": "-26334253.25622",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0093",
+      "problem": "0.01 - 19.1",
+      "answer": "-19.09",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0094",
+      "problem": "Work out 1.34821 + -2.",
+      "answer": "-0.65179",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0095",
+      "problem": "Work out -0.04495 + -4.",
+      "answer": "-4.04495",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0096",
+      "problem": "Total of -146 and -223.",
+      "answer": "-369",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0097",
+      "problem": "8 + -4154.896501871",
+      "answer": "-4146.896501871",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0098",
+      "problem": "Work out 3023 - -683118.3438.",
+      "answer": "686141.3438",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0099",
+      "problem": "What is the distance between -0.066 and -0.14?",
+      "answer": "0.074",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0100",
+      "problem": "Work out 4700.678 - 20.60741.",
+      "answer": "4680.07059",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0101",
+      "problem": "Subtract -12.93 from -1023397.",
+      "answer": "-1023384.07",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0102",
+      "problem": "Work out -158 - 224344.3.",
+      "answer": "-224502.3",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0103",
+      "problem": "What is -0.65999 - -0.4?",
+      "answer": "-0.25999",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0104",
+      "problem": "Calculate 2.567 + -3456.",
+      "answer": "-3453.433",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0105",
+      "problem": "What is 57.8 take away -23?",
+      "answer": "80.8",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0106",
+      "problem": "Subtract -1 from 129028597383739.",
+      "answer": "129028597383740",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0107",
+      "problem": "Add -0.06 and -18309882.",
+      "answer": "-18309882.06",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0108",
+      "problem": "-5916.61008 - 168",
+      "answer": "-6084.61008",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0109",
+      "problem": "4993+2426512.4",
+      "answer": "2431505.4",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0110",
+      "problem": "Add 350 and -0.8926889.",
+      "answer": "349.1073111",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0111",
+      "problem": "What is 54.466 + 10.84522?",
+      "answer": "65.31122",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0112",
+      "problem": "What is -90202212 take away -1121325.4?",
+      "answer": "-89080886.6",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0113",
+      "problem": "What is the difference between 0.3509 and 46?",
+      "answer": "45.6491",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0114",
+      "problem": "What is the difference between -63.03 and -0.42?",
+      "answer": "62.61",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0115",
+      "problem": "Add together -11861 and 0.4.",
+      "answer": "-11860.6",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0116",
+      "problem": "What is 0.8 take away 114258247?",
+      "answer": "-114258246.2",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0117",
+      "problem": "What is -1 minus 1916.50356831?",
+      "answer": "-1917.50356831",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0118",
+      "problem": "Sum -4693603 and -79125.",
+      "answer": "-4772728",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0119",
+      "problem": "What is -2 - -1667?",
+      "answer": "1665",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0120",
+      "problem": "What is 1 minus -26995458?",
+      "answer": "26995459",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0121",
+      "problem": "What is -0.5 - 16593492.501?",
+      "answer": "-16593493.001",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0122",
+      "problem": "Add -5.15 and 830.",
+      "answer": "824.85",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0123",
+      "problem": "Add together -314 and -0.11092.",
+      "answer": "-314.11092",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0124",
+      "problem": "What is -29.2244 - -0.08?",
+      "answer": "-29.1444",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0125",
+      "problem": "5 - 431971.248",
+      "answer": "-431966.248",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0126",
+      "problem": "Add -701727292805.7 and -0.02.",
+      "answer": "-701727292805.72",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0127",
+      "problem": "What is -33651867 take away 0.07?",
+      "answer": "-33651867.07",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0128",
+      "problem": "Put together -0.06 and 20.234209.",
+      "answer": "20.174209",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0129",
+      "problem": "Calculate 0.7 + 562.",
+      "answer": "562.7",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0130",
+      "problem": "What is 0.4081791 minus -2.607798?",
+      "answer": "3.0159771",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0131",
+      "problem": "What is 47081872.6 - -237?",
+      "answer": "47082109.6",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0132",
+      "problem": "-9597+-1",
+      "answer": "-9598",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0133",
+      "problem": "Calculate 0.2833 - -5.",
+      "answer": "5.2833",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0134",
+      "problem": "Add 0.0155496 and -0.5.",
+      "answer": "-0.4844504",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0135",
+      "problem": "-0.056733415282 + -857",
+      "answer": "-857.056733415282",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0136",
+      "problem": "Total of -11 and -15057993.",
+      "answer": "-15058004",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0137",
+      "problem": "Work out -5.820115044 + -0.47.",
+      "answer": "-6.290115044",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0138",
+      "problem": "2 - 799",
+      "answer": "-797",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0139",
+      "problem": "Subtract 19 from 0.67.",
+      "answer": "-18.33",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0140",
+      "problem": "Add together 3023.8321 and 44.",
+      "answer": "3067.8321",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0141",
+      "problem": "What is 1298222.514 + -6586?",
+      "answer": "1291636.514",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0142",
+      "problem": "What is the distance between -307 and -26805?",
+      "answer": "26498",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0143",
+      "problem": "Calculate -0.97683 + -0.5.",
+      "answer": "-1.47683",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0144",
+      "problem": "What is 0.12 less than -1025767?",
+      "answer": "-1025767.12",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0145",
+      "problem": "Work out -0.5 - 1143.",
+      "answer": "-1143.5",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0146",
+      "problem": "What is 5452 - -3?",
+      "answer": "5455",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0147",
+      "problem": "Add together 121 and 8204.2.",
+      "answer": "8325.2",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0148",
+      "problem": "114.3+-3317960",
+      "answer": "-3317845.7",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0149",
+      "problem": "What is -566.906 plus 55135585?",
+      "answer": "55135018.094",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0150",
+      "problem": "Calculate 0.1 - 416932313.",
+      "answer": "-416932312.9",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0151",
+      "problem": "-13175.4746021 - -0.11",
+      "answer": "-13175.3646021",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0152",
+      "problem": "What is -5.7827 - 7?",
+      "answer": "-12.7827",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0153",
+      "problem": "What is 8987173782 less than -13298?",
+      "answer": "-8987187080",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0154",
+      "problem": "What is 370422 + 199?",
+      "answer": "370621",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0155",
+      "problem": "What is 0.2 - -828399.2582?",
+      "answer": "828399.4582",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0156",
+      "problem": "What is -205850 take away -5751?",
+      "answer": "-200099",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0157",
+      "problem": "Calculate -430.006 + -56474.4.",
+      "answer": "-56904.406",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0158",
+      "problem": "Total of 0.9 and -750.",
+      "answer": "-749.1",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0159",
+      "problem": "What is -0.093 plus -9.819?",
+      "answer": "-9.912",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0160",
+      "problem": "Add -1 and -5.6.",
+      "answer": "-6.6",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0161",
+      "problem": "What is 0.012 plus -111?",
+      "answer": "-110.988",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0162",
+      "problem": "Calculate 57811538630.88 + 0.2.",
+      "answer": "57811538631.08",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0163",
+      "problem": "What is -3 plus 8.53?",
+      "answer": "5.53",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0164",
+      "problem": "0.3 - 1.2",
+      "answer": "-0.9",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0165",
+      "problem": "Calculate -4574387633 - 0.1.",
+      "answer": "-4574387633.1",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0166",
+      "problem": "Work out 0.5 - 1295670.",
+      "answer": "-1295669.5",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0167",
+      "problem": "Work out -386 - -4804.59.",
+      "answer": "4418.59",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0168",
+      "problem": "Total of 2.76 and 4175.73447457.",
+      "answer": "4178.49447457",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0169",
+      "problem": "What is -5 take away 651823.52995?",
+      "answer": "-651828.52995",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0170",
+      "problem": "What is -52263 + 21013.1?",
+      "answer": "-31249.9",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0171",
+      "problem": "Add together 5 and 4014.",
+      "answer": "4019",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0172",
+      "problem": "What is -24115 minus -1.135?",
+      "answer": "-24113.865",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0173",
+      "problem": "What is the distance between -12.8 and 0.4?",
+      "answer": "13.2",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0174",
+      "problem": "Add together -52.8 and -0.534527513.",
+      "answer": "-53.334527513",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0175",
+      "problem": "-0.00902 + -27549",
+      "answer": "-27549.00902",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0176",
+      "problem": "Work out 0.2 + -5663360.",
+      "answer": "-5663359.8",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0177",
+      "problem": "Add -129 and -2.54.",
+      "answer": "-131.54",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0178",
+      "problem": "Add -4 and -144015598.",
+      "answer": "-144015602",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0179",
+      "problem": "Total of -220.844 and 38.",
+      "answer": "-182.844",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0180",
+      "problem": "What is -12116 plus -5.7?",
+      "answer": "-12121.7",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0181",
+      "problem": "Subtract -106 from 613122.",
+      "answer": "613228",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0182",
+      "problem": "Work out 0.0164 + -10843342.8.",
+      "answer": "-10843342.7836",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0183",
+      "problem": "Work out -0.408 - 0.2.",
+      "answer": "-0.608",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0184",
+      "problem": "138031041 + 4.80608",
+      "answer": "138031045.80608",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0185",
+      "problem": "Calculate -0.2 + 79077119612875.",
+      "answer": "79077119612874.8",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0186",
+      "problem": "-2+-3877",
+      "answer": "-3879",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0187",
+      "problem": "Total of 447578 and -560131321.",
+      "answer": "-559683743",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0188",
+      "problem": "-45705226025 - 0.21",
+      "answer": "-45705226025.21",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0189",
+      "problem": "1.39+0.8",
+      "answer": "2.19",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0190",
+      "problem": "Subtract -6 from -68.72141064.",
+      "answer": "-62.72141064",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0191",
+      "problem": "What is -0.437547 less than 264?",
+      "answer": "264.437547",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0192",
+      "problem": "Calculate -0.3 - -1.6484.",
+      "answer": "1.3484",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0193",
+      "problem": "Subtract -0.172 from -8759356.7.",
+      "answer": "-8759356.528",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0194",
+      "problem": "What is 2.43 plus 0.4083?",
+      "answer": "2.8383",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0195",
+      "problem": "What is 17969011 take away 1043?",
+      "answer": "17967968",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0196",
+      "problem": "Add -7 and -115653.5685.",
+      "answer": "-115660.5685",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0197",
+      "problem": "What is -341159886 minus 28.5?",
+      "answer": "-341159914.5",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0198",
+      "problem": "Total of 3472 and 735.2.",
+      "answer": "4207.2",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0199",
+      "problem": "What is 0.15 - -142?",
+      "answer": "142.15",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-add-sub.q0200",
+      "problem": "Sum -65 and -27.8.",
+      "answer": "-92.8",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · arithmetic__add_or_sub",
+      "hint": "DeepMind add/sub",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "arithmetic__add_or_sub"
+      ]
+    }
+  ]
+}

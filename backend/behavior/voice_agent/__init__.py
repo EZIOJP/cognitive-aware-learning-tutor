@@ -172,6 +172,21 @@ def open_voice_chat(user_id: int) -> None:
     if _free_mode_paused:
         log.info("Voice chat blocked during FREE mode (gaming VRAM)")
         try:
+            from PySide6.QtWidgets import QApplication
+
+            if QApplication.instance() is not None:
+                from PySide6.QtWidgets import QMessageBox
+
+                QMessageBox.information(
+                    None,
+                    "Voice agent",
+                    "Voice agent is paused in FREE mode so games can use VRAM/CPU/GPU.\n"
+                    "It turns back on when you leave free / reward day.",
+                )
+                return
+        except Exception:  # noqa: BLE001
+            pass
+        try:
             import tkinter as tk
             from tkinter import messagebox
 
@@ -188,6 +203,25 @@ def open_voice_chat(user_id: int) -> None:
         except Exception:  # noqa: BLE001
             pass
         return
+
+    try:
+        from PySide6.QtWidgets import QApplication
+
+        if QApplication.instance() is not None:
+            from backend.behavior.calt_desktop.voice_chat_window import open_voice_chat_qt
+
+            start_voice_agent(user_id, enable_hotkey=is_voice_hotkey_enabled())
+            try:
+                from backend.behavior.voice_agent.morning_brief import maybe_chat_open_greet
+
+                maybe_chat_open_greet(int(user_id))
+            except Exception as exc:  # noqa: BLE001
+                log.debug("chat-open greet skipped: %s", exc)
+            open_voice_chat_qt(int(user_id))
+            return
+    except Exception as exc:  # noqa: BLE001
+        log.debug("Qt voice chat unavailable: %s", exc)
+
     agent = start_voice_agent(user_id, enable_hotkey=is_voice_hotkey_enabled())
     if agent is None:
         return

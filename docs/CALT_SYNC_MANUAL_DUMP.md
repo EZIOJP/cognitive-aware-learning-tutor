@@ -24,7 +24,9 @@ wearable_daily + Life Tracker
 
 ## Model
 
-Watch = dump + queue. PC = merge, dedupe, sleep windows.
+Watch = **manual** dump + queue (Dump today → Send). PC / web / desktop **never pull** the watch on a timer — they only show last ingest after you Send (or hit Refresh).
+
+PC = merge, dedupe, sleep windows.
 
 ## Install
 

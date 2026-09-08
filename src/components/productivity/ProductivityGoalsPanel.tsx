@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Check, ChevronDown, ChevronUp, Gift, Plus, Save, Target, Trash2 } from "lucide-react";
 import type { AdherenceSummary } from "../../api/plannerClient";
+import type { StudyTask } from "../../api/plannerClient";
 import {
   fetchProductivityPolicy,
   fetchGoalsStatus,
@@ -8,6 +9,7 @@ import {
   type GoalsStatusResponse,
 } from "../../api/behaviorClient";
 import { cn } from "../../app/components/ui/utils";
+import { BLOCK_TEMPLATES } from "./studyTaskPresets";
 
 const LS_KEY = "productivity:goals:v1";
 export const GOALS_UPDATED_EVENT = "productivity:goals-updated";
@@ -24,6 +26,8 @@ export type ProductivityGoals = {
   mainGoal: string;
   reward: string;
   extraGoals: ExtraGoal[];
+  studyTasks: StudyTask[];
+  weekKey?: string;
 };
 
 const DEFAULT_GOALS: ProductivityGoals = {
@@ -32,10 +36,39 @@ const DEFAULT_GOALS: ProductivityGoals = {
   mainGoal: "Complete the Scaler AI/ML course — daily lessons + practice before entertainment.",
   reward: "Unlock games / free time after hitting today's on-plan focus target (off-plan productive apps don't count).",
   extraGoals: [],
+  studyTasks: [],
 };
 
 function newExtraId(): string {
   return `g-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
+}
+
+function newStudyTaskId(): string {
+  return `task-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
+}
+
+function currentWeekKey(): string {
+  const d = new Date();
+  const target = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const dayNum = target.getUTCDay() || 7;
+  target.setUTCDate(target.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(target.getUTCFullYear(), 0, 1));
+  const weekNo = Math.ceil(((target.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
+  return `${target.getUTCFullYear()}-W${String(weekNo).padStart(2, "0")}`;
+}
+
+function normalizeStudyTasks(raw: unknown): StudyTask[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .filter((t): t is StudyTask => Boolean(t && typeof t === "object"))
+    .map((t) => ({
+      id: String(t.id || newStudyTaskId()),
+      title: String(t.title || "Study").trim(),
+      minutes: Math.max(25, Number(t.minutes) || 60),
+      allowHosts: Array.isArray(t.allowHosts) ? t.allowHosts.map(String) : [],
+      blockCategories: Array.isArray(t.blockCategories) ? t.blockCategories.map(String) : [],
+    }))
+    .filter((t) => t.title);
 }
 
 function HoursStepper({
@@ -127,6 +160,13 @@ export function loadProductivityGoals(): ProductivityGoals {
         title: g.title,
         done: Boolean(g.done),
       }));
+    parsed.studyTasks = normalizeStudyTasks(parsed.studyTasks);
+    const wk = currentWeekKey();
+    if (parsed.weekKey && parsed.weekKey !== wk) {
+      parsed.weekKey = wk;
+    } else if (!parsed.weekKey) {
+      parsed.weekKey = wk;
+    }
     if (
       parsed.mainGoal === "Finish AI/ML and Scaler work before entertainment." ||
       !parsed.mainGoal?.trim()
@@ -150,7 +190,18 @@ export function formatGoalsForPrompt(goals: ProductivityGoals): string {
       : ` Extra goals/todos: ${extras
           .map((g) => `${g.done ? "[done] " : ""}${g.title.trim()}`)
           .join("; ")}.`;
-  return `${goals.mainGoal} Daily effective-focus target: ${goals.focusHoursPerDay}h. Weekly target: ${goals.weeklyFocusHours}h. Reward: ${goals.reward}.${extraBlock}`;
+  const tasks = goals.studyTasks || [];
+  const taskBlock =
+    tasks.length === 0
+      ? ""
+      : ` Study tasks: ${tasks
+          .map((t) => {
+            const allow = (t.allowHosts || []).join(", ").slice(0, 120);
+            const block = (t.blockCategories || []).join(", ").slice(0, 80);
+            return `${t.title} (${t.minutes}m; allow ${allow || "study sites"}; block ${block || "distractions"})`;
+          })
+          .join(" | ")}.`;
+  return `${goals.mainGoal} Daily effective-focus target: ${goals.focusHoursPerDay}h. Weekly target: ${goals.weeklyFocusHours}h. Reward: ${goals.reward}.${extraBlock}${taskBlock}`;
 }
 
 export function ProductivityGoalsPanel({
@@ -166,6 +217,7 @@ export function ProductivityGoalsPanel({
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [draftExtra, setDraftExtra] = useState("");
+  const [hostDrafts, setHostDrafts] = useState<Record<string, string>>({});
   const [goalsStatus, setGoalsStatus] = useState<GoalsStatusResponse | null>(null);
 
   const effectiveHours = (adherence?.effective_focus_minutes ?? 0) / 60;
@@ -381,6 +433,171 @@ export function ProductivityGoalsPanel({
           className="mt-1 w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm text-foreground leading-relaxed resize-y min-h-[4.5rem]"
         />
       </label>
+
+      {/* Study tasks — same block templates as CALT Desktop */}
+      <div className="rounded-xl border border-white/10 bg-black/20 p-3 space-y-2">
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-xs font-medium text-foreground">Study tasks (today&apos;s blocks)</p>
+          <span className="text-[10px] text-muted-foreground tabular-nums">
+            {goals.studyTasks.length} task{goals.studyTasks.length === 1 ? "" : "s"}
+          </span>
+        </div>
+        <p className="text-[11px] text-muted-foreground">
+          Packed after morning routines via Apply my day. Each task includes gate allow/block lists.
+        </p>
+        <div className="flex flex-wrap gap-1.5">
+          {BLOCK_TEMPLATES.map(({ label, factory }) => (
+            <button
+              key={label}
+              type="button"
+              onClick={() =>
+                setGoals({
+                  ...goals,
+                  studyTasks: [...goals.studyTasks, factory()],
+                })
+              }
+              className="rounded-lg border border-white/10 px-2 py-1 text-[10px] hover:bg-white/5"
+            >
+              + {label}
+            </button>
+          ))}
+        </div>
+        <ul className="space-y-1.5">
+          {goals.studyTasks.length === 0 && (
+            <li className="text-[11px] text-muted-foreground py-1">
+              Add Scaler, GRE, or deep-read blocks — same presets as desktop.
+            </li>
+          )}
+          {goals.studyTasks.map((t) => (
+            <li
+              key={t.id}
+              className="rounded-lg border border-white/10 bg-black/30 px-2 py-1.5 space-y-1.5"
+            >
+              <div className="flex items-center gap-2">
+                <input
+                  value={t.title}
+                  onChange={(e) =>
+                    setGoals({
+                      ...goals,
+                      studyTasks: goals.studyTasks.map((x) =>
+                        x.id === t.id ? { ...x, title: e.target.value } : x,
+                      ),
+                    })
+                  }
+                  className="flex-1 min-w-0 bg-transparent text-xs text-foreground outline-none"
+                />
+                <input
+                  type="number"
+                  min={25}
+                  max={240}
+                  value={t.minutes}
+                  onChange={(e) =>
+                    setGoals({
+                      ...goals,
+                      studyTasks: goals.studyTasks.map((x) =>
+                        x.id === t.id ? { ...x, minutes: Number(e.target.value) || 60 } : x,
+                      ),
+                    })
+                  }
+                  className="w-12 rounded border border-white/10 bg-black/40 px-1 py-0.5 text-[10px] text-center tabular-nums"
+                  title="Minutes"
+                />
+                <button
+                  type="button"
+                  aria-label="Remove study task"
+                  onClick={() =>
+                    setGoals({
+                      ...goals,
+                      studyTasks: goals.studyTasks.filter((x) => x.id !== t.id),
+                    })
+                  }
+                  className="text-muted-foreground hover:text-rose-300 p-0.5"
+                >
+                  <Trash2 size={12} />
+                </button>
+              </div>
+              <div className="space-y-1">
+                <p className="text-[10px] text-muted-foreground">allowHosts</p>
+                <div className="flex flex-wrap gap-1">
+                  {(t.allowHosts || []).map((host) => (
+                    <button
+                      key={host}
+                      type="button"
+                      title="Remove host"
+                      onClick={() =>
+                        setGoals({
+                          ...goals,
+                          studyTasks: goals.studyTasks.map((x) =>
+                            x.id === t.id
+                              ? {
+                                  ...x,
+                                  allowHosts: (x.allowHosts || []).filter((h) => h !== host),
+                                }
+                              : x,
+                          ),
+                        })
+                      }
+                      className="rounded border border-emerald-400/30 bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-mono text-emerald-100 hover:border-rose-400/40 hover:text-rose-200"
+                    >
+                      {host} ×
+                    </button>
+                  ))}
+                </div>
+                <div className="flex gap-1.5">
+                  <input
+                    value={hostDrafts[t.id] || ""}
+                    onChange={(e) =>
+                      setHostDrafts((d) => ({ ...d, [t.id]: e.target.value }))
+                    }
+                    onKeyDown={(e) => {
+                      if (e.key !== "Enter") return;
+                      e.preventDefault();
+                      const raw = (hostDrafts[t.id] || "").trim().toLowerCase();
+                      const host = raw.replace(/^https?:\/\//, "").split("/")[0]?.replace(/^www\./, "") || "";
+                      if (!host) return;
+                      setGoals({
+                        ...goals,
+                        studyTasks: goals.studyTasks.map((x) => {
+                          if (x.id !== t.id) return x;
+                          const cur = x.allowHosts || [];
+                          if (cur.includes(host)) return x;
+                          return { ...x, allowHosts: [...cur, host] };
+                        }),
+                      });
+                      setHostDrafts((d) => ({ ...d, [t.id]: "" }));
+                    }}
+                    placeholder="Add host…"
+                    className="flex-1 min-w-0 rounded border border-white/10 bg-black/40 px-1.5 py-0.5 text-[10px] text-foreground"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const raw = (hostDrafts[t.id] || "").trim().toLowerCase();
+                      const host =
+                        raw.replace(/^https?:\/\//, "").split("/")[0]?.replace(/^www\./, "") || "";
+                      if (!host) return;
+                      setGoals({
+                        ...goals,
+                        studyTasks: goals.studyTasks.map((x) => {
+                          if (x.id !== t.id) return x;
+                          const cur = x.allowHosts || [];
+                          if (cur.includes(host)) return x;
+                          return { ...x, allowHosts: [...cur, host] };
+                        }),
+                      });
+                      setHostDrafts((d) => ({ ...d, [t.id]: "" }));
+                    }}
+                    disabled={!(hostDrafts[t.id] || "").trim()}
+                    className="rounded border border-emerald-500/30 px-1.5 py-0.5 text-[10px] text-emerald-200 disabled:opacity-40"
+                  >
+                    <Plus size={10} />
+                  </button>
+                </div>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </div>
 
       {/* Extra goals / todos */}
       <div className="rounded-xl border border-white/10 bg-black/20 p-3 space-y-2">

@@ -1,0 +1,3022 @@
+{
+  "schema_version": 1,
+  "kind": "math",
+  "topic": {
+    "topic_id": "math.aptitude.dm-gcd",
+    "title": "DeepMind GCD",
+    "stage": "foundations",
+    "path": [
+      "Aptitude",
+      "DeepMind",
+      "numbers__gcd"
+    ],
+    "track": "aptitude",
+    "prerequisites": [],
+    "note_topic_ids": [
+      "MT1-T02"
+    ],
+    "description": "google-deepmind/mathematics_dataset (numbers__gcd)."
+  },
+  "questions": [
+    {
+      "id": "math.aptitude.dm-gcd.q0001",
+      "problem": "Calculate the greatest common factor of 31126 and 2449.",
+      "answer": "79",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0002",
+      "problem": "What is the highest common divisor of 12685 and 72729890?",
+      "answer": "295",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0003",
+      "problem": "Calculate the highest common factor of 106716 and 24.",
+      "answer": "12",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0004",
+      "problem": "What is the highest common divisor of 14990 and 27970?",
+      "answer": "10",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0005",
+      "problem": "Calculate the highest common factor of 1990 and 107198315.",
+      "answer": "995",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0006",
+      "problem": "Calculate the greatest common factor of 1 and 7.",
+      "answer": "1",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0007",
+      "problem": "What is the highest common divisor of 833 and 374?",
+      "answer": "17",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0008",
+      "problem": "What is the highest common divisor of 8023 and 113?",
+      "answer": "113",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0009",
+      "problem": "What is the highest common factor of 210148 and 107038?",
+      "answer": "982",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0010",
+      "problem": "What is the greatest common factor of 342 and 846?",
+      "answer": "18",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0011",
+      "problem": "Calculate the highest common divisor of 789273 and 909.",
+      "answer": "9",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0012",
+      "problem": "Calculate the greatest common divisor of 102 and 3706.",
+      "answer": "34",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0013",
+      "problem": "What is the greatest common factor of 11 and 209?",
+      "answer": "11",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0014",
+      "problem": "What is the greatest common divisor of 7035 and 15?",
+      "answer": "15",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0015",
+      "problem": "Calculate the greatest common divisor of 3585 and 139222041.",
+      "answer": "717",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0016",
+      "problem": "What is the highest common factor of 8288 and 814?",
+      "answer": "74",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0017",
+      "problem": "What is the highest common factor of 3378 and 68123?",
+      "answer": "563",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0018",
+      "problem": "Calculate the greatest common divisor of 222094 and 14402.",
+      "answer": "758",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0019",
+      "problem": "What is the greatest common factor of 25905 and 48345?",
+      "answer": "165",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0020",
+      "problem": "Calculate the greatest common factor of 8 and 324.",
+      "answer": "4",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0021",
+      "problem": "Calculate the highest common divisor of 24701534 and 572.",
+      "answer": "286",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0022",
+      "problem": "What is the highest common factor of 186 and 132?",
+      "answer": "6",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0023",
+      "problem": "What is the highest common factor of 86 and 29842?",
+      "answer": "86",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0024",
+      "problem": "What is the highest common factor of 9 and 981?",
+      "answer": "9",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0025",
+      "problem": "What is the greatest common factor of 10 and 410266?",
+      "answer": "2",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0026",
+      "problem": "Calculate the greatest common factor of 78 and 1212276.",
+      "answer": "78",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0027",
+      "problem": "What is the highest common factor of 214 and 43870?",
+      "answer": "214",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0028",
+      "problem": "Calculate the highest common divisor of 62412 and 700588.",
+      "answer": "28",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0029",
+      "problem": "Calculate the greatest common factor of 800 and 50.",
+      "answer": "50",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0030",
+      "problem": "Calculate the greatest common divisor of 110 and 117205.",
+      "answer": "55",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0031",
+      "problem": "What is the highest common factor of 96344528 and 7?",
+      "answer": "7",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0032",
+      "problem": "Calculate the greatest common factor of 170 and 90.",
+      "answer": "10",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0033",
+      "problem": "What is the greatest common factor of 411794800 and 80?",
+      "answer": "80",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0034",
+      "problem": "What is the greatest common divisor of 56 and 136?",
+      "answer": "8",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0035",
+      "problem": "What is the greatest common factor of 984 and 29192?",
+      "answer": "328",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0036",
+      "problem": "Calculate the greatest common factor of 24 and 21303464.",
+      "answer": "8",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0037",
+      "problem": "Calculate the highest common divisor of 41688227 and 63.",
+      "answer": "7",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0038",
+      "problem": "Calculate the greatest common divisor of 54670 and 83490.",
+      "answer": "110",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0039",
+      "problem": "What is the highest common factor of 250275 and 1927?",
+      "answer": "47",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0040",
+      "problem": "Calculate the greatest common divisor of 5598 and 18.",
+      "answer": "18",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0041",
+      "problem": "What is the highest common divisor of 564616 and 348920?",
+      "answer": "6344",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0042",
+      "problem": "What is the highest common factor of 354 and 138?",
+      "answer": "6",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0043",
+      "problem": "What is the highest common factor of 124 and 2418?",
+      "answer": "62",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0044",
+      "problem": "What is the highest common factor of 47 and 752?",
+      "answer": "47",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0045",
+      "problem": "What is the greatest common divisor of 86 and 116?",
+      "answer": "2",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0046",
+      "problem": "What is the highest common factor of 222 and 84?",
+      "answer": "6",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0047",
+      "problem": "Calculate the greatest common divisor of 34 and 289.",
+      "answer": "17",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0048",
+      "problem": "What is the greatest common divisor of 13760479 and 4832?",
+      "answer": "151",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0049",
+      "problem": "What is the highest common factor of 1078635 and 1920?",
+      "answer": "15",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0050",
+      "problem": "Calculate the greatest common factor of 553770 and 737730.",
+      "answer": "630",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0051",
+      "problem": "Calculate the greatest common divisor of 44435 and 10.",
+      "answer": "5",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0052",
+      "problem": "Calculate the highest common divisor of 117612 and 113982.",
+      "answer": "726",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0053",
+      "problem": "Calculate the highest common divisor of 1016 and 21120.",
+      "answer": "8",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0054",
+      "problem": "What is the highest common factor of 18432 and 4902048?",
+      "answer": "288",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0055",
+      "problem": "What is the highest common factor of 73348912 and 5824?",
+      "answer": "1456",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0056",
+      "problem": "What is the greatest common factor of 2089875 and 75?",
+      "answer": "75",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0057",
+      "problem": "What is the highest common factor of 525 and 42279300?",
+      "answer": "525",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0058",
+      "problem": "What is the greatest common factor of 14806 and 22?",
+      "answer": "22",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0059",
+      "problem": "What is the highest common factor of 630 and 140?",
+      "answer": "70",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0060",
+      "problem": "Calculate the highest common divisor of 525 and 463350.",
+      "answer": "75",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0061",
+      "problem": "What is the highest common divisor of 9 and 60369?",
+      "answer": "3",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0062",
+      "problem": "What is the greatest common factor of 695063 and 339?",
+      "answer": "113",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0063",
+      "problem": "What is the highest common factor of 306 and 288?",
+      "answer": "18",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0064",
+      "problem": "What is the greatest common factor of 26 and 61542?",
+      "answer": "26",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0065",
+      "problem": "Calculate the highest common divisor of 1005693890 and 1720.",
+      "answer": "430",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0066",
+      "problem": "What is the greatest common factor of 146 and 9563?",
+      "answer": "73",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0067",
+      "problem": "What is the greatest common divisor of 8463 and 936?",
+      "answer": "39",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0068",
+      "problem": "Calculate the greatest common factor of 30 and 1040625.",
+      "answer": "15",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0069",
+      "problem": "What is the highest common divisor of 8308 and 248?",
+      "answer": "124",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0070",
+      "problem": "Calculate the highest common factor of 1960 and 40.",
+      "answer": "40",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0071",
+      "problem": "Calculate the highest common factor of 120 and 1740.",
+      "answer": "60",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0072",
+      "problem": "What is the greatest common factor of 1883 and 436318?",
+      "answer": "269",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0073",
+      "problem": "What is the greatest common factor of 585623 and 1252?",
+      "answer": "313",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0074",
+      "problem": "What is the highest common factor of 848 and 106?",
+      "answer": "106",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0075",
+      "problem": "Calculate the highest common divisor of 6 and 786.",
+      "answer": "6",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0076",
+      "problem": "What is the greatest common divisor of 21 and 1957907175?",
+      "answer": "21",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0077",
+      "problem": "Calculate the greatest common factor of 44806 and 21950251.",
+      "answer": "521",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0078",
+      "problem": "What is the greatest common factor of 28760190 and 10?",
+      "answer": "10",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0079",
+      "problem": "What is the greatest common factor of 27 and 2241?",
+      "answer": "27",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0080",
+      "problem": "What is the greatest common divisor of 89342484 and 547428?",
+      "answer": "11172",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0081",
+      "problem": "What is the highest common divisor of 802 and 1332924?",
+      "answer": "802",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0082",
+      "problem": "What is the highest common divisor of 4529 and 7?",
+      "answer": "7",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0083",
+      "problem": "Calculate the greatest common factor of 8094 and 2865418.",
+      "answer": "142",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0084",
+      "problem": "What is the greatest common factor of 152 and 3629?",
+      "answer": "19",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0085",
+      "problem": "What is the highest common divisor of 521640 and 3424815?",
+      "answer": "3105",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0086",
+      "problem": "What is the highest common divisor of 10133109 and 5166?",
+      "answer": "2583",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0087",
+      "problem": "What is the highest common divisor of 401744253 and 9339?",
+      "answer": "849",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0088",
+      "problem": "Calculate the highest common divisor of 11067 and 3423.",
+      "answer": "21",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0089",
+      "problem": "What is the highest common divisor of 76 and 13471?",
+      "answer": "19",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0090",
+      "problem": "What is the greatest common factor of 265835 and 4345?",
+      "answer": "395",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0091",
+      "problem": "Calculate the highest common divisor of 252 and 696.",
+      "answer": "12",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0092",
+      "problem": "What is the greatest common factor of 9540162 and 918?",
+      "answer": "306",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0093",
+      "problem": "Calculate the greatest common factor of 13002565 and 8155.",
+      "answer": "1165",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0094",
+      "problem": "What is the greatest common divisor of 2330 and 20?",
+      "answer": "10",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0095",
+      "problem": "What is the greatest common factor of 386624 and 896?",
+      "answer": "448",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0096",
+      "problem": "What is the greatest common factor of 18920 and 22086520?",
+      "answer": "1720",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0097",
+      "problem": "What is the highest common divisor of 618366 and 42?",
+      "answer": "42",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0098",
+      "problem": "What is the highest common factor of 1333044 and 6588?",
+      "answer": "108",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0099",
+      "problem": "What is the highest common factor of 297 and 6?",
+      "answer": "3",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0100",
+      "problem": "Calculate the highest common factor of 508 and 2254504.",
+      "answer": "508",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0101",
+      "problem": "Calculate the highest common factor of 750 and 3225.",
+      "answer": "75",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0102",
+      "problem": "Calculate the highest common divisor of 588 and 245.",
+      "answer": "49",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0103",
+      "problem": "What is the highest common factor of 858 and 51909?",
+      "answer": "429",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0104",
+      "problem": "Calculate the highest common factor of 320 and 80.",
+      "answer": "80",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0105",
+      "problem": "What is the greatest common divisor of 17 and 17?",
+      "answer": "17",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0106",
+      "problem": "What is the greatest common factor of 42 and 896?",
+      "answer": "14",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0107",
+      "problem": "What is the greatest common factor of 621 and 54?",
+      "answer": "27",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0108",
+      "problem": "Calculate the greatest common divisor of 420 and 4020.",
+      "answer": "60",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0109",
+      "problem": "What is the highest common factor of 77973 and 2679?",
+      "answer": "141",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0110",
+      "problem": "What is the highest common factor of 44 and 1699588?",
+      "answer": "44",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0111",
+      "problem": "What is the greatest common divisor of 3916644 and 852?",
+      "answer": "852",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0112",
+      "problem": "Calculate the greatest common divisor of 2145 and 7535.",
+      "answer": "55",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0113",
+      "problem": "Calculate the highest common factor of 26 and 1287.",
+      "answer": "13",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0114",
+      "problem": "What is the greatest common factor of 27 and 7479?",
+      "answer": "27",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0115",
+      "problem": "What is the greatest common divisor of 30988 and 366?",
+      "answer": "122",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0116",
+      "problem": "Calculate the highest common divisor of 24360 and 439656.",
+      "answer": "168",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0117",
+      "problem": "Calculate the greatest common divisor of 1219153112 and 26088.",
+      "answer": "8696",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0118",
+      "problem": "Calculate the highest common divisor of 1888 and 32.",
+      "answer": "32",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0119",
+      "problem": "What is the greatest common factor of 448 and 1363320?",
+      "answer": "56",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0120",
+      "problem": "Calculate the highest common factor of 176 and 726.",
+      "answer": "22",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0121",
+      "problem": "Calculate the greatest common divisor of 1280 and 125696.",
+      "answer": "256",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0122",
+      "problem": "Calculate the greatest common factor of 2744 and 681812656.",
+      "answer": "2744",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0123",
+      "problem": "Calculate the greatest common divisor of 5236 and 224.",
+      "answer": "28",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0124",
+      "problem": "Calculate the highest common factor of 736638 and 28.",
+      "answer": "14",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0125",
+      "problem": "What is the highest common divisor of 13176 and 23912?",
+      "answer": "488",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0126",
+      "problem": "What is the greatest common divisor of 608 and 23759424?",
+      "answer": "608",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0127",
+      "problem": "What is the greatest common factor of 3812 and 28412?",
+      "answer": "4",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0128",
+      "problem": "What is the greatest common divisor of 2176702 and 6070?",
+      "answer": "1214",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0129",
+      "problem": "Calculate the highest common factor of 2565 and 168340.",
+      "answer": "95",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0130",
+      "problem": "Calculate the greatest common factor of 704 and 105160.",
+      "answer": "88",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0131",
+      "problem": "Calculate the highest common factor of 1639 and 11.",
+      "answer": "11",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0132",
+      "problem": "Calculate the greatest common factor of 5 and 65.",
+      "answer": "5",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0133",
+      "problem": "What is the highest common factor of 12696890 and 9125?",
+      "answer": "365",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0134",
+      "problem": "Calculate the highest common factor of 1276 and 22407517.",
+      "answer": "319",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0135",
+      "problem": "Calculate the greatest common divisor of 286 and 922207.",
+      "answer": "143",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0136",
+      "problem": "What is the highest common divisor of 96 and 1200?",
+      "answer": "48",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0137",
+      "problem": "What is the greatest common divisor of 319090 and 170?",
+      "answer": "170",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0138",
+      "problem": "Calculate the greatest common factor of 16403 and 47.",
+      "answer": "47",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0139",
+      "problem": "What is the highest common factor of 134148800 and 25?",
+      "answer": "25",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0140",
+      "problem": "What is the highest common factor of 598424 and 8816?",
+      "answer": "152",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0141",
+      "problem": "What is the greatest common factor of 99 and 429?",
+      "answer": "33",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0142",
+      "problem": "Calculate the highest common factor of 3787 and 222010711.",
+      "answer": "541",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0143",
+      "problem": "Calculate the greatest common factor of 125 and 850.",
+      "answer": "25",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0144",
+      "problem": "What is the greatest common divisor of 102 and 2768331?",
+      "answer": "51",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0145",
+      "problem": "What is the highest common divisor of 12593 and 72217?",
+      "answer": "257",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0146",
+      "problem": "Calculate the highest common divisor of 5586 and 442470.",
+      "answer": "294",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0147",
+      "problem": "Calculate the greatest common factor of 120 and 10880.",
+      "answer": "40",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0148",
+      "problem": "Calculate the greatest common factor of 15435 and 15783831.",
+      "answer": "3087",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0149",
+      "problem": "What is the highest common factor of 1825 and 25?",
+      "answer": "25",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0150",
+      "problem": "Calculate the greatest common divisor of 1121 and 228.",
+      "answer": "19",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0151",
+      "problem": "What is the highest common divisor of 270795 and 1155?",
+      "answer": "105",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0152",
+      "problem": "What is the highest common divisor of 1157 and 3293?",
+      "answer": "89",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0153",
+      "problem": "What is the greatest common factor of 209345 and 20115?",
+      "answer": "745",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0154",
+      "problem": "What is the highest common factor of 139238353 and 1262?",
+      "answer": "631",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0155",
+      "problem": "What is the greatest common factor of 2509 and 13?",
+      "answer": "13",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0156",
+      "problem": "Calculate the highest common divisor of 2877099 and 309.",
+      "answer": "309",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0157",
+      "problem": "Calculate the highest common factor of 1044 and 151960.",
+      "answer": "116",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0158",
+      "problem": "What is the highest common factor of 108 and 252?",
+      "answer": "36",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0159",
+      "problem": "What is the highest common factor of 1131858 and 54?",
+      "answer": "18",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0160",
+      "problem": "What is the highest common divisor of 7524 and 1178?",
+      "answer": "38",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0161",
+      "problem": "Calculate the highest common factor of 310 and 9459340.",
+      "answer": "310",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0162",
+      "problem": "What is the highest common factor of 963 and 45?",
+      "answer": "9",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0163",
+      "problem": "What is the greatest common factor of 2650 and 280635?",
+      "answer": "265",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0164",
+      "problem": "What is the highest common divisor of 469 and 380761?",
+      "answer": "67",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0165",
+      "problem": "Calculate the greatest common divisor of 558072 and 21505992.",
+      "answer": "8088",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0166",
+      "problem": "What is the highest common factor of 1812 and 12?",
+      "answer": "12",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0167",
+      "problem": "What is the highest common divisor of 4472 and 328?",
+      "answer": "8",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0168",
+      "problem": "Calculate the highest common factor of 1350 and 18.",
+      "answer": "18",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0169",
+      "problem": "Calculate the highest common factor of 66605 and 770.",
+      "answer": "385",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0170",
+      "problem": "What is the greatest common divisor of 704 and 64?",
+      "answer": "64",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0171",
+      "problem": "Calculate the highest common divisor of 191304 and 630.",
+      "answer": "18",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0172",
+      "problem": "Calculate the highest common factor of 65463541 and 20449.",
+      "answer": "1573",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0173",
+      "problem": "Calculate the highest common divisor of 176 and 1265.",
+      "answer": "11",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0174",
+      "problem": "Calculate the highest common divisor of 198 and 1056627.",
+      "answer": "99",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0175",
+      "problem": "Calculate the greatest common divisor of 5 and 108840.",
+      "answer": "5",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0176",
+      "problem": "What is the greatest common divisor of 63593 and 475?",
+      "answer": "19",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0177",
+      "problem": "Calculate the highest common divisor of 162 and 243.",
+      "answer": "81",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0178",
+      "problem": "Calculate the greatest common divisor of 36 and 198.",
+      "answer": "18",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0179",
+      "problem": "Calculate the greatest common divisor of 5144 and 512.",
+      "answer": "8",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0180",
+      "problem": "What is the greatest common divisor of 128 and 478736?",
+      "answer": "16",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0181",
+      "problem": "Calculate the highest common divisor of 6 and 68462.",
+      "answer": "2",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0182",
+      "problem": "What is the greatest common factor of 637 and 245?",
+      "answer": "49",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0183",
+      "problem": "What is the greatest common divisor of 38 and 114?",
+      "answer": "38",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0184",
+      "problem": "Calculate the highest common divisor of 119 and 42.",
+      "answer": "7",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0185",
+      "problem": "What is the highest common divisor of 1019 and 28825?",
+      "answer": "1",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0186",
+      "problem": "What is the highest common divisor of 99 and 12419?",
+      "answer": "11",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0187",
+      "problem": "Calculate the highest common divisor of 295 and 26305.",
+      "answer": "5",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0188",
+      "problem": "Calculate the greatest common factor of 672 and 41538.",
+      "answer": "42",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0189",
+      "problem": "Calculate the highest common factor of 221 and 4537.",
+      "answer": "13",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0190",
+      "problem": "Calculate the highest common factor of 584904 and 1416.",
+      "answer": "24",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0191",
+      "problem": "What is the greatest common divisor of 32438 and 294?",
+      "answer": "98",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0192",
+      "problem": "Calculate the highest common divisor of 5573 and 495473138.",
+      "answer": "5573",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0193",
+      "problem": "What is the greatest common factor of 1356 and 22728?",
+      "answer": "12",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0194",
+      "problem": "Calculate the highest common factor of 12460576 and 439.",
+      "answer": "439",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0195",
+      "problem": "What is the greatest common factor of 232 and 812?",
+      "answer": "116",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0196",
+      "problem": "Calculate the greatest common divisor of 945 and 9354.",
+      "answer": "3",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0197",
+      "problem": "Calculate the highest common divisor of 443 and 115082097.",
+      "answer": "443",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0198",
+      "problem": "Calculate the greatest common factor of 56 and 232.",
+      "answer": "8",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0199",
+      "problem": "Calculate the greatest common divisor of 1297790 and 4470.",
+      "answer": "1490",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    },
+    {
+      "id": "math.aptitude.dm-gcd.q0200",
+      "problem": "Calculate the greatest common divisor of 143451 and 27.",
+      "answer": "27",
+      "answer_format": "expression",
+      "difficulty": "easy",
+      "solution_steps": [],
+      "explanation": "DeepMind mathematics_dataset · numbers__gcd",
+      "hint": "DeepMind GCD",
+      "tags": [
+        "deepmind",
+        "mathematics_dataset",
+        "numbers__gcd"
+      ]
+    }
+  ]
+}

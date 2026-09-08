@@ -81,6 +81,55 @@ def test_full_snapshot_upsert(db_session):
     assert row.battery_pct == 64
 
 
+def test_rich_v2_workouts_and_series_merge(db_session):
+    """CALT Sync 4.2 chunks: scalars then series/workouts merge into payload_json."""
+    user = db_session.query(User).first()
+    day = date(2026, 9, 6)
+    upsert_wearable_daily(
+        db_session,
+        user,
+        day,
+        {
+            "dump": "processed_v2",
+            "dump_id": "dump_rich_1",
+            "meta": {"chunk_id": "dump_rich_1_1", "chunk": {"part": 1, "total": 2}},
+            "captured_at": "2026-09-06T10:00:00+00:00",
+            "heart": {"last": 70, "resting": 55},
+            "activity": {"steps": 1000},
+        },
+        source="mini_program",
+    )
+    out = upsert_wearable_daily(
+        db_session,
+        user,
+        day,
+        {
+            "dump": "processed_v2",
+            "dump_id": "dump_rich_1",
+            "meta": {"chunk_id": "dump_rich_1_2", "chunk": {"part": 2, "total": 2}},
+            "captured_at": "2026-09-06T10:01:00+00:00",
+            "heart": {"today_min": [60, 62, 70], "today_count": 3},
+            "workouts": [{"type": "run", "duration_min": 25, "calories": 200}],
+            "sleep": {"total_min": 400, "score": 82, "light_min": 180, "rem_min": 90},
+        },
+        source="mini_program",
+    )
+    assert out["upserted"] is True
+    row = (
+        db_session.query(WearableDaily)
+        .filter(WearableDaily.user_id == user.id, WearableDaily.local_date == day)
+        .one()
+    )
+    import json
+
+    payload = json.loads(row.payload_json)
+    assert payload["heart"]["last"] == 70
+    assert payload["heart"]["today_min"] == [60, 62, 70]
+    assert payload["workouts"][0]["duration_min"] == 25
+    assert row.steps == 1000
+    assert row.sleep_hours is not None
+
+
 def test_sleep_load_scale(db_session):
     user = db_session.query(User).first()
     upsert_wearable_daily(

@@ -117,7 +117,11 @@ def _tracker_compact(db: Session, user_id: int) -> dict[str, Any]:
         )
         .all()
     )
-    last_at = max((r.end_time for r in rows if r.end_time), default=None)
+    last_at = max(
+        (r.end_time for r in rows if r.end_time),
+        key=lambda dt: dt if dt.tzinfo is not None else dt.replace(tzinfo=timezone.utc),
+        default=None,
+    )
     alive = bool(proc.get("process_alive"))
     if not alive and last_at is not None:
         try:
@@ -342,6 +346,16 @@ def build_day_status(db: Session, user_id: int, *, enqueue_notify: bool = True) 
             or optional_minutes_label(gate.get("remaining_minutes")),
             "day_unlimited": bool(gate.get("day_unlimited")),
         },
+        "incubation": gate.get("incubation")
+        if isinstance(gate.get("incubation"), dict)
+        else {"active": False, "remaining_sec": 0, "total_sec": 480},
+        "desktop": gate.get("desktop")
+        if isinstance(gate.get("desktop"), dict)
+        else {
+            "control": "CALT Desktop · Focus",
+            "enforcer_owns_kills": False,
+            "hint": "Manage blocks in CALT Desktop Dashboard.",
+        },
         "tracker": tracker,
         "tracker_alive": bool(tracker.get("alive")),
         "wearables": wearables,
@@ -363,8 +377,9 @@ def build_day_status(db: Session, user_id: int, *, enqueue_notify: bool = True) 
                 "hardware T-Rex smart alarm stays on-device."
             ),
             "hard_block_arm": (
-                "Arm/disarm requires JWT via PUT /api/behavior/policy — "
-                "do not expose wearable ingest key for policy writes."
+                "Arm/disarm on PC via CALT Desktop · Focus (Rules) or PUT /api/behavior/policy — "
+                "do not expose wearable ingest key for policy writes. "
+                "Kills are owned by the Windows enforcer when it is running."
             ),
         },
     }

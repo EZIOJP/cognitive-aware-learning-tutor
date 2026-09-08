@@ -367,6 +367,11 @@ def test_build_browser_gate_section_morning_bible():
     assert section["redirect_url"].endswith("/bible")
     assert "localhost" in section["allow_domains"]
     assert "youtube.com" in section["watch_domains"]
+    assert "crunchyroll.com" in section["watch_domains"]
+    assert section["force_watch_hosts"] == section["watch_domains"]
+    assert section["force_porn_hosts"] == section["porn_domains"]
+    assert "weights" in section["content_score"]
+    assert "porn" in section["content_score"]["weights"]
     assert any("porn" in s or s.endswith("hub.com") or "xvideos" in s for s in section["porn_domains"])
     assert DEFAULT_ALLOW_DOMAINS  # sanity
 

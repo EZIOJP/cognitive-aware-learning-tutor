@@ -145,6 +145,7 @@ def list_nonempty_export_days(
             TrackedSession.end_time,
             TrackedSession.app_name,
             TrackedSession.window_title,
+            TrackedSession.source,
         )
         .filter(
             TrackedSession.user_id.in_(user_ids),
@@ -154,10 +155,10 @@ def list_nonempty_export_days(
         )
         .all()
     )
-    for start_time, end_time, app_name, window_title in sessions:
+    for start_time, end_time, app_name, window_title, source in sessions:
         if start_time is None or end_time is None:
             continue
-        if is_ignored_app(app_name or "", window_title or ""):
+        if is_ignored_app(app_name or "", window_title or "", source=source):
             continue
         _mark_local_days_in_span(
             marked,
@@ -263,7 +264,7 @@ def build_productivity_week_export(
         for s in all_sessions
         if s.start_time
         and s.end_time
-        and not is_ignored_app(s.app_name or "", s.window_title or "")
+        and not is_ignored_app(s.app_name or "", s.window_title or "", source=s.source)
     ]
     wearable_by_day = {
         row.local_date: row

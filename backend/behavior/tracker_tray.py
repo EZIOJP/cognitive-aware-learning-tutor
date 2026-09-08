@@ -161,6 +161,16 @@ def _prompt_free_time() -> bool:
             parent=root,
         )
         return True
+    except Exception as exc:  # noqa: BLE001
+        try:
+            from backend.behavior.break_reward import IncubationBlocksFreeOverride
+
+            if isinstance(exc, IncubationBlocksFreeOverride):
+                messagebox.showwarning("Free time", str(exc), parent=root)
+                return False
+        except Exception:
+            pass
+        raise
     finally:
         try:
             root.destroy()

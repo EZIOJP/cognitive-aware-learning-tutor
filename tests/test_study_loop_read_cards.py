@@ -29,10 +29,11 @@ def test_real_notes_have_l5_or_mt1():
     from backend.paths import NOTES_DIR
     from backend.quiz import read_cards as rc
 
-    if not (NOTES_DIR / "L05_pandas_operations_notes.md").is_file():
+    if not (NOTES_DIR / "pandas" / "L05_pandas_operations_notes.md").is_file():
         return
     cards = rc.list_read_cards(tag="L5-T05")
     assert cards and "unique" in cards[0]["body_markdown"].lower()
+    assert cards[0]["note_path"].startswith("pandas/")
 
 
 def test_malformed_card_id_returns_none():

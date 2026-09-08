@@ -9,6 +9,25 @@ import sys
 log = logging.getLogger("calt_desktop")
 
 
+def _notify_already_running() -> None:
+    """Tray-only second instance — user often thinks restart failed."""
+    if sys.platform != "win32":
+        return
+    try:
+        import ctypes
+
+        ctypes.windll.user32.MessageBoxW(  # type: ignore[attr-defined]
+            None,
+            "CALT Desktop is already running.\n\n"
+            "Check the teal dot near the clock (system tray).\n"
+            "If you don't see it, run scripts\\desktop_tracker\\run_calt_desktop.bat",
+            "CALT Desktop",
+            0x00000040 | 0x00040000,  # MB_ICONINFORMATION | MB_TOPMOST
+        )
+    except Exception:  # noqa: BLE001
+        pass
+
+
 def _configure_logging() -> None:
     is_headless = os.path.basename(sys.executable).lower() == "pythonw.exe"
     handlers: list[logging.Handler] = []
@@ -41,6 +60,7 @@ def run() -> int:
 
     if not acquire_single_instance():
         log.info("Another tracker/desktop instance already holds the mutex — exit.")
+        _notify_already_running()
         return 0
     os.environ["CALT_TRACKER_PRIMARY"] = "1"
     # Desktop owns the tray; prevent nested pystray path if anything re-enters.
@@ -55,6 +75,7 @@ def run() -> int:
         return 1
 
     try:
+        from PySide6.QtCore import Qt
         from PySide6.QtWidgets import QApplication
     except ImportError:
         release_single_instance()
@@ -66,11 +87,13 @@ def run() -> int:
 
     from backend.behavior.tracker_service import TrackerService
 
-    from backend.behavior.calt_desktop.constants import CALENDAR_URL, LOGIN_URL
     from backend.behavior.calt_desktop.main_window import MainWindow
+    from backend.behavior.calt_desktop.theme import apply_calt_theme
     from backend.behavior.calt_desktop.tray import DesktopTray
 
     qt_app = QApplication(sys.argv)
+    apply_calt_theme(qt_app)
+    qt_app.setAttribute(Qt.ApplicationAttribute.AA_DontShowIconsInMenus, True)
     qt_app.setQuitOnLastWindowClosed(False)
     qt_app.setApplicationName("CALT Desktop")
     qt_app.setOrganizationName("CALT")
@@ -78,7 +101,6 @@ def run() -> int:
     service = TrackerService()
     service.start()
     log.info("TrackerService started under CALT Desktop pid=%s", os.getpid())
-    log.info("Web login: %s · calendar: %s", LOGIN_URL, CALENDAR_URL)
 
     window = MainWindow(service)
     from backend.behavior.calt_desktop.dialogs import hard_block_bridge

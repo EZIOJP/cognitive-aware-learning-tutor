@@ -1,25 +1,29 @@
 # Focus frontend (FE)
 
-Vite entry for CALT Focus UI.
+UI for CALT Focus (Calendar / Plan / Settings / Focus / Bible / Journal).
+
+**Product context:** see [../README.md](../README.md) (idea + architecture).  
+This folder is only the **Vite entry**; most React still lives in shared repo `src/` so Study can show interstitials.
+
+## This folder
 
 | Item | Path |
 |------|------|
 | Vite config | `calt-focus/frontend/vite.config.ts` |
-| npm scripts | `npm run dev:focus` · `npm run build:focus` → repo `dist-focus/` |
+| Scripts | `npm run dev:focus` · `npm run build:focus` → repo `dist-focus/` |
 | Design host | http://127.0.0.1:5180/ |
 | Mirrors | `/calt-data` → `data/productivity/behavior` · `/calt-bible` → `data/productivity/bible` |
 
-## Shared React sources (repo `src/`)
+Writes (SoftLand/Arm/Plan) need **`calt_focus.exe`** + enforcer pipe — the design host is read/hot-reload only.
 
-Focus and Study still share the React tree. **Review these for Focus FE:**
+## Shared React sources to review (repo `src/`)
 
-- `src/pages/ProductivityPage.tsx`, `FocusPage.tsx`, `JournalPage.tsx`, `src/pages/bible/**`
-- `src/components/productivity/**`
-- `src/api/{focusMirrors,plannerClient,bibleClient,journalClient,behaviorClient}.ts`
-- `src/lib/enforcerNativeCmd.ts`
-- `src/utils/{focusDesktopShell,focusDataUrl,bibleCorpus}.ts`
-- `src/plugins/{productivity_plugin,bible_plugin}.tsx`
-- `src/layout/AppSidebar.tsx` (Focus nav)
-- `src/app/App.tsx` (Focus HashRouter)
+- Pages: `ProductivityPage.tsx`, `FocusPage.tsx`, `JournalPage.tsx`, `pages/bible/**`
+- UI: `components/productivity/**` (Settings hub, SoftLand, Arm, plan cards, write gate)
+- Clients: `api/focusMirrors.ts`, `plannerClient.ts`, `bibleClient.ts`, `journalClient.ts`, `behaviorClient.ts`
+- Bridge: `lib/enforcerNativeCmd.ts` → named pipe
+- Shell detect: `utils/focusDesktopShell.ts`, `focusDataUrl.ts`, `bibleCorpus.ts`
+- Plugins: `productivity_plugin.tsx`, `bible_plugin.tsx`
+- Chrome: `layout/AppSidebar.tsx`, `app/App.tsx` (Focus = HashRouter)
 
-Study-only pages (vocab, math, notes, quiz) are out of scope.
+Out of scope: vocab, math, notes, quiz Study pages.

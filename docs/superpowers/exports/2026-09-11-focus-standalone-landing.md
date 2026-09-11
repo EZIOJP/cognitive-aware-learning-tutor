@@ -33,11 +33,11 @@ Writes (SoftLand/Arm/Plan mutations) need `calt_focus.exe` + enforcer pipe.
 
 Works: SoftLand, Arm, site rules, schedules, day-pass/spend, Plan CRUD + start/complete/roll-forward + apply routines, Calendar glance/overlay/adherence from enforcer, browser SoftLand via msg_host, OS kills.
 
-Still need sidecar / Study API when you use them:
+Still need sidecar / Study API when you use them (tray **Advanced**):
 - Google Calendar OAuth (`:8000` planner routes)
 - Wearables hub `:8765`
 - LLM propose / generate-from-timetable / seed-default-routines
-- Study content (GRE, Bible pages, Notes)
+- Study content (GRE, Notes, Math — **not** Bible/Journal; those are Focus)
 
 ### Smokes
 
@@ -58,4 +58,8 @@ powershell -File scripts\desktop_tracker\run\smoke_p5a.ps1
 
 1. Kill Study `:8000` — SoftLand/Arm/Settings/Plan CRUD/Calendar glance still work in Focus.
 2. Reload Gate — SoftLand never hits `:8000` for get_mode.
-3. Tray Start API only when you want Study content / Google / propose.
+3. Tray **Advanced** only when you want Study content / Google / propose.
+
+## Doc entry
+
+Architecture + idea: [calt-focus/README.md](../../../calt-focus/README.md)

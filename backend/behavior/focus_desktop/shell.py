@@ -1,6 +1,6 @@
 """Deprecated: do not use as the Focus launcher.
 
-Owner 2026-09-07: control UI is native/calt_focus (C++ tray + WebView2).
+Owner 2026-09-07: control UI is calt-focus/backend/calt_focus (C++ tray + WebView2).
 This Python/pystray module is kept only so old imports do not crash; it prints
 a redirect and exits.
 """

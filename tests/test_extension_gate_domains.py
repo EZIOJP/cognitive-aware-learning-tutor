@@ -1,4 +1,4 @@
-"""Domain match rules mirrored from selftracker-extension/gate_policy.js."""
+"""Domain match rules mirrored from calt-focus/extensions/selftracker-extension/gate_policy.js."""
 
 from __future__ import annotations
 
@@ -54,7 +54,7 @@ def test_distraction_domains_allow_work():
 def test_js_gate_policy_lists_same_cores():
     from pathlib import Path
 
-    text = Path("selftracker-extension/gate_policy.js").read_text(encoding="utf-8")
+    text = Path("calt-focus/extensions/selftracker-extension/gate_policy.js").read_text(encoding="utf-8")
     for d in ("netflix.com", "youtube.com", "youtu.be"):
         assert d in text
     for d in ("scaler.com", "bing.com", "google.com", "interviewbit.com"):
@@ -77,7 +77,7 @@ def test_extension_manifest_bumped_for_scaler_fix():
     import json
 
     man = json.loads(
-        Path("selftracker-extension/manifest.json").read_text(encoding="utf-8")
+        Path("calt-focus/extensions/selftracker-extension/manifest.json").read_text(encoding="utf-8")
     )
     # 1.5.18+: 60s per-host temp allow on locked.html
     parts = [int(x) for x in str(man["version"]).split(".")]
@@ -139,17 +139,17 @@ def is_host_temp_allowed(host: str, allows: list, now_ms: int) -> bool:
 def test_temp_allow_ms_is_60_seconds():
     from pathlib import Path
 
-    text = Path("selftracker-extension/gate_policy.js").read_text(encoding="utf-8")
+    text = Path("calt-focus/extensions/selftracker-extension/gate_policy.js").read_text(encoding="utf-8")
     assert "TEMP_ALLOW_MS" in text
     assert "60000" in text
     assert "isHostTempAllowed" in text
     assert "isTempAllowExcludedHost" in text
     assert "buildTempAllowGrant" in text
     assert "Watch sites can't be temporarily allowed" in text
-    locked = Path("selftracker-extension/locked.js").read_text(encoding="utf-8")
+    locked = Path("calt-focus/extensions/selftracker-extension/locked.js").read_text(encoding="utf-8")
     assert "Allow this site 60 sec" in locked
     assert "TEMP_ALLOW_REQUEST" in locked
-    bg = Path("selftracker-extension/background.js").read_text(encoding="utf-8")
+    bg = Path("calt-focus/extensions/selftracker-extension/background.js").read_text(encoding="utf-8")
     assert "lockedPageUrlForBlocked" in bg
     assert "TEMP_ALLOW_REQUEST" in bg
 
@@ -183,7 +183,7 @@ def test_py_js_allow_domains_include_ds_sites():
     from pathlib import Path
     from backend.behavior.browser_gate_policy import DEFAULT_ALLOW_DOMAINS
 
-    text = Path("selftracker-extension/gate_policy.js").read_text(encoding="utf-8")
+    text = Path("calt-focus/extensions/selftracker-extension/gate_policy.js").read_text(encoding="utf-8")
     for d in (
         "numpy.org",
         "pandas.pydata.org",

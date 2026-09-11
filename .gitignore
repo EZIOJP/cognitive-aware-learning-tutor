@@ -127,6 +127,11 @@ scripts/experiments/out/
 native/calt_enforcer/build/
 native/calt_focus/build/
 native/calt_focus/third_party/webview2/
+calt-focus/backend/calt_enforcer/build/
+calt-focus/backend/calt_focus/build/
+calt-focus/backend/calt_focus/build_quitfix/
+calt-focus/backend/calt_msg_host/build/
+calt-focus/backend/calt_focus/third_party/webview2/
 dist-focus/
 scripts/desktop_tracker/installer_payload/bin/
 scripts/desktop_tracker/Output/

@@ -10,13 +10,13 @@ def _assert_incubation_helpers(text: str, path: str) -> None:
 
 
 def test_calt_gate_policy_has_incubation():
-    path = Path("calt-gate-extension/gate_policy.js")
+    path = Path("calt-focus/extensions/calt-gate-extension/gate_policy.js")
     text = path.read_text(encoding="utf-8")
     _assert_incubation_helpers(text, str(path))
 
 
 def test_selftracker_gate_policy_has_incubation():
-    path = Path("selftracker-extension/gate_policy.js")
+    path = Path("calt-focus/extensions/selftracker-extension/gate_policy.js")
     text = path.read_text(encoding="utf-8")
     _assert_incubation_helpers(text, str(path))
 

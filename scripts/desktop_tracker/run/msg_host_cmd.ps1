@@ -12,7 +12,7 @@ param(
 $ErrorActionPreference = 'Stop'
 if (-not $Exe) {
   $repo = (Resolve-Path (Join-Path $PSScriptRoot '..\..\..')).Path
-  $Exe = Join-Path $repo 'native\calt_msg_host\build\calt_msg_host.exe'
+  $Exe = Join-Path $repo 'calt-focus\backend\calt_msg_host\build\calt_msg_host.exe'
 }
 if (-not (Test-Path $Exe)) { Write-Error "missing $Exe - run build\build_calt_msg_host.bat"; exit 1 }
 

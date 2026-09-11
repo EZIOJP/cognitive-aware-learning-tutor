@@ -183,7 +183,7 @@ def test_porn_and_keywords_block_even_when_enforce_false():
 def test_extension_force_porn_hosts_present():
     from pathlib import Path
 
-    text = Path("selftracker-extension/gate_policy.js").read_text(encoding="utf-8")
+    text = Path("calt-focus/extensions/selftracker-extension/gate_policy.js").read_text(encoding="utf-8")
     assert "FORCE_PORN_HOSTS" in text
     assert "isForcePornHost" in text
     assert "pornhub.com" in text

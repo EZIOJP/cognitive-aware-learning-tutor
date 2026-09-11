@@ -489,7 +489,7 @@ def test_js_gate_policy_consumes_mode():
     from pathlib import Path
     import json
 
-    text = Path("selftracker-extension/gate_policy.js").read_text(encoding="utf-8")
+    text = Path("calt-focus/extensions/selftracker-extension/gate_policy.js").read_text(encoding="utf-8")
     assert "block_other" in text
     assert "strict_allowlist" in text
     assert "browser.mode" in text or "b.mode" in text
@@ -497,7 +497,7 @@ def test_js_gate_policy_consumes_mode():
     assert "isForceWatchHost" in text
     assert "degraded" in text
     man = json.loads(
-        Path("selftracker-extension/manifest.json").read_text(encoding="utf-8")
+        Path("calt-focus/extensions/selftracker-extension/manifest.json").read_text(encoding="utf-8")
     )
     parts = [int(x) for x in str(man["version"]).split(".")]
     assert parts >= [1, 5, 16]

@@ -14,8 +14,8 @@ $ErrorActionPreference = "Stop"
 $Repo = Split-Path (Split-Path (Split-Path $PSScriptRoot -Parent) -Parent) -Parent
 if (-not $ExePath) {
   $cand = @(
-    (Join-Path $Repo "native\calt_msg_host\build\Release\calt_msg_host.exe"),
-    (Join-Path $Repo "native\calt_msg_host\build\calt_msg_host.exe")
+    (Join-Path $Repo "calt-focus\backend\calt_msg_host\build\Release\calt_msg_host.exe"),
+    (Join-Path $Repo "calt-focus\backend\calt_msg_host\build\calt_msg_host.exe")
   )
   foreach ($c in $cand) {
     if (Test-Path $c) { $ExePath = (Resolve-Path $c).Path; break }

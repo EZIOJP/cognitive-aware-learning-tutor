@@ -21,16 +21,16 @@ if not exist "%ROOT%\dist-focus\index.html" (
 )
 
 set "FOCUS_EXE="
-if exist "%ROOT%\native\calt_focus\build\Release\calt_focus.exe" set "FOCUS_EXE=%ROOT%\native\calt_focus\build\Release\calt_focus.exe"
-if exist "%ROOT%\native\calt_focus\build\calt_focus.exe" set "FOCUS_EXE=%ROOT%\native\calt_focus\build\calt_focus.exe"
+if exist "%ROOT%\calt-focus\backend\calt_focus\build\Release\calt_focus.exe" set "FOCUS_EXE=%ROOT%\calt-focus\backend\calt_focus\build\Release\calt_focus.exe"
+if exist "%ROOT%\calt-focus\backend\calt_focus\build\calt_focus.exe" set "FOCUS_EXE=%ROOT%\calt-focus\backend\calt_focus\build\calt_focus.exe"
 if exist "%ROOT%\scripts\desktop_tracker\installer\installer_payload\bin\calt_focus.exe" if not defined FOCUS_EXE set "FOCUS_EXE=%ROOT%\scripts\desktop_tracker\installer\installer_payload\bin\calt_focus.exe"
 
 if not defined FOCUS_EXE (
   echo calt_focus.exe missing — building...
   call "%ROOT%\scripts\desktop_tracker\build\build_native_focus.bat"
   if errorlevel 1 exit /b 1
-  if exist "%ROOT%\native\calt_focus\build\Release\calt_focus.exe" set "FOCUS_EXE=%ROOT%\native\calt_focus\build\Release\calt_focus.exe"
-  if exist "%ROOT%\native\calt_focus\build\calt_focus.exe" set "FOCUS_EXE=%ROOT%\native\calt_focus\build\calt_focus.exe"
+  if exist "%ROOT%\calt-focus\backend\calt_focus\build\Release\calt_focus.exe" set "FOCUS_EXE=%ROOT%\calt-focus\backend\calt_focus\build\Release\calt_focus.exe"
+  if exist "%ROOT%\calt-focus\backend\calt_focus\build\calt_focus.exe" set "FOCUS_EXE=%ROOT%\calt-focus\backend\calt_focus\build\calt_focus.exe"
 )
 
 if not defined FOCUS_EXE (

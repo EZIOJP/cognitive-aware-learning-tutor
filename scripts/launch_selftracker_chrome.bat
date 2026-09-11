@@ -2,7 +2,7 @@
 setlocal
 call "%~dp0_common.bat" env-only
 
-set "EXT_DIR=%ROOT%\selftracker-extension"
+set "EXT_DIR=%ROOT%\calt-focus\extensions\selftracker-extension"
 set "PROFILE_DIR=%ROOT%\.browser-profiles\chrome-selftracker"
 set "CHROME_EXE=C:\Program Files\Google\Chrome\Application\chrome.exe"
 

@@ -34,13 +34,13 @@ if not exist "%ISS%" (
 )
 
 rem Ensure native exe is in payload\bin when already built
-if exist "%~dp0..\..\..\native\calt_enforcer\build\calt_enforcer.exe" (
+if exist "%~dp0..\..\..\calt-focus\backend\calt_enforcer\build\calt_enforcer.exe" (
   if not exist "%~dp0installer_payload\bin" mkdir "%~dp0installer_payload\bin"
-  copy /Y "%~dp0..\..\..\native\calt_enforcer\build\calt_enforcer.exe" "%~dp0installer_payload\bin\calt_enforcer.exe" >nul
+  copy /Y "%~dp0..\..\..\calt-focus\backend\calt_enforcer\build\calt_enforcer.exe" "%~dp0installer_payload\bin\calt_enforcer.exe" >nul
 )
-if exist "%~dp0..\..\..\native\calt_enforcer\build\Release\calt_enforcer.exe" (
+if exist "%~dp0..\..\..\calt-focus\backend\calt_enforcer\build\Release\calt_enforcer.exe" (
   if not exist "%~dp0installer_payload\bin" mkdir "%~dp0installer_payload\bin"
-  copy /Y "%~dp0..\..\..\native\calt_enforcer\build\Release\calt_enforcer.exe" "%~dp0installer_payload\bin\calt_enforcer.exe" >nul
+  copy /Y "%~dp0..\..\..\calt-focus\backend\calt_enforcer\build\Release\calt_enforcer.exe" "%~dp0installer_payload\bin\calt_enforcer.exe" >nul
 )
 
 echo Compiling with: %ISCC%

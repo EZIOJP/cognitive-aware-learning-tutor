@@ -695,9 +695,9 @@ bool FocusApp::RunUpdateStackScript() {
 
 bool FocusApp::PendingUpdateNeedsRestart() const {
   const std::wstring focusNew =
-      RepoRoot() + L"\\native\\calt_focus\\build\\calt_focus.exe.new";
+      RepoRoot() + L"\\calt-focus\\backend\\calt_focus\\build\\calt_focus.exe.new";
   const std::wstring enfNew =
-      RepoRoot() + L"\\native\\calt_enforcer\\build\\calt_enforcer.exe.new";
+      RepoRoot() + L"\\calt-focus\\backend\\calt_enforcer\\build\\calt_enforcer.exe.new";
   if (GetFileAttributesW(focusNew.c_str()) != INVALID_FILE_ATTRIBUTES) {
     return true;
   }

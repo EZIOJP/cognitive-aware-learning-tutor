@@ -114,6 +114,8 @@ std::wstring ResolveFocusExePath() {
   wchar_t* repo = _wgetenv(L"CALT_REPO");
   if (repo && *repo) {
     const std::wstring cands[] = {
+        Join(repo, L"calt-focus\\backend\\calt_focus\\build\\Release\\calt_focus.exe"),
+        Join(repo, L"calt-focus\\backend\\calt_focus\\build\\calt_focus.exe"),
         Join(repo, L"native\\calt_focus\\build\\Release\\calt_focus.exe"),
         Join(repo, L"native\\calt_focus\\build\\calt_focus.exe"),
     };
@@ -121,11 +123,12 @@ std::wstring ResolveFocusExePath() {
       if (GetFileAttributesW(c.c_str()) != INVALID_FILE_ATTRIBUTES) return c;
     }
   }
-  // Walk up from enforcer: …/native/calt_enforcer/build/Release → repo
+  // Walk up from enforcer build dir → repo
   std::wstring dir = ExeDir();
-  for (int i = 0; i < 6; ++i) {
-    const std::wstring c1 = Join(dir, L"native\\calt_focus\\build\\Release\\calt_focus.exe");
-    const std::wstring c2 = Join(dir, L"native\\calt_focus\\build\\calt_focus.exe");
+  for (int i = 0; i < 8; ++i) {
+    const std::wstring c1 =
+        Join(dir, L"calt-focus\\backend\\calt_focus\\build\\Release\\calt_focus.exe");
+    const std::wstring c2 = Join(dir, L"calt-focus\\backend\\calt_focus\\build\\calt_focus.exe");
     if (GetFileAttributesW(c1.c_str()) != INVALID_FILE_ATTRIBUTES) return c1;
     if (GetFileAttributesW(c2.c_str()) != INVALID_FILE_ATTRIBUTES) return c2;
     dir = DirOf(dir);

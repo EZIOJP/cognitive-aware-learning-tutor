@@ -31,10 +31,12 @@ BEGIN_CS = "// BEGIN GENERATED_CONTENT_SCORE (scripts/sync_gate_policy_seeds.py)
 END_CS = "// END GENERATED_CONTENT_SCORE"
 
 TARGETS = (
-    ROOT / "selftracker-extension" / "gate_policy.js",
-    ROOT / "calt-gate-extension" / "gate_policy.js",
+    ROOT / "calt-focus" / "extensions" / "selftracker-extension" / "gate_policy.js",
+    ROOT / "calt-focus" / "extensions" / "calt-gate-extension" / "gate_policy.js",
 )
-CALT_GATE_POLICY = ROOT / "calt-gate-extension" / "gate_policy.js"
+CALT_GATE_POLICY = (
+    ROOT / "calt-focus" / "extensions" / "calt-gate-extension" / "gate_policy.js"
+)
 
 
 def _js_str_list(name: str, values: tuple[str, ...] | list[str], *, comment: str = "") -> str:

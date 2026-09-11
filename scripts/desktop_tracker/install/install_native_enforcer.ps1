@@ -8,8 +8,8 @@ param(
 $ErrorActionPreference = "Stop"
 $Repo = Split-Path (Split-Path (Split-Path $PSScriptRoot -Parent) -Parent) -Parent
 $ExeCandidates = @(
-  (Join-Path $Repo "native\calt_enforcer\build\Release\calt_enforcer.exe"),
-  (Join-Path $Repo "native\calt_enforcer\build\calt_enforcer.exe")
+  (Join-Path $Repo "calt-focus\backend\calt_enforcer\build\Release\calt_enforcer.exe"),
+  (Join-Path $Repo "calt-focus\backend\calt_enforcer\build\calt_enforcer.exe")
 )
 $Exe = $ExeCandidates | Where-Object { Test-Path $_ } | Select-Object -First 1
 if (-not $Exe) { throw "Missing calt_enforcer.exe - run build\build_native_enforcer.bat first" }

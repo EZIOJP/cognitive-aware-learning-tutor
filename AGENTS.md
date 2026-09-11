@@ -38,7 +38,7 @@ Quiz mandate is **Done** (regressions only). EEG soft-fail is **Done** (flash ne
 
 ---
 
-**Focus FE/BE review map (for another AI):** start at [calt-focus/README.md](calt-focus/README.md) → [FRONTEND.md](calt-focus/FRONTEND.md) + [BACKEND.md](calt-focus/BACKEND.md). Do not treat Study `:8000` as SoftLand brain.
+**Focus FE/BE (clean tree):** [calt-focus/](calt-focus/README.md) → `frontend/` · `backend/` · `extensions/`. Shared React still under `src/` (listed in frontend README). Do not treat Study `:8000` as SoftLand brain.
 
 ## Architecture (locked)
 

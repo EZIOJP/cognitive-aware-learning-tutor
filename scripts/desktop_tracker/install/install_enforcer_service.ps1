@@ -33,8 +33,8 @@ if ($Unregister) {
 }
 
 $NativeExeCandidates = @(
-  (Join-Path $Root "native\calt_enforcer\build\Release\calt_enforcer.exe"),
-  (Join-Path $Root "native\calt_enforcer\build\calt_enforcer.exe"),
+  (Join-Path $Root "calt-focus\backend\calt_enforcer\build\Release\calt_enforcer.exe"),
+  (Join-Path $Root "calt-focus\backend\calt_enforcer\build\calt_enforcer.exe"),
   (Join-Path $TrackerDir "installer\installer_payload\bin\calt_enforcer.exe")
 )
 $NativeExe = $NativeExeCandidates | Where-Object { Test-Path $_ } | Select-Object -First 1

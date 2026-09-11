@@ -38,15 +38,15 @@ function Write-Bundle {
   Write-Host "Wrote $OutPath ($len bytes)"
 }
 
-Write-Bundle -OutPath (Join-Path $Root "selftracker-extension\service_worker.js") -Parts @(
-  "selftracker-extension\gate_policy.js",
-  "selftracker-extension\telemetry.js",
-  "selftracker-extension\background.js"
+Write-Bundle -OutPath (Join-Path $Root "calt-focus\extensions\selftracker-extension\service_worker.js") -Parts @(
+  "calt-focus\extensions\selftracker-extension\gate_policy.js",
+  "calt-focus\extensions\selftracker-extension\telemetry.js",
+  "calt-focus\extensions\selftracker-extension\background.js"
 )
 
-Write-Bundle -OutPath (Join-Path $Root "calt-gate-extension\service_worker.js") -Parts @(
-  "calt-gate-extension\gate_policy.js",
-  "calt-gate-extension\background.js"
+Write-Bundle -OutPath (Join-Path $Root "calt-focus\extensions\calt-gate-extension\service_worker.js") -Parts @(
+  "calt-focus\extensions\calt-gate-extension\gate_policy.js",
+  "calt-focus\extensions\calt-gate-extension\background.js"
 )
 
 Write-Host "Done. In edge://extensions: Remove old copies if needed, Load unpacked, Reload."

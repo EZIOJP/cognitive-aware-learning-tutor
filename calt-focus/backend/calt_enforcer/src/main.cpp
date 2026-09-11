@@ -22,10 +22,12 @@ std::wstring DefaultDbPath() {
   if (env && *env) return env;
   std::wstring dir = ExeDir();
   const wchar_t* candidates[] = {
+      L"\\..\\..\\..\\..\\..\\data\\productivity\\productivity.db",
       L"\\..\\..\\..\\..\\data\\productivity\\productivity.db",
       L"\\..\\..\\..\\data\\productivity\\productivity.db",
       L"\\..\\..\\data\\productivity\\productivity.db",
       // legacy fallback during transition
+      L"\\..\\..\\..\\..\\..\\data\\vocab_app.db",
       L"\\..\\..\\..\\..\\data\\vocab_app.db",
       L"\\..\\..\\..\\data\\vocab_app.db",
       L"\\..\\..\\data\\vocab_app.db",
@@ -35,7 +37,7 @@ std::wstring DefaultDbPath() {
     std::wstring c = dir + candidates[i];
     if (GetFileAttributesW(c.c_str()) != INVALID_FILE_ATTRIBUTES) return c;
   }
-  return dir + L"\\..\\..\\..\\..\\data\\productivity\\productivity.db";
+  return dir + L"\\..\\..\\..\\..\\..\\data\\productivity\\productivity.db";
 }
 
 std::wstring DefaultLockPath(const std::wstring& dbPath) {

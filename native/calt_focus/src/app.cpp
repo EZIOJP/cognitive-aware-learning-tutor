@@ -91,15 +91,9 @@ int FocusApp::Run(HINSTANCE instance) {
           // Phase 7: do NOT auto-start Study :8000 — SoftLand/Arm work offline.
           // Manual tray "Start API" still calls StartApiOnly().
           if (tray_) {
-            if (PortListening(8000)) {
-              tray_->ShowBalloon(
-                  L"CALT Focus",
-                  L"Prebuilt UI ready. SoftLand/Arm work offline; Study API is optional.");
-            } else {
-              tray_->ShowBalloon(
-                  L"CALT Focus",
-                  L"Prebuilt UI ready. SoftLand/Arm offline via enforcer; Study API optional (tray → Start API).");
-            }
+            tray_->ShowBalloon(
+                L"CALT Focus",
+                L"Productivity ready — SoftLand/Arm/Plan via enforcer (no Study API).");
           }
           ShowFocusWindow();
         } else {
@@ -121,7 +115,7 @@ int FocusApp::Run(HINSTANCE instance) {
           nullptr,
           L"WebView2 failed to start.\n\n"
           L"Install the Evergreen WebView2 Runtime.\n"
-          L"Tray → Run to start API / open Focus.",
+          L"Tray → Open Focus after fixing WebView2.",
           L"CALT Focus",
           MB_OK | MB_ICONWARNING);
     }
@@ -157,7 +151,7 @@ void FocusApp::CreateMainWindow(HINSTANCE instance) {
   RegisterClassExW(&wc);
 
   main_hwnd_ = CreateWindowExW(
-      0, kMainClass, L"CALT Focus", WS_OVERLAPPEDWINDOW,
+      0, kMainClass, L"CALT Focus — Productivity", WS_OVERLAPPEDWINDOW,
       CW_USEDEFAULT, CW_USEDEFAULT, 1100, 740,
       nullptr, nullptr, instance, this);
 }
@@ -260,7 +254,7 @@ void FocusApp::ShowOfflinePage() {
       L"%3Ch2%3ECALT%20Focus%20%E2%80%94%20UI%20not%20ready%3C%2Fh2%3E"
       L"%3Cp%3EBuild%20precompiled%20UI%20once%20(no%20Vite%20daily)%3A%3C%2Fp%3E"
       L"%3Cpre%20style%3D'background%3A%231e293b%3Bpadding%3A12px'%3Enpm%20run%20build%3Afocus%3C%2Fpre%3E"
-      L"%3Cp%3EThen%20reopen%20CALT%20Focus.%20SoftLand%2FArm%20work%20offline%3B%20Study%20API%20is%20optional.%3C%2Fp%3E"
+      L"%3Cp%3EThen%20reopen%20CALT%20Focus.%20SoftLand%2FArm%2FPlan%20run%20via%20enforcer%20%E2%80%94%20no%20Study%20API.%3C%2Fp%3E"
       L"%3C%2Fbody%3E%3C%2Fhtml%3E";
   webview_->Navigate(html);
 }
@@ -513,12 +507,11 @@ void FocusApp::StartFrontendOnly() {
 void FocusApp::RunStack() {
   EnsureEnforcer();
   if (HasPrebuiltWebUi()) {
-    // Phase 7: prebuilt UI — do not auto-start Study :8000.
     OpenCalendar();
     if (tray_) {
       tray_->ShowBalloon(
           L"CALT Focus",
-          L"Prebuilt UI + enforcer. SoftLand/Arm offline; Study API optional (tray → Start API).");
+          L"Enforcer ready — SoftLand/Arm/Plan offline. Study API is under Advanced.");
     }
     return;
   }

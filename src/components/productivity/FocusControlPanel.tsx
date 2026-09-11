@@ -438,9 +438,8 @@ export function FocusControlPanel() {
           {err}
           {offlineWhy ? (
             <span className="block mt-1 text-xs text-muted-foreground">
-              API offline — SoftLand why below is a frozen file snapshot (as of {offlineWhy.asOf}).
-              SoftLand/Arm still work offline via Gate + enforcer; Study API is optional for ledger
-              spend.{" "}
+              SoftLand why below is a frozen file snapshot (as of {offlineWhy.asOf}).
+              SoftLand/Arm run via Gate + enforcer — no Study API required.{" "}
               {offlineEnf
                 ? `Enforcer mirror: ${offlineEnf.armed ? "armed" : "disarmed"}${
                     offlineEnf.owns ? ", owns kills" : ""
@@ -701,8 +700,8 @@ export function FocusControlPanel() {
             </button>
           </div>
           <p className="text-[11px] text-muted-foreground pt-1">
-            Writes <code className="text-foreground/80">data/behavior/enforcer_policy.json</code> — native
-            reads it with Python killed. Prefer the Windows service for stay-alive.
+            Writes <code className="text-foreground/80">data/productivity/behavior/enforcer_policy.json</code> —
+            native reads it with Python killed. Prefer the Windows service for stay-alive.
           </p>
         </div>
       </SectionBar>
@@ -716,22 +715,16 @@ export function FocusControlPanel() {
             Calendar
           </Link>
           <Link
-            to="/review"
-            className="rounded-lg border border-border px-3 py-1.5 text-muted-foreground hover:text-foreground"
-          >
-            Study Loop
-          </Link>
-          <Link
             to="/bible"
             className="rounded-lg border border-border px-3 py-1.5 text-muted-foreground hover:text-foreground"
           >
             Bible
           </Link>
           <Link
-            to="/lecture-notes"
+            to="/journal"
             className="rounded-lg border border-border px-3 py-1.5 text-muted-foreground hover:text-foreground"
           >
-            Lecture Notes
+            Journal
           </Link>
         </div>
       </SectionBar>

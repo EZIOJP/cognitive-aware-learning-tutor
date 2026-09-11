@@ -431,6 +431,7 @@ function DayTimeline({ timeline, listTotalSeconds }: { timeline: DesktopTimeline
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export function ProductivityPage() {
+  const focusShell = isFocusDesktopShell();
   const { burst } = useEaster();
   const trackerEgg = useLongPress(600, () => burst("cat"));
   const [desktop, setDesktop] = useState<DesktopStats | null>(null);
@@ -551,11 +552,18 @@ export function ProductivityPage() {
   const proposeDone = Boolean(proposed?.length) || planAppliedThisSession;
   const finishDone = planAppliedThisSession;
   const syncDone = planAppliedThisSession; // last step available after apply
-  const planStepOrder = ["routines", "goals", "propose", "done", "sync"] as const;
+  const planStepOrder = focusShell
+    ? (["routines", "goals", "done"] as const)
+    : (["routines", "goals", "propose", "done", "sync"] as const);
   const planStepRef = useRef<HTMLDivElement>(null);
 
-  // Do not auto-force planStep here — that blocked Goals/Build/Apply/Watch clicks
-  // whenever a draft existed. Advance only from propose/apply success handlers.
+  // Focus shell: never land on Study-only propose/sync steps
+  useEffect(() => {
+    if (!focusShell) return;
+    if (planStep === "propose" || planStep === "sync") {
+      setPlanStep("done");
+    }
+  }, [focusShell, planStep]);
 
   useEffect(() => {
     planStepRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
@@ -672,13 +680,17 @@ export function ProductivityPage() {
   }, []);
 
   const loadDue = useCallback(async () => {
+    if (focusShell) {
+      setDueReviews(0);
+      return;
+    }
     try {
       const d = await fetchDueReview(5);
       setDueReviews(d.count ?? d.items?.length ?? 0);
     } catch {
       setDueReviews(0);
     }
-  }, []);
+  }, [focusShell]);
 
   const bumpPlanner = useCallback(() => {
     setPlannerRefresh((k) => k + 1);
@@ -687,6 +699,11 @@ export function ProductivityPage() {
   }, [plannerDay, loadAdherence, loadDue]);
 
   useEffect(() => {
+    if (focusShell) {
+      setSleepHours(null);
+      setSleepScore(null);
+      return;
+    }
     const day = toApiDay(plannerDay);
     void fetchHubDaily(day)
       .then((h) => {
@@ -698,7 +715,7 @@ export function ProductivityPage() {
         setSleepHours(null);
         setSleepScore(null);
       });
-  }, [plannerDay, plannerRefresh]);
+  }, [plannerDay, plannerRefresh, focusShell]);
 
   useEffect(() => {
     const day = toApiDay(plannerDay);
@@ -1267,14 +1284,16 @@ export function ProductivityPage() {
           </div>
         ) : null}
 
-        <ShutdownRitualPanel
-          day={plannerDay}
-          desktop={desktop}
-          adherence={adherence}
-          goalsStatus={goalsStatus}
-          refreshKey={plannerRefresh}
-          onComplete={() => bumpPlanner()}
-        />
+        {!focusShell ? (
+          <ShutdownRitualPanel
+            day={plannerDay}
+            desktop={desktop}
+            adherence={adherence}
+            goalsStatus={goalsStatus}
+            refreshKey={plannerRefresh}
+            onComplete={() => bumpPlanner()}
+          />
+        ) : null}
 
         <div className="w-full bg-white/[0.03] border border-white/10 rounded-2xl p-5 sm:p-6">
           <PlannerCalendar
@@ -1320,6 +1339,7 @@ export function ProductivityPage() {
           />
         </div>
 
+        {!focusShell ? (
         <details className="group rounded-2xl border border-white/10 bg-white/[0.03] open:pb-4">
           <summary className="cursor-pointer list-none flex items-center gap-2 px-5 py-3.5 text-sm font-medium text-muted-foreground hover:text-foreground">
             <ChevronRight size={14} className="transition-transform group-open:rotate-90 text-primary" />
@@ -1329,6 +1349,7 @@ export function ProductivityPage() {
             <WeeklyDigestPanel endDay={toApiDay(plannerDay)} refreshKey={plannerRefresh} />
           </div>
         </details>
+        ) : null}
 
         <details className="group rounded-2xl border border-white/10 bg-white/[0.03] open:pb-4">
           <summary className="cursor-pointer list-none flex items-center gap-2 px-5 py-3.5 text-sm font-medium text-muted-foreground hover:text-foreground">
@@ -1481,8 +1502,14 @@ export function ProductivityPage() {
           <div className="shrink-0 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2.5 space-y-2">
             <h2 className="text-sm font-semibold text-foreground">Today’s plan</h2>
             <p className="text-[11px] text-muted-foreground">
-              Work the steps below, then tap <strong className="text-foreground">Confirm plan</strong> to
-              leave planning mode.
+              {focusShell
+                ? "Routines + goals via enforcer. Add blocks on the calendar — LLM Build and Google Watch stay in Study Advanced."
+                : (
+                  <>
+                    Work the steps below, then tap <strong className="text-foreground">Confirm plan</strong> to
+                    leave planning mode.
+                  </>
+                )}
             </p>
             {morningRule ? (
               <p className="text-[10px] text-emerald-200/90 border border-emerald-500/20 rounded-lg px-2 py-1 bg-emerald-500/5">
@@ -1510,7 +1537,7 @@ export function ProductivityPage() {
             <ConfirmPlanButton size="block" />
           </div>
           <nav aria-label="Plan steps" className="shrink-0 px-1 pt-0.5 pb-0.5">
-            <ol className="relative grid grid-cols-5">
+            <ol className={`relative grid ${focusShell ? "grid-cols-3" : "grid-cols-5"}`}>
               <div
                 aria-hidden
                 className="pointer-events-none absolute left-[10%] right-[10%] top-[9px] h-px bg-white/15"
@@ -1519,17 +1546,23 @@ export function ProductivityPage() {
                 aria-hidden
                 className="pointer-events-none absolute left-[10%] top-[9px] h-px bg-emerald-500/70 transition-[width] duration-300"
                 style={{
-                  width: `${Math.max(0, planStepOrder.indexOf(planStep)) * 20}%`,
+                  width: `${Math.max(0, planStepOrder.indexOf(planStep as (typeof planStepOrder)[number])) * (100 / Math.max(1, planStepOrder.length - 1)) * 0.8}%`,
                 }}
               />
               {(
-                [
-                  { id: "routines" as const, n: 1, label: "Routines", done: routinesDone },
-                  { id: "goals" as const, n: 2, label: "Goals", done: goalsDone },
-                  { id: "propose" as const, n: 3, label: "Build", done: proposeDone },
-                  { id: "done" as const, n: 4, label: "Apply", done: finishDone },
-                  { id: "sync" as const, n: 5, label: "Watch", done: syncDone && planStep === "sync" },
-                ] as const
+                focusShell
+                  ? ([
+                      { id: "routines" as const, n: 1, label: "Routines", done: routinesDone },
+                      { id: "goals" as const, n: 2, label: "Goals", done: goalsDone },
+                      { id: "done" as const, n: 3, label: "Ready", done: finishDone || goalsDone },
+                    ] as const)
+                  : ([
+                      { id: "routines" as const, n: 1, label: "Routines", done: routinesDone },
+                      { id: "goals" as const, n: 2, label: "Goals", done: goalsDone },
+                      { id: "propose" as const, n: 3, label: "Build", done: proposeDone },
+                      { id: "done" as const, n: 4, label: "Apply", done: finishDone },
+                      { id: "sync" as const, n: 5, label: "Watch", done: syncDone && planStep === "sync" },
+                    ] as const)
               ).map((s) => {
                 const active = planStep === s.id;
                 return (
@@ -1585,6 +1618,7 @@ export function ProductivityPage() {
                 <div className="rounded-xl border border-white/10 bg-black/20 p-4">
                   <RoutinesPanel onApplied={bumpPlanner} onRoutinesChange={onRoutinesChange} />
                 </div>
+                {!focusShell ? (
                 <details open className="rounded-xl border border-white/10 bg-black/20 open:pb-1">
                   <summary className="cursor-pointer list-none px-4 py-3 text-xs font-medium text-muted-foreground hover:text-foreground">
                     Weekly timetable (optional)
@@ -1598,6 +1632,7 @@ export function ProductivityPage() {
                     />
                   </div>
                 </details>
+                ) : null}
               </div>
             </div>
           )}
@@ -1614,7 +1649,7 @@ export function ProductivityPage() {
             </div>
           )}
 
-          {planStep === "propose" && (
+          {planStep === "propose" && !focusShell && (
               <ProposeStepPanel
                 horizon={proposeHorizon}
                 onHorizonChange={setProposeHorizon}
@@ -1641,9 +1676,24 @@ export function ProductivityPage() {
           {planStep === "done" && (
             <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 space-y-4">
               <div>
-                <h2 className="text-sm font-semibold text-foreground">4 · Apply</h2>
+                <h2 className="text-sm font-semibold text-foreground">
+                  {focusShell ? "3 · Ready" : "4 · Apply"}
+                </h2>
               </div>
-              {finishDone ? (
+              {focusShell ? (
+                <div className="space-y-3">
+                  <p className="text-sm text-emerald-200">
+                    Routines and goals are Focus-native. Edit blocks on Calendar — SoftLand follows active plan blocks via the enforcer.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setTab("calendar")}
+                    className="rounded-xl bg-primary px-4 py-2.5 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+                  >
+                    Open Calendar
+                  </button>
+                </div>
+              ) : finishDone ? (
                 <div className="space-y-3">
                   <p className="text-sm text-emerald-200">
                     Your schedule is on the calendar. Next: push it to Google so Amazfit can see it.
@@ -1699,7 +1749,7 @@ export function ProductivityPage() {
             </div>
           )}
 
-          {planStep === "sync" && (
+          {planStep === "sync" && !focusShell && (
             <div className="space-y-3">
               <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 space-y-2">
                 <h2 className="text-sm font-semibold text-foreground">5 · Watch (Google → Amazfit)</h2>
@@ -1750,11 +1800,11 @@ export function ProductivityPage() {
                     type="button"
                     onClick={() => {
                       setGoalsConfirmed(true);
-                      setPlanStep("propose");
+                      setPlanStep(focusShell ? "done" : "propose");
                     }}
                     className="rounded-xl bg-primary px-4 py-2 text-xs font-medium text-primary-foreground hover:bg-primary/90"
                   >
-                    Next · Build
+                    {focusShell ? "Next · Ready" : "Next · Build"}
                   </button>
                 </div>
               </>

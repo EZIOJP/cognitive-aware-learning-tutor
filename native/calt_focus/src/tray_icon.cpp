@@ -76,24 +76,31 @@ void TrayIcon::PopupMenu() {
   POINT pt{};
   GetCursorPos(&pt);
   HMENU menu = CreatePopupMenu();
-  AppendMenuW(menu, MF_STRING, ID_RUN, L"Run (enforcer + API; prebuilt UI)");
-  AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
-  AppendMenuW(menu, MF_STRING, ID_STACK, L"Start API + Frontend (Vite)");
-  AppendMenuW(menu, MF_STRING, ID_API, L"Start API (backend :8000)");
-  AppendMenuW(menu, MF_STRING, ID_FE, L"Start Frontend (Vite :5173)");
-  AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
+  HMENU adv = CreatePopupMenu();
+
+  AppendMenuW(menu, MF_STRING, ID_OPEN, L"Open Focus");
   AppendMenuW(menu, MF_STRING, ID_CALENDAR, L"Open Calendar");
   AppendMenuW(menu, MF_STRING, ID_PLAN, L"Open Plan");
-  AppendMenuW(menu, MF_STRING, ID_OPEN, L"Open Focus");
   AppendMenuW(menu, MF_STRING, ID_SETTINGS, L"Open Settings");
+  AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
+  AppendMenuW(menu, MF_STRING, ID_RUN, L"Ensure enforcer + open");
   AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
   AppendMenuW(menu, MF_STRING, ID_RELOAD_UI, L"Reload UI");
   AppendMenuW(menu, MF_STRING, ID_UPDATE_UI, L"Update UI (rebuild + reload)");
-  AppendMenuW(menu, MF_STRING, ID_UPDATE_STACK, L"Update stack (UI + natives + rules)");
-  AppendMenuW(menu, MF_STRING, ID_APPLY_UPDATE, L"Apply pending update && restart");
+  AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
+
+  // Study :8000 / Vite — optional sidecars, not part of Productivity runtime.
+  AppendMenuW(adv, MF_STRING, ID_API, L"Start Study API (:8000)");
+  AppendMenuW(adv, MF_STRING, ID_FE, L"Start Study Frontend (Vite :5173)");
+  AppendMenuW(adv, MF_STRING, ID_STACK, L"Start Study API + Vite");
+  AppendMenuW(adv, MF_SEPARATOR, 0, nullptr);
+  AppendMenuW(adv, MF_STRING, ID_UPDATE_STACK, L"Update stack (UI + natives + rules)");
+  AppendMenuW(adv, MF_STRING, ID_APPLY_UPDATE, L"Apply pending update && restart");
+  AppendMenuW(menu, MF_POPUP, reinterpret_cast<UINT_PTR>(adv), L"Advanced (Study / rebuild)");
+
   AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
   AppendMenuW(menu, MF_STRING, ID_QUIT, L"Quit");
-  SetMenuDefaultItem(menu, ID_RUN, FALSE);
+  SetMenuDefaultItem(menu, ID_OPEN, FALSE);
   SetForegroundWindow(hwnd_);
   TrackPopupMenu(menu, TPM_RIGHTBUTTON | TPM_BOTTOMALIGN | TPM_LEFTALIGN, pt.x, pt.y,
                  0, hwnd_, nullptr);
@@ -105,10 +112,10 @@ LRESULT TrayIcon::HandleMessage(UINT msg, WPARAM wParam, LPARAM lParam) {
   if (msg == WM_TRAY) {
     switch (LOWORD(lParam)) {
       case WM_LBUTTONDBLCLK:
-        if (on_run_) {
-          on_run_();
-        } else if (on_open_) {
+        if (on_open_) {
           on_open_();
+        } else if (on_run_) {
+          on_run_();
         }
         return 0;
       case WM_RBUTTONUP:
@@ -116,10 +123,10 @@ LRESULT TrayIcon::HandleMessage(UINT msg, WPARAM wParam, LPARAM lParam) {
         PopupMenu();
         return 0;
       case WM_LBUTTONUP:
-        if (on_run_) {
-          on_run_();
-        } else if (on_open_) {
+        if (on_open_) {
           on_open_();
+        } else if (on_run_) {
+          on_run_();
         }
         return 0;
       default:

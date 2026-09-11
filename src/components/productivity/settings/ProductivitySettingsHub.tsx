@@ -101,16 +101,10 @@ export function ProductivitySettingsHub({
                   </button>
                 ))}
               </div>
-              <div className="flex flex-wrap gap-2 pt-1">
+              <div className="flex flex-wrap gap-2">
                 <NativeOrApiBadge kind="native" />
                 <span className="text-[11px] text-muted-foreground self-center">
-                  SoftLand, Arm, lists, schedules — work with API down
-                </span>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <NativeOrApiBadge kind="api" />
-                <span className="text-[11px] text-muted-foreground self-center">
-                  Scores, hosts filter, watch sync — need :8000
+                  SoftLand, Arm, lists, schedules, Plan, Bible, Journal — enforcer only
                 </span>
               </div>
             </div>

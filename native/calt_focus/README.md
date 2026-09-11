@@ -16,6 +16,8 @@ npm run dev:focus
 
 Open **http://127.0.0.1:5180/** (detected as Focus shell). Port **5180** avoids clash with Focus static fallback on **:5174**. Vite serves `data/productivity/behavior/*` at `/calt-data/`. SoftLand/Arm/Plan **writes** still need `calt_focus.exe` (WebView2 → enforcer pipe).
 
+Tray is **Productivity-first** (Open Focus / Calendar / Plan / Settings). Study `:8000` and Vite live under **Advanced (Study / rebuild)** — not required for SoftLand/Arm/Plan.
+
 Ship to the tray shell with `npm run build:focus` (or tray **Update UI**).
 
 ## No Vite every day

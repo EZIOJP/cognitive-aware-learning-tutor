@@ -19,6 +19,7 @@ import {
 } from "./ProductivityGoalsPanel";
 import { formatHoursMins, formatHoursMinsPair } from "../../utils/formatDuration";
 import { DeviceBlockPanel } from "./DeviceBlockPanel";
+import { isFocusDesktopShell } from "../../utils/focusDesktopShell";
 
 const COMMON_CATEGORIES = [
   "IDE / Code Editor",
@@ -271,6 +272,7 @@ export function ProductivityPolicyPanel({ onSaved, variant = "all" }: Props) {
             Open Bible reader
           </a>
         </p>
+        {!isFocusDesktopShell() ? (
         <div className="rounded-md border border-white/10 bg-black/20 p-2.5 space-y-2">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
@@ -326,6 +328,7 @@ export function ProductivityPolicyPanel({ onSaved, variant = "all" }: Props) {
             </label>
           </div>
         </div>
+        ) : null}
         <div className="rounded-md border border-teal-400/25 bg-teal-500/5 p-2.5 space-y-2">
           <p className="text-[11px] text-muted-foreground">
             Earned Free Day: complete your study goal and one Bible chapter on{" "}

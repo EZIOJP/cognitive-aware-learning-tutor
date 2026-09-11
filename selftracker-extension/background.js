@@ -204,6 +204,13 @@ function noteSoftLandAttempt() {
   return false;
 }
 
+/**
+ * Phase 4 (Focus Standalone): WebSocket ws://localhost:8000/ws/behavior is OPT-IN only.
+ * Storage: caltPythonTelemetry=true (default false / unset). Required browser track path
+ * is native msg_host track_tab — not this WS. Gate get_mode is unaffected (CALT Gate).
+ */
+var PYTHON_TELEMETRY_STORAGE_KEY = "caltPythonTelemetry";
+
 extAPI.runtime.onInstalled.addListener(() => {
   scheduleAlarms();
   startLightGatePoll();
@@ -233,30 +240,46 @@ try {
   console.warn("SelfTracker: telemetry start failed", e);
 }
 
-function connectWebSocket() {
-  if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) {
-    return;
-  }
+function isPythonBehaviorTelemetryEnabled(cb) {
   try {
-    ws = new WebSocket("ws://localhost:8000/ws/behavior");
-    ws.onopen = () => {
-      console.log("SelfTracker: connected to backend");
-      extAPI.alarms.clear("ws-retry");
-      flushOutboundQueue();
-    };
-    ws.onmessage = () => {};
-    ws.onclose = () => {
-      console.log("SelfTracker: backend disconnected — retry in 5s");
-      ws = null;
-      extAPI.alarms.create("ws-retry", { delayInMinutes: 5 / 60 });
-    };
-    ws.onerror = () => {
-      ws = null;
-    };
+    extAPI.storage.local.get([PYTHON_TELEMETRY_STORAGE_KEY], function (st) {
+      cb(!!(st && st[PYTHON_TELEMETRY_STORAGE_KEY] === true));
+    });
   } catch (e) {
-    console.warn("SelfTracker: WebSocket unavailable", e);
-    extAPI.alarms.create("ws-retry", { delayInMinutes: 10 / 60 });
+    cb(false);
   }
+}
+
+function connectWebSocket() {
+  isPythonBehaviorTelemetryEnabled(function (enabled) {
+    if (!enabled) {
+      // Default OFF — do not open /ws/behavior or schedule retries.
+      return;
+    }
+    if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) {
+      return;
+    }
+    try {
+      ws = new WebSocket("ws://localhost:8000/ws/behavior");
+      ws.onopen = () => {
+        console.log("SelfTracker: connected to backend (opt-in Python telemetry)");
+        extAPI.alarms.clear("ws-retry");
+        flushOutboundQueue();
+      };
+      ws.onmessage = () => {};
+      ws.onclose = () => {
+        console.log("SelfTracker: backend disconnected — retry in 5s");
+        ws = null;
+        extAPI.alarms.create("ws-retry", { delayInMinutes: 5 / 60 });
+      };
+      ws.onerror = () => {
+        ws = null;
+      };
+    } catch (e) {
+      console.warn("SelfTracker: WebSocket unavailable", e);
+      extAPI.alarms.create("ws-retry", { delayInMinutes: 10 / 60 });
+    }
+  });
 }
 
 function caltExtensionHeaders() {

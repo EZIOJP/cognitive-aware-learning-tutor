@@ -1,173 +1,134 @@
 """Earned free-day credits for the desktop productivity gate.
 
 Four qualifying days (daily productive goal plus Bible chapter) earn one
-stackable credit. A credit can unlock the existing FREE mode until midnight.
-The tracker keeps recording sessions; this only changes enforcement.
-
-Bonus credits can be granted (dev/admin) without inventing fake qualifying days.
+stackable credit. A credit unlocks FREE mode until midnight via calt_enforcer.
+Qualification *decision* stays in distraction_gate until P5c; this module is a
+thin gateway caller for status / claim / mark / grant.
 """
 
 from __future__ import annotations
 
 import logging
-from datetime import datetime
 from typing import Any
 
 from backend.bible import store as bible_store
-from backend.bible.paths import bible_dir
-from backend.planner.service import local_tz
 
 logger = logging.getLogger(__name__)
 
-QUALIFYING_DAYS_PER_REWARD = 4
 CONFIRM_PHRASE = "REWARD"
+QUALIFYING_DAYS_PER_REWARD = 4  # display / docs; enforcer owns the maths
 
 
-def _today() -> str:
-    return datetime.now(local_tz()).date().isoformat()
-
-
-def _path(user_id: int):
-    return bible_dir() / f"reward_days_{user_id}.json"
-
-
-def _load(user_id: int) -> dict[str, Any]:
-    raw = bible_store._read_json(
-        _path(user_id),
-        {"qualified_dates": [], "used_dates": [], "granted": 0},
-    )
-    qualified = sorted({str(day) for day in raw.get("qualified_dates", []) if str(day)})
-    used = sorted({str(day) for day in raw.get("used_dates", []) if str(day)})
-    try:
-        granted = max(0, int(raw.get("granted") or 0))
-    except (TypeError, ValueError):
-        granted = 0
-    return {"qualified_dates": qualified, "used_dates": used, "granted": granted}
-
-
-def _save(user_id: int, data: dict[str, Any]) -> None:
-    bible_store._write_json(
-        _path(user_id),
-        {
-            "qualified_dates": sorted(set(str(d) for d in data.get("qualified_dates", []) if str(d))),
-            "used_dates": sorted(set(str(d) for d in data.get("used_dates", []) if str(d))),
-            "granted": max(0, int(data.get("granted") or 0)),
-        },
-    )
-
-
-def status(user_id: int) -> dict[str, Any]:
-    data = _load(user_id)
-    qualified = data["qualified_dates"]
-    used = data["used_dates"]
-    granted = int(data["granted"])
-    earned = len(qualified) // QUALIFYING_DAYS_PER_REWARD
-    spent = len(used)
-    available = max(0, earned + granted - spent)
-    day = bible_store.load_day(user_id)
+def _map_status(reply: dict[str, Any], *, active_today: bool) -> dict[str, Any]:
+    qualified = int(reply.get("qualified_days") or 0)
+    earned = int(reply.get("reward_earned") or (qualified // QUALIFYING_DAYS_PER_REWARD))
+    granted = int(reply.get("reward_granted") or 0)
+    spent = int(reply.get("reward_spent") or 0)
+    available = int(reply.get("reward_available") or max(0, earned + granted - spent))
+    to_next = int(reply.get("days_to_next_reward") or (QUALIFYING_DAYS_PER_REWARD - (qualified % 4)))
     return {
-        "qualifying_days": len(qualified),
+        "qualifying_days": qualified,
         "qualifying_days_per_reward": QUALIFYING_DAYS_PER_REWARD,
-        "days_to_next_reward": QUALIFYING_DAYS_PER_REWARD
-        - (len(qualified) % QUALIFYING_DAYS_PER_REWARD),
+        "days_to_next_reward": to_next,
         "earned": earned,
         "granted": granted,
         "spent": spent,
         "available": available,
-        "active_today": bool(day.get("reward_day")),
+        "active_today": active_today,
         "confirm_phrase": CONFIRM_PHRASE,
     }
 
 
+def status(user_id: int) -> dict[str, Any]:
+    from backend.behavior.enforcer_gateway import GatewayUnavailable, gateway_call
+
+    day = bible_store.load_day(user_id)
+    active = bool(day.get("reward_day"))
+    try:
+        reply = gateway_call("reward.status")
+    except GatewayUnavailable:
+        return {
+            "qualifying_days": 0,
+            "qualifying_days_per_reward": QUALIFYING_DAYS_PER_REWARD,
+            "days_to_next_reward": QUALIFYING_DAYS_PER_REWARD,
+            "earned": 0,
+            "granted": 0,
+            "spent": 0,
+            "available": 0,
+            "active_today": active,
+            "confirm_phrase": CONFIRM_PHRASE,
+            "gateway_unavailable": True,
+        }
+    return _map_status(reply, active_today=active)
+
+
 def grant_credits(user_id: int, count: int = 3) -> dict[str, Any]:
     """Bank bonus reward-day credits (does not invent qualifying history)."""
+    from backend.behavior.enforcer_gateway import GatewayUnavailable, gateway_call
+
     n = int(count)
     if n <= 0:
         raise ValueError("count must be positive")
-    data = _load(user_id)
-    data["granted"] = int(data["granted"]) + n
-    _save(user_id, data)
+    try:
+        reply = gateway_call("reward.grant_credits", {"count": n})
+    except GatewayUnavailable as exc:
+        raise ValueError("Enforcer is not running — start CALT Desktop Enforcer") from exc
+    if not reply.get("ok"):
+        raise ValueError(str(reply.get("error") or "gateway_refused"))
     return status(user_id)
 
 
 def record_qualifying_day(user_id: int, *, qualified: bool) -> dict[str, Any]:
-    """Idempotently record today's completed day; never count reward days."""
+    """Idempotently record today's completed day; never count reward days.
+
+    Decision stays in distraction_gate; enforcer owns the credit ledger (P5a)
+    and earn-minute events (chapter_done / daily_goal).
+    """
+    from backend.behavior.enforcer_gateway import GatewayUnavailable, gateway_call
+
     if not qualified or bible_store.load_day(user_id).get("reward_day"):
         return status(user_id)
-    data = _load(user_id)
-    today = _today()
-    if today not in data["qualified_dates"]:
-        data["qualified_dates"].append(today)
-        data["qualified_dates"].sort()
-        _save(user_id, data)
+    try:
+        gateway_call("reward.mark_qualified", {})
+        gateway_call("day.mark_event", {"event": "chapter_done"})
+        # daily_goal earn minutes — best-effort; already-recorded is fine
+        gateway_call("day.mark_event", {"event": "daily_goal"})
+    except GatewayUnavailable as exc:
+        logger.warning("record_qualifying_day gateway unavailable: %s", exc)
     return status(user_id)
 
 
-def _sync_reward_day_to_softland_policy() -> None:
-    """Native SoftLand reads softland_policy.json — keep reward day in sync."""
-    from datetime import timedelta
-
-    from backend.behavior.softland_policy import patch_softland_policy
-
-    now = datetime.now(local_tz())
-    end = now.replace(hour=23, minute=59, second=59, microsecond=0)
-    if end <= now:
-        end = now + timedelta(minutes=60)
-    patch_softland_policy(
-        {
-            "runtime": {
-                "reward_day_active": True,
-                "free_until": end.isoformat(),
-            }
-        }
-    )
-
-
 def claim_reward_day(user_id: int, *, confirm: str, already_unlocked: bool) -> dict[str, Any]:
-    if (confirm or "").strip().upper() != CONFIRM_PHRASE:
-        raise ValueError(f"Type {CONFIRM_PHRASE} to use an earned reward day")
+    from backend.behavior.enforcer_gateway import GatewayUnavailable, gateway_call
+
     day = bible_store.load_day(user_id)
     if day.get("reward_day"):
-        # Re-sync even on idempotent claim (prior SoftLand write may have been skipped).
-        try:
-            _sync_reward_day_to_softland_policy()
-        except Exception as exc:
-            logger.warning("reward_day SoftLand policy sync failed (already active): %s", exc)
         return {**status(user_id), "ok": True, "message": "Reward day is already active until midnight"}
+
+    # Spec §1 sharp edge 8: refuse organic unlock days at the Python edge until
+    # P5c teaches the enforcer day_unlocked. Enforcer's already_unlocked means
+    # reward_day_active only.
     if already_unlocked:
         raise ValueError("Today is already unlocked; save the reward day for another day")
 
-    current = status(user_id)
-    if int(current["available"]) <= 0:
-        raise ValueError(
-            f"Complete {current['days_to_next_reward']} more qualifying day(s) to earn a reward day"
-        )
+    try:
+        reply = gateway_call("reward.claim", {"confirm": confirm})
+    except GatewayUnavailable as exc:
+        raise ValueError("Enforcer is not running — start CALT Desktop Enforcer") from exc
 
-    data = _load(user_id)
-    data["used_dates"].append(_today())
-    data["used_dates"] = sorted(set(data["used_dates"]))
-    _save(user_id, data)
+    if not reply.get("ok"):
+        err = str(reply.get("error") or "gateway_refused")
+        if err == "confirm_required":
+            raise ValueError(f"Type {CONFIRM_PHRASE} to use an earned reward day")
+        if err == "no_reward_available":
+            cur = status(user_id)
+            raise ValueError(
+                f"Complete {cur['days_to_next_reward']} more qualifying day(s) to earn a reward day"
+            )
+        if err == "already_unlocked":
+            raise ValueError("Reward day is already active until midnight")
+        raise ValueError(err)
+
     day["reward_day"] = True
     bible_store.save_day(user_id, day)
-    # Solo-pack: native SoftLand reads softland_policy.json (not Bible JSON).
-    # Without this, Gate prefers get_mode and still blocks YouTube on reward day.
-    try:
-        _sync_reward_day_to_softland_policy()
-    except Exception as exc:
-        logger.warning("reward_day SoftLand policy sync failed: %s", exc)
-    # Belt-and-suspenders: also arm tray free-override until midnight so the
-    # browser gate resolves mode=free even if clients cache poorly.
-    try:
-        from datetime import timedelta
-
-        from backend.behavior.browser_gate_policy import set_free_override
-
-        now = datetime.now(local_tz())
-        end = now.replace(hour=23, minute=59, second=59, microsecond=0)
-        if end <= now:
-            end = now + timedelta(minutes=60)
-        mins = max(5, int((end - now).total_seconds() // 60))
-        set_free_override(minutes=mins, now=now)
-    except Exception as exc:
-        logger.warning("reward_day free-override arm failed: %s", exc)
     return {**status(user_id), "ok": True, "message": "Reward day active — free mode until midnight"}

@@ -1,41 +1,43 @@
-"""Weekly Bible day-pass quota."""
+"""Weekly Bible day-pass quota — enforced by calt_enforcer gateway."""
 
 from backend.bible import store
 
 
-def test_day_pass_requires_confirm(tmp_path, monkeypatch):
-    monkeypatch.setattr(store, "bible_dir", lambda: tmp_path)
-    monkeypatch.setattr(store, "_day_key", lambda: "2026-07-22")
-    monkeypatch.setattr(store, "_week_monday_key", lambda: "2026-07-20")
+def test_request_day_pass_goes_through_gateway(monkeypatch):
+    calls = []
 
+    def fake_call(op, payload=None, **kw):
+        calls.append((op, payload))
+        return {"ok": True, "passes_limit": 2, "passes_used": 1, "pass_today": True}
+
+    monkeypatch.setattr("backend.behavior.enforcer_gateway.gateway_call", fake_call)
+    monkeypatch.setattr(store, "load_day", lambda _uid: {"day_pass": False, "game_consumed_seconds": 0})
+    monkeypatch.setattr(store, "save_day", lambda _uid, _day: None)
+    monkeypatch.setattr(store, "summary", lambda _uid: {"day_pass": True})
+
+    out = store.request_day_pass(1, confirm="PASS")
+    assert out["ok"] is True
+    assert calls[0] == ("day.grant_pass", {"confirm": "PASS"})
+    assert any(op == "day.status" for op, _ in calls)
+
+
+def test_day_pass_requires_confirm(monkeypatch):
+    def fake_call(op, payload=None, **kw):
+        return {"ok": False, "error": "confirm_required"}
+
+    monkeypatch.setattr("backend.behavior.enforcer_gateway.gateway_call", fake_call)
     try:
         store.request_day_pass(1, confirm="nope")
         assert False, "expected ValueError"
-    except ValueError:
-        pass
+    except ValueError as e:
+        assert "PASS" in str(e)
 
 
-def test_day_pass_quota(tmp_path, monkeypatch):
-    monkeypatch.setattr(store, "bible_dir", lambda: tmp_path)
-    monkeypatch.setattr(store, "DAY_PASSES_PER_WEEK", 2)
+def test_day_pass_quota(monkeypatch):
+    def fake_call(op, payload=None, **kw):
+        return {"ok": False, "error": "pass_quota_exhausted"}
 
-    days = ["2026-07-20", "2026-07-21", "2026-07-22"]
-
-    def set_day(d: str):
-        monkeypatch.setattr(store, "_day_key", lambda: d)
-        monkeypatch.setattr(store, "_week_monday_key", lambda: "2026-07-20")
-
-    set_day(days[0])
-    out = store.request_day_pass(1, confirm="PASS")
-    assert out["day_pass"] is True
-    assert out["day_pass_status"]["used"] == 1
-    assert out["day_pass_status"]["remaining"] == 1
-
-    set_day(days[1])
-    out2 = store.request_day_pass(1, confirm="PASS")
-    assert out2["day_pass_status"]["remaining"] == 0
-
-    set_day(days[2])
+    monkeypatch.setattr("backend.behavior.enforcer_gateway.gateway_call", fake_call)
     try:
         store.request_day_pass(1, confirm="PASS")
         assert False, "expected quota error"

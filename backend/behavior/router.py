@@ -437,7 +437,7 @@ def _browser_stats_from_tracked_sessions(db: Session, user_ids: list[int], day: 
         db.query(TrackedSession)
         .filter(
             TrackedSession.user_id.in_(user_ids),
-            TrackedSession.source.in_(("desktop_tracker", "extension")),
+            TrackedSession.source.in_(("desktop_tracker", "extension", "selftracker")),
             TrackedSession.start_time >= start,
             TrackedSession.start_time < end,
         )
@@ -560,7 +560,9 @@ def _desktop_stats_from_tracked_sessions(
         db.query(TrackedSession)
         .filter(
             TrackedSession.user_id.in_(user_ids),
-            TrackedSession.source.in_(("desktop_tracker", "extension", "calt_spa")),
+            TrackedSession.source.in_(
+                ("desktop_tracker", "extension", "selftracker", "calt_spa")
+            ),
             TrackedSession.start_time >= start,
             TrackedSession.start_time < end,
         )
@@ -788,7 +790,9 @@ def behavior_activities(
         db.query(TrackedSession)
         .filter(
             TrackedSession.user_id.in_(user_ids),
-            TrackedSession.source.in_(("desktop_tracker", "extension", "calt_spa")),
+            TrackedSession.source.in_(
+                ("desktop_tracker", "extension", "selftracker", "calt_spa")
+            ),
             TrackedSession.start_time >= start,
             TrackedSession.start_time < end,
         )
@@ -959,7 +963,9 @@ def focus_quality(
         db.query(TrackedSession)
         .filter(
             TrackedSession.user_id.in_(user_ids),
-            TrackedSession.source.in_(("desktop_tracker", "extension", "calt_spa")),
+            TrackedSession.source.in_(
+                ("desktop_tracker", "extension", "selftracker", "calt_spa")
+            ),
             TrackedSession.start_time >= start,
             TrackedSession.start_time < end,
         )
@@ -1065,7 +1071,9 @@ def desktop_timeline(
         db.query(TrackedSession)
         .filter(
             TrackedSession.user_id.in_(user_ids),
-            TrackedSession.source.in_(("desktop_tracker", "extension", "calt_spa")),
+            TrackedSession.source.in_(
+                ("desktop_tracker", "extension", "selftracker", "calt_spa")
+            ),
             TrackedSession.start_time >= start,
             TrackedSession.start_time < end,
         )

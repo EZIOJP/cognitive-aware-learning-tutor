@@ -1,5 +1,6 @@
 #include "win_service.h"
 #include "cmd_gateway.h"
+#include "day_rollup.h"
 #include "focus_watchdog.h"
 #include "kill.h"
 #include "owner_lock.h"
@@ -113,14 +114,23 @@ int RunEnforcerLoop(const std::wstring& dbPath, const std::wstring& lockPath, vo
   SessionTracker sessions(dbPath);
   DWORD lastBeat = GetTickCount();
   DWORD lastStatus = 0;
+  DWORD lastRollup = 0;
   const DWORD kPollMs = 1500;
   const DWORD kStatusMs = 2500;
   const DWORD kLockRefreshMs = 5000;
+  const DWORD kRollupMs = 15000;
 
   const std::wstring behaviorDir = ProductivityBehaviorDirFromDb(dbPath);
   const std::wstring softlandPath = behaviorDir + L"\\softland_policy.json";
   ProductivityStoreOpen(dbPath);
   ProductivityMigrateAndImport(softlandPath);
+  {
+    // One-time Bible JSON → SQLite unlock history (idempotent if tables already filled).
+    std::wstring dataDir = behaviorDir;
+    size_t slash = dataDir.find_last_of(L"\\/");
+    if (slash != std::wstring::npos) dataDir = dataDir.substr(0, slash);
+    ProductivityImportLegacyUnlockHistory(dataDir);
+  }
   {
     ProductivitySoftland s;
     if (ProductivityLoadSoftland(s)) {
@@ -141,8 +151,11 @@ int RunEnforcerLoop(const std::wstring& dbPath, const std::wstring& lockPath, vo
     TickFocusWatchdog(snap.armed, softland, gFocusWatch);
     TickSoftlandClocks(behaviorDir);
     CmdGatewayPoll(behaviorDir);
-
     DWORD now = GetTickCount();
+    if (lastRollup == 0 || now - lastRollup >= kRollupMs) {
+      TickDayRollup(dbPath, behaviorDir);
+      lastRollup = now;
+    }
     if (now - lastBeat > kLockRefreshMs) {
       RefreshOwnerLock(lockPath);
       lastBeat = now;

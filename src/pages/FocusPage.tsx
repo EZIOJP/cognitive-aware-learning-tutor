@@ -1,10 +1,11 @@
-import FocusControlPanel from "../components/productivity/FocusControlPanel";
+import { Navigate } from "react-router";
 
-/** Web-only Focus control (no PySide6). */
+/** Focus page retired — live SoftLand / Arm live on Settings → Overview. */
 export default function FocusPage() {
   return (
-    <div className="mx-auto max-w-3xl px-4 py-6">
-      <FocusControlPanel />
-    </div>
+    <Navigate
+      to={{ pathname: "/productivity", search: "?tab=settings&section=overview" }}
+      replace
+    />
   );
 }

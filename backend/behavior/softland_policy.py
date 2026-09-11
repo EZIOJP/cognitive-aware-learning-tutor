@@ -1,4 +1,4 @@
-"""SoftLand policy store — Phase 2 SoT at data/behavior/softland_policy.json.
+"""SoftLand policy store — Phase 2 SoT at data/productivity/behavior/softland_policy.json.
 
 C++ Productivity owns this file long-term. Python writers/migrator land first.
 Never sets hard_block_armed. SoftLand decide in C++ is out of scope here.
@@ -13,11 +13,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from backend.paths import ROOT
+from backend.paths import BEHAVIOR_DIR
 
-_PATH = ROOT / "data" / "behavior" / "softland_policy.json"
-_LEGACY_SITE = ROOT / "data" / "behavior" / "softland_site_rules.json"
-_LEGACY_SCHEDULES = ROOT / "data" / "behavior" / "gate_schedules.json"
+_PATH = BEHAVIOR_DIR / "softland_policy.json"
+_LEGACY_SITE = BEHAVIOR_DIR / "softland_site_rules.json"
+_LEGACY_SCHEDULES = BEHAVIOR_DIR / "gate_schedules.json"
 
 _HOST_RE = re.compile(r"^[a-z0-9]([a-z0-9.-]*[a-z0-9])?\.[a-z]{2,}$", re.I)
 

@@ -1,6 +1,35 @@
 import { resolveApiUrl } from "../utils/resolveBackendUrl";
+import { enforcerNativeCmd, isFocusEnforcerBridgeAvailable } from "../lib/enforcerNativeCmd";
+import { isFocusDesktopShell } from "../utils/focusDesktopShell";
 
 const TOKEN_KEY = "vocab:auth-token";
+
+/** Focus sole Productivity door — plan mutations go through the enforcer pipe. */
+function planTransport(): "gateway" | "http" {
+  if (!isFocusDesktopShell()) return "http";
+  if (!isFocusEnforcerBridgeAvailable()) {
+    throw new Error("enforcer_unreachable");
+  }
+  return "gateway";
+}
+
+/** Study-HTTP-only features: fail fast in Focus (no hung :8000 fetch). */
+function focusNeedsStudyApi(feature: string): never {
+  throw new Error(
+    `${feature} needs Study API (tray → Start API) — not available offline in Focus yet`,
+  );
+}
+
+async function planGateway(
+  op: string,
+  payload: Record<string, unknown> = {},
+  timeoutMs = 8000,
+): Promise<Record<string, unknown>> {
+  const res = await enforcerNativeCmd(op, payload, timeoutMs);
+  if (!res) throw new Error("enforcer_unreachable");
+  if (res.ok === false) throw new Error(String(res.error || "enforcer_cmd_failed"));
+  return res as Record<string, unknown>;
+}
 
 function authHeaders(): HeadersInit {
   const headers: Record<string, string> = { "Content-Type": "application/json" };
@@ -73,6 +102,13 @@ export interface AdherenceSummary {
 }
 
 export async function fetchPlannerBlocks(from: Date, to: Date): Promise<PlannerBlock[]> {
+  if (planTransport() === "gateway") {
+    const res = await planGateway("plan.list", {
+      from: from.toISOString(),
+      to: to.toISOString(),
+    });
+    return (res.blocks as PlannerBlock[]) ?? [];
+  }
   const params = new URLSearchParams({
     from: from.toISOString(),
     to: to.toISOString(),
@@ -91,6 +127,10 @@ export async function createPlannerBlock(body: {
   end_at?: string;
   color?: string;
 }): Promise<PlannerBlock> {
+  if (planTransport() === "gateway") {
+    const res = await planGateway("plan.upsert", { ...body });
+    return res.block as PlannerBlock;
+  }
   const res = await fetch(resolveApiUrl("/api/planner/blocks"), {
     method: "POST",
     headers: authHeaders(),
@@ -114,6 +154,10 @@ export async function updatePlannerBlock(
     status: PlannerBlockStatus;
   }>,
 ): Promise<PlannerBlock> {
+  if (planTransport() === "gateway") {
+    const res = await planGateway("plan.upsert", { id, ...body });
+    return res.block as PlannerBlock;
+  }
   const res = await fetch(resolveApiUrl(`/api/planner/blocks/${id}`), {
     method: "PATCH",
     headers: authHeaders(),
@@ -125,6 +169,10 @@ export async function updatePlannerBlock(
 }
 
 export async function deletePlannerBlock(id: number): Promise<void> {
+  if (planTransport() === "gateway") {
+    await planGateway("plan.delete", { id });
+    return;
+  }
   const res = await fetch(resolveApiUrl(`/api/planner/blocks/${id}`), {
     method: "DELETE",
     headers: authHeaders(),
@@ -133,6 +181,10 @@ export async function deletePlannerBlock(id: number): Promise<void> {
 }
 
 export async function startPlannerBlock(id: number): Promise<PlannerBlock> {
+  if (planTransport() === "gateway") {
+    const res = await planGateway("plan.start", { id });
+    return res.block as PlannerBlock;
+  }
   const res = await fetch(resolveApiUrl(`/api/planner/blocks/${id}/start`), {
     method: "POST",
     headers: authHeaders(),
@@ -146,6 +198,12 @@ export async function completePlannerBlock(
   id: number,
   minutes_spent?: number,
 ): Promise<PlannerBlock> {
+  if (planTransport() === "gateway") {
+    const payload: Record<string, unknown> = { id };
+    if (typeof minutes_spent === "number") payload.minutes_spent = minutes_spent;
+    const res = await planGateway("plan.complete", payload);
+    return res.block as PlannerBlock;
+  }
   const res = await fetch(resolveApiUrl(`/api/planner/blocks/${id}/complete`), {
     method: "POST",
     headers: authHeaders(),
@@ -160,6 +218,15 @@ export async function rollForwardPlannerBlock(
   id: number,
   new_start?: string,
 ): Promise<{ rolled_block: PlannerBlock; new_block: PlannerBlock }> {
+  if (planTransport() === "gateway") {
+    const payload: Record<string, unknown> = { id };
+    if (new_start) payload.new_start = new_start;
+    const res = await planGateway("plan.roll_forward", payload);
+    return {
+      rolled_block: res.rolled_block as PlannerBlock,
+      new_block: (res.new_block as PlannerBlock) ?? (res.rolled_block as PlannerBlock),
+    };
+  }
   const res = await fetch(resolveApiUrl(`/api/planner/blocks/${id}/roll-forward`), {
     method: "POST",
     headers: authHeaders(),
@@ -175,6 +242,17 @@ export async function fetchActualOverlay(from: Date, to: Date): Promise<ActualSe
 }
 
 export async function fetchActualOverlayFull(from: Date, to: Date): Promise<ActualOverlayPayload> {
+  if (planTransport() === "gateway") {
+    const res = await planGateway("plan.overlay", {
+      from: from.toISOString(),
+      to: to.toISOString(),
+    });
+    const overlay = (res.overlay as ActualOverlayPayload) || { sessions: [], hour_slices: [] };
+    return {
+      sessions: overlay.sessions ?? [],
+      hour_slices: overlay.hour_slices ?? [],
+    };
+  }
   const params = new URLSearchParams({
     from: from.toISOString(),
     to: to.toISOString(),
@@ -191,6 +269,22 @@ export async function fetchActualOverlayFull(from: Date, to: Date): Promise<Actu
 }
 
 export async function fetchAdherence(day: Date): Promise<AdherenceSummary> {
+  if (planTransport() === "gateway") {
+    const y = day.getFullYear();
+    const m = String(day.getMonth() + 1).padStart(2, "0");
+    const d = String(day.getDate()).padStart(2, "0");
+    const res = await planGateway("plan.adherence", { day: `${y}-${m}-${d}` });
+    return (res.adherence as AdherenceSummary) ?? {
+      day: `${y}-${m}-${d}`,
+      planned_minutes: 0,
+      actual_minutes: 0,
+      productive_minutes: 0,
+      effective_focus_minutes: 0,
+      adherence_pct: null,
+      block_count: 0,
+      session_count: 0,
+    };
+  }
   const params = new URLSearchParams({ day: day.toISOString() });
   const res = await fetch(resolveApiUrl(`/api/planner/adherence?${params}`), {
     headers: authHeaders(),
@@ -212,6 +306,7 @@ export async function fetchAdherenceRange(days = 7, end?: Date): Promise<Adheren
 }
 
 export async function generateWeekFromTimetable(timetableId?: number): Promise<{ created: number }> {
+  if (isFocusDesktopShell()) focusNeedsStudyApi("Generate week from timetable");
   const res = await fetch(resolveApiUrl("/api/planner/generate-week"), {
     method: "POST",
     headers: authHeaders(),
@@ -235,6 +330,10 @@ export interface PlannerRoutine {
 }
 
 export async function fetchRoutines(): Promise<PlannerRoutine[]> {
+  if (planTransport() === "gateway") {
+    const res = await planGateway("routine.list", {});
+    return (res.routines as PlannerRoutine[]) ?? [];
+  }
   const res = await fetch(resolveApiUrl("/api/planner/routines"), { headers: authHeaders() });
   if (!res.ok) throw new Error(await res.text());
   const data = (await res.json()) as { routines: PlannerRoutine[] };
@@ -242,6 +341,7 @@ export async function fetchRoutines(): Promise<PlannerRoutine[]> {
 }
 
 export async function seedDefaultRoutines(): Promise<PlannerRoutine[]> {
+  if (isFocusDesktopShell()) focusNeedsStudyApi("Seed default routines");
   const res = await fetch(resolveApiUrl("/api/planner/routines/seed-defaults"), {
     method: "POST",
     headers: authHeaders(),
@@ -259,6 +359,10 @@ export async function createRoutine(body: {
   days?: string[];
   color?: string;
 }): Promise<PlannerRoutine> {
+  if (planTransport() === "gateway") {
+    const res = await planGateway("routine.upsert", { ...body });
+    return res.routine as PlannerRoutine;
+  }
   const res = await fetch(resolveApiUrl("/api/planner/routines"), {
     method: "POST",
     headers: authHeaders(),
@@ -283,6 +387,10 @@ export async function updateRoutine(
     sort_order: number;
   }>,
 ): Promise<PlannerRoutine> {
+  if (planTransport() === "gateway") {
+    const res = await planGateway("routine.upsert", { id, ...body });
+    return res.routine as PlannerRoutine;
+  }
   const res = await fetch(resolveApiUrl(`/api/planner/routines/${id}`), {
     method: "PATCH",
     headers: authHeaders(),
@@ -294,6 +402,10 @@ export async function updateRoutine(
 }
 
 export async function deleteRoutine(id: number): Promise<void> {
+  if (planTransport() === "gateway") {
+    await planGateway("routine.delete", { id });
+    return;
+  }
   const res = await fetch(resolveApiUrl(`/api/planner/routines/${id}`), {
     method: "DELETE",
     headers: authHeaders(),
@@ -302,6 +414,13 @@ export async function deleteRoutine(id: number): Promise<void> {
 }
 
 export async function applyRoutines(date?: string): Promise<{ created: number }> {
+  if (planTransport() === "gateway") {
+    const res = await planGateway("routine.apply", {
+      date: date ?? null,
+      skip_overlaps: true,
+    });
+    return { created: Number(res.created ?? 0) };
+  }
   let res: Response;
   try {
     res = await fetch(resolveApiUrl("/api/planner/routines/apply"), {
@@ -325,6 +444,10 @@ export async function autoApplyRoutinesToday(): Promise<{
   skipped: boolean;
   date?: string;
 }> {
+  if (planTransport() === "gateway") {
+    const res = await planGateway("routine.apply", { skip_overlaps: true });
+    return { created: Number(res.created ?? 0), skipped: false };
+  }
   const res = await fetch(resolveApiUrl("/api/planner/routines/auto-apply-today"), {
     method: "POST",
     headers: authHeaders(),
@@ -481,6 +604,7 @@ export async function proposeWeekFromExport(body?: {
   scaled_daily_hours?: number;
   stated_daily_hours?: number;
 }> {
+  if (isFocusDesktopShell()) focusNeedsStudyApi("Propose week (LLM/rules)");
   let res: Response;
   try {
     res = await fetch(resolveApiUrl("/api/planner/propose-from-export"), {
@@ -644,6 +768,7 @@ export type GoogleCalendarStatus = {
 };
 
 export async function fetchGoogleCalendarStatus(): Promise<GoogleCalendarStatus> {
+  if (isFocusDesktopShell()) focusNeedsStudyApi("Google Calendar (sidecar)");
   const res = await fetch(resolveApiUrl("/api/planner/google-calendar/status"), {
     headers: authHeaders(),
   });

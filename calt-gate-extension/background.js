@@ -609,57 +609,50 @@ async function softLandBlockedTab(tabId, spaUrl, meta) {
 }
 
 async function softlandNativeGetMode(url) {
-  // Prod P3: Gate → com.calt.msg_host → C++ SoftLand (softland_policy.json).
-  // Set storage caltSoftlandHttpFallback=true to skip native and use HTTP path only.
+  // SoftLand decide: Gate → com.calt.msg_host → C++ only (no Study :8000 HTTP).
   return new Promise(function (resolve) {
     try {
-      extAPI.storage.local.get(["caltSoftlandHttpFallback"], function (st) {
-        if (st && st.caltSoftlandHttpFallback) {
-          resolve(null);
-          return;
-        }
-        if (!extAPI.runtime || typeof extAPI.runtime.connectNative !== "function") {
-          resolve(null);
-          return;
-        }
-        var port;
+      if (!extAPI.runtime || typeof extAPI.runtime.connectNative !== "function") {
+        resolve(null);
+        return;
+      }
+      var port;
+      try {
+        port = extAPI.runtime.connectNative("com.calt.msg_host");
+      } catch (e) {
+        resolve(null);
+        return;
+      }
+      var done = false;
+      var timer = setTimeout(function () {
+        if (done) return;
+        done = true;
         try {
-          port = extAPI.runtime.connectNative("com.calt.msg_host");
-        } catch (e) {
-          resolve(null);
-          return;
-        }
-        var done = false;
-        var timer = setTimeout(function () {
-          if (done) return;
-          done = true;
-          try {
-            port.disconnect();
-          } catch (e2) {}
-          resolve(null);
-        }, 900);
-        port.onMessage.addListener(function (msg) {
-          if (done) return;
-          done = true;
-          clearTimeout(timer);
-          try {
-            port.disconnect();
-          } catch (e3) {}
-          resolve(msg && typeof msg === "object" ? msg : null);
-        });
-        port.onDisconnect.addListener(function () {
-          if (done) return;
-          done = true;
-          clearTimeout(timer);
-          resolve(null);
-        });
-        port.postMessage({
-          type: "get_mode",
-          schema_version: 1,
-          url: String(url || ""),
-          tab_id: null,
-          now: null,
-        });
+          port.disconnect();
+        } catch (e2) {}
+        resolve(null);
+      }, 900);
+      port.onMessage.addListener(function (msg) {
+        if (done) return;
+        done = true;
+        clearTimeout(timer);
+        try {
+          port.disconnect();
+        } catch (e3) {}
+        resolve(msg && typeof msg === "object" ? msg : null);
+      });
+      port.onDisconnect.addListener(function () {
+        if (done) return;
+        done = true;
+        clearTimeout(timer);
+        resolve(null);
+      });
+      port.postMessage({
+        type: "get_mode",
+        schema_version: 1,
+        url: String(url || ""),
+        tab_id: null,
+        now: null,
       });
     } catch (e) {
       resolve(null);
@@ -683,7 +676,7 @@ async function maybeRedirectTab(tabId, url, title) {
     return false;
   }
 
-  // Prefer native SoftLand decide (works with uvicorn stopped).
+  // Native SoftLand only — if msg_host fails, fail-closed (no SoftLand redirect).
   var native = await softlandNativeGetMode(url);
   if (native && native.ok !== false && native.action) {
     if (native.action === "allow" || native.action === "none") return false;
@@ -698,45 +691,8 @@ async function maybeRedirectTab(tabId, url, title) {
         until: native.until || "",
       });
     }
-    return false;
   }
-
-  // Prod P4: SoftLand HTTP :8000 fallback is opt-in debug only (caltSoftlandHttpFallback=true).
-  var allowHttpFallback = await new Promise(function (resolve) {
-    try {
-      extAPI.storage.local.get(["caltSoftlandHttpFallback"], function (st) {
-        resolve(!!(st && st.caltSoftlandHttpFallback));
-      });
-    } catch (e) {
-      resolve(false);
-    }
-  });
-  if (!allowHttpFallback) {
-    return false;
-  }
-
-  // HTTP fallback (debug) when native host missing / failed AND flag set.
-  var gc = gateCacheForBlockCheck();
-  if (!gc || (!gc.ok && !gc.degraded)) return false;
-  if (!shouldBlockUrl(url, gc, title || "")) return false;
-
-  var kind = typeof blockKindForUrl === "function" ? blockKindForUrl(url, gc, title || "") : "blocked";
-  reportGateAlert(kind, url.slice(0, 120));
-  var spa = redirectTargetUrl(gc, lockedPageUrlForBlocked(url, kind));
-  if (spa && spa.indexOf("locked.html") >= 0) {
-    var next = (gc.morning && gc.morning.next) || "";
-    var mode = String((gc.browser && gc.browser.mode) || "").toLowerCase();
-    if (next === "bible" || mode === "bible") {
-      spa = (gc.browser && gc.browser.bible_url) || CALT_BIBLE_URL;
-    } else if (next === "plan" || mode === "planning") {
-      spa = (gc.browser && gc.browser.plan_url) || CALT_PRODUCTIVITY_URL;
-    } else {
-      spa = lockedPageUrlForBlocked(url, kind);
-    }
-  } else if (!spa) {
-    spa = lockedPageUrlForBlocked(url, kind);
-  }
-  return softLandBlockedTab(tabId, spa, { fromUrl: url, kind: kind, host: host });
+  return false;
 }
 
 if (extAPI.webNavigation && extAPI.webNavigation.onCommitted) {

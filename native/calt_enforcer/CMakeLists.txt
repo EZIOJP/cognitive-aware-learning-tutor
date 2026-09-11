@@ -26,6 +26,9 @@ add_executable(calt_enforcer
   src/softland_publish.cpp
   src/softland_tick.cpp
   src/cmd_gateway.cpp
+  src/day_rollup.cpp
+  src/plan_gate.cpp
+  src/life_content.cpp
   ${SQLITE_DIR}/sqlite3.c
 )
 target_include_directories(calt_enforcer PRIVATE src ${SQLITE_DIR})

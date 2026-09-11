@@ -6,6 +6,44 @@ import {
   type SoftLandSiteRules,
 } from "../../api/behaviorClient";
 import { enforcerNativeCmd, isFocusEnforcerBridgeAvailable } from "../../lib/enforcerNativeCmd";
+import { isFocusDesktopShell } from "../../utils/focusDesktopShell";
+import { focusDataUrl } from "../../utils/focusDataUrl";
+
+const EMPTY_RULES: SoftLandSiteRules = {
+  allow_extra: [],
+  watch_extra: [],
+  block_extra: [],
+};
+
+function asStringList(v: unknown): string[] {
+  if (!Array.isArray(v)) return [];
+  return v.map((x) => String(x || "").trim().toLowerCase()).filter(Boolean);
+}
+
+async function loadSiteRules(): Promise<SoftLandSiteRules> {
+  if (isFocusDesktopShell()) {
+    try {
+      const r = await fetch(focusDataUrl("softland_policy.json"), { cache: "no-store" });
+      if (r.ok) {
+        const j = (await r.json()) as {
+          site_rules?: Partial<SoftLandSiteRules>;
+          allow_extra?: string[];
+          watch_extra?: string[];
+          block_extra?: string[];
+        };
+        const sr = j.site_rules || j;
+        return {
+          allow_extra: asStringList(sr.allow_extra),
+          watch_extra: asStringList(sr.watch_extra),
+          block_extra: asStringList(sr.block_extra),
+        };
+      }
+    } catch {
+      /* fall through to Study API when available */
+    }
+  }
+  return fetchSoftLandSiteRules();
+}
 
 type ListKey = "allow_extra" | "watch_extra" | "block_extra";
 
@@ -51,9 +89,18 @@ export function SoftLandSiteRulesPanel() {
 
   const load = useCallback(async () => {
     try {
-      setData(await fetchSoftLandSiteRules());
+      setData(await loadSiteRules());
       setError(null);
     } catch (e: unknown) {
+      if (isFocusDesktopShell()) {
+        setData(EMPTY_RULES);
+        setError(
+          e instanceof Error
+            ? e.message
+            : "Could not load SoftLand lists — start calt_enforcer or check /calt-data/softland_policy.json",
+        );
+        return;
+      }
       setError(e instanceof Error ? e.message : "Failed to load site rules");
     }
   }, []);
@@ -99,6 +146,12 @@ export function SoftLandSiteRulesPanel() {
           setTimeout(() => setSaved(false), 2500);
           return;
         }
+        throw new Error("Enforcer gateway rejected SoftLand site rules");
+      }
+      if (isFocusDesktopShell()) {
+        throw new Error(
+          "SoftLand saves need calt_focus.exe (enforcer pipe). Design host :5180 is read-only for lists.",
+        );
       }
       setData(await saveSoftLandSiteRules(data));
       setVia("API");

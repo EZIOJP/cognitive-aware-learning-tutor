@@ -77,3 +77,16 @@ def _no_desktop_popups(monkeypatch):
         "backend.behavior.tracker_block_gui.show_extension_redirect_notice",
     ):
         monkeypatch.setattr(target, lambda *a, **k: None)
+
+
+@pytest.fixture(autouse=True)
+def _isolate_day_rollup(tmp_path, monkeypatch):
+    """P5c: do not read the live enforcer day_rollup.json during unit tests.
+
+    Opt in by writing a fixture file and monkeypatching
+    ``backend.behavior.day_rollup._PATH`` (or calling helpers with ``path=``).
+    """
+    monkeypatch.setattr(
+        "backend.behavior.day_rollup._PATH",
+        tmp_path / "missing_day_rollup.json",
+    )

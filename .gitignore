@@ -85,6 +85,7 @@ data/bible/reader_*.json
 data/bible/reward_days_*.json
 data/bible/*.pdf
 data/behavior/
+data/productivity/
 data/browser_calt_tab_command.json
 data/downloads/
 data/exports/

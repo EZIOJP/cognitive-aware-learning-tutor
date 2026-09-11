@@ -14,6 +14,17 @@ elif _db_legacy.exists():
 else:
     DB_PATH = _db_primary
     _db_primary.parent.mkdir(parents=True, exist_ok=True)
+
+# CALT Productivity tree (Focus / enforcer) — separate from Study vocab_app.db
+PRODUCTIVITY_DIR = ROOT / "data" / "productivity"
+PRODUCTIVITY_DB = PRODUCTIVITY_DIR / "productivity.db"
+_prod_behavior = PRODUCTIVITY_DIR / "behavior"
+_legacy_behavior = ROOT / "data" / "behavior"
+BEHAVIOR_DIR = _prod_behavior if _prod_behavior.is_dir() else _legacy_behavior
+_prod_bible = PRODUCTIVITY_DIR / "bible"
+_legacy_bible = ROOT / "data" / "bible"
+BIBLE_DATA_DIR = _prod_bible if _prod_bible.is_dir() else _legacy_bible
+
 DATA_LOGS_DIR = ROOT / "data_logs"
 ASSETS_DIR = ROOT / "assets"
 PLATE_IMAGES_DIR = ROOT / "data" / "plate_images"

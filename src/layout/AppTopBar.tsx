@@ -1,6 +1,6 @@
 import { useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { useLocation, useNavigate } from "react-router";
-import { CircleUserRound, Shield } from "lucide-react";
+import { BookOpen, CircleUserRound, Shield } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { ThemeToggle } from "../components/theme/ThemeToggle";
 import { useAuth } from "../context/AuthContext";
@@ -8,6 +8,7 @@ import { PomodoroDock } from "./topbar/PomodoroDock";
 import { FaceTrackerDock } from "./topbar/FaceTrackerDock";
 import { DashboardChromeDock } from "./topbar/DashboardChromeDock";
 import { usePluginsOptional } from "../plugins/registry";
+import { isFocusDesktopShell } from "../utils/focusDesktopShell";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,6 +17,20 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "../app/components/ui/dropdown-menu";
+
+/** Study FE (Vite) preferred; API-only hosts can still open docs later. */
+const STUDY_SITE_URL = "http://127.0.0.1:5173/";
+
+function openStudyInBrowser() {
+  const w = window as Window & {
+    chrome?: { webview?: { postMessage: (m: unknown) => void } };
+  };
+  if (w.chrome?.webview?.postMessage) {
+    w.chrome.webview.postMessage({ type: "open_external", v: 1, url: STUDY_SITE_URL });
+    return;
+  }
+  window.open(STUDY_SITE_URL, "_blank", "noopener,noreferrer");
+}
 
 const LONG_PRESS_MS = 600;
 const ROCKET_COLOR = "#fb923c";
@@ -253,6 +268,17 @@ export function AppTopBar() {
         </div>
 
         <div className="relative z-10 flex items-center gap-3">
+          {isFocusDesktopShell() && (
+            <button
+              type="button"
+              onClick={openStudyInBrowser}
+              className="gloss-dock-btn inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium text-foreground/90 hover:scale-[1.02] transition-transform"
+              title="Open CALT Study in your browser"
+            >
+              <BookOpen className="h-3.5 w-3.5" aria-hidden />
+              <span className="hidden sm:inline">Open Study</span>
+            </button>
+          )}
           <DashboardChromeDock />
           {focusMirrorOn && <FaceTrackerDock />}
           <div ref={timerRef} className="inline-flex">

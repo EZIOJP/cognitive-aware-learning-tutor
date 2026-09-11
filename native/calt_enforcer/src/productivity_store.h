@@ -3,6 +3,10 @@
 #include <string>
 #include <vector>
 
+struct sqlite3;
+/** Exposed for life_content.cpp (same process DB handle). */
+extern sqlite3* gDb;
+
 /** SoftLand SoT row — full policy document JSON + extracted clocks for tick. */
 struct ProductivitySoftland {
   int schema_version = 1;
@@ -112,3 +116,49 @@ int ProductivityIncubationStartsSinceIso(const std::string& sinceIso);
 
 /** One-time import of data/bible/reward_days_*.json + day_passes_*.json. */
 void ProductivityImportLegacyUnlockHistory(const std::wstring& dataDir);
+
+// ---------------------------------------------------------------------------
+// Phase 6a — planner SoT (planner_blocks / planner_routines in vocab_app.db).
+// Claims existing Python tables; Focus mutates only via gateway.
+// ---------------------------------------------------------------------------
+
+/** Ensure planner_* DDL + one-time ownership claim (existing rows stay). */
+void ProductivityEnsurePlanner();
+
+/** Blocks overlapping [fromIso, toIso) for user (default user_id=1). */
+std::string ProductivityPlanListJson(const std::string& fromIso, const std::string& toIso,
+                                     int userId = 1);
+
+std::string ProductivityPlanGetJson(long long id, int userId = 1);
+
+/**
+ * Create (no id) or update (id set). Payload fields mirror Focus plannerClient.
+ * On success writes block JSON into *outBlockJson and bumps gateway_seq.
+ */
+bool ProductivityPlanUpsert(const std::string& payloadJson, int userId, std::string* outBlockJson);
+
+bool ProductivityPlanDelete(long long id, int userId = 1);
+
+std::string ProductivityRoutineListJson(int userId = 1);
+
+bool ProductivityRoutineUpsert(const std::string& payloadJson, int userId,
+                               std::string* outRoutineJson);
+
+bool ProductivityRoutineDelete(long long id, int userId = 1);
+
+/** Phase restore: start / complete / roll-forward / apply routines. */
+bool ProductivityPlanStart(long long id, int userId, std::string* outBlockJson);
+bool ProductivityPlanComplete(long long id, int userId, int minutesSpentOrNeg1,
+                              std::string* outBlockJson);
+/** Marks block rolled + creates new scheduled block; writes both JSON objects. */
+bool ProductivityPlanRollForward(long long id, int userId, const std::string& newStartIsoOrEmpty,
+                                 std::string* outRolledJson, std::string* outNewJson);
+/** Apply enabled routines for local date YYYY-MM-DD (empty = today). Returns created count. */
+int ProductivityRoutineApply(int userId, const std::string& dateYmdOrEmpty, bool skipOverlaps);
+
+/** Overlay sessions from tracked_sessions for Focus (no Study API). */
+std::string ProductivityPlanOverlayJson(const std::string& fromIso, const std::string& toIso,
+                                        int userId = 1);
+
+/** Simple day adherence summary JSON object for Focus. */
+std::string ProductivityPlanAdherenceJson(const std::string& dayYmd, int userId = 1);

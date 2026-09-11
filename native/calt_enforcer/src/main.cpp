@@ -16,12 +16,16 @@ std::wstring ExeDir() {
 }
 
 std::wstring DefaultDbPath() {
-  // Prefer CALT_DB env, else ../../data/vocab_app.db from build/bin layout or repo native/../data
+  // Prefer CALT_DB; else data/productivity/productivity.db (Focus/Productivity SoT).
+  // Legacy CALT_DB pointing at vocab_app.db still works if set explicitly.
   wchar_t* env = _wgetenv(L"CALT_DB");
   if (env && *env) return env;
   std::wstring dir = ExeDir();
-  // try repo-relative: <repo>/native/calt_enforcer/build/Release -> <repo>/data
   const wchar_t* candidates[] = {
+      L"\\..\\..\\..\\..\\data\\productivity\\productivity.db",
+      L"\\..\\..\\..\\data\\productivity\\productivity.db",
+      L"\\..\\..\\data\\productivity\\productivity.db",
+      // legacy fallback during transition
       L"\\..\\..\\..\\..\\data\\vocab_app.db",
       L"\\..\\..\\..\\data\\vocab_app.db",
       L"\\..\\..\\data\\vocab_app.db",
@@ -31,13 +35,13 @@ std::wstring DefaultDbPath() {
     std::wstring c = dir + candidates[i];
     if (GetFileAttributesW(c.c_str()) != INVALID_FILE_ATTRIBUTES) return c;
   }
-  return dir + L"\\vocab_app.db";
+  return dir + L"\\..\\..\\..\\..\\data\\productivity\\productivity.db";
 }
 
 std::wstring DefaultLockPath(const std::wstring& dbPath) {
   wchar_t* env = _wgetenv(L"CALT_ENFORCER_LOCK");
   if (env && *env) return env;
-  // sibling of db: data/behavior/enforcer_owner.lock
+  // sibling of db: data/productivity/behavior/enforcer_owner.lock
   size_t slash = dbPath.find_last_of(L"\\/");
   std::wstring dataDir = (slash == std::wstring::npos) ? L"." : dbPath.substr(0, slash);
   return dataDir + L"\\behavior\\enforcer_owner.lock";
@@ -48,10 +52,10 @@ void PrintUsage() {
       << L"CALT Native Enforcer (C++) — zero-Python desktop tracker\n"
       << L"  calt_enforcer.exe              console loop\n"
       << L"  calt_enforcer.exe --service    Windows Service dispatcher\n"
-      << L"Env: CALT_DB, CALT_ENFORCER_LOCK\n"
-      << L"Policy: SQLite enforcer_runtime and/or data/behavior/enforcer_policy.json\n"
-      << L"Status: data/behavior/enforcer_status.json (written every ~2.5s)\n"
-      << L"Writes tracked_sessions (non-browser); holds ownership lock.\n"
+      << L"Env: CALT_DB (default data/productivity/productivity.db), CALT_ENFORCER_LOCK\n"
+      << L"Policy mirrors: <db-dir>/behavior/enforcer_policy.json\n"
+      << L"Status: <db-dir>/behavior/enforcer_status.json\n"
+      << L"Bible corpus: <db-dir>/bible/\n"
       << L"No Python runtime required. No Cold Turkey code.\n";
 }
 

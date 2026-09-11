@@ -5,9 +5,11 @@
   "type": "module",
   "scripts": {
     "build": "vite build",
-    "build:focus": "vite build --outDir dist-focus --base ./ --emptyOutDir",
+    "build:focus": "vite build --outDir dist-focus --base ./",
     "dev": "vite",
+    "dev:focus": "vite --config vite.focus.config.ts",
     "preview": "vite preview --host 127.0.0.1 --port 5173 --strictPort",
+    "preview:focus": "vite preview --config vite.focus.config.ts --outDir dist-focus",
     "stitch:verify": "node scripts/stitch/verify.mjs",
     "stitch:clock": "node scripts/stitch/generate.mjs life-clock",
     "stitch:hub": "node scripts/stitch/generate.mjs study-hub",

@@ -10,7 +10,7 @@ import {
   type DistractionGate,
   type ProductivityPolicy,
 } from "../../api/behaviorClient";
-import { requestBibleDayPass, requestRewardDay } from "../../api/bibleClient";
+import { requestRewardDay } from "../../api/bibleClient";
 import {
   GOALS_UPDATED_EVENT,
   goalMinutesToFocusHours,
@@ -326,47 +326,6 @@ export function ProductivityPolicyPanel({ onSaved, variant = "all" }: Props) {
             </label>
           </div>
         </div>
-        <div className="rounded-md border border-white/10 bg-black/20 p-2.5 space-y-2">
-          <p className="text-[11px] text-muted-foreground">
-            Controlled skip: <strong className="text-foreground/80">2 day-passes per week</strong>{" "}
-            (Mon–Sun). Unlocks games until midnight without reading. Type{" "}
-            <code className="text-amber-200/90">PASS</code> to confirm.
-            {gate?.day_pass_status
-              ? ` · ${gate.day_pass_status.remaining ?? 0} left this week (${gate.day_pass_status.used ?? 0}/${gate.day_pass_status.limit ?? 2} used)`
-              : ""}
-          </p>
-          <button
-            type="button"
-            className="text-xs px-3 py-1.5 rounded-md bg-amber-500/20 text-amber-100 border border-amber-400/30 hover:bg-amber-500/30 disabled:opacity-40"
-            disabled={Boolean(
-              gate?.day_pass ||
-                gate?.day_unlimited ||
-                (gate?.day_pass_status && (gate.day_pass_status.remaining ?? 0) <= 0),
-            )}
-            onClick={() => {
-              const ok = window.prompt(
-                "Skip Bible for today? Type PASS to spend 1 weekly day-pass (games unlocked until midnight):",
-              );
-              if (ok !== "PASS") return;
-              void (async () => {
-                try {
-                  const r = await requestBibleDayPass("PASS");
-                  const g = await fetchDistractionGate().catch(() => null);
-                  setGate(g);
-                  setHint(r.message || "Day pass granted — games unlocked until midnight.");
-                } catch (e: unknown) {
-                  setError(e instanceof Error ? e.message : "Day pass failed");
-                }
-              })();
-            }}
-          >
-            {gate?.day_pass || gate?.day_unlimited
-              ? "Day pass active today"
-              : (gate?.day_pass_status?.remaining ?? 0) <= 0
-                ? "No day-passes left this week"
-                : "Use day pass (skip Bible today)"}
-          </button>
-        </div>
         <div className="rounded-md border border-teal-400/25 bg-teal-500/5 p-2.5 space-y-2">
           <p className="text-[11px] text-muted-foreground">
             Earned Free Day: complete your study goal and one Bible chapter on{" "}
@@ -559,7 +518,7 @@ export function ProductivityPolicyPanel({ onSaved, variant = "all" }: Props) {
           </p>
           <p className="text-[11px] text-muted-foreground mb-2">
             OS kill list lives on{" "}
-            <a className="underline text-amber-200/90" href="#focus">
+            <a className="underline text-amber-200/90" href="?tab=settings&section=overview">
               Focus
             </a>{" "}
             /{" "}

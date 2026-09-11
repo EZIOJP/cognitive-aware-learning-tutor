@@ -1,5 +1,6 @@
 #include "softland_tick.h"
 #include "cmd_gateway.h"
+#include "plan_gate.h"
 #include "productivity_store.h"
 #include "softland_publish.h"
 
@@ -82,5 +83,9 @@ bool TickSoftlandClocks(const std::wstring& behaviorDir) {
     PublishSoftlandMirror(behaviorDir, s);
     changed = true;
   }
+
+  // Phase 6b: active planner block → SoftLand free_until / runtime.plan_block
+  if (ApplyActivePlanToSoftland(behaviorDir, 1)) changed = true;
+
   return changed;
 }

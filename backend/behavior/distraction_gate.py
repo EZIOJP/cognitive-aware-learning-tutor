@@ -668,13 +668,28 @@ def compute_distraction_gate(db: Session, user_id: int) -> dict[str, Any]:
 
 def _compute_distraction_gate_uncached(db: Session, user_id: int) -> dict[str, Any]:
     """Full gate compute (caller holds singleflight / cache miss)."""
-    from backend.behavior.category_scores import load_score_map
     from backend.behavior.gate_notify import current_policy_gen
     from backend.behavior.demo_clock import is_demo, now_local, status as demo_status
-    from backend.behavior.productivity_policy import load_policy_dict, resolve_session_score
-    from backend.bible import store as bible_store
-    from backend.models.timetable import TrackedSession
+    from backend.behavior.productivity_policy import load_policy_dict
     from backend.planner.service import local_day_bounds_utc, local_tz
+    import json
+    from pathlib import Path
+
+    def _native_bible_done() -> bool:
+        """Focus/enforcer SoT — softland_policy.json goals.bible_done (no Python bible.store)."""
+        try:
+            from backend.behavior.softland_policy import softland_policy_path
+
+            p = softland_policy_path()
+            if not p.is_file():
+                return False
+            doc = json.loads(p.read_text(encoding="utf-8"))
+            goals = doc.get("goals") if isinstance(doc, dict) else None
+            if isinstance(goals, dict):
+                return bool(goals.get("bible_done"))
+        except Exception:
+            pass
+        return False
 
     policy = load_policy_dict(db, user_id)
     enabled = bool(policy.get("hard_block_enabled"))
@@ -693,86 +708,101 @@ def _compute_distraction_gate_uncached(db: Session, user_id: int) -> dict[str, A
     gate_now = now_local()
     day_date = gate_now.date()
     start, end = local_day_bounds_utc(day_date)
-    # Same scope as stats APIs: admin tracker rows + legacy demo mis-attributions.
-    from backend.models import User
-    from backend.timetable.tracker_query import tracker_user_ids
 
-    get_row = getattr(db, "get", None)
-    gate_user = get_row(User, user_id) if callable(get_row) else None
-    uid_scope = tracker_user_ids(db, gate_user) if gate_user is not None else [user_id]
-    sessions = (
-        db.query(TrackedSession)
-        .filter(
-            TrackedSession.user_id.in_(uid_scope),
-            TrackedSession.start_time < end,
-            TrackedSession.end_time > start,
+    # P5c: prefer enforcer day_rollup.json when present + fresh for this local day.
+    productive: int | None = None
+    productive_source = "legacy"
+    try:
+        from backend.behavior.day_rollup import productive_minutes_from_rollup
+
+        hit = productive_minutes_from_rollup(day_date)
+        if hit is not None:
+            productive = int(hit)
+            productive_source = "day_rollup"
+    except Exception:
+        productive = None
+
+    if productive is None:
+        # Legacy Study scorer — wall-clock union + sleep subtract (fallback).
+        from backend.behavior.category_scores import load_score_map
+        from backend.behavior.productivity_policy import resolve_session_score
+        from backend.models import User
+        from backend.models.timetable import TrackedSession
+        from backend.timetable.tracker_query import tracker_user_ids
+
+        get_row = getattr(db, "get", None)
+        gate_user = get_row(User, user_id) if callable(get_row) else None
+        uid_scope = tracker_user_ids(db, gate_user) if gate_user is not None else [user_id]
+        sessions = (
+            db.query(TrackedSession)
+            .filter(
+                TrackedSession.user_id.in_(uid_scope),
+                TrackedSession.start_time < end,
+                TrackedSession.end_time > start,
+            )
+            .all()
         )
-        .all()
-    )
-    scores = load_score_map(db)
+        scores = load_score_map(db)
 
-    def score_fn(sess):
-        return resolve_session_score(sess, scores, policy)
+        def score_fn(sess):
+            return resolve_session_score(sess, scores, policy)
 
-    productive = 0
-    # Wall-clock union of productive intervals (avoids double-count Edge desktop + extension).
-    intervals: list[tuple[datetime, datetime]] = []
-    for s in sessions:
-        if not s.start_time or not s.end_time:
-            continue
-        if score_fn(s) < threshold:
-            continue
-        a = s.start_time
-        b = s.end_time
-        if a.tzinfo is None:
-            a = a.replace(tzinfo=UTC)
-        if b.tzinfo is None:
-            b = b.replace(tzinfo=UTC)
-        a = max(a, start)
-        b = min(b, end)
-        if b > a:
-            intervals.append((a, b))
-    intervals.sort(key=lambda t: t[0])
-    merged: list[tuple[datetime, datetime]] = []
-    for a, b in intervals:
-        if not merged or a > merged[-1][1]:
-            merged.append((a, b))
-        else:
-            merged[-1] = (merged[-1][0], max(merged[-1][1], b))
+        productive = 0
+        intervals: list[tuple[datetime, datetime]] = []
+        for s in sessions:
+            if not s.start_time or not s.end_time:
+                continue
+            if score_fn(s) < threshold:
+                continue
+            a = s.start_time
+            b = s.end_time
+            if a.tzinfo is None:
+                a = a.replace(tzinfo=UTC)
+            if b.tzinfo is None:
+                b = b.replace(tzinfo=UTC)
+            a = max(a, start)
+            b = min(b, end)
+            if b > a:
+                intervals.append((a, b))
+        intervals.sort(key=lambda t: t[0])
+        merged: list[tuple[datetime, datetime]] = []
+        for a, b in intervals:
+            if not merged or a > merged[-1][1]:
+                merged.append((a, b))
+            else:
+                merged[-1] = (merged[-1][0], max(merged[-1][1], b))
 
-    # PC left on while sleeping must not count toward the study goal.
-    from backend.wearables.sleep_window import sleep_bouts_for_user_day, subtract_intervals
+        from backend.wearables.sleep_window import sleep_bouts_for_user_day, subtract_intervals
 
-    sleep_windows = sleep_bouts_for_user_day(db, user_id, day_date, pad_days=1)
-    sleep_cut: list[tuple[datetime, datetime]] = []
-    for ss, se in sleep_windows:
-        if ss.tzinfo is None:
-            ss = ss.replace(tzinfo=UTC)
-        else:
-            ss = ss.astimezone(UTC)
-        if se.tzinfo is None:
-            se = se.replace(tzinfo=UTC)
-        else:
-            se = se.astimezone(UTC)
-        a = max(ss, start)
-        b = min(se, end)
-        if b > a:
-            sleep_cut.append((a, b))
-    if sleep_cut:
-        merged = subtract_intervals(merged, sleep_cut)
+        sleep_windows = sleep_bouts_for_user_day(db, user_id, day_date, pad_days=1)
+        sleep_cut: list[tuple[datetime, datetime]] = []
+        for ss, se in sleep_windows:
+            if ss.tzinfo is None:
+                ss = ss.replace(tzinfo=UTC)
+            else:
+                ss = ss.astimezone(UTC)
+            if se.tzinfo is None:
+                se = se.replace(tzinfo=UTC)
+            else:
+                se = se.astimezone(UTC)
+            a = max(ss, start)
+            b = min(se, end)
+            if b > a:
+                sleep_cut.append((a, b))
+        if sleep_cut:
+            merged = subtract_intervals(merged, sleep_cut)
 
-    for a, b in merged:
-        productive += int((b - a).total_seconds() // 60)
+        for a, b in merged:
+            productive += int((b - a).total_seconds() // 60)
 
-    bible = bible_store.summary(user_id)
-    bible_minutes = float(bible.get("bible_minutes") or 0)
-    bank_remaining_s = int(bible.get("game_bank_remaining_seconds") or 0)
-    bank_remaining_m = float(bible.get("game_bank_remaining_minutes") or 0)
-    day_pass = bool(bible.get("day_pass"))
-    reward_day = bool(bible.get("reward_day"))
-    chapter_goal = bible.get("chapter_goal") or {}
-    chapters_today = list(bible.get("chapters_completed_today") or [])
-    chapter_met = bool(chapter_goal.get("met")) or len(chapters_today) >= 1
+    bible_minutes = 0.0
+    bank_remaining_s = 0
+    bank_remaining_m = 0.0
+    day_pass = False
+    reward_day = False
+    chapter_met = _native_bible_done()
+    chapters_today: list[str] = ["native"] if chapter_met else []
+    chapter_goal = {"done": 1 if chapter_met else 0, "target": 1, "met": chapter_met}
     from backend.behavior import reward_days
 
     reward_status = reward_days.record_qualifying_day(
@@ -781,6 +811,20 @@ def _compute_distraction_gate_uncached(db: Session, user_id: int) -> dict[str, A
     )
     # Study goal + ≥1 chapter, a controlled day pass, or an earned reward day
     # unlocks games and normal browsing until midnight.
+    # day_pass / reward_day: still read SoftLand runtime when present
+    try:
+        from backend.behavior.softland_policy import softland_policy_path
+
+        sp = softland_policy_path()
+        if sp.is_file():
+            sdoc = json.loads(sp.read_text(encoding="utf-8"))
+            rt = sdoc.get("runtime") if isinstance(sdoc, dict) else None
+            if isinstance(rt, dict):
+                reward_day = bool(rt.get("reward_day_active"))
+                dp = rt.get("day_pass") if isinstance(rt.get("day_pass"), dict) else {}
+                day_pass = bool(dp.get("spent"))
+    except Exception:
+        pass
     day_unlimited = bool(reward_day or day_pass or (productive >= goal and chapter_met))
     # Legacy bank no longer unlocks midday (chapter+study is the primary path)
     has_bank = False
@@ -1010,6 +1054,7 @@ def _compute_distraction_gate_uncached(db: Session, user_id: int) -> dict[str, A
         "locked": locked_flag,
         "unlocked": unlocked,
         "productive_minutes": productive,
+        "productive_source": productive_source,
         "productive_label": format_hours_mins(productive),
         "daily_goal_minutes": goal,
         "daily_goal_label": format_hours_mins(goal),

@@ -28,6 +28,10 @@ class TrayIcon {
   void SetOnCalendar(Callback cb) { on_calendar_ = std::move(cb); }
   void SetOnPlan(Callback cb) { on_plan_ = std::move(cb); }
   void SetOnProductivity(Callback cb) { on_prod_ = std::move(cb); }
+  void SetOnReloadUi(Callback cb) { on_reload_ui_ = std::move(cb); }
+  void SetOnUpdateUi(Callback cb) { on_update_ui_ = std::move(cb); }
+  void SetOnUpdateStack(Callback cb) { on_update_stack_ = std::move(cb); }
+  void SetOnApplyUpdate(Callback cb) { on_apply_update_ = std::move(cb); }
   void SetOnQuit(Callback cb) { on_quit_ = std::move(cb); }
 
   LRESULT HandleMessage(UINT msg, WPARAM wParam, LPARAM lParam);
@@ -42,6 +46,10 @@ class TrayIcon {
   static constexpr UINT ID_CALENDAR = 4008;
   static constexpr UINT ID_PLAN = 4009;
   static constexpr UINT ID_PROD = 4002;
+  static constexpr UINT ID_RELOAD_UI = 4010;
+  static constexpr UINT ID_UPDATE_UI = 4011;
+  static constexpr UINT ID_UPDATE_STACK = 4012;
+  static constexpr UINT ID_APPLY_UPDATE = 4013;
   static constexpr UINT ID_QUIT = 4003;
 
  private:
@@ -59,5 +67,9 @@ class TrayIcon {
   Callback on_calendar_;
   Callback on_plan_;
   Callback on_prod_;
+  Callback on_reload_ui_;
+  Callback on_update_ui_;
+  Callback on_update_stack_;
+  Callback on_apply_update_;
   Callback on_quit_;
 };

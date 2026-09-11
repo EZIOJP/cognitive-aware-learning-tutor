@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router";
 import { useAuth } from "../context/AuthContext";
 import { fetchDistractionGate, type MorningGate } from "../api/behaviorClient";
 import { MORNING_UPDATED_EVENT } from "./productivity/ConfirmPlanButton";
+import { isFocusDesktopShell } from "../utils/focusDesktopShell";
 
 /** Soft-landing for morning.next=plan — Productivity Plan tab (server default). */
 export const MORNING_PLAN_PATH = "/productivity?tab=plan";
@@ -60,9 +61,11 @@ export function MorningGateRedirect() {
   const [morning, setMorning] = useState<MorningGate | null>(null);
   const lastNav = useRef<string>("");
   const isLeader = useRef(false);
+  const focusShell = isFocusDesktopShell();
 
   useEffect(() => {
-    if (!sessionReady || !isAuthenticated) {
+    // Focus desktop shell is Productivity-only — never soft-redirect to Bible/Study (blank shell).
+    if (focusShell || !sessionReady || !isAuthenticated) {
       setMorning(null);
       return;
     }
@@ -126,10 +129,10 @@ export function MorningGateRedirect() {
       window.removeEventListener(MORNING_UPDATED_EVENT, onMorning);
       bc?.close();
     };
-  }, [isAuthenticated, sessionReady]);
+  }, [isAuthenticated, sessionReady, focusShell]);
 
   useEffect(() => {
-    if (!isAuthenticated || !morning?.enabled) return;
+    if (focusShell || !isAuthenticated || !morning?.enabled) return;
     if (morning.next === "open") return;
     if (pathAllowed(location.pathname, morning.allow_paths)) return;
 
@@ -138,7 +141,7 @@ export function MorningGateRedirect() {
     if (lastNav.current === target && location.pathname === targetPath) return;
     lastNav.current = target;
     navigate(target, { replace: true });
-  }, [isAuthenticated, morning, location.pathname, location.search, navigate]);
+  }, [focusShell, isAuthenticated, morning, location.pathname, location.search, navigate]);
 
   return null;
 }

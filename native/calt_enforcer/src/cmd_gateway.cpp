@@ -1,4 +1,6 @@
 #include "cmd_gateway.h"
+#include "life_content.h"
+#include "plan_gate.h"
 #include "policy_db.h"
 #include "productivity_store.h"
 #include "softland_publish.h"
@@ -222,7 +224,12 @@ std::string AddMinutesLocalIso(int minutes) {
   ULARGE_INTEGER uli;
   uli.LowPart = ft.dwLowDateTime;
   uli.HighPart = ft.dwHighDateTime;
-  uli.QuadPart += (ULONGLONG)minutes * 60ULL * 10000000ULL;
+  // Support negatives (incubation rate-limit lookback). Clamp at epoch.
+  LONGLONG delta = (LONGLONG)minutes * 60LL * 10000000LL;
+  if (delta < 0 && (ULONGLONG)(-delta) > uli.QuadPart)
+    uli.QuadPart = 0;
+  else
+    uli.QuadPart = (ULONGLONG)((LONGLONG)uli.QuadPart + delta);
   ft.dwLowDateTime = uli.LowPart;
   ft.dwHighDateTime = uli.HighPart;
   SYSTEMTIME outSt;
@@ -231,6 +238,17 @@ std::string AddMinutesLocalIso(int minutes) {
   snprintf(buf, sizeof(buf), "%04u-%02u-%02uT%02u:%02u:%02u", outSt.wYear, outSt.wMonth, outSt.wDay,
            outSt.wHour, outSt.wMinute, outSt.wSecond);
   return buf;
+}
+
+bool ConfirmMatches(const std::string& payload, const char* expected) {
+  std::string got;
+  if (!JsonGetString(payload, "confirm", &got)) return false;
+  size_t a = got.find_first_not_of(" \t\r\n");
+  size_t b = got.find_last_not_of(" \t\r\n");
+  if (a == std::string::npos) return false;
+  std::string trimmed = got.substr(a, b - a + 1);
+  for (auto& c : trimmed) c = (char)toupper((unsigned char)c);
+  return trimmed == expected;
 }
 
 std::string EndOfLocalDayIso() {
@@ -302,6 +320,9 @@ std::string HandleOp(const std::string& op, const std::string& payload,
     return "";
   }
   if (op == "softland.set_incubation") {
+    // max_incubations_per_hour = 1 (break_reward.py DEFAULT_CONFIG)
+    if (ProductivityIncubationStartsSinceIso(AddMinutesLocalIso(-60)) >= 1)
+      return "incubation_rate_limited";
     std::string until;
     int minutes = 0;
     if (JsonGetString(payload, "until_iso", &until) && !until.empty()) {
@@ -309,13 +330,11 @@ std::string HandleOp(const std::string& op, const std::string& payload,
     } else if (JsonGetInt(payload, "minutes", &minutes) && minutes > 0) {
       s.incubation_until = AddMinutesLocalIso(minutes);
     } else {
-      return "bad_payload";
+      s.incubation_until = AddMinutesLocalIso(8);  // break_minutes default
     }
-    s.updated_at = IsoLocalNow();
-    ProductivityApplyCacheToDocument(s);
-    if (!ProductivitySaveSoftland(s)) return "store_save_failed";
-    ProductivityBumpSeq();
-    PublishSoftlandMirror(behaviorDir, s);
+    std::string err = SaveAndPublish(s, behaviorDir);
+    if (!err.empty()) return err;
+    ProductivityLedgerAdd("incubation", 0, "incubation start", "gateway");
     return "";
   }
   if (op == "softland.clear_incubation") {
@@ -417,7 +436,141 @@ std::string HandleOp(const std::string& op, const std::string& payload,
                       ", \"spent\": " + (spent ? "true" : "false") +
                       ", \"remaining_seconds\": " + std::to_string(remaining) + "}";
     if (!ProductivityReplaceJsonValue(s.document_json, "day_pass", obj)) return "policy_key_missing";
+    // Legacy callers: spent pass must open SoftLand via free_until (decide ignores day_pass).
+    if (spent) {
+      if (remaining > 0) {
+        int minutes = (remaining + 59) / 60;
+        if (minutes < 1) minutes = 1;
+        s.free_until = ExtendFreeWindowIso(s.free_until, minutes);
+      } else {
+        s.free_until = EndOfLocalDayIso();
+      }
+    }
     return SaveAndPublish(s, behaviorDir);
+  }
+  if (op == "day.grant_pass") {
+    if (!ConfirmMatches(payload, "PASS")) return "confirm_required";
+    const std::string today = ProductivityLocalDate();
+    const bool already = ProductivityPassGrantedToday();
+    if (!already && ProductivityPassesUsedThisWeek() >= 2) return "pass_quota_exhausted";
+    if (!already && !ProductivityInsertPass(today, ProductivityWeekStart()))
+      return "store_save_failed";
+
+    // One free-window mechanism: SoftLand decide already honours free_until.
+    s.free_until = EndOfLocalDayIso();
+    std::string obj = "{\"date\": \"" + today + "\", \"spent\": true, \"remaining_seconds\": 0}";
+    if (!ProductivityReplaceJsonValue(s.document_json, "day_pass", obj)) return "policy_key_missing";
+    std::string err = SaveAndPublish(s, behaviorDir);
+    if (!err.empty()) return err;
+    if (!already) ProductivityLedgerAdd("day_pass", 0, "day pass granted " + today, "gateway");
+    return "";
+  }
+  if (op == "day.mark_event") {
+    std::string event;
+    if (!JsonGetString(payload, "event", &event) || event.empty()) return "bad_payload";
+    // Rates copied from backend/behavior/break_reward.py DEFAULT_CONFIG.
+    int minutes = 0;
+    if (event == "chapter_done")
+      minutes = 15;
+    else if (event == "plan_confirmed")
+      minutes = 10;
+    else if (event == "daily_goal")
+      minutes = 30;
+    else if (event == "bite_done")
+      minutes = 0;
+    else
+      return "bad_payload";
+
+    const std::string today = ProductivityLocalDate();
+    if (ProductivityDayEventSeconds(today, event, nullptr)) return "event_already_recorded";
+
+    // Daily cap 60 min: credit only the remainder, never negative.
+    const int capSeconds = 60 * 60;
+    int used = ProductivityDayEarnedSecondsToday();
+    int want = minutes * 60;
+    int credit = want;
+    if (used + credit > capSeconds) credit = capSeconds - used;
+    if (credit < 0) credit = 0;
+
+    if (!ProductivityInsertDayEvent(today, event, credit)) return "store_save_failed";
+    if (credit > 0) {
+      s.earned_ledger_seconds += credit;
+      std::string err = SaveAndPublish(s, behaviorDir);
+      if (!err.empty()) return err;
+      ProductivityLedgerAdd("earn", credit, event, "gateway");
+    }
+    if (extraOut)
+      *extraOut = ",\"credited_seconds\":" + std::to_string(credit) +
+                  ",\"balance_seconds\":" + std::to_string(s.earned_ledger_seconds);
+    return "";
+  }
+  if (op == "reward.status" || op == "day.status") {
+    const int qualified = ProductivityRewardCount("qualified");
+    const int used = ProductivityRewardCount("used");
+    const int granted = ProductivityRewardGranted();
+    const int earned = qualified / 4;  // QUALIFYING_DAYS_PER_REWARD
+    int available = earned + granted - used;
+    if (available < 0) available = 0;
+    const int toNext = 4 - (qualified % 4);
+    std::string extra = ",\"qualified_days\":" + std::to_string(qualified) +
+                        ",\"reward_earned\":" + std::to_string(earned) +
+                        ",\"reward_granted\":" + std::to_string(granted) +
+                        ",\"reward_spent\":" + std::to_string(used) +
+                        ",\"reward_available\":" + std::to_string(available) +
+                        ",\"days_to_next_reward\":" + std::to_string(toNext);
+    if (op == "day.status") {
+      extra += ",\"passes_limit\":2,\"passes_used\":" +
+               std::to_string(ProductivityPassesUsedThisWeek()) +
+               ",\"pass_today\":" + (ProductivityPassGrantedToday() ? "true" : "false") +
+               ",\"earned_today_seconds\":" + std::to_string(ProductivityDayEarnedSecondsToday()) +
+               ",\"balance_seconds\":" + std::to_string(s.earned_ledger_seconds) +
+               ",\"free_until\":" + (s.free_until.empty() ? "null" : "\"" + s.free_until + "\"") +
+               ",\"reward_day_active\":" + (s.reward_day_active ? "true" : "false");
+    }
+    if (extraOut) *extraOut = extra;
+    return "";
+  }
+  if (op == "reward.claim") {
+    if (!ConfirmMatches(payload, "REWARD")) return "confirm_required";
+    const int qualified = ProductivityRewardCount("qualified");
+    const int used = ProductivityRewardCount("used");
+    const int available = qualified / 4 + ProductivityRewardGranted() - used;
+    if (available <= 0) return "no_reward_available";
+    if (s.reward_day_active) return "already_unlocked";
+    const std::string today = ProductivityLocalDate();
+    if (!ProductivityRewardMark("used", today)) return "store_save_failed";
+    s.reward_day_active = true;
+    s.free_until = EndOfLocalDayIso();
+    std::string err = SaveAndPublish(s, behaviorDir);
+    if (!err.empty()) return err;
+    ProductivityLedgerAdd("reward_day", 0, "reward day claimed " + today, "gateway");
+    return "";
+  }
+  if (op == "reward.mark_qualified") {
+    // Bridge until P5c: Python still decides qualification; enforcer owns the ledger.
+    const std::string today = ProductivityLocalDate();
+    if (!ProductivityRewardMark("qualified", today)) return "store_save_failed";
+    if (extraOut) {
+      const int qualified = ProductivityRewardCount("qualified");
+      const int usedR = ProductivityRewardCount("used");
+      const int granted = ProductivityRewardGranted();
+      int available = qualified / 4 + granted - usedR;
+      if (available < 0) available = 0;
+      *extraOut = ",\"qualified_days\":" + std::to_string(qualified) +
+                  ",\"reward_available\":" + std::to_string(available);
+    }
+    return "";
+  }
+  if (op == "reward.grant_credits") {
+    int count = 0;
+    if (!JsonGetInt(payload, "count", &count) || count <= 0) return "bad_payload";
+    if (!ProductivityRewardSetGranted(ProductivityRewardGranted() + count))
+      return "store_save_failed";
+    if (extraOut) {
+      const int granted = ProductivityRewardGranted();
+      *extraOut = ",\"reward_granted\":" + std::to_string(granted);
+    }
+    return "";
   }
   if (op == "ledger.add") {
     int seconds = 0;
@@ -470,6 +623,272 @@ std::string HandleOp(const std::string& op, const std::string& payload,
     if (extraOut) *extraOut = ",\"pending\":" + ProductivityPendingListJson(20);
     return "";
   }
+  // Phase 6a — planner CRUD (SQLite planner_* via gateway; no SoftLand mutate).
+  if (op == "plan.list") {
+    std::string from, to;
+    int userId = 1;
+    if (!JsonGetString(payload, "from", &from) || from.empty()) return "bad_payload";
+    if (!JsonGetString(payload, "to", &to) || to.empty()) return "bad_payload";
+    JsonGetInt(payload, "user_id", &userId);
+    if (userId <= 0) userId = 1;
+    if (extraOut) *extraOut = ",\"blocks\":" + ProductivityPlanListJson(from, to, userId);
+    return "";
+  }
+  if (op == "plan.get") {
+    int id = 0;
+    int userId = 1;
+    if (!JsonGetInt(payload, "id", &id) || id <= 0) return "bad_payload";
+    JsonGetInt(payload, "user_id", &userId);
+    if (userId <= 0) userId = 1;
+    std::string block = ProductivityPlanGetJson(id, userId);
+    if (block.empty()) return "not_found";
+    if (extraOut) *extraOut = ",\"block\":" + block;
+    return "";
+  }
+  if (op == "plan.upsert") {
+    int userId = 1;
+    JsonGetInt(payload, "user_id", &userId);
+    if (userId <= 0) userId = 1;
+    std::string blockJson;
+    if (!ProductivityPlanUpsert(payload, userId, &blockJson) || blockJson.empty())
+      return "store_save_failed";
+    if (extraOut) *extraOut = ",\"block\":" + blockJson;
+    return "";
+  }
+  if (op == "plan.delete") {
+    int id = 0;
+    int userId = 1;
+    if (!JsonGetInt(payload, "id", &id) || id <= 0) return "bad_payload";
+    JsonGetInt(payload, "user_id", &userId);
+    if (userId <= 0) userId = 1;
+    if (!ProductivityPlanDelete(id, userId)) return "not_found";
+    if (extraOut) *extraOut = ",\"deleted\":true,\"block_id\":" + std::to_string(id);
+    return "";
+  }
+  if (op == "routine.list") {
+    int userId = 1;
+    JsonGetInt(payload, "user_id", &userId);
+    if (userId <= 0) userId = 1;
+    if (extraOut) *extraOut = ",\"routines\":" + ProductivityRoutineListJson(userId);
+    return "";
+  }
+  if (op == "routine.upsert") {
+    int userId = 1;
+    JsonGetInt(payload, "user_id", &userId);
+    if (userId <= 0) userId = 1;
+    std::string routineJson;
+    if (!ProductivityRoutineUpsert(payload, userId, &routineJson) || routineJson.empty())
+      return "store_save_failed";
+    if (extraOut) *extraOut = ",\"routine\":" + routineJson;
+    return "";
+  }
+  if (op == "routine.delete") {
+    int id = 0;
+    int userId = 1;
+    if (!JsonGetInt(payload, "id", &id) || id <= 0) return "bad_payload";
+    JsonGetInt(payload, "user_id", &userId);
+    if (userId <= 0) userId = 1;
+    if (!ProductivityRoutineDelete(id, userId)) return "not_found";
+    if (extraOut) *extraOut = ",\"deleted\":true,\"routine_id\":" + std::to_string(id);
+    return "";
+  }
+  // Phase 6b — force-sync active plan block → SoftLand
+  if (op == "plan.apply_gate") {
+    int userId = 1;
+    JsonGetInt(payload, "user_id", &userId);
+    if (userId <= 0) userId = 1;
+    const bool applied = ApplyActivePlanToSoftland(behaviorDir, userId);
+    if (extraOut)
+      *extraOut = std::string(",\"applied\":") + (applied ? "true" : "false");
+    return "";
+  }
+  if (op == "plan.start") {
+    int id = 0;
+    int userId = 1;
+    if (!JsonGetInt(payload, "id", &id) || id <= 0) return "bad_payload";
+    JsonGetInt(payload, "user_id", &userId);
+    if (userId <= 0) userId = 1;
+    std::string blockJson;
+    if (!ProductivityPlanStart(id, userId, &blockJson) || blockJson.empty()) return "not_found";
+    if (extraOut) *extraOut = ",\"block\":" + blockJson;
+    return "";
+  }
+  if (op == "plan.complete") {
+    int id = 0;
+    int userId = 1;
+    int minutes = -1;
+    if (!JsonGetInt(payload, "id", &id) || id <= 0) return "bad_payload";
+    JsonGetInt(payload, "user_id", &userId);
+    if (userId <= 0) userId = 1;
+    JsonGetInt(payload, "minutes_spent", &minutes);
+    std::string blockJson;
+    if (!ProductivityPlanComplete(id, userId, minutes, &blockJson) || blockJson.empty())
+      return "not_found";
+    if (extraOut) *extraOut = ",\"block\":" + blockJson;
+    return "";
+  }
+  if (op == "plan.roll_forward") {
+    int id = 0;
+    int userId = 1;
+    std::string newStart;
+    if (!JsonGetInt(payload, "id", &id) || id <= 0) return "bad_payload";
+    JsonGetInt(payload, "user_id", &userId);
+    if (userId <= 0) userId = 1;
+    JsonGetString(payload, "new_start", &newStart);
+    std::string rolled, neu;
+    if (!ProductivityPlanRollForward(id, userId, newStart, &rolled, &neu) || rolled.empty())
+      return "not_found";
+    if (extraOut)
+      *extraOut = ",\"rolled_block\":" + rolled + ",\"new_block\":" +
+                  (neu.empty() ? "null" : neu);
+    return "";
+  }
+  if (op == "routine.apply") {
+    int userId = 1;
+    std::string date;
+    bool skip = true;
+    JsonGetInt(payload, "user_id", &userId);
+    if (userId <= 0) userId = 1;
+    JsonGetString(payload, "date", &date);
+    JsonGetBool(payload, "skip_overlaps", &skip);
+    int n = ProductivityRoutineApply(userId, date, skip);
+    if (n < 0) return "store_save_failed";
+    if (extraOut) *extraOut = ",\"created\":" + std::to_string(n);
+    return "";
+  }
+  if (op == "plan.overlay") {
+    std::string from, to;
+    int userId = 1;
+    if (!JsonGetString(payload, "from", &from) || from.empty()) return "bad_payload";
+    if (!JsonGetString(payload, "to", &to) || to.empty()) return "bad_payload";
+    JsonGetInt(payload, "user_id", &userId);
+    if (userId <= 0) userId = 1;
+    if (extraOut) *extraOut = ",\"overlay\":" + ProductivityPlanOverlayJson(from, to, userId);
+    return "";
+  }
+  if (op == "plan.adherence") {
+    std::string day;
+    int userId = 1;
+    JsonGetString(payload, "day", &day);
+    JsonGetInt(payload, "user_id", &userId);
+    if (userId <= 0) userId = 1;
+    if (extraOut)
+      *extraOut = ",\"adherence\":" + ProductivityPlanAdherenceJson(day, userId);
+    return "";
+  }
+
+  // Focus life content — Journal + Bible (no Study :8000).
+  {
+    std::wstring dataDir = behaviorDir;
+    size_t slash = dataDir.find_last_of(L"\\/");
+    if (slash != std::wstring::npos) dataDir = dataDir.substr(0, slash);
+    std::wstring bibleDir = dataDir + L"\\bible";
+
+    if (op == "journal.summary") {
+      std::string day;
+      int userId = 1;
+      JsonGetString(payload, "day", &day);
+      JsonGetInt(payload, "user_id", &userId);
+      if (userId <= 0) userId = 1;
+      LifeEnsureTables();
+      if (extraOut) *extraOut = ",\"summary\":" + LifeJournalSummaryJson(day, userId);
+      return "";
+    }
+    if (op == "journal.log") {
+      int limit = 30;
+      int userId = 1;
+      JsonGetInt(payload, "limit", &limit);
+      JsonGetInt(payload, "user_id", &userId);
+      if (userId <= 0) userId = 1;
+      if (extraOut) *extraOut = ",\"entries\":" + LifeJournalLogJson(limit, userId);
+      return "";
+    }
+    if (op == "journal.upsert") {
+      int userId = 1;
+      JsonGetInt(payload, "user_id", &userId);
+      if (userId <= 0) userId = 1;
+      std::string entry;
+      std::string contentCheck;
+      if (!JsonGetString(payload, "content", &contentCheck) || contentCheck.empty())
+        return "bad_payload";
+      if (!LifeJournalUpsert(payload, userId, &entry) || entry.empty()) return "store_save_failed";
+      if (extraOut) *extraOut = ",\"entry\":" + entry;
+      return "";
+    }
+    if (op == "bible.today" || op == "bible.state") {
+      int userId = 1;
+      JsonGetInt(payload, "user_id", &userId);
+      if (userId <= 0) userId = 1;
+      if (extraOut) *extraOut = ",\"state\":" + LifeBibleTodayJson(userId, bibleDir);
+      return "";
+    }
+    if (op == "bible.tick") {
+      int userId = 1;
+      std::string book;
+      int chapter = 1;
+      bool done = true;
+      JsonGetInt(payload, "user_id", &userId);
+      if (userId <= 0) userId = 1;
+      JsonGetString(payload, "book", &book);
+      JsonGetInt(payload, "chapter", &chapter);
+      JsonGetBool(payload, "done", &done);
+      std::string state;
+      if (!LifeBibleTick(userId, book, chapter, done, bibleDir, behaviorDir, &state))
+        return "tick_failed";
+      if (extraOut) *extraOut = ",\"state\":" + state;
+      return "";
+    }
+    if (op == "bible.heartbeat") {
+      int userId = 1;
+      std::string book;
+      int chapter = 1;
+      bool focused = true;
+      JsonGetInt(payload, "user_id", &userId);
+      if (userId <= 0) userId = 1;
+      JsonGetString(payload, "book", &book);
+      JsonGetInt(payload, "chapter", &chapter);
+      JsonGetBool(payload, "focused", &focused);
+      std::string state;
+      if (!LifeBibleHeartbeat(userId, book, chapter, focused, bibleDir, &state))
+        return "heartbeat_failed";
+      if (extraOut) *extraOut = ",\"state\":" + state;
+      return "";
+    }
+    if (op == "bible.devotion.today") {
+      int userId = 1;
+      JsonGetInt(payload, "user_id", &userId);
+      if (userId <= 0) userId = 1;
+      if (extraOut) *extraOut = ",\"devotion\":" + LifeBibleDevotionTodayJson(userId, bibleDir);
+      return "";
+    }
+    if (op == "bible.devotion.done") {
+      int userId = 1;
+      std::string slot;
+      bool done = true;
+      JsonGetInt(payload, "user_id", &userId);
+      if (userId <= 0) userId = 1;
+      JsonGetString(payload, "slot", &slot);
+      JsonGetBool(payload, "done", &done);
+      std::string out;
+      if (!LifeBibleDevotionDone(userId, slot, done, bibleDir, behaviorDir, &out))
+        return "devotion_failed";
+      if (extraOut) *extraOut = ",\"devotion\":" + out;
+      return "";
+    }
+    if (op == "bible.devotion.notes") {
+      int userId = 1;
+      std::string slot, notes;
+      JsonGetInt(payload, "user_id", &userId);
+      if (userId <= 0) userId = 1;
+      JsonGetString(payload, "slot", &slot);
+      JsonGetString(payload, "notes", &notes);
+      std::string out;
+      if (!LifeBibleDevotionNotes(userId, slot, notes, bibleDir, &out)) return "devotion_failed";
+      if (extraOut) *extraOut = ",\"devotion\":" + out;
+      return "";
+    }
+  }
+
   if (op == "arm.set") {
     EnforcerSnapshot cur;
     std::string loadErr;
@@ -478,7 +897,10 @@ std::string HandleOp(const std::string& op, const std::string& payload,
     std::wstring dataDir = behaviorDir;
     size_t slash = dataDir.find_last_of(L"\\/");
     if (slash != std::wstring::npos) dataDir = dataDir.substr(0, slash);
-    std::wstring dbPath = dataDir + L"\\vocab_app.db";
+    std::wstring dbPath = dataDir + L"\\productivity.db";
+    if (GetFileAttributesW(dbPath.c_str()) == INVALID_FILE_ATTRIBUTES) {
+      dbPath = dataDir + L"\\vocab_app.db";  // legacy
+    }
     LoadEnforcerSnapshot(dbPath, cur, loadErr);
 
     bool armed = cur.armed;

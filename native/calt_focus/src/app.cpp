@@ -9,6 +9,7 @@
 #include <objbase.h>
 #include <shellapi.h>
 
+#include <cstring>
 #include <string>
 
 namespace {
@@ -70,6 +71,10 @@ int FocusApp::Run(HINSTANCE instance) {
   tray_->SetOnCalendar([this]() { OpenCalendar(); });
   tray_->SetOnPlan([this]() { OpenPlan(); });
   tray_->SetOnProductivity([this]() { OpenCalendar(); });
+  tray_->SetOnReloadUi([this]() { ReloadUi(); });
+  tray_->SetOnUpdateUi([this]() { UpdateUi(); });
+  tray_->SetOnUpdateStack([this]() { UpdateStack(); });
+  tray_->SetOnApplyUpdate([this]() { ApplyPendingUpdate(); });
   tray_->SetOnQuit([this]() { Quit(); });
 
   webview_ = std::make_unique<WebViewHost>();
@@ -83,15 +88,20 @@ int FocusApp::Run(HINSTANCE instance) {
         if (EnsurePrebuiltUiReady()) {
           pending_url_ = CalendarUrl();
           webview_->Navigate(pending_url_);
-          if (!PortListening(8000)) {
-            if (tray_) {
+          // Phase 7: do NOT auto-start Study :8000 — SoftLand/Arm work offline.
+          // Manual tray "Start API" still calls StartApiOnly().
+          if (tray_) {
+            if (PortListening(8000)) {
               tray_->ShowBalloon(
                   L"CALT Focus",
-                  L"Prebuilt UI ready. Starting API (:8000)…");
+                  L"Prebuilt UI ready. SoftLand/Arm work offline; Study API is optional.");
+            } else {
+              tray_->ShowBalloon(
+                  L"CALT Focus",
+                  L"Prebuilt UI ready. SoftLand/Arm offline via enforcer; Study API optional (tray → Start API).");
             }
-            StartApiOnly();
-            ShowFocusWindow();
           }
+          ShowFocusWindow();
         } else {
           ShowOfflinePage();
         }
@@ -250,7 +260,7 @@ void FocusApp::ShowOfflinePage() {
       L"%3Ch2%3ECALT%20Focus%20%E2%80%94%20UI%20not%20ready%3C%2Fh2%3E"
       L"%3Cp%3EBuild%20precompiled%20UI%20once%20(no%20Vite%20daily)%3A%3C%2Fp%3E"
       L"%3Cpre%20style%3D'background%3A%231e293b%3Bpadding%3A12px'%3Enpm%20run%20build%3Afocus%3C%2Fpre%3E"
-      L"%3Cp%3EThen%20reopen%20CALT%20Focus.%20API%20%3A8000%20only%20for%20live%20data.%3C%2Fp%3E"
+      L"%3Cp%3EThen%20reopen%20CALT%20Focus.%20SoftLand%2FArm%20work%20offline%3B%20Study%20API%20is%20optional.%3C%2Fp%3E"
       L"%3C%2Fbody%3E%3C%2Fhtml%3E";
   webview_->Navigate(html);
 }
@@ -294,6 +304,7 @@ bool FocusApp::EnsurePrebuiltUiReady() {
   if (webview_->MapStaticSite(DistDir())) {
     // Solo-pack: SoftLand / status JSON readable without :8000
     webview_->MapBehaviorData(DataBehaviorDir());
+    webview_->MapBibleData(DataBibleDir());
     SetEnvironmentVariableW(L"CALT_FOCUS_UI_MODE", nullptr);
     return true;
   }
@@ -464,7 +475,9 @@ void FocusApp::StartWebStack() {
 
 void FocusApp::StartApiOnly() {
   if (tray_) {
-    tray_->ShowBalloon(L"CALT Focus", L"Starting API (:8000)…");
+    tray_->ShowBalloon(
+        L"CALT Focus",
+        L"Starting Study API (:8000) — optional; SoftLand/Arm already work offline…");
   }
   RunLifecycleCommand(L"ensure-api", true);
   WaitForPort(8000, 60000);
@@ -472,7 +485,9 @@ void FocusApp::StartApiOnly() {
   if (tray_) {
     tray_->ShowBalloon(
         L"CALT Focus",
-        PortListening(8000) ? L"API is up on :8000." : L"API not reachable yet — check console.");
+        PortListening(8000)
+            ? L"Study API is up on :8000."
+            : L"Study API not reachable yet — check console.");
   }
 }
 
@@ -498,15 +513,12 @@ void FocusApp::StartFrontendOnly() {
 void FocusApp::RunStack() {
   EnsureEnforcer();
   if (HasPrebuiltWebUi()) {
-    // Precompiled dist/ — only need API for live Arm/Disarm data.
-    if (!PortListening(8000)) {
-      StartApiOnly();
-    }
+    // Phase 7: prebuilt UI — do not auto-start Study :8000.
     OpenCalendar();
     if (tray_) {
       tray_->ShowBalloon(
           L"CALT Focus",
-          L"Prebuilt UI + enforcer. Calendar ready.");
+          L"Prebuilt UI + enforcer. SoftLand/Arm offline; Study API optional (tray → Start API).");
     }
     return;
   }
@@ -531,9 +543,7 @@ void FocusApp::OpenPlan() {
 
 void FocusApp::NavigateShell(const std::wstring& url) {
   if (HasPrebuiltWebUi()) {
-    if (!PortListening(8000)) {
-      StartApiOnly();
-    }
+    // Phase 7: Calendar/Plan/Settings open without auto-starting :8000.
     if (webview_ && webview_->Ready() && EnsurePrebuiltUiReady()) {
       webview_->Navigate(url);
       ShowWindow(main_hwnd_, SW_SHOW);
@@ -545,6 +555,244 @@ void FocusApp::NavigateShell(const std::wstring& url) {
     StartWebStack();
   }
   ShellExecuteW(nullptr, L"open", url.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+}
+
+std::wstring FocusApp::SettingsUrlBusted() const {
+  // Bust WebView module cache so rebuilt dist-focus JS is picked up.
+  // Keep hash query intact: #/productivity?tab=settings&section=overview&_ui=…
+  const DWORD t = GetTickCount();
+  wchar_t buf[64]{};
+  swprintf(buf, 64, L"%lu", static_cast<unsigned long>(t));
+  std::wstring base = SettingsUrl();
+  // SettingsUrl already has ?tab=settings — append bust + section.
+  if (base.find(L"section=") == std::wstring::npos) {
+    base += L"&section=overview";
+  }
+  return base + L"&_ui=" + buf;
+}
+
+void FocusApp::ReloadUi() {
+  if (tray_) {
+    tray_->ShowBalloon(L"CALT Focus", L"Reloading Settings UI…");
+  }
+  if (webview_ && webview_->Ready()) {
+    EnsurePrebuiltUiReady();
+  }
+  NavigateShell(SettingsUrlBusted());
+}
+
+bool FocusApp::RunNpmBuildFocus() {
+  const std::wstring root = RepoRoot();
+  // cmd.exe so npm.cmd resolves on PATH
+  std::wstring cmdLine =
+      L"cmd.exe /c \"npm run build:focus\"";
+  STARTUPINFOW si{};
+  si.cb = sizeof(si);
+  PROCESS_INFORMATION pi{};
+  std::wstring mutableCmd = cmdLine;
+  const BOOL ok = CreateProcessW(
+      nullptr,
+      mutableCmd.data(),
+      nullptr,
+      nullptr,
+      FALSE,
+      CREATE_NO_WINDOW,
+      nullptr,
+      root.c_str(),
+      &si,
+      &pi);
+  if (!ok) {
+    return false;
+  }
+  // Keep tray alive while npm builds (can take ~30–60s)
+  for (;;) {
+    const DWORD wait = WaitForSingleObject(pi.hProcess, 200);
+    MSG pump{};
+    while (PeekMessageW(&pump, nullptr, 0, 0, PM_REMOVE)) {
+      TranslateMessage(&pump);
+      DispatchMessageW(&pump);
+    }
+    if (wait == WAIT_OBJECT_0) {
+      break;
+    }
+  }
+  DWORD code = 1;
+  GetExitCodeProcess(pi.hProcess, &code);
+  CloseHandle(pi.hThread);
+  CloseHandle(pi.hProcess);
+  return code == 0;
+}
+
+void FocusApp::UpdateUi() {
+  if (tray_) {
+    tray_->ShowBalloon(
+        L"CALT Focus",
+        L"Updating UI — npm run build:focus (may take a minute)…");
+  }
+  const bool ok = RunNpmBuildFocus();
+  if (!ok) {
+    if (tray_) {
+      tray_->ShowBalloon(
+          L"CALT Focus",
+          L"build:focus failed — check Node/npm in PATH, then try again.");
+    }
+    return;
+  }
+  if (!HasPrebuiltWebUi()) {
+    if (tray_) {
+      tray_->ShowBalloon(L"CALT Focus", L"dist-focus missing after build.");
+    }
+    return;
+  }
+  if (tray_) {
+    tray_->ShowBalloon(L"CALT Focus", L"UI rebuilt — reloading Settings…");
+  }
+  if (webview_ && webview_->Ready()) {
+    EnsurePrebuiltUiReady();
+  }
+  NavigateShell(SettingsUrlBusted());
+}
+
+bool FocusApp::RunUpdateStackScript() {
+  const std::wstring root = RepoRoot();
+  const std::wstring script =
+      root + L"\\scripts\\desktop_tracker\\build\\update_calt_productivity.ps1";
+  if (GetFileAttributesW(script.c_str()) == INVALID_FILE_ATTRIBUTES) {
+    return false;
+  }
+  // powershell -NoProfile -ExecutionPolicy Bypass -File "...\update_calt_productivity.ps1"
+  std::wstring cmdLine = L"powershell.exe -NoProfile -ExecutionPolicy Bypass -File \"";
+  cmdLine += script;
+  cmdLine += L"\"";
+  STARTUPINFOW si{};
+  si.cb = sizeof(si);
+  PROCESS_INFORMATION pi{};
+  std::wstring mutableCmd = cmdLine;
+  const BOOL ok = CreateProcessW(
+      nullptr,
+      mutableCmd.data(),
+      nullptr,
+      nullptr,
+      FALSE,
+      CREATE_NO_WINDOW,
+      nullptr,
+      root.c_str(),
+      &si,
+      &pi);
+  if (!ok) {
+    return false;
+  }
+  for (;;) {
+    const DWORD wait = WaitForSingleObject(pi.hProcess, 200);
+    MSG pump{};
+    while (PeekMessageW(&pump, nullptr, 0, 0, PM_REMOVE)) {
+      TranslateMessage(&pump);
+      DispatchMessageW(&pump);
+    }
+    if (wait == WAIT_OBJECT_0) {
+      break;
+    }
+  }
+  DWORD code = 1;
+  GetExitCodeProcess(pi.hProcess, &code);
+  CloseHandle(pi.hThread);
+  CloseHandle(pi.hProcess);
+  return code == 0;
+}
+
+bool FocusApp::PendingUpdateNeedsRestart() const {
+  const std::wstring focusNew =
+      RepoRoot() + L"\\native\\calt_focus\\build\\calt_focus.exe.new";
+  const std::wstring enfNew =
+      RepoRoot() + L"\\native\\calt_enforcer\\build\\calt_enforcer.exe.new";
+  if (GetFileAttributesW(focusNew.c_str()) != INVALID_FILE_ATTRIBUTES) {
+    return true;
+  }
+  if (GetFileAttributesW(enfNew.c_str()) != INVALID_FILE_ATTRIBUTES) {
+    return true;
+  }
+  const std::wstring pending =
+      DataBehaviorDir() + L"\\pending_update.json";
+  HANDLE h = CreateFileW(pending.c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr,
+                         OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+  if (h == INVALID_HANDLE_VALUE) {
+    return false;
+  }
+  char buf[4096]{};
+  DWORD n = 0;
+  const BOOL readOk = ReadFile(h, buf, sizeof(buf) - 1, &n, nullptr);
+  CloseHandle(h);
+  if (!readOk || n == 0) {
+    return false;
+  }
+  buf[n] = 0;
+  return strstr(buf, "\"needs_restart\": true") != nullptr ||
+         strstr(buf, "\"needs_restart\":true") != nullptr;
+}
+
+void FocusApp::UpdateStack() {
+  if (tray_) {
+    tray_->ShowBalloon(
+        L"CALT Focus",
+        L"Updating stack — UI, classify rules, natives (may take several minutes)…");
+  }
+  const bool ok = RunUpdateStackScript();
+  if (!ok) {
+    if (tray_) {
+      tray_->ShowBalloon(
+          L"CALT Focus",
+          L"Update stack failed — see PowerShell / build logs. UI-only: use Update UI.");
+    }
+    return;
+  }
+  if (HasPrebuiltWebUi() && webview_ && webview_->Ready()) {
+    EnsurePrebuiltUiReady();
+    NavigateShell(SettingsUrlBusted());
+  }
+  if (PendingUpdateNeedsRestart()) {
+    if (tray_) {
+      tray_->ShowBalloon(
+          L"CALT Focus",
+          L"UI/rules updated. Natives staged as .new — SoftLand off + Disarm, then Apply pending update && restart.");
+    }
+  } else if (tray_) {
+    tray_->ShowBalloon(L"CALT Focus", L"Stack updated — UI reloaded.");
+  }
+}
+
+void FocusApp::ApplyPendingUpdate() {
+  if (FocusBlocksActive()) {
+    if (tray_) {
+      tray_->ShowBalloon(
+          L"CALT Focus",
+          L"Turn SoftLand off and Disarm before applying a native update.");
+    }
+    return;
+  }
+  if (!PendingUpdateNeedsRestart()) {
+    if (tray_) {
+      tray_->ShowBalloon(
+          L"CALT Focus",
+          L"No pending .new binaries. Run Update stack first (or UI already applied).");
+    }
+    return;
+  }
+  const std::wstring bat =
+      RepoRoot() + L"\\scripts\\desktop_tracker\\build\\apply_pending_update.bat";
+  if (GetFileAttributesW(bat.c_str()) == INVALID_FILE_ATTRIBUTES) {
+    if (tray_) {
+      tray_->ShowBalloon(L"CALT Focus", L"apply_pending_update.bat missing.");
+    }
+    return;
+  }
+  if (tray_) {
+    tray_->ShowBalloon(
+        L"CALT Focus",
+        L"Quitting to apply staged natives, then Focus will restart…");
+  }
+  // Detached: bat waits for Focus/enforcer exit, copies .new → exe, relaunches.
+  ShellExecuteW(nullptr, L"open", bat.c_str(), nullptr, RepoRoot().c_str(), SW_SHOW);
+  Quit();
 }
 
 void FocusApp::Quit() {

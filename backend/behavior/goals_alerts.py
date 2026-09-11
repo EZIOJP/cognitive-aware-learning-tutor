@@ -90,6 +90,17 @@ def _aggregate_totals(
 
     scores = load_score_map(db)
     policy = load_policy_dict(db, user_id)
+    daily_goal_seconds = int(policy.get("daily_goal_minutes") or 240) * 60
+
+    # P5c: prefer enforcer day_rollup for productive seconds when fresh.
+    rollup_productive: int | None = None
+    try:
+        from backend.behavior.day_rollup import productive_seconds_from_rollup
+
+        rollup_productive = productive_seconds_from_rollup(day)
+    except Exception:
+        rollup_productive = None
+
     start, end = local_day_bounds_utc(day)
     rows = (
         db.query(TrackedSession)
@@ -105,24 +116,28 @@ def _aggregate_totals(
     rows = merge_tracked_rows(rows)
     buckets, total = aggregate_session_rows(rows, scores=scores, policy=policy)
 
-    productive = 0
     site_seconds: dict[str, int] = {}
+    productive = 0
 
     for _exe, bucket in buckets.items():
         if bucket.sites:
             for site_label, site in bucket.sites.items():
                 site_seconds[site_label] = site_seconds.get(site_label, 0) + site.seconds
-                if site.productivity_score >= PRODUCTIVE_THRESHOLD:
+                if rollup_productive is None and site.productivity_score >= PRODUCTIVE_THRESHOLD:
                     productive += site.seconds
         else:
-            if bucket.productivity_score >= PRODUCTIVE_THRESHOLD:
+            if rollup_productive is None and bucket.productivity_score >= PRODUCTIVE_THRESHOLD:
                 productive += bucket.seconds
+
+    if rollup_productive is not None:
+        productive = int(rollup_productive)
 
     return {
         "total_seconds": total,
         "productive_seconds": productive,
         "site_seconds": site_seconds,
-        "daily_goal_seconds": int(policy.get("daily_goal_minutes") or 240) * 60,
+        "daily_goal_seconds": daily_goal_seconds,
+        "productive_source": "day_rollup" if rollup_productive is not None else "legacy",
     }
 
 
@@ -177,6 +192,7 @@ def build_goals_status(
         "alerts": alerts,
         "productive_seconds": productive,
         "total_seconds": totals["total_seconds"],
+        "productive_source": totals.get("productive_source") or "legacy",
     }
 
 

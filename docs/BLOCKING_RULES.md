@@ -38,8 +38,11 @@ built-in distractor list block anything.
 *and* tick a Bible chapter; spend a reward day (4 qualifying days buys one); or
 spend a day pass (2 a week). Separately, small chores pay out **earned minutes**
 (15 for Bible, 10 for the plan, 30 for the goal, 60/day cap) that you spend in
-15-minute chunks. Reward days and passes are Python-owned, so they need `:8000`
-up; the blocking itself never does.
+15-minute chunks. Passes, reward claim, earn events and incubation limits are
+enforced by `calt_enforcer` (work with `:8000` stopped). **P5c (2026-09-11):**
+Study `distraction_gate` / `goals_alerts` **read** `data/behavior/day_rollup.json`
+when present and fresh (legacy recompute only as fallback). Native qualification
+/ streak credit without `:8000` remains a later P5c slice.
 
 ---
 
@@ -79,6 +82,24 @@ The banner text picks its reason in the same priority: incubation, then reward
 day, then free window — so during a cooldown you always see *why* you are stuck,
 not the nicer reason underneath it.
 
+### Locked-page / voice reason vocabulary (Phase 3)
+
+Native SoftLand decide (`softland_decide.cpp`) and the Gate extension
+(`blockKindForUrl`) historically used overlapping but not identical tokens.
+Shared tokens today: `porn`, `watch_list`, `incubation`.
+
+| Native `reason` | Extension `blockKind` / voice alias |
+|-----------------|-------------------------------------|
+| `porn` | `porn` |
+| `watch_list` | `watch_list` / `watch` |
+| `incubation` | `incubation` |
+| `block_extra` | maps to `watch_site_block` in voice |
+| `not_listed` / study catch-all | extension uses `study_block` / `softland_block` |
+| `free_window` / `reward_day` / `allow_list` | allow paths (no lock page) |
+| — | `morning_bible` / `morning_plan` / `keyword` (extension/morning cache; not SoftLand decide) |
+
+Voice canonicalization: `backend/behavior/voice_agent/block_dialogues.py` → `KIND_ALIASES`.
+
 ### Step 2 — the host ladder, first match wins
 
 Host is lowercased with scheme, port and a leading `www.` stripped. Matching is
@@ -92,6 +113,28 @@ exact host **or** any subdomain (`docs.google.com` matches `*.docs.google.com`).
 | 4 | Mode is `free` and not incubating | **Allow** | `reward_day` / `free_window` / `free_mode` |
 | 5 | Mode's `block_watch_sites` is on, and host is in `watch_extra` **or** the built-in list | **Block** | `watch_list` |
 | 6 | Anything else | **Allow** | `not_listed` / `default_allow` |
+
+### Reason vocabulary (native SoftLand vs Gate `blockKind`)
+
+Native `get_mode` replies with short SoftLand `reason` tokens from
+`softland_decide.cpp`. Gate’s `blockKindForUrl` (locked interstitial / voice)
+uses a related but not identical set. Reconcile when comparing logs:
+
+| Native SoftLand `reason` | Typical Gate `blockKind` / voice alias |
+|--------------------------|----------------------------------------|
+| `allow_list` | (allow — not blocked) |
+| `porn` | `porn` / `keyword` |
+| `block_extra` | `softland_block` / `generic_rule_break` |
+| `reward_day` / `free_window` / `free_mode` | (allow in free) |
+| `watch_list` | `watch` / `watch_list` |
+| `not_listed` / `default_allow` | (allow) |
+| `incubation` | `incubation` |
+| `softland_off` | SoftLand disabled |
+| `softland_policy_missing` / `_corrupt` | fail-closed |
+
+Voice `KIND_ALIASES` in `backend/behavior/voice_agent/block_dialogues.py` maps
+these native tokens into dialogue pools so Jarvis does not fall through on
+unknown reasons.
 
 Consequences worth saying out loud, because they surprise people:
 
@@ -192,15 +235,18 @@ one off does not turn the others off.
 
 ## Goals, earning and unlocks
 
-This is the part with real numbers. Everything here is Python-owned, which means
-**it needs `:8000` running** — unlike SoftLand and Arm, which do not.
+Day passes, reward credits, earned-minute rates/caps, and incubation limits are
+**enforced by `calt_enforcer`** (gateway ops on `\\.\pipe\calt_enforcer_cmd`) and
+work with `:8000` stopped. SoftLand decide already honours `runtime.free_until`
+and `reward_day_active`. **P5c reader path (2026-09-11):** productive minutes for
+Study UI come from enforcer `day_rollup.json` when fresh; Python still combines
+them with Bible chapter for unlock / streak recording until native qualification
+owns that end-to-end.
 
-> **This is a known deviation, not the design.** `AGENTS.md` locks day-pass, free
-> and incubation accounting to the C++ product; it simply has not moved yet.
-> Prod P5 does the move — see the
+> **P5a done (2026-09-11).** See the
 > [P5 design](superpowers/specs/2026-09-08-calt-productivity-p5-native-unlock-accounting-design.md)
 > and the [P5a plan](superpowers/plans/2026-09-08-calt-productivity-p5a-native-unlock-accounting.md).
-> Until then, read this section as "how it works today".
+> Study UI still calls thin Python helpers that forward to the gateway.
 
 ### What unlocks the day
 
@@ -228,60 +274,53 @@ Three independent doors, any one of which opens the day:
 ### Reward days — the 4-day streak
 
 - A day **qualifies** when you hit both halves: productive ≥ goal *and* the
-  chapter. Recorded once per day.
+  chapter. Recorded once per day (Python decides until P5c; enforcer stores the
+  credit via `reward.mark_qualified`).
 - **A day spent on a reward day never qualifies**, so you cannot farm streaks
   out of your days off.
-- **4 qualifying days = 1 reward day** (`QUALIFYING_DAYS_PER_REWARD = 4`).
-  `available = earned + granted − spent`.
-- **Claiming** takes the typed phrase **`REWARD`**, and is refused if today is
-  already unlocked some other way — "save the reward day for another day".
-- Claiming writes four things at once: today into `used_dates`, `reward_day` on
-  the Bible day, `runtime.reward_day_active` + `free_until` (today 23:59:59
-  local) into the SoftLand policy, and a free override until midnight.
-- **It ends at local midnight**, by the day file rolling over. There is no
-  "end reward day" button.
+- **4 qualifying days = 1 reward day**. `available = earned + granted − spent`
+  lives in SQLite `productivity_reward_*` tables.
+- **Claiming** takes the typed phrase **`REWARD`** (enforced natively on
+  `reward.claim`), opens `free_until` until local midnight, and sets
+  `reward_day_active`.
+- **It ends at local midnight**, by SoftLand tick clearing expired
+  `free_until` / `reward_day_active`. There is no "end reward day" button.
 
 ### Day pass — the deliberate skip
 
-Two per Mon–Sun week, confirmed by typing **`PASS`**. Unlike a reward day it does
-**not** excuse you from the morning Bible and plan redirects. That asymmetry is
-intentional: a pass buys the day, not the morning.
-
-> **Broken today (fixed by P5a):** a day pass does not unlock a single website.
-> `request_day_pass` writes only the Bible day file, and the SoftLand ladder never
-> reads `runtime.day_pass` — so the pass flips the Python `day_unlimited` flag,
-> which since Prod P4 no longer reaches the browser. Reward days work only because
-> their claim explicitly writes `free_until`; nobody wired the pass. If you burn a
-> pass right now, YouTube stays blocked.
+Two per Mon–Sun week, confirmed by typing **`PASS`**. `day.grant_pass` records
+the pass in `productivity_day_passes`, writes `runtime.day_pass` as audit, and
+**opens `free_until` to local 23:59:59** — the same free-window SoftLand decide
+already honours. Unlike a reward day it does **not** excuse you from the morning
+Bible and plan redirects. That asymmetry is intentional: a pass buys the day,
+not the morning.
 
 ### Earned minutes — the small change
 
-A separate, much smaller currency than reward days
-(`backend/behavior/break_reward.py`):
+Credited natively by `day.mark_event` (rates copied from
+`backend/behavior/break_reward.py`):
 
 | Action | Earns | How often |
 |--------|-------|-----------|
-| Bible done | **15 min** | once a day |
+| Bible done (`chapter_done`) | **15 min** | once a day |
 | Plan confirmed | **10 min** | once a day |
 | Daily goal hit | **30 min** | once a day |
 
 Capped at **60 min earned per day**. Spending (default 15 min at a time) debits
-the ledger and opens a free window; it is **refused while incubating**; and it
-asks for a PIN only if `TRACKER_EXIT_PIN` is set in the environment. On the
-native side, `softland.spend_free` always **extends** the current free window —
-spending 15 minutes during a reward day can never shorten it.
+the ledger via `softland.spend_free` and opens/extends a free window; it is
+**refused while incubating**. On the native side, spend always **extends** the
+current free window — spending 15 minutes during a reward day can never shorten it.
 
 ### Incubation — the cooldown
 
 - Starts either when a **study block ends** or after a **productive streak** of
   `work_minutes` (**45 min**).
-- Lasts `break_minutes` (**8 min**, 480s fallback).
-- **At most 1 per rolling hour.**
+- Lasts `break_minutes` (**8 min** default on `softland.set_incubation`).
+- **At most 1 per rolling hour** — enforced natively (`incubation_rate_limited`).
 - While it runs: mode is forced to `study`, and spending earned minutes is
   refused.
-- **It cannot be cancelled early.** There is no endpoint for it, and the
-  `allow_snooze` config flag is stored but never read.
-
+- Clear with `softland.clear_incubation` (gateway); there is still no casual UI
+  cancel.
 ### Evening free and the study-loop gate
 
 - **Evening free:** after `BROWSER_FREE_AFTER` (default **21:00**) the Python
@@ -329,15 +368,15 @@ their `apply_after` passes — with no window open and no Python running.
 | Arm / Disarm + kill list | The OS killer and its target list |
 | Lock mode / anti-tamper / protect uninstall | How hard it is to undo an Arm |
 | Daily goal (min) and Plan's "daily focus h" | The **same** unlock target under two names — default 240 min |
-| Category scores / productive threshold / app overrides | Feed the productive-time maths, i.e. whether the day counts. Python-owned — needs the API |
-| Reward days / day pass / earned minutes | The three unlock currencies — see [Goals, earning and unlocks](#goals-earning-and-unlocks). Python-owned |
+| Category scores / productive threshold / app overrides | Feed the productive-time maths. **P5b** classifies in enforcer; **P5c** Study reads `day_rollup.json` (legacy recompute = fallback) |
+| Reward days / day pass / earned minutes / incubation limits | Unlock currencies — enforcer-owned (P5a). Thin Python callers only |
 | Study-loop gate | Off by default; when on it forces the morning into the daily bite |
 | Device porn block (hosts) | Separate OS-level filter, all apps, needs admin, unrelated to SoftLand rules |
 | Demo mode (fake clock) | Testing aid; moves the clock the rules read |
 
-Anything in the "needs the API" row stops working when `:8000` is down.
-Everything above it — SoftLand, lists, schedules, Arm, the ledger — keeps
-working, because it goes through the enforcer gateway.
+Pass/reward/earn/incubation keep working when `:8000` is down (enforcer gateway).
+Productive minutes for Study gate/goals prefer `day_rollup.json` (P5c); Bible +
+streak recording still touch Python until full native qualification.
 
 ---
 
@@ -363,13 +402,11 @@ speculation; each was read out of the code.
 6. **Arm has a fail-open window:** if the enforcer process is not running,
    nothing kills anything. That is why it holds an ownership lock, gets
    relaunched, and should be installed as a service for stay-alive.
-7. **"Goal met" and "day unlocked" are computed by two different functions and
-   can disagree.** The unlock path (`distraction_gate`) uses your policy
-   `threshold`, merges overlapping sessions, subtracts sleep, counts every
-   source, **and requires a Bible chapter**. The `goal_met` chip
-   (`goals_alerts`) uses a hardcoded threshold of 60, sums buckets, counts only
-   three sources, and **ignores the Bible entirely**. So the chip can read "goal
-   met" while the day is still locked.
+7. **"Goal met" and "day unlocked" can still disagree on Bible.** Unlock
+   (`distraction_gate`) still requires a Bible chapter on top of productive
+   minutes. The `goal_met` chip (`goals_alerts`) only checks productive time
+   (now from `day_rollup` when fresh) and **ignores the Bible**. So the chip can
+   read "goal met" while the day is still locked.
 8. **Claiming a reward day is refused on a day you already unlocked by working.**
    That is deliberate — it stops you burning a hard-won credit on a day you had
    already earned — but the message ("Today is already unlocked") reads like an
@@ -381,11 +418,11 @@ speculation; each was read out of the code.
     nothing. Chapter + study minutes is the only earn path.
 11. **`softland_policy.goals.goal_met` is never written by Python.** It exists in
     the schema and normalises to `False` on read. Do not build UI on it.
-12. **Everything in this section stops at `:8000`.** Goals, reward days, day
-    passes, earned minutes and incubation are Python-owned, so with the API down
-    they freeze — while SoftLand, the lists, schedules, Arm and the ledger keep
-    working through the enforcer gateway. A day where the API was down is a day
-    that earns no streak credit.
+12. **P5c reader path landed (2026-09-11).** `distraction_gate` and
+    `goals_alerts` prefer `data/behavior/day_rollup.json` for productive minutes
+    when the mirror is present, for today, and fresh (~120s). Missing/stale →
+    legacy Python recompute. Bible chapter + streak *recording* still run in
+    Study until native qualification finishes the P5c exit.
 
 ### Fixed on 2026-09-08 while writing this
 

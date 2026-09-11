@@ -1,12 +1,19 @@
 /**
- * Light browser telemetry → CALT POST /api/behavior/browser-telemetry
+ * Light browser telemetry → native track_tab (required) + optional Python HTTP.
  * Cadence ~45s (idle backoff ~2 min). Domain-preferring; strips sensitive query tokens.
  * Edge-only SelfTracker telemetry (Chromium MV3).
+ *
+ * Phase 4 (Focus Standalone): HTTP POST /api/behavior/browser-telemetry is OPT-IN only
+ * (chrome.storage.local caltPythonTelemetry=true). Default OFF. Required path is
+ * native msg_host track_tab — works with Study :8000 stopped. Do not re-enable HTTP
+ * by default.
  */
 /* eslint-disable no-unused-vars */
 /* global extAPI — set by background.js */
 
 var TELEMETRY_URL = "http://127.0.0.1:8000/api/behavior/browser-telemetry";
+/** Storage flag: enable Python HTTP browser-telemetry (default false). */
+var PYTHON_TELEMETRY_STORAGE_KEY = "caltPythonTelemetry";
 /** Active / focus cadence (ms). */
 var TELEMETRY_CADENCE_MS = 90000;
 /** When browser idle or locked. */
@@ -248,7 +255,22 @@ async function maybePostBrowserTelemetry(api, gateCache, opts) {
 
     if (nativeOk) return;
 
-    // HTTP fallback when host missing / failed.
+    // Opt-in HTTP fallback only (default OFF). track_tab above is the required path.
+    var httpEnabled = await new Promise(function (resolve) {
+      try {
+        if (!api.storage || !api.storage.local) {
+          resolve(false);
+          return;
+        }
+        api.storage.local.get([PYTHON_TELEMETRY_STORAGE_KEY], function (st) {
+          resolve(!!(st && st[PYTHON_TELEMETRY_STORAGE_KEY] === true));
+        });
+      } catch (e2) {
+        resolve(false);
+      }
+    });
+    if (!httpEnabled) return;
+
     fetch(TELEMETRY_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },

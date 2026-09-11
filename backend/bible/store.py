@@ -569,12 +569,10 @@ def summary(user_id: int) -> dict[str, Any]:
 
 
 def grant_day_pass(user_id: int) -> dict[str, Any]:
-    """Unlock games until local midnight (manual day pass). Does not enforce weekly quota.
+    """Unlock games until local midnight (manual day pass). Sites via SoftLand free_until.
 
-    Sites are NOT unlocked here: native SoftLand decides URLs and ignores
-    runtime.day_pass. Prod P5a moves the grant into calt_enforcer, which opens
-    the free window natively — see docs/superpowers/plans/
-    2026-09-08-calt-productivity-p5a-native-unlock-accounting.md.
+    Quota + confirm are enforced by calt_enforcer ``day.grant_pass``. Prefer
+    ``request_day_pass`` from UI; this keeps a thin study-side day flag for games.
     """
     day = load_day(user_id)
     day["day_pass"] = True
@@ -583,78 +581,80 @@ def grant_day_pass(user_id: int) -> dict[str, Any]:
     return summary(user_id)
 
 
-def _passes_path(user_id: int) -> Path:
-    return bible_dir() / f"day_passes_{user_id}.json"
-
-
-def _week_monday_key() -> str:
-    today = datetime.now(local_tz()).date()
-    monday = today.fromordinal(today.toordinal() - today.weekday())  # Mon=0
-    return monday.isoformat()
-
-
 def day_pass_status(user_id: int) -> dict[str, Any]:
-    """Weekly quota for controlled skips (no Bible required that day)."""
-    week = _week_monday_key()
-    today = _day_key()
-    raw = _read_json(_passes_path(user_id), {"week": week, "dates": []})
-    if raw.get("week") != week:
-        raw = {"week": week, "dates": []}
-    dates = [str(d) for d in (raw.get("dates") or []) if str(d)]
-    used = len(dates)
-    limit = DAY_PASSES_PER_WEEK
-    already = today in dates or bool(load_day(user_id).get("day_pass"))
-    return {
-        "week_start": week,
-        "limit": limit,
-        "used": used,
-        "remaining": max(0, limit - used),
-        "already_active_today": already,
-        "confirm_phrase": "PASS",
-    }
+    """Weekly quota for controlled skips — owned by calt_enforcer."""
+    from backend.behavior.enforcer_gateway import GatewayUnavailable, gateway_call
+
+    week = datetime.now(local_tz()).date()
+    monday = week.fromordinal(week.toordinal() - week.weekday()).isoformat()
+    try:
+        status = gateway_call("day.status")
+        used = int(status.get("passes_used") or 0)
+        limit = int(status.get("passes_limit") or DAY_PASSES_PER_WEEK)
+        already = bool(status.get("pass_today")) or bool(load_day(user_id).get("day_pass"))
+        return {
+            "week_start": monday,
+            "limit": limit,
+            "used": used,
+            "remaining": max(0, limit - used),
+            "already_active_today": already,
+            "confirm_phrase": "PASS",
+        }
+    except GatewayUnavailable:
+        # Enforcer down: report study-side flag only; writes still go through the pipe.
+        already = bool(load_day(user_id).get("day_pass"))
+        return {
+            "week_start": monday,
+            "limit": DAY_PASSES_PER_WEEK,
+            "used": 0,
+            "remaining": DAY_PASSES_PER_WEEK,
+            "already_active_today": already,
+            "confirm_phrase": "PASS",
+            "gateway_unavailable": True,
+        }
 
 
 def request_day_pass(user_id: int, *, confirm: str) -> dict[str, Any]:
-    """Spend one weekly pass. Requires confirm == PASS."""
-    if (confirm or "").strip().upper() != "PASS":
-        raise ValueError("Type PASS to confirm a day pass")
-    status = day_pass_status(user_id)
-    week = status["week_start"]
-    today = _day_key()
-    raw = _read_json(_passes_path(user_id), {"week": week, "dates": []})
-    if raw.get("week") != week:
-        raw = {"week": week, "dates": []}
-    dates = [str(d) for d in (raw.get("dates") or []) if str(d)]
+    """Spend one weekly pass. Quota + confirm phrase are enforced by calt_enforcer."""
+    from backend.behavior.enforcer_gateway import GatewayUnavailable, gateway_call
 
-    if status["already_active_today"]:
-        # Count agent/manual grants toward the weekly quota if not recorded yet
-        if today not in dates:
-            if len(dates) >= DAY_PASSES_PER_WEEK:
-                pass  # already over; still leave day unlocked
-            else:
-                dates.append(today)
-                raw["week"] = week
-                raw["dates"] = dates
-                _write_json(_passes_path(user_id), raw)
-        return {
-            **summary(user_id),
-            "day_pass_status": day_pass_status(user_id),
-            "ok": True,
-            "message": "Already unlocked today",
-        }
-    if status["remaining"] <= 0:
-        raise ValueError(f"No day passes left this week ({status['used']}/{status['limit']})")
-    if today not in dates:
-        dates.append(today)
-    raw["week"] = week
-    raw["dates"] = dates
-    _write_json(_passes_path(user_id), raw)
-    out = grant_day_pass(user_id)
+    try:
+        reply = gateway_call("day.grant_pass", {"confirm": confirm})
+    except GatewayUnavailable as exc:
+        raise ValueError("Enforcer is not running — start CALT Desktop Enforcer") from exc
+
+    if not reply.get("ok"):
+        err = str(reply.get("error") or "gateway_refused")
+        if err == "confirm_required":
+            raise ValueError("Type PASS to confirm a day pass")
+        if err == "pass_quota_exhausted":
+            raise ValueError("No day passes left this week")
+        raise ValueError(err)
+
+    day = load_day(user_id)
+    day["day_pass"] = True
+    day["game_consumed_seconds"] = 0
+    save_day(user_id, day)
+    status = {}
+    try:
+        status = gateway_call("day.status")
+    except GatewayUnavailable:
+        pass
     return {
-        **out,
-        "day_pass_status": day_pass_status(user_id),
+        **summary(user_id),
+        "day_pass_status": {
+            "limit": status.get("passes_limit", DAY_PASSES_PER_WEEK),
+            "used": status.get("passes_used", 0),
+            "remaining": max(
+                0,
+                int(status.get("passes_limit", DAY_PASSES_PER_WEEK))
+                - int(status.get("passes_used", 0)),
+            ),
+            "already": bool(status.get("pass_today")),
+            "already_active_today": bool(status.get("pass_today")),
+        },
         "ok": True,
-        "message": "Day pass granted — games unlocked until midnight",
+        "message": "Day pass granted — games and sites unlocked until midnight",
     }
 
 

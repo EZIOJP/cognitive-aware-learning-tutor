@@ -463,19 +463,25 @@ std::wstring SoftlandPolicyPathW() {
     return JoinPath(env, L"behavior\\softland_policy.json");
   }
   if (GetEnvironmentVariableW(L"CALT_ROOT", env, MAX_PATH) > 0) {
+    std::wstring prod = JoinPath(env, L"data\\productivity\\behavior\\softland_policy.json");
+    if (FileExistsW(prod)) return prod;
     return JoinPath(env, L"data\\behavior\\softland_policy.json");
   }
   wchar_t mod[MAX_PATH] = {};
   GetModuleFileNameW(nullptr, mod, MAX_PATH);
   std::wstring dir = ParentDir(mod);
   for (int i = 0; i < 8; ++i) {
-    std::wstring candidate = JoinPath(dir, L"data\\behavior\\softland_policy.json");
+    std::wstring candidate =
+        JoinPath(dir, L"data\\productivity\\behavior\\softland_policy.json");
+    if (FileExistsW(candidate)) return candidate;
+    candidate = JoinPath(dir, L"data\\behavior\\softland_policy.json");
     if (FileExistsW(candidate)) return candidate;
     std::wstring next = ParentDir(dir);
     if (next == dir) break;
     dir = next;
   }
-  return JoinPath(ParentDir(mod), L"data\\behavior\\softland_policy.json");
+  return JoinPath(ParentDir(mod),
+                  L"data\\productivity\\behavior\\softland_policy.json");
 }
 
 SoftlandModeResult SoftlandGetMode(const std::string& url, const std::string& /*now_iso_opt*/) {

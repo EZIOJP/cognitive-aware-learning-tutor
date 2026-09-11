@@ -984,6 +984,47 @@ export async function putEnforcerPolicy(body: {
   provided_unlock?: string;
   protect_uninstall?: boolean;
 }): Promise<{ ok: boolean; policy: Record<string, unknown>; snapshot: FocusDashboardSnapshot }> {
+  const { isFocusDesktopShell } = await import("../utils/focusDesktopShell");
+  if (isFocusDesktopShell()) {
+    const { enforcerNativeCmd, isFocusEnforcerBridgeAvailable } = await import(
+      "../lib/enforcerNativeCmd"
+    );
+    if (!isFocusEnforcerBridgeAvailable()) {
+      throw new Error("enforcer_unreachable");
+    }
+    const native = await enforcerNativeCmd("arm.set", {
+      hard_block_armed: body.hard_block_armed,
+      armed: body.hard_block_armed,
+      gate_locked: body.gate_locked,
+      incubation_active: body.incubation_active,
+      anti_tamper: body.anti_tamper,
+      exes: body.exes,
+      lock_mode: body.lock_mode,
+      unlock_password: body.unlock_password,
+      unlock_phrase: body.unlock_phrase,
+      provided_unlock: body.provided_unlock,
+      protect_uninstall: body.protect_uninstall,
+    });
+    if (!native || native.ok === false) {
+      throw new Error(String(native?.error || "enforcer_cmd_failed"));
+    }
+    // Minimal snapshot so Settings kill-list UI can refresh without :8000.
+    const snap: FocusDashboardSnapshot = {
+      enforcer_policy: {
+        hard_block_armed: body.hard_block_armed,
+        gate_locked: body.gate_locked,
+        incubation_active: body.incubation_active,
+        anti_tamper: body.anti_tamper,
+        exes: body.exes ?? [],
+      },
+      enforcer: { armed: body.hard_block_armed },
+    };
+    return {
+      ok: true,
+      policy: { ...(body as unknown as Record<string, unknown>), exes: body.exes ?? [] },
+      snapshot: snap,
+    };
+  }
   const res = await fetch(resolveApiUrl("/api/behavior/enforcer-policy"), {
     method: "PUT",
     headers: authHeaders(),

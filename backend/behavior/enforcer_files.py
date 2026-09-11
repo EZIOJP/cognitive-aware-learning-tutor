@@ -1,6 +1,6 @@
 """Native enforcer policy + status files (zero-Python tracker contract).
 
-Paths under data/behavior/:
+Paths under data/productivity/behavior/ (legacy: data/behavior/):
   enforcer_policy.json  — Focus / gate may write; calt_enforcer reads
   enforcer_status.json  — calt_enforcer writes; Focus / API only read
 
@@ -14,11 +14,10 @@ import logging
 import time
 from typing import Any
 
-from backend.paths import ROOT
+from backend.paths import BEHAVIOR_DIR, ROOT
 
 log = logging.getLogger("calt.enforcer_files")
 
-BEHAVIOR_DIR = ROOT / "data" / "behavior"
 POLICY_PATH = BEHAVIOR_DIR / "enforcer_policy.json"
 STATUS_PATH = BEHAVIOR_DIR / "enforcer_status.json"
 LOCK_PATH = BEHAVIOR_DIR / "enforcer_owner.lock"

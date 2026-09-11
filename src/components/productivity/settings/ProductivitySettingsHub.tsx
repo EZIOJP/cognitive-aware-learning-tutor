@@ -1,15 +1,4 @@
 import type { ReactNode } from "react";
-import {
-  LayoutDashboard,
-  Radio,
-  Globe2,
-  AppWindow,
-  Unlock,
-  Gauge,
-  Filter,
-  Wrench,
-  type LucideIcon,
-} from "lucide-react";
 import { WeaponCallout, SettingSection, NativeOrApiBadge } from "./SettingPrimitives";
 import FocusControlPanel from "../FocusControlPanel";
 import SoftLandSiteRulesPanel from "../SoftLandSiteRulesPanel";
@@ -18,6 +7,7 @@ import AppKillRulesPanel from "../AppKillRulesPanel";
 import ProductivityPolicyPanel from "../ProductivityPolicyPanel";
 import { DeviceBlockPanel } from "../DeviceBlockPanel";
 import { DesktopManagedBanner } from "../DesktopManagedBanner";
+import { EnforcerWriteGate } from "../EnforcerWriteGate";
 
 export type SettingsSectionId =
   | "overview"
@@ -29,22 +19,24 @@ export type SettingsSectionId =
   | "filters"
   | "tools";
 
-const NAV: { id: SettingsSectionId; label: string; blurb: string; Icon: LucideIcon }[] = [
-  { id: "overview", label: "Overview", blurb: "How it works", Icon: LayoutDashboard },
-  { id: "now", label: "Now", blurb: "Mode · earn · Arm", Icon: Radio },
-  { id: "sites", label: "Sites", blurb: "Lists · schedule", Icon: Globe2 },
-  { id: "apps", label: "Apps", blurb: "Kill list · Arm", Icon: AppWindow },
-  { id: "unlock", label: "Unlock", blurb: "Goal · pass · reward", Icon: Unlock },
-  { id: "productive", label: "Productive", blurb: "Scores", Icon: Gauge },
-  { id: "filters", label: "Filters", blurb: "Hosts block", Icon: Filter },
-  { id: "tools", label: "Tools", blurb: "Demo · watch", Icon: Wrench },
+const NAV: { id: SettingsSectionId; label: string; blurb: string }[] = [
+  { id: "overview", label: "Overview", blurb: "How blocking works" },
+  { id: "now", label: "Now", blurb: "Mode, earn, Arm" },
+  { id: "sites", label: "Sites", blurb: "SoftLand lists & schedule" },
+  { id: "apps", label: "Apps", blurb: "Kill list & Arm" },
+  { id: "unlock", label: "Unlock", blurb: "Goal, pass, reward" },
+  { id: "productive", label: "Productive", blurb: "Scores & categories" },
+  { id: "filters", label: "Filters", blurb: "Hosts porn block" },
+  { id: "tools", label: "Tools", blurb: "Demo, watch, export" },
 ];
 
 export type ProductivitySettingsHubProps = {
   section: SettingsSectionId;
   onSectionChange: (id: SettingsSectionId) => void;
   onPolicySaved?: () => void;
+  /** Scoring / session tools that need page timeline state */
   productiveExtra?: ReactNode;
+  /** Demo, watch, reminders, export, setup — owned by the page */
   toolsContent?: ReactNode;
 };
 
@@ -56,88 +48,70 @@ export function ProductivitySettingsHub({
   toolsContent,
 }: ProductivitySettingsHubProps) {
   return (
-    <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-8">
+    <EnforcerWriteGate>
+    <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
       <nav
         aria-label="Settings groups"
-        className="lg:sticky lg:top-20 lg:w-[13.5rem] shrink-0 rounded-2xl border border-white/[0.07] bg-zinc-950/50 p-1.5 backdrop-blur-sm"
+        className="lg:sticky lg:top-20 lg:w-52 shrink-0 space-y-1 rounded-2xl border border-white/10 bg-white/[0.03] p-2"
       >
-        <p className="px-2.5 pt-2 pb-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-500">
-          Settings
-        </p>
-        <div className="space-y-0.5">
-          {NAV.map((item) => {
-            const active = section === item.id;
-            const Icon = item.Icon;
-            return (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => onSectionChange(item.id)}
-                className={`group flex w-full items-start gap-2.5 rounded-xl px-2.5 py-2 text-left transition-colors ${
-                  active
-                    ? "bg-white/[0.09] text-zinc-50 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)]"
-                    : "text-zinc-500 hover:bg-white/[0.04] hover:text-zinc-300"
-                }`}
-              >
-                <span
-                  className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border ${
-                    active
-                      ? "border-teal-500/30 bg-teal-500/10 text-teal-200"
-                      : "border-white/[0.06] bg-black/20 text-zinc-500 group-hover:text-zinc-400"
-                  }`}
-                >
-                  <Icon className="h-3.5 w-3.5" aria-hidden />
-                </span>
-                <span className="min-w-0 pt-0.5">
-                  <span className="block text-[12px] font-semibold tracking-tight">{item.label}</span>
-                  <span className="block text-[10px] opacity-75 mt-0.5 leading-snug">{item.blurb}</span>
-                </span>
-              </button>
-            );
-          })}
-        </div>
+        {NAV.map((item) => {
+          const active = section === item.id;
+          return (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => onSectionChange(item.id)}
+              className={`w-full rounded-xl px-3 py-2 text-left transition-colors ${
+                active
+                  ? "bg-white/10 text-foreground"
+                  : "text-muted-foreground hover:bg-white/5 hover:text-foreground/90"
+              }`}
+            >
+              <span className="block text-xs font-semibold">{item.label}</span>
+              <span className="block text-[10px] opacity-80 mt-0.5">{item.blurb}</span>
+            </button>
+          );
+        })}
       </nav>
 
       <div className="min-w-0 flex-1 space-y-6">
         {section === "overview" && (
-          <div className="space-y-5">
+          <div className="space-y-4">
             <WeaponCallout />
-            <div className="rounded-2xl border border-white/[0.07] bg-zinc-950/40 p-5 space-y-4">
-              <div>
-                <p className="text-[13px] font-semibold tracking-tight text-zinc-100">Start here</p>
-                <p className="mt-1 text-[12px] text-zinc-500">
-                  Each group is one job. Open one, finish it, leave — no mega-scroll.
-                </p>
-              </div>
-              <div className="grid gap-2.5 sm:grid-cols-2">
+            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:p-6 space-y-3">
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Jump to a group
+              </p>
+              <div className="grid gap-2 sm:grid-cols-2">
                 {(
                   [
-                    ["sites", "Sites", "Allow / watch / block + week schedule"],
-                    ["apps", "Apps", "OS kill list — Arm is under Now"],
-                    ["unlock", "Unlock", "Daily goal, day pass, reward day"],
-                    ["now", "Now", "Live mode, spend earned, Arm switch"],
+                    ["sites", "Sites — allow / watch / block + week schedule"],
+                    ["apps", "Apps — OS kill list and Arm"],
+                    ["unlock", "Unlock — daily goal, day pass, reward day"],
+                    ["now", "Now — live mode, spend earned, Arm switch"],
                   ] as const
-                ).map(([id, title, sub]) => (
+                ).map(([id, label]) => (
                   <button
                     key={id}
                     type="button"
                     onClick={() => onSectionChange(id)}
-                    className="rounded-xl border border-white/[0.07] bg-black/30 px-3.5 py-3 text-left transition-colors hover:border-teal-500/25 hover:bg-teal-500/[0.05]"
+                    className="rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-left text-[12px] text-foreground/90 hover:border-sky-400/30 hover:bg-sky-500/5"
                   >
-                    <span className="block text-[12px] font-semibold text-zinc-100">{title}</span>
-                    <span className="mt-0.5 block text-[11px] text-zinc-500 leading-snug">{sub}</span>
+                    {label}
                   </button>
                 ))}
               </div>
-              <div className="flex flex-col gap-2 border-t border-white/[0.05] pt-3 sm:flex-row sm:flex-wrap sm:gap-x-6 sm:gap-y-2">
-                <div className="flex items-center gap-2">
-                  <NativeOrApiBadge kind="native" />
-                  <span className="text-[11px] text-zinc-500">SoftLand · Arm · lists · schedules</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <NativeOrApiBadge kind="api" />
-                  <span className="text-[11px] text-zinc-500">Scores · hosts · watch sync</span>
-                </div>
+              <div className="flex flex-wrap gap-2 pt-1">
+                <NativeOrApiBadge kind="native" />
+                <span className="text-[11px] text-muted-foreground self-center">
+                  SoftLand, Arm, lists, schedules — work with API down
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <NativeOrApiBadge kind="api" />
+                <span className="text-[11px] text-muted-foreground self-center">
+                  Scores, hosts filter, watch sync — need :8000
+                </span>
               </div>
             </div>
           </div>
@@ -182,15 +156,15 @@ export function ProductivitySettingsHub({
         {section === "apps" && (
           <SettingSection
             title="Apps (Arm)"
-            why="OS process kills only. SoftLand site lists never belong here."
+            why="OS process kills only. SoftLand site lists never belong here. Arm from Now or below."
             availability="native"
           >
             <AppKillRulesPanel />
-            <p className="text-[11px] text-zinc-500 px-0.5">
+            <p className="text-[11px] text-muted-foreground px-1">
               Arm / Disarm and lock mode live on{" "}
               <button
                 type="button"
-                className="text-teal-300/90 underline underline-offset-2 hover:text-teal-200"
+                className="underline text-sky-300/90"
                 onClick={() => onSectionChange("now")}
               >
                 Now
@@ -203,10 +177,10 @@ export function ProductivitySettingsHub({
         {section === "unlock" && (
           <SettingSection
             title="Unlock"
-            why="Three doors: earn goal + Bible chapter, spend a reward day, or use a day pass. Daily goal matches Plan’s daily focus."
+            why="Three doors: earn goal+Bible chapter, spend a reward day, or use a day pass. Daily goal is the same number as Plan’s daily focus."
             availability="api"
           >
-            <p className="text-[11px] leading-relaxed text-amber-100/85 rounded-xl border border-amber-500/20 bg-amber-500/[0.06] px-3.5 py-2.5">
+            <p className="text-[11px] text-amber-200/80 rounded-lg border border-amber-400/20 bg-amber-500/5 px-3 py-2">
               Until native unlock accounting (P5a), day-pass / reward claim need the API. A day pass may
               not open watch sites in SoftLand yet — prefer a reward day or free spend for browsing.
             </p>
@@ -248,24 +222,18 @@ export function ProductivitySettingsHub({
         )}
       </div>
     </div>
+    </EnforcerWriteGate>
   );
 }
 
 export function parseSettingsSection(raw: string | null): SettingsSectionId {
   const id = (raw || "overview").toLowerCase();
   if (NAV.some((n) => n.id === id)) return id as SettingsSectionId;
+  // Legacy hashes / anchors
   if (id === "focus" || id === "enforcer") return "now";
   if (id === "policy" || id === "rules" || id === "schedules") return "sites";
   if (id === "scoring" || id === "classification") return "productive";
-  if (
-    id === "watch" ||
-    id === "demo" ||
-    id === "demo-mode" ||
-    id === "export" ||
-    id === "setup" ||
-    id === "reminders" ||
-    id === "planning"
-  )
+  if (id === "watch" || id === "demo" || id === "demo-mode" || id === "export" || id === "setup" || id === "reminders" || id === "planning")
     return "tools";
   return "overview";
 }

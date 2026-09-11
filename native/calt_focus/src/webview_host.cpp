@@ -2,6 +2,7 @@
 #include "enforcer_cmd.h"
 
 #include <WebView2.h>
+#include <shellapi.h>
 #include <shlwapi.h>
 
 #include <atomic>
@@ -141,6 +142,36 @@ class MsgHandler : public ICoreWebView2WebMessageReceivedEventHandler {
     if (FAILED(args->get_WebMessageAsJson(&json)) || !json) return S_OK;
     std::string msg = NarrowUtf8(json);
     CoTaskMemFree(json);
+
+    // Open Study / external browser links from Focus UI.
+    if (msg.find("\"open_external\"") != std::string::npos) {
+      std::string url;
+      auto grabUrl = [&]() {
+        std::string needle = "\"url\"";
+        size_t p = msg.find(needle);
+        if (p == std::string::npos) return;
+        size_t colon = msg.find(':', p + needle.size());
+        if (colon == std::string::npos) return;
+        size_t i = colon + 1;
+        while (i < msg.size() && (msg[i] == ' ' || msg[i] == '\t')) ++i;
+        if (i >= msg.size() || msg[i] != '"') return;
+        ++i;
+        while (i < msg.size() && msg[i] != '"') {
+          if (msg[i] == '\\' && i + 1 < msg.size()) {
+            url.push_back(msg[i + 1]);
+            i += 2;
+            continue;
+          }
+          url.push_back(msg[i++]);
+        }
+      };
+      grabUrl();
+      if (!url.empty()) {
+        std::wstring wurl = WidenUtf8(url);
+        ShellExecuteW(nullptr, L"open", wurl.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+      }
+      return S_OK;
+    }
 
     // Expect: {"type":"enforcer_cmd","id":"...","op":"...","payload":{...},"v":1}
     if (msg.find("\"enforcer_cmd\"") == std::string::npos) return S_OK;
@@ -361,6 +392,23 @@ bool WebViewHost::MapBehaviorData(const std::wstring& folderAbsolute) {
   wv3->Release();
   behavior_mapped_ = SUCCEEDED(hr);
   return behavior_mapped_;
+}
+
+bool WebViewHost::MapBibleData(const std::wstring& folderAbsolute) {
+  if (!webview_ || folderAbsolute.empty()) {
+    return false;
+  }
+  ICoreWebView2_3* wv3 = nullptr;
+  if (FAILED(webview_->QueryInterface(IID_ICoreWebView2_3, reinterpret_cast<void**>(&wv3))) ||
+      !wv3) {
+    return false;
+  }
+  const HRESULT hr = wv3->SetVirtualHostNameToFolderMapping(
+      L"calt-bible.app",
+      folderAbsolute.c_str(),
+      COREWEBVIEW2_HOST_RESOURCE_ACCESS_KIND_ALLOW);
+  wv3->Release();
+  return SUCCEEDED(hr);
 }
 
 void WebViewHost::Resize() {

@@ -24,6 +24,13 @@ import { AppErrorBoundary } from "../components/layout/AppErrorBoundary";
 import { EegSnapTestPage } from "../pages/EegSnapTestPage";
 import { isFocusDesktopShell } from "../utils/focusDesktopShell";
 
+function JournalRoute() {
+  if (!isFocusDesktopShell()) {
+    return <Navigate to="/" replace />;
+  }
+  return <JournalPage />;
+}
+
 /** Prebuilt Focus shell: HashRouter for file://, calt.app virtual host, or :5174 static serve. */
 function useDesktopShellRouter(): boolean {
   return isFocusDesktopShell();
@@ -65,7 +72,7 @@ function AppRoutes() {
         <Route path="cortex" element={<Navigate to="/" replace />} />
         <Route path="ai-coach" element={<Navigate to="/" replace />} />
         <Route path="project-agent" element={<Navigate to="/" replace />} />
-        <Route path="journal" element={<JournalPage />} />
+        <Route path="journal" element={<JournalRoute />} />
 
         {/* Dynamically mount plugin routes */}
         {pluginRoutes.map((route, i) => (

@@ -1,4 +1,6 @@
 import { resolveApiUrl } from "../utils/resolveBackendUrl";
+import { enforcerNativeCmd, isFocusEnforcerBridgeAvailable } from "../lib/enforcerNativeCmd";
+import { isFocusDesktopShell } from "../utils/focusDesktopShell";
 
 const TOKEN_KEY = "vocab:auth-token";
 
@@ -19,6 +21,23 @@ async function apiError(res: Response): Promise<string> {
     /* plain text */
   }
   return text || res.statusText || "Request failed";
+}
+
+function lifeTransport(): "gateway" | "http" {
+  if (!isFocusDesktopShell()) return "http";
+  if (!isFocusEnforcerBridgeAvailable()) throw new Error("enforcer_unreachable");
+  return "gateway";
+}
+
+async function lifeGateway(
+  op: string,
+  payload: Record<string, unknown> = {},
+  timeoutMs = 8000,
+): Promise<Record<string, unknown>> {
+  const res = await enforcerNativeCmd(op, payload, timeoutMs);
+  if (!res) throw new Error("enforcer_unreachable");
+  if (res.ok === false) throw new Error(String(res.error || "enforcer_cmd_failed"));
+  return res as Record<string, unknown>;
 }
 
 export interface JournalEntry {
@@ -45,10 +64,18 @@ export interface JournalLogEntry {
 }
 
 export async function fetchJournalSummary(day?: string): Promise<JournalSummary> {
+  if (lifeTransport() === "gateway") {
+    const res = await lifeGateway("journal.summary", { day: day || "" });
+    return (res.summary as JournalSummary) || {
+      day: day || "",
+      journal_written: false,
+      journal_entry: null,
+    };
+  }
   const qs = day ? `?day=${day}` : "";
-  const res = await fetch(resolveApiUrl(`/api/journal/summary${qs}`), { headers: authHeaders() });
-  if (!res.ok) throw new Error(await apiError(res));
-  return res.json();
+  const r = await fetch(resolveApiUrl(`/api/journal/summary${qs}`), { headers: authHeaders() });
+  if (!r.ok) throw new Error(await apiError(r));
+  return r.json();
 }
 
 export async function saveJournalEntry(body: {
@@ -56,21 +83,31 @@ export async function saveJournalEntry(body: {
   title?: string;
   entry_date?: string;
 }): Promise<JournalEntry> {
-  const res = await fetch(resolveApiUrl("/api/journal/entries"), {
+  if (lifeTransport() === "gateway") {
+    const res = await lifeGateway("journal.upsert", { ...body });
+    return res.entry as JournalEntry;
+  }
+  const r = await fetch(resolveApiUrl("/api/journal/entries"), {
     method: "POST",
     headers: authHeaders(),
     body: JSON.stringify(body),
   });
-  if (!res.ok) throw new Error(await apiError(res));
-  const data = (await res.json()) as { entry: JournalEntry };
+  if (!r.ok) throw new Error(await apiError(r));
+  const data = (await r.json()) as { entry: JournalEntry };
   return data.entry;
 }
 
 export async function fetchJournalLog(limit = 30): Promise<JournalLogEntry[]> {
+  if (lifeTransport() === "gateway") {
+    const res = await lifeGateway("journal.log", { limit });
+    return (res.entries as JournalLogEntry[]) || [];
+  }
   const params = new URLSearchParams({ limit: String(limit) });
-  const res = await fetch(resolveApiUrl(`/api/journal/entries/log?${params}`), { headers: authHeaders() });
-  if (res.status === 404 || res.status === 405) return [];
-  if (!res.ok) throw new Error(await apiError(res));
-  const data = (await res.json()) as { entries: JournalLogEntry[] };
+  const r = await fetch(resolveApiUrl(`/api/journal/entries/log?${params}`), {
+    headers: authHeaders(),
+  });
+  if (r.status === 404 || r.status === 405) return [];
+  if (!r.ok) throw new Error(await apiError(r));
+  const data = (await r.json()) as { entries: JournalLogEntry[] };
   return data.entries;
 }

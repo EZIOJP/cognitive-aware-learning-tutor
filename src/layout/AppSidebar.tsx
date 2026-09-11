@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, type ComponentType } from "react";
-import { NavLink } from "react-router";
+import { Link, NavLink, useLocation } from "react-router";
 import { motion, AnimatePresence } from "motion/react";
-import { Home, Shield, Settings2, Menu, CalendarDays, ListTodo, Crosshair } from "lucide-react";
+import { Home, Shield, Settings2, Menu, CalendarDays, ListTodo, Crosshair, BookMarked, PenLine } from "lucide-react";
 import { cn } from "../app/components/ui/utils";
 import { useAuth } from "../context/AuthContext";
 import { usePluginsOptional } from "../plugins/registry";
@@ -57,6 +57,8 @@ function focusShellSections(): { id: NavSectionId; label: string; items: Sidebar
           category: "focus",
         },
         { to: "/productivity/focus", label: "Focus", icon: Crosshair, end: true, category: "focus" },
+        { to: "/bible", label: "Bible", icon: BookMarked, end: true, category: "focus" },
+        { to: "/journal", label: "Journal", icon: PenLine, end: true, category: "focus" },
       ],
     },
   ];
@@ -67,6 +69,8 @@ export function AppSidebar() {
   const { isAdmin } = useAuth();
   const plugins = usePluginsOptional();
   const shell = isFocusDesktopShell();
+  const location = useLocation();
+  const currentTab = new URLSearchParams(location.search).get("tab");
 
   const sections = useMemo(() => {
     if (shell) return focusShellSections();
@@ -163,6 +167,21 @@ export function AppSidebar() {
               {section.items.map(({ to, label, icon: Icon, end }) => {
                 const delay = collapsed ? 0 : Math.min(animIndex++, 16) * 0.018;
                 const IconComp = Icon as ComponentType<{ className?: string }>;
+                const qIdx = to.indexOf("?");
+                const toPath = qIdx >= 0 ? to.slice(0, qIdx) : to;
+                const toSearch = qIdx >= 0 ? to.slice(qIdx) : "";
+                const toTab = toSearch ? new URLSearchParams(toSearch.slice(1)).get("tab") : null;
+                const pathActive =
+                  end
+                    ? location.pathname === toPath
+                    : location.pathname === toPath || location.pathname.startsWith(toPath + "/");
+                const active =
+                  shell && toPath === "/productivity" && location.pathname === "/productivity"
+                    ? toTab
+                      ? currentTab === toTab
+                      : !currentTab || currentTab === "calendar"
+                    : pathActive && (!toTab || currentTab === toTab);
+                const LinkComp = shell && toPath === "/productivity" ? Link : NavLink;
                 return (
                   <motion.li
                     key={to}
@@ -170,27 +189,65 @@ export function AppSidebar() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.18, delay }}
                   >
-                    <NavLink
-                      to={to}
-                      end={end}
+                    <LinkComp
+                      to={toSearch ? { pathname: toPath, search: toSearch } : to}
+                      {...(LinkComp === NavLink ? { end } : {})}
                       title={collapsed ? `${section.label} · ${label}` : undefined}
-                      className={({ isActive }) =>
-                        cn(
-                          "group flex items-center rounded-lg text-[13px] font-medium transition-colors duration-150",
-                          collapsed ? "h-9 w-9 justify-center p-0 mx-auto" : "gap-2.5 px-2.5 py-2",
-                          "focus:outline-none focus:ring-2 focus:ring-ring",
-                          isActive
-                            ? "bg-primary/12 text-primary hover:bg-primary/18"
-                            : "text-foreground/70 hover:bg-foreground/6 hover:text-foreground",
-                        )
+                      aria-current={active ? "page" : undefined}
+                      className={
+                        LinkComp === NavLink
+                          ? () =>
+                              cn(
+                                "group flex items-center rounded-lg text-[13px] font-medium transition-colors duration-150",
+                                collapsed ? "h-9 w-9 justify-center p-0 mx-auto" : "gap-2.5 px-2.5 py-2",
+                                "focus:outline-none focus:ring-2 focus:ring-ring",
+                                active
+                                  ? "bg-primary/12 text-primary hover:bg-primary/18"
+                                  : "text-foreground/70 hover:bg-foreground/6 hover:text-foreground",
+                              )
+                          : cn(
+                              "group flex items-center rounded-lg text-[13px] font-medium transition-colors duration-150",
+                              collapsed ? "h-9 w-9 justify-center p-0 mx-auto" : "gap-2.5 px-2.5 py-2",
+                              "focus:outline-none focus:ring-2 focus:ring-ring",
+                              active
+                                ? "bg-primary/12 text-primary hover:bg-primary/18"
+                                : "text-foreground/70 hover:bg-foreground/6 hover:text-foreground",
+                            )
                       }
                     >
-                      {({ isActive }) => (
+                      {LinkComp === NavLink ? (
+                        () => (
+                          <>
+                            <IconComp
+                              className={cn(
+                                "h-[18px] w-[18px] shrink-0 transition-[opacity,transform,color] duration-200",
+                                active
+                                  ? "scale-105 opacity-100"
+                                  : "opacity-[0.55] group-hover:opacity-100 group-hover/rail:opacity-100",
+                              )}
+                            />
+                            <AnimatePresence initial={false}>
+                              {!collapsed && (
+                                <motion.span
+                                  key="label"
+                                  initial={{ opacity: 0, width: 0 }}
+                                  animate={{ opacity: 1, width: "auto" }}
+                                  exit={{ opacity: 0, width: 0 }}
+                                  transition={{ duration: 0.15 }}
+                                  className="truncate overflow-hidden"
+                                >
+                                  {label}
+                                </motion.span>
+                              )}
+                            </AnimatePresence>
+                          </>
+                        )
+                      ) : (
                         <>
                           <IconComp
                             className={cn(
                               "h-[18px] w-[18px] shrink-0 transition-[opacity,transform,color] duration-200",
-                              isActive
+                              active
                                 ? "scale-105 opacity-100"
                                 : "opacity-[0.55] group-hover:opacity-100 group-hover/rail:opacity-100",
                             )}
@@ -211,7 +268,7 @@ export function AppSidebar() {
                           </AnimatePresence>
                         </>
                       )}
-                    </NavLink>
+                    </LinkComp>
                   </motion.li>
                 );
               })}

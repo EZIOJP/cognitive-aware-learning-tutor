@@ -87,6 +87,11 @@ void TrayIcon::PopupMenu() {
   AppendMenuW(menu, MF_STRING, ID_OPEN, L"Open Focus");
   AppendMenuW(menu, MF_STRING, ID_SETTINGS, L"Open Settings");
   AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
+  AppendMenuW(menu, MF_STRING, ID_RELOAD_UI, L"Reload UI");
+  AppendMenuW(menu, MF_STRING, ID_UPDATE_UI, L"Update UI (rebuild + reload)");
+  AppendMenuW(menu, MF_STRING, ID_UPDATE_STACK, L"Update stack (UI + natives + rules)");
+  AppendMenuW(menu, MF_STRING, ID_APPLY_UPDATE, L"Apply pending update && restart");
+  AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
   AppendMenuW(menu, MF_STRING, ID_QUIT, L"Quit");
   SetMenuDefaultItem(menu, ID_RUN, FALSE);
   SetForegroundWindow(hwnd_);
@@ -166,6 +171,26 @@ LRESULT TrayIcon::HandleMessage(UINT msg, WPARAM wParam, LPARAM lParam) {
       case ID_PROD:
         if (on_prod_) {
           on_prod_();
+        }
+        return 0;
+      case ID_RELOAD_UI:
+        if (on_reload_ui_) {
+          on_reload_ui_();
+        }
+        return 0;
+      case ID_UPDATE_UI:
+        if (on_update_ui_) {
+          on_update_ui_();
+        }
+        return 0;
+      case ID_UPDATE_STACK:
+        if (on_update_stack_) {
+          on_update_stack_();
+        }
+        return 0;
+      case ID_APPLY_UPDATE:
+        if (on_apply_update_) {
+          on_apply_update_();
         }
         return 0;
       case ID_QUIT:

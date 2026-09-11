@@ -10,6 +10,8 @@ import {
 } from "../../api/behaviorClient";
 import { cn } from "../../app/components/ui/utils";
 import { BLOCK_TEMPLATES } from "./studyTaskPresets";
+import SoftLandSiteRulesPanel from "./SoftLandSiteRulesPanel";
+import { isFocusDesktopShell } from "../../utils/focusDesktopShell";
 
 const LS_KEY = "productivity:goals:v1";
 export const GOALS_UPDATED_EVENT = "productivity:goals-updated";
@@ -345,6 +347,9 @@ export function ProductivityGoalsPanel({
           </h3>
           <p className="text-xs text-muted-foreground mt-1">
             Routines already locked fixed times. Set focus hours to match free gaps — Save also updates the study gate (unlock / YouTube).
+            {isFocusDesktopShell()
+              ? " SoftLand site lists below are the blockers you choose (Allow / Watch / Block)."
+              : null}
           </p>
           {saveError ? <p className="text-[11px] text-rose-300 mt-1">{saveError}</p> : null}
         </div>
@@ -357,6 +362,12 @@ export function ProductivityGoalsPanel({
           <Save size={12} /> {saving ? "Saving…" : saved ? "Saved" : "Save"}
         </button>
       </div>
+
+      {isFocusDesktopShell() ? (
+        <div className="rounded-xl border border-sky-500/20 bg-sky-500/[0.04] p-3">
+          <SoftLandSiteRulesPanel />
+        </div>
+      ) : null}
 
       <div
         className={cn(

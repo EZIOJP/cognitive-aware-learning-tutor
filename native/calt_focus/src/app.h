@@ -33,6 +33,14 @@ class FocusApp {
   void OpenCalendar();
   void OpenPlan();
   void NavigateShell(const std::wstring& url);
+  void ReloadUi();
+  void UpdateUi();
+  void UpdateStack();
+  void ApplyPendingUpdate();
+  bool RunNpmBuildFocus();
+  bool RunUpdateStackScript();
+  bool PendingUpdateNeedsRestart() const;
+  std::wstring SettingsUrlBusted() const;
   void Quit();
   void RefreshTrayTip();
   HICON MakeDotIcon();

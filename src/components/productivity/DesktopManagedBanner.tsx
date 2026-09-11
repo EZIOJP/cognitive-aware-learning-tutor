@@ -1,26 +1,23 @@
 /**
- * Points users at web Focus + native enforcer (no PySide6 Desktop required).
- * Prefer Settings hub anchors when already on Settings; Focus route remains the tray deep link.
+ * Points users at Settings → Overview (live SoftLand / Arm) + native enforcer.
  */
 export function DesktopManagedBanner({ feature }: { feature: string }) {
   return (
     <div className="rounded-xl border border-teal-500/30 bg-teal-500/10 px-3 py-3 text-xs leading-relaxed text-teal-100/95 space-y-2">
       <p>
-        <span className="font-medium text-foreground">{feature}</span> — SoftLand + Focus live in{" "}
-        <a href="#focus" className="text-foreground underline underline-offset-2">
-          Settings → Focus
+        <span className="font-medium text-foreground">{feature}</span> — SoftLand + Arm live in{" "}
+        <a
+          href="/productivity?tab=settings&section=overview"
+          className="text-foreground underline underline-offset-2"
+        >
+          Settings → Overview
         </a>
-        {" "}
-        (or{" "}
-        <a href="/productivity/focus" className="text-foreground underline underline-offset-2">
-          /productivity/focus
-        </a>
-        ), not a Python desktop app.
+        , not a Python desktop app.
       </p>
       <ul className="list-disc pl-4 space-y-1 text-muted-foreground">
         <li>
-          <span className="text-foreground">Focus web UI</span> — what’s blocked, why, until;
-          incubation + earned free time
+          <span className="text-foreground">Overview</span> — what’s blocked, why, until; earned free
+          time; Arm / Disarm
         </li>
         <li>
           <span className="text-foreground">Native enforcer (C++)</span> — app hard-block kills
@@ -31,7 +28,9 @@ export function DesktopManagedBanner({ feature }: { feature: string }) {
       </ul>
       <p className="text-muted-foreground">
         Open:{" "}
-        <code className="text-[10px] text-foreground">/productivity?tab=settings#focus</code>
+        <code className="text-[10px] text-foreground">
+          /productivity?tab=settings&section=overview
+        </code>
         {" · "}
         Enforcer:{" "}
         <code className="text-[10px] text-foreground">

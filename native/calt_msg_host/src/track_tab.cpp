@@ -65,7 +65,9 @@ std::wstring ResolveCaltDbPathW() {
   if (env && *env) return env;
   wchar_t* repo = _wgetenv(L"CALT_REPO");
   if (repo && *repo) {
-    std::wstring p = Join(repo, L"data\\vocab_app.db");
+    std::wstring p = Join(repo, L"data\\productivity\\productivity.db");
+    if (GetFileAttributesW(p.c_str()) != INVALID_FILE_ATTRIBUTES) return p;
+    p = Join(repo, L"data\\vocab_app.db");
     if (GetFileAttributesW(p.c_str()) != INVALID_FILE_ATTRIBUTES) return p;
   }
   wchar_t buf[MAX_PATH];
@@ -73,7 +75,9 @@ std::wstring ResolveCaltDbPathW() {
   if (!n || n >= MAX_PATH) return L"";
   std::wstring dir = DirOf(buf);
   for (int i = 0; i < 8; ++i) {
-    std::wstring cand = Join(dir, L"data\\vocab_app.db");
+    std::wstring cand = Join(dir, L"data\\productivity\\productivity.db");
+    if (GetFileAttributesW(cand.c_str()) != INVALID_FILE_ATTRIBUTES) return cand;
+    cand = Join(dir, L"data\\vocab_app.db");
     if (GetFileAttributesW(cand.c_str()) != INVALID_FILE_ATTRIBUTES) return cand;
     dir = DirOf(dir);
   }

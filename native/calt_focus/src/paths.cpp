@@ -64,6 +64,9 @@ std::wstring RepoRoot() {
 }
 
 std::wstring DataBehaviorDir() {
+  if (const wchar_t* env = _wgetenv(L"CALT_BEHAVIOR_DIR")) {
+    if (env[0]) return env;
+  }
   if (const wchar_t* env = _wgetenv(L"CALT_DB")) {
     if (env[0]) {
       std::wstring db = env;
@@ -73,7 +76,27 @@ std::wstring DataBehaviorDir() {
       }
     }
   }
-  return Join(RepoRoot(), L"data\\behavior");
+  const std::wstring prod = Join(RepoRoot(), L"data\\productivity\\behavior");
+  if (GetFileAttributesW(prod.c_str()) != INVALID_FILE_ATTRIBUTES) return prod;
+  return Join(RepoRoot(), L"data\\behavior");  // legacy
+}
+
+std::wstring DataBibleDir() {
+  if (const wchar_t* env = _wgetenv(L"CALT_BIBLE_DIR")) {
+    if (env[0]) return env;
+  }
+  if (const wchar_t* env = _wgetenv(L"CALT_DB")) {
+    if (env[0]) {
+      std::wstring db = env;
+      const size_t slash = db.find_last_of(L"\\/");
+      if (slash != std::wstring::npos) {
+        return Join(db.substr(0, slash), L"bible");
+      }
+    }
+  }
+  const std::wstring prod = Join(RepoRoot(), L"data\\productivity\\bible");
+  if (GetFileAttributesW(prod.c_str()) != INVALID_FILE_ATTRIBUTES) return prod;
+  return Join(RepoRoot(), L"data\\bible");  // legacy
 }
 
 std::wstring EnforcerStatusPath() {

@@ -73,6 +73,43 @@ export function AppKillRulesPanel() {
 
   const load = useCallback(async () => {
     try {
+      const { isFocusDesktopShell } = await import("../../utils/focusDesktopShell");
+      if (isFocusDesktopShell()) {
+        const { fetchEnforcerStatusMirror } = await import("../../api/focusMirrors");
+        const status = await fetchEnforcerStatusMirror();
+        let exesList: string[] = [];
+        try {
+          const { focusDataUrl } = await import("../../utils/focusDataUrl");
+          const polRes = await fetch(focusDataUrl("enforcer_policy.json"), {
+            cache: "no-store",
+          });
+          if (polRes.ok) {
+            const pol = (await polRes.json()) as { exes?: string[]; hard_block_armed?: boolean };
+            exesList = list(pol.exes);
+            const s: FocusDashboardSnapshot = {
+              enforcer_policy: {
+                hard_block_armed: Boolean(pol.hard_block_armed ?? status?.armed),
+                gate_locked: Boolean(status?.locked),
+                exes: exesList,
+              },
+              enforcer: { armed: Boolean(status?.armed), locked: Boolean(status?.locked) },
+            };
+            setSnap(s);
+            setExes(exesList);
+            setError(null);
+            return;
+          }
+        } catch {
+          /* fall through */
+        }
+        setSnap({
+          enforcer_policy: { hard_block_armed: Boolean(status?.armed), exes: [] },
+          enforcer: { armed: Boolean(status?.armed) },
+        });
+        setExes([]);
+        setError(null);
+        return;
+      }
       const s = await fetchFocusDashboard();
       setSnap(s);
       setExes(list(s.enforcer_policy?.exes));
@@ -166,8 +203,8 @@ export function AppKillRulesPanel() {
       {locked ? (
         <p className="text-xs text-amber-200/90">
           Kill list locked while armed with password/phrase/timer — disarm on{" "}
-          <a className="underline" href="#focus">
-            Focus
+          <a className="underline" href="/productivity?tab=settings&section=overview">
+            Overview
           </a>{" "}
           to edit.
         </p>
@@ -237,8 +274,8 @@ export function AppKillRulesPanel() {
       {error ? <p className="text-xs text-rose-300 break-all">{error}</p> : null}
       <p className="text-[11px] text-muted-foreground">
         Writes <code className="text-foreground/80">enforcer_policy.json</code>. Arm/disarm stays on{" "}
-        <a className="underline text-sky-300/90" href="#focus">
-          Focus
+        <a className="underline text-sky-300/90" href="/productivity?tab=settings&section=overview">
+          Overview
         </a>
         .
       </p>

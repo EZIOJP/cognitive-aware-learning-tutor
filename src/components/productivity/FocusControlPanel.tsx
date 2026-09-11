@@ -11,8 +11,13 @@ import {
   putEnforcerPolicy,
   type FocusDashboardSnapshot,
 } from "../../api/behaviorClient";
+import {
+  fetchEnforcerStatusMirror,
+  type EnforcerStatusMirror,
+} from "../../api/focusMirrors";
 import { enforcerNativeCmd, isFocusEnforcerBridgeAvailable } from "../../lib/enforcerNativeCmd";
 import { isFocusDesktopShell } from "../../utils/focusDesktopShell";
+import { focusDataUrl } from "../../utils/focusDataUrl";
 
 type OfflineSoftLandWhy = {
   why: string;
@@ -25,7 +30,7 @@ type OfflineSoftLandWhy = {
 async function loadOfflineSoftLandWhy(): Promise<OfflineSoftLandWhy | null> {
   if (!isFocusDesktopShell()) return null;
   try {
-    const r = await fetch("https://calt-data.app/softland_policy.json", { cache: "no-store" });
+    const r = await fetch(focusDataUrl("softland_policy.json"), { cache: "no-store" });
     if (!r.ok) return null;
     const j = (await r.json()) as {
       softland_enabled?: boolean;
@@ -86,6 +91,7 @@ export function FocusControlPanel() {
   const [protectUninstall, setProtectUninstall] = useState(false);
 
   const [offlineWhy, setOfflineWhy] = useState<OfflineSoftLandWhy | null>(null);
+  const [offlineEnf, setOfflineEnf] = useState<EnforcerStatusMirror | null>(null);
 
   const refresh = useCallback(async () => {
     try {
@@ -93,6 +99,7 @@ export function FocusControlPanel() {
       setSnap(s);
       setErr(null);
       setOfflineWhy(null);
+      setOfflineEnf(null);
       const list = s.enforcer_policy?.exes;
       if (Array.isArray(list) && list.length) {
         setExes(list.map(String));
@@ -109,8 +116,12 @@ export function FocusControlPanel() {
       }
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e));
-      const offline = await loadOfflineSoftLandWhy();
+      const [offline, enfStatus] = await Promise.all([
+        loadOfflineSoftLandWhy(),
+        fetchEnforcerStatusMirror(),
+      ]);
       setOfflineWhy(offline);
+      setOfflineEnf(enfStatus);
     }
   }, []);
 
@@ -137,6 +148,12 @@ export function FocusControlPanel() {
   const statusFresh =
     enf?.status_source === "enforcer_status.json" && age != null && age <= STATUS_FRESH_S;
   const enforcerHealthy = Boolean(statusFresh && (enf?.owns || enf?.lock_present));
+  /** Offline mirror when dashboard API is down (Phase 5). */
+  const armedShown = Boolean(
+    active?.hard_block_armed || pol?.hard_block_armed || enf?.armed || offlineEnf?.armed,
+  );
+  const ownsShown = Boolean(enf?.owns || offlineEnf?.owns);
+  const lockPresentShown = Boolean(enf?.lock_present || offlineEnf?.lock_present);
 
   const lockModeActive = String(pol?.lock_mode || "none").toLowerCase();
   const timerStillActive =
@@ -348,13 +365,17 @@ export function FocusControlPanel() {
     }
   }
 
-  const enfLabel = enf?.owns
-    ? "owns kills + tracking"
-    : enf?.service_running === true
+  const enfLabel = ownsShown
+    ? err && offlineEnf
+      ? "owns kills + tracking (offline mirror)"
+      : "owns kills + tracking"
+    : enf?.service_running === true || offlineEnf?.service_running === true
       ? "service up (lock stale?)"
       : enf?.exe_built
         ? "built — install or run console"
-        : "not built";
+        : err && offlineEnf
+          ? "enforcer status from mirror"
+          : "not built";
 
   const ageLabel =
     age == null ? "no status file" : age < 1 ? "just now" : `${Math.round(age)}s ago`;
@@ -417,8 +438,14 @@ export function FocusControlPanel() {
           {err}
           {offlineWhy ? (
             <span className="block mt-1 text-xs text-muted-foreground">
-              API offline — SoftLand why below is a frozen file snapshot (as of {offlineWhy.asOf}). Live
-              ledger / spend / Settings writes need Study API. Blocks still run via Gate + enforcer.
+              API offline — SoftLand why below is a frozen file snapshot (as of {offlineWhy.asOf}).
+              SoftLand/Arm still work offline via Gate + enforcer; Study API is optional for ledger
+              spend.{" "}
+              {offlineEnf
+                ? `Enforcer mirror: ${offlineEnf.armed ? "armed" : "disarmed"}${
+                    offlineEnf.owns ? ", owns kills" : ""
+                  }.`
+                : ""}
             </span>
           ) : null}
         </p>
@@ -435,9 +462,7 @@ export function FocusControlPanel() {
             </p>
             <p className="text-sm">
               <span className="rounded-full border px-2 py-0.5 text-xs">
-                {active?.hard_block_armed || pol?.hard_block_armed || enf?.armed
-                  ? "OS hard block armed"
-                  : "OS hard block off"}
+                {armedShown ? "OS hard block armed" : "OS hard block off"}
               </span>{" "}
               <span className="text-muted-foreground text-xs">Next: {active?.morning_next || "—"}</span>
             </p>
@@ -515,24 +540,25 @@ export function FocusControlPanel() {
           <div className="flex flex-wrap items-center gap-2">
             <span
               className={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${
-                pol?.hard_block_armed || enf?.armed
+                armedShown
                   ? "border-rose-500/50 bg-rose-500/15 text-rose-100"
                   : "border-border text-muted-foreground"
               }`}
             >
-              {pol?.hard_block_armed || enf?.armed ? "Armed" : "Disarmed"}
+              {armedShown ? "Armed" : "Disarmed"}
             </span>
             <span
               className={`rounded-full border px-2.5 py-0.5 text-xs ${
-                enf?.owns
+                ownsShown
                   ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-100"
                   : "border-amber-500/40 text-amber-100/90"
               }`}
             >
-              {enf?.owns ? "Owns kills" : "Not owning"}
+              {ownsShown ? "Owns kills" : "Not owning"}
             </span>
             <span className="rounded-full border border-border px-2.5 py-0.5 text-xs text-muted-foreground">
-              Lock {enf?.lock_present ? "present" : "missing"}
+              Lock {lockPresentShown ? "present" : "missing"}
+              {err && offlineEnf ? " (offline mirror)" : ""}
             </span>
             <span className="rounded-full border border-border px-2.5 py-0.5 text-xs text-muted-foreground">
               {ageLabel}

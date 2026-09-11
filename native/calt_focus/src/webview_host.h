@@ -22,6 +22,8 @@ class WebViewHost {
   bool MapStaticSite(const std::wstring& folderAbsolute);
   // Map https://calt-data.app → data/behavior (softland_policy.json, enforcer_status.json).
   bool MapBehaviorData(const std::wstring& folderAbsolute);
+  // Map https://calt-bible.app → data/bible (WEB corpus for Focus reader).
+  bool MapBibleData(const std::wstring& folderAbsolute);
   void Resize();
   void Navigate(const std::wstring& url);
   void Show(bool show);

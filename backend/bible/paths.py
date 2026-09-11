@@ -1,19 +1,19 @@
-"""Bible PDF paths — seed Good News Bible into data/bible/."""
+"""Bible PDF paths — corpus under data/productivity/bible/ (Focus owned)."""
 
 from __future__ import annotations
 
 import shutil
 from pathlib import Path
 
-# Repo data/ next to backend/
-_DATA = Path(__file__).resolve().parents[2] / "data" / "bible"
+from backend.paths import BIBLE_DATA_DIR
+
 _SEED = Path(r"C:\Users\Lenovo\Downloads\good-news-bible.pdf")
 PDF_NAME = "good-news-bible.pdf"
 
 
 def bible_dir() -> Path:
-    _DATA.mkdir(parents=True, exist_ok=True)
-    return _DATA
+    BIBLE_DATA_DIR.mkdir(parents=True, exist_ok=True)
+    return BIBLE_DATA_DIR
 
 
 def ensure_bible_pdf() -> Path:

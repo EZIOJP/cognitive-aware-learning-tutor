@@ -1,4 +1,4 @@
-import { Settings2, BookOpen, Brain, PenLine } from "lucide-react";
+import { Settings2, BookOpen, Brain } from "lucide-react";
 import type { PluginDef } from "./types";
 import { registerPlugin } from "./registry";
 import { LectureNotesPage } from "../pages/study/LectureNotesPage";
@@ -16,7 +16,6 @@ export const CorePlugin: PluginDef = {
     { path: "review", element: <ReviewHubPage /> },
   ],
   navItems: [
-    { to: "/journal", label: "Journal", icon: PenLine, end: true, category: "study" },
     { to: "/lecture-notes", label: "Lecture Notes", icon: BookOpen, end: true, category: "study" },
     { to: "/review", label: "Study Loop", icon: Brain, end: true, category: "study" },
   ],

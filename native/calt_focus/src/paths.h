@@ -7,6 +7,7 @@
 std::wstring ExeDir();
 std::wstring RepoRoot();
 std::wstring DataBehaviorDir();
+std::wstring DataBibleDir();
 std::wstring EnforcerStatusPath();
 std::wstring SoftlandPolicyPath();
 std::wstring DistDir();

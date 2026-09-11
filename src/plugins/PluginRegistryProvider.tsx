@@ -81,29 +81,52 @@ export function PluginRegistryProvider({ children }: { children: ReactNode }) {
       setIsLoaded(true);
       return;
     }
-    const state = await fetchHubPluginsState();
-    if (!state) {
+    try {
+      const state = await Promise.race([
+        fetchHubPluginsState(),
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), 4000)),
+      ]);
+      if (!state) {
+        loadLocal();
+        setSyncError("Could not sync features from server — using local settings.");
+        setIsLoaded(true);
+        return;
+      }
+      setSyncError(null);
+      let frontendIds = backendStateToFrontendIds(state.plugins);
+      if (!frontendIds.includes("eeg") && getAllPlugins().some((p) => p.id === "eeg")) {
+        frontendIds = [...frontendIds, "eeg"];
+        void setHubPlugin("eeg", true);
+      }
+      // Focus shell must always keep productivity enabled
+      if (typeof window !== "undefined") {
+        const h = window.location.hostname;
+        const focusShell =
+          window.location.protocol === "file:" ||
+          h === "calt.app" ||
+          h.endsWith(".calt.app") ||
+          ((h === "127.0.0.1" || h === "localhost") && window.location.port === "5174");
+        if (focusShell && !frontendIds.includes("productivity")) {
+          frontendIds = [...frontendIds, "productivity"];
+        }
+      }
+      setEnabledIds(frontendIds);
+      localStorage.setItem(LS_KEY, JSON.stringify(frontendIds));
+      setCustomFeatures((state.custom_features ?? []).filter((f) => f.enabled));
+      setIsLoaded(true);
+    } catch {
       loadLocal();
       setSyncError("Could not sync features from server — using local settings.");
       setIsLoaded(true);
-      return;
     }
-    setSyncError(null);
-    let frontendIds = backendStateToFrontendIds(state.plugins);
-    if (!frontendIds.includes("eeg") && getAllPlugins().some((p) => p.id === "eeg")) {
-      frontendIds = [...frontendIds, "eeg"];
-      void setHubPlugin("eeg", true);
-    }
-    setEnabledIds(frontendIds);
-    localStorage.setItem(LS_KEY, JSON.stringify(frontendIds));
-    setCustomFeatures((state.custom_features ?? []).filter((f) => f.enabled));
-    setIsLoaded(true);
   }, [isAuthenticated, loadLocal]);
 
   useEffect(() => {
-    setIsLoaded(false);
+    // Paint immediately from localStorage — never block the shell on hub API.
+    loadLocal();
+    setIsLoaded(true);
     void refreshFromServer();
-  }, [refreshFromServer, isAuthenticated]);
+  }, [refreshFromServer, loadLocal]);
 
   const togglePlugin = useCallback(
     async (id: string, enabled: boolean) => {

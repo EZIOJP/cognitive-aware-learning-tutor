@@ -1,10 +1,10 @@
 # Prod P5 — Native unlock accounting, classification and scoring (design)
 
 **Date:** 2026-09-08
-**Status:** Design agreed by owner (full P5 chosen over the minimal fix), not yet implemented
+**Status:** P5a implemented and verified 2026-09-11; P5b/P5c not started
 **Owner decision:** unlock accounting belongs in C++, end to end
 **Supersedes for this area:** the Python ownership described in [docs/BLOCKING_RULES.md](../../BLOCKING_RULES.md) "Goals, earning and unlocks"
-**Related:** [product lock](2026-09-07-calt-productivity-cpp-product-design.md) · [Phase 2 gateway](2026-09-08-calt-productivity-phase2-gateway-design.md) · [BLOCKING_RULES](../../BLOCKING_RULES.md)
+**Related:** [product lock](2026-09-07-calt-productivity-cpp-product-design.md) · [Phase 2 gateway](2026-09-08-calt-productivity-phase2-gateway-design.md) · [Focus standalone](2026-09-11-calt-focus-standalone-productivity-design.md) · [BLOCKING_RULES](../../BLOCKING_RULES.md)
 
 ---
 
@@ -89,25 +89,57 @@ Three subsystems, each shippable and verifiable alone. Do them in order.
 
 ### P5a — Native unlock accounting (no scoring)
 
+**Status: Done (2026-09-11).**
+
 Moves every quota and currency that needs no productive-time maths.
 
 - `productivity_day_passes`, `productivity_reward_credits` tables + one-time
   import of `data/bible/day_passes_*.json` and `reward_days_*.json`.
 - Gateway ops: `day.grant_pass` (enforces the 2/week quota and the `PASS`
   phrase natively), `day.mark_event` (`chapter_done` | `plan_confirmed` |
-  `bite_done`), `reward.claim` (enforces `REWARD`), `day.status`.
+  `bite_done` | `daily_goal`), `reward.claim` (enforces `REWARD`), `day.status`,
+  plus bridge ops `reward.mark_qualified` / `reward.grant_credits` until P5c.
 - Earn rates and the 60/day cap enforced in the enforcer on `day.mark_event`.
 - Incubation duration and the 1-per-hour limit enforced on
   `softland.set_incubation`.
 - **Day-pass grant writes `free_until` (the single free-window mechanism) plus
-  `runtime.day_pass` as audit.** No second free-window concept, and
-  `runtime.day_pass` stops being dead-on-read because `day.status` reports it.
-- Python's `request_day_pass` / `claim_reward_day` become thin gateway callers;
-  their quota and streak code is deleted.
+  `runtime.day_pass` as audit.** SoftLand decide already honours `free_until`.
+- Python's `request_day_pass` / `claim_reward_day` are thin gateway callers;
+  quota and streak JSON code deleted.
+
+**Verified (2026-09-11, console enforcer, Study `:8000` not required):**
+
+```text
+smoke_p5a.ps1 -Mutate
+  → P5a smoke: all checks passed
+
+day.grant_pass {"confirm":"PASS"}
+  → ok:true, free_until:2026-09-11T23:59:59
+
+msg_host_cmd get_mode https://youtube.com
+  → action:allow mode:free reason:free_window until:2026-09-11T23:59:59
+  (bug fix — previously blocked)
+
+2 synthetic passes this week + grant
+  → error:pass_quota_exhausted
+
+day.mark_event chapter_done → credited_seconds:900
+  repeat → event_already_recorded
+  plan_confirmed → credited_seconds:600
+
+softland.set_incubation ×2 → second: incubation_rate_limited
+
+Import from reward_days_1.json
+  → qualified=8 used=5 granted=3 (matches JSON); no day_passes_*.json present
+
+pytest tests/test_bible_day_pass.py tests/test_reward_days.py
+       tests/test_break_reward.py tests/test_morning_rewards.py
+  → 18 passed
+```
 
 **Exit:** with `:8000` stopped, `day.grant_pass` unlocks watch sites through the
 real Gate path, refuses a third pass in one week, and `reward.claim` refuses
-without 4 qualifying days. Existing pass/credit history survives the import.
+without available credits. Existing pass/credit history survives the import.
 
 ### P5b — Native classification and scoring
 

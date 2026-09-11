@@ -10,9 +10,10 @@
 #include <string>
 #include <vector>
 
+sqlite3* gDb = nullptr;
+
 namespace {
 
-sqlite3* gDb = nullptr;
 std::wstring gDbPath;
 
 std::string Narrow(const std::wstring& w) {
@@ -621,11 +622,49 @@ bool ProductivityMigrateAndImport(const std::wstring& softlandJsonPath) {
       "  at TEXT NOT NULL,"
       "  earned_seconds INTEGER NOT NULL DEFAULT 0,"
       "  PRIMARY KEY (local_date, event)"
+      ");"
+      // Phase 6a — planner owned by enforcer (same names as Python SoT tables).
+      "CREATE TABLE IF NOT EXISTS planner_blocks ("
+      "  id INTEGER PRIMARY KEY,"
+      "  user_id INTEGER NOT NULL,"
+      "  title VARCHAR NOT NULL,"
+      "  category VARCHAR NOT NULL DEFAULT 'study',"
+      "  start_at DATETIME NOT NULL,"
+      "  end_at DATETIME NOT NULL,"
+      "  planned_minutes INTEGER NOT NULL,"
+      "  remaining_minutes INTEGER NOT NULL,"
+      "  status VARCHAR NOT NULL DEFAULT 'scheduled',"
+      "  rolled_from_id INTEGER,"
+      "  roll_count INTEGER NOT NULL DEFAULT 0,"
+      "  task_id INTEGER,"
+      "  color VARCHAR,"
+      "  created_at DATETIME"
+      ");"
+      "CREATE TABLE IF NOT EXISTS planner_routines ("
+      "  id INTEGER PRIMARY KEY,"
+      "  user_id INTEGER NOT NULL,"
+      "  title VARCHAR NOT NULL,"
+      "  category VARCHAR NOT NULL DEFAULT 'personal',"
+      "  start_time VARCHAR NOT NULL,"
+      "  end_time VARCHAR,"
+      "  duration_minutes INTEGER,"
+      "  days_json TEXT NOT NULL DEFAULT '[\"mon\",\"tue\",\"wed\",\"thu\",\"fri\",\"sat\",\"sun\"]',"
+      "  color VARCHAR,"
+      "  enabled BOOLEAN NOT NULL DEFAULT 1,"
+      "  sort_order INTEGER NOT NULL DEFAULT 0,"
+      "  created_at DATETIME"
+      ");"
+      "CREATE TABLE IF NOT EXISTS productivity_planner_meta ("
+      "  id INTEGER PRIMARY KEY CHECK (id = 1),"
+      "  imported_at TEXT,"
+      "  block_count INTEGER NOT NULL DEFAULT 0,"
+      "  routine_count INTEGER NOT NULL DEFAULT 0"
       ");";
   if (!Exec(ddl)) return false;
   Exec("INSERT OR IGNORE INTO productivity_gateway_meta (id, gateway_seq, last_publish_at) "
        "VALUES (1, 0, NULL);");
   Exec("INSERT OR IGNORE INTO productivity_reward_meta (id, granted) VALUES (1, 0);");
+  ProductivityEnsurePlanner();
 
   sqlite3_stmt* st = nullptr;
   bool hasRow = false;
@@ -641,35 +680,42 @@ bool ProductivityMigrateAndImport(const std::wstring& softlandJsonPath) {
   }
   if (hasRow) {
     ProductivityImportIfStale(softlandJsonPath);
-    return true;
-  }
-  (void)rowUpdated;
+  } else {
+    (void)rowUpdated;
 
-  std::string body = ReadFileUtf8(softlandJsonPath);
-  if (body.empty()) {
-    body =
-        "{\n  \"schema_version\": 1,\n  \"updated_at\": null,\n  \"softland_enabled\": false,\n"
-        "  \"site_rules\": {\"allow_extra\": [], \"watch_extra\": [], \"block_extra\": []},\n"
-        "  \"schedules\": {\"enabled\": false, \"windows\": []},\n"
-        "  \"runtime\": {\"free_until\": null, \"free_after_hm\": null, \"incubation_until\": null,\n"
-        "    \"day_pass\": {\"date\": null, \"spent\": false, \"remaining_seconds\": 0},\n"
-        "    \"reward_day_active\": false, \"earned_ledger_seconds\": 0},\n"
-        "  \"goals\": {\"daily_focus_minutes\": 0, \"goal_met\": false, \"bible_done\": false,\n"
-        "    \"plan_confirmed_for_date\": null, \"plan_confirmed\": false},\n"
-        "  \"mode_flags\": {}\n}\n";
+    std::string body = ReadFileUtf8(softlandJsonPath);
+    if (body.empty()) {
+      body =
+          "{\n  \"schema_version\": 1,\n  \"updated_at\": null,\n  \"softland_enabled\": false,\n"
+          "  \"site_rules\": {\"allow_extra\": [], \"watch_extra\": [], \"block_extra\": []},\n"
+          "  \"schedules\": {\"enabled\": false, \"windows\": []},\n"
+          "  \"runtime\": {\"free_until\": null, \"free_after_hm\": null, \"incubation_until\": null,\n"
+          "    \"day_pass\": {\"date\": null, \"spent\": false, \"remaining_seconds\": 0},\n"
+          "    \"reward_day_active\": false, \"earned_ledger_seconds\": 0},\n"
+          "  \"goals\": {\"daily_focus_minutes\": 0, \"goal_met\": false, \"bible_done\": false,\n"
+          "    \"plan_confirmed_for_date\": null, \"plan_confirmed\": false},\n"
+          "  \"mode_flags\": {}\n}\n";
+    }
+    std::string now = IsoLocalNow();
+    if (sqlite3_prepare_v2(gDb,
+                           "INSERT INTO productivity_softland (id, document_json, updated_at) "
+                           "VALUES (1, ?, ?);",
+                           -1, &st, nullptr) != SQLITE_OK) {
+      return false;
+    }
+    sqlite3_bind_text(st, 1, body.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(st, 2, now.c_str(), -1, SQLITE_TRANSIENT);
+    bool ok = sqlite3_step(st) == SQLITE_DONE;
+    sqlite3_finalize(st);
+    if (!ok) return false;
   }
-  std::string now = IsoLocalNow();
-  if (sqlite3_prepare_v2(gDb,
-                         "INSERT INTO productivity_softland (id, document_json, updated_at) "
-                         "VALUES (1, ?, ?);",
-                         -1, &st, nullptr) != SQLITE_OK) {
-    return false;
-  }
-  sqlite3_bind_text(st, 1, body.c_str(), -1, SQLITE_TRANSIENT);
-  sqlite3_bind_text(st, 2, now.c_str(), -1, SQLITE_TRANSIENT);
-  bool ok = sqlite3_step(st) == SQLITE_DONE;
-  sqlite3_finalize(st);
-  return ok;
+
+  // One-time import of Bible JSON unlock history into productivity_* tables.
+  // softlandJsonPath is …/data/behavior/softland_policy.json → dataDir is …/data.
+  const std::wstring behaviorDir = DirOf(softlandJsonPath);
+  const std::wstring dataDir = DirOf(behaviorDir);
+  ProductivityImportLegacyUnlockHistory(dataDir);
+  return true;
 }
 
 bool ProductivityLoadSoftland(ProductivitySoftland& out) {
@@ -923,4 +969,1289 @@ void ProductivityImportLegacyUnlockHistory(const std::wstring& dataDir) {
       FindClose(h);
     }
   }
+}
+
+// ---------------------------------------------------------------------------
+// Phase 6a — planner_* CRUD (Focus gateway)
+// ---------------------------------------------------------------------------
+
+namespace {
+
+std::string NormalizeTs(const std::string& iso) {
+  std::string o = iso;
+  for (char& c : o) {
+    if (c == 'T' || c == 't') c = ' ';
+  }
+  size_t cut = o.find('Z');
+  if (cut == std::string::npos) cut = o.find('z');
+  if (cut == std::string::npos) {
+    for (size_t i = 10; i < o.size(); ++i) {
+      if (o[i] == '+' || (o[i] == '-' && i > 10)) {
+        cut = i;
+        break;
+      }
+    }
+  }
+  if (cut != std::string::npos) o = o.substr(0, cut);
+  size_t dot = o.find('.');
+  if (dot != std::string::npos) o = o.substr(0, dot);
+  while (!o.empty() && (o.back() == ' ' || o.back() == '\t')) o.pop_back();
+  return o;
+}
+
+std::string ToStoreTs(const std::string& iso) {
+  std::string n = NormalizeTs(iso);
+  if (n.size() >= 19) return n.substr(0, 19);
+  return n;
+}
+
+std::string ToApiIso(const std::string& stored) {
+  if (stored.empty()) return "";
+  std::string s = NormalizeTs(stored);
+  if (s.size() >= 10 && s[10] == ' ') s[10] = 'T';
+  if (s.size() >= 19) s = s.substr(0, 19);
+  if (!s.empty() && s.back() != 'Z') s += "Z";
+  return s;
+}
+
+std::string MinutesLabel(int totalMinutes) {
+  if (totalMinutes < 0) totalMinutes = 0;
+  int hours = totalMinutes / 60;
+  int mins = totalMinutes % 60;
+  char buf[64];
+  if (hours == 0) {
+    snprintf(buf, sizeof(buf), "0 hours %d min%s", mins, mins == 1 ? "" : "s");
+  } else if (mins == 0) {
+    snprintf(buf, sizeof(buf), "%d hour%s", hours, hours == 1 ? "" : "s");
+  } else {
+    snprintf(buf, sizeof(buf), "%d hour%s %d min%s", hours, hours == 1 ? "" : "s", mins,
+             mins == 1 ? "" : "s");
+  }
+  return buf;
+}
+
+bool ParseIsoFileTime(const std::string& iso, FILETIME* out) {
+  std::string n = NormalizeTs(iso);
+  // Accept HH:MM:SS or culture-mangled HH.MM.SS after the date.
+  for (size_t i = 11; i < n.size() && i < 19; ++i) {
+    if (n[i] == '.') n[i] = ':';
+  }
+  if (n.size() < 16) return false;
+  SYSTEMTIME st{};
+  st.wYear = (WORD)atoi(n.c_str());
+  st.wMonth = (WORD)atoi(n.c_str() + 5);
+  st.wDay = (WORD)atoi(n.c_str() + 8);
+  size_t sp = n.find(' ');
+  if (sp == std::string::npos || sp + 5 >= n.size()) return false;
+  st.wHour = (WORD)atoi(n.c_str() + sp + 1);
+  st.wMinute = (WORD)atoi(n.c_str() + sp + 4);
+  if (sp + 7 < n.size() && n[sp + 6] == ':') st.wSecond = (WORD)atoi(n.c_str() + sp + 7);
+  return SystemTimeToFileTime(&st, out) != 0;
+}
+
+int MinutesBetweenIso(const std::string& start, const std::string& end) {
+  FILETIME a{}, b{};
+  if (!ParseIsoFileTime(start, &a) || !ParseIsoFileTime(end, &b)) return 0;
+  ULARGE_INTEGER ua{}, ub{};
+  ua.LowPart = a.dwLowDateTime;
+  ua.HighPart = a.dwHighDateTime;
+  ub.LowPart = b.dwLowDateTime;
+  ub.HighPart = b.dwHighDateTime;
+  if (ub.QuadPart <= ua.QuadPart) return 1;
+  long long secs = (long long)((ub.QuadPart - ua.QuadPart) / 10000000ULL);
+  int mins = (int)(secs / 60);
+  return mins < 1 ? 1 : mins;
+}
+
+bool PayloadGetString(const std::string& body, const char* key, std::string* out) {
+  return JsonStringNear(body, key, out);
+}
+
+bool PayloadGetInt(const std::string& body, const char* key, int* out) {
+  return JsonIntNear(body, key, out);
+}
+
+bool PayloadGetBool(const std::string& body, const char* key, bool* out) {
+  return JsonBoolNear(body, key, out);
+}
+
+bool PayloadGetRaw(const std::string& body, const char* key, std::string* out) {
+  std::string needle = std::string("\"") + key + "\"";
+  size_t p = body.find(needle);
+  if (p == std::string::npos) return false;
+  size_t colon = body.find(':', p + needle.size());
+  if (colon == std::string::npos) return false;
+  size_t i = colon + 1;
+  while (i < body.size() && isspace((unsigned char)body[i])) ++i;
+  if (i >= body.size()) return false;
+  size_t end = i;
+  if (body[i] == '{' || body[i] == '[') {
+    char open = body[i];
+    char close = open == '{' ? '}' : ']';
+    int depth = 0;
+    bool inStr = false;
+    for (end = i; end < body.size(); ++end) {
+      char c = body[end];
+      if (inStr) {
+        if (c == '\\' && end + 1 < body.size()) {
+          ++end;
+          continue;
+        }
+        if (c == '"') inStr = false;
+        continue;
+      }
+      if (c == '"') {
+        inStr = true;
+        continue;
+      }
+      if (c == open)
+        ++depth;
+      else if (c == close) {
+        --depth;
+        if (depth == 0) {
+          ++end;
+          break;
+        }
+      }
+    }
+  } else if (body[i] == '"') {
+    end = i + 1;
+    while (end < body.size() && body[end] != '"') {
+      if (body[end] == '\\' && end + 1 < body.size())
+        end += 2;
+      else
+        ++end;
+    }
+    if (end < body.size()) ++end;
+  } else if (body.compare(i, 4, "null") == 0) {
+    *out = "null";
+    return true;
+  } else {
+    while (end < body.size() && body[end] != ',' && body[end] != '}' && body[end] != ']') ++end;
+  }
+  *out = body.substr(i, end - i);
+  return true;
+}
+
+bool PayloadHasKey(const std::string& body, const char* key) {
+  std::string needle = std::string("\"") + key + "\"";
+  return body.find(needle) != std::string::npos;
+}
+
+std::string NullOrQuoted(const std::string& v, bool present) {
+  if (!present || v.empty()) return "null";
+  return std::string("\"") + JsonEscape(v) + "\"";
+}
+
+std::string NullOrInt(long long v, bool present) {
+  if (!present) return "null";
+  return std::to_string(v);
+}
+
+std::string BlockRowJson(sqlite3_stmt* st) {
+  auto col = [&](int i) -> std::string {
+    const char* p = reinterpret_cast<const char*>(sqlite3_column_text(st, i));
+    return p ? p : "";
+  };
+  long long id = sqlite3_column_int64(st, 0);
+  std::string title = col(1);
+  std::string category = col(2);
+  std::string startAt = ToApiIso(col(3));
+  std::string endAt = ToApiIso(col(4));
+  int planned = sqlite3_column_int(st, 5);
+  int remaining = sqlite3_column_int(st, 6);
+  std::string status = col(7);
+  bool hasRolled = sqlite3_column_type(st, 8) != SQLITE_NULL;
+  long long rolled = hasRolled ? sqlite3_column_int64(st, 8) : 0;
+  int rollCount = sqlite3_column_int(st, 9);
+  bool hasTask = sqlite3_column_type(st, 10) != SQLITE_NULL;
+  long long taskId = hasTask ? sqlite3_column_int64(st, 10) : 0;
+  bool hasColor = sqlite3_column_type(st, 11) != SQLITE_NULL;
+  std::string color = hasColor ? col(11) : "";
+  bool hasCreated = sqlite3_column_type(st, 12) != SQLITE_NULL;
+  std::string created = hasCreated ? ToApiIso(col(12)) : "";
+
+  return std::string("{\"id\":") + std::to_string(id) + ",\"title\":\"" + JsonEscape(title) +
+         "\",\"category\":\"" + JsonEscape(category.empty() ? "study" : category) +
+         "\",\"start_at\":\"" + JsonEscape(startAt) + "\",\"end_at\":\"" + JsonEscape(endAt) +
+         "\",\"planned_minutes\":" + std::to_string(planned) + ",\"planned_label\":\"" +
+         JsonEscape(MinutesLabel(planned)) + "\",\"remaining_minutes\":" +
+         std::to_string(remaining) + ",\"remaining_label\":\"" + JsonEscape(MinutesLabel(remaining)) +
+         "\",\"status\":\"" + JsonEscape(status.empty() ? "scheduled" : status) +
+         "\",\"rolled_from_id\":" + NullOrInt(rolled, hasRolled) +
+         ",\"roll_count\":" + std::to_string(rollCount) + ",\"task_id\":" +
+         NullOrInt(taskId, hasTask) + ",\"color\":" + NullOrQuoted(color, hasColor) +
+         ",\"created_at\":" + NullOrQuoted(created, hasCreated) + "}";
+}
+
+const char* kBlockSelectCols =
+    "SELECT id, title, category, start_at, end_at, planned_minutes, remaining_minutes, "
+    "status, rolled_from_id, roll_count, task_id, color, created_at FROM planner_blocks ";
+
+std::string RoutineRowJson(sqlite3_stmt* st) {
+  auto col = [&](int i) -> std::string {
+    const char* p = reinterpret_cast<const char*>(sqlite3_column_text(st, i));
+    return p ? p : "";
+  };
+  long long id = sqlite3_column_int64(st, 0);
+  std::string title = col(1);
+  std::string category = col(2);
+  std::string startTime = col(3);
+  bool hasEnd = sqlite3_column_type(st, 4) != SQLITE_NULL;
+  std::string endTime = hasEnd ? col(4) : "";
+  bool hasDur = sqlite3_column_type(st, 5) != SQLITE_NULL;
+  int dur = hasDur ? sqlite3_column_int(st, 5) : 0;
+  std::string daysJson = col(6);
+  if (daysJson.empty()) daysJson = "[\"mon\",\"tue\",\"wed\",\"thu\",\"fri\",\"sat\",\"sun\"]";
+  bool hasColor = sqlite3_column_type(st, 7) != SQLITE_NULL;
+  std::string color = hasColor ? col(7) : "";
+  bool enabled = sqlite3_column_int(st, 8) != 0;
+  int sortOrder = sqlite3_column_int(st, 9);
+
+  return std::string("{\"id\":") + std::to_string(id) + ",\"title\":\"" + JsonEscape(title) +
+         "\",\"category\":\"" + JsonEscape(category.empty() ? "personal" : category) +
+         "\",\"start_time\":\"" + JsonEscape(startTime) + "\",\"end_time\":" +
+         NullOrQuoted(endTime, hasEnd) + ",\"duration_minutes\":" +
+         (hasDur ? std::to_string(dur) : "null") + ",\"days\":" + daysJson + ",\"color\":" +
+         NullOrQuoted(color, hasColor) + ",\"enabled\":" + (enabled ? "true" : "false") +
+         ",\"sort_order\":" + std::to_string(sortOrder) + "}";
+}
+
+const char* kRoutineSelectCols =
+    "SELECT id, title, category, start_time, end_time, duration_minutes, days_json, color, "
+    "enabled, sort_order FROM planner_routines ";
+
+}  // namespace
+
+void ProductivityEnsurePlanner() {
+  if (!gDb) return;
+  Exec(
+      "CREATE TABLE IF NOT EXISTS planner_blocks ("
+      "  id INTEGER PRIMARY KEY,"
+      "  user_id INTEGER NOT NULL,"
+      "  title VARCHAR NOT NULL,"
+      "  category VARCHAR NOT NULL DEFAULT 'study',"
+      "  start_at DATETIME NOT NULL,"
+      "  end_at DATETIME NOT NULL,"
+      "  planned_minutes INTEGER NOT NULL,"
+      "  remaining_minutes INTEGER NOT NULL,"
+      "  status VARCHAR NOT NULL DEFAULT 'scheduled',"
+      "  rolled_from_id INTEGER,"
+      "  roll_count INTEGER NOT NULL DEFAULT 0,"
+      "  task_id INTEGER,"
+      "  color VARCHAR,"
+      "  created_at DATETIME"
+      ");"
+      "CREATE TABLE IF NOT EXISTS planner_routines ("
+      "  id INTEGER PRIMARY KEY,"
+      "  user_id INTEGER NOT NULL,"
+      "  title VARCHAR NOT NULL,"
+      "  category VARCHAR NOT NULL DEFAULT 'personal',"
+      "  start_time VARCHAR NOT NULL,"
+      "  end_time VARCHAR,"
+      "  duration_minutes INTEGER,"
+      "  days_json TEXT NOT NULL DEFAULT '[\"mon\",\"tue\",\"wed\",\"thu\",\"fri\",\"sat\",\"sun\"]',"
+      "  color VARCHAR,"
+      "  enabled BOOLEAN NOT NULL DEFAULT 1,"
+      "  sort_order INTEGER NOT NULL DEFAULT 0,"
+      "  created_at DATETIME"
+      ");"
+      "CREATE TABLE IF NOT EXISTS productivity_planner_meta ("
+      "  id INTEGER PRIMARY KEY CHECK (id = 1),"
+      "  imported_at TEXT,"
+      "  block_count INTEGER NOT NULL DEFAULT 0,"
+      "  routine_count INTEGER NOT NULL DEFAULT 0"
+      ");");
+  Exec("INSERT OR IGNORE INTO productivity_planner_meta (id, imported_at, block_count, "
+       "routine_count) VALUES (1, NULL, 0, 0);");
+
+  // One-time claim: existing Python planner_* rows become enforcer SoT (same tables).
+  sqlite3_stmt* st = nullptr;
+  bool already = false;
+  if (sqlite3_prepare_v2(gDb, "SELECT imported_at FROM productivity_planner_meta WHERE id=1;", -1,
+                         &st, nullptr) == SQLITE_OK) {
+    if (sqlite3_step(st) == SQLITE_ROW) {
+      const char* p = reinterpret_cast<const char*>(sqlite3_column_text(st, 0));
+      already = p && *p;
+    }
+    sqlite3_finalize(st);
+  }
+  if (already) return;
+
+  int blocks = ScalarInt("SELECT COUNT(*) FROM planner_blocks;", nullptr, nullptr);
+  int routines = ScalarInt("SELECT COUNT(*) FROM planner_routines;", nullptr, nullptr);
+  std::string now = IsoLocalNow();
+  if (sqlite3_prepare_v2(gDb,
+                         "UPDATE productivity_planner_meta SET imported_at=?, block_count=?, "
+                         "routine_count=? WHERE id=1;",
+                         -1, &st, nullptr) == SQLITE_OK) {
+    sqlite3_bind_text(st, 1, now.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_int(st, 2, blocks);
+    sqlite3_bind_int(st, 3, routines);
+    sqlite3_step(st);
+    sqlite3_finalize(st);
+  }
+}
+
+std::string ProductivityPlanListJson(const std::string& fromIso, const std::string& toIso,
+                                     int userId) {
+  if (!gDb) return "[]";
+  ProductivityEnsurePlanner();
+  std::string from = ToStoreTs(fromIso);
+  std::string to = ToStoreTs(toIso);
+  sqlite3_stmt* st = nullptr;
+  std::string sql = std::string(kBlockSelectCols) +
+                    "WHERE user_id=? AND start_at < ? AND end_at > ? ORDER BY start_at ASC;";
+  if (sqlite3_prepare_v2(gDb, sql.c_str(), -1, &st, nullptr) != SQLITE_OK) return "[]";
+  sqlite3_bind_int(st, 1, userId);
+  sqlite3_bind_text(st, 2, to.c_str(), -1, SQLITE_TRANSIENT);
+  sqlite3_bind_text(st, 3, from.c_str(), -1, SQLITE_TRANSIENT);
+  std::string out = "[";
+  bool first = true;
+  while (sqlite3_step(st) == SQLITE_ROW) {
+    if (!first) out += ",";
+    first = false;
+    out += BlockRowJson(st);
+  }
+  sqlite3_finalize(st);
+  out += "]";
+  return out;
+}
+
+std::string ProductivityPlanGetJson(long long id, int userId) {
+  if (!gDb || id <= 0) return "";
+  ProductivityEnsurePlanner();
+  sqlite3_stmt* st = nullptr;
+  std::string sql = std::string(kBlockSelectCols) + "WHERE id=? AND user_id=?;";
+  if (sqlite3_prepare_v2(gDb, sql.c_str(), -1, &st, nullptr) != SQLITE_OK) return "";
+  sqlite3_bind_int64(st, 1, id);
+  sqlite3_bind_int(st, 2, userId);
+  std::string out;
+  if (sqlite3_step(st) == SQLITE_ROW) out = BlockRowJson(st);
+  sqlite3_finalize(st);
+  return out;
+}
+
+bool ProductivityPlanUpsert(const std::string& payloadJson, int userId, std::string* outBlockJson) {
+  if (!gDb) return false;
+  ProductivityEnsurePlanner();
+
+  int id = 0;
+  PayloadGetInt(payloadJson, "id", &id);
+
+  if (id > 0) {
+    // Load existing then patch.
+    std::string existing = ProductivityPlanGetJson(id, userId);
+    if (existing.empty()) return false;
+
+    std::string title, category, startAt, endAt, status, color;
+    int duration = 0, remaining = -1;
+    bool hasTitle = PayloadGetString(payloadJson, "title", &title);
+    bool hasCat = PayloadGetString(payloadJson, "category", &category);
+    bool hasStart = PayloadGetString(payloadJson, "start_at", &startAt);
+    bool hasEnd = PayloadGetString(payloadJson, "end_at", &endAt);
+    bool hasDur = PayloadGetInt(payloadJson, "duration_minutes", &duration);
+    bool hasRem = PayloadGetInt(payloadJson, "remaining_minutes", &remaining);
+    bool hasStatus = PayloadGetString(payloadJson, "status", &status);
+    bool hasColor = PayloadHasKey(payloadJson, "color");
+    if (hasColor) {
+      std::string raw;
+      if (PayloadGetRaw(payloadJson, "color", &raw)) {
+        if (raw == "null")
+          color.clear();
+        else
+          PayloadGetString(payloadJson, "color", &color);
+      }
+    }
+
+    // Fetch current row fields for merge when only duration/start change.
+    sqlite3_stmt* st = nullptr;
+    std::string curStart, curEnd, curTitle, curCat, curStatus, curColor;
+    int curPlanned = 0, curRemaining = 0;
+    bool curHasColor = false;
+    if (sqlite3_prepare_v2(gDb,
+                           "SELECT title, category, start_at, end_at, planned_minutes, "
+                           "remaining_minutes, status, color FROM planner_blocks WHERE id=? AND "
+                           "user_id=?;",
+                           -1, &st, nullptr) != SQLITE_OK) {
+      return false;
+    }
+    sqlite3_bind_int64(st, 1, id);
+    sqlite3_bind_int(st, 2, userId);
+    if (sqlite3_step(st) != SQLITE_ROW) {
+      sqlite3_finalize(st);
+      return false;
+    }
+    auto col = [&](int i) -> std::string {
+      const char* p = reinterpret_cast<const char*>(sqlite3_column_text(st, i));
+      return p ? p : "";
+    };
+    curTitle = col(0);
+    curCat = col(1);
+    curStart = col(2);
+    curEnd = col(3);
+    curPlanned = sqlite3_column_int(st, 4);
+    curRemaining = sqlite3_column_int(st, 5);
+    curStatus = col(6);
+    curHasColor = sqlite3_column_type(st, 7) != SQLITE_NULL;
+    curColor = curHasColor ? col(7) : "";
+    sqlite3_finalize(st);
+
+    if (!hasTitle) title = curTitle;
+    if (!hasCat) category = curCat;
+    if (!hasStart) startAt = curStart;
+    else startAt = ToStoreTs(startAt);
+    if (!hasStatus) status = curStatus;
+    if (!hasColor) {
+      color = curColor;
+      hasColor = curHasColor;
+    }
+
+    int planned = curPlanned;
+    if (hasDur && duration > 0) {
+      planned = duration;
+      endAt = "";  // recompute
+      hasEnd = false;
+    }
+    if (hasEnd) {
+      endAt = ToStoreTs(endAt);
+      planned = MinutesBetweenIso(startAt, endAt);
+    } else if (hasDur && duration > 0) {
+      // add minutes to start
+      FILETIME ft{};
+      if (!ParseIsoFileTime(startAt, &ft)) return false;
+      ULARGE_INTEGER uli;
+      uli.LowPart = ft.dwLowDateTime;
+      uli.HighPart = ft.dwHighDateTime;
+      uli.QuadPart += (ULONGLONG)duration * 60ULL * 10000000ULL;
+      ft.dwLowDateTime = uli.LowPart;
+      ft.dwHighDateTime = uli.HighPart;
+      SYSTEMTIME outSt;
+      FileTimeToSystemTime(&ft, &outSt);
+      char buf[40];
+      snprintf(buf, sizeof(buf), "%04u-%02u-%02u %02u:%02u:%02u", outSt.wYear, outSt.wMonth,
+               outSt.wDay, outSt.wHour, outSt.wMinute, outSt.wSecond);
+      endAt = buf;
+    } else {
+      endAt = ToStoreTs(curEnd);
+    }
+    startAt = ToStoreTs(startAt);
+
+    int rem = hasRem ? remaining : curRemaining;
+    if (hasDur && duration > 0 && !hasRem) rem = planned;
+
+    if (sqlite3_prepare_v2(gDb,
+                           "UPDATE planner_blocks SET title=?, category=?, start_at=?, end_at=?, "
+                           "planned_minutes=?, remaining_minutes=?, status=?, color=? WHERE id=? AND "
+                           "user_id=?;",
+                           -1, &st, nullptr) != SQLITE_OK) {
+      return false;
+    }
+    sqlite3_bind_text(st, 1, title.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(st, 2, category.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(st, 3, startAt.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(st, 4, endAt.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_int(st, 5, planned);
+    sqlite3_bind_int(st, 6, rem);
+    sqlite3_bind_text(st, 7, status.c_str(), -1, SQLITE_TRANSIENT);
+    if (hasColor && !color.empty())
+      sqlite3_bind_text(st, 8, color.c_str(), -1, SQLITE_TRANSIENT);
+    else if (hasColor)
+      sqlite3_bind_null(st, 8);
+    else if (curHasColor)
+      sqlite3_bind_text(st, 8, curColor.c_str(), -1, SQLITE_TRANSIENT);
+    else
+      sqlite3_bind_null(st, 8);
+    sqlite3_bind_int64(st, 9, id);
+    sqlite3_bind_int(st, 10, userId);
+    bool ok = sqlite3_step(st) == SQLITE_DONE;
+    sqlite3_finalize(st);
+    if (!ok) return false;
+    ProductivityBumpSeq();
+    if (outBlockJson) *outBlockJson = ProductivityPlanGetJson(id, userId);
+    return true;
+  }
+
+  // Create
+  std::string title, category = "study", startAt, endAt, color;
+  int duration = 0;
+  if (!PayloadGetString(payloadJson, "title", &title) || title.empty()) return false;
+  PayloadGetString(payloadJson, "category", &category);
+  if (!PayloadGetString(payloadJson, "start_at", &startAt) || startAt.empty()) return false;
+  bool hasEnd = PayloadGetString(payloadJson, "end_at", &endAt);
+  bool hasDur = PayloadGetInt(payloadJson, "duration_minutes", &duration);
+  PayloadGetString(payloadJson, "color", &color);
+  startAt = ToStoreTs(startAt);
+
+  int planned = 0;
+  if (hasDur && duration > 0) {
+    planned = duration;
+    FILETIME ft{};
+    if (!ParseIsoFileTime(startAt, &ft)) return false;
+    ULARGE_INTEGER uli;
+    uli.LowPart = ft.dwLowDateTime;
+    uli.HighPart = ft.dwHighDateTime;
+    uli.QuadPart += (ULONGLONG)duration * 60ULL * 10000000ULL;
+    ft.dwLowDateTime = uli.LowPart;
+    ft.dwHighDateTime = uli.HighPart;
+    SYSTEMTIME outSt;
+    FileTimeToSystemTime(&ft, &outSt);
+    char buf[40];
+    snprintf(buf, sizeof(buf), "%04u-%02u-%02u %02u:%02u:%02u", outSt.wYear, outSt.wMonth, outSt.wDay,
+             outSt.wHour, outSt.wMinute, outSt.wSecond);
+    endAt = buf;
+  } else if (hasEnd && !endAt.empty()) {
+    endAt = ToStoreTs(endAt);
+    planned = MinutesBetweenIso(startAt, endAt);
+  } else {
+    return false;
+  }
+
+  std::string now = IsoLocalNow();
+  std::string created = ToStoreTs(now);
+  sqlite3_stmt* st = nullptr;
+  if (sqlite3_prepare_v2(gDb,
+                         "INSERT INTO planner_blocks (user_id, title, category, start_at, end_at, "
+                         "planned_minutes, remaining_minutes, status, roll_count, color, "
+                         "created_at) VALUES (?, ?, ?, ?, ?, ?, ?, 'scheduled', 0, ?, ?);",
+                         -1, &st, nullptr) != SQLITE_OK) {
+    return false;
+  }
+  sqlite3_bind_int(st, 1, userId);
+  sqlite3_bind_text(st, 2, title.c_str(), -1, SQLITE_TRANSIENT);
+  sqlite3_bind_text(st, 3, category.c_str(), -1, SQLITE_TRANSIENT);
+  sqlite3_bind_text(st, 4, startAt.c_str(), -1, SQLITE_TRANSIENT);
+  sqlite3_bind_text(st, 5, endAt.c_str(), -1, SQLITE_TRANSIENT);
+  sqlite3_bind_int(st, 6, planned);
+  sqlite3_bind_int(st, 7, planned);
+  if (!color.empty())
+    sqlite3_bind_text(st, 8, color.c_str(), -1, SQLITE_TRANSIENT);
+  else
+    sqlite3_bind_null(st, 8);
+  sqlite3_bind_text(st, 9, created.c_str(), -1, SQLITE_TRANSIENT);
+  bool ok = sqlite3_step(st) == SQLITE_DONE;
+  sqlite3_finalize(st);
+  if (!ok) return false;
+  long long newId = sqlite3_last_insert_rowid(gDb);
+  ProductivityBumpSeq();
+  if (outBlockJson) *outBlockJson = ProductivityPlanGetJson(newId, userId);
+  return true;
+}
+
+bool ProductivityPlanDelete(long long id, int userId) {
+  if (!gDb || id <= 0) return false;
+  ProductivityEnsurePlanner();
+  sqlite3_stmt* st = nullptr;
+  if (sqlite3_prepare_v2(gDb, "DELETE FROM planner_blocks WHERE id=? AND user_id=?;", -1, &st,
+                         nullptr) != SQLITE_OK) {
+    return false;
+  }
+  sqlite3_bind_int64(st, 1, id);
+  sqlite3_bind_int(st, 2, userId);
+  bool ok = sqlite3_step(st) == SQLITE_DONE;
+  int changes = sqlite3_changes(gDb);
+  sqlite3_finalize(st);
+  if (!ok || changes <= 0) return false;
+  ProductivityBumpSeq();
+  return true;
+}
+
+std::string ProductivityRoutineListJson(int userId) {
+  if (!gDb) return "[]";
+  ProductivityEnsurePlanner();
+  sqlite3_stmt* st = nullptr;
+  std::string sql =
+      std::string(kRoutineSelectCols) + "WHERE user_id=? ORDER BY sort_order ASC, id ASC;";
+  if (sqlite3_prepare_v2(gDb, sql.c_str(), -1, &st, nullptr) != SQLITE_OK) return "[]";
+  sqlite3_bind_int(st, 1, userId);
+  std::string out = "[";
+  bool first = true;
+  while (sqlite3_step(st) == SQLITE_ROW) {
+    if (!first) out += ",";
+    first = false;
+    out += RoutineRowJson(st);
+  }
+  sqlite3_finalize(st);
+  out += "]";
+  return out;
+}
+
+bool ProductivityRoutineUpsert(const std::string& payloadJson, int userId,
+                               std::string* outRoutineJson) {
+  if (!gDb) return false;
+  ProductivityEnsurePlanner();
+  int id = 0;
+  PayloadGetInt(payloadJson, "id", &id);
+
+  auto fetchOne = [&](long long rid) -> std::string {
+    sqlite3_stmt* st = nullptr;
+    std::string sql = std::string(kRoutineSelectCols) + "WHERE id=? AND user_id=?;";
+    if (sqlite3_prepare_v2(gDb, sql.c_str(), -1, &st, nullptr) != SQLITE_OK) return "";
+    sqlite3_bind_int64(st, 1, rid);
+    sqlite3_bind_int(st, 2, userId);
+    std::string out;
+    if (sqlite3_step(st) == SQLITE_ROW) out = RoutineRowJson(st);
+    sqlite3_finalize(st);
+    return out;
+  };
+
+  if (id > 0) {
+    sqlite3_stmt* st = nullptr;
+    if (sqlite3_prepare_v2(gDb,
+                           "SELECT title, category, start_time, end_time, duration_minutes, "
+                           "days_json, color, enabled, sort_order FROM planner_routines WHERE "
+                           "id=? AND user_id=?;",
+                           -1, &st, nullptr) != SQLITE_OK) {
+      return false;
+    }
+    sqlite3_bind_int64(st, 1, id);
+    sqlite3_bind_int(st, 2, userId);
+    if (sqlite3_step(st) != SQLITE_ROW) {
+      sqlite3_finalize(st);
+      return false;
+    }
+    auto col = [&](int i) -> std::string {
+      const char* p = reinterpret_cast<const char*>(sqlite3_column_text(st, i));
+      return p ? p : "";
+    };
+    std::string title = col(0), category = col(1), startTime = col(2), endTime = col(3);
+    bool hasEnd = sqlite3_column_type(st, 3) != SQLITE_NULL;
+    bool hasDur = sqlite3_column_type(st, 4) != SQLITE_NULL;
+    int dur = hasDur ? sqlite3_column_int(st, 4) : 0;
+    std::string daysJson = col(5);
+    bool hasColor = sqlite3_column_type(st, 6) != SQLITE_NULL;
+    std::string color = hasColor ? col(6) : "";
+    bool enabled = sqlite3_column_int(st, 7) != 0;
+    int sortOrder = sqlite3_column_int(st, 8);
+    sqlite3_finalize(st);
+
+    std::string t;
+    if (PayloadGetString(payloadJson, "title", &t) && !t.empty()) title = t;
+    if (PayloadGetString(payloadJson, "category", &t) && !t.empty()) category = t;
+    if (PayloadGetString(payloadJson, "start_time", &t) && !t.empty()) startTime = t;
+    if (PayloadHasKey(payloadJson, "end_time")) {
+      std::string raw;
+      PayloadGetRaw(payloadJson, "end_time", &raw);
+      if (raw == "null") {
+        endTime.clear();
+        hasEnd = false;
+      } else if (PayloadGetString(payloadJson, "end_time", &t)) {
+        endTime = t;
+        hasEnd = !t.empty();
+      }
+    }
+    if (PayloadHasKey(payloadJson, "duration_minutes")) {
+      std::string raw;
+      PayloadGetRaw(payloadJson, "duration_minutes", &raw);
+      if (raw == "null") {
+        hasDur = false;
+        dur = 0;
+      } else if (PayloadGetInt(payloadJson, "duration_minutes", &dur)) {
+        hasDur = true;
+      }
+    }
+    if (PayloadHasKey(payloadJson, "days")) {
+      std::string raw;
+      if (PayloadGetRaw(payloadJson, "days", &raw) && !raw.empty() && raw[0] == '[') daysJson = raw;
+    }
+    if (PayloadHasKey(payloadJson, "color")) {
+      std::string raw;
+      PayloadGetRaw(payloadJson, "color", &raw);
+      if (raw == "null") {
+        color.clear();
+        hasColor = false;
+      } else if (PayloadGetString(payloadJson, "color", &t)) {
+        color = t;
+        hasColor = !t.empty();
+      }
+    }
+    bool en = enabled;
+    if (PayloadGetBool(payloadJson, "enabled", &en)) enabled = en;
+    int so = sortOrder;
+    if (PayloadGetInt(payloadJson, "sort_order", &so)) sortOrder = so;
+
+    if (sqlite3_prepare_v2(gDb,
+                           "UPDATE planner_routines SET title=?, category=?, start_time=?, end_time=?, "
+                           "duration_minutes=?, days_json=?, color=?, enabled=?, sort_order=? WHERE "
+                           "id=? AND user_id=?;",
+                           -1, &st, nullptr) != SQLITE_OK) {
+      return false;
+    }
+    sqlite3_bind_text(st, 1, title.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(st, 2, category.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(st, 3, startTime.c_str(), -1, SQLITE_TRANSIENT);
+    if (hasEnd)
+      sqlite3_bind_text(st, 4, endTime.c_str(), -1, SQLITE_TRANSIENT);
+    else
+      sqlite3_bind_null(st, 4);
+    if (hasDur)
+      sqlite3_bind_int(st, 5, dur);
+    else
+      sqlite3_bind_null(st, 5);
+    sqlite3_bind_text(st, 6, daysJson.c_str(), -1, SQLITE_TRANSIENT);
+    if (hasColor)
+      sqlite3_bind_text(st, 7, color.c_str(), -1, SQLITE_TRANSIENT);
+    else
+      sqlite3_bind_null(st, 7);
+    sqlite3_bind_int(st, 8, enabled ? 1 : 0);
+    sqlite3_bind_int(st, 9, sortOrder);
+    sqlite3_bind_int64(st, 10, id);
+    sqlite3_bind_int(st, 11, userId);
+    bool ok = sqlite3_step(st) == SQLITE_DONE;
+    sqlite3_finalize(st);
+    if (!ok) return false;
+    ProductivityBumpSeq();
+    if (outRoutineJson) *outRoutineJson = fetchOne(id);
+    return true;
+  }
+
+  std::string title, category = "personal", startTime, endTime, color;
+  int duration = 0, sortOrder = 0;
+  bool enabled = true;
+  if (!PayloadGetString(payloadJson, "title", &title) || title.empty()) return false;
+  PayloadGetString(payloadJson, "category", &category);
+  if (!PayloadGetString(payloadJson, "start_time", &startTime) || startTime.empty()) return false;
+  bool hasEnd = PayloadGetString(payloadJson, "end_time", &endTime);
+  bool hasDur = PayloadGetInt(payloadJson, "duration_minutes", &duration);
+  PayloadGetString(payloadJson, "color", &color);
+  PayloadGetBool(payloadJson, "enabled", &enabled);
+  PayloadGetInt(payloadJson, "sort_order", &sortOrder);
+  std::string daysJson = "[\"mon\",\"tue\",\"wed\",\"thu\",\"fri\",\"sat\",\"sun\"]";
+  std::string rawDays;
+  if (PayloadGetRaw(payloadJson, "days", &rawDays) && !rawDays.empty() && rawDays[0] == '[')
+    daysJson = rawDays;
+
+  std::string created = ToStoreTs(IsoLocalNow());
+  sqlite3_stmt* st = nullptr;
+  if (sqlite3_prepare_v2(gDb,
+                         "INSERT INTO planner_routines (user_id, title, category, start_time, "
+                         "end_time, duration_minutes, days_json, color, enabled, sort_order, "
+                         "created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);",
+                         -1, &st, nullptr) != SQLITE_OK) {
+    return false;
+  }
+  sqlite3_bind_int(st, 1, userId);
+  sqlite3_bind_text(st, 2, title.c_str(), -1, SQLITE_TRANSIENT);
+  sqlite3_bind_text(st, 3, category.c_str(), -1, SQLITE_TRANSIENT);
+  sqlite3_bind_text(st, 4, startTime.c_str(), -1, SQLITE_TRANSIENT);
+  if (hasEnd && !endTime.empty())
+    sqlite3_bind_text(st, 5, endTime.c_str(), -1, SQLITE_TRANSIENT);
+  else
+    sqlite3_bind_null(st, 5);
+  if (hasDur && duration > 0)
+    sqlite3_bind_int(st, 6, duration);
+  else
+    sqlite3_bind_null(st, 6);
+  sqlite3_bind_text(st, 7, daysJson.c_str(), -1, SQLITE_TRANSIENT);
+  if (!color.empty())
+    sqlite3_bind_text(st, 8, color.c_str(), -1, SQLITE_TRANSIENT);
+  else
+    sqlite3_bind_null(st, 8);
+  sqlite3_bind_int(st, 9, enabled ? 1 : 0);
+  sqlite3_bind_int(st, 10, sortOrder);
+  sqlite3_bind_text(st, 11, created.c_str(), -1, SQLITE_TRANSIENT);
+  bool ok = sqlite3_step(st) == SQLITE_DONE;
+  sqlite3_finalize(st);
+  if (!ok) return false;
+  long long newId = sqlite3_last_insert_rowid(gDb);
+  ProductivityBumpSeq();
+  if (outRoutineJson) *outRoutineJson = fetchOne(newId);
+  return true;
+}
+
+bool ProductivityRoutineDelete(long long id, int userId) {
+  if (!gDb || id <= 0) return false;
+  ProductivityEnsurePlanner();
+  sqlite3_stmt* st = nullptr;
+  if (sqlite3_prepare_v2(gDb, "DELETE FROM planner_routines WHERE id=? AND user_id=?;", -1, &st,
+                         nullptr) != SQLITE_OK) {
+    return false;
+  }
+  sqlite3_bind_int64(st, 1, id);
+  sqlite3_bind_int(st, 2, userId);
+  bool ok = sqlite3_step(st) == SQLITE_DONE;
+  int changes = sqlite3_changes(gDb);
+  sqlite3_finalize(st);
+  if (!ok || changes <= 0) return false;
+  ProductivityBumpSeq();
+  return true;
+}
+
+namespace {
+
+std::string AddMinutesToIso(const std::string& startIso, int minutes) {
+  FILETIME ft{};
+  if (!ParseIsoFileTime(startIso, &ft)) return startIso;
+  ULARGE_INTEGER uli;
+  uli.LowPart = ft.dwLowDateTime;
+  uli.HighPart = ft.dwHighDateTime;
+  uli.QuadPart += (ULONGLONG)(minutes > 0 ? minutes : 0) * 60ULL * 10000000ULL;
+  ft.dwLowDateTime = uli.LowPart;
+  ft.dwHighDateTime = uli.HighPart;
+  SYSTEMTIME outSt;
+  FileTimeToSystemTime(&ft, &outSt);
+  char buf[40];
+  snprintf(buf, sizeof(buf), "%04u-%02u-%02u %02u:%02u:%02u", outSt.wYear, outSt.wMonth, outSt.wDay,
+           outSt.wHour, outSt.wMinute, outSt.wSecond);
+  return buf;
+}
+
+bool BlockOverlaps(int userId, const std::string& startAt, const std::string& endAt,
+                   long long excludeId) {
+  sqlite3_stmt* st = nullptr;
+  const char* sql =
+      "SELECT 1 FROM planner_blocks WHERE user_id=? AND status IN ('scheduled','in_progress') "
+      "AND start_at < ? AND end_at > ? AND id != ? LIMIT 1;";
+  if (sqlite3_prepare_v2(gDb, sql, -1, &st, nullptr) != SQLITE_OK) return false;
+  sqlite3_bind_int(st, 1, userId);
+  sqlite3_bind_text(st, 2, endAt.c_str(), -1, SQLITE_TRANSIENT);
+  sqlite3_bind_text(st, 3, startAt.c_str(), -1, SQLITE_TRANSIENT);
+  sqlite3_bind_int64(st, 4, excludeId);
+  bool hit = sqlite3_step(st) == SQLITE_ROW;
+  sqlite3_finalize(st);
+  return hit;
+}
+
+std::string WeekdayKeyLocal(const SYSTEMTIME& st) {
+  static const char* keys[] = {"sun", "mon", "tue", "wed", "thu", "fri", "sat"};
+  int d = st.wDayOfWeek;
+  if (d < 0 || d > 6) d = 0;
+  return keys[d];
+}
+
+bool ParseHm(const std::string& hm, int* hour, int* minute) {
+  if (hm.size() < 4) return false;
+  int h = 0, m = 0;
+  if (sscanf(hm.c_str(), "%d:%d", &h, &m) < 2) return false;
+  if (h < 0 || h > 23 || m < 0 || m > 59) return false;
+  *hour = h;
+  *minute = m;
+  return true;
+}
+
+bool DayInRoutineDays(const std::string& daysJson, const std::string& dayKey) {
+  std::string lower = daysJson;
+  for (char& c : lower) c = static_cast<char>(tolower(static_cast<unsigned char>(c)));
+  if (lower.find("daily") != std::string::npos) return true;
+  return lower.find(dayKey) != std::string::npos;
+}
+
+}  // namespace
+
+bool ProductivityPlanStart(long long id, int userId, std::string* outBlockJson) {
+  if (!gDb || id <= 0) return false;
+  ProductivityEnsurePlanner();
+  sqlite3_stmt* st = nullptr;
+  if (sqlite3_prepare_v2(gDb,
+                         "UPDATE planner_blocks SET status='in_progress' WHERE id=? AND user_id=? "
+                         "AND status NOT IN ('done','rolled','cancelled');",
+                         -1, &st, nullptr) != SQLITE_OK) {
+    return false;
+  }
+  sqlite3_bind_int64(st, 1, id);
+  sqlite3_bind_int(st, 2, userId);
+  bool ok = sqlite3_step(st) == SQLITE_DONE;
+  sqlite3_finalize(st);
+  if (!ok || sqlite3_changes(gDb) <= 0) {
+    std::string cur = ProductivityPlanGetJson(id, userId);
+    if (cur.empty()) return false;
+    if (outBlockJson) *outBlockJson = cur;
+    return true;
+  }
+  ProductivityBumpSeq();
+  if (outBlockJson) *outBlockJson = ProductivityPlanGetJson(id, userId);
+  return true;
+}
+
+bool ProductivityPlanComplete(long long id, int userId, int minutesSpentOrNeg1,
+                              std::string* outBlockJson) {
+  if (!gDb || id <= 0) return false;
+  ProductivityEnsurePlanner();
+  sqlite3_stmt* st = nullptr;
+  if (sqlite3_prepare_v2(gDb,
+                         "SELECT remaining_minutes, status, start_at FROM planner_blocks WHERE "
+                         "id=? AND user_id=?;",
+                         -1, &st, nullptr) != SQLITE_OK) {
+    return false;
+  }
+  sqlite3_bind_int64(st, 1, id);
+  sqlite3_bind_int(st, 2, userId);
+  if (sqlite3_step(st) != SQLITE_ROW) {
+    sqlite3_finalize(st);
+    return false;
+  }
+  int remaining = sqlite3_column_int(st, 0);
+  const char* statusP = reinterpret_cast<const char*>(sqlite3_column_text(st, 1));
+  std::string status = statusP ? statusP : "";
+  const char* startP = reinterpret_cast<const char*>(sqlite3_column_text(st, 2));
+  std::string startAt = startP ? startP : "";
+  sqlite3_finalize(st);
+
+  if (status == "done" || status == "rolled" || status == "cancelled") {
+    if (outBlockJson) *outBlockJson = ProductivityPlanGetJson(id, userId);
+    return true;
+  }
+
+  if (minutesSpentOrNeg1 >= 0)
+    remaining = remaining - minutesSpentOrNeg1;
+  else
+    remaining = 0;
+  if (remaining < 0) remaining = 0;
+
+  std::string newStatus = remaining <= 0 ? "done" : status;
+  std::string newEnd;
+  if (remaining <= 0) {
+    remaining = 0;
+    newStatus = "done";
+  } else {
+    newEnd = AddMinutesToIso(startAt, remaining);
+  }
+
+  if (remaining <= 0) {
+    if (sqlite3_prepare_v2(gDb,
+                           "UPDATE planner_blocks SET remaining_minutes=?, status=? WHERE id=? AND "
+                           "user_id=?;",
+                           -1, &st, nullptr) != SQLITE_OK) {
+      return false;
+    }
+    sqlite3_bind_int(st, 1, remaining);
+    sqlite3_bind_text(st, 2, newStatus.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_int64(st, 3, id);
+    sqlite3_bind_int(st, 4, userId);
+  } else {
+    if (sqlite3_prepare_v2(gDb,
+                           "UPDATE planner_blocks SET remaining_minutes=?, status=?, end_at=? WHERE "
+                           "id=? AND user_id=?;",
+                           -1, &st, nullptr) != SQLITE_OK) {
+      return false;
+    }
+    sqlite3_bind_int(st, 1, remaining);
+    sqlite3_bind_text(st, 2, newStatus.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(st, 3, newEnd.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_int64(st, 4, id);
+    sqlite3_bind_int(st, 5, userId);
+  }
+  bool ok = sqlite3_step(st) == SQLITE_DONE;
+  sqlite3_finalize(st);
+  if (!ok) return false;
+  ProductivityBumpSeq();
+  if (outBlockJson) *outBlockJson = ProductivityPlanGetJson(id, userId);
+  return true;
+}
+
+bool ProductivityPlanRollForward(long long id, int userId, const std::string& newStartIsoOrEmpty,
+                                 std::string* outRolledJson, std::string* outNewJson) {
+  if (!gDb || id <= 0) return false;
+  ProductivityEnsurePlanner();
+
+  sqlite3_stmt* st = nullptr;
+  if (sqlite3_prepare_v2(gDb,
+                         "SELECT title, category, remaining_minutes, planned_minutes, roll_count, "
+                         "task_id, color, status FROM planner_blocks WHERE id=? AND user_id=?;",
+                         -1, &st, nullptr) != SQLITE_OK) {
+    return false;
+  }
+  sqlite3_bind_int64(st, 1, id);
+  sqlite3_bind_int(st, 2, userId);
+  if (sqlite3_step(st) != SQLITE_ROW) {
+    sqlite3_finalize(st);
+    return false;
+  }
+  auto col = [&](int i) -> std::string {
+    const char* p = reinterpret_cast<const char*>(sqlite3_column_text(st, i));
+    return p ? p : "";
+  };
+  std::string title = col(0);
+  std::string category = col(1);
+  int remaining = sqlite3_column_int(st, 2);
+  int planned = sqlite3_column_int(st, 3);
+  int rollCount = sqlite3_column_int(st, 4);
+  bool hasTask = sqlite3_column_type(st, 5) != SQLITE_NULL;
+  long long taskId = hasTask ? sqlite3_column_int64(st, 5) : 0;
+  bool hasColor = sqlite3_column_type(st, 6) != SQLITE_NULL;
+  std::string color = hasColor ? col(6) : "";
+  sqlite3_finalize(st);
+
+  if (remaining <= 0) {
+    return ProductivityPlanComplete(id, userId, -1, outRolledJson);
+  }
+
+  if (sqlite3_prepare_v2(gDb, "UPDATE planner_blocks SET status='rolled' WHERE id=? AND user_id=?;",
+                         -1, &st, nullptr) != SQLITE_OK) {
+    return false;
+  }
+  sqlite3_bind_int64(st, 1, id);
+  sqlite3_bind_int(st, 2, userId);
+  if (sqlite3_step(st) != SQLITE_DONE) {
+    sqlite3_finalize(st);
+    return false;
+  }
+  sqlite3_finalize(st);
+
+  std::string startAt;
+  if (!newStartIsoOrEmpty.empty()) {
+    startAt = ToStoreTs(newStartIsoOrEmpty);
+  } else {
+    SYSTEMTIME now;
+    GetLocalTime(&now);
+    now.wMinute = 0;
+    now.wSecond = 0;
+    now.wMilliseconds = 0;
+    FILETIME ft;
+    SystemTimeToFileTime(&now, &ft);
+    ULARGE_INTEGER uli;
+    uli.LowPart = ft.dwLowDateTime;
+    uli.HighPart = ft.dwHighDateTime;
+    uli.QuadPart += 60ULL * 60ULL * 10000000ULL;
+    ft.dwLowDateTime = uli.LowPart;
+    ft.dwHighDateTime = uli.HighPart;
+    SYSTEMTIME st2;
+    FileTimeToSystemTime(&ft, &st2);
+    char buf[40];
+    snprintf(buf, sizeof(buf), "%04u-%02u-%02u %02u:%02u:%02u", st2.wYear, st2.wMonth, st2.wDay,
+             st2.wHour, st2.wMinute, st2.wSecond);
+    startAt = buf;
+  }
+  std::string endAt = AddMinutesToIso(startAt, remaining);
+  std::string created = ToStoreTs(IsoLocalNow());
+
+  if (sqlite3_prepare_v2(gDb,
+                         "INSERT INTO planner_blocks (user_id, title, category, start_at, end_at, "
+                         "planned_minutes, remaining_minutes, status, rolled_from_id, roll_count, "
+                         "task_id, color, created_at) VALUES (?,?,?,?,?,?,?,'scheduled',?,?,?,?,?);",
+                         -1, &st, nullptr) != SQLITE_OK) {
+    return false;
+  }
+  sqlite3_bind_int(st, 1, userId);
+  sqlite3_bind_text(st, 2, title.c_str(), -1, SQLITE_TRANSIENT);
+  sqlite3_bind_text(st, 3, category.empty() ? "study" : category.c_str(), -1, SQLITE_TRANSIENT);
+  sqlite3_bind_text(st, 4, startAt.c_str(), -1, SQLITE_TRANSIENT);
+  sqlite3_bind_text(st, 5, endAt.c_str(), -1, SQLITE_TRANSIENT);
+  sqlite3_bind_int(st, 6, planned);
+  sqlite3_bind_int(st, 7, remaining);
+  sqlite3_bind_int64(st, 8, id);
+  sqlite3_bind_int(st, 9, rollCount + 1);
+  if (hasTask)
+    sqlite3_bind_int64(st, 10, taskId);
+  else
+    sqlite3_bind_null(st, 10);
+  if (hasColor)
+    sqlite3_bind_text(st, 11, color.c_str(), -1, SQLITE_TRANSIENT);
+  else
+    sqlite3_bind_null(st, 11);
+  sqlite3_bind_text(st, 12, created.c_str(), -1, SQLITE_TRANSIENT);
+  bool ok = sqlite3_step(st) == SQLITE_DONE;
+  sqlite3_finalize(st);
+  if (!ok) return false;
+  long long newId = sqlite3_last_insert_rowid(gDb);
+  ProductivityBumpSeq();
+  if (outRolledJson) *outRolledJson = ProductivityPlanGetJson(id, userId);
+  if (outNewJson) *outNewJson = ProductivityPlanGetJson(newId, userId);
+  return true;
+}
+
+int ProductivityRoutineApply(int userId, const std::string& dateYmdOrEmpty, bool skipOverlaps) {
+  if (!gDb) return -1;
+  ProductivityEnsurePlanner();
+
+  SYSTEMTIME daySt;
+  GetLocalTime(&daySt);
+  if (!dateYmdOrEmpty.empty() && dateYmdOrEmpty.size() >= 10) {
+    int y = 0, mo = 0, d = 0;
+    if (sscanf(dateYmdOrEmpty.c_str(), "%d-%d-%d", &y, &mo, &d) == 3) {
+      daySt.wYear = (WORD)y;
+      daySt.wMonth = (WORD)mo;
+      daySt.wDay = (WORD)d;
+      daySt.wHour = 12;
+      daySt.wMinute = 0;
+      daySt.wSecond = 0;
+      FILETIME ft;
+      SystemTimeToFileTime(&daySt, &ft);
+      FileTimeToSystemTime(&ft, &daySt);
+    }
+  }
+  std::string dayKey = WeekdayKeyLocal(daySt);
+
+  sqlite3_stmt* st = nullptr;
+  if (sqlite3_prepare_v2(gDb,
+                         "SELECT id, title, category, start_time, end_time, duration_minutes, "
+                         "days_json, color FROM planner_routines WHERE user_id=? AND enabled=1 "
+                         "ORDER BY sort_order ASC, id ASC;",
+                         -1, &st, nullptr) != SQLITE_OK) {
+    return -1;
+  }
+  sqlite3_bind_int(st, 1, userId);
+
+  int created = 0;
+  while (sqlite3_step(st) == SQLITE_ROW) {
+    auto col = [&](int i) -> std::string {
+      const char* p = reinterpret_cast<const char*>(sqlite3_column_text(st, i));
+      return p ? p : "";
+    };
+    std::string title = col(1);
+    std::string category = col(2);
+    std::string startHm = col(3);
+    bool hasEnd = sqlite3_column_type(st, 4) != SQLITE_NULL;
+    std::string endHm = hasEnd ? col(4) : "";
+    bool hasDur = sqlite3_column_type(st, 5) != SQLITE_NULL;
+    int dur = hasDur ? sqlite3_column_int(st, 5) : 60;
+    std::string daysJson = col(6);
+    bool hasColor = sqlite3_column_type(st, 7) != SQLITE_NULL;
+    std::string color = hasColor ? col(7) : "";
+
+    if (!DayInRoutineDays(daysJson, dayKey)) continue;
+
+    int sh = 9, sm = 0;
+    if (!ParseHm(startHm, &sh, &sm)) continue;
+    char startBuf[40];
+    snprintf(startBuf, sizeof(startBuf), "%04u-%02u-%02u %02u:%02u:00", daySt.wYear, daySt.wMonth,
+             daySt.wDay, sh, sm);
+    std::string startAt = startBuf;
+    std::string endAt;
+    if (hasEnd && !endHm.empty()) {
+      int eh = 10, em = 0;
+      if (!ParseHm(endHm, &eh, &em)) continue;
+      char endBuf[40];
+      snprintf(endBuf, sizeof(endBuf), "%04u-%02u-%02u %02u:%02u:00", daySt.wYear, daySt.wMonth,
+               daySt.wDay, eh, em);
+      endAt = endBuf;
+    } else {
+      if (dur <= 0) dur = 60;
+      endAt = AddMinutesToIso(startAt, dur);
+    }
+    int minutes = MinutesBetweenIso(startAt, endAt);
+    if (minutes <= 0) continue;
+    if (skipOverlaps && BlockOverlaps(userId, startAt, endAt, 0)) continue;
+
+    std::string payload = std::string("{\"title\":\"") + JsonEscape(title) +
+                          "\",\"category\":\"" +
+                          JsonEscape(category.empty() ? "personal" : category) +
+                          "\",\"start_at\":\"" + JsonEscape(ToApiIso(startAt)) +
+                          "\",\"end_at\":\"" + JsonEscape(ToApiIso(endAt)) +
+                          "\",\"planned_minutes\":" + std::to_string(minutes) +
+                          ",\"remaining_minutes\":" + std::to_string(minutes) +
+                          ",\"status\":\"scheduled\"";
+    if (hasColor && !color.empty())
+      payload += ",\"color\":\"" + JsonEscape(color) + "\"";
+    payload += "}";
+    std::string out;
+    if (ProductivityPlanUpsert(payload, userId, &out)) ++created;
+  }
+  sqlite3_finalize(st);
+  return created;
+}
+
+std::string ProductivityPlanOverlayJson(const std::string& fromIso, const std::string& toIso,
+                                        int userId) {
+  if (!gDb) return "{\"sessions\":[],\"hour_slices\":[]}";
+  std::string from = ToStoreTs(fromIso);
+  std::string to = ToStoreTs(toIso);
+  sqlite3_stmt* st = nullptr;
+  const char* sql =
+      "SELECT session_id, start_time, end_time, source, category, app_name, window_title, "
+      "task_id FROM tracked_sessions WHERE user_id=? AND start_time < ? AND end_time > ? "
+      "ORDER BY start_time ASC LIMIT 120;";
+  if (sqlite3_prepare_v2(gDb, sql, -1, &st, nullptr) != SQLITE_OK) {
+    return "{\"sessions\":[],\"hour_slices\":[]}";
+  }
+  sqlite3_bind_int(st, 1, userId);
+  sqlite3_bind_text(st, 2, to.c_str(), -1, SQLITE_TRANSIENT);
+  sqlite3_bind_text(st, 3, from.c_str(), -1, SQLITE_TRANSIENT);
+  std::string sessions = "[";
+  bool first = true;
+  while (sqlite3_step(st) == SQLITE_ROW) {
+    auto col = [&](int i) -> std::string {
+      const char* p = reinterpret_cast<const char*>(sqlite3_column_text(st, i));
+      return p ? p : "";
+    };
+    if (!first) sessions += ",";
+    first = false;
+    std::string sid = col(0);
+    std::string start = ToApiIso(col(1));
+    std::string end = ToApiIso(col(2));
+    std::string source = col(3);
+    std::string category = col(4);
+    std::string app = col(5);
+    std::string title = col(6);
+    if (title.size() > 80) title = title.substr(0, 80);
+    bool hasTask = sqlite3_column_type(st, 7) != SQLITE_NULL;
+    long long taskId = hasTask ? sqlite3_column_int64(st, 7) : 0;
+    sessions += "{\"session_id\":\"" + JsonEscape(sid) + "\",\"start_time\":\"" +
+                JsonEscape(start) + "\",\"end_time\":\"" + JsonEscape(end) + "\",\"source\":\"" +
+                JsonEscape(source) + "\",\"category\":" +
+                (category.empty() ? "null" : ("\"" + JsonEscape(category) + "\"")) +
+                ",\"app_name\":" + (app.empty() ? "null" : ("\"" + JsonEscape(app) + "\"")) +
+                ",\"window_title\":" +
+                (title.empty() ? "null" : ("\"" + JsonEscape(title) + "\"")) + ",\"task_id\":" +
+                (hasTask ? std::to_string(taskId) : "null") + "}";
+  }
+  sqlite3_finalize(st);
+  sessions += "]";
+  return "{\"sessions\":" + sessions + ",\"hour_slices\":[]}";
+}
+
+std::string ProductivityPlanAdherenceJson(const std::string& dayYmd, int userId) {
+  if (!gDb) return "{}";
+  std::string day = dayYmd;
+  if (day.size() < 10) {
+    SYSTEMTIME st;
+    GetLocalTime(&st);
+    char buf[16];
+    snprintf(buf, sizeof(buf), "%04u-%02u-%02u", st.wYear, st.wMonth, st.wDay);
+    day = buf;
+  } else {
+    day = day.substr(0, 10);
+  }
+  std::string from = day + " 00:00:00";
+  std::string to = day + " 23:59:59";
+
+  int planned = 0;
+  int blockCount = 0;
+  sqlite3_stmt* st = nullptr;
+  if (sqlite3_prepare_v2(gDb,
+                         "SELECT planned_minutes FROM planner_blocks WHERE user_id=? AND "
+                         "start_at <= ? AND end_at >= ? AND status NOT IN ('cancelled');",
+                         -1, &st, nullptr) == SQLITE_OK) {
+    sqlite3_bind_int(st, 1, userId);
+    sqlite3_bind_text(st, 2, to.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(st, 3, from.c_str(), -1, SQLITE_TRANSIENT);
+    while (sqlite3_step(st) == SQLITE_ROW) {
+      planned += sqlite3_column_int(st, 0);
+      ++blockCount;
+    }
+    sqlite3_finalize(st);
+  }
+
+  int actualSec = 0;
+  int sessionCount = 0;
+  if (sqlite3_prepare_v2(gDb,
+                         "SELECT start_time, end_time FROM tracked_sessions WHERE user_id=? AND "
+                         "start_time < ? AND end_time > ?;",
+                         -1, &st, nullptr) == SQLITE_OK) {
+    sqlite3_bind_int(st, 1, userId);
+    sqlite3_bind_text(st, 2, to.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(st, 3, from.c_str(), -1, SQLITE_TRANSIENT);
+    while (sqlite3_step(st) == SQLITE_ROW) {
+      const char* a = reinterpret_cast<const char*>(sqlite3_column_text(st, 0));
+      const char* b = reinterpret_cast<const char*>(sqlite3_column_text(st, 1));
+      int mins = MinutesBetweenIso(a ? a : "", b ? b : "");
+      if (mins > 0) actualSec += mins * 60;
+      ++sessionCount;
+    }
+    sqlite3_finalize(st);
+  }
+  int actualMin = actualSec / 60;
+  int productive = actualMin;
+  double pct = planned > 0 ? (100.0 * (double)actualMin / (double)planned) : 0.0;
+  if (pct > 100.0) pct = 100.0;
+
+  char pctBuf[32];
+  snprintf(pctBuf, sizeof(pctBuf), "%.1f", pct);
+
+  return std::string("{\"day\":\"") + day + "\",\"planned_minutes\":" + std::to_string(planned) +
+         ",\"actual_minutes\":" + std::to_string(actualMin) +
+         ",\"productive_minutes\":" + std::to_string(productive) +
+         ",\"effective_focus_minutes\":" + std::to_string(productive) +
+         ",\"adherence_pct\":" + pctBuf + ",\"block_count\":" + std::to_string(blockCount) +
+         ",\"session_count\":" + std::to_string(sessionCount) + "}";
 }

@@ -1,4 +1,7 @@
 import { resolveApiUrl } from "../utils/resolveBackendUrl";
+import { enforcerNativeCmd, isFocusEnforcerBridgeAvailable } from "../lib/enforcerNativeCmd";
+import { isFocusDesktopShell } from "../utils/focusDesktopShell";
+import { readFocusBibleChapter } from "../utils/bibleCorpus";
 
 const TOKEN_KEY = "vocab:auth-token";
 
@@ -11,6 +14,23 @@ function authHeaders(): HeadersInit {
     /* ignore */
   }
   return headers;
+}
+
+function lifeTransport(): "gateway" | "http" {
+  if (!isFocusDesktopShell()) return "http";
+  if (!isFocusEnforcerBridgeAvailable()) throw new Error("enforcer_unreachable");
+  return "gateway";
+}
+
+async function lifeGateway(
+  op: string,
+  payload: Record<string, unknown> = {},
+  timeoutMs = 12000,
+): Promise<Record<string, unknown>> {
+  const res = await enforcerNativeCmd(op, payload, timeoutMs);
+  if (!res) throw new Error("enforcer_unreachable");
+  if (res.ok === false) throw new Error(String(res.error || "enforcer_cmd_failed"));
+  return res as Record<string, unknown>;
 }
 
 export type BibleBookmark = {
@@ -83,9 +103,13 @@ export type BibleChapter = {
 };
 
 export async function fetchBibleState(): Promise<BibleState> {
-  const res = await fetch(resolveApiUrl("/api/bible/state"), { headers: authHeaders() });
-  if (!res.ok) throw new Error(`bible/state: ${res.status}`);
-  return res.json();
+  if (lifeTransport() === "gateway") {
+    const res = await lifeGateway("bible.state");
+    return (res.state as BibleState) || ({} as BibleState);
+  }
+  const r = await fetch(resolveApiUrl("/api/bible/state"), { headers: authHeaders() });
+  if (!r.ok) throw new Error(`bible/state: ${r.status}`);
+  return r.json();
 }
 
 export async function fetchBibleToday(version = "web"): Promise<
@@ -95,20 +119,48 @@ export async function fetchBibleToday(version = "web"): Promise<
     preview_verses?: BibleVerse[];
   }
 > {
-  const res = await fetch(
+  if (lifeTransport() === "gateway") {
+    const res = await lifeGateway("bible.today", { version });
+    const state = (res.state as BibleState) || ({} as BibleState);
+    const tc = state.today_chapter as TodayChapter;
+    const chapter =
+      (await readFocusBibleChapter(tc?.book || "Genesis", tc?.chapter || 1)) ||
+      ({
+        version: "web",
+        version_name: "World English Bible",
+        name: tc?.book || "Genesis",
+        book_id: "genesis",
+        testament: "",
+        num_chapters: 1,
+        chapter: tc?.chapter || 1,
+        verses: [],
+      } as BibleChapter);
+    return { ...state, today_chapter: tc, chapter, preview_verses: chapter.verses?.slice(0, 3) };
+  }
+  const r = await fetch(
     resolveApiUrl(`/api/bible/v2/today?version=${encodeURIComponent(version)}`),
     { headers: authHeaders() },
   );
-  if (!res.ok) throw new Error(`bible/v2/today: ${res.status}`);
-  return res.json();
+  if (!r.ok) throw new Error(`bible/v2/today: ${r.status}`);
+  return r.json();
 }
 
 export async function fetchBibleMeta(version = "web"): Promise<BibleMeta> {
-  const res = await fetch(resolveApiUrl(`/api/bible/v2/meta?version=${encodeURIComponent(version)}`), {
+  if (lifeTransport() === "gateway") {
+    // Meta from corpus not required for devotion UI — soft empty
+    return {
+      version: "web",
+      version_name: "World English Bible",
+      license: "",
+      book_count: 0,
+      books: [],
+    };
+  }
+  const r = await fetch(resolveApiUrl(`/api/bible/v2/meta?version=${encodeURIComponent(version)}`), {
     headers: authHeaders(),
   });
-  if (!res.ok) throw new Error(`bible/v2/meta: ${res.status}`);
-  return res.json();
+  if (!r.ok) throw new Error(`bible/v2/meta: ${r.status}`);
+  return r.json();
 }
 
 export async function fetchBibleChapter(
@@ -116,14 +168,19 @@ export async function fetchBibleChapter(
   chapter: number,
   version = "web",
 ): Promise<BibleChapter> {
-  const res = await fetch(
+  if (lifeTransport() === "gateway") {
+    const ch = await readFocusBibleChapter(book, chapter);
+    if (!ch) throw new Error("bible chapter missing (calt-bible corpus)");
+    return ch;
+  }
+  const r = await fetch(
     resolveApiUrl(
       `/api/bible/v2/read/${encodeURIComponent(version)}/${encodeURIComponent(book)}/${chapter}`,
     ),
     { headers: authHeaders() },
   );
-  if (!res.ok) throw new Error(`bible/v2/read: ${res.status}`);
-  return res.json();
+  if (!r.ok) throw new Error(`bible/v2/read: ${r.status}`);
+  return r.json();
 }
 
 export async function bibleChapterHeartbeat(
@@ -132,13 +189,17 @@ export async function bibleChapterHeartbeat(
   focused: boolean,
   verse = 1,
 ): Promise<BibleState> {
-  const res = await fetch(resolveApiUrl("/api/bible/v2/heartbeat"), {
+  if (lifeTransport() === "gateway") {
+    const res = await lifeGateway("bible.heartbeat", { book, chapter, focused, verse });
+    return (res.state as BibleState) || ({} as BibleState);
+  }
+  const r = await fetch(resolveApiUrl("/api/bible/v2/heartbeat"), {
     method: "POST",
     headers: authHeaders(),
     body: JSON.stringify({ book, chapter, verse, focused }),
   });
-  if (!res.ok) throw new Error(`bible/v2/heartbeat: ${res.status}`);
-  return res.json();
+  if (!r.ok) throw new Error(`bible/v2/heartbeat: ${r.status}`);
+  return r.json();
 }
 
 export async function tickBibleChapter(
@@ -146,13 +207,17 @@ export async function tickBibleChapter(
   chapter: number,
   done = true,
 ): Promise<BibleState & { key?: string; done?: boolean }> {
-  const res = await fetch(resolveApiUrl("/api/bible/v2/chapters/tick"), {
+  if (lifeTransport() === "gateway") {
+    const res = await lifeGateway("bible.tick", { book, chapter, done });
+    return (res.state as BibleState & { key?: string; done?: boolean }) || ({} as BibleState);
+  }
+  const r = await fetch(resolveApiUrl("/api/bible/v2/chapters/tick"), {
     method: "POST",
     headers: authHeaders(),
     body: JSON.stringify({ book, chapter, done }),
   });
-  if (!res.ok) throw new Error(`bible/v2/chapters/tick: ${res.status}`);
-  return res.json();
+  if (!r.ok) throw new Error(`bible/v2/chapters/tick: ${r.status}`);
+  return r.json();
 }
 
 /** @deprecated PDF heartbeat — prefer bibleChapterHeartbeat */
@@ -304,36 +369,59 @@ export type DevotionTodayPayload = {
 };
 
 export async function fetchDevotionToday(version = "web"): Promise<DevotionTodayPayload> {
-  const res = await fetch(
+  if (lifeTransport() === "gateway") {
+    const res = await lifeGateway("bible.devotion.today", { version });
+    const d = (res.devotion as DevotionTodayPayload) || ({} as DevotionTodayPayload);
+    const tc = d.today_chapter;
+    if (tc?.book && tc?.chapter) {
+      d.morning_chapter = await readFocusBibleChapter(tc.book, tc.chapter);
+    }
+    if (d.afternoon?.book && d.afternoon?.chapter) {
+      d.afternoon_chapter = await readFocusBibleChapter(d.afternoon.book, d.afternoon.chapter);
+    }
+    if (d.evening?.book && d.evening?.chapter) {
+      d.evening_chapter = await readFocusBibleChapter(d.evening.book, d.evening.chapter);
+    }
+    return d;
+  }
+  const r = await fetch(
     resolveApiUrl(`/api/bible/devotion/today?version=${encodeURIComponent(version)}`),
     { headers: authHeaders() },
   );
-  if (!res.ok) throw new Error(`bible/devotion/today: ${res.status}`);
-  return res.json();
+  if (!r.ok) throw new Error(`bible/devotion/today: ${r.status}`);
+  return r.json();
 }
 
 export async function markDevotionDone(
   slot: DevotionSlot,
   done = true,
 ): Promise<DevotionTodayPayload | BibleState> {
-  const res = await fetch(resolveApiUrl(`/api/bible/devotion/${slot}/done`), {
+  if (lifeTransport() === "gateway") {
+    const res = await lifeGateway("bible.devotion.done", { slot, done });
+    return (res.devotion as DevotionTodayPayload) || ({} as DevotionTodayPayload);
+  }
+  const r = await fetch(resolveApiUrl(`/api/bible/devotion/${slot}/done`), {
     method: "POST",
     headers: authHeaders(),
     body: JSON.stringify({ done }),
   });
-  if (!res.ok) throw new Error(`bible/devotion/${slot}/done: ${res.status}`);
-  return res.json();
+  if (!r.ok) throw new Error(`bible/devotion/${slot}/done: ${r.status}`);
+  return r.json();
 }
 
 export async function saveDevotionNotes(
   slot: DevotionSlot,
   notes: string,
 ): Promise<DevotionTodayPayload> {
-  const res = await fetch(resolveApiUrl("/api/bible/devotion/notes"), {
+  if (lifeTransport() === "gateway") {
+    const res = await lifeGateway("bible.devotion.notes", { slot, notes });
+    return (res.devotion as DevotionTodayPayload) || ({} as DevotionTodayPayload);
+  }
+  const r = await fetch(resolveApiUrl("/api/bible/devotion/notes"), {
     method: "PATCH",
     headers: authHeaders(),
     body: JSON.stringify({ slot, notes }),
   });
-  if (!res.ok) throw new Error(`bible/devotion/notes: ${res.status}`);
-  return res.json();
+  if (!r.ok) throw new Error(`bible/devotion/notes: ${r.status}`);
+  return r.json();
 }

@@ -6,8 +6,8 @@ You are finishing a **local-first study + productivity platform** for daily pers
 
 | Product | Tech | Owns |
 |---------|------|------|
-| **CALT Productivity** | C++ (`calt_enforcer` + SoftLand engine + tracker + `calt_msg_host` + `calt_focus`) | Tracking, SoftLand decide/apply, hard-block kills/locks, schedules, day-pass/free/incubation, goals-as-blocker-state, productivity Settings/Focus UI, tray |
-| **CALT Study** | Python FastAPI + React `:8000` | Notes, Study Loop *content*, GRE, Math, Journal, Bible *content* — pure study workflows |
+| **CALT Productivity** | C++ (`calt_enforcer` + SoftLand engine + tracker + `calt_msg_host` + `calt_focus`) | Tracking, SoftLand decide/apply, hard-block kills/locks, schedules, day-pass/free/incubation, goals-as-blocker-state, productivity Settings/Focus UI, tray, **Bible + Journal** |
+| **CALT Study** | Python FastAPI + React `:8000` | Notes, Study Loop *content*, GRE, Math — pure study workflows. **Bible + Journal moved to Focus** (2026-09-11). |
 
 - SoftLand must **not** depend on live `:8000` (target: Gate → msg-host → C++ SoftLand).  
 - Study may optionally emit events into the productivity store later; Study is **never** the SoftLand brain.  
@@ -26,6 +26,7 @@ webapp. Python may remain for study content only.
 ```
 
 **Authoritative product lock:** [docs/superpowers/specs/2026-09-07-calt-productivity-cpp-product-design.md](docs/superpowers/specs/2026-09-07-calt-productivity-cpp-product-design.md)  
+**Focus standalone migration (locked 2026-09-11):** [docs/superpowers/specs/2026-09-11-calt-focus-standalone-productivity-design.md](docs/superpowers/specs/2026-09-11-calt-focus-standalone-productivity-design.md) — Phases **0–7 + P5c** landed (Focus Productivity offline from Study `:8000`; Gate SoftLand native-only). Optional next: **3b** native LLM. Study `/productivity*` interstitial-only.  
 **Phase 2 SoftLand store:** [docs/superpowers/specs/2026-09-07-calt-productivity-softland-state-model.md](docs/superpowers/specs/2026-09-07-calt-productivity-softland-state-model.md)  
 **Prior split (partially superseded for SoftLand-as-brain):** [docs/superpowers/specs/2026-09-07-calt-blocker-study-split-decisions.md](docs/superpowers/specs/2026-09-07-calt-blocker-study-split-decisions.md)  
 **One-engine map (options; SoftLand-on-Python brain superseded):** [docs/superpowers/specs/2026-09-07-one-engine-map.md](docs/superpowers/specs/2026-09-07-one-engine-map.md)  
@@ -40,17 +41,19 @@ Quiz mandate is **Done** (regressions only). EEG soft-fail is **Done** (flash ne
 ## Architecture (locked)
 
 ```text
-CALT Study (content only)     → Python + React (:8000) — notes, GRE, quiz UI, Bible pages
+CALT Study (content only)     → Python + React (:8000) — notes, GRE, quiz UI (no Bible/Journal)
 CALT Productivity (blocker)   → C++ product:
   SoftLand decide/apply       → SoftLand engine + calt_msg_host (Gate native messaging)
   OS kills + stay-alive       → calt_enforcer (ZERO Python)
   Tracking                    → native (expand browser path over phases)
   Settings / Focus UI         → calt_focus (tray + WebView2)
-Policy kills hot path         → data/behavior/enforcer_policy.json (mirror)
-SoftLand state (SoT)          → SQLite productivity_* in data/vocab_app.db
+Policy kills hot path         → data/productivity/behavior/enforcer_policy.json (mirror)
+SoftLand state (SoT)          → SQLite in data/productivity/productivity.db
 Writes (only mutator)         → calt_enforcer gateway: \\.\pipe\calt_enforcer_cmd
-SoftLand hot read             → data/behavior/softland_policy.json (mirror)
-Status (native-owned)         → data/behavior/enforcer_status.json
+SoftLand hot read             → data/productivity/behavior/softland_policy.json (mirror)
+Status (native-owned)         → data/productivity/behavior/enforcer_status.json
+Bible corpus                  → data/productivity/bible/
+Study DB (content only)       → data/vocab_app.db
 ```
 
 **Naming (forever):** `softland_enabled` = sites / SoftLand only. `hard_block_armed` = native kill switch only. SoftLand ON ≠ Arm.
@@ -78,10 +81,11 @@ No Qt, no pystray, no Electron.
 | **Prod P2** | C++-owned SoftLand **state** store + UI writes | **Done** (softland_policy.json writers/migrator) |
 | **Prod P3** | Gate → msg-host → native SoftLand decide | **Done** (`calt_msg_host` get_mode; Gate nativeMessaging + HTTP fallback) |
 | **Prod P4** | Remove SoftLand HTTP `:8000` dependency | **Done** (Gate HTTP SoftLand fallback opt-in only; edits go through the gateway) |
-| **Prod P5** | Native unlock accounting + classification/scoring (owner chose full P5 2026-09-08) | **Designed, not built** — [P5 design](docs/superpowers/specs/2026-09-08-calt-productivity-p5-native-unlock-accounting-design.md); first plan ready: [P5a](docs/superpowers/plans/2026-09-08-calt-productivity-p5a-native-unlock-accounting.md) |
-| **Settings UI** | Grouped Settings overhaul (Focus) — communicate SoftLand/Arm/lists | **Done** — React + visual polish; [design](docs/superpowers/specs/2026-09-08-productivity-settings-ui-overhaul-design.md) · [after P5a](docs/superpowers/exports/2026-09-09-after-p5a-next.md) |
-| **Prod P6** | Browser track without Python | Planned |
-| **Future F1–F3** | Plan/Calendar/Watch deeper into Focus/C++ (parked) | [Thin future plan](docs/superpowers/exports/2026-09-08-future-plan-calendar-watch-cpp.md) |
+| **Prod P5** | Native unlock accounting + classification/scoring (owner chose full P5 2026-09-08) | **P5a Done** (2026-09-11) — day pass / reward / earn / incubation in enforcer; [design](docs/superpowers/specs/2026-09-08-calt-productivity-p5-native-unlock-accounting-design.md). **Next = P5b scoring** (Focus standalone Phase 3) |
+| **Settings UI** | Grouped Settings overhaul (Focus) — communicate SoftLand/Arm/lists | **Live hub restored** (Phase 1); Make visual is deferred; enforcer-unreachable hard-blocks writes |
+| **Focus standalone** | Sole Productivity door; Study interstitial; no Study `:8000` for SoftLand | **Phase 0+1+2 (P5a) landing** — [design](docs/superpowers/specs/2026-09-11-calt-focus-standalone-productivity-design.md) · order 0→7 |
+| **Prod P6** | Browser track without Python | Planned (standalone Phase 4) |
+| **Future F1–F3** | Plan/Calendar/Watch deeper into Focus/C++ | **Unparked** into Focus standalone Phases 0/5/6 — [design](docs/superpowers/specs/2026-09-11-calt-focus-standalone-productivity-design.md) |
 | **Phase 2 gateway** | Enforcer-owned command API + SQLite SoT + SoftLand tick; JSON mirrors | **Backend done + verified with `:8000` stopped** (2026-09-08). Next: Settings **frontend** overhaul only |
 | P4 (old) | Msg-host relay → Python | **Superseded** — host must ask C++ SoftLand, not Python |
 | P7 | Python kills again | **Rejected** |
@@ -103,7 +107,7 @@ No Qt, no pystray, no Electron.
 5. Python `enforcer_service` = **legacy fallback only** — do not add new Python kill/track code  
 6. Never require a live Python process for `calt_enforcer` to arm/kill/track/status  
 7. SoftLand decide: Gate → `calt_msg_host` → C++ `get_mode`. The HTTP `:8000` SoftLand fallback is off unless `caltSoftlandHttpFallback` is set (debug only). 
-8. SoftLand SoT = **SQLite `productivity_*` tables in `data/vocab_app.db`**, mutated only by the `calt_enforcer` gateway (named pipe `\\.\pipe\calt_enforcer_cmd`); `softland_policy.json` / `enforcer_policy.json` are published **mirrors**. Python may still write the JSON mirror — the enforcer imports it when its `updated_at` is newer. SoftLand never sets `hard_block_armed`. 
+8. SoftLand SoT = **SQLite in `data/productivity/productivity.db`**, mutated only by the `calt_enforcer` gateway (named pipe `\\.\pipe\calt_enforcer_cmd`); mirrors live under `data/productivity/behavior/`. Study keeps `data/vocab_app.db` for vocab/content only. SoftLand never sets `hard_block_armed`. 
 
 ## Dev
 

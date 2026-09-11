@@ -8,8 +8,17 @@ import {
 import { Views, type View } from "react-big-calendar";
 import { fetchDesktopStats, fetchBrowserStats, fetchTrackerHealth, fetchDesktopTimeline, forceTrackerSync, clearDemoClock, fetchDemoClock, fetchGoalsStatus } from "../api/behaviorClient";
 import type { DesktopStats, BrowserStats, AppSession, BrowserSite, BrowserDomain, TrackerHealth, DesktopTimeline, DemoClockStatus, GoalsStatusResponse } from "../api/behaviorClient";
+import {
+  dayRollupToDesktopStats,
+  dayRollupToGoalsStatus,
+  emptyDesktopStats,
+  fetchDayRollupMirror,
+} from "../api/focusMirrors";
+import { isFocusDesktopShell } from "../utils/focusDesktopShell";
 import { PlannerCalendar } from "../components/productivity/PlannerCalendar";
 import { GlanceBar } from "../components/productivity/GlanceBar";
+import { ActivePlanBlockCards } from "../components/productivity/ActivePlanBlockCards";
+import { FocusDesignHostBanner } from "../components/productivity/FocusDesignHostBanner";
 import { PlanVsActualDashboard } from "../components/productivity/PlanVsActualDashboard";
 import { ConfirmPlanButton } from "../components/productivity/ConfirmPlanButton";
 import { TimetablePanel } from "../components/productivity/TimetablePanel";
@@ -449,9 +458,7 @@ export function ProductivityPage() {
   const rawTab = searchParams.get("tab");
   const tab: "calendar" | "plan" | "settings" =
     rawTab === "plan" || rawTab === "settings" ? rawTab : "calendar";
-  const settingsSection = parseSettingsSection(
-    searchParams.get("section") || searchParams.get("settings") || (typeof window !== "undefined" ? window.location.hash.replace(/^#/, "") : null),
-  );
+  const settingsSection = parseSettingsSection(searchParams.get("section"));
   const setSettingsSection = useCallback(
     (id: SettingsSectionId) => {
       setSearchParams(
@@ -697,11 +704,35 @@ export function ProductivityPage() {
     const day = toApiDay(plannerDay);
     void fetchGoalsStatus(day)
       .then(setGoalsStatus)
-      .catch(() => setGoalsStatus(null));
+      .catch(async () => {
+        if (isFocusDesktopShell()) {
+          const rollup = await fetchDayRollupMirror();
+          setGoalsStatus(dayRollupToGoalsStatus(rollup));
+        } else {
+          setGoalsStatus(null);
+        }
+      });
   }, [plannerDay, plannerRefresh]);
 
   /** Header + GlanceBar — follow selected month/week/day. */
   const loadCore = useCallback(async () => {
+    if (isFocusDesktopShell()) {
+      // Phase 5: prefer day_rollup mirror; soft-fail API — zeros, not error spam.
+      const rollup = await fetchDayRollupMirror();
+      const results = await Promise.allSettled([
+        fetchDesktopStatsForRange(statsRange.from, statsRange.to),
+        fetchTrackerHealth(),
+      ]);
+      if (rollup) {
+        setDesktop(dayRollupToDesktopStats(rollup));
+      } else if (results[0].status === "fulfilled") {
+        setDesktop(results[0].value);
+      } else {
+        setDesktop(emptyDesktopStats(toApiDay(statsRange.from)));
+      }
+      if (results[1].status === "fulfilled") setTrackerHealth(results[1].value);
+      return;
+    }
     const results = await Promise.allSettled([
       fetchDesktopStatsForRange(statsRange.from, statsRange.to),
       fetchTrackerHealth(),
@@ -718,6 +749,23 @@ export function ProductivityPage() {
       fetchDesktopTimeline(timelineDay),
     ]);
     if (results[0].status === "fulfilled") setBrowser(results[0].value);
+    else if (isFocusDesktopShell()) {
+      // Soft empty when Study API down in Focus shell
+      setBrowser((prev) =>
+        prev ?? {
+          connected: false,
+          events_today: 0,
+          total_events: 0,
+          top_category: "",
+          avg_productivity_score: 0,
+          top_domains: [],
+          recent_sites: [],
+          category_breakdown: {},
+          date: timelineDay,
+          source: "offline",
+        },
+      );
+    }
     if (results[1].status === "fulfilled") setTimeline(results[1].value);
   }, [plannerDay.getTime(), statsRange.from.getTime(), statsRange.to.getTime()]);
 
@@ -1079,6 +1127,8 @@ export function ProductivityPage() {
         </div>
       ) : null}
 
+      <FocusDesignHostBanner />
+
       {/* Header: tabs + actions (page title lives in AppTopBar) */}
       <div className="gloss-panel rounded-3xl border border-border/50 p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -1193,6 +1243,12 @@ export function ProductivityPage() {
               duration_minutes: Math.min(30, 15 + dueReviews * 2),
             }).then(() => bumpPlanner());
           }}
+        />
+
+        <ActivePlanBlockCards
+          day={plannerDay}
+          refreshKey={plannerRefresh}
+          onChanged={bumpPlanner}
         />
 
         {planDrift && planDrift.block_count > 0 ? (

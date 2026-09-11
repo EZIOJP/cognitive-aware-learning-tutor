@@ -7,7 +7,11 @@ export function isFocusDesktopShell(): boolean {
   if (window.location.protocol === "file:") return true;
   const h = window.location.hostname;
   if (h === "calt.app" || h.endsWith(".calt.app")) return true;
-  if ((h === "127.0.0.1" || h === "localhost") && window.location.port === "5174") {
+  // 5180 = npm run dev:focus (Vite hot-reload). 5174 = calt_focus static fallback only.
+  if (
+    (h === "127.0.0.1" || h === "localhost") &&
+    (window.location.port === "5180" || window.location.port === "5174")
+  ) {
     return true;
   }
   try {

@@ -9,6 +9,9 @@ __pycache__/
 *.egg-info/
 dist/
 build/
+# Keep Focus/Productivity build scripts tracked (blanket build/ would hide them)
+!scripts/desktop_tracker/build/
+!scripts/desktop_tracker/build/**
 
 # Node / frontend
 node_modules/

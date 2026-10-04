@@ -1,3 +1,5 @@
+#include "device_block.h"
+#include "tracker_agent.h"
 #include "win_service.h"
 
 #include <windows.h>
@@ -49,11 +51,21 @@ std::wstring DefaultLockPath(const std::wstring& dbPath) {
   return dataDir + L"\\behavior\\enforcer_owner.lock";
 }
 
+std::wstring BehaviorDirFromDb(const std::wstring& dbPath) {
+  size_t slash = dbPath.find_last_of(L"\\/");
+  std::wstring dataDir = (slash == std::wstring::npos) ? L"." : dbPath.substr(0, slash);
+  return dataDir + L"\\behavior";
+}
+
 void PrintUsage() {
   std::wcout
       << L"CALT Native Enforcer (C++) — zero-Python desktop tracker\n"
       << L"  calt_enforcer.exe              console loop\n"
       << L"  calt_enforcer.exe --service    Windows Service dispatcher\n"
+      << L"  calt_enforcer.exe --tracker-agent  user-session FG tracker (spawned by service)\n"
+      << L"  calt_enforcer.exe --device-block-apply --confirm \"DEVICE LOCK\"\n"
+      << L"  calt_enforcer.exe --device-block-remove --confirm \"DEVICE LOCK\"\n"
+      << L"  calt_enforcer.exe --device-block-refresh [--force]\n"
       << L"Env: CALT_DB (default data/productivity/productivity.db), CALT_ENFORCER_LOCK\n"
       << L"Policy mirrors: <db-dir>/behavior/enforcer_policy.json\n"
       << L"Status: <db-dir>/behavior/enforcer_status.json\n"
@@ -73,10 +85,32 @@ int wmain(int argc, wchar_t** argv) {
 
   std::wstring db = DefaultDbPath();
   std::wstring lock = DefaultLockPath(db);
+  std::wstring behavior = BehaviorDirFromDb(db);
 
   for (int i = 1; i < argc; ++i) {
     if (wcscmp(argv[i], L"--service") == 0) {
       return RunAsWindowsService(db, lock);
+    }
+  }
+
+  for (int i = 1; i < argc; ++i) {
+    if (wcscmp(argv[i], L"--tracker-agent") == 0) {
+      std::wstring agentDb = db;
+      for (int j = 1; j < argc; ++j) {
+        if (wcscmp(argv[j], L"--db") == 0 && j + 1 < argc) {
+          agentDb = argv[j + 1];
+          break;
+        }
+      }
+      return RunTrackerAgentLoop(agentDb);
+    }
+  }
+
+  for (int i = 1; i < argc; ++i) {
+    if (wcscmp(argv[i], L"--device-block-apply") == 0 ||
+        wcscmp(argv[i], L"--device-block-remove") == 0 ||
+        wcscmp(argv[i], L"--device-block-refresh") == 0) {
+      return DeviceBlockCliMain(behavior, argc, argv);
     }
   }
 

@@ -33,13 +33,13 @@ const PATH_SECTION: Record<string, NavSectionId> = {
   "/": "system",
   "/lecture-notes": "study",
   "/review": "study",
-  "/journal": "study",
+  "/journal": "focus",
   "/gre-vocab": "study",
   "/math-tutor": "study",
   "/study-room": "study",
   "/productivity": "focus",
   "/productivity/focus": "focus",
-  "/bible": "life",
+  "/bible": "focus",
   "/life-tracker": "life",
   "/nutrition": "life",
   "/settings": "system",
@@ -53,8 +53,8 @@ export function resolveNavSection(to: string, explicit?: NavSectionId | null): N
   if (to.startsWith("/math")) return "study";
   if (to.startsWith("/life")) return "life";
   if (to.startsWith("/nutrition")) return "life";
-  if (to.startsWith("/bible")) return "life";
-  if (to.startsWith("/gre") || to.startsWith("/lecture") || to.startsWith("/review") || to.startsWith("/journal") || to.startsWith("/study")) {
+  if (to.startsWith("/bible") || to.startsWith("/journal")) return "focus";
+  if (to.startsWith("/gre") || to.startsWith("/lecture") || to.startsWith("/review") || to.startsWith("/study")) {
     return "study";
   }
   return "system";

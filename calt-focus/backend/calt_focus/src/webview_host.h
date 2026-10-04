@@ -26,6 +26,10 @@ class WebViewHost {
   bool MapBibleData(const std::wstring& folderAbsolute);
   void Resize();
   void Navigate(const std::wstring& url);
+  /** Change only the hash (SPA) — no full document reload. */
+  void NavigateHash(const std::wstring& hashWithQuery);
+  /** Push JSON to the page (Phase C status_tick). UTF-8 JSON string. */
+  bool PostWebMessageJson(const std::string& utf8Json);
   void Show(bool show);
   bool Ready() const { return ready_; }
   bool StaticMapped() const { return static_mapped_; }

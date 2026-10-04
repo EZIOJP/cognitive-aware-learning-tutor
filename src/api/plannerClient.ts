@@ -1,16 +1,46 @@
 import { resolveApiUrl } from "../utils/resolveBackendUrl";
 import { enforcerNativeCmd, isFocusEnforcerBridgeAvailable } from "../lib/enforcerNativeCmd";
 import { isFocusDesktopShell } from "../utils/focusDesktopShell";
+import { focusDataUrl } from "../utils/focusDataUrl";
 
 const TOKEN_KEY = "vocab:auth-token";
 
-/** Focus sole Productivity door — plan mutations go through the enforcer pipe. */
-function planTransport(): "gateway" | "http" {
+/**
+ * Focus sole Productivity door — plan mutations go through the enforcer pipe.
+ * Reads soft-fail to `"offline"` when the WebView bridge is missing (design host /
+ * enforcer down) so Analytics never hard-depends on Study `:8000`.
+ */
+function tryPlanTransport(): "gateway" | "http" | "offline" {
   if (!isFocusDesktopShell()) return "http";
-  if (!isFocusEnforcerBridgeAvailable()) {
-    throw new Error("enforcer_unreachable");
-  }
+  if (!isFocusEnforcerBridgeAvailable()) return "offline";
   return "gateway";
+}
+
+/** Write / mutate path — still throws when Focus bridge is missing. */
+function planTransport(): "gateway" | "http" {
+  const t = tryPlanTransport();
+  if (t === "offline") throw new Error("enforcer_unreachable");
+  return t;
+}
+
+function dayIsoLocal(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+function emptyAdherence(day: string): AdherenceSummary {
+  return {
+    day,
+    planned_minutes: 0,
+    actual_minutes: 0,
+    productive_minutes: 0,
+    effective_focus_minutes: 0,
+    adherence_pct: null,
+    block_count: 0,
+    session_count: 0,
+  };
 }
 
 /** Study-HTTP-only features: fail fast in Focus (no hung :8000 fetch). */
@@ -24,11 +54,24 @@ async function planGateway(
   op: string,
   payload: Record<string, unknown> = {},
   timeoutMs = 8000,
+  /** Hot-path reads (list/overlay) — one short try; mutations keep retries. */
+  retries = 3,
 ): Promise<Record<string, unknown>> {
-  const res = await enforcerNativeCmd(op, payload, timeoutMs);
-  if (!res) throw new Error("enforcer_unreachable");
-  if (res.ok === false) throw new Error(String(res.error || "enforcer_cmd_failed"));
-  return res as Record<string, unknown>;
+  let last: Record<string, unknown> | null = null;
+  const attempts = Math.max(1, retries);
+  for (let attempt = 0; attempt < attempts; attempt++) {
+    const res = await enforcerNativeCmd(op, payload, timeoutMs);
+    if (res && res.ok !== false && !res.error) return res as Record<string, unknown>;
+    if (res?.error && res.error !== "timeout" && res.error !== "queue_dropped" && res.error !== "coalesced") {
+      throw new Error(String(res.error));
+    }
+    last = res as Record<string, unknown> | null;
+    if (attempt + 1 < attempts) {
+      await new Promise((r) => window.setTimeout(r, 120 + attempt * 150));
+    }
+  }
+  if (!last) throw new Error("enforcer_unreachable");
+  throw new Error(String(last.error || "enforcer_unreachable"));
 }
 
 function authHeaders(): HeadersInit {
@@ -102,12 +145,38 @@ export interface AdherenceSummary {
 }
 
 export async function fetchPlannerBlocks(from: Date, to: Date): Promise<PlannerBlock[]> {
-  if (planTransport() === "gateway") {
-    const res = await planGateway("plan.list", {
-      from: from.toISOString(),
-      to: to.toISOString(),
-    });
-    return (res.blocks as PlannerBlock[]) ?? [];
+  if (isFocusDesktopShell()) {
+    try {
+      const r = await fetch(focusDataUrl("plan_blocks.json"), { cache: "no-store" });
+      if (r.ok) {
+        const j = (await r.json()) as { blocks?: PlannerBlock[] };
+        const blocks = Array.isArray(j.blocks) ? j.blocks : [];
+        const fromMs = from.getTime();
+        const toMs = to.getTime();
+        return blocks.filter((b) => {
+          const s = Date.parse(String(b.start_at || ""));
+          return Number.isFinite(s) && s >= fromMs && s < toMs;
+        });
+      }
+    } catch {
+      /* fall through */
+    }
+  }
+  const transport = tryPlanTransport();
+  if (transport === "offline") return [];
+  if (transport === "gateway") {
+    try {
+      // Calendar tab paint: one 2.5s try — do not burn 3×8s on a busy pipe.
+      const res = await planGateway(
+        "plan.list",
+        { from: from.toISOString(), to: to.toISOString() },
+        2500,
+        1,
+      );
+      return (res.blocks as PlannerBlock[]) ?? [];
+    } catch {
+      return [];
+    }
   }
   const params = new URLSearchParams({
     from: from.toISOString(),
@@ -180,6 +249,34 @@ export async function deletePlannerBlock(id: number): Promise<void> {
   if (!res.ok) throw new Error(await res.text());
 }
 
+/** Delete every planner block overlapping the local calendar day (default: today). */
+export async function clearPlannerDay(date?: string): Promise<{ deleted: number }> {
+  const ymd =
+    date ??
+    (() => {
+      const t = new Date();
+      const y = t.getFullYear();
+      const m = String(t.getMonth() + 1).padStart(2, "0");
+      const d = String(t.getDate()).padStart(2, "0");
+      return `${y}-${m}-${d}`;
+    })();
+  if (planTransport() === "gateway") {
+    const res = await planGateway("plan.clear_day", { date: ymd });
+    return { deleted: Number(res.deleted ?? 0) };
+  }
+  // Study HTTP: delete listed blocks for the day (no dedicated clear endpoint).
+  const from = new Date(`${ymd}T00:00:00`);
+  const to = new Date(from);
+  to.setDate(to.getDate() + 1);
+  const blocks = await fetchPlannerBlocks(from, to);
+  let deleted = 0;
+  for (const b of blocks) {
+    await deletePlannerBlock(b.id);
+    deleted += 1;
+  }
+  return { deleted };
+}
+
 export async function startPlannerBlock(id: number): Promise<PlannerBlock> {
   if (planTransport() === "gateway") {
     const res = await planGateway("plan.start", { id });
@@ -215,25 +312,10 @@ export async function completePlannerBlock(
 }
 
 export async function rollForwardPlannerBlock(
-  id: number,
-  new_start?: string,
+  _id: number,
+  _new_start?: string,
 ): Promise<{ rolled_block: PlannerBlock; new_block: PlannerBlock }> {
-  if (planTransport() === "gateway") {
-    const payload: Record<string, unknown> = { id };
-    if (new_start) payload.new_start = new_start;
-    const res = await planGateway("plan.roll_forward", payload);
-    return {
-      rolled_block: res.rolled_block as PlannerBlock,
-      new_block: (res.new_block as PlannerBlock) ?? (res.rolled_block as PlannerBlock),
-    };
-  }
-  const res = await fetch(resolveApiUrl(`/api/planner/blocks/${id}/roll-forward`), {
-    method: "POST",
-    headers: authHeaders(),
-    body: JSON.stringify({ new_start }),
-  });
-  if (!res.ok) throw new Error(await res.text());
-  return res.json();
+  throw new Error("Carry-forward disabled — unfinished plans do not move to another day.");
 }
 
 export async function fetchActualOverlay(from: Date, to: Date): Promise<ActualSession[]> {
@@ -242,16 +324,24 @@ export async function fetchActualOverlay(from: Date, to: Date): Promise<ActualSe
 }
 
 export async function fetchActualOverlayFull(from: Date, to: Date): Promise<ActualOverlayPayload> {
-  if (planTransport() === "gateway") {
-    const res = await planGateway("plan.overlay", {
-      from: from.toISOString(),
-      to: to.toISOString(),
-    });
-    const overlay = (res.overlay as ActualOverlayPayload) || { sessions: [], hour_slices: [] };
-    return {
-      sessions: overlay.sessions ?? [],
-      hour_slices: overlay.hour_slices ?? [],
-    };
+  const transport = tryPlanTransport();
+  if (transport === "offline") return { sessions: [], hour_slices: [] };
+  if (transport === "gateway") {
+    try {
+      const res = await planGateway(
+        "plan.overlay",
+        { from: from.toISOString(), to: to.toISOString() },
+        2500,
+        1,
+      );
+      const overlay = (res.overlay as ActualOverlayPayload) || { sessions: [], hour_slices: [] };
+      return {
+        sessions: overlay.sessions ?? [],
+        hour_slices: overlay.hour_slices ?? [],
+      };
+    } catch {
+      return { sessions: [], hour_slices: [] };
+    }
   }
   const params = new URLSearchParams({
     from: from.toISOString(),
@@ -269,21 +359,16 @@ export async function fetchActualOverlayFull(from: Date, to: Date): Promise<Actu
 }
 
 export async function fetchAdherence(day: Date): Promise<AdherenceSummary> {
-  if (planTransport() === "gateway") {
-    const y = day.getFullYear();
-    const m = String(day.getMonth() + 1).padStart(2, "0");
-    const d = String(day.getDate()).padStart(2, "0");
-    const res = await planGateway("plan.adherence", { day: `${y}-${m}-${d}` });
-    return (res.adherence as AdherenceSummary) ?? {
-      day: `${y}-${m}-${d}`,
-      planned_minutes: 0,
-      actual_minutes: 0,
-      productive_minutes: 0,
-      effective_focus_minutes: 0,
-      adherence_pct: null,
-      block_count: 0,
-      session_count: 0,
-    };
+  const dayKey = dayIsoLocal(day);
+  const transport = tryPlanTransport();
+  if (transport === "offline") return emptyAdherence(dayKey);
+  if (transport === "gateway") {
+    try {
+      const res = await planGateway("plan.adherence", { day: dayKey });
+      return (res.adherence as AdherenceSummary) ?? emptyAdherence(dayKey);
+    } catch {
+      return emptyAdherence(dayKey);
+    }
   }
   const params = new URLSearchParams({ day: day.toISOString() });
   const res = await fetch(resolveApiUrl(`/api/planner/adherence?${params}`), {
@@ -295,6 +380,34 @@ export async function fetchAdherence(day: Date): Promise<AdherenceSummary> {
 
 /** N days of adherence ending on `end` (default: today). */
 export async function fetchAdherenceRange(days = 7, end?: Date): Promise<AdherenceSummary[]> {
+  const transport = tryPlanTransport();
+  const endDay = end ? new Date(end) : new Date();
+  endDay.setHours(0, 0, 0, 0);
+
+  if (transport === "offline") {
+    return Array.from({ length: days }, (_, i) => {
+      const d = new Date(endDay);
+      d.setDate(d.getDate() - (days - 1 - i));
+      return emptyAdherence(dayIsoLocal(d));
+    });
+  }
+
+  // Focus gateway has plan.adherence (single day) — assemble the strip locally.
+  if (transport === "gateway") {
+    const results = await Promise.all(
+      Array.from({ length: days }, async (_, i) => {
+        const d = new Date(endDay);
+        d.setDate(d.getDate() - (days - 1 - i));
+        try {
+          return await fetchAdherence(d);
+        } catch {
+          return emptyAdherence(dayIsoLocal(d));
+        }
+      }),
+    );
+    return results;
+  }
+
   const params = new URLSearchParams({ days: String(days) });
   if (end) params.set("end", end.toISOString());
   const res = await fetch(resolveApiUrl(`/api/planner/adherence/range?${params}`), {
@@ -330,6 +443,17 @@ export interface PlannerRoutine {
 }
 
 export async function fetchRoutines(): Promise<PlannerRoutine[]> {
+  if (isFocusDesktopShell()) {
+    try {
+      const r = await fetch(focusDataUrl("plan_blocks.json"), { cache: "no-store" });
+      if (r.ok) {
+        const j = (await r.json()) as { routines?: PlannerRoutine[] };
+        if (Array.isArray(j.routines)) return j.routines;
+      }
+    } catch {
+      /* fall through */
+    }
+  }
   if (planTransport() === "gateway") {
     const res = await planGateway("routine.list", {});
     return (res.routines as PlannerRoutine[]) ?? [];
@@ -438,6 +562,62 @@ export async function applyRoutines(date?: string): Promise<{ created: number }>
   return res.json();
 }
 
+/** Max days for routine lock-in / clear range (Today · Week · Month). */
+export const MAX_ROUTINE_APPLY_DAYS = 31;
+
+/** Inclusive local YMD list from → to, capped at maxDays. */
+export function expandYmdRange(
+  fromYmd: string,
+  toYmd: string,
+  maxDays = MAX_ROUTINE_APPLY_DAYS,
+): string[] {
+  const [fy, fm, fd] = fromYmd.split("-").map(Number);
+  const [ty, tm, td] = toYmd.split("-").map(Number);
+  let a = new Date(fy, (fm || 1) - 1, fd || 1);
+  let b = new Date(ty, (tm || 1) - 1, td || 1);
+  if (a.getTime() > b.getTime()) {
+    const tmp = a;
+    a = b;
+    b = tmp;
+  }
+  const out: string[] = [];
+  const cur = new Date(a);
+  while (cur.getTime() <= b.getTime() && out.length < maxDays) {
+    const y = cur.getFullYear();
+    const m = String(cur.getMonth() + 1).padStart(2, "0");
+    const d = String(cur.getDate()).padStart(2, "0");
+    out.push(`${y}-${m}-${d}`);
+    cur.setDate(cur.getDate() + 1);
+  }
+  return out;
+}
+
+/** Apply enabled routines for each local day (skip overlaps). */
+export async function applyRoutinesRange(
+  dates: string[],
+): Promise<{ created: number; days: number }> {
+  const capped = dates.slice(0, MAX_ROUTINE_APPLY_DAYS);
+  let created = 0;
+  for (const date of capped) {
+    const r = await applyRoutines(date);
+    created += r.created;
+  }
+  return { created, days: capped.length };
+}
+
+/** Clear planner blocks for each local day in the list. */
+export async function clearPlannerRange(
+  dates: string[],
+): Promise<{ deleted: number; days: number }> {
+  const capped = dates.slice(0, MAX_ROUTINE_APPLY_DAYS);
+  let deleted = 0;
+  for (const date of capped) {
+    const r = await clearPlannerDay(date);
+    deleted += r.deleted;
+  }
+  return { deleted, days: capped.length };
+}
+
 /** Runs once per local day on login — adds missing routine blocks (skip_overlaps). */
 export async function autoApplyRoutinesToday(): Promise<{
   created: number;
@@ -494,7 +674,7 @@ export function formatPlannerApiError(raw: string, status: number): string {
 /** Last N days of plan + tracked usage — for designing weekly timetables. */
 export async function downloadProductivityWeekExport(
   days = 7,
-  format: "json" | "csv" = "json",
+  format: "json" | "csv" | "csv_wide" = "json",
   options?: {
     include?: string;
     productiveOnly?: boolean;
@@ -540,9 +720,11 @@ export async function downloadProductivityWeekExport(
   const a = document.createElement("a");
   a.href = url;
   a.download =
-    format === "csv"
-      ? `productivity-${clampedDays}d-${stamp}.csv`
-      : `productivity-${clampedDays}d-${stamp}.json`;
+    format === "json"
+      ? `productivity-${clampedDays}d-${stamp}.json`
+      : format === "csv_wide"
+        ? `productivity-${clampedDays}d-${stamp}-wide.csv`
+        : `productivity-${clampedDays}d-${stamp}-long.csv`;
   document.body.appendChild(a);
   a.click();
   a.remove();

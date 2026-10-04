@@ -1,4 +1,10 @@
 import { config } from "../config";
+import {
+  installClientErrorRingBuffer,
+  pushClientError,
+  setClientErrorSink,
+  type ClientErrorEntry,
+} from "../lib/clientErrorLog";
 
 const BASE = config.backend.apiUrl;
 const TOKEN_KEY = "vocab:auth-token";
@@ -101,36 +107,33 @@ export function reportClientLog(payload: {
   url?: string;
   stack?: string;
 }): void {
-  if (!shouldSendClientLog(payload.message)) return;
+  pushClientError({
+    level: payload.level ?? "error",
+    message: payload.message,
+    context: payload.context,
+    url: payload.url ?? (typeof window !== "undefined" ? window.location.href : undefined),
+    stack: payload.stack,
+  });
+}
+
+function postClientLogToBackend(entry: ClientErrorEntry): void {
+  if (!shouldSendClientLog(entry.message)) return;
   void fetch(`${BASE}/api/system/logs/client`, {
     method: "POST",
     headers: headers(),
     body: JSON.stringify({
-      level: payload.level ?? "error",
-      message: payload.message,
-      context: payload.context,
-      url: payload.url ?? (typeof window !== "undefined" ? window.location.href : undefined),
-      stack: payload.stack,
+      level: entry.level,
+      message: entry.message,
+      context: entry.context,
+      url: entry.url,
+      stack: entry.stack,
     }),
   }).catch(() => undefined);
 }
 
-/** Global hook — call once at app start to log uncaught UI errors to backend.log */
+/** Global hook — local ring buffer always; soft-fail POST to Study backend when up. */
 export function installClientErrorLogger(): void {
   if (typeof window === "undefined") return;
-  window.addEventListener("error", (event) => {
-    reportClientLog({
-      message: event.message,
-      context: `${event.filename}:${event.lineno}`,
-      stack: event.error instanceof Error ? event.error.stack : undefined,
-    });
-  });
-  window.addEventListener("unhandledrejection", (event) => {
-    const reason = event.reason;
-    reportClientLog({
-      message: reason instanceof Error ? reason.message : String(reason),
-      context: "unhandledrejection",
-      stack: reason instanceof Error ? reason.stack : undefined,
-    });
-  });
+  setClientErrorSink(postClientLogToBackend);
+  installClientErrorRingBuffer();
 }

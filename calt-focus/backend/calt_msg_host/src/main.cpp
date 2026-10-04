@@ -83,6 +83,10 @@ int main() {
       WriteMessage(SoftlandModeResultToJson(r));
       continue;
     }
+    if (HasType(msg, "get_softland_doc")) {
+      WriteMessage(SoftlandGateSnapshotJson());
+      continue;
+    }
     if (HasType(msg, "track_tab") || HasType(msg, "track_heartbeat")) {
       std::string url = ExtractJsonString(msg, "url");
       std::string title = ExtractJsonString(msg, "title");

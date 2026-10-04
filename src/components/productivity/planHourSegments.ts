@@ -20,6 +20,10 @@ export type PlanHourSeg = {
   seamRight: boolean;
   isDraft?: boolean;
   status?: string;
+  /** Overlap lane within this hour (0-based). */
+  lane_index?: number;
+  /** Concurrent lane count for this hour cluster. */
+  lane_count?: number;
 };
 
 function dayKeyLocal(d: Date): string {
@@ -135,12 +139,40 @@ export function planBlocksToHourSegs(
   return segs;
 }
 
+function overlapsMin(a0: number, a1: number, b0: number, b1: number): boolean {
+  return a0 < b1 && b0 < a1;
+}
+
+/** Pack overlapping plan segs in one hour into vertical lanes (same axis as actuals). */
+export function assignPlanLanes(segs: PlanHourSeg[]): PlanHourSeg[] {
+  if (!segs.length) return segs;
+  const sorted = [...segs].sort(
+    (a, b) => a.start_min - b.start_min || b.end_min - a.end_min || a.blockId - b.blockId,
+  );
+  const occupied: Array<[number, number, number]> = [];
+  const out: PlanHourSeg[] = [];
+  for (const seg of sorted) {
+    let lane = 0;
+    while (occupied.some(([o0, o1, oL]) => oL === lane && overlapsMin(seg.start_min, seg.end_min, o0, o1))) {
+      lane += 1;
+    }
+    occupied.push([seg.start_min, seg.end_min, lane]);
+    out.push({ ...seg, lane_index: lane });
+  }
+  const maxLane = Math.max(0, ...out.map((s) => s.lane_index ?? 0));
+  const laneCount = maxLane + 1;
+  return out.map((s) => ({ ...s, lane_count: laneCount }));
+}
+
 export function segsByHour(segs: PlanHourSeg[]): Map<number, PlanHourSeg[]> {
   const m = new Map<number, PlanHourSeg[]>();
   for (const s of segs) {
     const list = m.get(s.hour) ?? [];
     list.push(s);
     m.set(s.hour, list);
+  }
+  for (const [hour, list] of m) {
+    m.set(hour, assignPlanLanes(list));
   }
   return m;
 }

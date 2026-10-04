@@ -1,5 +1,6 @@
 #include "win_service.h"
 #include "cmd_gateway.h"
+#include "day_loop.h"
 #include "day_rollup.h"
 #include "focus_watchdog.h"
 #include "kill.h"
@@ -10,6 +11,8 @@
 #include "softland_publish.h"
 #include "softland_tick.h"
 #include "status_writer.h"
+#include "life_content.h"
+#include "tracker_agent.h"
 
 #include <windows.h>
 
@@ -111,22 +114,30 @@ void TickKills(const std::wstring& dbPath, EnforcerSnapshot& snapOut) {
 
 int RunEnforcerLoop(const std::wstring& dbPath, const std::wstring& lockPath, volatile bool* stop) {
   ClaimOwnerLock(lockPath);
+  // LocalSystem (Session 0) cannot see interactive FG — spawn user-session agent.
+  const bool useTrackerAgent = TrackerNeedsUserSessionAgent();
   SessionTracker sessions(dbPath);
   DWORD lastBeat = GetTickCount();
   DWORD lastStatus = 0;
-  DWORD lastRollup = 0;
-  const DWORD kPollMs = 1500;
-  const DWORD kStatusMs = 2500;
+  DWORD lastDbSlow = 0;
+  DWORD lastAgentEnsure = 0;
+  DWORD lastClock = 0;
+  // Kill + gateway stay hot. Calendar/plan/DB mirrors are 1-minute work.
+  const DWORD kKillMs = 1500;
+  const DWORD kClockMs = 5000;       // free_until / incubation expiry
+  const DWORD kStatusMs = 10000;     // tray / enforcer_status.json
   const DWORD kLockRefreshMs = 5000;
-  const DWORD kRollupMs = 15000;
+  const DWORD kDbSlowMs = 60000;     // rollup + plan apply + day-loop + UI mirrors
+  const DWORD kAgentEnsureMs = 15000;
 
   const std::wstring behaviorDir = ProductivityBehaviorDirFromDb(dbPath);
   const std::wstring softlandPath = behaviorDir + L"\\softland_policy.json";
   ProductivityStoreOpen(dbPath);
   ProductivityMigrateAndImport(softlandPath);
+  DayLoopEnsureSchema();
+  std::wstring dataDir = behaviorDir;
   {
     // One-time Bible JSON → SQLite unlock history (idempotent if tables already filled).
-    std::wstring dataDir = behaviorDir;
     size_t slash = dataDir.find_last_of(L"\\/");
     if (slash != std::wstring::npos) dataDir = dataDir.substr(0, slash);
     ProductivityImportLegacyUnlockHistory(dataDir);
@@ -137,6 +148,8 @@ int RunEnforcerLoop(const std::wstring& dbPath, const std::wstring& lockPath, vo
       PublishSoftlandMirror(behaviorDir, s);
     }
   }
+  // Focus UI loads from these mirrors — pipe is for writes / Arm / tracking only.
+  PublishFocusReadMirrors(behaviorDir);
   CmdGatewayInit();
 
   while (stop == nullptr || !(*stop)) {
@@ -144,17 +157,32 @@ int RunEnforcerLoop(const std::wstring& dbPath, const std::wstring& lockPath, vo
 
     EnforcerSnapshot snap;
     TickKills(dbPath, snap);
-    sessions.Tick();
+    if (useTrackerAgent) {
+      DWORD nowEnsure = GetTickCount();
+      if (lastAgentEnsure == 0 || nowEnsure - lastAgentEnsure >= kAgentEnsureMs) {
+        TrackerAgentEnsure(dbPath);
+        lastAgentEnsure = nowEnsure;
+      }
+    } else {
+      sessions.Tick();
+    }
 
     bool softland = false;
     ReadSoftlandEnabled(dbPath, &softland);
+    // Watchdog only matters while SoftLand or Arm is on — keep with kill cadence.
     TickFocusWatchdog(snap.armed, softland, gFocusWatch);
-    TickSoftlandClocks(behaviorDir);
+    // Writes must stay realtime with kills.
     CmdGatewayPoll(behaviorDir);
     DWORD now = GetTickCount();
-    if (lastRollup == 0 || now - lastRollup >= kRollupMs) {
+    if (lastClock == 0 || now - lastClock >= kClockMs) {
+      TickSoftlandClocks(behaviorDir);
+      lastClock = now;
+    }
+    if (lastDbSlow == 0 || now - lastDbSlow >= kDbSlowMs) {
+      TickSoftlandPlanAndDayLoop(behaviorDir);
       TickDayRollup(dbPath, behaviorDir);
-      lastRollup = now;
+      PublishFocusReadMirrors(behaviorDir);
+      lastDbSlow = now;
     }
     if (now - lastBeat > kLockRefreshMs) {
       RefreshOwnerLock(lockPath);
@@ -166,14 +194,18 @@ int RunEnforcerLoop(const std::wstring& dbPath, const std::wstring& lockPath, vo
     }
 
     if (gStopEvent) {
-      WaitForSingleObject(gStopEvent, kPollMs);
+      WaitForSingleObject(gStopEvent, kKillMs);
     } else {
-      Sleep(kPollMs);
+      Sleep(kKillMs);
     }
   }
   CmdGatewayShutdown();
   ProductivityStoreClose();
-  sessions.Flush();
+  if (useTrackerAgent) {
+    TrackerAgentStop();
+  } else {
+    sessions.Flush();
+  }
   ReleaseOwnerLock(lockPath);
   return 0;
 }

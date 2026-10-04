@@ -224,32 +224,7 @@ function showRedirectDialog(parsed) {
 function reportLockedPageLoad() {
   const parsed = parseBlockedHost();
   showRedirectDialog(parsed);
-  const logUrl = typeof GATE_EXT_LOG_URL !== "undefined" ? GATE_EXT_LOG_URL : "";
-  if (!logUrl) return;
-  const key = "calt_gate_logged_" + (parsed.host || "page");
-  try {
-    if (sessionStorage.getItem(key)) return;
-    sessionStorage.setItem(key, String(Date.now()));
-  } catch (e) {
-    /* ignore */
-  }
-  try {
-    fetch(logUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        event: "locked_page",
-        source: "calt-gate",
-        kind: "dnr_or_soft_land",
-        detail: parsed.host || "",
-        url: parsed.from || "",
-        notify: true,
-      }),
-      cache: "no-store",
-    }).catch(function () {});
-  } catch (e) {
-    /* ignore */
-  }
+  // Study :8000 logging removed — Gate is native SoftLand only.
 }
 
 function reopenUrl(host, from) {
@@ -403,20 +378,17 @@ async function initTempAllowUi() {
 }
 
 async function refresh() {
-  const api = extRuntime();
-  // Prefer live gate; fall back to background gateCache (includes stats + links).
+  // Native-first: ask SW gateCache (populated by get_softland_doc). No Study :8000.
   try {
-    const r = await fetch(GATE_API_URL, {
-      cache: "no-store",
-      headers: { "X-CALT-Extension": "calt-gate-locked" },
-    });
-    if (!r.ok) throw new Error("HTTP " + r.status);
-    const g = await r.json();
-    applyGate(g, false);
-    return;
+    const resp = await sendExtMessage({ type: "GET_GATE" });
+    if (resp && resp.gateCache) {
+      applyGate(resp.gateCache, Boolean(resp.gateCache.stale || resp.gateCache.degraded));
+      return;
+    }
   } catch (err) {
-    /* try cache */
+    /* fall through */
   }
+  const api = extRuntime();
   if (api && api.storage && api.storage.local) {
     try {
       const result = await new Promise(function (resolve) {
@@ -426,12 +398,14 @@ async function refresh() {
         applyGate(result.gateCache, true);
         return;
       }
-    } catch (e) { /* ignore */ }
+    } catch (e) {
+      /* ignore */
+    }
   }
   applyGate({ _offline: true }, false);
 }
 
 refresh();
-setInterval(refresh, 5000);
+setInterval(refresh, 8000);
 initTempAllowUi();
 reportLockedPageLoad();

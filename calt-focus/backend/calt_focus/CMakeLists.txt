@@ -56,6 +56,7 @@ target_link_libraries(calt_focus PRIVATE
   shlwapi
   version
   ws2_32
+  dwmapi
 )
 
 # Copy loader DLL next to the exe after build

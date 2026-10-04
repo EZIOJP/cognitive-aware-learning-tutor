@@ -27,8 +27,11 @@ add_executable(calt_enforcer
   src/softland_tick.cpp
   src/cmd_gateway.cpp
   src/day_rollup.cpp
+  src/day_loop.cpp
   src/plan_gate.cpp
   src/life_content.cpp
+  src/device_block.cpp
+  src/tracker_agent.cpp
   ${SQLITE_DIR}/sqlite3.c
 )
 target_include_directories(calt_enforcer PRIVATE src ${SQLITE_DIR})
@@ -39,8 +42,9 @@ target_compile_definitions(calt_enforcer PRIVATE
 if(MSVC)
   target_compile_options(calt_enforcer PRIVATE /W3)
 else()
-  # MinGW/Clang: wmain entry + Windows libs
+  # MinGW/Clang: wmain entry + Windows libs.
+  # Prefer static libc++/libunwind so LocalSystem service starts without MinGW on PATH.
   target_compile_options(calt_enforcer PRIVATE -Wall -municode)
-  target_link_options(calt_enforcer PRIVATE -municode)
+  target_link_options(calt_enforcer PRIVATE -municode -static)
 endif()
-target_link_libraries(calt_enforcer PRIVATE advapi32 user32)
+target_link_libraries(calt_enforcer PRIVATE advapi32 user32 winhttp wtsapi32 userenv)

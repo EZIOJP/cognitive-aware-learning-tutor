@@ -1,5 +1,6 @@
 #include "softland_tick.h"
 #include "cmd_gateway.h"
+#include "day_loop.h"
 #include "plan_gate.h"
 #include "productivity_store.h"
 #include "softland_publish.h"
@@ -84,8 +85,21 @@ bool TickSoftlandClocks(const std::wstring& behaviorDir) {
     changed = true;
   }
 
+  return changed;
+}
+
+bool TickSoftlandPlanAndDayLoop(const std::wstring& behaviorDir) {
+  bool changed = false;
   // Phase 6b: active planner block → SoftLand free_until / runtime.plan_block
   if (ApplyActivePlanToSoftland(behaviorDir, 1)) changed = true;
 
+  // Day loop: bedtime_active + emergency expiry + opportunistic close-out free
+  {
+    std::wstring dataDir = behaviorDir;
+    size_t slash = dataDir.find_last_of(L"\\/");
+    if (slash != std::wstring::npos) dataDir = dataDir.substr(0, slash);
+    std::wstring dbPath = dataDir + L"\\productivity.db";
+    if (DayLoopTick(behaviorDir, dbPath)) changed = true;
+  }
   return changed;
 }

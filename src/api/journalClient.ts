@@ -1,6 +1,7 @@
 import { resolveApiUrl } from "../utils/resolveBackendUrl";
 import { enforcerNativeCmd, isFocusEnforcerBridgeAvailable } from "../lib/enforcerNativeCmd";
 import { isFocusDesktopShell } from "../utils/focusDesktopShell";
+import { focusDataUrl } from "../utils/focusDataUrl";
 
 const TOKEN_KEY = "vocab:auth-token";
 
@@ -64,13 +65,32 @@ export interface JournalLogEntry {
 }
 
 export async function fetchJournalSummary(day?: string): Promise<JournalSummary> {
-  if (lifeTransport() === "gateway") {
-    const res = await lifeGateway("journal.summary", { day: day || "" });
-    return (res.summary as JournalSummary) || {
-      day: day || "",
-      journal_written: false,
-      journal_entry: null,
-    };
+  if (isFocusDesktopShell()) {
+    try {
+      const r = await fetch(focusDataUrl("journal_today.json"), { cache: "no-store" });
+      if (r.ok) {
+        const j = (await r.json()) as JournalSummary;
+        // Mirror is always "today"; other days still need the pipe once.
+        if (!day || !j.day || j.day === day) {
+          return {
+            day: j.day || day || "",
+            journal_written: Boolean(j.journal_written),
+            journal_entry: j.journal_entry || null,
+          };
+        }
+      }
+    } catch {
+      /* fall through */
+    }
+    if (isFocusEnforcerBridgeAvailable()) {
+      const res = await lifeGateway("journal.summary", { day: day || "" });
+      return (res.summary as JournalSummary) || {
+        day: day || "",
+        journal_written: false,
+        journal_entry: null,
+      };
+    }
+    return { day: day || "", journal_written: false, journal_entry: null };
   }
   const qs = day ? `?day=${day}` : "";
   const r = await fetch(resolveApiUrl(`/api/journal/summary${qs}`), { headers: authHeaders() });
@@ -98,9 +118,22 @@ export async function saveJournalEntry(body: {
 }
 
 export async function fetchJournalLog(limit = 30): Promise<JournalLogEntry[]> {
-  if (lifeTransport() === "gateway") {
-    const res = await lifeGateway("journal.log", { limit });
-    return (res.entries as JournalLogEntry[]) || [];
+  if (isFocusDesktopShell()) {
+    try {
+      const r = await fetch(focusDataUrl("journal_log.json"), { cache: "no-store" });
+      if (r.ok) {
+        const j = (await r.json()) as { entries?: JournalLogEntry[] };
+        const entries = Array.isArray(j.entries) ? j.entries : [];
+        return entries.slice(0, Math.max(1, limit));
+      }
+    } catch {
+      /* fall through */
+    }
+    if (isFocusEnforcerBridgeAvailable()) {
+      const res = await lifeGateway("journal.log", { limit });
+      return (res.entries as JournalLogEntry[]) || [];
+    }
+    return [];
   }
   const params = new URLSearchParams({ limit: String(limit) });
   const r = await fetch(resolveApiUrl(`/api/journal/entries/log?${params}`), {

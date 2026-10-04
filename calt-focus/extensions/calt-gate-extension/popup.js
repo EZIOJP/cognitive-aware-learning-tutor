@@ -7,6 +7,10 @@
     var b = g.browser || {};
     var mode = (b.mode_label || b.mode || "—").toUpperCase();
     var bits = ["Mode: " + mode];
+    var src = g.source || "";
+    if (src) bits.push("src:" + src);
+    if (res && res.nativeHostOk === true) bits.push("msg_host OK");
+    else if (res && res.nativeHostOk === false) bits.push("msg_host DOWN");
     var inc = g.incubation || {};
     if (inc.active) {
       bits.push("incubation " + Math.max(0, inc.remaining_sec || 0) + "s");
@@ -20,6 +24,10 @@
     var desk = g.desktop || {};
     if (desk.enforcer_owns_kills) bits.push("enforcer on");
     var html = bits.join(" · ");
+    if (res && res.nativeHostOk === false) {
+      html =
+        '<div class="warn">Native host missing — run install_calt_msg_host.ps1</div>' + html;
+    }
     if (inc.active) {
       html =
         '<div class="warn">Incubation — entertainment blocked. Open CALT Desktop · Focus.</div>' +

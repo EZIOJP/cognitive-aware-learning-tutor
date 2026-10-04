@@ -1,7 +1,7 @@
 # How blocking actually works
 
 Written from the code, not from intent. If this file and the code disagree, the
-code wins and this file is a bug. Last checked against source **2026-09-08**.
+code wins and this file is a bug. Last checked against source **2026-10-03**.
 
 Read [The 60-second version](#the-60-second-version) if you just need to explain
 it to someone. Everything after that is the exact rule, with the file that
@@ -11,28 +11,42 @@ decides it.
 
 ## The 60-second version
 
-You have **two separate weapons** and they share nothing except your intent:
+You have **two separate weapons**. They share intent in the UI; they do **not**
+share a decision function:
 
-| | SoftLand | Arm |
+| | Site block (SoftLand engine) | Arm |
 |---|---|---|
+| UI name | **Blocker** → sites (Allow / Block) | **Blocker** → apps (kill list) |
 | Blocks | **websites**, in the browser | **apps**, at the OS level |
-| Decided by | `calt_msg_host.exe` asked by the Gate extension | `calt_enforcer.exe` kill loop |
+| Decided by | `calt_msg_host.exe` (`softland_decide.cpp`) via Gate | `calt_enforcer.exe` kill loop |
 | Switch | `softland_enabled` | `hard_block_armed` |
-| Reads | `data/behavior/softland_policy.json` | `data/behavior/enforcer_policy.json` |
+| Reads | `data/productivity/behavior/softland_policy.json` | `data/productivity/behavior/enforcer_policy.json` |
 | Can it kill Steam? | Never | Yes |
 | Can it block YouTube? | Yes | Never |
+| Knows mode / free / incubation? | Yes — stateful | No — binary armed × kill-list |
 
-**SoftLand ON is not Armed.** Turning SoftLand on does not arm anything, and
-SoftLand code is structurally forbidden from setting `hard_block_armed`.
+**Site block ON is not Armed.** Turning site blocking on does not arm anything,
+and SoftLand / msg-host code is structurally forbidden from setting
+`hard_block_armed`. That split is a **safety** decision (annoying vs
+destructive), not a leftover from the old Python/extension split.
 
-SoftLand is **stateful**: the same URL is allowed or blocked depending on what
-*mode* the day is in right now. Mode comes from your schedule, then gets
-overridden by a reward day or free window (→ `free`), and incubation overrides
-everything back to `study`.
+Site block is **stateful**: the same URL is allowed or blocked depending on
+*mode*. Mode is not “study vs unlocked” — it is a **three-step override**:
 
-SoftLand is a **blocklist, not an allowlist**. A site nobody has ever listed is
-allowed, in every mode. Only the porn filter, your block/watch lists and the
-built-in distractor list block anything.
+1. Schedule (default `study` if no window)
+2. Reward day or free window → `free`
+3. **Incubation** → back to `study` (wins over free)
+
+Site block is a **blocklist, not an allowlist**. An unlisted site is allowed.
+Blocking comes from: SoftLand porn **heuristic**, your `block_extra`, and (in
+study, when watch is on) `watch_extra` + the built-in distractor list.
+
+**Porn is two layers** (do not conflate them in UI copy):
+
+| Layer | Where | Respects SoftLand Allow? | Respects free / goal unlock? |
+|-------|--------|---------------------------|------------------------------|
+| SoftLand porn **heuristic** | Host ladder rule 2 in `softland_decide.cpp` | Yes — `allow_extra` beats it | No — stays on in free (with `block_porn`) |
+| Windows **hosts-file** device block | `calt_enforcer` `device_block.*` → `hosts` | **No** | **No** — always on for those domains |
 
 **The day gets unlocked three ways, and only three:** hit your daily minutes
 *and* tick a Bible chapter; spend a reward day (4 qualifying days buys one); or
@@ -40,15 +54,59 @@ spend a day pass (2 a week). Separately, small chores pay out **earned minutes**
 (15 for Bible, 10 for the plan, 30 for the goal, 60/day cap) that you spend in
 15-minute chunks. Passes, reward claim, earn events and incubation limits are
 enforced by `calt_enforcer` (work with `:8000` stopped). **P5c (2026-09-11):**
-Study `distraction_gate` / `goals_alerts` **read** `data/behavior/day_rollup.json`
+Study `distraction_gate` / `goals_alerts` **read** `data/productivity/behavior/day_rollup.json`
 when present and fresh (legacy recompute only as fallback). Native qualification
 / streak credit without `:8000` remains a later P5c slice.
 
 ---
 
-## SoftLand: the exact decision ladder
+## Naming (UI vs code)
 
-One file decides: `native/calt_msg_host/src/softland_decide.cpp`
+| User-facing | Code / SoT / gateway (keep forever) |
+|-------------|-------------------------------------|
+| **Site block** / **Blocker** (sites) | SoftLand: `softland_enabled`, `softland_policy.json`, `softland_decide.cpp`, `softland.*` ops |
+| **Arm** / **Blocker** (apps) | `hard_block_armed`, `enforcer_policy.json` `exes`, `kill.cpp` |
+| Device porn (hosts) | Settings only — not Plan Goals Blocker copy |
+
+“SoftLand” was the name for browser-site blocking when it was split across
+extension + Python. The decide path is now Gate → `calt_msg_host` → C++. Prefer
+plain terms in UI and docs for humans; keep `softland_*` identifiers in code so
+migrations and mirrors stay stable.
+
+**Do not merge** site decide and Arm kill into one verdict function. Wrong site
+verdict self-corrects on the next navigation; wrong kill is destructive. If you
+share code later, share only a **mode resolver** (schedule / free / incubation →
+current mode) — not the host ladder and the kill-list check.
+
+---
+
+## Goals “Blocker” board (product shape)
+
+Plan → Goals may show one **Blocker** control surface. That is **UX grouping**,
+not one engine:
+
+| Column / action | Sites | Apps |
+|-----------------|-------|------|
+| **Allow** | → `site_rules.allow_extra` | Remove from kill list (`exes`) |
+| **Block** | → `site_rules.block_extra` | Add to kill list (`exes`) |
+
+- **Study-only** (`watch_extra` + built-in distractors) stays out of this board
+  (Settings / engine defaults). They open in SoftLand `free` mode unless
+  incubation is on.
+- **Block** sites stay blocked after unlock (rule 3 beats free). **Block** apps
+  stay killable while Armed — focus/goal met does **not** disarm Arm.
+- **Allow** always wins on the SoftLand host ladder (including SoftLand porn
+  heuristic). It does **not** punch through the hosts-file device block.
+- Safe short copy for that board: *“Block stays after focus unlock; Allow always
+  wins in Site block. Apps = Arm kill list. Device porn (hosts) is separate.”*
+  Do not say “Allow always wins over porn” without meaning the SoftLand
+  heuristic only.
+
+---
+
+## SoftLand (Site block): the exact decision ladder
+
+One file decides: `calt-focus/backend/calt_msg_host/src/softland_decide.cpp`
 (`SoftlandGetMode`). The Gate extension asks it per navigation and blocks only
 when the answer is `action: "block"` **and** `enforce` is not `false`.
 
@@ -82,6 +140,10 @@ The banner text picks its reason in the same priority: incubation, then reward
 day, then free window — so during a cooldown you always see *why* you are stuck,
 not the nicer reason underneath it.
 
+**UI copy:** do not reduce this to only “study vs after unlock.” A user in
+incubation during an earned free window will see distractors closed again; the
+reason is incubation, not “study schedule.”
+
 ### Locked-page / voice reason vocabulary (Phase 3)
 
 Native SoftLand decide (`softland_decide.cpp`) and the Gate extension
@@ -96,7 +158,11 @@ Shared tokens today: `porn`, `watch_list`, `incubation`.
 | `block_extra` | maps to `watch_site_block` in voice |
 | `not_listed` / study catch-all | extension uses `study_block` / `softland_block` |
 | `free_window` / `reward_day` / `allow_list` | allow paths (no lock page) |
-| — | `morning_bible` / `morning_plan` / `keyword` (extension/morning cache; not SoftLand decide) |
+| `morning_bible` / `morning_plan` | Gate interstitial / Focus morning overlay |
+
+**Do not drive user-facing Blocker copy from live `reason` strings** until native
+and any HTTP-fallback vocab are fully aligned; prefer the static wording in
+[Goals “Blocker” board](#goals-blocker-board-product-shape).
 
 Voice canonicalization: `backend/behavior/voice_agent/block_dialogues.py` → `KIND_ALIASES`.
 
@@ -108,11 +174,12 @@ exact host **or** any subdomain (`docs.google.com` matches `*.docs.google.com`).
 | # | Rule | Verdict | `reason` |
 |---|------|---------|----------|
 | 1 | `site_rules.allow_extra`, or `localhost` / `127.0.0.1` | **Allow** | `allow_list` |
-| 2 | Looks like porn, and the mode's `block_porn` is on | **Block** | `porn` |
-| 3 | `site_rules.block_extra` | **Block** | `block_extra` |
-| 4 | Mode is `free` and not incubating | **Allow** | `reward_day` / `free_window` / `free_mode` |
-| 5 | Mode's `block_watch_sites` is on, and host is in `watch_extra` **or** the built-in list | **Block** | `watch_list` |
-| 6 | Anything else | **Allow** | `not_listed` / `default_allow` |
+| 2 | SoftLand on and Bible or Confirm **not done for local today** (and not emergency) | **Block** | `morning_bible` / `morning_plan` |
+| 3 | Looks like porn, and the mode's `block_porn` is on | **Block** | `porn` |
+| 4 | `site_rules.block_extra` | **Block** | `block_extra` |
+| 5 | Mode is `free` and not incubating | **Allow** | `reward_day` / `free_window` / `free_mode` |
+| 6 | Mode's `block_watch_sites` is on, and host is in `watch_extra` **or** the built-in list | **Block** | `watch_list` |
+| 7 | Anything else | **Allow** | `not_listed` / `default_allow` |
 
 ### Reason vocabulary (native SoftLand vs Gate `blockKind`)
 
@@ -138,18 +205,22 @@ unknown reasons.
 
 Consequences worth saying out loud, because they surprise people:
 
-- **Porn and `block_extra` beat free mode.** Rules 2 and 3 come before rule 4,
-  so a reward day does not open them. That is the intended asymmetry.
+- **SoftLand porn heuristic and `block_extra` beat free mode.** Rules 2 and 3
+  come before rule 4, so a reward day does not open them. That is the intended
+  asymmetry. (Hosts-file porn is separate and never opens.)
 - **`watch_extra` is study-only.** A reward day, a free window or a `free`
   schedule window lets everything on the watch list through (rule 4 fires
   first). If you want a site blocked *even on a reward day*, it belongs in
   `block_extra`, not `watch_extra`.
-- **`allow_extra` beats the porn filter.** Rule 1 is above rule 2, so
-  allow-listing a host disables porn blocking for it. See
-  [Sharp edges](#sharp-edges).
+- **`allow_extra` beats the SoftLand porn heuristic** (not the hosts file).
+  Rule 1 is above rule 2. See [Sharp edges](#sharp-edges).
 - **While incubating, every block reads `incubation`**, even if what technically
   matched was the watch list — the urgent reason is not overwritten by a
-  lesser one.
+  lesser one. Incubation re-closes watch/built-in distractors even if free was
+  already earned.
+- **"Goal met → only porn + hard blocks left"** is true only if “porn” means
+  the SoftLand heuristic (plus `block_extra`). Hosts-file domains stay dead.
+  Arm kill list is untouched by SoftLand goal state.
 
 ### The built-in watch list
 
@@ -163,12 +234,13 @@ Hardcoded in `softland_decide.cpp`, always in effect when
 The only way to unblock one of these in study mode is to put it in
 `allow_extra`.
 
-### The porn filter
+### The SoftLand porn heuristic (not hosts)
 
 Heuristic, not a list: host ends in `.xxx` / `.porn` / `.sex`, or contains
 `porn`, `xvideos` or `pornhub`. It is on by default in **both** study and free
-mode. It is not the same thing as the hosts-file porn block (see
-[Hosts porn block](#hosts-porn-block)).
+mode. It is **not** the same thing as the hosts-file porn block (see
+[Hosts porn block](#hosts-porn-block)). SoftLand Allow can override this
+heuristic; SoftLand Allow **cannot** override hosts.
 
 ### Mode flags
 
@@ -193,12 +265,15 @@ a feature to build, not a checkbox to flip.
 ## Arm: the exact kill rules
 
 `calt_enforcer.exe` owns this end to end and needs **no Python running**.
+Arm does **not** use SoftLand mode, free windows, or incubation. Armed or not;
+kill-list match or not. Do not give apps the site mode ladder unless that is an
+explicit product change later.
 
-- Reads `data/behavior/enforcer_policy.json` every tick (~1.5s). The JSON is
+- Reads `data/productivity/behavior/enforcer_policy.json` every tick (~1.5s). The JSON is
   authoritative; the SQLite row is a fallback when the file is missing.
 - While `hard_block_armed` is true, it enumerates processes and terminates any
   whose executable base name matches your `exes` list, then appends to
-  `data/behavior/enforcer_kills.log`.
+  `data/productivity/behavior/enforcer_kills.log`.
 - **Protected, never killed:** core Windows processes (`explorer.exe`,
   `csrss.exe`, `winlogon.exe`, `services.exe`, `lsass.exe`, `svchost.exe`,
   `smss.exe`, `fontdrvhost.exe`, …) plus `calt_focus.exe` and
@@ -207,7 +282,9 @@ a feature to build, not a checkbox to flip.
 - **Lock modes** (`lock_mode`): `none`, `timer` (until `lock_until_unix`),
   `password`, `phrase`. A disarm that does not satisfy the lock is refused and
   the enforcer forces `armed + locked` back on, so editing the JSON by hand does
-  not get you out.
+  not get you out. A **gateway** disarm that passes `provided_unlock` clears
+  `lock_mode` to `none` (keeps the stored password/phrase for the next Arm) so
+  sticky lock cannot immediately re-arm after a valid unlock.
 - **Focus watchdog:** while SoftLand is on *or* Arm is on, `calt_focus.exe` and
   `calt_msg_host.exe` are relaunched if they die — at most 3 times in a rolling
   60s window, after which relaunching is suppressed (visible as
@@ -217,19 +294,22 @@ a feature to build, not a checkbox to flip.
 
 ---
 
-## Hosts porn block
+## Hosts porn block (Device lock)
 
-A third, independent thing, easy to confuse with the SoftLand porn filter.
-`backend/behavior/device_block.py` writes a `# BEGIN CALT-DEVICE-BLOCK` section
-into `C:\Windows\System32\drivers\etc\hosts`, pointing porn domains at
-`0.0.0.0`. It needs **admin rights**, it applies to **every app** on the machine
-(not just the browser), and it does not care whether SoftLand is on, what mode
-you are in, or whether it is a reward day. Defaults: porn on, watch off, social
-off.
+A third, independent thing, easy to confuse with the SoftLand porn heuristic.
+**UI:** Focus → Settings → **Filters** → Device lock. Type `DEVICE LOCK` to enable or remove.
+**SoT (native):** `data/productivity/behavior/device_block.json` + `porn_blocklist.json`, mutated only by
+`calt_enforcer` (`device_block.*` gateway ops + elevated `--device-block-* --confirm`).
+**Apply:** Admin via `scripts\device_block_apply.bat` / `remove` (pass confirm; bats re-pass after UAC).
+Study `/api/behavior/device-block*` returns **410** (retired). Tracker hourly Python sync is a no-op.
 
 So a porn domain can be blocked by up to three separate things at once: the
 hosts file, the SoftLand porn heuristic, and the extension's own rules. Turning
 one off does not turn the others off.
+
+**Out of scope for Plan Goals Blocker copy** — keep hosts porn in Settings /
+Filters only. Saying “Allow always wins” on the Goals board must not imply
+hosts is overridden.
 
 ---
 
@@ -243,6 +323,38 @@ Study UI come from enforcer `day_rollup.json` when fresh; Python still combines
 them with Bible chapter for unlock / streak recording until native qualification
 owns that end-to-end.
 
+### Focus day loop (2026-09-11; finalize 2026-10-03)
+
+Morning (Focus shell, offline SoftLand + Arm):
+
+```text
+New calendar day (DayLoopTick)
+  → clear sticky bible/plan/goal flags; clear stale free_until / goal_free_granted_date
+  → SoftLand get_mode: non-allow hosts → morning_bible / morning_plan
+  → Focus MorningBibleOverlay until bible_done_for_date == today
+  → Confirm plan → SoftLand ON + Arm ON
+  → Seed kill list (games/social presets + cursor.exe) if empty / missing cursor
+  → Sites + cursor blocked until productive minutes ≥ daily_focus
+  → DayLoopMaybeGrantGoalFree → free_until EOD; drop cursor.exe from kills (games/social stay)
+```
+
+**Cursor trade-off:** Cursor is on the kill list until goal met, so Cursor itself
+does not earn unlock — other productive tracking does.
+
+**Reward / day pass:** `reward.claim` and `day.grant_pass` require Bible done
+today (`bible_required`); both clear study-temp kills (cursor) when granting free.
+
+Landing: `DayLoopLanding` — tasks, SoftLand/Site-block mode, planned vs tracked.
+
+**Dual-gate 1h free** (`day.evaluate_close`): checkboxes done (or zero tasks) **and** tracked ≥ 50% of today’s planned non-free block minutes → `free_until = now+60m` once per day. No SoftLand time-extend on incomplete tasks; carry/import are user prompts only.
+
+**Bedtime:** `softland.set_bedtime` → tick sets `bedtime_active` → Focus `BedtimeOverlay`. **Emergency:** `softland.emergency_winddown` (confirm `EMERGENCY`) opens web minus distraction lists; Arm keeps game kills.
+
+**Focus FE:** Home stats / schedules / SoftLand lists read enforcer mirrors +
+gateway only — no live Study `:8000`. Demo clock hidden in Focus Settings.
+
+Spec: [2026-09-11-focus-day-loop-design.md](superpowers/specs/2026-09-11-focus-day-loop-design.md).
+
 > **P5a done (2026-09-11).** See the
 > [P5 design](superpowers/specs/2026-09-08-calt-productivity-p5-native-unlock-accounting-design.md)
 > and the [P5a plan](superpowers/plans/2026-09-08-calt-productivity-p5a-native-unlock-accounting.md).
@@ -250,32 +362,36 @@ owns that end-to-end.
 
 ### What unlocks the day
 
-One line decides it (`backend/behavior/distraction_gate.py:784`):
+**Product rule** (same formula whether Study or enforcer evaluates it):
 
-```python
-day_unlimited = bool(reward_day or day_pass or (productive >= goal and chapter_met))
+```text
+day_unlimited = reward_day OR day_pass OR (productive >= goal AND chapter_met)
 ```
+
+**Owner (2026-09-12):** SoftLand / Focus unlock qualification belongs in
+**C++** (finish P5c). Study `distraction_gate.py` still implements this for
+Study UI chips — that is **legacy**, not SoftLand truth. SoftLand free/reward
+already honour enforcer `runtime` / gateway. Focus day loop also grants
+`free_until` via `day.evaluate_close` (separate 1h free door).
 
 Three independent doors, any one of which opens the day:
 
-| Door | Requirement |
-|------|-------------|
-| **Earn it** | productive minutes ≥ daily goal **and** ≥ 1 Bible chapter ticked |
-| **Spend a reward day** | a credit from a 4-day streak (below) |
-| **Spend a day pass** | 2 per Mon–Sun week, deliberate skip |
+| Door | Requirement | Enforced today |
+|------|-------------|----------------|
+| **Earn it** | productive ≥ daily goal **and** ≥ 1 Bible chapter | Productive → `day_rollup`; chapter + full native qualify = P5c WIP |
+| **Spend a reward day** | credit from 4-day streak | Enforcer gateway (**P5a**) |
+| **Spend a day pass** | 2 per Mon–Sun week | Enforcer gateway (**P5a**) |
 
-- **Daily goal** default **240 min** (`daily_goal_minutes`, editable 15–960).
-- **Productive minutes** = wall-clock time in sessions whose score ≥ `threshold`
-  (default **60**), with overlapping sessions merged so nothing double-counts and
-  sleep windows subtracted.
-- **Chapter** = 1 chapter, and it only counts when you tick it by hand — dwell
-  time and PDF page turns deliberately do not count.
+- **Daily goal** default **240 min** (`goals.daily_focus_minutes` / policy), editable.
+- **Productive minutes** = scored sessions (enforcer rollup when fresh).
+- **Chapter** = 1 chapter ticked in Focus/Bible path — dwell / PDF page turns do not count.
 
 ### Reward days — the 4-day streak
 
 - A day **qualifies** when you hit both halves: productive ≥ goal *and* the
-  chapter. Recorded once per day (Python decides until P5c; enforcer stores the
-  credit via `reward.mark_qualified`).
+  chapter. Recorded once per day (target: enforcer **P5c**; until then Study may
+  still call `reward.mark_qualified` via thin helpers). Enforcer stores the
+  credit via `reward.mark_qualified`.
 - **A day spent on a reward day never qualifies**, so you cannot farm streaks
   out of your days off.
 - **4 qualifying days = 1 reward day**. `available = earned + granted − spent`
@@ -338,10 +454,10 @@ current free window — spending 15 minutes during a reward day can never shorte
 ```text
 SoT (the truth)      → SQLite productivity_* tables in data/vocab_app.db
 Only mutator         → calt_enforcer gateway, named pipe \\.\pipe\calt_enforcer_cmd
-SoftLand hot read    → data/behavior/softland_policy.json   (mirror, published by enforcer)
-Kill hot read        → data/behavior/enforcer_policy.json   (mirror, published by enforcer)
-Health               → data/behavior/enforcer_status.json   (written by enforcer)
-Kill history         → data/behavior/enforcer_kills.log
+SoftLand hot read    → data/productivity/behavior/softland_policy.json   (mirror, published by enforcer)
+Kill hot read        → data/productivity/behavior/enforcer_policy.json   (mirror, published by enforcer)
+Health               → data/productivity/behavior/enforcer_status.json   (written by enforcer)
+Kill history         → data/productivity/behavior/enforcer_kills.log
 ```
 
 The UI never writes policy files directly. `calt_focus` posts a command into the
@@ -359,19 +475,19 @@ their `apply_after` passes — with no window open and no Python running.
 
 | Control | What it really does |
 |---------|---------------------|
-| SoftLand on/off | Master switch for **site** blocking only. Off = every site allowed (`softland_off`) |
-| Allow extra | Rule 1 — wins over everything, including porn |
-| Watch extra | Rule 5 — study mode only |
-| Block extra | Rule 3 — every mode, including reward days |
+| SoftLand / Site block on/off | Master switch for **site** blocking only. Off = every site allowed (`softland_off`) |
+| Allow extra | Rule 1 — wins over SoftLand host ladder, including SoftLand porn heuristic (not hosts) |
+| Watch extra | Rule 5 — study mode only (opens in free unless incubating) |
+| Block extra | Rule 3 — every SoftLand mode, including reward days / free |
 | Gate schedules | Supplies the mode by day + time; first matching window wins |
 | Mode flags | Only `block_porn` and `block_watch_sites` change behaviour today |
-| Arm / Disarm + kill list | The OS killer and its target list |
+| Arm / Disarm + kill list | The OS killer and its target list — no SoftLand free/incubation |
 | Lock mode / anti-tamper / protect uninstall | How hard it is to undo an Arm |
 | Daily goal (min) and Plan's "daily focus h" | The **same** unlock target under two names — default 240 min |
 | Category scores / productive threshold / app overrides | Feed the productive-time maths. **P5b** classifies in enforcer; **P5c** Study reads `day_rollup.json` (legacy recompute = fallback) |
 | Reward days / day pass / earned minutes / incubation limits | Unlock currencies — enforcer-owned (P5a). Thin Python callers only |
 | Study-loop gate | Off by default; when on it forces the morning into the daily bite |
-| Device porn block (hosts) | Separate OS-level filter, all apps, needs admin, unrelated to SoftLand rules |
+| Device porn block (hosts) | Separate OS-level filter, all apps, needs admin, unrelated to SoftLand Allow/Block |
 | Demo mode (fake clock) | Testing aid; moves the clock the rules read |
 
 Pass/reward/earn/incubation keep working when `:8000` is down (enforcer gateway).
@@ -385,11 +501,12 @@ streak recording still touch Python until full native qualification.
 Real behaviours that a reasonable person would guess wrong. None of these are
 speculation; each was read out of the code.
 
-1. **`allow_extra` disables the porn filter for that host.** The allow list is
-   checked first so it can rescue a false positive (the filter is a substring
-   heuristic), but it also means the allow list is a self-sabotage hatch. If you
-   want porn blocking to be unconditional, rule 2 has to move above rule 1 —
-   an intentional decision, not a bug fix, so it is left to you.
+1. **`allow_extra` disables the SoftLand porn heuristic for that host** — not
+   the hosts-file device block. The allow list is checked first so it can rescue
+   a false positive (the filter is a substring heuristic), but it also means
+   the SoftLand allow list is a self-sabotage hatch for that heuristic. If you
+   want SoftLand porn blocking to be unconditional, rule 2 has to move above
+   rule 1 — an intentional decision, not a bug fix, so it is left to you.
 2. **`watch_extra` does nothing on a reward day.** Use `block_extra` for
    "always blocked".
 3. **`strict_allowlist`, `block_other`, `block_social`, `block_keywords` are
@@ -419,7 +536,7 @@ speculation; each was read out of the code.
 11. **`softland_policy.goals.goal_met` is never written by Python.** It exists in
     the schema and normalises to `False` on read. Do not build UI on it.
 12. **P5c reader path landed (2026-09-11).** `distraction_gate` and
-    `goals_alerts` prefer `data/behavior/day_rollup.json` for productive minutes
+    `goals_alerts` prefer `data/productivity/behavior/day_rollup.json` for productive minutes
     when the mirror is present, for today, and fresh (~120s). Missing/stale →
     legacy Python recompute. Bible chapter + streak *recording* still run in
     Study until native qualification finishes the P5c exit.
@@ -473,18 +590,29 @@ which mode the clock and schedule put you in.
 
 ## Files that decide things
 
-| Question | File |
-|----------|------|
-| Is this URL blocked? | `native/calt_msg_host/src/softland_decide.cpp` |
-| Does the browser obey? | `calt-gate-extension/background.js`, `gate_policy.js`, `locked.js` |
-| Is this app killed? | `native/calt_enforcer/src/kill.cpp`, `policy_db.cpp` |
-| Who may change policy? | `native/calt_enforcer/src/cmd_gateway.cpp` |
-| When do timers expire? | `native/calt_enforcer/src/softland_tick.cpp` |
-| Policy shape + defaults | `backend/behavior/softland_policy.py` |
-| Is the day unlocked? | `backend/behavior/distraction_gate.py` (line 784 is the whole answer) |
-| Reward-day streak maths | `backend/behavior/reward_days.py` |
-| Earned minutes + incubation | `backend/behavior/break_reward.py`, `break_reward_hooks.py` |
-| Day pass + chapter goal | `backend/bible/store.py` |
-| Scoring / what counts as productive | `backend/behavior/productivity_policy.py`, `category_scores.py` |
-| Hosts-file porn block | `backend/behavior/device_block.py` |
-| Product rules of ownership | [AGENTS.md](../AGENTS.md), [Phase 2 gateway spec](superpowers/specs/2026-09-08-calt-productivity-phase2-gateway-design.md) |
+**Hot path (must work with Study `:8000` stopped):** C++ + Gate only.
+
+| Question | Owner today | Target (locked) |
+|----------|-------------|-----------------|
+| Is this URL blocked? | `calt-focus/…/softland_decide.cpp` | Same — already C++ |
+| Does the browser obey? | Gate extension | Same |
+| Is this app killed? | `calt-focus/…/kill.cpp` | Same |
+| Who may change SoftLand/Arm policy? | Enforcer gateway (`cmd_gateway.cpp`) | Same. Focus UI → pipe only |
+| When do timers expire? | `softland_tick.cpp` | Same |
+| Day pass / reward / earn / incubation | Enforcer gateway (**P5a**) | Same |
+| Productive minutes rollup | Enforcer `day_rollup.json` (**P5b/P5c reader**) | Same — expand scoring in C++ |
+| Hosts-file porn | `calt_enforcer` device_block (Admin CLI) | Native SoT — **not** SoftLand |
+
+**Study Python leftovers (not the Gate brain — remove from SoftLand/unlock story):**
+
+| Leftover | What it actually is | What to do |
+|----------|---------------------|------------|
+| `softland_policy.py` | Compat shim: load/patch/migrate mirrors for Study HTTP APIs. **Not** live `get_mode`. | Stop Study SoftLand mutators; Focus already uses gateway. Delete or shrink to migrate-only when Study interstitial is clean. |
+| `distraction_gate.py` “day unlocked?” | Study UI still combines Bible + productive time for **Study** unlock chips / morning. SoftLand free/reward already honour enforcer runtime. | **Move qualification to C++ (finish P5c).** Study must not own “day unlocked.” Focus reads enforcer status / day loop. |
+| `reward_days.py` / `break_reward.py` | Legacy accounting; rates copied into enforcer | Thin callers only → delete once nothing imports them for Focus |
+| `bible.store` in unlock paths | Study still consulted in some gate paths | Bible ticks → Focus/enforcer (`goals.bible_done`); drop Study from SoftLand unlock |
+| `productivity_policy.py` / `category_scores.py` | Study scoring / fallback recompute | Prefer enforcer rollup; legacy fallback only until P5b scoring complete |
+
+**Product rules:** [AGENTS.md](../AGENTS.md), [Phase 2 gateway](superpowers/specs/2026-09-08-calt-productivity-phase2-gateway-design.md), [Focus standalone](superpowers/specs/2026-09-11-calt-focus-standalone-productivity-design.md), [P5 unlock](superpowers/specs/2026-09-08-calt-productivity-p5-native-unlock-accounting-design.md).
+
+**Owner intent (2026-09-12):** Unlock qualification, SoftLand policy mutation, and productive scoring for Productivity belong in C++. Study keeps content (GRE/Notes/Math/…). Keeping `distraction_gate` as SoftLand truth is wrong; keeping `softland_policy.py` as if it were the decide brain is wrong — it is migrate/compat only.

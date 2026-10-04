@@ -906,12 +906,213 @@ export async function clearDemoClock(): Promise<DemoClockStatus> {
 }
 
 export async function fetchProductivityPolicy(): Promise<ProductivityPolicy> {
+  const { isFocusDesktopShell } = await import("../utils/focusDesktopShell");
+  if (isFocusDesktopShell()) {
+    try {
+      const { focusDataUrl } = await import("../utils/focusDataUrl");
+      let goalMin = 240;
+      try {
+        const raw = localStorage.getItem("productivity:goals:v1");
+        if (raw) {
+          const parsed = JSON.parse(raw) as { focusHoursPerDay?: number };
+          if (typeof parsed.focusHoursPerDay === "number" && parsed.focusHoursPerDay > 0) {
+            goalMin = Math.round(parsed.focusHoursPerDay * 60);
+          }
+        }
+      } catch {
+        /* default */
+      }
+      let softlandOn = true;
+      let exes: string[] = [];
+      try {
+        const r = await fetch(focusDataUrl("softland_policy.json"), { cache: "no-store" });
+        if (r.ok) {
+          const j = (await r.json()) as {
+            softland_enabled?: boolean;
+            goals?: { daily_focus_minutes?: number };
+          };
+          if (typeof j.softland_enabled === "boolean") softlandOn = j.softland_enabled;
+          const mins = Number(j.goals?.daily_focus_minutes);
+          if (Number.isFinite(mins) && mins > 0) goalMin = mins;
+        }
+      } catch {
+        /* ignore */
+      }
+      try {
+        const r = await fetch(focusDataUrl("enforcer_policy.json"), { cache: "no-store" });
+        if (r.ok) {
+          const j = (await r.json()) as { exes?: unknown };
+          if (Array.isArray(j.exes)) {
+            exes = j.exes.map((x) => String(x || "").trim().toLowerCase()).filter(Boolean);
+          }
+        }
+      } catch {
+        /* ignore */
+      }
+      let threshold = 60;
+      let productive: string[] = [];
+      let blocked: string[] = [];
+      try {
+        const r = await fetch(focusDataUrl("classify_rules.json"), { cache: "no-store" });
+        if (r.ok) {
+          const j = (await r.json()) as {
+            threshold?: number;
+            productive_categories?: string[];
+            blocked_categories?: string[];
+          };
+          if (typeof j.threshold === "number") threshold = j.threshold;
+          if (Array.isArray(j.productive_categories)) productive = j.productive_categories.map(String);
+          if (Array.isArray(j.blocked_categories)) blocked = j.blocked_categories.map(String);
+        }
+      } catch {
+        /* ignore */
+      }
+      return {
+        productive_categories: productive,
+        blocked_categories: blocked,
+        app_overrides: {},
+        threshold,
+        softland_enabled: softlandOn,
+        hard_block_enabled: softlandOn,
+        daily_goal_minutes: goalMin,
+        hard_block_gaming: true,
+        hard_block_exes: exes,
+      };
+    } catch {
+      /* fall through to HTTP */
+    }
+  }
   const res = await fetch(resolveApiUrl("/api/behavior/policy"), { headers: authHeaders() });
   if (!res.ok) throw new Error(`behavior/policy: ${res.status}`);
   return res.json();
 }
 
 export async function fetchDistractionGate(): Promise<DistractionGate> {
+  const { isFocusDesktopShell } = await import("../utils/focusDesktopShell");
+  if (isFocusDesktopShell()) {
+    try {
+      const { focusDataUrl } = await import("../utils/focusDataUrl");
+      const { fetchDayRollupMirror } = await import("./focusMirrors");
+      const { enforcerNativeCmd, isFocusEnforcerBridgeAvailable } = await import(
+        "../lib/enforcerNativeCmd"
+      );
+      let dailyGoal = 240;
+      try {
+        const raw = localStorage.getItem("productivity:goals:v1");
+        if (raw) {
+          const parsed = JSON.parse(raw) as { focusHoursPerDay?: number };
+          if (typeof parsed.focusHoursPerDay === "number" && parsed.focusHoursPerDay > 0) {
+            dailyGoal = Math.round(parsed.focusHoursPerDay * 60);
+          }
+        }
+      } catch {
+        /* default */
+      }
+      try {
+        const r = await fetch(focusDataUrl("softland_policy.json"), { cache: "no-store" });
+        if (r.ok) {
+          const j = (await r.json()) as { goals?: { daily_focus_minutes?: number } };
+          const mins = Number(j.goals?.daily_focus_minutes);
+          if (Number.isFinite(mins) && mins > 0) dailyGoal = mins;
+        }
+      } catch {
+        /* ignore */
+      }
+      const rollup = await fetchDayRollupMirror();
+      const productive = Math.max(
+        0,
+        Math.floor(
+          typeof rollup?.productive_minutes === "number"
+            ? rollup.productive_minutes
+            : (rollup?.productive_seconds || 0) / 60,
+        ),
+      );
+      let rewardAvailable = 0;
+      let daysToNext = 4;
+      let rewardActive = false;
+      let passUsed = 0;
+      let passToday = false;
+      let freeUntil: string | null = null;
+      // Avoid pipe on every Settings open — mirrors first; day.status only if bridge idle needed later.
+      try {
+        const r = await fetch(focusDataUrl("softland_policy.json"), { cache: "no-store" });
+        if (r.ok) {
+          const j = (await r.json()) as {
+            softland_enabled?: boolean;
+            reward_day_active?: boolean;
+            runtime?: {
+              free_until?: string | null;
+              day_pass?: { spent?: boolean; date?: string | null };
+              earned_ledger_seconds?: number;
+            };
+          };
+          if (typeof j.reward_day_active === "boolean") rewardActive = j.reward_day_active;
+          if (j.runtime?.free_until) freeUntil = String(j.runtime.free_until);
+          if (j.runtime?.day_pass?.spent) passToday = true;
+        }
+      } catch {
+        /* ignore */
+      }
+      try {
+        const stRes = await fetch(focusDataUrl("day_status.json"), { cache: "no-store" });
+        if (stRes.ok) {
+          const st = (await stRes.json()) as Record<string, unknown>;
+          rewardAvailable = Number(st.reward_available ?? 0);
+          daysToNext = Number(st.days_to_next_reward ?? 4);
+          rewardActive = Boolean(st.reward_day_active) || rewardActive;
+          passUsed = Number(st.passes_used ?? 0);
+          passToday = Boolean(st.pass_today) || passToday;
+          if (st.free_until) freeUntil = String(st.free_until);
+        }
+      } catch {
+        /* ignore */
+      }
+      const remaining = Math.max(0, dailyGoal - productive);
+      const unlocked = Boolean(rollup?.day_unlocked || rollup?.goal_met || rewardActive || passToday);
+      const today = new Date();
+      const day = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+      return {
+        enabled: true,
+        locked: !unlocked && remaining > 0,
+        unlocked,
+        productive_minutes: productive,
+        daily_goal_minutes: dailyGoal,
+        remaining_minutes: remaining,
+        hard_block_gaming: true,
+        hard_block_exes: [],
+        day,
+        day_unlimited: rewardActive || passToday,
+        day_pass: passToday,
+        day_pass_status: {
+          week_start: "",
+          limit: 2,
+          used: passUsed,
+          remaining: Math.max(0, 2 - passUsed),
+          already_active_today: passToday,
+          confirm_phrase: "PASS",
+        },
+        reward_day: rewardActive,
+        reward_day_status: {
+          qualifying_days: 0,
+          qualifying_days_per_reward: 4,
+          days_to_next_reward: daysToNext,
+          earned: 0,
+          spent: 0,
+          available: rewardAvailable,
+          active_today: rewardActive,
+          confirm_phrase: "REWARD",
+        },
+        browser_mode: freeUntil || rewardActive || passToday ? "free" : "study",
+        browser: {
+          mode: freeUntil || rewardActive || passToday ? "free" : "study",
+          mode_label: freeUntil || rewardActive || passToday ? "FREE" : "STUDY",
+          note: freeUntil ? `Free until ${freeUntil}` : undefined,
+        } as DistractionGate["browser"],
+      };
+    } catch {
+      /* fall through */
+    }
+  }
   const res = await fetch(resolveApiUrl("/api/behavior/distraction-gate"), {
     headers: authHeaders(),
   });
@@ -964,6 +1165,153 @@ export interface FocusDashboardSnapshot {
 }
 
 export async function fetchFocusDashboard(): Promise<FocusDashboardSnapshot> {
+  const { isFocusDesktopShell } = await import("../utils/focusDesktopShell");
+  if (isFocusDesktopShell()) {
+    try {
+      const { focusDataUrl } = await import("../utils/focusDataUrl");
+      const { fetchEnforcerStatusMirror } = await import("./focusMirrors");
+      // Mirrors only — do NOT hit the named pipe on every poll (was freezing Focus UI).
+      const status = await fetchEnforcerStatusMirror();
+      let softlandOn = false;
+      let freeUntil: string | null = null;
+      let incubUntil: string | null = null;
+      let earnedSec = 0;
+      let rewardActive = false;
+      let exes: string[] = [];
+      let lockMode = "none";
+      let antiTamper = true;
+      let protectUninstall = false;
+      let gateLocked = false;
+      let hardArmed = Boolean(status?.armed);
+      let statusAgeS: number | null = null;
+      if (status?.updated_at) {
+        const t = Date.parse(status.updated_at);
+        if (Number.isFinite(t)) statusAgeS = Math.max(0, (Date.now() - t) / 1000);
+      }
+      const [polRes, slRes] = await Promise.all([
+        fetch(focusDataUrl("enforcer_policy.json"), { cache: "no-store" }).catch(() => null),
+        fetch(focusDataUrl("softland_policy.json"), { cache: "no-store" }).catch(() => null),
+      ]);
+      if (polRes?.ok) {
+        try {
+          const j = (await polRes.json()) as {
+            hard_block_armed?: boolean;
+            gate_locked?: boolean;
+            exes?: unknown;
+            lock_mode?: string;
+            anti_tamper?: boolean;
+            protect_uninstall?: boolean;
+          };
+          if (typeof j.hard_block_armed === "boolean") hardArmed = j.hard_block_armed;
+          gateLocked = Boolean(j.gate_locked);
+          if (Array.isArray(j.exes)) {
+            exes = j.exes.map((x) => String(x || "").trim().toLowerCase()).filter(Boolean);
+          }
+          if (j.lock_mode) lockMode = String(j.lock_mode);
+          if (typeof j.anti_tamper === "boolean") antiTamper = j.anti_tamper;
+          if (typeof j.protect_uninstall === "boolean") protectUninstall = j.protect_uninstall;
+        } catch {
+          /* ignore */
+        }
+      }
+      if (slRes?.ok) {
+        try {
+          const j = (await slRes.json()) as {
+            softland_enabled?: boolean;
+            reward_day_active?: boolean;
+            runtime?: {
+              free_until?: string | null;
+              incubation_until?: string | null;
+              earned_ledger_seconds?: number;
+            };
+          };
+          if (typeof j.softland_enabled === "boolean") softlandOn = j.softland_enabled;
+          if (typeof j.reward_day_active === "boolean") rewardActive = j.reward_day_active;
+          if (j.runtime?.free_until) freeUntil = String(j.runtime.free_until);
+          if (j.runtime?.incubation_until) incubUntil = String(j.runtime.incubation_until);
+          if (typeof j.runtime?.earned_ledger_seconds === "number") {
+            earnedSec = j.runtime.earned_ledger_seconds;
+          }
+        } catch {
+          /* ignore */
+        }
+      }
+      let dailyEarned = 0;
+      let dailyCap = 60;
+      try {
+        const stRes = await fetch(focusDataUrl("day_status.json"), { cache: "no-store" });
+        if (stRes.ok) {
+          const st = (await stRes.json()) as Record<string, unknown>;
+          if (typeof st.balance_seconds === "number") earnedSec = st.balance_seconds;
+          if (typeof st.earned_today_seconds === "number") dailyEarned = st.earned_today_seconds;
+          if (st.free_until != null) freeUntil = String(st.free_until);
+          if (typeof st.reward_day_active === "boolean") rewardActive = st.reward_day_active;
+        }
+      } catch {
+        /* mirrors already filled */
+      }
+      const balanceMin = Math.floor(earnedSec / 60);
+      const dailyEarnedMin = Math.floor(dailyEarned / 60);
+      const modeLabel = incubUntil
+        ? "Incubation"
+        : freeUntil || rewardActive
+          ? "Free"
+          : softlandOn
+            ? "Study"
+            : "SoftLand off";
+      return {
+        active: {
+          hard_block_armed: hardArmed,
+          browser_mode_label: modeLabel,
+          why: softlandOn
+            ? "SoftLand on (native snapshot)."
+            : "SoftLand off (native snapshot).",
+          until: freeUntil
+            ? { kind: "free", label: freeUntil }
+            : incubUntil
+              ? { kind: "incubation", label: incubUntil }
+              : undefined,
+        },
+        incubation: {
+          active: Boolean(incubUntil),
+          remaining_sec: 0,
+          total_sec: 0,
+        },
+        earned: {
+          balance_minutes: balanceMin,
+          daily_earned: dailyEarnedMin,
+          daily_cap: dailyCap,
+        },
+        actions: {
+          can_spend_earned: balanceMin > 0 && !incubUntil,
+          can_pin_free: false,
+          incubation_blocks_pin: Boolean(incubUntil),
+        },
+        enforcer: {
+          owns: Boolean(status?.owns),
+          exe_built: true,
+          service_running: status?.service_running ?? null,
+          lock_present: Boolean(status?.lock_present),
+          armed: Boolean(status?.armed ?? hardArmed),
+          locked: Boolean(status?.locked),
+          policy_source: "enforcer_policy.json",
+          status_source: "enforcer_status.json",
+          status_age_s: statusAgeS,
+        },
+        enforcer_policy: {
+          hard_block_armed: hardArmed,
+          gate_locked: gateLocked,
+          incubation_active: Boolean(incubUntil),
+          exes,
+          lock_mode: lockMode,
+          anti_tamper: antiTamper,
+          protect_uninstall: protectUninstall,
+        },
+      };
+    } catch {
+      /* fall through to HTTP */
+    }
+  }
   const res = await fetch(resolveApiUrl("/api/behavior/focus-dashboard"), {
     headers: authHeaders(),
   });
@@ -1199,6 +1547,69 @@ export async function draftMorningAutoPlan(opts?: {
 export async function saveProductivityPolicy(
   body: Partial<ProductivityPolicy>,
 ): Promise<ProductivityPolicy> {
+  const { isFocusDesktopShell } = await import("../utils/focusDesktopShell");
+  if (isFocusDesktopShell()) {
+    const { enforcerNativeCmd, isFocusEnforcerBridgeAvailable } = await import(
+      "../lib/enforcerNativeCmd"
+    );
+    const { focusDataUrl } = await import("../utils/focusDataUrl");
+    if (!isFocusEnforcerBridgeAvailable()) {
+      throw new Error("enforcer_unreachable");
+    }
+    if (typeof body.softland_enabled === "boolean" || typeof body.hard_block_enabled === "boolean") {
+      const enabled = Boolean(body.softland_enabled ?? body.hard_block_enabled);
+      const payload: { enabled: boolean; confirm?: string } = { enabled };
+      if (!enabled) payload.confirm = "UNLOCK";
+      const native = await enforcerNativeCmd("softland.set_enabled", payload);
+      if (native && native.ok === false) {
+        if (native.error === "confirm_required") {
+          throw new Error('Type UNLOCK to turn SoftLand off (gateway confirm required).');
+        }
+        throw new Error(String(native.error || "softland.set_enabled failed"));
+      }
+    }
+    if (typeof body.daily_goal_minutes === "number") {
+      const minutes = Math.min(960, Math.max(15, Math.round(body.daily_goal_minutes)));
+      const hours = Math.round((minutes / 60) * 10) / 10;
+      try {
+        const raw = localStorage.getItem("productivity:goals:v1");
+        const parsed = raw ? JSON.parse(raw) : {};
+        localStorage.setItem(
+          "productivity:goals:v1",
+          JSON.stringify({ ...parsed, focusHoursPerDay: hours }),
+        );
+        window.dispatchEvent(
+          new CustomEvent("productivity:goals-updated", {
+            detail: { ...parsed, focusHoursPerDay: hours },
+          }),
+        );
+      } catch {
+        /* ignore */
+      }
+      let goalsObj: Record<string, unknown> = {
+        daily_focus_minutes: minutes,
+        goal_met: false,
+        bible_done: false,
+      };
+      try {
+        const r = await fetch(focusDataUrl("softland_policy.json"), { cache: "no-store" });
+        if (r.ok) {
+          const j = (await r.json()) as { goals?: Record<string, unknown> };
+          if (j.goals && typeof j.goals === "object") {
+            goalsObj = { ...j.goals, daily_focus_minutes: minutes };
+          }
+        }
+      } catch {
+        /* defaults */
+      }
+      const res = await enforcerNativeCmd("softland.patch_goals", { goals: goalsObj });
+      if (res && res.ok === false) {
+        throw new Error(String(res.error || "softland.patch_goals failed"));
+      }
+    }
+    const current = await fetchProductivityPolicy();
+    return { ...current, ...body };
+  }
   const res = await fetch(resolveApiUrl("/api/behavior/policy"), {
     method: "PUT",
     headers: authHeaders(),

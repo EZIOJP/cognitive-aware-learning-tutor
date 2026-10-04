@@ -416,10 +416,17 @@ def export_productivity_last_days(
         le=366,
         description="Inclusive calendar-day window length (max 366 / ~1 leap year)",
     ),
-    format: str = Query("json", pattern="^(json|csv)$"),
+    format: str = Query(
+        "json",
+        pattern="^(json|csv|csv_wide)$",
+        description="json | csv (tidy long multi-table) | csv_wide (legacy day×hour)",
+    ),
     include: str = Query(
-        "summary,patterns,by_day,blocks,hints,policy,wearable",
-        description="Comma list: summary,patterns,by_day,blocks,hints,policy,wearable",
+        "summary,patterns,by_day,blocks,hints,policy,wearable,tables,sessions",
+        description=(
+            "Comma list: summary,patterns,by_day,blocks,hints,policy,wearable,"
+            "tables,sessions"
+        ),
     ),
     productive_only: bool = Query(False, description="Prefer productive metrics in by_day"),
     skip_empty: bool = Query(
@@ -439,6 +446,7 @@ def export_productivity_last_days(
     from backend.planner.week_export import (
         build_productivity_week_export,
         export_as_csv,
+        export_as_csv_wide,
         filter_export_payload,
     )
 
@@ -450,13 +458,20 @@ def export_productivity_last_days(
         payload, include=include_set, productive_only=productive_only
     )
     stamp = payload["range"]["end"].replace("-", "")
-    if format == "csv":
-        body = export_as_csv(payload)
+    if format in ("csv", "csv_wide"):
+        body = (
+            export_as_csv_wide(payload)
+            if format == "csv_wide"
+            else export_as_csv(payload)
+        )
+        suffix = "wide" if format == "csv_wide" else "long"
         return Response(
             content=body,
             media_type="text/csv; charset=utf-8",
             headers={
-                "Content-Disposition": f'attachment; filename="productivity-{days}d-{stamp}.csv"',
+                "Content-Disposition": (
+                    f'attachment; filename="productivity-{days}d-{stamp}-{suffix}.csv"'
+                ),
             },
         )
     return payload

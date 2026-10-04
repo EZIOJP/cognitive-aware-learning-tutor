@@ -47,7 +47,7 @@ scripts\desktop_tracker\build_native_focus.bat
 
 **Run (enforcer + API; prebuilt UI)** · Start API · Start Frontend (optional Vite) ·
 Open Calendar · Open Plan · Open Focus · Open Settings ·
-**Reload UI** · **Update UI** · **Update stack** · **Apply pending update && restart** · Quit
+**Tray (ship note):** icon is a teal dot — Win11 may hide it under the ^ overflow; pin it. If the tray is missing, use the in-app **Focus** menu (top bar) for Reload UI / Settings / Quit.
 
 | Action | What it does |
 |--------|----------------|

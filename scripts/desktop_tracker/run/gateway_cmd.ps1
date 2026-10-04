@@ -1,15 +1,21 @@
 # Send one command to the calt_enforcer gateway named pipe and print the reply.
 #
 #   powershell -File scripts\desktop_tracker\run\gateway_cmd.ps1 -Op softland.set_enabled -Payload '{"enabled":true}'
+#   powershell -File scripts\desktop_tracker\run\gateway_cmd.ps1 -Op arm.set -PayloadFile .\arm.json
 #
 # The enforcer must be running (console or service). No Python / :8000 involved.
 param(
   [Parameter(Mandatory = $true)][string]$Op,
   [string]$Payload = '{}',
+  [string]$PayloadFile = '',
   [int]$TimeoutMs = 4000
 )
 
 $ErrorActionPreference = 'Stop'
+if ($PayloadFile) {
+  if (-not (Test-Path -LiteralPath $PayloadFile)) { throw "PayloadFile not found: $PayloadFile" }
+  $Payload = [IO.File]::ReadAllText((Resolve-Path -LiteralPath $PayloadFile)).Trim()
+}
 $id = [guid]::NewGuid().ToString()
 $req = '{"v":1,"id":"' + $id + '","op":"' + $Op + '","payload":' + $Payload + '}'
 $bytes = [Text.Encoding]::UTF8.GetBytes($req)
@@ -38,5 +44,6 @@ foreach ($attempt in 1..3) {
   }
   Start-Sleep -Milliseconds 200
 }
+
 Write-Error "gateway command failed after 3 attempts: $last"
-exit 2
+exit 1

@@ -19,7 +19,7 @@ from backend.models.planner import PlannerBlock
 from backend.models.timetable import TrackedSession
 from backend.models.wearable_daily import WearableDaily
 from backend.planner.day_metrics import compute_day_metrics
-from backend.planner.service import _utc, local_day_bounds_utc, serialize_block
+from backend.planner.service import _utc, iso_utc, local_day_bounds_utc, serialize_block
 from backend.timetable.tracker_query import tracker_user_ids
 
 _WEEKDAYS = ("mon", "tue", "wed", "thu", "fri", "sat", "sun")
@@ -278,6 +278,7 @@ def build_productivity_week_export(
     }
 
     by_day: list[dict[str, Any]] = []
+    session_rows: list[dict[str, Any]] = []
     weekday_hour_sum: dict[str, list[float]] = {k: [0.0] * 24 for k in _WEEKDAYS}
     weekday_day_count: dict[str, int] = defaultdict(int)
     weekday_productive: dict[str, list[float]] = defaultdict(list)
@@ -321,7 +322,28 @@ def build_productivity_week_export(
             global_cat_minutes[cat] += mins
             global_app_minutes[app] += mins
             # Attribute minutes to local hour of segment start (good enough for heatmaps)
-            hour_minutes[_local_hour(seg_start)] += mins
+            hour = _local_hour(seg_start)
+            hour_minutes[hour] += mins
+            score = int(score_fn(s))
+            session_rows.append(
+                {
+                    "session_id": s.session_id,
+                    "date": day.isoformat(),
+                    "weekday": weekday,
+                    "start_at": iso_utc(seg_start),
+                    "end_at": iso_utc(seg_end),
+                    "minutes": round(mins, 2),
+                    "hour": hour,
+                    "app_name": app,
+                    "window_title": (s.window_title or "")[:240],
+                    "category": cat,
+                    "source": s.source or "",
+                    "category_source": s.category_source or "",
+                    "productivity_score": score,
+                    "is_productive": bool(score >= threshold),
+                    "override_productive": s.override_productive,
+                }
+            )
 
         metrics = compute_day_metrics(
             day, day_blocks, day_sessions, score_fn, threshold=threshold
@@ -439,13 +461,22 @@ def build_productivity_week_export(
 
     exported_days = omit_empty_export_days(by_day) if skip_empty else by_day
     empty_omitted = max(0, len(by_day) - len(exported_days))
+    exported_dates = {d["date"] for d in exported_days}
+    exported_sessions = [r for r in session_rows if r["date"] in exported_dates]
+    tables = build_tidy_export_tables(
+        exported_days,
+        sessions=exported_sessions,
+        weekday_patterns=weekday_patterns,
+        hints=hints,
+    )
 
     return {
-        "export_version": "1.3",
+        "export_version": "1.4",
         "exported_at": datetime.now(timezone.utc).isoformat(),
         "purpose": (
-            "Last-N-days productivity and wearable snapshot for designing weekly "
-            "timetables (weekday patterns, peak hours, plan vs actual, health context)."
+            "Last-N-days productivity for analysis and timetable design. "
+            "Use `tables` (tidy long format) for pandas/R; `by_day` stays nested "
+            "for apps that prefer day objects."
         ),
         "range": {
             "start": start.isoformat(),
@@ -467,10 +498,148 @@ def build_productivity_week_export(
             "top_categories": top_categories,
             "top_apps": top_apps,
             "threshold": threshold,
+            "session_rows": len(exported_sessions),
         },
         "weekday_patterns": weekday_patterns,
         "suggested_timetable_hints": hints,
         "by_day": exported_days,
+        "tables": tables,
+    }
+
+
+def build_tidy_export_tables(
+    by_day: list[dict[str, Any]],
+    *,
+    sessions: list[dict[str, Any]] | None = None,
+    weekday_patterns: dict[str, Any] | None = None,
+    hints: list[str] | None = None,
+) -> dict[str, list[dict[str, Any]]]:
+    """Build tidy long-format frames for analysis (pandas / R / Sheets)."""
+    day_metrics: list[dict[str, Any]] = []
+    day_hour: list[dict[str, Any]] = []
+    day_category: list[dict[str, Any]] = []
+    day_app: list[dict[str, Any]] = []
+    planned_blocks: list[dict[str, Any]] = []
+    wearable_daily: list[dict[str, Any]] = []
+
+    for day in by_day:
+        date_s = day.get("date")
+        weekday = day.get("weekday")
+        day_metrics.append(
+            {
+                "date": date_s,
+                "weekday": weekday,
+                "planned_minutes": day.get("planned_minutes"),
+                "actual_minutes": day.get("actual_minutes"),
+                "productive_minutes": day.get("productive_minutes"),
+                "effective_focus_minutes": day.get("effective_focus_minutes"),
+                "on_plan_focus_minutes": day.get("on_plan_focus_minutes"),
+                "off_plan_productive_minutes": day.get("off_plan_productive_minutes"),
+                "distraction_on_plan_minutes": day.get("distraction_on_plan_minutes"),
+                "adherence_pct": day.get("adherence_pct"),
+                "block_count": day.get("block_count"),
+                "session_count": day.get("session_count"),
+            }
+        )
+        hours = day.get("by_hour_minutes") or {}
+        for h in range(24):
+            day_hour.append(
+                {
+                    "date": date_s,
+                    "weekday": weekday,
+                    "hour": h,
+                    "minutes": float(hours.get(str(h), 0) or 0),
+                }
+            )
+        for cat, mins in (day.get("by_category_minutes") or {}).items():
+            day_category.append(
+                {
+                    "date": date_s,
+                    "weekday": weekday,
+                    "category": cat,
+                    "minutes": mins,
+                }
+            )
+        for app_row in day.get("top_apps") or []:
+            day_app.append(
+                {
+                    "date": date_s,
+                    "weekday": weekday,
+                    "app": app_row.get("app"),
+                    "minutes": app_row.get("minutes"),
+                }
+            )
+        for block in day.get("planned_blocks") or []:
+            planned_blocks.append(
+                {
+                    "date": date_s,
+                    "weekday": weekday,
+                    "block_id": block.get("id"),
+                    "title": block.get("title"),
+                    "category": block.get("category"),
+                    "start_at": block.get("start_at"),
+                    "end_at": block.get("end_at"),
+                    "planned_minutes": block.get("planned_minutes"),
+                    "remaining_minutes": block.get("remaining_minutes"),
+                    "status": block.get("status"),
+                    "task_id": block.get("task_id"),
+                    "rolled_from_id": block.get("rolled_from_id"),
+                    "roll_count": block.get("roll_count"),
+                }
+            )
+        wearable = day.get("wearable")
+        if wearable:
+            wearable_daily.append(
+                {
+                    "date": date_s,
+                    "weekday": weekday,
+                    "source": wearable.get("source"),
+                    "sleep_hours": wearable.get("sleep_hours"),
+                    "sleep_score": wearable.get("sleep_score"),
+                    "sleep_deep_minutes": wearable.get("sleep_deep_minutes"),
+                    "steps": wearable.get("steps"),
+                    "step_target": wearable.get("step_target"),
+                    "calories": wearable.get("calories"),
+                    "calorie_target": wearable.get("calorie_target"),
+                    "distance_meters": wearable.get("distance_meters"),
+                    "heart_rate_last": wearable.get("heart_rate_last"),
+                    "heart_rate_resting": wearable.get("heart_rate_resting"),
+                    "spo2_pct": wearable.get("spo2_pct"),
+                    "stress": wearable.get("stress"),
+                    "pai_today": wearable.get("pai_today"),
+                    "pai_total": wearable.get("pai_total"),
+                    "stand_hours": wearable.get("stand_hours"),
+                    "stand_target": wearable.get("stand_target"),
+                    "battery_pct": wearable.get("battery_pct"),
+                    "captured_at": wearable.get("captured_at"),
+                    "synced_at": wearable.get("synced_at"),
+                }
+            )
+
+    weekday_hour: list[dict[str, Any]] = []
+    for wd in _WEEKDAYS:
+        pattern = (weekday_patterns or {}).get(wd) or {}
+        avg_hours = pattern.get("avg_hour_minutes") or [0.0] * 24
+        for h, mins in enumerate(avg_hours):
+            weekday_hour.append(
+                {
+                    "weekday": wd,
+                    "hour": h,
+                    "avg_minutes": mins,
+                    "days_sampled": pattern.get("days_sampled", 0),
+                }
+            )
+
+    return {
+        "day_metrics": day_metrics,
+        "day_hour": day_hour,
+        "day_category": day_category,
+        "day_app": day_app,
+        "sessions": list(sessions or []),
+        "planned_blocks": planned_blocks,
+        "wearable_daily": wearable_daily,
+        "weekday_hour": weekday_hour,
+        "hints": [{"hint": h} for h in (hints or [])],
     }
 
 
@@ -481,7 +650,17 @@ def filter_export_payload(
     productive_only: bool = False,
 ) -> dict[str, Any]:
     """Slim export for custom download / LLM propose."""
-    include = include or {"summary", "patterns", "by_day", "blocks", "hints", "policy", "wearable"}
+    include = include or {
+        "summary",
+        "patterns",
+        "by_day",
+        "blocks",
+        "hints",
+        "policy",
+        "wearable",
+        "tables",
+        "sessions",
+    }
     out: dict[str, Any] = {
         "export_version": payload.get("export_version"),
         "exported_at": payload.get("exported_at"),
@@ -509,11 +688,181 @@ def filter_export_payload(
                 row["actual_minutes"] = row.get("productive_minutes", 0)
             days.append(row)
         out["by_day"] = days
+
+    want_tables = bool({"tables", "sessions", "by_day", "blocks", "wearable"} & include)
+    if want_tables:
+        tables = dict(payload.get("tables") or {})
+        if not tables and out.get("by_day") is not None:
+            tables = build_tidy_export_tables(
+                out.get("by_day") or [],
+                sessions=(payload.get("tables") or {}).get("sessions") or [],
+                weekday_patterns=payload.get("weekday_patterns")
+                if "patterns" in include
+                else {},
+                hints=payload.get("suggested_timetable_hints")
+                if "hints" in include
+                else [],
+            )
+        if "sessions" not in include and "tables" not in include:
+            tables.pop("sessions", None)
+        if "blocks" not in include and "tables" not in include:
+            tables.pop("planned_blocks", None)
+        if "wearable" not in include and "tables" not in include:
+            tables.pop("wearable_daily", None)
+        if "patterns" not in include and "tables" not in include:
+            tables.pop("weekday_hour", None)
+        if "hints" not in include and "tables" not in include:
+            tables.pop("hints", None)
+        if productive_only and tables.get("sessions"):
+            tables["sessions"] = [
+                r for r in tables["sessions"] if r.get("is_productive")
+            ]
+        out["tables"] = tables
     return out
 
 
+_TABLE_ORDER = (
+    "day_metrics",
+    "day_hour",
+    "day_category",
+    "day_app",
+    "sessions",
+    "planned_blocks",
+    "wearable_daily",
+    "weekday_hour",
+    "hints",
+)
+
+
+def _write_table_section(
+    writer: Any,
+    name: str,
+    rows: list[dict[str, Any]],
+    columns: list[str],
+) -> None:
+    writer.writerow([])
+    writer.writerow([f"# table:{name}"])
+    writer.writerow(columns)
+    for row in rows:
+        writer.writerow([row.get(col, "") if row.get(col) is not None else "" for col in columns])
+
+
 def export_as_csv(payload: dict[str, Any]) -> str:
-    """Flat day × hour CSV for spreadsheet timetable drafting."""
+    """Tidy multi-table CSV (long format) for analysis tools.
+
+    Sections are marked ``# table:<name>`` then a header row. Load in pandas with
+    a small section splitter, or open in Sheets and split on those markers.
+    """
+    tables = payload.get("tables")
+    if not isinstance(tables, dict) or not tables:
+        tables = build_tidy_export_tables(
+            payload.get("by_day") or [],
+            weekday_patterns=payload.get("weekday_patterns"),
+            hints=payload.get("suggested_timetable_hints") or [],
+        )
+
+    buf = io.StringIO()
+    writer = csv.writer(buf)
+    writer.writerow(["# CALT productivity export - tidy long format"])
+    writer.writerow(
+        [
+            f"# version={payload.get('export_version', '')}",
+            f"exported_at={payload.get('exported_at', '')}",
+            f"range_start={(payload.get('range') or {}).get('start', '')}",
+            f"range_end={(payload.get('range') or {}).get('end', '')}",
+        ]
+    )
+
+    schemas: dict[str, list[str]] = {
+        "day_metrics": [
+            "date",
+            "weekday",
+            "planned_minutes",
+            "actual_minutes",
+            "productive_minutes",
+            "effective_focus_minutes",
+            "on_plan_focus_minutes",
+            "off_plan_productive_minutes",
+            "distraction_on_plan_minutes",
+            "adherence_pct",
+            "block_count",
+            "session_count",
+        ],
+        "day_hour": ["date", "weekday", "hour", "minutes"],
+        "day_category": ["date", "weekday", "category", "minutes"],
+        "day_app": ["date", "weekday", "app", "minutes"],
+        "sessions": [
+            "session_id",
+            "date",
+            "weekday",
+            "start_at",
+            "end_at",
+            "minutes",
+            "hour",
+            "app_name",
+            "window_title",
+            "category",
+            "source",
+            "category_source",
+            "productivity_score",
+            "is_productive",
+            "override_productive",
+        ],
+        "planned_blocks": [
+            "date",
+            "weekday",
+            "block_id",
+            "title",
+            "category",
+            "start_at",
+            "end_at",
+            "planned_minutes",
+            "remaining_minutes",
+            "status",
+            "task_id",
+            "rolled_from_id",
+            "roll_count",
+        ],
+        "wearable_daily": [
+            "date",
+            "weekday",
+            "source",
+            "sleep_hours",
+            "sleep_score",
+            "sleep_deep_minutes",
+            "steps",
+            "step_target",
+            "calories",
+            "calorie_target",
+            "distance_meters",
+            "heart_rate_last",
+            "heart_rate_resting",
+            "spo2_pct",
+            "stress",
+            "pai_today",
+            "pai_total",
+            "stand_hours",
+            "stand_target",
+            "battery_pct",
+            "captured_at",
+            "synced_at",
+        ],
+        "weekday_hour": ["weekday", "hour", "avg_minutes", "days_sampled"],
+        "hints": ["hint"],
+    }
+
+    for name in _TABLE_ORDER:
+        cols = schemas[name]
+        rows = tables.get(name) or []
+        if name == "hints" and not rows:
+            rows = [{"hint": h} for h in (payload.get("suggested_timetable_hints") or [])]
+        _write_table_section(writer, name, rows, cols)
+
+    return buf.getvalue()
+
+
+def export_as_csv_wide(payload: dict[str, Any]) -> str:
+    """Legacy wide day × hour CSV (one row per day, h00–h23 columns)."""
     buf = io.StringIO()
     writer = csv.writer(buf)
     writer.writerow(
@@ -575,7 +924,6 @@ def export_as_csv(payload: dict[str, Any]) -> str:
                 *[hours.get(str(h), 0) for h in range(24)],
             ]
         )
-    # Trailing summary section
     writer.writerow([])
     writer.writerow(["# hints"])
     for hint in payload.get("suggested_timetable_hints") or []:

@@ -5,6 +5,8 @@ const CATEGORIES = ["reading", "study", "lecture", "review", "break"] as const;
 
 type Props = {
   defaultStart?: Date;
+  /** Prefill duration from horizontal drag (minutes). */
+  defaultDuration?: number;
   onSubmit: (data: {
     title: string;
     category: string;
@@ -21,10 +23,16 @@ function toLocalInput(d: Date): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-export function PlannerBlockForm({ defaultStart, onSubmit, onCancel, embedded = false }: Props) {
+export function PlannerBlockForm({
+  defaultStart,
+  defaultDuration = 60,
+  onSubmit,
+  onCancel,
+  embedded = false,
+}: Props) {
   const [title, setTitle] = useState("1 hr reading");
   const [category, setCategory] = useState<string>("reading");
-  const [duration, setDuration] = useState(60);
+  const [duration, setDuration] = useState(defaultDuration);
   const [startLocal, setStartLocal] = useState(() => toLocalInput(defaultStart ?? new Date()));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -32,6 +40,10 @@ export function PlannerBlockForm({ defaultStart, onSubmit, onCancel, embedded = 
   useEffect(() => {
     if (defaultStart) setStartLocal(toLocalInput(defaultStart));
   }, [defaultStart?.getTime()]);
+
+  useEffect(() => {
+    setDuration(defaultDuration);
+  }, [defaultDuration]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -1,5 +1,6 @@
 import React from "react";
 import { reportClientLog } from "../../api/systemClient";
+import { copyClientErrorLog } from "../../lib/clientErrorLog";
 
 type Props = {
   children: React.ReactNode;
@@ -7,12 +8,13 @@ type Props = {
 
 type State = {
   error: Error | null;
+  copyStatus: string | null;
 };
 
 export class AppErrorBoundary extends React.Component<Props, State> {
-  state: State = { error: null };
+  state: State = { error: null, copyStatus: null };
 
-  static getDerivedStateFromError(error: Error): State {
+  static getDerivedStateFromError(error: Error): Partial<State> {
     return { error };
   }
 
@@ -37,13 +39,33 @@ export class AppErrorBoundary extends React.Component<Props, State> {
           <p className="text-xs text-red-400/90 font-mono max-w-lg truncate" title={this.state.error.message}>
             {this.state.error.message}
           </p>
-          <button
-            type="button"
-            onClick={() => window.location.reload()}
-            className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm hover:opacity-90"
-          >
-            Reload page
-          </button>
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm hover:opacity-90"
+            >
+              Reload page
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                void copyClientErrorLog().then((r) => {
+                  this.setState({
+                    copyStatus: r.ok
+                      ? `Copied ${r.count} error(s)`
+                      : r.error || "Copy failed",
+                  });
+                });
+              }}
+              className="px-4 py-2 rounded-lg border border-border text-sm hover:bg-muted"
+            >
+              Copy error log
+            </button>
+          </div>
+          {this.state.copyStatus ? (
+            <p className="text-xs text-muted-foreground">{this.state.copyStatus}</p>
+          ) : null}
         </div>
       );
     }

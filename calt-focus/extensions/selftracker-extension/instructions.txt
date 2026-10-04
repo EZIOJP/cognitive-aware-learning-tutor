@@ -1,41 +1,36 @@
 CALT SelfTracker — Microsoft Edge (Chromium MV3)
 ================================================
 
-Tracking / telemetry / Jarvis only. **Site blocking is CALT Gate.**
+Tracking only. **Site blocking is CALT Gate.**
 
 Folders (Load unpacked):
-  C:\Users\Lenovo\Desktop\Cognitive-Aware Learning Tutor\calt-gate-extension
-  C:\Users\Lenovo\Desktop\Cognitive-Aware Learning Tutor\selftracker-extension
+  …\calt-focus\extensions\calt-gate-extension
+  …\calt-focus\extensions\selftracker-extension
 
 Install BOTH in Microsoft Edge:
-1. Start CALT backend (run.bat) so http://127.0.0.1:8000 is up.
-2. edge://extensions → Developer mode ON
-3. Load unpacked → calt-gate-extension  (v1.0.2)
-4. Load unpacked → selftracker-extension (v1.5.23)
+1. edge://extensions → Developer mode ON
+2. Load unpacked → calt-gate-extension  (v1.0.8+)
+3. Load unpacked → selftracker-extension (v1.5.28+)
+4. Register native host with BOTH extension IDs:
 
-*** REQUIRED AFTER UPDATES — REMOVE + RELOAD ***
-If you see: importScripts … gate_policy.js failed to load (NetworkError):
-  1. edge://extensions → Remove BOTH extensions
-  2. Load unpacked again from the folders above
-  3. Confirm versions: Gate 1.0.2 · SelfTracker 1.5.23
+   powershell -File scripts\desktop_tracker\install\install_calt_msg_host.ps1 `
+     -ExtensionIds @('<GATE_ID>','<SELFTRACKER_ID>')
 
-Normal update (after code change):
-  powershell -File scripts\build_extension_workers.ps1
-  edge://extensions → Reload on both cards
+5. Ensure calt_enforcer.exe is running (SoftLand SoT). Study :8000 is NOT required.
 
-v1.5.23: Single service_worker.js bundle (fixes Edge importScripts NetworkError).
-v1.5.22: Active focused tab only; skip all localhost (CALT SPA owns presence).
-v1.5.21: Split — SelfTracker no longer does DNR/softLand (Edge crash load).
+After JS edits:
+  powershell -File scripts\build_extension_workers.ps1 -SkipSeedSync
+  edge://extensions → Reload both cards
 
-What SelfTracker does (v1.5.23):
-- Tracks **active focused** internet tab URLs/time → ws://localhost:8000/ws/behavior
-- Does **not** SESSION_END localhost / 127.0.0.1
-- Hidden tabs: no content-script telemetry
-- Jarvis toast + browser telemetry
+What SelfTracker does (v1.5.28):
+- Native track_tab → productivity.db (calt_msg_host)
+- Mode cache via get_softland_doc (same C++ SoftLand as Gate)
+- Optional Study :8000 only if storage caltGateHttpFallback / caltPythonTelemetry = true
 
-What CALT Gate does (v1.0.2):
-- Poll distraction-gate + DNR redirect watch hosts → locked.html
-- Soft-land skips localhost CALT SPA
-- FREE / day_unlimited: YouTube stays open
+What CALT Gate does (v1.0.8):
+- get_mode per navigation + DNR → locked.html
+- get_softland_doc for policy cache
+- Temp-allow 60s (extension-local)
+- Popup shows msg_host OK / DOWN
 
-Keep redirects enabled in the **CALT Gate** popup (not SelfTracker).
+Keep redirects enabled in the **CALT Gate** popup.

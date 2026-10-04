@@ -1,4 +1,6 @@
 #include "cmd_gateway.h"
+#include "day_loop.h"
+#include "device_block.h"
 #include "life_content.h"
 #include "plan_gate.h"
 #include "policy_db.h"
@@ -6,6 +8,7 @@
 #include "softland_publish.h"
 
 #include <windows.h>
+#include <sddl.h>
 
 #include <cctype>
 #include <cstdio>
@@ -26,6 +29,66 @@ std::string IsoLocalNow() {
   return buf;
 }
 
+/** Decode one JSON string escape (\n, \t, \uXXXX, …). Advances i past the sequence. */
+bool DecodeJsonEscape(const std::string& body, size_t& i, std::string* out) {
+  if (i >= body.size() || body[i] != '\\' || i + 1 >= body.size()) return false;
+  char e = body[++i];
+  ++i;
+  switch (e) {
+    case '"':
+    case '\\':
+    case '/':
+      out->push_back(e);
+      return true;
+    case 'b':
+      out->push_back('\b');
+      return true;
+    case 'f':
+      out->push_back('\f');
+      return true;
+    case 'n':
+      out->push_back('\n');
+      return true;
+    case 'r':
+      out->push_back('\r');
+      return true;
+    case 't':
+      out->push_back('\t');
+      return true;
+    case 'u': {
+      if (i + 4 > body.size()) return false;
+      unsigned code = 0;
+      for (int n = 0; n < 4; ++n) {
+        char c = body[i++];
+        code <<= 4;
+        if (c >= '0' && c <= '9')
+          code |= (unsigned)(c - '0');
+        else if (c >= 'a' && c <= 'f')
+          code |= (unsigned)(c - 'a' + 10);
+        else if (c >= 'A' && c <= 'F')
+          code |= (unsigned)(c - 'A' + 10);
+        else
+          return false;
+      }
+      // BMP only — enough for notes/emoji astral via surrogate pairs later if needed.
+      if (code < 0x80) {
+        out->push_back((char)code);
+      } else if (code < 0x800) {
+        out->push_back((char)(0xC0 | (code >> 6)));
+        out->push_back((char)(0x80 | (code & 0x3F)));
+      } else {
+        out->push_back((char)(0xE0 | (code >> 12)));
+        out->push_back((char)(0x80 | ((code >> 6) & 0x3F)));
+        out->push_back((char)(0x80 | (code & 0x3F)));
+      }
+      return true;
+    }
+    default:
+      out->push_back(e);
+      return true;
+  }
+}
+
 bool JsonGetString(const std::string& body, const char* key, std::string* out) {
   std::string needle = std::string("\"") + key + "\"";
   size_t p = body.find(needle);
@@ -38,15 +101,28 @@ bool JsonGetString(const std::string& body, const char* key, std::string* out) {
   ++i;
   std::string val;
   while (i < body.size() && body[i] != '"') {
-    if (body[i] == '\\' && i + 1 < body.size()) {
-      val.push_back(body[i + 1]);
-      i += 2;
+    if (body[i] == '\\') {
+      if (!DecodeJsonEscape(body, i, &val)) return false;
       continue;
     }
     val.push_back(body[i++]);
   }
   *out = val;
   return true;
+}
+
+bool LockModeIsStrong(const std::string& mode) {
+  return mode == "password" || mode == "phrase";
+}
+
+/** Unlock against *persisted* credentials (never against payload-mutated lock_mode). */
+bool RequirePersistedUnlock(const EnforcerSnapshot& prev, const std::string& provided) {
+  if (!LockModeIsStrong(prev.lock_mode)) return true;
+  const std::string& expect =
+      prev.lock_mode == "password" ? prev.unlock_password : prev.unlock_phrase;
+  // Fail closed: password/phrase mode with empty secret must not disarm.
+  if (expect.empty()) return false;
+  return provided == expect;
 }
 
 bool JsonGetBool(const std::string& body, const char* key, bool* out) {
@@ -294,6 +370,9 @@ std::string SaveAndPublish(ProductivitySoftland& s, const std::wstring& behavior
   if (!ProductivitySaveSoftland(s)) return "store_save_failed";
   ProductivityBumpSeq();
   PublishSoftlandMirror(behaviorDir, s);
+  // FE reads mirrors — refresh immediately after SoftLand writes (don't wait 1 min).
+  PublishDayStatusMirror(behaviorDir);
+  PublishDayLoopMirror(behaviorDir);
   return "";
 }
 
@@ -305,12 +384,176 @@ std::string HandleOp(const std::string& op, const std::string& payload,
 
   if (op == "status.snapshot" || op.empty()) return "";
 
+  if (op == "day.confirm_plan") {
+    return DayLoopConfirmPlan(behaviorDir, extraOut);
+  }
+  if (op == "day.loop_snapshot") {
+    std::wstring dataDir = behaviorDir;
+    size_t slash = dataDir.find_last_of(L"\\/");
+    if (slash != std::wstring::npos) dataDir = dataDir.substr(0, slash);
+    std::wstring dbPath = dataDir + L"\\productivity.db";
+    return DayLoopSnapshot(behaviorDir, dbPath, extraOut);
+  }
+  if (op == "day.evaluate_close") {
+    std::wstring dataDir = behaviorDir;
+    size_t slash = dataDir.find_last_of(L"\\/");
+    if (slash != std::wstring::npos) dataDir = dataDir.substr(0, slash);
+    std::wstring dbPath = dataDir + L"\\productivity.db";
+    return DayLoopEvaluateClose(behaviorDir, dbPath, extraOut);
+  }
+  if (op == "day.task_list") {
+    DayLoopEnsureSchema();
+    std::string date;
+    JsonGetString(payload, "date", &date);
+    int userId = 1;
+    JsonGetInt(payload, "user_id", &userId);
+    if (extraOut) *extraOut = ",\"tasks\":" + DayLoopTaskListJson(date, userId);
+    return "";
+  }
+  if (op == "day.task_upsert") {
+    DayLoopEnsureSchema();
+    int userId = 1;
+    JsonGetInt(payload, "user_id", &userId);
+    std::string out;
+    if (!DayLoopTaskUpsert(payload, userId, &out)) return "task_upsert_failed";
+    PublishDayLoopMirror(behaviorDir);
+    if (extraOut) *extraOut = ",\"task\":" + out;
+    return "";
+  }
+  if (op == "day.task_set_done") {
+    int userId = 1;
+    long long id = 0;
+    bool done = false;
+    JsonGetInt(payload, "user_id", &userId);
+    int idInt = 0;
+    if (JsonGetInt(payload, "id", &idInt)) id = idInt;
+    JsonGetBool(payload, "done", &done);
+    if (!DayLoopTaskSetDone(id, done, userId)) return "task_set_done_failed";
+    PublishDayLoopMirror(behaviorDir);
+    return "";
+  }
+  if (op == "day.task_delete") {
+    int userId = 1;
+    int idInt = 0;
+    JsonGetInt(payload, "user_id", &userId);
+    if (!JsonGetInt(payload, "id", &idInt)) return "bad_payload";
+    if (!DayLoopTaskDelete(idInt, userId)) return "task_delete_failed";
+    PublishDayLoopMirror(behaviorDir);
+    return "";
+  }
+  if (op == "softland.set_bedtime") {
+    return DayLoopSetBedtime(behaviorDir, payload);
+  }
+  if (op == "softland.emergency_winddown") {
+    return DayLoopEmergencyWinddown(behaviorDir, payload);
+  }
+  if (op == "plan.import_from_date") {
+    int userId = 1;
+    JsonGetInt(payload, "user_id", &userId);
+    return DayLoopImportFromDate(payload, userId, extraOut);
+  }
+
+  // Device lock (hosts) — independent of SoftLand SoT
+  if (op == "device_block.status") {
+    auto st = DeviceBlockStatus(behaviorDir);
+    if (extraOut) *extraOut = DeviceBlockStatusJsonExtra(st);
+    return "";
+  }
+  if (op == "device_block.save") {
+    DeviceBlockSettings patch;
+    DeviceBlockLoadSettings(behaviorDir, patch);
+    bool hasEnabled = false, hasPorn = false, hasWatch = false, hasSocial = false, hasExtra = false;
+    bool b = false;
+    if (JsonGetBool(payload, "enabled", &b)) {
+      patch.enabled = b;
+      hasEnabled = true;
+    }
+    if (JsonGetBool(payload, "block_porn", &b)) {
+      patch.block_porn = b;
+      hasPorn = true;
+    }
+    if (JsonGetBool(payload, "block_watch", &b)) {
+      patch.block_watch = b;
+      hasWatch = true;
+    }
+    if (JsonGetBool(payload, "block_social", &b)) {
+      patch.block_social = b;
+      hasSocial = true;
+    }
+    std::string confirm;
+    JsonGetString(payload, "confirm", &confirm);
+    std::string err;
+    if (!DeviceBlockPatchSettings(behaviorDir, patch, hasEnabled, hasPorn, hasWatch, hasSocial,
+                                  hasExtra, confirm, &err))
+      return err.empty() ? "save_failed" : err;
+    bool applyNow = false;
+    JsonGetBool(payload, "apply_now", &applyNow);
+    DeviceBlockApplyResult ar;
+    if (applyNow) {
+      DeviceBlockSettings s;
+      DeviceBlockLoadSettings(behaviorDir, s);
+      ar = s.enabled ? DeviceBlockApplyHosts(behaviorDir) : DeviceBlockRemoveHosts(behaviorDir);
+    }
+    auto st = DeviceBlockStatus(behaviorDir);
+    if (extraOut) {
+      *extraOut = DeviceBlockStatusJsonExtra(st);
+      if (applyNow) *extraOut += DeviceBlockApplyJsonExtra(ar);
+    }
+    return "";
+  }
+  if (op == "device_block.apply") {
+    std::string confirm;
+    JsonGetString(payload, "confirm", &confirm);
+    DeviceBlockSettings s;
+    DeviceBlockLoadSettings(behaviorDir, s);
+    if (!s.enabled) {
+      std::string err;
+      if (!DeviceBlockTrySetEnabled(behaviorDir, true, confirm, &err))
+        return err.empty() ? "confirm_required" : err;
+    }
+    auto ar = DeviceBlockApplyHosts(behaviorDir);
+    auto st = DeviceBlockStatus(behaviorDir);
+    if (extraOut) {
+      *extraOut = DeviceBlockStatusJsonExtra(st) + DeviceBlockApplyJsonExtra(ar);
+    }
+    if (!ar.ok) return ar.error.empty() ? "apply_failed" : ar.error;
+    return "";
+  }
+  if (op == "device_block.remove") {
+    std::string confirm;
+    JsonGetString(payload, "confirm", &confirm);
+    std::string err;
+    if (!DeviceBlockTrySetEnabled(behaviorDir, false, confirm, &err))
+      return err.empty() ? "confirm_required" : err;
+    auto ar = DeviceBlockRemoveHosts(behaviorDir);
+    auto st = DeviceBlockStatus(behaviorDir);
+    if (extraOut) {
+      *extraOut = DeviceBlockStatusJsonExtra(st) + DeviceBlockApplyJsonExtra(ar);
+    }
+    if (!ar.ok) return ar.error.empty() ? "remove_failed" : ar.error;
+    return "";
+  }
+  if (op == "device_block.refresh_list") {
+    bool force = false;
+    JsonGetBool(payload, "force", &force);
+    std::string kick = DeviceBlockRefreshListKick(behaviorDir, force);
+    if (extraOut) *extraOut = ",\"refresh\":\"" + kick + "\"";
+    return "";
+  }
+
   ProductivitySoftland s;
   if (!ProductivityLoadSoftland(s)) return "store_load_failed";
 
   if (op == "softland.set_enabled") {
     bool en = false;
     if (!JsonGetBool(payload, "enabled", &en)) return "bad_payload";
+    // Commitment friction: turning SoftLand *off* requires typed confirm (server-enforced).
+    // Matches Focus UI prompt ("UNLOCK"). Pipe clients cannot skip this.
+    if (!en && s.softland_enabled) {
+      if (!ConfirmMatches(payload, "UNLOCK")) return "confirm_required";
+    }
+    // Turning SoftLand *on* before Bible + Confirm today is the morning gate itself —
+    // allowed. Arm stays separate (only day.confirm_plan / reward / pass couple Arm).
     s.softland_enabled = en;
     s.updated_at = IsoLocalNow();
     ProductivityApplyCacheToDocument(s);
@@ -451,17 +694,23 @@ std::string HandleOp(const std::string& op, const std::string& payload,
   if (op == "day.grant_pass") {
     if (!ConfirmMatches(payload, "PASS")) return "confirm_required";
     const std::string today = ProductivityLocalDate();
+    if (!DayLoopBibleDoneToday(s.document_json)) return "bible_required";
     const bool already = ProductivityPassGrantedToday();
     if (!already && ProductivityPassesUsedThisWeek() >= 2) return "pass_quota_exhausted";
     if (!already && !ProductivityInsertPass(today, ProductivityWeekStart()))
       return "store_save_failed";
 
     // One free-window mechanism: SoftLand decide already honours free_until.
+    s.softland_enabled = true;
     s.free_until = EndOfLocalDayIso();
     std::string obj = "{\"date\": \"" + today + "\", \"spent\": true, \"remaining_seconds\": 0}";
     if (!ProductivityReplaceJsonValue(s.document_json, "day_pass", obj)) return "policy_key_missing";
+    ProductivityReplaceJsonValue(s.document_json, "plan_confirmed", "true");
+    ProductivityReplaceJsonValue(s.document_json, "plan_confirmed_for_date",
+                                 std::string("\"") + today + "\"");
     std::string err = SaveAndPublish(s, behaviorDir);
     if (!err.empty()) return err;
+    DayLoopClearStudyTempKills(behaviorDir);
     if (!already) ProductivityLedgerAdd("day_pass", 0, "day pass granted " + today, "gateway");
     return "";
   }
@@ -526,23 +775,30 @@ std::string HandleOp(const std::string& op, const std::string& payload,
                ",\"balance_seconds\":" + std::to_string(s.earned_ledger_seconds) +
                ",\"free_until\":" + (s.free_until.empty() ? "null" : "\"" + s.free_until + "\"") +
                ",\"reward_day_active\":" + (s.reward_day_active ? "true" : "false");
+      PublishDayStatusMirror(behaviorDir);
     }
     if (extraOut) *extraOut = extra;
     return "";
   }
   if (op == "reward.claim") {
     if (!ConfirmMatches(payload, "REWARD")) return "confirm_required";
+    const std::string today = ProductivityLocalDate();
+    if (!DayLoopBibleDoneToday(s.document_json)) return "bible_required";
     const int qualified = ProductivityRewardCount("qualified");
     const int used = ProductivityRewardCount("used");
     const int available = qualified / 4 + ProductivityRewardGranted() - used;
     if (available <= 0) return "no_reward_available";
     if (s.reward_day_active) return "already_unlocked";
-    const std::string today = ProductivityLocalDate();
     if (!ProductivityRewardMark("used", today)) return "store_save_failed";
     s.reward_day_active = true;
+    s.softland_enabled = true;
     s.free_until = EndOfLocalDayIso();
+    ProductivityReplaceJsonValue(s.document_json, "plan_confirmed", "true");
+    ProductivityReplaceJsonValue(s.document_json, "plan_confirmed_for_date",
+                                 std::string("\"") + today + "\"");
     std::string err = SaveAndPublish(s, behaviorDir);
     if (!err.empty()) return err;
+    DayLoopClearStudyTempKills(behaviorDir);
     ProductivityLedgerAdd("reward_day", 0, "reward day claimed " + today, "gateway");
     return "";
   }
@@ -652,6 +908,7 @@ std::string HandleOp(const std::string& op, const std::string& payload,
     std::string blockJson;
     if (!ProductivityPlanUpsert(payload, userId, &blockJson) || blockJson.empty())
       return "store_save_failed";
+    PublishPlanBlocksMirror(behaviorDir);
     if (extraOut) *extraOut = ",\"block\":" + blockJson;
     return "";
   }
@@ -662,6 +919,7 @@ std::string HandleOp(const std::string& op, const std::string& payload,
     JsonGetInt(payload, "user_id", &userId);
     if (userId <= 0) userId = 1;
     if (!ProductivityPlanDelete(id, userId)) return "not_found";
+    PublishPlanBlocksMirror(behaviorDir);
     if (extraOut) *extraOut = ",\"deleted\":true,\"block_id\":" + std::to_string(id);
     return "";
   }
@@ -728,20 +986,8 @@ std::string HandleOp(const std::string& op, const std::string& payload,
     return "";
   }
   if (op == "plan.roll_forward") {
-    int id = 0;
-    int userId = 1;
-    std::string newStart;
-    if (!JsonGetInt(payload, "id", &id) || id <= 0) return "bad_payload";
-    JsonGetInt(payload, "user_id", &userId);
-    if (userId <= 0) userId = 1;
-    JsonGetString(payload, "new_start", &newStart);
-    std::string rolled, neu;
-    if (!ProductivityPlanRollForward(id, userId, newStart, &rolled, &neu) || rolled.empty())
-      return "not_found";
-    if (extraOut)
-      *extraOut = ",\"rolled_block\":" + rolled + ",\"new_block\":" +
-                  (neu.empty() ? "null" : neu);
-    return "";
+    // Product rule: unfinished plans do not carry to tomorrow/today.
+    return "carry_disabled";
   }
   if (op == "routine.apply") {
     int userId = 1;
@@ -858,6 +1104,7 @@ std::string HandleOp(const std::string& op, const std::string& payload,
       int userId = 1;
       JsonGetInt(payload, "user_id", &userId);
       if (userId <= 0) userId = 1;
+      PublishBibleDevotionMirror(behaviorDir, bibleDir, userId);
       if (extraOut) *extraOut = ",\"devotion\":" + LifeBibleDevotionTodayJson(userId, bibleDir);
       return "";
     }
@@ -887,6 +1134,49 @@ std::string HandleOp(const std::string& op, const std::string& payload,
       if (extraOut) *extraOut = ",\"devotion\":" + out;
       return "";
     }
+    if (op == "bible.devotion.assign") {
+      int userId = 1;
+      std::string slot, book;
+      int chapter = 1;
+      JsonGetInt(payload, "user_id", &userId);
+      if (userId <= 0) userId = 1;
+      JsonGetString(payload, "slot", &slot);
+      JsonGetString(payload, "book", &book);
+      JsonGetInt(payload, "chapter", &chapter);
+      std::string out;
+      if (!LifeBibleDevotionAssign(userId, slot, book, chapter, bibleDir, &out))
+        return "devotion_failed";
+      if (extraOut) *extraOut = ",\"devotion\":" + out;
+      return "";
+    }
+    if (op == "bible.devotion.step") {
+      int userId = 1;
+      std::string slot;
+      int delta = 1;
+      JsonGetInt(payload, "user_id", &userId);
+      if (userId <= 0) userId = 1;
+      JsonGetString(payload, "slot", &slot);
+      JsonGetInt(payload, "delta", &delta);
+      std::string out;
+      if (!LifeBibleDevotionStep(userId, slot, delta, bibleDir, &out)) return "devotion_failed";
+      if (extraOut) *extraOut = ",\"devotion\":" + out;
+      return "";
+    }
+    if (op == "bible.devotion.prayer") {
+      int userId = 1;
+      std::string slot, text;
+      bool reset = false;
+      JsonGetInt(payload, "user_id", &userId);
+      if (userId <= 0) userId = 1;
+      JsonGetString(payload, "slot", &slot);
+      JsonGetString(payload, "text", &text);
+      JsonGetBool(payload, "reset", &reset);
+      std::string out;
+      if (!LifeBibleDevotionPrayer(userId, slot, text, reset, bibleDir, &out))
+        return "devotion_failed";
+      if (extraOut) *extraOut = ",\"devotion\":" + out;
+      return "";
+    }
   }
 
   if (op == "arm.set") {
@@ -902,6 +1192,10 @@ std::string HandleOp(const std::string& op, const std::string& payload,
       dbPath = dataDir + L"\\vocab_app.db";  // legacy
     }
     LoadEnforcerSnapshot(dbPath, cur, loadErr);
+
+    // Snapshot *persisted* commitment state before any payload mutation.
+    const EnforcerSnapshot prev = cur;
+    const bool wasArmedOrLocked = prev.armed || prev.locked;
 
     bool armed = cur.armed;
     bool locked = cur.locked;
@@ -921,21 +1215,26 @@ std::string HandleOp(const std::string& op, const std::string& payload,
     JsonGetBool(payload, "protect_uninstall", &protect);
 
     std::string mode, pwd, phrase, provided;
-    if (JsonGetString(payload, "lock_mode", &mode) && !mode.empty())
-      cur.lock_mode = mode;
-    else if (cur.lock_mode.empty())
-      cur.lock_mode = "none";
+    const bool hasMode = JsonGetString(payload, "lock_mode", &mode) && !mode.empty();
     JsonGetString(payload, "unlock_password", &pwd);
     JsonGetString(payload, "unlock_phrase", &phrase);
     JsonGetString(payload, "provided_unlock", &provided);
     int lockUntil = 0;
     if (JsonGetInt(payload, "lock_until_unix", &lockUntil)) cur.lock_until_unix = lockUntil;
 
-    if (!armed && (cur.lock_mode == "password" || cur.lock_mode == "phrase")) {
-      const std::string& expect =
-          cur.lock_mode == "password" ? cur.unlock_password : cur.unlock_phrase;
-      if (!expect.empty() && provided != expect) return "unlock_failed";
+    const bool disarming = !armed && wasArmedOrLocked;
+    const bool weakeningLock =
+        hasMode && LockModeIsStrong(prev.lock_mode) && !LockModeIsStrong(mode);
+    // Gate unlock against *previous* lock_mode/secret — never against payload lock_mode.
+    // Prevents: {"armed":false,"lock_mode":"none"} clearing password then skipping the check.
+    if ((disarming || weakeningLock) && LockModeIsStrong(prev.lock_mode)) {
+      if (!RequirePersistedUnlock(prev, provided)) return "unlock_failed";
     }
+
+    if (hasMode)
+      cur.lock_mode = mode;
+    else if (cur.lock_mode.empty())
+      cur.lock_mode = "none";
 
     // exes array
     size_t exesKey = payload.find("\"exes\"");
@@ -951,9 +1250,8 @@ std::string HandleOp(const std::string& op, const std::string& payload,
             size_t j = i + 1;
             std::string tok;
             while (j < arr.size() && arr[j] != '"') {
-              if (arr[j] == '\\' && j + 1 < arr.size()) {
-                tok.push_back(arr[j + 1]);
-                j += 2;
+              if (arr[j] == '\\') {
+                if (!DecodeJsonEscape(arr, j, &tok)) break;
                 continue;
               }
               tok.push_back(arr[j++]);
@@ -971,6 +1269,16 @@ std::string HandleOp(const std::string& op, const std::string& payload,
       }
     }
 
+    // Changing stored secrets while strong-locked also requires unlock.
+    if (LockModeIsStrong(prev.lock_mode) && wasArmedOrLocked) {
+      bool secretChange = false;
+      if (prev.lock_mode == "password" && !pwd.empty() && pwd != prev.unlock_password)
+        secretChange = true;
+      if (prev.lock_mode == "phrase" && !phrase.empty() && phrase != prev.unlock_phrase)
+        secretChange = true;
+      if (secretChange && !RequirePersistedUnlock(prev, provided)) return "unlock_failed";
+    }
+
     if (!pwd.empty()) cur.unlock_password = pwd;
     if (!phrase.empty()) cur.unlock_phrase = phrase;
     cur.armed = armed;
@@ -979,7 +1287,19 @@ std::string HandleOp(const std::string& op, const std::string& payload,
     cur.anti_tamper = anti;
     if (cur.lock_mode.empty()) cur.lock_mode = "none";
 
+    // Disarmed policy must not keep a strong lock_mode. ApplyStickyLock re-arms on
+    // the next tick if password/phrase mode remains while hard_block_armed is false
+    // (provided_unlock is not persisted in the JSON mirror). Comment in policy_db:
+    // "API clears mode on success." Keep unlock_password/phrase so the next Arm can
+    // re-enable the same secret without retyping.
+    if (!cur.armed) {
+      cur.lock_mode = "none";
+      cur.locked = false;
+    }
+
     if (!WriteEnforcerPolicyJson(polPath, cur, anti, protect)) return "arm_write_failed";
+    // Keep SQLite enforcer_runtime aligned with JSON (JSON remains authoritative).
+    SyncEnforcerRuntimeSqlite(dbPath, cur);
     ProductivityBumpSeq();
     return "";
   }
@@ -988,23 +1308,43 @@ std::string HandleOp(const std::string& op, const std::string& payload,
 
 void EnsurePipe() {
   if (gPipe != INVALID_HANDLE_VALUE) return;
+  // LocalSystem service default DACL denies interactive user clients (Focus /
+  // msg-host / scripts) — Access denied (5). Allow SYSTEM + Admins + Interactive
+  // + Authenticated Users to connect on this machine-local control pipe.
+  PSECURITY_DESCRIPTOR sd = nullptr;
+  SECURITY_ATTRIBUTES* psa = nullptr;
+  SECURITY_ATTRIBUTES sa{};
+  if (ConvertStringSecurityDescriptorToSecurityDescriptorW(
+          L"D:(A;;GA;;;SY)(A;;GA;;;BA)(A;;GA;;;IU)(A;;GA;;;AU)", SDDL_REVISION_1, &sd, nullptr) &&
+      sd) {
+    sa.nLength = sizeof(sa);
+    sa.lpSecurityDescriptor = sd;
+    sa.bInheritHandle = FALSE;
+    psa = &sa;
+  }
+  // Two instances: one live listener + one spare while recycling (no listen gap).
+  // PIPE_NOWAIT: never block the kill/track loop waiting for a client.
   gPipe = CreateNamedPipeW(kPipeName, PIPE_ACCESS_DUPLEX,
-                           PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE | PIPE_NOWAIT, 1, 64 * 1024,
-                           64 * 1024, 0, nullptr);
+                           PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE | PIPE_NOWAIT, 2, 64 * 1024,
+                           64 * 1024, 0, psa);
+  if (sd) LocalFree(sd);
 }
 
 /**
- * Recycle the single pipe instance and start listening again immediately —
- * without this a client connecting between two polls sees a broken pipe.
+ * Recycle the listening instance. Create the next listener BEFORE closing the
+ * old handle so clients never see a gap (that gap was a common Focus timeout).
  */
 void ResetPipe() {
-  if (gPipe != INVALID_HANDLE_VALUE) {
-    DisconnectNamedPipe(gPipe);
-    CloseHandle(gPipe);
-    gPipe = INVALID_HANDLE_VALUE;
-  }
+  HANDLE old = gPipe;
+  gPipe = INVALID_HANDLE_VALUE;
   EnsurePipe();
-  if (gPipe != INVALID_HANDLE_VALUE) ConnectNamedPipe(gPipe, nullptr);
+  if (gPipe != INVALID_HANDLE_VALUE) {
+    ConnectNamedPipe(gPipe, nullptr);  // arm listen (may return ERROR_PIPE_CONNECTED)
+  }
+  if (old != INVALID_HANDLE_VALUE) {
+    DisconnectNamedPipe(old);
+    CloseHandle(old);
+  }
 }
 
 }  // namespace
@@ -1014,7 +1354,10 @@ std::string GatewayApplyOp(const std::string& op, const std::string& payloadJson
   return HandleOp(op, payloadJson, behaviorDir, nullptr);
 }
 
-void CmdGatewayInit() { EnsurePipe(); }
+void CmdGatewayInit() {
+  EnsurePipe();
+  if (gPipe != INVALID_HANDLE_VALUE) ConnectNamedPipe(gPipe, nullptr);
+}
 
 void CmdGatewayShutdown() {
   if (gPipe != INVALID_HANDLE_VALUE) {
@@ -1024,51 +1367,55 @@ void CmdGatewayShutdown() {
 }
 
 void CmdGatewayPoll(const std::wstring& behaviorDir) {
-  EnsurePipe();
-  if (gPipe == INVALID_HANDLE_VALUE) return;
+  // Serve a burst of waiting clients, but stop as soon as no one is connected
+  // so we never open extra idle instances.
+  for (int n = 0; n < 4; ++n) {
+    EnsurePipe();
+    if (gPipe == INVALID_HANDLE_VALUE) return;
 
-  BOOL connected = ConnectNamedPipe(gPipe, nullptr) ? TRUE : (GetLastError() == ERROR_PIPE_CONNECTED);
-  if (!connected) {
-    DWORD err = GetLastError();
-    if (err != ERROR_PIPE_CONNECTED) return;
+    BOOL connected =
+        ConnectNamedPipe(gPipe, nullptr) ? TRUE : (GetLastError() == ERROR_PIPE_CONNECTED);
+    if (!connected) {
+      return;  // still listening / no client
+    }
+
+    char buf[64 * 1024];
+    DWORD read = 0;
+    if (!ReadFile(gPipe, buf, sizeof(buf) - 1, &read, nullptr) || read == 0) {
+      if (GetLastError() != ERROR_NO_DATA) ResetPipe();
+      return;
+    }
+    buf[read] = 0;
+    std::string req(buf, read);
+    std::string op, id;
+    JsonGetString(req, "op", &op);
+    JsonGetString(req, "id", &id);
+    std::string payload = ExtractPayload(req);
+    std::string extra;
+    std::string err = HandleOp(op, payload, behaviorDir, &extra);
+
+    ProductivitySoftland s;
+    ProductivityLoadSoftland(s);
+    ProductivityGatewayMeta meta;
+    ProductivityLoadMeta(meta);
+
+    std::string freeJs = s.free_until.empty() ? "null" : ("\"" + s.free_until + "\"");
+    std::string incJs = s.incubation_until.empty() ? "null" : ("\"" + s.incubation_until + "\"");
+    std::string out;
+    if (err.empty()) {
+      out = std::string("{\"ok\":true,\"id\":\"") + id + "\",\"gateway_seq\":" +
+            std::to_string(meta.gateway_seq) + ",\"as_of\":\"" + IsoLocalNow() +
+            "\",\"softland_enabled\":" + (s.softland_enabled ? "true" : "false") +
+            ",\"free_until\":" + freeJs + ",\"incubation_until\":" + incJs +
+            ",\"reward_day_active\":" + (s.reward_day_active ? "true" : "false") +
+            ",\"earned_ledger_seconds\":" + std::to_string(s.earned_ledger_seconds) + extra + "}";
+    } else {
+      out = std::string("{\"ok\":false,\"id\":\"") + id + "\",\"error\":\"" + err + "\"}";
+    }
+
+    DWORD written = 0;
+    WriteFile(gPipe, out.data(), (DWORD)out.size(), &written, nullptr);
+    FlushFileBuffers(gPipe);
+    ResetPipe();
   }
-
-  char buf[64 * 1024];
-  DWORD read = 0;
-  if (!ReadFile(gPipe, buf, sizeof(buf) - 1, &read, nullptr) || read == 0) {
-    if (GetLastError() != ERROR_NO_DATA) ResetPipe();
-    return;
-  }
-  buf[read] = 0;
-  std::string req(buf, read);
-  std::string op, id;
-  JsonGetString(req, "op", &op);
-  JsonGetString(req, "id", &id);
-  std::string payload = ExtractPayload(req);
-  std::string extra;
-  std::string err = HandleOp(op, payload, behaviorDir, &extra);
-
-  ProductivitySoftland s;
-  ProductivityLoadSoftland(s);
-  ProductivityGatewayMeta meta;
-  ProductivityLoadMeta(meta);
-
-  std::string freeJs = s.free_until.empty() ? "null" : ("\"" + s.free_until + "\"");
-  std::string incJs = s.incubation_until.empty() ? "null" : ("\"" + s.incubation_until + "\"");
-  std::string out;
-  if (err.empty()) {
-    out = std::string("{\"ok\":true,\"id\":\"") + id + "\",\"gateway_seq\":" +
-          std::to_string(meta.gateway_seq) + ",\"as_of\":\"" + IsoLocalNow() +
-          "\",\"softland_enabled\":" + (s.softland_enabled ? "true" : "false") +
-          ",\"free_until\":" + freeJs + ",\"incubation_until\":" + incJs +
-          ",\"reward_day_active\":" + (s.reward_day_active ? "true" : "false") +
-          ",\"earned_ledger_seconds\":" + std::to_string(s.earned_ledger_seconds) + extra + "}";
-  } else {
-    out = std::string("{\"ok\":false,\"id\":\"") + id + "\",\"error\":\"" + err + "\"}";
-  }
-
-  DWORD written = 0;
-  WriteFile(gPipe, out.data(), (DWORD)out.size(), &written, nullptr);
-  FlushFileBuffers(gPipe);
-  ResetPipe();
 }

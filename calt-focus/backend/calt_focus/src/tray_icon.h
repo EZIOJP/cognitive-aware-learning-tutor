@@ -15,9 +15,13 @@ class TrayIcon {
   ~TrayIcon();
 
   bool Create(HWND messageHwnd, HICON icon, const wchar_t* tip);
+  /** Re-add after explorer restart / failed first add. */
+  bool EnsureAdded();
   void Destroy();
   void SetTooltip(const wchar_t* tip);
   void ShowBalloon(const wchar_t* title, const wchar_t* body);
+  bool IsAdded() const;
+  void PopupMenu();
 
   void SetOnRun(Callback cb) { on_run_ = std::move(cb); }
   void SetOnStartStack(Callback cb) { on_stack_ = std::move(cb); }
@@ -32,6 +36,7 @@ class TrayIcon {
   void SetOnUpdateUi(Callback cb) { on_update_ui_ = std::move(cb); }
   void SetOnUpdateStack(Callback cb) { on_update_stack_ = std::move(cb); }
   void SetOnApplyUpdate(Callback cb) { on_apply_update_ = std::move(cb); }
+  void SetOnRestartEnforcer(Callback cb) { on_restart_enforcer_ = std::move(cb); }
   void SetOnQuit(Callback cb) { on_quit_ = std::move(cb); }
 
   LRESULT HandleMessage(UINT msg, WPARAM wParam, LPARAM lParam);
@@ -50,13 +55,14 @@ class TrayIcon {
   static constexpr UINT ID_UPDATE_UI = 4011;
   static constexpr UINT ID_UPDATE_STACK = 4012;
   static constexpr UINT ID_APPLY_UPDATE = 4013;
+  static constexpr UINT ID_RESTART_ENFORCER = 4014;
   static constexpr UINT ID_QUIT = 4003;
 
  private:
-  void PopupMenu();
-
   NOTIFYICONDATAW nid_{};
   HWND hwnd_ = nullptr;
+  HICON icon_ = nullptr;
+  wchar_t tip_[128]{};
   bool added_ = false;
   Callback on_run_;
   Callback on_stack_;
@@ -71,5 +77,6 @@ class TrayIcon {
   Callback on_update_ui_;
   Callback on_update_stack_;
   Callback on_apply_update_;
+  Callback on_restart_enforcer_;
   Callback on_quit_;
 };

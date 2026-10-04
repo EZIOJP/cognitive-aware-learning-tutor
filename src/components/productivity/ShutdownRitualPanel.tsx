@@ -4,7 +4,6 @@ import type { DesktopStats, GoalsStatusResponse } from "../../api/behaviorClient
 import {
   deletePlannerBlock,
   fetchPlannerBlocks,
-  rollForwardPlannerBlock,
   type AdherenceSummary,
   type PlannerBlock,
 } from "../../api/plannerClient";
@@ -34,13 +33,6 @@ function endOfDay(d: Date): Date {
   return x;
 }
 
-function tomorrowNineAm(from: Date): Date {
-  const t = new Date(from);
-  t.setDate(t.getDate() + 1);
-  t.setHours(9, 0, 0, 0);
-  return t;
-}
-
 function toDayIso(d: Date): string {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, "0");
@@ -48,7 +40,7 @@ function toDayIso(d: Date): string {
   return `${y}-${m}-${day}`;
 }
 
-type BlockAction = "roll" | "drop" | "keep";
+type BlockAction = "drop" | "keep";
 
 type Props = {
   day: Date;
@@ -97,7 +89,7 @@ export function ShutdownRitualPanel({
       const next: Record<number, BlockAction> = {};
       for (const b of data) {
         if (b.status !== "done" && b.status !== "cancelled" && b.status !== "rolled") {
-          next[b.id] = "roll";
+          next[b.id] = "drop";
         }
       }
       setActions(next);
@@ -122,25 +114,20 @@ export function ShutdownRitualPanel({
   const finish = async () => {
     setBusy(true);
     setError(null);
-    const carried: string[] = [];
     let dropped = 0;
     try {
-      let slot = tomorrowNineAm(day);
       for (const block of incomplete) {
-        const act = actions[block.id] ?? "keep";
-        if (act === "roll") {
-          await rollForwardPlannerBlock(block.id, slot.toISOString());
-          carried.push(block.title);
-          slot = new Date(slot.getTime() + (block.planned_minutes || 60) * 60_000);
-        } else if (act === "drop") {
+        const act = actions[block.id] ?? "drop";
+        if (act === "drop") {
           await deletePlannerBlock(block.id);
           dropped += 1;
         }
+        // "keep" leaves the block on today's date — never roll to tomorrow.
       }
       const record: ShutdownRecord = {
         date: dayIso,
         reflection: reflection.trim(),
-        carriedTitles: carried,
+        carriedTitles: [],
         droppedCount: dropped,
         completedAt: new Date().toISOString(),
       };
@@ -165,9 +152,14 @@ export function ShutdownRitualPanel({
         <div className="flex items-center gap-2 text-sm text-indigo-100">
           <MoonStar size={16} className="text-indigo-300 shrink-0" />
           {done ? (
-            <span>Shutdown complete for this day — carried {loadLastShutdown()?.carriedTitles.length ?? 0} to tomorrow.</span>
+            <span>
+              Shutdown complete for this day
+              {(loadLastShutdown()?.droppedCount ?? 0) > 0
+                ? ` — dropped ${loadLastShutdown()?.droppedCount} incomplete.`
+                : "."}
+            </span>
           ) : (
-            <span>End-of-day shutdown — review plan vs actual and carry tasks forward.</span>
+            <span>End-of-day shutdown — review plan vs actual. Incomplete blocks are not carried forward.</span>
           )}
         </div>
         {!done ? (
@@ -236,7 +228,7 @@ export function ShutdownRitualPanel({
                   {formatHoursMins(b.remaining_minutes || b.planned_minutes)}
                 </span>
                 <select
-                  value={actions[b.id] ?? "roll"}
+                  value={actions[b.id] ?? "drop"}
                   onChange={(e) =>
                     setActions((prev) => ({
                       ...prev,
@@ -245,9 +237,8 @@ export function ShutdownRitualPanel({
                   }
                   className="rounded-md border border-white/10 bg-black/40 px-2 py-1 text-xs"
                 >
-                  <option value="roll">Move to tomorrow</option>
-                  <option value="keep">Keep today</option>
-                  <option value="drop">Drop</option>
+                  <option value="drop">Drop (no carry)</option>
+                  <option value="keep">Leave on today</option>
                 </select>
               </div>
             ))

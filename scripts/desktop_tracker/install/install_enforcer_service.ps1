@@ -3,8 +3,12 @@
 # Preferred no-admin (recommended for daily use):
 #   powershell -ExecutionPolicy Bypass -File scripts\desktop_tracker\install\install_enforcer_service.ps1 -Start
 #
-# Real Windows Service (admin + native binary):
+# Real Windows Service (admin + native binary) — USE THIS for commitment / anti-impulse:
 #   powershell -File scripts\desktop_tracker\install\install_native_enforcer.ps1
+# The default Scheduled Task runs as the logged-in user and can be removed with:
+#   Unregister-ScheduledTask -TaskName "CALT Enforcer" -Confirm:$false
+# That is not a password-protected commitment device. Prefer the Admin Service when
+# resisting self-bypass matters.
 #
 # Foreground debug:
 #   scripts\desktop_tracker\run\run_native_enforcer_console.bat
@@ -81,7 +85,13 @@ $settings = New-ScheduledTaskSettingsSet `
   -RestartInterval (New-TimeSpan -Minutes 1) `
   -ExecutionTimeLimit ([TimeSpan]::Zero) `
   -Hidden
-$principal = New-ScheduledTaskPrincipal -UserId $env:USERNAME -LogonType Interactive -RunLevel Limited
+
+# Highest only works when this script is elevated; otherwise fall back to Limited.
+$identity = [Security.Principal.WindowsIdentity]::GetCurrent()
+$principalCheck = New-Object Security.Principal.WindowsPrincipal($identity)
+$elevated = $principalCheck.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+$runLevel = if ($elevated) { "Highest" } else { "Limited" }
+$principal = New-ScheduledTaskPrincipal -UserId $env:USERNAME -LogonType Interactive -RunLevel $runLevel
 $logon = New-ScheduledTaskTrigger -AtLogOn -User $env:USERNAME
 
 Register-ScheduledTask `
@@ -93,11 +103,13 @@ Register-ScheduledTask `
   -Force | Out-Null
 
 Write-Host "  WorkDir: $Root"
+Write-Host "  RunLevel: $runLevel$(if (-not $elevated) { ' (not elevated — task is user-removable)' })"
 Write-Host "  Restart-on-crash: RestartCount=999 / RestartInterval=1min (Task Scheduler)"
 Write-Host "  NOTE: While the task/process is restarting, Arm kills briefly fail-open;"
 Write-Host "        SoftLand decide still works via calt_msg_host + softland_policy.json."
-Write-Host "  Control UI: /productivity/focus (web) via run\run_calt_desktop.bat"
-Write-Host "  Admin Windows Service (optional): install\install_native_enforcer.ps1"
+Write-Host "  COMMITMENT: for password-grade stay-alive use Admin Service:"
+Write-Host "        install\install_native_enforcer.ps1"
+Write-Host "  Control UI: Focus tray via run\run_calt_desktop.bat"
 
 if ($Start) {
   Start-ScheduledTask -TaskName $TaskName

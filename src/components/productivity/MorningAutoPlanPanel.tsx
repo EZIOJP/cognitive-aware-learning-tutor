@@ -20,12 +20,6 @@ import {
   GOALS_UPDATED_EVENT,
   loadProductivityGoals,
 } from "./ProductivityGoalsPanel";
-import {
-  carriedTitlesForMorning,
-  formatShutdownDayLabel,
-  loadLastShutdown,
-  SHUTDOWN_UPDATED_EVENT,
-} from "./shutdownPrefs";
 import { checkPlanOvercommit } from "./planCapacityUtils";
 
 function startOfDay(d: Date): Date {
@@ -198,18 +192,6 @@ export function MorningAutoPlanPanel({
 
   const planExists = morning?.auto_plan?.reason === "plan_exists";
 
-  const [carriedFromShutdown, setCarriedFromShutdown] = useState<string[]>(() =>
-    carriedTitlesForMorning(),
-  );
-  useEffect(() => {
-    const refresh = () => setCarriedFromShutdown(carriedTitlesForMorning());
-    refresh();
-    window.addEventListener(SHUTDOWN_UPDATED_EVENT, refresh);
-    return () => window.removeEventListener(SHUTDOWN_UPDATED_EVENT, refresh);
-  }, [refreshKey]);
-
-  const lastShutdown = loadLastShutdown();
-
   const mode = useMemo(
     () =>
       browserModeHint({
@@ -257,17 +239,6 @@ export function MorningAutoPlanPanel({
 
   return (
     <div className="space-y-3">
-      {carriedFromShutdown.length > 0 && lastShutdown ? (
-        <div className="rounded-xl border border-indigo-500/30 bg-indigo-500/10 px-3 py-2 text-[11px] text-indigo-100">
-          <p className="font-medium">Carried from {formatShutdownDayLabel(lastShutdown.date)} shutdown</p>
-          <ul className="mt-1 list-disc list-inside text-muted-foreground">
-            {carriedFromShutdown.map((t) => (
-              <li key={t}>{t}</li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
-
       {mode && (
         <div
           className={`rounded-xl border px-3 py-2 text-[11px] ${

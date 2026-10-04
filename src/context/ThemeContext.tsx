@@ -28,13 +28,28 @@ import {
   type TopbarTitleStyleId,
   type TopbarTitleFontId,
   type TopbarTitleSizeId,
+  type SidebarStickerFontId,
+  type SidebarStickerLayers,
+  type SidebarStickerSavedPreset,
   STUDY_DEFAULT_LAYERS,
   PRESET_LAYER_BUNDLES,
   mergeLayerBundle,
   TOPBAR_TITLE_DEFAULTS,
+  SIDEBAR_STICKER_DEFAULTS,
+  SIDEBAR_STICKER_LAYER_DEFAULTS,
+  SIDEBAR_STICKER_FONTS,
+  SIDEBAR_STICKER_LAYER_PRESETS,
+  clampSidebarStickerScale,
+  cloneSidebarStickerLayers,
+  coerceSidebarStickerLayers,
+  normalizeSidebarStickerLayers,
+  isHexColor,
 } from "../theme/layers";
+import { ContourStickerFilterDefs } from "../components/theme/ContourStickerFilterDefs";
 
 const TOPBAR_TITLE_PREF_VERSION = "5";
+const SIDEBAR_STICKER_FONT_IDS = new Set(SIDEBAR_STICKER_FONTS.map((f) => f.id));
+const CUSTOM_PRESETS_KEY = "sidebarStickerCustomPresets";
 
 function loadTopbarTitleStyle(): TopbarTitleStyleId {
   const migrated = localStorage.getItem("topbarTitlePrefsV");
@@ -62,6 +77,87 @@ function loadTopbarTitleSize(): TopbarTitleSizeId {
   return TOPBAR_TITLE_DEFAULTS.size;
 }
 
+function loadSidebarStickerFont(): SidebarStickerFontId {
+  const raw = localStorage.getItem("sidebarStickerFont") as SidebarStickerFontId | null;
+  if (raw && SIDEBAR_STICKER_FONT_IDS.has(raw)) return raw;
+  return SIDEBAR_STICKER_DEFAULTS.font;
+}
+
+function loadSidebarStickerScale(): number {
+  const raw = localStorage.getItem("sidebarStickerScale");
+  if (raw != null && raw !== "") return clampSidebarStickerScale(raw);
+  return SIDEBAR_STICKER_DEFAULTS.scale;
+}
+
+function loadSidebarStickerCoreFill(): string {
+  // One-shot: migrate to rings model + reset stale fill-preset keys.
+  if (localStorage.getItem("sidebarStickerContourV") !== "3") {
+    const prevLayers = localStorage.getItem("sidebarStickerLayers");
+    localStorage.setItem("sidebarStickerContourV", "3");
+    if (!localStorage.getItem("sidebarStickerCoreFill")) {
+      localStorage.setItem("sidebarStickerCoreFill", SIDEBAR_STICKER_DEFAULTS.coreFill);
+    }
+    if (!localStorage.getItem("sidebarStickerFont")) {
+      localStorage.setItem("sidebarStickerFont", SIDEBAR_STICKER_DEFAULTS.font);
+    }
+    if (prevLayers) {
+      try {
+        localStorage.setItem(
+          "sidebarStickerLayers",
+          JSON.stringify(coerceSidebarStickerLayers(JSON.parse(prevLayers))),
+        );
+      } catch {
+        localStorage.setItem(
+          "sidebarStickerLayers",
+          JSON.stringify(SIDEBAR_STICKER_DEFAULTS.layers),
+        );
+      }
+    } else {
+      localStorage.setItem(
+        "sidebarStickerLayers",
+        JSON.stringify(SIDEBAR_STICKER_DEFAULTS.layers),
+      );
+    }
+    if (!localStorage.getItem("sidebarStickerScale")) {
+      localStorage.setItem("sidebarStickerScale", String(SIDEBAR_STICKER_DEFAULTS.scale));
+    }
+    localStorage.removeItem("sidebarStickerFill");
+    localStorage.removeItem("sidebarStickerOutline");
+  }
+  const raw = localStorage.getItem("sidebarStickerCoreFill");
+  if (isHexColor(raw)) return raw;
+  return SIDEBAR_STICKER_DEFAULTS.coreFill;
+}
+
+function loadSidebarStickerLayers(): SidebarStickerLayers {
+  const raw = loadJson<unknown>("sidebarStickerLayers", null);
+  if (!raw) return cloneSidebarStickerLayers(SIDEBAR_STICKER_LAYER_DEFAULTS);
+  return coerceSidebarStickerLayers(raw);
+}
+
+function loadSidebarStickerCustomPresets(): SidebarStickerSavedPreset[] {
+  const raw = loadJson<unknown[]>(CUSTOM_PRESETS_KEY, []);
+  if (!Array.isArray(raw)) return [];
+  const out: SidebarStickerSavedPreset[] = [];
+  for (const item of raw) {
+    if (!item || typeof item !== "object") continue;
+    const p = item as Partial<SidebarStickerSavedPreset>;
+    if (typeof p.id !== "string" || typeof p.label !== "string") continue;
+    if (!isHexColor(p.coreFill)) continue;
+    if (!p.font || !SIDEBAR_STICKER_FONT_IDS.has(p.font)) continue;
+    out.push({
+      id: p.id,
+      label: p.label.slice(0, 40),
+      layers: coerceSidebarStickerLayers(p.layers),
+      coreFill: p.coreFill,
+      font: p.font,
+      scale: clampSidebarStickerScale(p.scale),
+      savedAt: typeof p.savedAt === "number" ? p.savedAt : Date.now(),
+    });
+  }
+  return out;
+}
+
 interface ThemeContextValue {
   isDarkMode: boolean;
   theme: "light" | "dark";
@@ -80,6 +176,11 @@ interface ThemeContextValue {
   topbarTitleStyle: TopbarTitleStyleId;
   topbarTitleFont: TopbarTitleFontId;
   topbarTitleSize: TopbarTitleSizeId;
+  sidebarStickerFont: SidebarStickerFontId;
+  sidebarStickerScale: number;
+  sidebarStickerCoreFill: string;
+  sidebarStickerLayers: SidebarStickerLayers;
+  sidebarStickerCustomPresets: SidebarStickerSavedPreset[];
   setAccentColor: (color: string) => void;
   setRadius: (radius: string) => void;
   setIntensity: (intensity: number) => void;
@@ -94,6 +195,13 @@ interface ThemeContextValue {
   setTopbarTitleStyle: (style: TopbarTitleStyleId) => void;
   setTopbarTitleFont: (font: TopbarTitleFontId) => void;
   setTopbarTitleSize: (size: TopbarTitleSizeId) => void;
+  setSidebarStickerFont: (font: SidebarStickerFontId) => void;
+  setSidebarStickerScale: (scale: number) => void;
+  setSidebarStickerCoreFill: (hex: string) => void;
+  setSidebarStickerLayers: (layers: SidebarStickerLayers) => void;
+  applySidebarStickerThemePreset: (presetId: string) => void;
+  saveSidebarStickerPreset: (label: string) => string | null;
+  deleteSidebarStickerPreset: (presetId: string) => void;
   applyPreset: (presetId: string) => void;
   resetStudyDefaults: () => void;
   isHeroLayersActive: boolean;
@@ -209,6 +317,76 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [topbarTitleSize, setTopbarTitleSize] = useState<TopbarTitleSizeId>(
     loadTopbarTitleSize
   );
+  const [sidebarStickerFont, setSidebarStickerFont] = useState<SidebarStickerFontId>(
+    loadSidebarStickerFont
+  );
+  const [sidebarStickerScale, setSidebarStickerScaleState] = useState<number>(
+    loadSidebarStickerScale
+  );
+  const setSidebarStickerScale = (scale: number) => {
+    setSidebarStickerScaleState(clampSidebarStickerScale(scale));
+  };
+  const [sidebarStickerCoreFill, setSidebarStickerCoreFillState] = useState<string>(
+    loadSidebarStickerCoreFill
+  );
+  const setSidebarStickerCoreFill = (hex: string) => {
+    if (isHexColor(hex)) setSidebarStickerCoreFillState(hex);
+  };
+  const [sidebarStickerLayers, setSidebarStickerLayersState] =
+    useState<SidebarStickerLayers>(loadSidebarStickerLayers);
+  const setSidebarStickerLayers = (layers: SidebarStickerLayers) => {
+    setSidebarStickerLayersState(normalizeSidebarStickerLayers(layers));
+  };
+
+  const [sidebarStickerCustomPresets, setSidebarStickerCustomPresets] = useState<
+    SidebarStickerSavedPreset[]
+  >(loadSidebarStickerCustomPresets);
+
+  const applySidebarStickerThemePreset = (presetId: string) => {
+    const builtin = SIDEBAR_STICKER_LAYER_PRESETS.find((p) => p.id === presetId);
+    if (builtin) {
+      setSidebarStickerLayers(cloneSidebarStickerLayers(builtin.layers));
+      setSidebarStickerCoreFill(builtin.coreFill);
+      if (builtin.font) setSidebarStickerFont(builtin.font);
+      if (builtin.scale != null) setSidebarStickerScale(builtin.scale);
+      return;
+    }
+    const custom = sidebarStickerCustomPresets.find((p) => p.id === presetId);
+    if (!custom) return;
+    setSidebarStickerLayers(cloneSidebarStickerLayers(custom.layers));
+    setSidebarStickerCoreFill(custom.coreFill);
+    setSidebarStickerFont(custom.font);
+    setSidebarStickerScale(custom.scale);
+  };
+
+  const saveSidebarStickerPreset = (label: string): string | null => {
+    const trimmed = label.trim().slice(0, 40);
+    if (!trimmed) return null;
+    const id = `custom-${Date.now().toString(36)}`;
+    const next: SidebarStickerSavedPreset = {
+      id,
+      label: trimmed,
+      layers: cloneSidebarStickerLayers(sidebarStickerLayers),
+      coreFill: sidebarStickerCoreFill,
+      font: sidebarStickerFont,
+      scale: sidebarStickerScale,
+      savedAt: Date.now(),
+    };
+    setSidebarStickerCustomPresets((prev) => {
+      const merged = [next, ...prev].slice(0, 24);
+      localStorage.setItem(CUSTOM_PRESETS_KEY, JSON.stringify(merged));
+      return merged;
+    });
+    return id;
+  };
+
+  const deleteSidebarStickerPreset = (presetId: string) => {
+    setSidebarStickerCustomPresets((prev) => {
+      const merged = prev.filter((p) => p.id !== presetId);
+      localStorage.setItem(CUSTOM_PRESETS_KEY, JSON.stringify(merged));
+      return merged;
+    });
+  };
 
   const applyPreset = (presetId: string) => {
     const preset = PRESET_BY_ID[presetId];
@@ -237,6 +415,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     setTopbarTitleStyle(TOPBAR_TITLE_DEFAULTS.style);
     setTopbarTitleFont(TOPBAR_TITLE_DEFAULTS.font);
     setTopbarTitleSize(TOPBAR_TITLE_DEFAULTS.size);
+    setSidebarStickerFont(SIDEBAR_STICKER_DEFAULTS.font);
+    setSidebarStickerScale(SIDEBAR_STICKER_DEFAULTS.scale);
+    setSidebarStickerCoreFill(SIDEBAR_STICKER_DEFAULTS.coreFill);
+    setSidebarStickerLayers(cloneSidebarStickerLayers(SIDEBAR_STICKER_DEFAULTS.layers));
     applyLayerBundleToState(STUDY_DEFAULT_LAYERS, {
       setTypographyPack,
       setSurfaceStyle,
@@ -285,6 +467,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     localStorage.setItem("topbarTitleStyle", topbarTitleStyle);
     localStorage.setItem("topbarTitleFont", topbarTitleFont);
     localStorage.setItem("topbarTitleSize", topbarTitleSize);
+    localStorage.setItem("sidebarStickerFont", sidebarStickerFont);
+    localStorage.setItem("sidebarStickerScale", String(sidebarStickerScale));
+    localStorage.setItem("sidebarStickerCoreFill", sidebarStickerCoreFill);
+    localStorage.setItem("sidebarStickerLayers", JSON.stringify(sidebarStickerLayers));
 
     const root = document.documentElement;
     const presetId = resolvePresetId(accentColor);
@@ -299,6 +485,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     root.setAttribute("data-topbar-title-style", topbarTitleStyle);
     root.setAttribute("data-topbar-title-font", topbarTitleFont);
     root.setAttribute("data-topbar-title-size", topbarTitleSize);
+    root.setAttribute("data-sidebar-sticker-font", sidebarStickerFont);
+    root.style.setProperty("--sidebar-sticker-scale", String(sidebarStickerScale));
+    root.style.setProperty("--sidebar-sticker-core", sidebarStickerCoreFill);
+    root.setAttribute("data-sidebar-sticker-outline", "true");
     root.classList.toggle("dark", isDarkMode);
 
     applyLayerBundle(root, layers);
@@ -362,6 +552,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     topbarTitleStyle,
     topbarTitleFont,
     topbarTitleSize,
+    sidebarStickerFont,
+    sidebarStickerScale,
+    sidebarStickerCoreFill,
+    sidebarStickerLayers,
   ]);
 
   const toggleTheme = () => setIsDarkMode((v) => !v);
@@ -386,6 +580,11 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         topbarTitleStyle,
         topbarTitleFont,
         topbarTitleSize,
+        sidebarStickerFont,
+        sidebarStickerScale,
+        sidebarStickerCoreFill,
+        sidebarStickerLayers,
+        sidebarStickerCustomPresets,
         setAccentColor,
         setRadius,
         setIntensity,
@@ -400,11 +599,19 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         setTopbarTitleStyle,
         setTopbarTitleFont,
         setTopbarTitleSize,
+        setSidebarStickerFont,
+        setSidebarStickerScale,
+        setSidebarStickerCoreFill,
+        setSidebarStickerLayers,
+        applySidebarStickerThemePreset,
+        saveSidebarStickerPreset,
+        deleteSidebarStickerPreset,
         applyPreset,
         resetStudyDefaults,
         isHeroLayersActive,
       }}
     >
+      <ContourStickerFilterDefs />
       {children}
     </ThemeContext.Provider>
   );

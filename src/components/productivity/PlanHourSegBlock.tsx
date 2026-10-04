@@ -15,7 +15,7 @@ function fmtClock(hour: number, min: number): string {
   return `${h12}:${String(m).padStart(2, "0")} ${ap}`;
 }
 
-/** Plan block on the 2D minute axis — solid color + time (distinct from tracked-app chips). */
+/** Plan block on the 2D minute axis — full-height; overlaps tracked apps / other plans. */
 export function PlanHourSegBlock({ seg, focused, onClick }: Props) {
   const start = Math.max(0, Math.min(59, seg.start_min));
   const end = Math.max(start + 1, Math.min(60, seg.end_min));
@@ -39,8 +39,8 @@ export function PlanHourSegBlock({ seg, focused, onClick }: Props) {
       style={{
         left: `${leftPct}%`,
         width: `${widthPct}%`,
-        top: "6%",
-        height: "88%",
+        top: "2px",
+        height: "calc(100% - 4px)",
         zIndex: 8 + Math.min(10, Math.round(60 - (end - start))),
         backgroundColor: color,
         borderColor: color,

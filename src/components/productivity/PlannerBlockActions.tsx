@@ -9,7 +9,8 @@ type Props = {
   mode?: "plan" | "track";
   onStart: () => Promise<void>;
   onComplete: (minutes?: number) => Promise<void>;
-  onRollForward: () => Promise<void>;
+  /** @deprecated Carry-forward disabled — prop ignored. */
+  onRollForward?: () => Promise<void>;
   onDelete: () => Promise<void>;
   onClose: () => void;
 };
@@ -19,7 +20,6 @@ export function PlannerBlockActions({
   mode = "track",
   onStart,
   onComplete,
-  onRollForward,
   onDelete,
   onClose,
 }: Props) {
@@ -116,15 +116,6 @@ export function PlannerBlockActions({
             onClick={() => void run(() => onComplete(partialMin))}
           >
             Log partial
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            disabled={busy}
-            onClick={() => void run(onRollForward)}
-          >
-            Roll forward ({formatHoursMins(block.remaining_minutes)})
           </Button>
         </div>
       )}

@@ -11,6 +11,7 @@ import type { BiometricData, CognitiveLoad } from "../types";
 import { config } from "../config";
 import { usePluginsOptional } from "../plugins/registry";
 import { useAuth } from "./AuthContext";
+import { usePomodoroOptional } from "./PomodoroContext";
 import { postHubReading } from "../api/hubClient";
 import { patchInterventionCorrect, patchInterventionRecover, postMathIntervention } from "../api/mathClient";
 import { EEGWebSocketClient } from "../utils/websocket";
@@ -90,6 +91,7 @@ export function useStudySession() {
 export function StudySessionProvider({ children }: { children: ReactNode }) {
   const plugins = usePluginsOptional();
   const { isAuthenticated } = useAuth();
+  const pomo = usePomodoroOptional();
   const eegActive = Boolean(plugins?.isLoaded && plugins.enabledIds.includes("eeg"));
 
   const [biometricData, setBiometricData] = useState<BiometricData[]>([]);
@@ -363,6 +365,15 @@ export function StudySessionProvider({ children }: { children: ReactNode }) {
   );
 
   const handleSessionComplete = () => setShowDiagnostics(true);
+
+  const prevPomoCountRef = useRef(pomo?.sessionCount ?? 0);
+  useEffect(() => {
+    if (!pomo) return;
+    if (pomo.sessionCount > prevPomoCountRef.current) {
+      handleSessionComplete();
+    }
+    prevPomoCountRef.current = pomo.sessionCount;
+  }, [pomo, pomo?.sessionCount]);
 
   const handleNewSession = () => {
     setShowDiagnostics(false);

@@ -52,6 +52,64 @@ std::string IsoNow() {
   return buf;
 }
 
+bool DecodeJsonEscapeLocal(const std::string& body, size_t& i, std::string* out) {
+  if (i >= body.size() || body[i] != '\\' || i + 1 >= body.size()) return false;
+  char e = body[++i];
+  ++i;
+  switch (e) {
+    case '"':
+    case '\\':
+    case '/':
+      out->push_back(e);
+      return true;
+    case 'b':
+      out->push_back('\b');
+      return true;
+    case 'f':
+      out->push_back('\f');
+      return true;
+    case 'n':
+      out->push_back('\n');
+      return true;
+    case 'r':
+      out->push_back('\r');
+      return true;
+    case 't':
+      out->push_back('\t');
+      return true;
+    case 'u': {
+      if (i + 4 > body.size()) return false;
+      unsigned code = 0;
+      for (int n = 0; n < 4; ++n) {
+        char c = body[i++];
+        code <<= 4;
+        if (c >= '0' && c <= '9')
+          code |= (unsigned)(c - '0');
+        else if (c >= 'a' && c <= 'f')
+          code |= (unsigned)(c - 'a' + 10);
+        else if (c >= 'A' && c <= 'F')
+          code |= (unsigned)(c - 'A' + 10);
+        else
+          return false;
+      }
+      if (code < 0x80) {
+        out->push_back((char)code);
+      } else if (code < 0x800) {
+        out->push_back((char)(0xC0 | (code >> 6)));
+        out->push_back((char)(0x80 | (code & 0x3F)));
+      } else {
+        out->push_back((char)(0xE0 | (code >> 12)));
+        out->push_back((char)(0x80 | ((code >> 6) & 0x3F)));
+        out->push_back((char)(0x80 | (code & 0x3F)));
+      }
+      return true;
+    }
+    default:
+      out->push_back(e);
+      return true;
+  }
+}
+
 bool JsonGetStringLocal(const std::string& body, const char* key, std::string* out) {
   std::string needle = std::string("\"") + key + "\"";
   size_t p = body.find(needle);
@@ -64,9 +122,8 @@ bool JsonGetStringLocal(const std::string& body, const char* key, std::string* o
   ++i;
   std::string val;
   while (i < body.size() && body[i] != '"') {
-    if (body[i] == '\\' && i + 1 < body.size()) {
-      val.push_back(body[i + 1]);
-      i += 2;
+    if (body[i] == '\\') {
+      if (!DecodeJsonEscapeLocal(body, i, &val)) return false;
       continue;
     }
     val.push_back(body[i++]);
@@ -104,6 +161,53 @@ std::string ReadFileUtf8(const std::wstring& path) {
   if (!ok) return {};
   out.resize(n);
   return out;
+}
+
+bool WriteFileUtf8Atomic(const std::wstring& dest, const std::string& body) {
+  if (dest.empty()) return false;
+  const size_t slash = dest.find_last_of(L"\\/");
+  if (slash != std::wstring::npos) {
+    CreateDirectoryW(dest.substr(0, slash).c_str(), nullptr);
+  }
+  const std::wstring tmp = dest + L".tmp";
+  FILE* f = nullptr;
+#if defined(_MSC_VER)
+  _wfopen_s(&f, tmp.c_str(), L"wb");
+#else
+  f = _wfopen(tmp.c_str(), L"wb");
+#endif
+  if (!f) return false;
+  fwrite(body.data(), 1, body.size(), f);
+  fclose(f);
+  if (!MoveFileExW(tmp.c_str(), dest.c_str(), MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH)) {
+#if defined(_MSC_VER)
+    _wfopen_s(&f, dest.c_str(), L"wb");
+#else
+    f = _wfopen(dest.c_str(), L"wb");
+#endif
+    if (!f) {
+      DeleteFileW(tmp.c_str());
+      return false;
+    }
+    fwrite(body.data(), 1, body.size(), f);
+    fclose(f);
+    DeleteFileW(tmp.c_str());
+  }
+  return true;
+}
+
+std::wstring BehaviorDirBesideBible(const std::wstring& bibleDataDir) {
+  const size_t slash = bibleDataDir.find_last_of(L"\\/");
+  if (slash == std::wstring::npos) return {};
+  return bibleDataDir.substr(0, slash) + L"\\behavior";
+}
+
+void PublishDevotionMirrorBestEffort(const std::wstring& bibleDataDir,
+                                     const std::wstring& behaviorDirOpt, int userId) {
+  std::wstring beh = behaviorDirOpt;
+  if (beh.empty()) beh = BehaviorDirBesideBible(bibleDataDir);
+  if (beh.empty()) return;
+  PublishBibleDevotionMirror(beh, bibleDataDir, userId);
 }
 
 struct PlanChapter {
@@ -215,7 +319,16 @@ bool PublishBibleDone(bool done, const std::wstring& behaviorDir) {
                       std::string(",\"bible_done\":") + (done ? "true" : "false"));
     }
   }
+  const std::string today = ProductivityLocalDate();
+  const std::string dateLit = done ? ("\"" + today + "\"") : "null";
+  if (!ProductivityReplaceJsonValue(goalsObj, "bible_done_for_date", dateLit)) {
+    if (goalsObj.size() > 2) {
+      goalsObj.insert(goalsObj.size() - 1, std::string(",\"bible_done_for_date\":") + dateLit);
+    }
+  }
   if (!ProductivityReplaceJsonValue(s.document_json, "goals", goalsObj)) return false;
+  // Always bump wall-clock so Focus mirrors/ImportIfStale see the SoftLand write.
+  s.updated_at.clear();
   if (!ProductivitySaveSoftland(s)) return false;
   PublishSoftlandMirror(behaviorDir, s);
   ProductivityBumpSeq();
@@ -301,6 +414,264 @@ int DayOfYear() {
   return d;
 }
 
+const char* kLordsPrayer =
+    "Our Father in heaven,\n"
+    "hallowed be your name.\n"
+    "Your kingdom come,\n"
+    "your will be done,\n"
+    "on earth as it is in heaven.\n"
+    "Give us today our daily bread.\n"
+    "And forgive us our debts,\n"
+    "as we also have forgiven our debtors.\n"
+    "And lead us not into temptation,\n"
+    "but deliver us from evil.\n"
+    "For yours is the kingdom and the power and the glory forever.\n"
+    "Amen.";
+
+const char* kAfternoonPrayerDefault =
+    "Lord, grant me wisdom for today's work,\n"
+    "health for my body, and a steady mind.\n"
+    "Guide my decisions and keep my words kind.\n"
+    "Amen.";
+
+const char* kEveningPrayerDefault =
+    "Father, thank You for this day.\n"
+    "Forgive what was unfinished or unwise,\n"
+    "and give me rest under Your care.\n"
+    "\n"
+    "Our Father in heaven,\n"
+    "hallowed be your name.\n"
+    "Your kingdom come,\n"
+    "your will be done,\n"
+    "on earth as it is in heaven.\n"
+    "Give us today our daily bread.\n"
+    "And forgive us our debts,\n"
+    "as we also have forgiven our debtors.\n"
+    "And lead us not into temptation,\n"
+    "but deliver us from evil.\n"
+    "Amen.";
+
+void SetJsonStringField(std::string* doc, const char* key, const std::string& value) {
+  if (!doc) return;
+  std::string needle = std::string("\"") + key + "\"";
+  std::string esc = EscapeJson(value);
+  size_t p = doc->find(needle);
+  if (p == std::string::npos) {
+    if (doc->size() >= 2 && (*doc)[doc->size() - 1] == '}') {
+      doc->insert(doc->size() - 1, std::string(",\"") + key + "\":\"" + esc + "\"");
+    }
+    return;
+  }
+  size_t colon = doc->find(':', p);
+  if (colon == std::string::npos) return;
+  size_t q1 = doc->find('"', colon + 1);
+  if (q1 == std::string::npos) return;
+  size_t q2 = q1 + 1;
+  while (q2 < doc->size()) {
+    if ((*doc)[q2] == '\\' && q2 + 1 < doc->size()) {
+      q2 += 2;
+      continue;
+    }
+    if ((*doc)[q2] == '"') break;
+    ++q2;
+  }
+  if (q2 >= doc->size()) return;
+  doc->replace(q1, q2 - q1 + 1, std::string("\"") + esc + "\"");
+}
+
+void SetJsonIntField(std::string* doc, const char* key, int value) {
+  if (!doc) return;
+  std::string needle = std::string("\"") + key + "\"";
+  size_t p = doc->find(needle);
+  if (p == std::string::npos) {
+    if (doc->size() >= 2 && (*doc)[doc->size() - 1] == '}') {
+      doc->insert(doc->size() - 1, std::string(",\"") + key + "\":" + std::to_string(value));
+    }
+    return;
+  }
+  size_t colon = doc->find(':', p);
+  if (colon == std::string::npos) return;
+  size_t i = colon + 1;
+  while (i < doc->size() && ((*doc)[i] == ' ' || (*doc)[i] == '\t')) ++i;
+  size_t j = i;
+  if (j < doc->size() && (*doc)[j] == '-') ++j;
+  while (j < doc->size() && isdigit((unsigned char)(*doc)[j])) ++j;
+  doc->replace(i, j - i, std::to_string(value));
+}
+
+void SetJsonBoolField(std::string* doc, const char* key, bool value) {
+  if (!doc) return;
+  std::string needle = std::string("\"") + key + "\"";
+  std::string val = value ? "true" : "false";
+  size_t p = doc->find(needle);
+  if (p == std::string::npos) {
+    if (doc->size() >= 2 && (*doc)[doc->size() - 1] == '}') {
+      doc->insert(doc->size() - 1, std::string(",\"") + key + "\":" + val);
+    }
+    return;
+  }
+  size_t colon = doc->find(':', p);
+  if (colon == std::string::npos) return;
+  size_t i = colon + 1;
+  while (i < doc->size() && ((*doc)[i] == ' ' || (*doc)[i] == '\t')) ++i;
+  size_t j = i;
+  while (j < doc->size() && isalpha((unsigned char)(*doc)[j])) ++j;
+  doc->replace(i, j - i, val);
+}
+
+bool LoadReaderDoc(int userId, std::string* out) {
+  if (!gDb || !out) return false;
+  sqlite3_stmt* st = nullptr;
+  if (sqlite3_prepare_v2(gDb,
+                         "SELECT document_json FROM productivity_bible_reader WHERE user_id=? LIMIT 1;",
+                         -1, &st, nullptr) != SQLITE_OK)
+    return false;
+  sqlite3_bind_int(st, 1, userId);
+  bool ok = false;
+  if (sqlite3_step(st) == SQLITE_ROW) {
+    const char* t = reinterpret_cast<const char*>(sqlite3_column_text(st, 0));
+    if (t) {
+      *out = t;
+      ok = true;
+    }
+  }
+  sqlite3_finalize(st);
+  return ok;
+}
+
+bool SaveReaderDoc(int userId, const std::string& doc) {
+  if (!gDb) return false;
+  sqlite3_stmt* st = nullptr;
+  if (sqlite3_prepare_v2(gDb,
+                         "INSERT INTO productivity_bible_reader(user_id, document_json, updated_at) "
+                         "VALUES(?,?,?) ON CONFLICT(user_id) DO UPDATE SET "
+                         "document_json=excluded.document_json, updated_at=excluded.updated_at;",
+                         -1, &st, nullptr) != SQLITE_OK)
+    return false;
+  std::string now = IsoNow();
+  sqlite3_bind_int(st, 1, userId);
+  sqlite3_bind_text(st, 2, doc.c_str(), -1, SQLITE_TRANSIENT);
+  sqlite3_bind_text(st, 3, now.c_str(), -1, SQLITE_TRANSIENT);
+  bool ok = sqlite3_step(st) == SQLITE_DONE;
+  sqlite3_finalize(st);
+  return ok;
+}
+
+std::string EmptyReaderDoc() {
+  return "{\"morning_book\":\"\",\"morning_chapter\":0,\"afternoon_book\":\"Proverbs\","
+         "\"afternoon_chapter\":0,\"evening_book\":\"Psalms\",\"evening_chapter\":0,"
+         "\"morning_prayer\":\"\",\"afternoon_prayer\":\"\",\"evening_prayer\":\"\"}";
+}
+
+int FindPlanIndex(const std::vector<PlanChapter>& plan, const std::string& book, int chapter) {
+  for (int i = 0; i < (int)plan.size(); ++i) {
+    if (plan[i].book == book && plan[i].chapter == chapter) return i;
+  }
+  return -1;
+}
+
+PlanChapter NextMorningChapter(const std::vector<PlanChapter>& plan, const PlanChapter& cur) {
+  if (plan.empty()) return cur;
+  int idx = FindPlanIndex(plan, cur.book, cur.chapter);
+  if (idx < 0) return plan[0];
+  return plan[(idx + 1) % (int)plan.size()];
+}
+
+PlanChapter NextWrapped(const std::string& book, int chapter, int maxCh) {
+  int n = chapter + 1;
+  if (n < 1 || n > maxCh) n = 1;
+  return {book, n};
+}
+
+PlanChapter AdvanceSlotChapter(const std::string& slot, const PlanChapter& cur,
+                               const std::vector<PlanChapter>& plan) {
+  if (slot == "morning") return NextMorningChapter(plan, cur);
+  if (slot == "afternoon") {
+    if (cur.book == "Proverbs" || cur.book == "proverbs") return NextWrapped("Proverbs", cur.chapter, 31);
+    // Prefer staying in-book via full plan scan
+    int idx = FindPlanIndex(plan, cur.book, cur.chapter);
+    if (idx >= 0) {
+      for (int i = 1; i < (int)plan.size(); ++i) {
+        const auto& n = plan[(idx + i) % (int)plan.size()];
+        if (n.book == cur.book) return n;
+      }
+    }
+    return NextWrapped(cur.book.empty() ? "Proverbs" : cur.book, cur.chapter, 150);
+  }
+  // evening
+  if (cur.book == "Psalms" || cur.book == "Psalm" || cur.book == "psalms")
+    return NextWrapped("Psalms", cur.chapter, 150);
+  int idx = FindPlanIndex(plan, cur.book, cur.chapter);
+  if (idx >= 0) {
+    for (int i = 1; i < (int)plan.size(); ++i) {
+      const auto& n = plan[(idx + i) % (int)plan.size()];
+      if (n.book == cur.book) return n;
+    }
+  }
+  return NextWrapped(cur.book.empty() ? "Psalms" : cur.book, cur.chapter, 150);
+}
+
+void EnsureReaderSeeded(int userId, const std::vector<PlanChapter>& plan, std::string* reader) {
+  if (!reader) return;
+  if (reader->empty()) *reader = EmptyReaderDoc();
+  std::string mb;
+  int mc = 0;
+  JsonGetStringLocal(*reader, "morning_book", &mb);
+  JsonGetIntLocal(*reader, "morning_chapter", &mc);
+  if (mb.empty() || mc <= 0) {
+    PlanChapter a = plan.empty() ? PlanChapter{"Genesis", 1}
+                                 : plan[(DayOfYear() - 1) % (int)plan.size()];
+    SetJsonStringField(reader, "morning_book", a.book);
+    SetJsonIntField(reader, "morning_chapter", a.chapter);
+  }
+  std::string ab;
+  int ac = 0;
+  JsonGetStringLocal(*reader, "afternoon_book", &ab);
+  JsonGetIntLocal(*reader, "afternoon_chapter", &ac);
+  if (ab.empty() || ac <= 0) {
+    SetJsonStringField(reader, "afternoon_book", "Proverbs");
+    SetJsonIntField(reader, "afternoon_chapter", (DayOfYear() % 31) + 1);
+  }
+  std::string eb;
+  int ec = 0;
+  JsonGetStringLocal(*reader, "evening_book", &eb);
+  JsonGetIntLocal(*reader, "evening_chapter", &ec);
+  if (eb.empty() || ec <= 0) {
+    SetJsonStringField(reader, "evening_book", "Psalms");
+    SetJsonIntField(reader, "evening_chapter", (DayOfYear() % 150) + 1);
+  }
+  SaveReaderDoc(userId, *reader);
+}
+
+PlanChapter ReaderSlot(const std::string& reader, const char* bookKey, const char* chKey,
+                       const PlanChapter& fallback) {
+  std::string b;
+  int c = 0;
+  if (JsonGetStringLocal(reader, bookKey, &b) && JsonGetIntLocal(reader, chKey, &c) && !b.empty() &&
+      c > 0)
+    return {b, c};
+  return fallback;
+}
+
+std::string SlotPrayerText(const std::string& slot, const std::string& dayDoc,
+                           const std::string& reader) {
+  const char* dayKey = slot == "morning"     ? "morning_prayer"
+                       : slot == "afternoon" ? "afternoon_prayer"
+                                             : "evening_prayer";
+  std::string custom;
+  if (JsonGetStringLocal(dayDoc, dayKey, &custom) && !custom.empty()) return custom;
+  if (JsonGetStringLocal(reader, dayKey, &custom) && !custom.empty()) return custom;
+  if (slot == "morning") return kLordsPrayer;
+  if (slot == "afternoon") return kAfternoonPrayerDefault;
+  return kEveningPrayerDefault;
+}
+
+std::string SlotJournalTitle(const std::string& slot) {
+  if (slot == "morning") return "Devotion · Morning";
+  if (slot == "afternoon") return "Devotion · Afternoon";
+  return "Devotion · Evening";
+}
+
 }  // namespace
 
 void LifeEnsureTables() {
@@ -323,6 +694,11 @@ void LifeEnsureTables() {
                "  document_json TEXT NOT NULL,"
                "  updated_at TEXT NOT NULL,"
                "  PRIMARY KEY (user_id, day)"
+               ");"
+               "CREATE TABLE IF NOT EXISTS productivity_bible_reader ("
+               "  user_id INTEGER PRIMARY KEY,"
+               "  document_json TEXT NOT NULL,"
+               "  updated_at TEXT NOT NULL"
                ");",
                nullptr, nullptr, nullptr);
 }
@@ -415,13 +791,25 @@ bool LifeJournalUpsert(const std::string& payloadJson, int userId, std::string* 
     entryDate = LocalDateYmd();
   std::string now = IsoNow();
 
-  // Update today's latest row if exists
+  // Prefer same-day + same-title row (per-slot devotion journals).
+  // If titled and missing → insert new. Untitled → update latest that day (legacy).
   sqlite3_stmt* find = nullptr;
   long long existingId = 0;
-  if (sqlite3_prepare_v2(gDb,
-                         "SELECT id FROM productivity_journal WHERE user_id=? AND entry_date=? "
-                         "ORDER BY id DESC LIMIT 1;",
-                         -1, &find, nullptr) == SQLITE_OK) {
+  if (!title.empty()) {
+    if (sqlite3_prepare_v2(gDb,
+                           "SELECT id FROM productivity_journal WHERE user_id=? AND entry_date=? "
+                           "AND title=? ORDER BY id DESC LIMIT 1;",
+                           -1, &find, nullptr) == SQLITE_OK) {
+      sqlite3_bind_int(find, 1, userId);
+      sqlite3_bind_text(find, 2, entryDate.c_str(), -1, SQLITE_TRANSIENT);
+      sqlite3_bind_text(find, 3, title.c_str(), -1, SQLITE_TRANSIENT);
+      if (sqlite3_step(find) == SQLITE_ROW) existingId = sqlite3_column_int64(find, 0);
+      sqlite3_finalize(find);
+    }
+  } else if (sqlite3_prepare_v2(gDb,
+                                "SELECT id FROM productivity_journal WHERE user_id=? AND entry_date=? "
+                                "ORDER BY id DESC LIMIT 1;",
+                                -1, &find, nullptr) == SQLITE_OK) {
     sqlite3_bind_int(find, 1, userId);
     sqlite3_bind_text(find, 2, entryDate.c_str(), -1, SQLITE_TRANSIENT);
     if (sqlite3_step(find) == SQLITE_ROW) existingId = sqlite3_column_int64(find, 0);
@@ -447,6 +835,7 @@ bool LifeJournalUpsert(const std::string& payloadJson, int userId, std::string* 
                       "\",\"content\":\"" + EscapeJson(content) + "\",\"updated_at\":\"" +
                       EscapeJson(now) + "\"}";
     }
+    PublishJournalMirrors(ProductivityCurrentBehaviorDir(), userId);
     return true;
   }
 
@@ -474,34 +863,86 @@ bool LifeJournalUpsert(const std::string& payloadJson, int userId, std::string* 
                     "\",\"title\":\"" + EscapeJson(title) + "\",\"content\":\"" + EscapeJson(content) +
                     "\",\"updated_at\":\"" + EscapeJson(now) + "\"}";
   }
+  PublishJournalMirrors(ProductivityCurrentBehaviorDir(), userId);
   return true;
+}
+
+bool PublishJournalMirrors(const std::wstring& behaviorDir, int userId) {
+  if (behaviorDir.empty()) return false;
+  LifeEnsureTables();
+  const std::string day = LocalDateYmd();
+  const std::string summary = LifeJournalSummaryJson(day, userId);
+  const std::string log = LifeJournalLogJson(40, userId);
+  const bool a = WriteBehaviorMirrorFile(behaviorDir, L"journal_today.json", summary);
+  const bool b =
+      WriteBehaviorMirrorFile(behaviorDir, L"journal_log.json",
+                              std::string("{\"entries\":") + (log.empty() ? "[]" : log) + "}");
+  return a && b;
 }
 
 void LifeBibleEnsureToday(int userId, const std::wstring& bibleDataDir) {
   LifeEnsureTables();
   std::string day = LocalDateYmd();
-  std::string doc;
-  if (LoadDayRow(userId, day, &doc)) return;
   auto plan = LoadPlan(bibleDataDir);
-  // Import legacy JSON if present
+  std::string reader;
+  if (!LoadReaderDoc(userId, &reader)) reader = EmptyReaderDoc();
+  EnsureReaderSeeded(userId, plan, &reader);
+
+  std::string doc;
+  if (LoadDayRow(userId, day, &doc)) {
+    // Backfill aft/eve assignment fields if older docs lack them
+    std::string ab;
+    int ac = 0;
+    if (!JsonGetStringLocal(doc, "afternoon_book", &ab) || ab.empty() ||
+        !JsonGetIntLocal(doc, "afternoon_chapter", &ac) || ac <= 0) {
+      PlanChapter a =
+          ReaderSlot(reader, "afternoon_book", "afternoon_chapter", {"Proverbs", (DayOfYear() % 31) + 1});
+      SetJsonStringField(&doc, "afternoon_book", a.book);
+      SetJsonIntField(&doc, "afternoon_chapter", a.chapter);
+      SaveDayRow(userId, day, doc);
+    }
+    std::string eb;
+    int ec = 0;
+    if (!JsonGetStringLocal(doc, "evening_book", &eb) || eb.empty() ||
+        !JsonGetIntLocal(doc, "evening_chapter", &ec) || ec <= 0) {
+      PlanChapter e =
+          ReaderSlot(reader, "evening_book", "evening_chapter", {"Psalms", (DayOfYear() % 150) + 1});
+      SetJsonStringField(&doc, "evening_book", e.book);
+      SetJsonIntField(&doc, "evening_chapter", e.chapter);
+      SaveDayRow(userId, day, doc);
+    }
+    return;
+  }
+
+  PlanChapter morning =
+      ReaderSlot(reader, "morning_book", "morning_chapter",
+                 plan.empty() ? PlanChapter{"Genesis", 1} : plan[(DayOfYear() - 1) % (int)plan.size()]);
+  PlanChapter afternoon =
+      ReaderSlot(reader, "afternoon_book", "afternoon_chapter", {"Proverbs", (DayOfYear() % 31) + 1});
+  PlanChapter evening =
+      ReaderSlot(reader, "evening_book", "evening_chapter", {"Psalms", (DayOfYear() % 150) + 1});
+
+  // Import legacy JSON if present (morning only)
   std::wstring legacy = bibleDataDir + L"\\day_" + std::to_wstring(userId) + L"_" +
                         std::wstring(day.begin(), day.end()) + L".json";
   std::string legacyBody = ReadFileUtf8(legacy);
-  PlanChapter assigned = plan.empty() ? PlanChapter{"Genesis", 1} : plan[0];
   if (!legacyBody.empty()) {
     doc = legacyBody;
-    std::string ab;
-    int ac = 0;
-    if (JsonGetStringLocal(doc, "assigned_book", &ab) && JsonGetIntLocal(doc, "assigned_chapter", &ac)) {
-      assigned = {ab, ac};
+    std::string abook;
+    int ach = 0;
+    if (JsonGetStringLocal(doc, "assigned_book", &abook) &&
+        JsonGetIntLocal(doc, "assigned_chapter", &ach) && !abook.empty() && ach > 0) {
+      morning = {abook, ach};
     }
   } else {
-    // Advance from lifetime: pick first plan chapter not done — simplified: use plan[0] or
-    // cursor from reader — keep simple: Genesis→… by day-of-year index
-    int idx = (DayOfYear() - 1) % static_cast<int>(plan.size());
-    assigned = plan[idx];
-    doc = EmptyDayDoc(day, assigned);
+    doc = EmptyDayDoc(day, morning);
   }
+  SetJsonStringField(&doc, "assigned_book", morning.book);
+  SetJsonIntField(&doc, "assigned_chapter", morning.chapter);
+  SetJsonStringField(&doc, "afternoon_book", afternoon.book);
+  SetJsonIntField(&doc, "afternoon_chapter", afternoon.chapter);
+  SetJsonStringField(&doc, "evening_book", evening.book);
+  SetJsonIntField(&doc, "evening_chapter", evening.chapter);
   SaveDayRow(userId, day, doc);
 }
 
@@ -584,7 +1025,9 @@ bool LifeBibleTick(int userId, const std::string& book, int chapter, bool done,
   if (done) met = true;
   // Recompute from chapters_completed after rewrite
   met = CountCompleted(doc) >= 1 || (done && ChaptersCompletedHas(doc, key));
-  PublishBibleDone(done ? true : met, behaviorDir);
+  // SoftLand goals must update or morning overlay never unlocks.
+  if (!PublishBibleDone(done ? true : met, behaviorDir)) return false;
+  PublishDevotionMirrorBestEffort(bibleDataDir, behaviorDir, userId);
   if (outStateJson) *outStateJson = BuildStateJson(doc, assigned);
   return true;
 }
@@ -626,82 +1069,130 @@ std::string LifeBibleDevotionTodayJson(int userId, const std::wstring& bibleData
   std::string day = LocalDateYmd();
   std::string doc;
   LoadDayRow(userId, day, &doc);
-  int doy = DayOfYear();
-  int prov = (doy % 31) + 1;
-  int psalm = (doy % 150) + 1;
-  std::string aftKey = "Proverbs|" + std::to_string(prov);
-  std::string eveKey = "Psalms|" + std::to_string(psalm);
-  bool aftDone = doc.find("\"afternoon_done\":true") != std::string::npos;
-  bool eveDone = doc.find("\"evening_done\":true") != std::string::npos;
-  // Merge devotion shell into state-like devotion payload
-  return std::string("{") +
-         "\"day\":\"" + day + "\"," +
-         "\"today_chapter\":" + [&]() {
-           size_t p = state.find("\"today_chapter\"");
-           if (p == std::string::npos) return std::string("null");
-           size_t b = state.find('{', p);
-           int depth = 0;
-           size_t e = b;
-           for (; e < state.size(); ++e) {
-             if (state[e] == '{') ++depth;
-             else if (state[e] == '}') {
-               --depth;
-               if (depth == 0) {
-                 ++e;
-                 break;
-               }
-             }
-           }
-           return state.substr(b, e - b);
-         }() +
-         ",\"chapter_goal\":" + [&]() {
-           size_t p = state.find("\"chapter_goal\"");
-           if (p == std::string::npos) return std::string("{\"done\":0,\"target\":1,\"met\":false}");
-           size_t b = state.find('{', p);
-           int depth = 0;
-           size_t e = b;
-           for (; e < state.size(); ++e) {
-             if (state[e] == '{') ++depth;
-             else if (state[e] == '}') {
-               --depth;
-               if (depth == 0) {
-                 ++e;
-                 break;
-               }
-             }
-           }
-           return state.substr(b, e - b);
-         }() +
-         ",\"morning\":{\"slot\":\"morning\",\"lords_prayer\":\"Our Father in heaven...\","
-         "\"note\":\"Read today's chapter, then pray. Mark done to set SoftLand bible_done.\",\"notes\":\"\"},"
-         "\"afternoon\":{\"book\":\"Proverbs\",\"chapter\":" +
-         std::to_string(prov) + ",\"key\":\"" + aftKey + "\",\"label\":\"Proverbs " +
-         std::to_string(prov) + "\",\"slot\":\"afternoon\",\"done\":" + (aftDone ? "true" : "false") +
-         ",\"notes\":\"\",\"note\":\"Afternoon Proverbs.\"},"
-         "\"evening\":{\"book\":\"Psalms\",\"chapter\":" + std::to_string(psalm) + ",\"key\":\"" +
-         eveKey + "\",\"label\":\"Psalms " + std::to_string(psalm) +
-         "\",\"slot\":\"evening\",\"done\":" + (eveDone ? "true" : "false") +
-         ",\"notes\":\"\",\"note\":\"Evening Psalms + worship.\","
-         "\"worship_title\":\"How Great Thou Art\",\"worship_opening\":\"O Lord my God...\","
-         "\"hymn_id\":\"how-great-thou-art\"},"
+  std::string reader;
+  if (!LoadReaderDoc(userId, &reader)) reader = EmptyReaderDoc();
+
+  PlanChapter afternoon =
+      ReaderSlot(doc, "afternoon_book", "afternoon_chapter",
+                 ReaderSlot(reader, "afternoon_book", "afternoon_chapter",
+                            {"Proverbs", (DayOfYear() % 31) + 1}));
+  PlanChapter evening =
+      ReaderSlot(doc, "evening_book", "evening_chapter",
+                 ReaderSlot(reader, "evening_book", "evening_chapter",
+                            {"Psalms", (DayOfYear() % 150) + 1}));
+
+  std::string aftKey = ChapterKey(afternoon.book, afternoon.chapter);
+  std::string eveKey = ChapterKey(evening.book, evening.chapter);
+  bool aftDone = false;
+  bool eveDone = false;
+  {
+    std::string flag;
+    // true/false tokens
+    size_t p = doc.find("\"afternoon_done\"");
+    if (p != std::string::npos) {
+      size_t colon = doc.find(':', p);
+      if (colon != std::string::npos && doc.find("true", colon) < doc.find(',', colon)) aftDone = true;
+    }
+    p = doc.find("\"evening_done\"");
+    if (p != std::string::npos) {
+      size_t colon = doc.find(':', p);
+      if (colon != std::string::npos && doc.find("true", colon) < doc.find(',', colon)) eveDone = true;
+    }
+  }
+
+  std::string mNotes, aNotes, eNotes;
+  JsonGetStringLocal(doc, "morning_notes", &mNotes);
+  JsonGetStringLocal(doc, "afternoon_notes", &aNotes);
+  JsonGetStringLocal(doc, "evening_notes", &eNotes);
+
+  std::string mPrayer = SlotPrayerText("morning", doc, reader);
+  std::string aPrayer = SlotPrayerText("afternoon", doc, reader);
+  std::string ePrayer = SlotPrayerText("evening", doc, reader);
+
+  auto extractObj = [&](const std::string& blob, const char* key) -> std::string {
+    size_t p = blob.find(std::string("\"") + key + "\"");
+    if (p == std::string::npos) return "null";
+    size_t b = blob.find('{', p);
+    if (b == std::string::npos) return "null";
+    int depth = 0;
+    size_t e = b;
+    for (; e < blob.size(); ++e) {
+      if (blob[e] == '{') ++depth;
+      else if (blob[e] == '}') {
+        --depth;
+        if (depth == 0) {
+          ++e;
+          break;
+        }
+      }
+    }
+    return blob.substr(b, e - b);
+  };
+
+  return std::string("{") + "\"day\":\"" + day + "\"," +
+         "\"today_chapter\":" + extractObj(state, "today_chapter") + "," +
+         "\"chapter_goal\":" + extractObj(state, "chapter_goal") + "," +
+         "\"morning\":{\"slot\":\"morning\",\"lords_prayer\":\"" + EscapeJson(mPrayer) +
+         "\",\"prayer\":\"" + EscapeJson(mPrayer) +
+         "\",\"note\":\"Read today's chapter, pray, then journal. Mark done for SoftLand bible_done.\","
+         "\"notes\":\"" +
+         EscapeJson(mNotes) + "\",\"journal\":\"" + EscapeJson(mNotes) + "\"}," +
+         "\"afternoon\":{\"book\":\"" + EscapeJson(afternoon.book) + "\",\"chapter\":" +
+         std::to_string(afternoon.chapter) + ",\"key\":\"" + EscapeJson(aftKey) + "\",\"label\":\"" +
+         EscapeJson(afternoon.book) + " " + std::to_string(afternoon.chapter) +
+         "\",\"slot\":\"afternoon\",\"done\":" + (aftDone ? "true" : "false") + ",\"notes\":\"" +
+         EscapeJson(aNotes) + "\",\"journal\":\"" + EscapeJson(aNotes) + "\",\"prayer\":\"" +
+         EscapeJson(aPrayer) + "\",\"note\":\"Afternoon reading (usually Proverbs).\"}," +
+         "\"evening\":{\"book\":\"" + EscapeJson(evening.book) + "\",\"chapter\":" +
+         std::to_string(evening.chapter) + ",\"key\":\"" + EscapeJson(eveKey) + "\",\"label\":\"" +
+         EscapeJson(evening.book) + " " + std::to_string(evening.chapter) +
+         "\",\"slot\":\"evening\",\"done\":" + (eveDone ? "true" : "false") + ",\"notes\":\"" +
+         EscapeJson(eNotes) + "\",\"journal\":\"" + EscapeJson(eNotes) + "\",\"prayer\":\"" +
+         EscapeJson(ePrayer) + "\",\"lords_prayer\":\"" + EscapeJson(ePrayer) +
+         "\",\"note\":\"Evening reading (usually Psalms).\",\"worship_title\":\"Evening prayer\","
+         "\"worship_opening\":\"" +
+         EscapeJson(ePrayer) + "\",\"hymn_id\":\"\"}," +
          "\"morning_chapter\":null,\"afternoon_chapter\":null,\"evening_chapter\":null,"
          "\"hymns_catalog\":[],\"gate\":{}}";
+}
+
+bool PublishBibleDevotionMirror(const std::wstring& behaviorDir, const std::wstring& bibleDataDir,
+                                int userId) {
+  if (behaviorDir.empty() || bibleDataDir.empty()) return false;
+  LifeEnsureTables();
+  LifeBibleEnsureToday(userId, bibleDataDir);
+  std::string body = LifeBibleDevotionTodayJson(userId, bibleDataDir);
+  if (body.empty()) return false;
+  // Stamp for FE cache / debugging (mirror is SQLite projection, not a second SoT).
+  if (body.front() == '{') {
+    body.insert(1, "\"updated_at\":\"" + EscapeJson(IsoNow()) + "\",");
+  }
+  return WriteBehaviorMirrorFile(behaviorDir, L"bible_devotion.json", body);
 }
 
 bool LifeBibleDevotionDone(int userId, const std::string& slot, bool done,
                            const std::wstring& bibleDataDir, const std::wstring& behaviorDir,
                            std::string* outJson) {
+  auto plan = LoadPlan(bibleDataDir);
   if (slot == "morning") {
     LifeBibleEnsureToday(userId, bibleDataDir);
     std::string day = LocalDateYmd();
     std::string doc;
     LoadDayRow(userId, day, &doc);
-    auto plan = LoadPlan(bibleDataDir);
     PlanChapter a = AssignedFromDoc(doc, plan);
     std::string state;
     if (!LifeBibleTick(userId, a.book, a.chapter, done, bibleDataDir, behaviorDir, &state))
       return false;
+    if (done) {
+      std::string reader;
+      if (!LoadReaderDoc(userId, &reader)) reader = EmptyReaderDoc();
+      PlanChapter next = AdvanceSlotChapter("morning", a, plan);
+      SetJsonStringField(&reader, "morning_book", next.book);
+      SetJsonIntField(&reader, "morning_chapter", next.chapter);
+      SaveReaderDoc(userId, reader);
+    }
     if (outJson) *outJson = LifeBibleDevotionTodayJson(userId, bibleDataDir);
+    PublishDevotionMirrorBestEffort(bibleDataDir, behaviorDir, userId);
     return true;
   }
   LifeBibleEnsureToday(userId, bibleDataDir);
@@ -709,30 +1200,24 @@ bool LifeBibleDevotionDone(int userId, const std::string& slot, bool done,
   std::string doc;
   if (!LoadDayRow(userId, day, &doc)) return false;
   std::string flag = slot == "afternoon" ? "afternoon_done" : "evening_done";
-  std::string needle = std::string("\"") + flag + "\"";
-  size_t p = doc.find(needle);
-  std::string val = done ? "true" : "false";
-  if (p == std::string::npos) {
-    // inject into devotion object or top-level
-    size_t d = doc.find("\"devotion\"");
-    if (d != std::string::npos) {
-      size_t brace = doc.find('{', d);
-      if (brace != std::string::npos) {
-        doc.insert(brace + 1, std::string("\"") + flag + "\":" + val + ",");
-      }
-    } else {
-      doc.insert(doc.size() - 1, std::string(",\"") + flag + "\":" + val);
-    }
-  } else {
-    size_t colon = doc.find(':', p);
-    size_t i = colon + 1;
-    while (i < doc.size() && (doc[i] == ' ' || doc[i] == '\t')) ++i;
-    size_t j = i;
-    while (j < doc.size() && isalpha((unsigned char)doc[j])) ++j;
-    doc.replace(i, j - i, val);
-  }
+  SetJsonBoolField(&doc, flag.c_str(), done);
   SaveDayRow(userId, day, doc);
+
+  if (done) {
+    std::string reader;
+    if (!LoadReaderDoc(userId, &reader)) reader = EmptyReaderDoc();
+    const char* bk = slot == "afternoon" ? "afternoon_book" : "evening_book";
+    const char* ck = slot == "afternoon" ? "afternoon_chapter" : "evening_chapter";
+    PlanChapter cur = ReaderSlot(doc, bk, ck, ReaderSlot(reader, bk, ck, slot == "afternoon"
+                                                                             ? PlanChapter{"Proverbs", 1}
+                                                                             : PlanChapter{"Psalms", 1}));
+    PlanChapter next = AdvanceSlotChapter(slot, cur, plan);
+    SetJsonStringField(&reader, bk, next.book);
+    SetJsonIntField(&reader, ck, next.chapter);
+    SaveReaderDoc(userId, reader);
+  }
   if (outJson) *outJson = LifeBibleDevotionTodayJson(userId, bibleDataDir);
+  PublishDevotionMirrorBestEffort(bibleDataDir, behaviorDir, userId);
   return true;
 }
 
@@ -745,21 +1230,127 @@ bool LifeBibleDevotionNotes(int userId, const std::string& slot, const std::stri
   std::string field = slot == "morning"     ? "morning_notes"
                       : slot == "afternoon" ? "afternoon_notes"
                                             : "evening_notes";
-  // Store simply at top-level for now
-  std::string needle = std::string("\"") + field + "\"";
-  size_t p = doc.find(needle);
-  std::string esc = EscapeJson(notes.substr(0, 4000));
-  if (p == std::string::npos) {
-    doc.insert(doc.size() - 1, std::string(",\"") + field + "\":\"" + esc + "\"");
+  SetJsonStringField(&doc, field.c_str(), notes.substr(0, 8000));
+  SaveDayRow(userId, day, doc);
+
+  // Mirror into Focus Journal (per-slot titled entry)
+  std::string title = SlotJournalTitle(slot);
+  std::string payload = std::string("{\"entry_date\":\"") + day + "\",\"title\":\"" +
+                        EscapeJson(title) + "\",\"content\":\"" + EscapeJson(notes.substr(0, 8000)) +
+                        "\"}";
+  LifeJournalUpsert(payload, userId, nullptr);
+
+  if (outJson) *outJson = LifeBibleDevotionTodayJson(userId, bibleDataDir);
+  PublishDevotionMirrorBestEffort(bibleDataDir, L"", userId);
+  return true;
+}
+
+bool LifeBibleDevotionAssign(int userId, const std::string& slot, const std::string& book,
+                             int chapter, const std::wstring& bibleDataDir, std::string* outJson) {
+  if (book.empty() || chapter <= 0) return false;
+  if (slot != "morning" && slot != "afternoon" && slot != "evening") return false;
+  LifeBibleEnsureToday(userId, bibleDataDir);
+  std::string day = LocalDateYmd();
+  std::string doc;
+  if (!LoadDayRow(userId, day, &doc)) return false;
+  std::string reader;
+  if (!LoadReaderDoc(userId, &reader)) reader = EmptyReaderDoc();
+
+  if (slot == "morning") {
+    SetJsonStringField(&doc, "assigned_book", book);
+    SetJsonIntField(&doc, "assigned_chapter", chapter);
+    SetJsonStringField(&reader, "morning_book", book);
+    SetJsonIntField(&reader, "morning_chapter", chapter);
+  } else if (slot == "afternoon") {
+    SetJsonStringField(&doc, "afternoon_book", book);
+    SetJsonIntField(&doc, "afternoon_chapter", chapter);
+    SetJsonStringField(&reader, "afternoon_book", book);
+    SetJsonIntField(&reader, "afternoon_chapter", chapter);
+    SetJsonBoolField(&doc, "afternoon_done", false);
   } else {
-    size_t colon = doc.find(':', p);
-    size_t q1 = doc.find('"', colon + 1);
-    size_t q2 = q1 == std::string::npos ? std::string::npos : doc.find('"', q1 + 1);
-    if (q1 != std::string::npos && q2 != std::string::npos) {
-      doc.replace(q1, q2 - q1 + 1, std::string("\"") + esc + "\"");
-    }
+    SetJsonStringField(&doc, "evening_book", book);
+    SetJsonIntField(&doc, "evening_chapter", chapter);
+    SetJsonStringField(&reader, "evening_book", book);
+    SetJsonIntField(&reader, "evening_chapter", chapter);
+    SetJsonBoolField(&doc, "evening_done", false);
   }
   SaveDayRow(userId, day, doc);
+  SaveReaderDoc(userId, reader);
   if (outJson) *outJson = LifeBibleDevotionTodayJson(userId, bibleDataDir);
+  PublishDevotionMirrorBestEffort(bibleDataDir, L"", userId);
+  return true;
+}
+
+bool LifeBibleDevotionStep(int userId, const std::string& slot, int delta,
+                           const std::wstring& bibleDataDir, std::string* outJson) {
+  if (delta == 0) return false;
+  if (slot != "morning" && slot != "afternoon" && slot != "evening") return false;
+  LifeBibleEnsureToday(userId, bibleDataDir);
+  auto plan = LoadPlan(bibleDataDir);
+  std::string day = LocalDateYmd();
+  std::string doc;
+  if (!LoadDayRow(userId, day, &doc)) return false;
+
+  PlanChapter cur;
+  if (slot == "morning") {
+    cur = AssignedFromDoc(doc, plan);
+  } else if (slot == "afternoon") {
+    cur = ReaderSlot(doc, "afternoon_book", "afternoon_chapter", {"Proverbs", 1});
+  } else {
+    cur = ReaderSlot(doc, "evening_book", "evening_chapter", {"Psalms", 1});
+  }
+
+  PlanChapter next = cur;
+  if (delta > 0) {
+    next = AdvanceSlotChapter(slot, cur, plan);
+  } else if (slot == "morning") {
+    int idx = FindPlanIndex(plan, cur.book, cur.chapter);
+    if (idx < 0) idx = 0;
+    int n = (int)plan.size();
+    next = n ? plan[(idx - 1 + n) % n] : cur;
+  } else if (slot == "afternoon" && (cur.book == "Proverbs" || cur.book == "proverbs")) {
+    int c = cur.chapter - 1;
+    if (c < 1) c = 31;
+    next = {"Proverbs", c};
+  } else if (slot == "evening" &&
+             (cur.book == "Psalms" || cur.book == "Psalm" || cur.book == "psalms")) {
+    int c = cur.chapter - 1;
+    if (c < 1) c = 150;
+    next = {"Psalms", c};
+  } else {
+    int c = cur.chapter - 1;
+    if (c < 1) c = 1;
+    next = {cur.book, c};
+  }
+  return LifeBibleDevotionAssign(userId, slot, next.book, next.chapter, bibleDataDir, outJson);
+}
+
+bool LifeBibleDevotionPrayer(int userId, const std::string& slot, const std::string& text,
+                             bool reset, const std::wstring& bibleDataDir, std::string* outJson) {
+  if (slot != "morning" && slot != "afternoon" && slot != "evening") return false;
+  LifeBibleEnsureToday(userId, bibleDataDir);
+  std::string day = LocalDateYmd();
+  std::string doc;
+  if (!LoadDayRow(userId, day, &doc)) return false;
+  std::string reader;
+  if (!LoadReaderDoc(userId, &reader)) reader = EmptyReaderDoc();
+
+  const char* key = slot == "morning"     ? "morning_prayer"
+                    : slot == "afternoon" ? "afternoon_prayer"
+                                          : "evening_prayer";
+  std::string body;
+  if (reset) {
+    body = slot == "morning"       ? kLordsPrayer
+           : slot == "afternoon"   ? kAfternoonPrayerDefault
+                                   : kEveningPrayerDefault;
+  } else {
+    body = text.substr(0, 8000);
+  }
+  SetJsonStringField(&doc, key, body);
+  SetJsonStringField(&reader, key, body);
+  SaveDayRow(userId, day, doc);
+  SaveReaderDoc(userId, reader);
+  if (outJson) *outJson = LifeBibleDevotionTodayJson(userId, bibleDataDir);
+  PublishDevotionMirrorBestEffort(bibleDataDir, L"", userId);
   return true;
 }

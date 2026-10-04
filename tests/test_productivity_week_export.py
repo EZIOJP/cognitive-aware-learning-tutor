@@ -10,6 +10,7 @@ from backend.planner.week_export import (
 
 def test_export_as_csv_headers():
     payload = {
+        "export_version": "1.4",
         "by_day": [
             {
                 "date": "2026-07-11",
@@ -27,9 +28,39 @@ def test_export_as_csv_headers():
         "suggested_timetable_hints": ["Protect 10:00 blocks."],
     }
     csv_text = export_as_csv(payload)
+    assert "# table:day_metrics" in csv_text
+    assert "# table:day_hour" in csv_text
+    assert "# table:day_category" in csv_text
     assert "date,weekday,planned_minutes" in csv_text
     assert "2026-07-11,sat,60" in csv_text
+    assert "2026-07-11,sat,10,10" in csv_text  # day_hour long row
+    assert "2026-07-11,sat,study,30" in csv_text
     assert "Protect 10:00 blocks." in csv_text
+
+
+def test_export_as_csv_wide_still_available():
+    from backend.planner.week_export import export_as_csv_wide
+
+    payload = {
+        "by_day": [
+            {
+                "date": "2026-07-11",
+                "weekday": "sat",
+                "planned_minutes": 60,
+                "actual_minutes": 45,
+                "productive_minutes": 30,
+                "effective_focus_minutes": 20,
+                "adherence_pct": 75.0,
+                "by_category_minutes": {"study": 30},
+                "top_apps": [{"app": "code.exe", "minutes": 30}],
+                "by_hour_minutes": {str(h): (10 if h == 10 else 0) for h in range(24)},
+            }
+        ],
+        "suggested_timetable_hints": [],
+    }
+    wide = export_as_csv_wide(payload)
+    assert "h00" in wide.splitlines()[0]
+    assert "2026-07-11,sat,60" in wide
 
 
 def test_is_empty_export_day_and_omit():
@@ -287,7 +318,12 @@ def test_week_export_includes_daily_wearable_metrics():
     assert wearable["sleep_hours"] == 7.5
     assert wearable["heart_rate_resting"] == 58
     assert wearable["spo2_pct"] == 97
-    assert "steps" in export_as_csv(payload).splitlines()[0]
+    csv_text = export_as_csv(payload)
+    assert "# table:wearable_daily" in csv_text
+    assert "steps" in csv_text
+    assert "8421" in csv_text
+    assert "tables" in payload
+    assert payload["tables"]["wearable_daily"][0]["steps"] == 8421
     db.close()
 
 

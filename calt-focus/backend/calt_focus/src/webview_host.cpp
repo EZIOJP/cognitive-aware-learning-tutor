@@ -1,5 +1,6 @@
 #include "webview_host.h"
 #include "enforcer_cmd.h"
+#include "paths.h"
 
 #include <WebView2.h>
 #include <shellapi.h>
@@ -119,6 +120,7 @@ std::string NarrowUtf8(const std::wstring& w) {
 
 class MsgHandler : public ICoreWebView2WebMessageReceivedEventHandler {
  public:
+  explicit MsgHandler(HWND shellHwnd) : shell_hwnd_(shellHwnd) {}
   HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, void** ppv) override {
     if (!ppv) return E_POINTER;
     if (riid == IID_IUnknown || riid == IID_ICoreWebView2WebMessageReceivedEventHandler) {
@@ -142,6 +144,42 @@ class MsgHandler : public ICoreWebView2WebMessageReceivedEventHandler {
     if (FAILED(args->get_WebMessageAsJson(&json)) || !json) return S_OK;
     std::string msg = NarrowUtf8(json);
     CoTaskMemFree(json);
+
+    // In-app Focus menu → native shell (reload / tray / quit) when tray is hard to find.
+    if (msg.find("\"focus_shell\"") != std::string::npos && shell_hwnd_) {
+      std::string action;
+      auto grabQuoted = [&](const char* key, std::string* out) {
+        std::string needle = std::string("\"") + key + "\"";
+        size_t p = msg.find(needle);
+        if (p == std::string::npos) return;
+        size_t colon = msg.find(':', p + needle.size());
+        if (colon == std::string::npos) return;
+        size_t i = colon + 1;
+        while (i < msg.size() && (msg[i] == ' ' || msg[i] == '\t')) ++i;
+        if (i >= msg.size() || msg[i] != '"') return;
+        ++i;
+        while (i < msg.size() && msg[i] != '"') {
+          if (msg[i] == '\\' && i + 1 < msg.size()) {
+            out->push_back(msg[i + 1]);
+            i += 2;
+            continue;
+          }
+          out->push_back(msg[i++]);
+        }
+      };
+      grabQuoted("action", &action);
+      // Must match FocusApp WM_FOCUS_SHELL WPARAM values in app.cpp
+      constexpr UINT WM_FOCUS_SHELL = WM_APP + 55;
+      WPARAM wp = 0;
+      if (action == "reload_ui") wp = 1;
+      else if (action == "ensure_tray") wp = 2;
+      else if (action == "quit") wp = 3;
+      else if (action == "open_settings") wp = 4;
+      else if (action == "popup_tray") wp = 5;
+      else if (action == "restart_enforcer") wp = 6;
+      if (wp) PostMessageW(shell_hwnd_, WM_FOCUS_SHELL, wp, 0);
+      return S_OK;
+    }
 
     // Open Study / external browser links from Focus UI.
     if (msg.find("\"open_external\"") != std::string::npos) {
@@ -169,6 +207,46 @@ class MsgHandler : public ICoreWebView2WebMessageReceivedEventHandler {
       if (!url.empty()) {
         std::wstring wurl = WidenUtf8(url);
         ShellExecuteW(nullptr, L"open", wurl.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+      }
+      return S_OK;
+    }
+
+    // Whitelisted Admin scripts under scripts\ (device hosts lock).
+    if (msg.find("\"run_repo_bat\"") != std::string::npos) {
+      std::string name;
+      std::string confirm;
+      auto grabQuoted = [&](const char* key, std::string* out) {
+        std::string needle = std::string("\"") + key + "\"";
+        size_t p = msg.find(needle);
+        if (p == std::string::npos) return;
+        size_t colon = msg.find(':', p + needle.size());
+        if (colon == std::string::npos) return;
+        size_t i = colon + 1;
+        while (i < msg.size() && (msg[i] == ' ' || msg[i] == '\t')) ++i;
+        if (i >= msg.size() || msg[i] != '"') return;
+        ++i;
+        while (i < msg.size() && msg[i] != '"') {
+          if (msg[i] == '\\' && i + 1 < msg.size()) {
+            out->push_back(msg[i + 1]);
+            i += 2;
+            continue;
+          }
+          out->push_back(msg[i++]);
+        }
+      };
+      grabQuoted("name", &name);
+      grabQuoted("confirm", &confirm);
+      if (name == "device_block_apply.bat" || name == "device_block_remove.bat") {
+        const std::wstring bat = RepoRoot() + L"\\scripts\\" + WidenUtf8(name);
+        // Pass confirm as first arg so bat can re-pass after UAC elevation.
+        std::wstring params;
+        if (!confirm.empty()) {
+          params = L"\"";
+          params += WidenUtf8(confirm);
+          params += L"\"";
+        }
+        ShellExecuteW(nullptr, L"open", bat.c_str(),
+                      params.empty() ? nullptr : params.c_str(), RepoRoot().c_str(), SW_SHOW);
       }
       return S_OK;
     }
@@ -247,6 +325,7 @@ class MsgHandler : public ICoreWebView2WebMessageReceivedEventHandler {
   }
 
  private:
+  HWND shell_hwnd_ = nullptr;
   std::atomic<ULONG> ref_{1};
 };
 
@@ -348,7 +427,7 @@ void WebViewHost::OnController(HRESULT hr, ICoreWebView2Controller* controller) 
   controller_->put_IsVisible(TRUE);
   {
     EventRegistrationToken token{};
-    auto* msg = new MsgHandler();
+    auto* msg = new MsgHandler(parent_);
     webview_->add_WebMessageReceived(msg, &token);
     msg->Release();
   }
@@ -425,6 +504,42 @@ void WebViewHost::Navigate(const std::wstring& url) {
     return;
   }
   webview_->Navigate(url.c_str());
+}
+
+bool WebViewHost::PostWebMessageJson(const std::string& utf8Json) {
+  if (!webview_ || utf8Json.empty()) {
+    return false;
+  }
+  int n = MultiByteToWideChar(CP_UTF8, 0, utf8Json.c_str(), (int)utf8Json.size(), nullptr, 0);
+  if (n <= 0) return false;
+  std::wstring w(n, L'\0');
+  MultiByteToWideChar(CP_UTF8, 0, utf8Json.c_str(), (int)utf8Json.size(), w.data(), n);
+  return SUCCEEDED(webview_->PostWebMessageAsJson(w.c_str()));
+}
+
+void WebViewHost::NavigateHash(const std::wstring& hashWithQuery) {
+  if (!webview_) {
+    return;
+  }
+  // Escape for JS string literal.
+  std::wstring esc;
+  esc.reserve(hashWithQuery.size() + 8);
+  for (wchar_t c : hashWithQuery) {
+    if (c == L'\\' || c == L'\'' || c == L'"') {
+      esc.push_back(L'\\');
+    }
+    if (c == L'\n' || c == L'\r') {
+      continue;
+    }
+    esc.push_back(c);
+  }
+  std::wstring script =
+      L"(function(){try{var h='" + esc +
+      L"';if(h.charAt(0)!=='#')h='#'+h;"
+      L"if(location.hash!==h){location.hash=h;}else{"
+      L"window.dispatchEvent(new HashChangeEvent('hashchange'));}"
+      L"}catch(e){}})();";
+  webview_->ExecuteScript(script.c_str(), nullptr);
 }
 
 void WebViewHost::Show(bool show) {

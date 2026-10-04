@@ -9,12 +9,12 @@ import { ActivitiesPanel } from "./ActivitiesPanel";
 import ClassificationReview from "./ClassificationReview";
 import { ExportRangeCalendar } from "./ExportRangeCalendar";
 import { DesktopManagedBanner } from "./DesktopManagedBanner";
-import {
-  ProductivitySettingsHub,
+import MakeSettingsApp, {
   parseSettingsSection,
   type SettingsSectionId,
-} from "./settings/ProductivitySettingsHub";
+} from "./settings/make/MakeSettingsApp";
 import type { DesktopTimeline } from "../../api/behaviorClient";
+import { isFocusDesktopShell } from "../../utils/focusDesktopShell";
 
 export type ProductivitySettingsTabProps = {
   section: SettingsSectionId;
@@ -35,15 +35,16 @@ export type ProductivitySettingsTabProps = {
   exporting: boolean;
   applyExportWindow: (start: string, end: string) => void;
   setExportDaysWindow: (days: number, end: string) => void;
-  exportWeek: (fmt: "json" | "csv") => void;
+  exportWeek: (fmt: "json" | "csv" | "csv_wide") => void;
   toApiDay: (d: Date) => string;
 };
 
 export function ProductivitySettingsTab(props: ProductivitySettingsTabProps) {
+  const focusShell = isFocusDesktopShell();
   const productiveExtra = (
     <div className="space-y-4">
       <DesktopManagedBanner feature="Session override & classification" />
-      <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:p-6">
+      <div className="rounded-2xl border border-border/50 bg-card/30 p-4 sm:p-6">
         <SessionOverridePanel
           timeline={props.timeline}
           onSaved={() => {
@@ -52,14 +53,14 @@ export function ProductivitySettingsTab(props: ProductivitySettingsTabProps) {
           }}
         />
       </div>
-      <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:p-6">
+      <div className="rounded-2xl border border-border/50 bg-card/30 p-4 sm:p-6">
         <ActivitiesPanel
           day={props.plannerDayApi}
           trackerNoData={props.trackerNoData}
           refreshKey={props.plannerRefresh}
         />
       </div>
-      <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:p-6">
+      <div className="rounded-2xl border border-border/50 bg-card/30 p-4 sm:p-6">
         <ClassificationReview trackerNoData={props.trackerNoData} />
       </div>
     </div>
@@ -74,13 +75,15 @@ export function ProductivitySettingsTab(props: ProductivitySettingsTabProps) {
           onPlannerChange={props.bumpPlanner}
         />
       </div>
-      <div className="space-y-2">
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-amber-200/90">Demo mode</h3>
-        <p className="text-[11px] text-muted-foreground">
-          Fake the clock for SoftLand schedules — pick a day on the calendar control below.
-        </p>
-        <DemoModePanel onChanged={props.onDemoChanged} onJumpToDay={props.onJumpToDay} />
-      </div>
+      {!focusShell ? (
+        <div className="space-y-2">
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-amber-200/90">Demo mode</h3>
+          <p className="text-[11px] text-muted-foreground">
+            Advanced: fake the SoftLand schedule clock for testing. Leave off for real days.
+          </p>
+          <DemoModePanel onChanged={props.onDemoChanged} onJumpToDay={props.onJumpToDay} />
+        </div>
+      ) : null}
       <div className="space-y-2">
         <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Watch ↔ PC</h3>
         <WearablesSyncPanel />
@@ -107,7 +110,7 @@ export function ProductivitySettingsTab(props: ProductivitySettingsTabProps) {
               className={`rounded-full border px-3 py-1 text-xs ${
                 props.exportDays === days
                   ? "border-primary/30 bg-primary/10 text-primary"
-                  : "border-white/10 bg-black/20 text-muted-foreground"
+                  : "border-border/50 bg-background/35 text-muted-foreground"
               }`}
             >
               {days === 365 ? "Year" : `${days}d`}
@@ -120,9 +123,8 @@ export function ProductivitySettingsTab(props: ProductivitySettingsTabProps) {
             <input
               type="date"
               value={props.exportStartDay}
-              max={props.exportEndDay}
-              onChange={(e) => e.target.value && props.applyExportWindow(e.target.value, props.exportEndDay)}
-              className="w-full rounded border border-white/10 bg-black/30 px-2 py-1.5 text-foreground"
+              onChange={(e) => props.applyExportWindow(e.target.value, props.exportEndDay)}
+              className="w-full rounded-lg border border-border/50 bg-background/50 px-2 py-1.5 text-xs"
             />
           </label>
           <label className="block space-y-1 text-xs text-muted-foreground">
@@ -130,10 +132,8 @@ export function ProductivitySettingsTab(props: ProductivitySettingsTabProps) {
             <input
               type="date"
               value={props.exportEndDay}
-              max={props.toApiDay(new Date())}
-              min={props.exportStartDay}
-              onChange={(e) => e.target.value && props.applyExportWindow(props.exportStartDay, e.target.value)}
-              className="w-full rounded border border-white/10 bg-black/30 px-2 py-1.5 text-foreground"
+              onChange={(e) => props.applyExportWindow(props.exportStartDay, e.target.value)}
+              className="w-full rounded-lg border border-border/50 bg-background/50 px-2 py-1.5 text-xs"
             />
           </label>
         </div>
@@ -142,12 +142,17 @@ export function ProductivitySettingsTab(props: ProductivitySettingsTabProps) {
           endIso={props.exportEndDay}
           onRangeChange={(start, end) => props.applyExportWindow(start, end)}
         />
+        <p className="text-[11px] text-muted-foreground leading-relaxed max-w-lg">
+          JSON includes nested <code className="text-[10px] bg-black/30 px-1 rounded">by_day</code> plus
+          tidy <code className="text-[10px] bg-black/30 px-1 rounded">tables</code> (sessions, day×hour,
+          categories, blocks). CSV is long-format multi-table for pandas/R/Sheets.
+        </p>
         <div className="flex flex-wrap gap-2">
           <button
             type="button"
             disabled={props.exporting}
             onClick={() => void props.exportWeek("json")}
-            className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs hover:bg-white/10 disabled:opacity-50"
+            className="flex items-center gap-1.5 rounded-lg border border-border/50 bg-background/35 px-3 py-2 text-xs hover:bg-accent/50 disabled:opacity-50"
           >
             {props.exporting ? <Loader2 size={13} className="animate-spin" /> : <Download size={13} />}
             JSON
@@ -156,34 +161,46 @@ export function ProductivitySettingsTab(props: ProductivitySettingsTabProps) {
             type="button"
             disabled={props.exporting}
             onClick={() => void props.exportWeek("csv")}
-            className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs hover:bg-white/10 disabled:opacity-50"
+            className="flex items-center gap-1.5 rounded-lg border border-border/50 bg-background/35 px-3 py-2 text-xs hover:bg-accent/50 disabled:opacity-50"
           >
-            <Download size={13} /> CSV
+            <Download size={13} /> CSV (long)
+          </button>
+          <button
+            type="button"
+            disabled={props.exporting}
+            onClick={() => void props.exportWeek("csv_wide")}
+            className="flex items-center gap-1.5 rounded-lg border border-border/50 bg-background/35 px-3 py-2 text-xs hover:bg-accent/50 disabled:opacity-50"
+          >
+            <Download size={13} /> CSV (wide)
           </button>
         </div>
       </div>
-      <div className="space-y-2 rounded-xl border border-white/10 bg-black/20 p-4">
+      <div className="space-y-2 rounded-xl border border-border/50 bg-background/35 p-4">
         <h3 className="font-semibold flex items-center gap-2 text-sm">
           <Terminal size={15} className="text-sky-400" />
           Setup
         </h3>
         <p className="text-[11px] text-muted-foreground leading-relaxed">
           Edge SelfTracker + CALT Gate for SoftLand.{" "}
-          <code className="text-[10px] bg-black/40 px-1 rounded">scripts\desktop_tracker\run\run_calt_desktop.bat</code>{" "}
-          for Focus + enforcer. Arm lives under <strong className="text-foreground/80">Now</strong>.
+          <code className="text-[10px] bg-black/40 px-1 rounded">
+            scripts\desktop_tracker\run\run_calt_desktop.bat
+          </code>{" "}
+          for Focus + enforcer. Arm lives under <strong className="text-foreground/80">Unlock</strong>.
         </p>
       </div>
     </div>
   );
 
   return (
-    <ProductivitySettingsHub
-      section={props.section}
-      onSectionChange={props.onSectionChange}
-      onPolicySaved={props.onPolicySaved}
-      productiveExtra={productiveExtra}
-      toolsContent={toolsContent}
-    />
+    <div className="gloss-panel rounded-3xl border border-border/50 overflow-hidden min-h-[70vh]">
+      <MakeSettingsApp
+        section={props.section}
+        onSectionChange={props.onSectionChange}
+        onPolicySaved={props.onPolicySaved}
+        productiveExtra={productiveExtra}
+        toolsContent={toolsContent}
+      />
+    </div>
   );
 }
 

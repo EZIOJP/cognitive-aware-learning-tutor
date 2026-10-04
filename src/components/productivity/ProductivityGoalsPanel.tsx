@@ -1,17 +1,75 @@
-import { useEffect, useMemo, useState } from "react";
-import { Check, ChevronDown, ChevronUp, Gift, Plus, Save, Target, Trash2 } from "lucide-react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { Check, ChevronDown, ChevronUp, Plus, Target, Trash2 } from "lucide-react";
 import type { AdherenceSummary } from "../../api/plannerClient";
 import type { StudyTask } from "../../api/plannerClient";
 import {
   fetchProductivityPolicy,
-  fetchGoalsStatus,
   saveProductivityPolicy,
-  type GoalsStatusResponse,
 } from "../../api/behaviorClient";
 import { cn } from "../../app/components/ui/utils";
-import { BLOCK_TEMPLATES } from "./studyTaskPresets";
-import SoftLandSiteRulesPanel from "./SoftLandSiteRulesPanel";
 import { isFocusDesktopShell } from "../../utils/focusDesktopShell";
+import { focusDataUrl } from "../../utils/focusDataUrl";
+import { enforcerNativeCmd, isFocusEnforcerBridgeAvailable } from "../../lib/enforcerNativeCmd";
+import BlockerPanel from "./BlockerPanel";
+import { GoalsTodayPlanBlocks } from "./GoalsTodayPlanBlocks";
+
+/** Fixed system reward — not user-edited copy */
+export const IMPLIED_FOCUS_REWARD =
+  "Hit today's on-plan focus target — SoftLand watch sites open in free/reward. SoftLand ON ≠ Armed.";
+
+async function loadDailyFocusHours(): Promise<number | null> {
+  if (isFocusDesktopShell()) {
+    try {
+      const r = await fetch(focusDataUrl("softland_policy.json"), { cache: "no-store" });
+      if (r.ok) {
+        const j = (await r.json()) as { goals?: { daily_focus_minutes?: number } };
+        const mins = Number(j.goals?.daily_focus_minutes);
+        if (Number.isFinite(mins) && mins > 0) return goalMinutesToFocusHours(mins);
+      }
+    } catch {
+      /* fall through */
+    }
+    return null;
+  }
+  try {
+    const p = await fetchProductivityPolicy();
+    return goalMinutesToFocusHours(p.daily_goal_minutes ?? 240);
+  } catch {
+    return null;
+  }
+}
+
+async function saveDailyFocusHours(hours: number): Promise<void> {
+  const minutes = focusHoursToGoalMinutes(hours);
+  if (isFocusEnforcerBridgeAvailable()) {
+    let goalsObj: Record<string, unknown> = {
+      daily_focus_minutes: minutes,
+      goal_met: false,
+      bible_done: false,
+    };
+    try {
+      const r = await fetch(focusDataUrl("softland_policy.json"), { cache: "no-store" });
+      if (r.ok) {
+        const j = (await r.json()) as { goals?: Record<string, unknown> };
+        if (j.goals && typeof j.goals === "object") {
+          goalsObj = { ...j.goals, daily_focus_minutes: minutes };
+        }
+      }
+    } catch {
+      /* use defaults */
+    }
+    const res = await enforcerNativeCmd("softland.patch_goals", { goals: goalsObj });
+    if (!res?.ok) {
+      throw new Error(typeof res?.error === "string" ? res.error : "Enforcer rejected daily focus");
+    }
+    return;
+  }
+  if (isFocusDesktopShell()) {
+    // Design host / no pipe — localStorage only (already persisted by the panel).
+    return;
+  }
+  await saveProductivityPolicy({ daily_goal_minutes: minutes });
+}
 
 const LS_KEY = "productivity:goals:v1";
 export const GOALS_UPDATED_EVENT = "productivity:goals-updated";
@@ -36,7 +94,7 @@ const DEFAULT_GOALS: ProductivityGoals = {
   focusHoursPerDay: 4,
   weeklyFocusHours: 24,
   mainGoal: "Complete the Scaler AI/ML course — daily lessons + practice before entertainment.",
-  reward: "Unlock games / free time after hitting today's on-plan focus target (off-plan productive apps don't count).",
+  reward: IMPLIED_FOCUS_REWARD,
   extraGoals: [],
   studyTasks: [],
 };
@@ -73,53 +131,70 @@ function normalizeStudyTasks(raw: unknown): StudyTask[] {
     .filter((t) => t.title);
 }
 
-function HoursStepper({
-  label,
+function FocusHoursHero({
   value,
   min,
   max,
   step,
+  effectiveHours,
+  plannedHours,
   onChange,
 }: {
-  label: string;
   value: number;
   min: number;
   max: number;
   step: number;
+  effectiveHours: number;
+  /** Hours already on today's calendar (all blocks). */
+  plannedHours?: number;
   onChange: (n: number) => void;
 }) {
   const bump = (dir: 1 | -1) => {
     const next = Math.round((value + dir * step) * 10) / 10;
     onChange(Math.min(max, Math.max(min, next)));
   };
+  const pct = value > 0 ? Math.min(100, Math.round((effectiveHours / value) * 100)) : 0;
+  const remaining = Math.max(0, value - effectiveHours);
+  const met = remaining <= 0 && value > 0;
+  const planned = typeof plannedHours === "number" && plannedHours > 0 ? plannedHours : null;
 
   return (
-    <div className="text-xs text-muted-foreground">
-      <span className="block mb-1">{label}</span>
-      <div className="inline-flex items-stretch rounded-lg border border-white/10 bg-black/30 overflow-hidden h-8">
-        <span className="min-w-[2.25rem] px-2 flex items-center justify-center font-mono tabular-nums text-sm text-foreground">
-          {value}
-        </span>
-        <div className="flex flex-col border-l border-white/10 w-6">
-          <button
-            type="button"
-            aria-label={`Increase ${label}`}
-            onClick={() => bump(1)}
-            className="flex-1 flex items-center justify-center hover:bg-white/10 text-muted-foreground hover:text-foreground"
-          >
-            <ChevronUp size={12} />
+    <section className="goals-focus-hero">
+      <div className="goals-focus-hero__row">
+        <div className="min-w-0">
+          <p className="goals-focus-hero__label">Daily focus</p>
+          <div className="goals-focus-hero__value-row">
+            <span className="goals-focus-hero__value tabular-nums">{value}</span>
+            <span className="goals-focus-hero__unit">hours</span>
+          </div>
+        </div>
+        <div className="goals-focus-hero__stepper" aria-label="Adjust daily focus hours">
+          <button type="button" aria-label="Increase daily focus" onClick={() => bump(1)}>
+            <ChevronUp size={14} />
           </button>
-          <button
-            type="button"
-            aria-label={`Decrease ${label}`}
-            onClick={() => bump(-1)}
-            className="flex-1 flex items-center justify-center border-t border-white/10 hover:bg-white/10 text-muted-foreground hover:text-foreground"
-          >
-            <ChevronDown size={12} />
+          <button type="button" aria-label="Decrease daily focus" onClick={() => bump(-1)}>
+            <ChevronDown size={14} />
           </button>
         </div>
       </div>
-    </div>
+
+      <div className="goals-focus-hero__meter" aria-hidden={!value}>
+        <div className="goals-focus-hero__bar">
+          <div
+            className={cn("goals-focus-hero__fill", met && "is-met")}
+            style={{ width: `${pct}%` }}
+          />
+        </div>
+        <p className={cn("goals-focus-hero__status", met && "is-met")}>
+          {met
+            ? "Focus met — Blocker lifts"
+            : `${effectiveHours.toFixed(1)} / ${value}h · ${remaining.toFixed(1)}h left`}
+          {planned != null ? (
+            <span className="text-sky-300/80"> · {planned.toFixed(1)}h study planned</span>
+          ) : null}
+        </p>
+      </div>
+    </section>
   );
 }
 
@@ -134,6 +209,14 @@ type Props = {
   onGoalsTextChange?: (text: string) => void;
   /** Fired when the user explicitly Saves — marks the Plan stepper Goals step complete */
   onConfirmed?: () => void;
+  /** After apply / plan block changes — refresh calendar mirrors */
+  onPlanBlocksChange?: () => void;
+  /** Bump when parent reloads planner */
+  planRefreshKey?: number;
+  /** Switch Productivity tab to Calendar (avoids Router Link crash in Focus). */
+  onOpenCalendar?: () => void;
+  /** Plan step Confirm / Back / Next — folded into this card */
+  footer?: ReactNode;
 };
 
 export function focusHoursToGoalMinutes(hours: number): number {
@@ -175,8 +258,12 @@ export function loadProductivityGoals(): ProductivityGoals {
     ) {
       parsed.mainGoal = DEFAULT_GOALS.mainGoal;
     }
-    if (parsed.reward === "Guilt-free break after hitting the focus target.") {
-      parsed.reward = DEFAULT_GOALS.reward;
+    if (
+      !parsed.reward?.trim() ||
+      parsed.reward === "Guilt-free break after hitting the focus target." ||
+      parsed.reward.startsWith("Unlock games / free time")
+    ) {
+      parsed.reward = IMPLIED_FOCUS_REWARD;
     }
     return parsed;
   } catch {
@@ -203,80 +290,25 @@ export function formatGoalsForPrompt(goals: ProductivityGoals): string {
             return `${t.title} (${t.minutes}m; allow ${allow || "study sites"}; block ${block || "distractions"})`;
           })
           .join(" | ")}.`;
-  return `${goals.mainGoal} Daily effective-focus target: ${goals.focusHoursPerDay}h. Weekly target: ${goals.weeklyFocusHours}h. Reward: ${goals.reward}.${extraBlock}${taskBlock}`;
+  return `${goals.mainGoal} Daily effective-focus target: ${goals.focusHoursPerDay}h. Weekly target: ${goals.weeklyFocusHours}h. Reward: ${IMPLIED_FOCUS_REWARD}.${extraBlock}${taskBlock}`;
 }
 
 export function ProductivityGoalsPanel({
   adherence,
-  lockedHours = 0,
-  wakingHours = 16,
-  sleepScore = null,
+  lockedHours,
   onGoalsTextChange,
-  onConfirmed,
+  onPlanBlocksChange,
+  planRefreshKey = 0,
+  onOpenCalendar,
+  footer,
 }: Props) {
   const [goals, setGoals] = useState<ProductivityGoals>(() => loadProductivityGoals());
-  const [saved, setSaved] = useState(false);
-  const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [draftExtra, setDraftExtra] = useState("");
-  const [hostDrafts, setHostDrafts] = useState<Record<string, string>>({});
-  const [goalsStatus, setGoalsStatus] = useState<GoalsStatusResponse | null>(null);
+  const [focusHydrated, setFocusHydrated] = useState(false);
+  const lastSavedFocusHours = useRef<number | null>(null);
 
   const effectiveHours = (adherence?.effective_focus_minutes ?? 0) / 60;
-  const dayPct =
-    goals.focusHoursPerDay > 0
-      ? Math.min(100, Math.round((effectiveHours / goals.focusHoursPerDay) * 100))
-      : 0;
-  const remaining = Math.max(0, goals.focusHoursPerDay - effectiveHours);
-  const openExtras = goals.extraGoals.filter((g) => !g.done && g.title.trim()).length;
-  const freeHours = Math.max(0, wakingHours - lockedHours);
-  const focusFit =
-    goals.focusHoursPerDay <= 0
-      ? "ok"
-      : goals.focusHoursPerDay <= freeHours * 0.85
-        ? "easy"
-        : goals.focusHoursPerDay <= freeHours
-          ? "ok"
-          : "tight";
-
-  const recoveryFactor =
-    sleepScore != null && sleepScore > 0
-      ? sleepScore >= 85
-        ? 1.0
-        : sleepScore >= 70
-          ? 0.9
-          : sleepScore >= 55
-            ? 0.75
-            : 0.6
-      : null;
-  const suggestedFocusHours =
-    recoveryFactor != null
-      ? Math.round(goals.focusHoursPerDay * recoveryFactor * 10) / 10
-      : null;
-  const recoveryLabel =
-    sleepScore != null && sleepScore > 0
-      ? sleepScore >= 85
-        ? "Full capacity"
-        : sleepScore >= 70
-          ? "Good recovery"
-          : sleepScore >= 55
-            ? "Moderate — trim deep work"
-            : "Low recovery — lighter day"
-      : null;
-
-  useEffect(() => {
-    let cancelled = false;
-    void fetchGoalsStatus()
-      .then((s) => {
-        if (!cancelled) setGoalsStatus(s);
-      })
-      .catch(() => {
-        if (!cancelled) setGoalsStatus(null);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [saved, goals.focusHoursPerDay]);
 
   const goalsText = useMemo(() => formatGoalsForPrompt(goals), [goals]);
 
@@ -292,40 +324,47 @@ export function ProductivityGoalsPanel({
 
   useEffect(() => {
     let cancelled = false;
-    void fetchProductivityPolicy()
-      .then((p) => {
-        if (cancelled) return;
-        const hours = goalMinutesToFocusHours(p.daily_goal_minutes ?? 240);
+    void loadDailyFocusHours().then((hours) => {
+      if (cancelled) return;
+      if (hours != null) {
+        lastSavedFocusHours.current = hours;
         setGoals((prev) =>
           prev.focusHoursPerDay === hours ? prev : { ...prev, focusHoursPerDay: hours },
         );
-      })
-      .catch(() => {});
+      } else {
+        lastSavedFocusHours.current = loadProductivityGoals().focusHoursPerDay;
+      }
+      setFocusHydrated(true);
+    });
     return () => {
       cancelled = true;
     };
   }, []);
 
-  const save = async () => {
-    setSaving(true);
-    setSaveError(null);
-    localStorage.setItem(LS_KEY, JSON.stringify(goals));
-    onGoalsTextChange?.(goalsText);
-    try {
-      await saveProductivityPolicy({
-        daily_goal_minutes: focusHoursToGoalMinutes(goals.focusHoursPerDay),
-      });
-      persistProductivityGoals(goals);
-      setSaved(true);
-      window.setTimeout(() => setSaved(false), 1800);
-      onConfirmed?.();
-    } catch (e: unknown) {
-      persistProductivityGoals(goals);
-      setSaveError(e instanceof Error ? e.message : "Could not update the daily gate goal");
-    } finally {
-      setSaving(false);
-    }
-  };
+  // Local persist on any edit (silent — avoid GOALS_UPDATED echo loop).
+  useEffect(() => {
+    localStorage.setItem(
+      LS_KEY,
+      JSON.stringify({ ...goals, reward: IMPLIED_FOCUS_REWARD }),
+    );
+  }, [goals]);
+
+  useEffect(() => {
+    if (!focusHydrated) return;
+    if (lastSavedFocusHours.current === goals.focusHoursPerDay) return;
+    const t = window.setTimeout(() => {
+      void (async () => {
+        try {
+          await saveDailyFocusHours(goals.focusHoursPerDay);
+          lastSavedFocusHours.current = goals.focusHoursPerDay;
+          setSaveError(null);
+        } catch (e: unknown) {
+          setSaveError(e instanceof Error ? e.message : "Could not update daily focus");
+        }
+      })();
+    }, 450);
+    return () => window.clearTimeout(t);
+  }, [goals.focusHoursPerDay, focusHydrated]);
 
   const addExtra = () => {
     const title = draftExtra.trim();
@@ -338,346 +377,103 @@ export function ProductivityGoalsPanel({
   };
 
   return (
-    <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.04] p-4 space-y-4">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h3 className="font-semibold text-sm flex items-center gap-2">
-            <Target size={15} className="text-emerald-300" />
-            Goals & motivation
-          </h3>
-          <p className="text-xs text-muted-foreground mt-1">
-            Routines already locked fixed times. Set focus hours to match free gaps — Save also updates the study gate (unlock / YouTube).
-            {isFocusDesktopShell()
-              ? " SoftLand site lists below are the blockers you choose (Allow / Watch / Block)."
-              : null}
-          </p>
-          {saveError ? <p className="text-[11px] text-rose-300 mt-1">{saveError}</p> : null}
-        </div>
-        <button
-          type="button"
-          onClick={() => void save()}
-          disabled={saving}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600/70 hover:bg-emerald-600 text-xs shrink-0 disabled:opacity-50"
-        >
-          <Save size={12} /> {saving ? "Saving…" : saved ? "Saved" : "Save"}
-        </button>
-      </div>
+    <div className="goals-panel space-y-5">
+      <header className="flex items-center justify-between gap-3">
+        <h3 className="font-semibold text-sm flex items-center gap-2">
+          <Target size={15} className="text-emerald-300" aria-hidden />
+          Goals
+        </h3>
+        {saveError ? <p className="text-[11px] text-rose-300">{saveError}</p> : null}
+      </header>
 
-      {isFocusDesktopShell() ? (
-        <div className="rounded-xl border border-sky-500/20 bg-sky-500/[0.04] p-3">
-          <SoftLandSiteRulesPanel />
-        </div>
-      ) : null}
+      <FocusHoursHero
+        value={goals.focusHoursPerDay}
+        min={0.5}
+        max={16}
+        step={0.5}
+        effectiveHours={effectiveHours}
+        plannedHours={lockedHours}
+        onChange={(n) => setGoals({ ...goals, focusHoursPerDay: n })}
+      />
 
-      <div
-        className={cn(
-          "rounded-xl border px-3 py-2.5 text-xs space-y-1",
-          focusFit === "tight"
-            ? "border-amber-500/40 bg-amber-500/10 text-amber-100"
-            : focusFit === "easy"
-              ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-100"
-              : "border-white/10 bg-black/25 text-muted-foreground",
-        )}
-      >
-        <p className="font-medium text-foreground/90">
-          Selected day capacity
-        </p>
-        <p>
-          Locked (routines/blocks): <span className="tabular-nums text-foreground">{lockedHours.toFixed(1)}h</span>
-          {" · "}
-          Free in ~{wakingHours}h day: <span className="tabular-nums text-foreground">{freeHours.toFixed(1)}h</span>
-          {" · "}
-          Daily focus: <span className="tabular-nums text-foreground">{goals.focusHoursPerDay}h</span>
-        </p>
-        <p className="text-[11px] opacity-90">
-          {focusFit === "tight"
-            ? "Focus target is higher than free time — lower daily hours or free gaps before propose."
-            : focusFit === "easy"
-              ? "Comfortable fit — propose can fill study blocks up to your focus target."
-              : "Tight but workable — propose will pack free gaps near your focus target."}
-        </p>
-        {recoveryLabel && suggestedFocusHours != null ? (
-          <p className="text-[11px] pt-1 border-t border-white/10 mt-2">
-            Watch recovery ({sleepScore}): {recoveryLabel}. Suggested focus today:{" "}
-            <span className="tabular-nums font-medium text-foreground">{suggestedFocusHours}h</span>
-            {" "}(your target {goals.focusHoursPerDay}h).
-          </p>
-        ) : null}
-      </div>
+      <GoalsTodayPlanBlocks
+        focusHours={goals.focusHoursPerDay}
+        studyTasks={goals.studyTasks}
+        refreshKey={planRefreshKey}
+        onChanged={onPlanBlocksChange}
+        onOpenCalendar={onOpenCalendar}
+      />
 
-      <div className="space-y-3">
-        <label className="block text-xs text-muted-foreground">
-          Main goal
-          <textarea
-            value={goals.mainGoal}
-            onChange={(e) => setGoals({ ...goals, mainGoal: e.target.value })}
-            rows={3}
-            className="mt-1 w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm text-foreground leading-relaxed resize-y min-h-[4.5rem]"
-          />
-        </label>
-        <div className="flex flex-wrap gap-4">
-          <HoursStepper
-            label="Daily focus h"
-            value={goals.focusHoursPerDay}
-            min={0.5}
-            max={16}
-            step={0.5}
-            onChange={(n) => setGoals({ ...goals, focusHoursPerDay: n })}
-          />
-          <HoursStepper
-            label="Weekly focus h"
-            value={goals.weeklyFocusHours}
-            min={1}
-            max={80}
-            step={1}
-            onChange={(n) => setGoals({ ...goals, weeklyFocusHours: n })}
-          />
-        </div>
-      </div>
+      {isFocusDesktopShell() ? <BlockerPanel /> : null}
 
-      <label className="block text-xs text-muted-foreground">
-        Reward after target
-        <textarea
-          value={goals.reward}
-          onChange={(e) => setGoals({ ...goals, reward: e.target.value })}
-          rows={3}
-          className="mt-1 w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm text-foreground leading-relaxed resize-y min-h-[4.5rem]"
-        />
-      </label>
-
-      {/* Study tasks — same block templates as CALT Desktop */}
-      <div className="rounded-xl border border-white/10 bg-black/20 p-3 space-y-2">
+      <section className="goals-todos space-y-2">
         <div className="flex items-center justify-between gap-2">
-          <p className="text-xs font-medium text-foreground">Study tasks (today&apos;s blocks)</p>
-          <span className="text-[10px] text-muted-foreground tabular-nums">
-            {goals.studyTasks.length} task{goals.studyTasks.length === 1 ? "" : "s"}
-          </span>
+          <h4 className="text-xs font-semibold text-foreground">Todos</h4>
+          {goals.extraGoals.filter((g) => !g.done && g.title.trim()).length > 0 ? (
+            <span className="text-[10px] text-muted-foreground tabular-nums">
+              {goals.extraGoals.filter((g) => !g.done && g.title.trim()).length} open
+            </span>
+          ) : null}
         </div>
-        <p className="text-[11px] text-muted-foreground">
-          Packed after morning routines via Apply my day. Each task includes gate allow/block lists.
-        </p>
-        <div className="flex flex-wrap gap-1.5">
-          {BLOCK_TEMPLATES.map(({ label, factory }) => (
-            <button
-              key={label}
-              type="button"
-              onClick={() =>
-                setGoals({
-                  ...goals,
-                  studyTasks: [...goals.studyTasks, factory()],
-                })
-              }
-              className="rounded-lg border border-white/10 px-2 py-1 text-[10px] hover:bg-white/5"
-            >
-              + {label}
-            </button>
-          ))}
-        </div>
-        <ul className="space-y-1.5">
-          {goals.studyTasks.length === 0 && (
-            <li className="text-[11px] text-muted-foreground py-1">
-              Add Scaler, GRE, or deep-read blocks — same presets as desktop.
-            </li>
-          )}
-          {goals.studyTasks.map((t) => (
-            <li
-              key={t.id}
-              className="rounded-lg border border-white/10 bg-black/30 px-2 py-1.5 space-y-1.5"
-            >
-              <div className="flex items-center gap-2">
-                <input
-                  value={t.title}
-                  onChange={(e) =>
-                    setGoals({
-                      ...goals,
-                      studyTasks: goals.studyTasks.map((x) =>
-                        x.id === t.id ? { ...x, title: e.target.value } : x,
-                      ),
-                    })
-                  }
-                  className="flex-1 min-w-0 bg-transparent text-xs text-foreground outline-none"
-                />
-                <input
-                  type="number"
-                  min={25}
-                  max={240}
-                  value={t.minutes}
-                  onChange={(e) =>
-                    setGoals({
-                      ...goals,
-                      studyTasks: goals.studyTasks.map((x) =>
-                        x.id === t.id ? { ...x, minutes: Number(e.target.value) || 60 } : x,
-                      ),
-                    })
-                  }
-                  className="w-12 rounded border border-white/10 bg-black/40 px-1 py-0.5 text-[10px] text-center tabular-nums"
-                  title="Minutes"
-                />
+        <ul className="space-y-1">
+          {goals.extraGoals.length === 0 ? (
+            <li className="text-[11px] text-muted-foreground py-0.5">Optional side goals</li>
+          ) : (
+            goals.extraGoals.map((g) => (
+              <li key={g.id} className="flex items-center gap-2 group">
                 <button
                   type="button"
-                  aria-label="Remove study task"
                   onClick={() =>
                     setGoals({
                       ...goals,
-                      studyTasks: goals.studyTasks.filter((x) => x.id !== t.id),
+                      extraGoals: goals.extraGoals.map((x) =>
+                        x.id === g.id ? { ...x, done: !x.done } : x,
+                      ),
                     })
                   }
-                  className="text-muted-foreground hover:text-rose-300 p-0.5"
+                  className={cn(
+                    "h-5 w-5 rounded border flex items-center justify-center shrink-0",
+                    g.done
+                      ? "border-emerald-500/60 bg-emerald-500/30 text-emerald-200"
+                      : "border-white/20 hover:border-white/40",
+                  )}
+                  aria-label={g.done ? "Mark open" : "Mark done"}
+                >
+                  {g.done ? <Check size={12} /> : null}
+                </button>
+                <input
+                  value={g.title}
+                  onChange={(e) =>
+                    setGoals({
+                      ...goals,
+                      extraGoals: goals.extraGoals.map((x) =>
+                        x.id === g.id ? { ...x, title: e.target.value } : x,
+                      ),
+                    })
+                  }
+                  className={cn(
+                    "flex-1 min-w-0 rounded border border-transparent bg-transparent px-1.5 py-1 text-xs text-foreground focus:border-white/15 focus:bg-black/30",
+                    g.done && "line-through text-muted-foreground",
+                  )}
+                />
+                <button
+                  type="button"
+                  onClick={() =>
+                    setGoals({
+                      ...goals,
+                      extraGoals: goals.extraGoals.filter((x) => x.id !== g.id),
+                    })
+                  }
+                  className="opacity-0 group-hover:opacity-100 p-1 text-muted-foreground hover:text-rose-300"
+                  aria-label="Remove goal"
                 >
                   <Trash2 size={12} />
                 </button>
-              </div>
-              <div className="space-y-1">
-                <p className="text-[10px] text-muted-foreground">allowHosts</p>
-                <div className="flex flex-wrap gap-1">
-                  {(t.allowHosts || []).map((host) => (
-                    <button
-                      key={host}
-                      type="button"
-                      title="Remove host"
-                      onClick={() =>
-                        setGoals({
-                          ...goals,
-                          studyTasks: goals.studyTasks.map((x) =>
-                            x.id === t.id
-                              ? {
-                                  ...x,
-                                  allowHosts: (x.allowHosts || []).filter((h) => h !== host),
-                                }
-                              : x,
-                          ),
-                        })
-                      }
-                      className="rounded border border-emerald-400/30 bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-mono text-emerald-100 hover:border-rose-400/40 hover:text-rose-200"
-                    >
-                      {host} ×
-                    </button>
-                  ))}
-                </div>
-                <div className="flex gap-1.5">
-                  <input
-                    value={hostDrafts[t.id] || ""}
-                    onChange={(e) =>
-                      setHostDrafts((d) => ({ ...d, [t.id]: e.target.value }))
-                    }
-                    onKeyDown={(e) => {
-                      if (e.key !== "Enter") return;
-                      e.preventDefault();
-                      const raw = (hostDrafts[t.id] || "").trim().toLowerCase();
-                      const host = raw.replace(/^https?:\/\//, "").split("/")[0]?.replace(/^www\./, "") || "";
-                      if (!host) return;
-                      setGoals({
-                        ...goals,
-                        studyTasks: goals.studyTasks.map((x) => {
-                          if (x.id !== t.id) return x;
-                          const cur = x.allowHosts || [];
-                          if (cur.includes(host)) return x;
-                          return { ...x, allowHosts: [...cur, host] };
-                        }),
-                      });
-                      setHostDrafts((d) => ({ ...d, [t.id]: "" }));
-                    }}
-                    placeholder="Add host…"
-                    className="flex-1 min-w-0 rounded border border-white/10 bg-black/40 px-1.5 py-0.5 text-[10px] text-foreground"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const raw = (hostDrafts[t.id] || "").trim().toLowerCase();
-                      const host =
-                        raw.replace(/^https?:\/\//, "").split("/")[0]?.replace(/^www\./, "") || "";
-                      if (!host) return;
-                      setGoals({
-                        ...goals,
-                        studyTasks: goals.studyTasks.map((x) => {
-                          if (x.id !== t.id) return x;
-                          const cur = x.allowHosts || [];
-                          if (cur.includes(host)) return x;
-                          return { ...x, allowHosts: [...cur, host] };
-                        }),
-                      });
-                      setHostDrafts((d) => ({ ...d, [t.id]: "" }));
-                    }}
-                    disabled={!(hostDrafts[t.id] || "").trim()}
-                    className="rounded border border-emerald-500/30 px-1.5 py-0.5 text-[10px] text-emerald-200 disabled:opacity-40"
-                  >
-                    <Plus size={10} />
-                  </button>
-                </div>
-              </div>
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      {/* Extra goals / todos */}
-      <div className="rounded-xl border border-white/10 bg-black/20 p-3 space-y-2">
-        <div className="flex items-center justify-between gap-2">
-          <p className="text-xs font-medium text-foreground">Extra goals / todos</p>
-          {openExtras > 0 && (
-            <span className="text-[10px] text-muted-foreground tabular-nums">{openExtras} open</span>
+              </li>
+            ))
           )}
-        </div>
-        <ul className="space-y-1.5">
-          {goals.extraGoals.length === 0 && (
-            <li className="text-[11px] text-muted-foreground py-1">
-              Add side goals (e.g. GRE vocab, gym) — they show up in AI propose.
-            </li>
-          )}
-          {goals.extraGoals.map((g) => (
-            <li key={g.id} className="flex items-center gap-2 group">
-              <button
-                type="button"
-                onClick={() =>
-                  setGoals({
-                    ...goals,
-                    extraGoals: goals.extraGoals.map((x) =>
-                      x.id === g.id ? { ...x, done: !x.done } : x,
-                    ),
-                  })
-                }
-                className={cn(
-                  "h-5 w-5 rounded border flex items-center justify-center shrink-0",
-                  g.done
-                    ? "border-emerald-500/60 bg-emerald-500/30 text-emerald-200"
-                    : "border-white/20 hover:border-white/40",
-                )}
-                aria-label={g.done ? "Mark open" : "Mark done"}
-              >
-                {g.done ? <Check size={12} /> : null}
-              </button>
-              <input
-                value={g.title}
-                onChange={(e) =>
-                  setGoals({
-                    ...goals,
-                    extraGoals: goals.extraGoals.map((x) =>
-                      x.id === g.id ? { ...x, title: e.target.value } : x,
-                    ),
-                  })
-                }
-                className={cn(
-                  "flex-1 min-w-0 rounded border border-transparent bg-transparent px-1.5 py-1 text-xs text-foreground focus:border-white/15 focus:bg-black/30",
-                  g.done && "line-through text-muted-foreground",
-                )}
-              />
-              <button
-                type="button"
-                onClick={() =>
-                  setGoals({
-                    ...goals,
-                    extraGoals: goals.extraGoals.filter((x) => x.id !== g.id),
-                  })
-                }
-                className="opacity-0 group-hover:opacity-100 p-1 text-muted-foreground hover:text-rose-300"
-                aria-label="Remove goal"
-              >
-                <Trash2 size={12} />
-              </button>
-            </li>
-          ))}
         </ul>
-        <div className="flex gap-2 pt-1">
+        <div className="flex gap-2">
           <input
             value={draftExtra}
             onChange={(e) => setDraftExtra(e.target.value)}
@@ -687,80 +483,21 @@ export function ProductivityGoalsPanel({
                 addExtra();
               }
             }}
-            placeholder="Add a goal or todo…"
-            className="flex-1 rounded border border-white/10 bg-black/30 px-2 py-1.5 text-xs text-foreground"
+            placeholder="Add a todo…"
+            className="flex-1 rounded-lg border border-white/10 bg-black/25 px-2.5 py-1.5 text-xs text-foreground"
           />
           <button
             type="button"
             onClick={addExtra}
             disabled={!draftExtra.trim()}
-            className="inline-flex items-center gap-1 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1.5 text-xs text-emerald-200 hover:bg-emerald-500/20 disabled:opacity-40"
+            className="inline-flex items-center gap-1 rounded-lg border border-white/12 px-2.5 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-white/5 disabled:opacity-40"
           >
             <Plus size={12} /> Add
           </button>
         </div>
-      </div>
+      </section>
 
-      {goalsStatus && (goalsStatus.alerts.length > 0 || goalsStatus.goals.length > 0) ? (
-        <div className="rounded-xl border border-white/10 bg-black/20 p-3 space-y-2 text-xs">
-          <p className="font-medium text-foreground/90">Today&apos;s alerts & goal</p>
-          {goalsStatus.goals.map((g) => (
-            <p key={g.id} className="text-muted-foreground">
-              {g.label}: {Math.round(g.current_seconds / 60)} / {Math.round(g.target_seconds / 60)} min
-              {g.met ? " · met" : ` · ${g.pct}%`}
-            </p>
-          ))}
-          {goalsStatus.alerts.map((a) => (
-            <p
-              key={a.id}
-              className={a.triggered ? "text-amber-200" : "text-muted-foreground"}
-            >
-              {a.label}: {Math.round(a.current_seconds / 60)} / {Math.round(a.max_seconds / 60)} min
-              {a.fired ? " · notified" : a.triggered ? " · triggered" : ""}
-            </p>
-          ))}
-        </div>
-      ) : null}
-
-      <div
-        className={cn(
-          "rounded-lg border p-3 transition-colors",
-          remaining <= 0
-            ? "border-amber-500/40 bg-amber-500/10"
-            : "border-white/10 bg-black/20",
-        )}
-      >
-        <div className="flex items-center justify-between text-xs">
-          <span className="text-muted-foreground">Selected day effective focus</span>
-          <span
-            className={cn(
-              "tabular-nums",
-              remaining <= 0 ? "text-amber-200" : "text-emerald-200",
-            )}
-          >
-            {effectiveHours.toFixed(1)}h / {goals.focusHoursPerDay}h
-          </span>
-        </div>
-        <div className="mt-2 h-2 rounded-full bg-white/10 overflow-hidden">
-          <div
-            className={cn("h-full rounded-full", remaining <= 0 ? "bg-amber-400" : "bg-emerald-400")}
-            style={{ width: `${dayPct}%` }}
-          />
-        </div>
-        {remaining <= 0 ? (
-          <div className="mt-3 flex items-start gap-2 rounded-md border border-amber-500/30 bg-amber-500/10 px-2.5 py-2">
-            <Gift size={16} className="mt-0.5 shrink-0 text-amber-300" aria-hidden />
-            <div className="min-w-0">
-              <p className="text-xs font-semibold text-amber-100">Reward unlocked</p>
-              <p className="text-[11px] text-amber-100/80 mt-0.5 leading-snug">{goals.reward}</p>
-            </div>
-          </div>
-        ) : (
-          <p className="text-[11px] text-muted-foreground mt-2">
-            {remaining.toFixed(1)}h effective focus left before entertainment.
-          </p>
-        )}
-      </div>
+      {footer}
     </div>
   );
 }

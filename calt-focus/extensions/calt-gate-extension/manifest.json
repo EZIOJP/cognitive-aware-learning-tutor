@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "CALT Gate (blocker)",
-  "version": "1.0.7",
-  "description": "Site SoftLand for CALT Desktop · Focus. DNR + locked page. Pairs with SelfTracker. App kills = Windows enforcer.",
+  "version": "1.0.8",
+  "description": "Site SoftLand for CALT Focus via calt_msg_host (C++). DNR + locked page. Study :8000 optional debug only.",
   "permissions": [
     "storage",
     "alarms",

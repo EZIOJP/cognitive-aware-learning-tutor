@@ -7,6 +7,8 @@ import {
   type GateScheduleWindow,
 } from "../../api/behaviorClient";
 import { enforcerNativeCmd, isFocusEnforcerBridgeAvailable } from "../../lib/enforcerNativeCmd";
+import { isFocusDesktopShell } from "../../utils/focusDesktopShell";
+import { focusDataUrl } from "../../utils/focusDataUrl";
 
 const DAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
@@ -21,6 +23,21 @@ function newWindow(): GateScheduleWindow {
   };
 }
 
+async function loadSchedulesFocus(): Promise<GateSchedulesResponse> {
+  const r = await fetch(focusDataUrl("softland_policy.json"), { cache: "no-store" });
+  if (!r.ok) throw new Error(`softland_policy.json: ${r.status}`);
+  const j = (await r.json()) as {
+    schedules?: GateSchedulesResponse;
+  };
+  if (j.schedules && typeof j.schedules === "object") {
+    return {
+      enabled: Boolean(j.schedules.enabled),
+      windows: Array.isArray(j.schedules.windows) ? j.schedules.windows : [],
+    };
+  }
+  return { enabled: false, windows: [newWindow()] };
+}
+
 export function GateSchedulesPanel() {
   const [data, setData] = useState<GateSchedulesResponse | null>(null);
   const [saving, setSaving] = useState(false);
@@ -29,7 +46,11 @@ export function GateSchedulesPanel() {
 
   const load = useCallback(async () => {
     try {
-      setData(await fetchGateSchedules());
+      if (isFocusDesktopShell()) {
+        setData(await loadSchedulesFocus());
+      } else {
+        setData(await fetchGateSchedules());
+      }
       setError(null);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Failed to load schedules");
@@ -79,6 +100,10 @@ export function GateSchedulesPanel() {
           setTimeout(() => setSaved(false), 2500);
           return;
         }
+        throw new Error("Enforcer gateway rejected schedule save");
+      }
+      if (isFocusDesktopShell()) {
+        throw new Error("Schedule saves need calt_focus.exe (enforcer pipe)");
       }
       setData(await saveGateSchedules(data));
       setSaved(true);

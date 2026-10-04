@@ -81,12 +81,9 @@ ULONGLONG SessionTracker::WallClockMs() {
 }
 
 ULONGLONG SessionTracker::IdleMs() {
-  LASTINPUTINFO lii{};
-  lii.cbSize = sizeof(lii);
-  if (!GetLastInputInfo(&lii)) return 0;
-  DWORD tick = GetTickCount();
-  DWORD idle = tick - lii.dwTime;
-  return (ULONGLONG)idle;
+  // Must use interactive-session last-input — Session 0 GetLastInputInfo
+  // looks permanently idle and blocks all FG tracking under the service.
+  return GetInteractiveIdleMs();
 }
 
 std::wstring SessionTracker::GroupKey(const std::wstring& exe, const std::wstring& title) {
@@ -100,7 +97,9 @@ int SessionTracker::ResolveUserId() {
   std::string path = Narrow(dbPath_);
   if (sqlite3_open_v2(path.c_str(), &db, SQLITE_OPEN_READONLY, nullptr) != SQLITE_OK) {
     if (db) sqlite3_close(db);
-    return 0;
+    // Productivity DB is local-first single-user; still allow inserts if DB briefly locked.
+    userId_ = 1;
+    return userId_;
   }
   sqlite3_busy_timeout(db, 3000);
   sqlite3_stmt* st = nullptr;
@@ -111,6 +110,7 @@ int SessionTracker::ResolveUserId() {
     sqlite3_finalize(st);
   }
   if (userId_ <= 0) {
+    // Optional legacy Study table — may be absent on productivity.db.
     if (sqlite3_prepare_v2(db, "SELECT id FROM users ORDER BY id LIMIT 1;", -1, &st, nullptr) ==
         SQLITE_OK) {
       if (sqlite3_step(st) == SQLITE_ROW) userId_ = sqlite3_column_int(st, 0);
@@ -118,6 +118,7 @@ int SessionTracker::ResolveUserId() {
     }
   }
   sqlite3_close(db);
+  if (userId_ <= 0) userId_ = 1;  // Focus/Productivity default
   return userId_;
 }
 

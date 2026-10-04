@@ -1,6 +1,11 @@
 /**
  * SoftLand get_mode — C++ Productivity decide (Prod P3).
- * Reads data/behavior/softland_policy.json. Never arms OS kills. No Python.
+ * Reads data/productivity/behavior/softland_policy.json. Never arms OS kills. No Python.
+ *
+ * NOTE: Schedule / free-window / incubation interpretation is intentionally duplicated
+ * here (not via enforcer pipe) so Gate SoftLand still works while calt_enforcer is
+ * restarting (Arm fail-open window). Keep in lockstep with enforcer softland_tick /
+ * SoftLand mode resolution when changing rules.
  */
 
 #include "softland_decide.h"
@@ -11,6 +16,7 @@
 #include <cctype>
 #include <chrono>
 #include <cstdio>
+#include <cstdlib>
 #include <ctime>
 #include <fstream>
 #include <sstream>
@@ -76,6 +82,22 @@ bool JsonStringNear(const std::string& body, const char* key, std::string* out) 
   }
   *out = tok;
   return true;
+}
+
+bool JsonIntNear(const std::string& body, const char* key, int* out) {
+  std::string needle = std::string("\"") + key + "\"";
+  size_t p = body.find(needle);
+  if (p == std::string::npos) return false;
+  size_t colon = body.find(':', p + needle.size());
+  if (colon == std::string::npos) return false;
+  size_t i = colon + 1;
+  while (i < body.size() && (body[i] == ' ' || body[i] == '\t' || body[i] == '\r' || body[i] == '\n')) ++i;
+  if (i >= body.size()) return false;
+  if (body[i] == '-' || (body[i] >= '0' && body[i] <= '9')) {
+    *out = atoi(body.c_str() + i);
+    return true;
+  }
+  return false;
 }
 
 void ParseStringArrayNear(const std::string& body, const char* key, std::vector<std::string>& out) {
@@ -205,6 +227,7 @@ struct LocalNow {
   int weekday = 0;  // 0=Mon .. 6=Sun
   int minutes = 0;
   std::time_t unix = 0;
+  std::string ymd;  // YYYY-MM-DD local
 };
 
 LocalNow LocalClock() {
@@ -216,6 +239,10 @@ LocalNow LocalClock() {
   int w = local.tm_wday;
   n.weekday = (w == 0) ? 6 : (w - 1);
   n.minutes = local.tm_hour * 60 + local.tm_min;
+  char buf[16];
+  snprintf(buf, sizeof(buf), "%04d-%02d-%02d", local.tm_year + 1900, local.tm_mon + 1,
+           local.tm_mday);
+  n.ymd = buf;
   return n;
 }
 
@@ -540,24 +567,67 @@ SoftlandModeResult SoftlandGetMode(const std::string& url, const std::string& /*
     JsonBoolNear(runtime, "reward_day_active", &reward_day);
   }
 
+  std::string goalsObj = ExtractObject(body, "goals");
+  bool bible_done = false;
+  bool plan_confirmed = false;
+  std::string bible_date, plan_date;
+  if (!goalsObj.empty()) {
+    JsonBoolNear(goalsObj, "bible_done", &bible_done);
+    JsonBoolNear(goalsObj, "plan_confirmed", &plan_confirmed);
+    JsonStringNear(goalsObj, "bible_done_for_date", &bible_date);
+    JsonStringNear(goalsObj, "plan_confirmed_for_date", &plan_date);
+  }
+  const bool bible_today = bible_done && bible_date == now.ymd;
+  const bool plan_today = plan_confirmed && plan_date == now.ymd;
+  const bool morning_pending = !bible_today || !plan_today;
+
   bool incubating = IsoStillActive(incubation_until, now.unix);
   bool free_win = IsoStillActive(free_until, now.unix);
   if (!free_after.empty() && free_after != "null") {
     int fa = ParseHm(free_after);
     if (fa >= 0 && now.minutes >= fa) free_win = true;
   }
+  std::string emergency_until;
+  if (!runtime.empty()) JsonStringNear(runtime, "emergency_until", &emergency_until);
+  bool emergency = IsoStillActive(emergency_until, now.unix);
+  if (emergency) free_win = true;
+
+  // Morning ritual wins over leftover free/reward until Bible + Confirm today.
+  if (morning_pending && !emergency) {
+    free_win = false;
+    reward_day = false;
+  }
 
   std::string mode = ResolveScheduleMode(body, now);
   if (mode.empty()) mode = "study";
   if (reward_day || free_win) mode = "free";
-  if (incubating) mode = "study";
+  if (incubating || morning_pending) mode = "study";
 
   ModeFlags flags = FlagsForMode(body, mode);
+  // Emergency: keep porn/watch blocks even in free (distraction trim).
+  if (emergency) {
+    ModeFlags studyFlags = FlagsForMode(body, "study");
+    flags.block_porn = studyFlags.block_porn;
+    flags.block_watch_sites = studyFlags.block_watch_sites;
+    flags.block_social = studyFlags.block_social;
+    flags.block_keywords = studyFlags.block_keywords;
+  }
+  if (morning_pending) {
+    ModeFlags studyFlags = FlagsForMode(body, "study");
+    flags.block_watch_sites = studyFlags.block_watch_sites;
+    flags.block_social = studyFlags.block_social;
+    flags.block_keywords = studyFlags.block_keywords;
+  }
   r.mode = mode;
   r.enforce = true;
   if (incubating) {
     r.until = incubation_until;
     r.reason = "incubation";
+  } else if (morning_pending) {
+    r.reason = !bible_today ? "morning_bible" : "morning_plan";
+  } else if (emergency) {
+    r.reason = "emergency_winddown";
+    r.until = emergency_until;
   } else if (reward_day) {
     r.reason = "reward_day";
     r.until = free_until.empty() ? free_after : free_until;
@@ -592,6 +662,17 @@ SoftlandModeResult SoftlandGetMode(const std::string& url, const std::string& /*
     return r;
   }
 
+  // Morning ritual: SoftLand on + Bible/Confirm not done today → block every non-allow host.
+  if (morning_pending && !emergency) {
+    r.ok = true;
+    r.action = "block";
+    r.enforce = true;
+    r.reason = !bible_today ? "morning_bible" : "morning_plan";
+    r.matched = host;
+    r.interstitial = true;
+    return r;
+  }
+
   if (flags.block_porn && LooksPorn(host)) {
     r.ok = true;
     r.action = "block";
@@ -613,10 +694,22 @@ SoftlandModeResult SoftlandGetMode(const std::string& url, const std::string& /*
   }
 
   if (mode == "free" && !incubating) {
+    // Emergency wind-down: free browsing except distraction lists (watch/social/porn already handled).
+    if (emergency && flags.block_watch_sites) {
+      if (ListMatch(host, watch_extra) || ListMatch(host, BuiltinWatch())) {
+        r.ok = true;
+        r.action = "block";
+        r.enforce = true;
+        r.reason = "emergency_distraction";
+        r.matched = host;
+        r.interstitial = true;
+        return r;
+      }
+    }
     r.ok = true;
     r.action = "allow";
-    // Keep reward_day / free_window reason when already set above.
-    if (r.reason.empty() || r.reason == "ok") r.reason = "free_mode";
+    // Keep reward_day / free_window / emergency reason when already set above.
+    if (r.reason.empty() || r.reason == "ok") r.reason = emergency ? "emergency_winddown" : "free_mode";
     r.enforce = true;
     r.interstitial = false;
     return r;
@@ -627,7 +720,10 @@ SoftlandModeResult SoftlandGetMode(const std::string& url, const std::string& /*
       r.ok = true;
       r.action = "block";
       r.enforce = true;
-      if (!incubating) r.reason = "watch_list";
+      if (morning_pending)
+        r.reason = !bible_today ? "morning_bible" : "morning_plan";
+      else if (!incubating)
+        r.reason = "watch_list";
       r.matched = host;
       r.interstitial = true;
       return r;
@@ -676,5 +772,186 @@ std::string SoftlandModeResultToJson(const SoftlandModeResult& r) {
     o << "\"redirect_url\":\"" << JsonEscape(r.redirect_url) << "\"";
   if (!r.error.empty()) o << ",\"error\":\"" << JsonEscape(r.error) << "\"";
   o << "}";
+  return o.str();
+}
+
+static std::string ModeLabelUpper(const std::string& mode) {
+  std::string out = mode;
+  for (char& c : out) {
+    if (c >= 'a' && c <= 'z') c = static_cast<char>(c - 'a' + 'A');
+  }
+  if (out.empty()) out = "STUDY";
+  return out;
+}
+
+static std::string JsonBoolLit(bool v) { return v ? "true" : "false"; }
+
+std::string SoftlandGateSnapshotJson() {
+  std::wstring path = SoftlandPolicyPathW();
+  std::string body = ReadFileUtf8(path);
+  if (body.empty()) {
+    return R"({"type":"get_softland_doc","ok":false,"error":"softland_policy_missing"})";
+  }
+
+  bool enabled = false;
+  if (!JsonBoolNear(body, "softland_enabled", &enabled)) {
+    return R"({"type":"get_softland_doc","ok":false,"error":"softland_policy_corrupt"})";
+  }
+
+  LocalNow now = LocalClock();
+  std::string runtime = ExtractObject(body, "runtime");
+  std::string free_until, incubation_until, free_after;
+  bool reward_day = false;
+  bool day_pass = false;
+  if (!runtime.empty()) {
+    JsonStringNear(runtime, "free_until", &free_until);
+    JsonStringNear(runtime, "incubation_until", &incubation_until);
+    JsonStringNear(runtime, "free_after_hm", &free_after);
+    JsonBoolNear(runtime, "reward_day_active", &reward_day);
+    std::string dp = ExtractObject(runtime, "day_pass");
+    if (!dp.empty()) {
+      bool spent = false;
+      JsonBoolNear(dp, "spent", &spent);
+      std::string date;
+      JsonStringNear(dp, "date", &date);
+      // Active day pass: dated today-ish and not spent (or remaining seconds > 0).
+      int rem = 0;
+      // remaining_seconds is numeric — treat spent=false + non-empty date as day_pass signal.
+      if (!date.empty() && date != "null" && !spent) day_pass = true;
+      (void)rem;
+    }
+  }
+
+  bool incubating = IsoStillActive(incubation_until, now.unix);
+  bool free_win = IsoStillActive(free_until, now.unix);
+  if (!free_after.empty() && free_after != "null") {
+    int fa = ParseHm(free_after);
+    if (fa >= 0 && now.minutes >= fa) free_win = true;
+  }
+
+  // Day-loop emergency: temporary free for non-distraction hosts.
+  std::string emergency_until;
+  if (!runtime.empty()) JsonStringNear(runtime, "emergency_until", &emergency_until);
+  bool emergency = IsoStillActive(emergency_until, now.unix);
+  if (emergency) free_win = true;
+
+  std::string mode = ResolveScheduleMode(body, now);
+  if (mode.empty()) mode = "study";
+  if (reward_day || free_win || day_pass) mode = "free";
+  if (incubating) mode = "study";
+  if (!enabled) mode = "free";
+
+  // Emergency keeps distraction blocks (porn/watch) via flags — use study flags for block_watch/porn
+  // while mode is free for allow path. SoftLandGetMode still blocks porn/block_extra before free allow.
+
+  ModeFlags flags = FlagsForMode(body, mode);
+  bool free_mode = (mode == "free" && !incubating) || !enabled;
+  bool locked = enabled && !free_mode;
+
+  std::string goals = ExtractObject(body, "goals");
+  bool bible_done = false;
+  bool plan_confirmed = false;
+  bool goal_met = false;
+  int daily_focus = 0;
+  std::string bible_date, plan_date;
+  if (!goals.empty()) {
+    JsonBoolNear(goals, "bible_done", &bible_done);
+    JsonBoolNear(goals, "plan_confirmed", &plan_confirmed);
+    JsonBoolNear(goals, "goal_met", &goal_met);
+    JsonIntNear(goals, "daily_focus_minutes", &daily_focus);
+    JsonStringNear(goals, "bible_done_for_date", &bible_date);
+    JsonStringNear(goals, "plan_confirmed_for_date", &plan_date);
+  }
+  const bool bible_today = bible_done && bible_date == now.ymd;
+  const bool plan_today = plan_confirmed && plan_date == now.ymd;
+
+  // Live productive minutes from enforcer day_rollup.json (same folder as policy).
+  int productive_minutes = 0;
+  {
+    std::wstring rollupPath = JoinPath(ParentDir(path), L"day_rollup.json");
+    std::string rollup = ReadFileUtf8(rollupPath);
+    if (!rollup.empty()) {
+      int pm = 0;
+      if (JsonIntNear(rollup, "productive_minutes", &pm) && pm >= 0) productive_minutes = pm;
+      int focusFromRollup = 0;
+      if (daily_focus <= 0 && JsonIntNear(rollup, "daily_focus_minutes", &focusFromRollup) &&
+          focusFromRollup > 0)
+        daily_focus = focusFromRollup;
+      bool rollupGoal = false;
+      if (JsonBoolNear(rollup, "goal_met", &rollupGoal) && rollupGoal) goal_met = true;
+    }
+  }
+  if (daily_focus <= 0) daily_focus = 180;
+  int remaining_minutes = daily_focus - productive_minutes;
+  if (remaining_minutes < 0) remaining_minutes = 0;
+  if (goal_met || reward_day || day_pass || free_win) remaining_minutes = 0;
+
+  std::string site_rules = ExtractObject(body, "site_rules");
+  std::string watch_domains = "[]";
+  std::string allow_domains = "[]";
+  std::string block_domains = "[]";
+  if (!site_rules.empty()) {
+    std::string w = ExtractArray(site_rules, "watch_extra");
+    std::string a = ExtractArray(site_rules, "allow_extra");
+    std::string b = ExtractArray(site_rules, "block_extra");
+    if (!w.empty()) watch_domains = w;
+    if (!a.empty()) allow_domains = a;
+    if (!b.empty()) block_domains = b;
+  }
+
+  std::string morning_next = "open";
+  if (!bible_today)
+    morning_next = "bible";
+  else if (!plan_today)
+    morning_next = "plan";
+
+  std::string label = ModeLabelUpper(mode);
+  bool block_watch = enabled && !free_mode && flags.block_watch_sites;
+  bool block_social = enabled && !free_mode && flags.block_social;
+  bool block_other = enabled && !free_mode && flags.block_other;
+  bool block_porn = flags.block_porn;  // often stays on in free
+  bool block_keywords = flags.block_keywords;
+
+  std::ostringstream o;
+  o << "{"
+    << "\"type\":\"get_softland_doc\","
+    << "\"ok\":true,"
+    << "\"source\":\"native\","
+    << "\"enabled\":" << JsonBoolLit(enabled) << ","
+    << "\"locked\":" << JsonBoolLit(locked) << ","
+    << "\"unlocked\":" << JsonBoolLit(!locked) << ","
+    << "\"reward_day\":" << JsonBoolLit(reward_day) << ","
+    << "\"day_unlimited\":" << JsonBoolLit(reward_day || day_pass || goal_met) << ","
+    << "\"day_pass\":" << JsonBoolLit(day_pass) << ","
+    << "\"chapter_goal_met\":" << JsonBoolLit(bible_today) << ","
+    << "\"productive_minutes\":" << productive_minutes << ","
+    << "\"daily_goal_minutes\":" << daily_focus << ","
+    << "\"remaining_minutes\":" << remaining_minutes << ","
+    << "\"suggested_links\":[],"
+    << "\"current_block\":null,"
+    << "\"morning\":{"
+    << "\"next\":\"" << JsonEscape(morning_next) << "\","
+    << "\"bible_done\":" << JsonBoolLit(bible_today) << ","
+    << "\"plan_done\":" << JsonBoolLit(plan_today) << ","
+    << "\"bible_url\":null,"
+    << "\"plan_url\":null,"
+    << "\"redirect_url\":null,"
+    << "\"hint\":\"\""
+    << "},"
+    << "\"browser\":{"
+    << "\"mode\":\"" << JsonEscape(mode) << "\","
+    << "\"mode_label\":\"" << JsonEscape(label) << "\","
+    << "\"enforce\":" << JsonBoolLit(enabled) << ","
+    << "\"block_watch_sites\":" << JsonBoolLit(block_watch) << ","
+    << "\"block_porn\":" << JsonBoolLit(block_porn) << ","
+    << "\"block_social\":" << JsonBoolLit(block_social) << ","
+    << "\"block_other\":" << JsonBoolLit(block_other) << ","
+    << "\"block_keywords\":" << JsonBoolLit(block_keywords) << ","
+    << "\"strict_allowlist\":" << JsonBoolLit(flags.strict_allowlist && enabled && !free_mode) << ","
+    << "\"watch_domains\":" << watch_domains << ","
+    << "\"allow_domains\":" << allow_domains << ","
+    << "\"block_domains\":" << block_domains
+    << "}"
+    << "}";
   return o.str();
 }

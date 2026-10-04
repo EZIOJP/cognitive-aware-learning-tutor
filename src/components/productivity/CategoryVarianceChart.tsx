@@ -8,6 +8,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import type { ActualSession, PlannerBlock } from "../../api/plannerClient";
 import { fetchTimetables } from "../../api/timetableClient";
 import { useActualOverlay, usePlannerBlocks } from "../../hooks/usePlanVsActual";
 import {
@@ -26,6 +27,12 @@ type Props = {
   to?: Date;
   baseDate?: Date;
   defaultPreset?: RangePreset;
+  focusShell?: boolean;
+  offline?: boolean;
+  /** Shared fetch from PlanVsActualDashboard — skips duplicate hooks when set. */
+  blocks?: PlannerBlock[];
+  sessions?: ActualSession[];
+  loading?: boolean;
 };
 
 const STACK_COLORS = [
@@ -171,7 +178,17 @@ function StackedSummary({
   );
 }
 
-export function CategoryVarianceChart({ from: fromProp, to: toProp, baseDate, defaultPreset = "day" }: Props) {
+export function CategoryVarianceChart({
+  from: fromProp,
+  to: toProp,
+  baseDate,
+  defaultPreset = "day",
+  focusShell = false,
+  offline = false,
+  blocks: blocksProp,
+  sessions: sessionsProp,
+  loading: loadingProp,
+}: Props) {
   const [preset, setPreset] = useState<RangePreset>(defaultPreset);
   const [taskMap, setTaskMap] = useState<Map<number, string>>(new Map());
   const [showFull, setShowFull] = useState(false);
@@ -196,14 +213,24 @@ export function CategoryVarianceChart({ from: fromProp, to: toProp, baseDate, de
     return { from: startOfDay(start), to: end };
   }, [fromProp, toProp, baseDate?.getTime(), preset]);
 
-  const { data: blocks, loading: blocksLoading } = usePlannerBlocks(from, to);
-  const { data: sessions, loading: sessionsLoading } = useActualOverlay(from, to);
+  const useShared = blocksProp != null && sessionsProp != null;
+  const fetchedBlocks = usePlannerBlocks(from, to, !useShared);
+  const fetchedSessions = useActualOverlay(from, to, 0, !useShared);
+  const blocks = useShared ? blocksProp! : fetchedBlocks.data;
+  const sessions = useShared ? sessionsProp! : fetchedSessions.data;
+  const blocksLoading = useShared ? Boolean(loadingProp) : fetchedBlocks.loading;
+  const sessionsLoading = useShared ? Boolean(loadingProp) : fetchedSessions.loading;
 
   useEffect(() => {
+    if (focusShell) {
+      // Timetables are Study-HTTP; Focus uses block titles via aggregate fallback.
+      setTaskMap(new Map());
+      return;
+    }
     fetchTimetables()
       .then((res) => setTaskMap(buildTaskMap(res)))
       .catch(() => setTaskMap(new Map()));
-  }, []);
+  }, [focusShell]);
 
   const plannedData = useMemo(
     () => aggregatePlannedByTask(blocks, taskMap),
@@ -212,9 +239,15 @@ export function CategoryVarianceChart({ from: fromProp, to: toProp, baseDate, de
   const actualData = useMemo(() => aggregateActualByCategory(sessions), [sessions]);
 
   const loading = blocksLoading || sessionsLoading;
+  const plannedEmpty = offline
+    ? "Plan data needs the Focus enforcer"
+    : "No planned blocks in range";
+  const actualEmpty = offline
+    ? "Tracking loads with the enforcer"
+    : "No tracked sessions in range";
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 rounded-xl border border-white/10 bg-white/[0.02] p-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h3 className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
           Category variance
@@ -241,12 +274,12 @@ export function CategoryVarianceChart({ from: fromProp, to: toProp, baseDate, de
           <StackedSummary
             title="Planned by task"
             data={plannedData}
-            emptyMessage="No planned blocks in range"
+            emptyMessage={plannedEmpty}
           />
           <StackedSummary
             title="Actual by category"
             data={actualData}
-            emptyMessage="No tracked sessions in range"
+            emptyMessage={actualEmpty}
           />
         </div>
       )}
@@ -254,7 +287,7 @@ export function CategoryVarianceChart({ from: fromProp, to: toProp, baseDate, de
       <button
         type="button"
         onClick={() => setShowFull((v) => !v)}
-        className="text-xs text-violet-300/90 hover:text-violet-200 underline-offset-2 hover:underline"
+        className="text-xs text-primary/90 hover:text-primary underline-offset-2 hover:underline"
       >
         {showFull ? "Hide full breakdown" : "See full breakdown"}
       </button>
@@ -264,14 +297,14 @@ export function CategoryVarianceChart({ from: fromProp, to: toProp, baseDate, de
           <ChartPanel
             title="Planned hours by task"
             data={plannedData}
-            color="#8b5cf6"
-            emptyMessage="No planned blocks in range"
+            color="#34d399"
+            emptyMessage={plannedEmpty}
           />
           <ChartPanel
             title="Actual hours by tracker category"
             data={actualData}
             color="#0ea5e9"
-            emptyMessage="No tracked sessions in range"
+            emptyMessage={actualEmpty}
           />
         </div>
       ) : null}

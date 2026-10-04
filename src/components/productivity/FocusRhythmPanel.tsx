@@ -1,4 +1,5 @@
 import { Brain, Clock3, MousePointer2 } from "lucide-react";
+import { useMemo } from "react";
 import {
   Bar,
   BarChart,
@@ -22,6 +23,9 @@ type Props = {
   to: Date;
   view: FocusRhythmView;
   loading?: boolean;
+  focusShell?: boolean;
+  offline?: boolean;
+  onOpenPlan?: () => void;
 };
 
 type BalanceItemProps = {
@@ -61,22 +65,46 @@ function strongestLabel(
   return `${bucket.label} (${fmtDurationMinutes(bucket[kind])})`;
 }
 
-export function FocusRhythmPanel({ blocks, sessions, from, to, view, loading = false }: Props) {
-  const rhythm = buildFocusRhythm(blocks, sessions, from, to, view);
-  const total = rhythm.totals.zoneMinutes + rhythm.totals.pulledAwayMinutes + rhythm.totals.focusedElsewhereMinutes;
+export function FocusRhythmPanel({
+  blocks,
+  sessions,
+  from,
+  to,
+  view,
+  loading = false,
+  focusShell = false,
+  offline = false,
+  onOpenPlan,
+}: Props) {
+  const fromMs = from.getTime();
+  const toMs = to.getTime();
+  const rhythm = useMemo(
+    () => buildFocusRhythm(blocks, sessions, new Date(fromMs), new Date(toMs), view),
+    [blocks, sessions, fromMs, toMs, view],
+  );
+  const total =
+    rhythm.totals.zoneMinutes + rhythm.totals.pulledAwayMinutes + rhythm.totals.focusedElsewhereMinutes;
   const strongestZone = strongestLabel(rhythm.strongestZone, "zoneMinutes");
   const strongestPulledAway = strongestLabel(rhythm.strongestPulledAway, "pulledAwayMinutes");
   const period = view === "day" ? "today" : view === "week" ? "this week" : "this month";
+  // Keep content up while refetching — only skeleton on true cold start.
+  const showSkeleton = loading && sessions.length === 0 && blocks.length === 0 && total === 0;
+
+  const emptyCopy = offline
+    ? "Rhythm needs the Focus enforcer bridge (tray app). Plan and SoftLand stay available in Settings."
+    : focusShell
+      ? "Once you have planned blocks and tracked time, zone vs pull-away shows up here."
+      : "Add planned blocks and keep the tracker running to see your focus rhythm.";
 
   return (
     <section className="space-y-4 rounded-xl border border-white/10 bg-white/[0.025] p-4 sm:p-5" aria-labelledby="focus-rhythm-heading">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
           <h3 id="focus-rhythm-heading" className="flex items-center gap-2 text-sm font-medium">
-            <Brain size={16} className="text-violet-300" aria-hidden />
+            <Brain size={16} className="text-primary" aria-hidden />
             Focus rhythm
           </h3>
-          {loading ? (
+          {showSkeleton ? (
             <div className="mt-1 h-3 w-64 max-w-full animate-pulse rounded bg-white/10" />
           ) : total > 0 ? (
             <p className="mt-1 text-xs text-muted-foreground">
@@ -85,7 +113,7 @@ export function FocusRhythmPanel({ blocks, sessions, from, to, view, loading = f
               {strongestPulledAway ? <>Most pulled away: <span className="text-rose-200">{strongestPulledAway}</span></> : null}
             </p>
           ) : (
-            <p className="mt-1 text-xs text-muted-foreground">Your focus story will appear here as you plan and track time.</p>
+            <p className="mt-1 text-xs text-muted-foreground">Your focus story for {period}.</p>
           )}
         </div>
         <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[10px] uppercase tracking-wider text-muted-foreground">
@@ -93,14 +121,23 @@ export function FocusRhythmPanel({ blocks, sessions, from, to, view, loading = f
         </span>
       </div>
 
-      {loading ? (
+      {showSkeleton ? (
         <div className="grid gap-2 sm:grid-cols-3">
-          {[0, 1, 2].map((n) => <div key={n} className="h-24 animate-pulse rounded-xl bg-white/5" />)}
+          {[0, 1, 2].map((n) => <div key={n} className="h-20 animate-pulse rounded-xl bg-white/5" />)}
         </div>
       ) : total === 0 ? (
-        <div className="rounded-xl border border-dashed border-white/15 bg-white/[0.02] px-4 py-6 text-center">
-          <Clock3 size={22} className="mx-auto mb-2 text-muted-foreground/60" aria-hidden />
-          <p className="text-sm text-muted-foreground">Add planned blocks and keep the tracker running to see your focus rhythm.</p>
+        <div className="rounded-xl border border-white/10 bg-white/[0.02] px-4 py-4 text-center space-y-2">
+          <Clock3 size={18} className="mx-auto text-muted-foreground/60" aria-hidden />
+          <p className="text-xs text-muted-foreground leading-relaxed max-w-md mx-auto">{emptyCopy}</p>
+          {onOpenPlan && !offline ? (
+            <button
+              type="button"
+              onClick={onOpenPlan}
+              className="text-xs text-primary hover:underline underline-offset-2"
+            >
+              Open Plan
+            </button>
+          ) : null}
         </div>
       ) : (
         <>

@@ -86,6 +86,9 @@ std::string ProductivityPendingListJson(int limit);
 
 std::wstring ProductivityBehaviorDirFromDb(const std::wstring& dbPath);
 
+/** behavior/ beside the currently open productivity.db (empty if store closed). */
+std::wstring ProductivityCurrentBehaviorDir();
+
 // ---------------------------------------------------------------------------
 // P5a — unlock accounting (day passes, reward credits, per-day earn events).
 // Local calendar dates ("YYYY-MM-DD"); weeks are Monday-start local.

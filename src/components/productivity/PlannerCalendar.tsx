@@ -41,6 +41,9 @@ import type { HourSlice, SessionSegment } from "./hourSliceTypes";
 import { planBlocksToHourSegs, type PlanHourSeg } from "./planHourSegments";
 import { HourSliceProvider } from "./HourSliceProvider";
 import { DayGridActualLayer } from "./DayGridActualLayer";
+import { buildHourSlicesFromSessions } from "./buildHourSlices";
+import { DayGridCreateLayer } from "./DayGridCreateLayer";
+import { PlannerDayTrack } from "./PlannerDayTrack";
 import { ActualStackEvent } from "./ActualStackEvent";
 import { ActualFocusPanel, type EventAnchorRect } from "./ActualFocusPanel";
 import { CalendarFocusContext } from "./calendarFocusContext";
@@ -68,11 +71,47 @@ const DnDCalendar = withDragAndDrop(BigCalendar);
 type HourStretch = "compact" | "normal" | "tall" | "xlo";
 
 const HOUR_STRETCH_HEIGHT: Record<HourStretch, number> = {
-  compact: 0.85,
+  compact: 0.75,
   normal: 1,
-  tall: 1.45,
-  xlo: 1.9,
+  tall: 1.35,
+  xlo: 1.75,
 };
+
+const HOUR_STRETCH_OPTIONS: { key: HourStretch; label: string; hint: string }[] = [
+  { key: "compact", label: "S", hint: "Compact" },
+  { key: "normal", label: "M", hint: "Default" },
+  { key: "tall", label: "L", hint: "Comfortable" },
+  { key: "xlo", label: "XL", hint: "Spacious" },
+];
+
+const DISPLAY_PREFS_KEY = "calt.planner.display.v2";
+
+function loadDisplayPrefs(planningOnly: boolean): {
+  showPlanned: boolean;
+  showActual: boolean;
+  hourStretch: HourStretch;
+} {
+  const fallback = {
+    showPlanned: true,
+    showActual: true,
+    hourStretch: "tall" as HourStretch,
+  };
+  try {
+    const raw = localStorage.getItem(DISPLAY_PREFS_KEY);
+    if (!raw) return fallback;
+    const p = JSON.parse(raw) as Partial<typeof fallback>;
+    const stretch = HOUR_STRETCH_OPTIONS.some((o) => o.key === p.hourStretch)
+      ? (p.hourStretch as HourStretch)
+      : fallback.hourStretch;
+    return {
+      showPlanned: typeof p.showPlanned === "boolean" ? p.showPlanned : true,
+      showActual: typeof p.showActual === "boolean" ? p.showActual : true,
+      hourStretch: stretch,
+    };
+  } catch {
+    return fallback;
+  }
+}
 
 type CalendarEvent = {
   id: number;
@@ -99,9 +138,9 @@ export function calendarLayerVisibility({
   return {
     // The dedicated Planning agenda must always render its editable schedule.
     showPlanned: planningOnly || planned,
-    showActual: !planningOnly && actual,
-    // Planning-only loads wearable sleep; the calendar loads the overlay only on demand.
-    loadOverlay: planningOnly || actual,
+    // Tracked chips on Plan + Calendar when the Display toggle is on.
+    showActual: actual,
+    loadOverlay: true,
   };
 }
 
@@ -364,9 +403,9 @@ type Props = {
    * Use the Calendar tab for plan-vs-actual.
    */
   planningOnly?: boolean;
-  /** Card title (e.g. “Planner calendar”) — sits in the same header band as nav */
+  /** Optional leading chrome (usually omit — tab already says Calendar). */
   headerTitle?: ReactNode;
-  /** Plan KPI badge(s) beside the title */
+  /** Compact KPI beside Display (e.g. on-plan hours). */
   headerBadge?: ReactNode;
 };
 
@@ -390,13 +429,15 @@ export function PlannerCalendar({
     onViewChange?.(next);
   };
   const [date, setDate] = useState(() => (selectedDay ? startOfDay(selectedDay) : new Date()));
-  const [step, setStep] = useState(15);
+  /** Slot snap for week/month RBC + click-to-add rounding (day create uses 1m). */
+  const step = 15;
   const [blocks, setBlocks] = useState<PlannerBlock[]>([]);
   const [actuals, setActuals] = useState<ActualSession[]>([]);
   const [hourSlices, setHourSlices] = useState<HourSlice[]>([]);
-  const [showActual, setShowActual] = useState(!planningOnly);
-  const [showPlanned, setShowPlanned] = useState(true);
-  const [show2dTrack, setShow2dTrack] = useState(true);
+  const initialDisplay = useMemo(() => loadDisplayPrefs(planningOnly), [planningOnly]);
+  const [showActual, setShowActual] = useState(initialDisplay.showActual);
+  const [showPlanned, setShowPlanned] = useState(initialDisplay.showPlanned);
+  const show2dTrack = true;
   const [loading, setLoading] = useState(true);
   /** Plan tab: 2D minute grid (default) vs lane-based timeline editor */
   const [planAgendaEdit, setPlanAgendaEdit] = useState(false);
@@ -412,14 +453,43 @@ export function PlannerCalendar({
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<PlannerBlock | null>(null);
   const [slotStart, setSlotStart] = useState<Date | null>(null);
+  const [slotDuration, setSlotDuration] = useState(60);
   const [focusedEventId, setFocusedEventId] = useState<number | null>(null);
   const [focusedStackItemIndex, setFocusedStackItemIndex] = useState(0);
   const [eventAnchor, setEventAnchor] = useState<EventAnchorRect | null>(null);
   const [hourPeek, setHourPeek] = useState<HourPeekState | null>(null);
-  const [hourStretch, setHourStretch] = useState<HourStretch>("tall");
+  const [hourStretch, setHourStretch] = useState<HourStretch>(initialDisplay.hourStretch);
   /** Week-mode multi-week nav highlight (mini-cal / chip); RBC Week still shows 7 days from range start. */
   const [navRange, setNavRange] = useState<NavRange | null>(null);
   const calendarWrapRef = useRef<HTMLDivElement>(null);
+  const dayTrackBodyRef = useRef<HTMLDivElement>(null);
+  const hasPaintedRef = useRef(false);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        DISPLAY_PREFS_KEY,
+        JSON.stringify({ showPlanned, showActual, hourStretch }),
+      );
+    } catch {
+      /* ignore quota / private mode */
+    }
+  }, [showPlanned, showActual, hourStretch]);
+
+  const togglePlanned = useCallback(() => {
+    setShowPlanned((on) => {
+      // Keep at least one layer visible on the calendar tab
+      if (on && !planningOnly && !showActual) return true;
+      return !on;
+    });
+  }, [planningOnly, showActual]);
+
+  const toggleActual = useCallback(() => {
+    setShowActual((on) => {
+      if (on && !showPlanned) return true;
+      return !on;
+    });
+  }, [showPlanned]);
 
   const calendarViews = useMemo(
     () => (expanded ? ([Views.MONTH, Views.WEEK, Views.DAY] as View[]) : ([Views.DAY, Views.WEEK] as View[])),
@@ -459,39 +529,35 @@ export function PlannerCalendar({
   }, [view, date, planningOnly]);
 
   const load = useCallback(async () => {
-    setLoading(true);
+    // Stale-while-revalidate: only gate first paint — tab re-entry must not flash Loading.
+    if (!hasPaintedRef.current) setLoading(true);
     setError(null);
     try {
-      const [b, overlay] = await Promise.all([
-        fetchPlannerBlocks(range.from, range.to),
-        loadOverlay
-          ? fetchActualOverlayFull(range.from, range.to)
-          : Promise.resolve({ sessions: [] as ActualSession[], hour_slices: [] as HourSlice[] }),
-      ]);
+      const b = await fetchPlannerBlocks(range.from, range.to);
       setBlocks(b);
-      const a = overlay.sessions;
-      setHourSlices(overlay.hour_slices ?? []);
-      if (!loadOverlay) {
+      hasPaintedRef.current = true;
+      setLoading(false);
+
+      if (!loadOverlay || !effectiveShowActual) {
         setActuals([]);
-      } else if (effectiveShowActual) {
-        setActuals(a);
-      } else {
-        // planningOnly: sleep only (PC left open overnight is not "work")
-        setActuals(
-          a.filter(
-            (s) =>
-              (s.category || "").toLowerCase() === "sleep" ||
-              (s.source || "").toLowerCase() === "wearable_sleep" ||
-              (s.app_name || "").toLowerCase() === "amazfit",
-          ),
-        );
+        setHourSlices([]);
+        return;
       }
+      // Overlay second so the calendar grid paints before tracked chips.
+      // Focus/C++ returns hour_slices: [] — build them client-side from sessions.
+      const overlay = await fetchActualOverlayFull(range.from, range.to);
+      const a = overlay.sessions ?? [];
+      let slices = overlay.hour_slices ?? [];
+      if (a.length && !slices.length) {
+        slices = buildHourSlicesFromSessions(a, date);
+      }
+      setHourSlices(slices);
+      setActuals(a);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load planner");
-    } finally {
       setLoading(false);
     }
-  }, [range.from, range.to, effectiveShowActual, loadOverlay, refreshKey]);
+  }, [range.from, range.to, effectiveShowActual, loadOverlay, refreshKey, date]);
 
   useEffect(() => {
     void load();
@@ -505,10 +571,12 @@ export function PlannerCalendar({
   // Taller hours so 15/30/45m marks stay readable after collapsing the all-day header.
   const calendarHeight = Math.round((expanded ? 880 : 720) * HOUR_STRETCH_HEIGHT[hourStretch]);
 
-  const use2dLayer =
-    show2dTrack &&
-    view === Views.DAY &&
-    (planningOnly ? effectiveShowPlanned : effectiveShowActual);
+  // 2D minute track whenever Day view + toggle is on (planned and/or actual).
+  // Create/drag uses X=minutes, Y=hours — must not depend on actual overlay alone.
+  const use2dLayer = show2dTrack && view === Views.DAY;
+
+  // Minute bar uses CSS grid (--planner-hour-col) to clear the hour gutter;
+  // no JS lane measurement needed for the header axis.
 
   const events: CalendarEvent[] = useMemo(() => {
     const planned: CalendarEvent[] = effectiveShowPlanned
@@ -940,22 +1008,39 @@ export function PlannerCalendar({
   };
 
   const onSelectSlot = (slot: SlotInfo) => {
+    // Classic vertical select only when 2D minute track is off.
+    if (use2dLayer) return;
     onSelectedDayChange?.(startOfDay(slot.start));
     setHourPeek(null);
     setFocusedEventId(null);
     setEventAnchor(null);
     setSelected(null);
+    setSlotDuration(Math.max(step, 60));
     setSlotStart(slot.start);
   };
+
+  const onHorizontalCreate = useCallback(
+    ({ start, durationMinutes }: { start: Date; durationMinutes: number }) => {
+      onSelectedDayChange?.(startOfDay(start));
+      setHourPeek(null);
+      setFocusedEventId(null);
+      setEventAnchor(null);
+      setSelected(null);
+      setSlotDuration(Math.max(step, durationMinutes));
+      setSlotStart(start);
+    },
+    [onSelectedDayChange, step],
+  );
 
   const openAddAt = (when: Date) => {
     const rounded = new Date(when);
     rounded.setSeconds(0, 0);
     const m = rounded.getMinutes();
-    rounded.setMinutes(m - (m % 15));
+    rounded.setMinutes(m - (m % step));
     setSelected(null);
     setFocusedEventId(null);
     setEventAnchor(null);
+    setSlotDuration(Math.max(step, 60));
     setSlotStart(rounded);
   };
 
@@ -1050,10 +1135,15 @@ export function PlannerCalendar({
         {slotStart && (
           <PlannerBlockForm
             defaultStart={slotStart}
-            onCancel={() => setSlotStart(null)}
+            defaultDuration={slotDuration}
+            onCancel={() => {
+              setSlotStart(null);
+              setSlotDuration(60);
+            }}
             onSubmit={async (data) => {
               await createPlannerBlock(data);
               setSlotStart(null);
+              setSlotDuration(60);
               await load();
             }}
           />
@@ -1067,7 +1157,7 @@ export function PlannerCalendar({
       {planningOnly ? (
         <div className="mb-2 flex flex-wrap items-center justify-between gap-2 px-0.5">
           <p className="text-[10px] text-muted-foreground">
-            Left→right = minutes within each hour · click a block or time slot to edit
+            Drag across minutes; move into the next/previous hour to extend · 1m while creating · click a block to edit
           </p>
           <div className="flex gap-1.5">
             <button
@@ -1096,113 +1186,6 @@ export function PlannerCalendar({
         </div>
       ) : null}
       <div className="planner-cal-header">
-        <div className="planner-cal-header__brand">
-          {headerTitle}
-          {headerBadge}
-          <div className="planner-cal-meta__controls">
-            <Popover>
-              <PopoverTrigger asChild>
-                <button
-                  type="button"
-                  className="planner-cal-meta__display"
-                  title={`Display · ${effectiveShowPlanned ? "planned" : "actual only"} · ${effectiveShowActual ? "actual" : "plan only"} · ${step}m`}
-                >
-                  <Settings2 size={11} />
-                  Display
-                </button>
-              </PopoverTrigger>
-              <PopoverContent align="start" className="w-64 space-y-3 bg-popover/95 backdrop-blur-sm">
-                <div>
-                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1.5">Layers</p>
-                  <div className="flex flex-wrap gap-x-3 gap-y-2">
-                    <label className="planner-cal-meta__check" title="Scheduled blocks and unsaved plan drafts.">
-                      <input
-                        type="checkbox"
-                        checked={showPlanned}
-                        onChange={(e) => setShowPlanned(e.target.checked)}
-                      />
-                      Show planned
-                    </label>
-                    <label
-                      className="planner-cal-meta__check"
-                      title="Blue blocks are tracked sessions. Click for details; ← → cycles overlaps."
-                    >
-                      <input
-                        type="checkbox"
-                        checked={showActual}
-                        onChange={(e) => setShowActual(e.target.checked)}
-                      />
-                      Show actual
-                    </label>
-                    {view === Views.DAY && effectiveShowActual ? (
-                      <label
-                        className="planner-cal-meta__check"
-                        title="Per-hour 2D lanes for tracked time (hides classic actual bars)."
-                      >
-                        <input
-                          type="checkbox"
-                          checked={show2dTrack}
-                          onChange={(e) => setShow2dTrack(e.target.checked)}
-                        />
-                        2D track
-                      </label>
-                    ) : null}
-                  </div>
-                </div>
-                <div>
-                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1.5">Zoom</p>
-                  <div className="flex gap-1.5">
-                    {[15, 30, 60].map((s) => (
-                      <button
-                        key={s}
-                        type="button"
-                        onClick={() => setStep(s)}
-                        className={`flex-1 px-2 py-1 rounded text-xs border ${
-                          step === s
-                            ? "border-primary/40 bg-primary/15 text-primary"
-                            : "border-white/10 text-muted-foreground"
-                        }`}
-                      >
-                        {s}m
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1.5">Row height</p>
-                  <div className="flex gap-1.5">
-                    {(
-                      [
-                        ["compact", "S"],
-                        ["normal", "M"],
-                        ["tall", "L"],
-                        ["xlo", "XL"],
-                      ] as const
-                    ).map(([key, label]) => (
-                      <button
-                        key={key}
-                        type="button"
-                        onClick={() => setHourStretch(key)}
-                        className={`flex-1 px-2 py-1 rounded text-xs border ${
-                          hourStretch === key
-                            ? "border-primary/40 bg-primary/15 text-primary"
-                            : "border-white/10 text-muted-foreground"
-                        }`}
-                      >
-                        {label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <p className="text-[10px] text-muted-foreground leading-relaxed">
-                  2D track (Day): left→right = minutes 0–60 for plan blocks and tracked apps. Turn off
-                  for classic full-width drag/drop.
-                </p>
-              </PopoverContent>
-            </Popover>
-          </div>
-          {loading && <span className="planner-cal-meta__loading">Loading…</span>}
-        </div>
         <div className="planner-cal-header__nav">
           <PlannerCalendarToolbar
             date={date}
@@ -1215,24 +1198,129 @@ export function PlannerCalendar({
             onNavRangeChange={setNavRange}
           />
         </div>
+        <div className="planner-cal-header__brand">
+          {headerTitle}
+          {headerBadge}
+          <div className="planner-cal-meta__controls">
+            <Popover>
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  className="planner-cal-meta__display"
+                  aria-label="Display options"
+                  title={`Display · ${effectiveShowPlanned ? "planned" : "actual only"} · ${effectiveShowActual ? "actual" : "plan only"}`}
+                >
+                  <Settings2 size={12} aria-hidden />
+                  <span className="planner-cal-meta__display-label">Display</span>
+                </button>
+              </PopoverTrigger>
+              <PopoverContent align="end" className="planner-cal-display-pop w-56 space-y-3 bg-popover/95 backdrop-blur-sm">
+                {!planningOnly ? (
+                  <div>
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1.5">Layers</p>
+                    <div className="planner-cal-display-pop__toggles" role="group" aria-label="Visible layers">
+                      <button
+                        type="button"
+                        className={`planner-cal-display-pop__toggle ${showPlanned ? "is-on" : ""}`}
+                        aria-pressed={showPlanned}
+                        title="Scheduled blocks and draft plan"
+                        onClick={togglePlanned}
+                      >
+                        Planned
+                      </button>
+                      <button
+                        type="button"
+                        className={`planner-cal-display-pop__toggle ${showActual ? "is-on" : ""}`}
+                        aria-pressed={showActual}
+                        title="Tracked app / site sessions"
+                        onClick={toggleActual}
+                      >
+                        Actual
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
+                <div>
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1.5">
+                    Row height
+                    <span className="ml-1.5 normal-case tracking-normal text-muted-foreground/70">
+                      {HOUR_STRETCH_OPTIONS.find((o) => o.key === hourStretch)?.hint}
+                    </span>
+                  </p>
+                  <div className="planner-cal-display-pop__toggles" role="group" aria-label="Hour row height">
+                    {HOUR_STRETCH_OPTIONS.map(({ key, label, hint }) => (
+                      <button
+                        key={key}
+                        type="button"
+                        title={hint}
+                        aria-pressed={hourStretch === key}
+                        onClick={() => setHourStretch(key)}
+                        className={`planner-cal-display-pop__toggle ${
+                          hourStretch === key ? "is-on" : ""
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
+          </div>
+          {loading && <span className="planner-cal-meta__loading">Loading…</span>}
+        </div>
       </div>
 
-      {error && <p className="text-xs text-red-400">{error}</p>}
+      {error && error !== "enforcer_unreachable" ? (
+        <p className="text-[11px] text-muted-foreground mb-1.5">{error}</p>
+      ) : null}
+
+      <div className="planner-cal-grid-stack">
+        {view === Views.DAY && !use2dLayer ? (
+          <div
+            className="planner-cal-minute-bar"
+            title="Minutes within each hour (0–60). Blocks map left→right to start/end minutes."
+          >
+            <span className="planner-cal-minute-bar__label" aria-hidden>
+              hr
+            </span>
+            <div className="planner-cal-minute-bar__lane" aria-hidden>
+              {[0, 15, 30, 45, 60].map((m) => (
+                <span
+                  key={m}
+                  className={
+                    m === 0
+                      ? "planner-cal-minute-bar__mark planner-cal-minute-bar__mark--zero"
+                      : m === 60
+                        ? "planner-cal-minute-bar__mark planner-cal-minute-bar__mark--edge"
+                        : "planner-cal-minute-bar__mark"
+                  }
+                  style={{ left: `${(m / 60) * 100}%` }}
+                >
+                  <span className="planner-cal-minute-bar__tick" />
+                  <span className="planner-cal-minute-bar__num">{m}</span>
+                </span>
+              ))}
+            </div>
+          </div>
+        ) : null}
 
       <div
         ref={calendarWrapRef}
-        className={`planner-calendar-wrap planner-calendar-wrap--no-allday relative overflow-hidden rounded-xl border border-white/10 bg-black/20 p-2 ${
+        className={`planner-calendar-wrap planner-calendar-wrap--no-allday relative overflow-visible ${
           focusedEventId != null || hourPeek ? "planner-calendar--focus-mode" : ""
-        } ${expanded ? "min-h-[880px]" : "min-h-[720px]"}`}
+        }`}
+        style={{ minHeight: calendarHeight }}
         data-hour-stretch={hourStretch}
         data-calendar-view={view}
         data-2d-track={use2dLayer ? "1" : "0"}
         onClickCapture={(e) => {
           const t = e.target as HTMLElement;
-          const gutter = t.closest(".rbc-time-gutter") as HTMLElement | null;
+          const gutter = t.closest(".rbc-time-gutter, .planner-day-track__hours") as HTMLElement | null;
           if (gutter) {
             const labelEl =
               (t.closest(".rbc-label") as HTMLElement | null) ||
+              (t.closest(".planner-day-track__hour") as HTMLElement | null) ||
               (t.closest(".rbc-timeslot-group")?.querySelector(".rbc-label") as HTMLElement | null);
             const labelText = (labelEl?.textContent || "").trim();
             if (labelText) {
@@ -1259,97 +1347,113 @@ export function PlannerCalendar({
           setSlotStart(null);
         }}
       >
-        {isEmpty && (
-          <div className="pointer-events-none absolute inset-x-0 top-4 z-10 flex justify-center px-4">
-            <p className="rounded-lg border border-white/10 bg-black/70 px-3 py-2 text-center text-xs text-muted-foreground shadow-lg backdrop-blur-sm">
-              No blocks this view — click a time slot to plan, or open Import & routines for timetable / propose week.
+        {isEmpty && !use2dLayer ? (
+          <div className="pointer-events-none absolute inset-x-0 top-3 z-10 flex justify-center px-4">
+            <p className="text-center text-[11px] text-muted-foreground/80">
+              No blocks yet — click a time slot to plan
             </p>
           </div>
-        )}
+        ) : null}
         <CalendarFocusContext.Provider value={{ focusedId: focusedEventId }}>
           <HourSliceProvider
             slices={hourSlices}
             dayKey={format(date, "yyyy-MM-dd")}
             enabled={use2dLayer}
           >
-            <DnDCalendar
-              localizer={localizer}
-              events={events}
-              view={view}
-              onView={(next) => setView(next)}
-              date={date}
-              onNavigate={(newDate, nextView) => {
-                setDate(newDate);
-                onSelectedDayChange?.(startOfDay(newDate));
-                if (nextView === Views.DAY || nextView === Views.WEEK || nextView === Views.MONTH) {
-                  setView(nextView);
-                }
-              }}
-              step={step}
-              timeslots={Math.max(1, 60 / step)}
-              /* App never uses all-day events; RBC still reserves minRows=2 — hide via CSS + prop. */
-              allDayMaxRows={0}
-              allDayAccessor={() => false}
-              showMultiDayTimes
-              selectable
-              resizable={false}
-              toolbar={false}
-              draggableAccessor={(e: CalendarEvent) =>
-                !use2dLayer && !e.isActual && focusedEventId == null
-              }
-              onEventDrop={onEventDrop as never}
-              onSelectEvent={onSelectEvent as never}
-              onSelectSlot={onSelectSlot}
-              eventPropGetter={eventStyleGetter as never}
-              components={{
-                event: EventChip as never,
-              }}
-              views={calendarViews}
-              defaultView={Views.DAY}
-              style={{ height: calendarHeight, width: "100%" }}
-            />
             {use2dLayer ? (
-              <DayGridActualLayer
+              <PlannerDayTrack
                 day={date}
-                slices={planningOnly ? [] : effectiveShowActual ? hourSlices : []}
-                planSegs={planHourSegs}
-                focusedPlanId={focusedEventId}
-                containerRef={calendarWrapRef}
-                onSegmentClick={(seg: SessionSegment, hourStart, el) => {
-                  openSegmentPeek(seg.session_ids, hourStart, el, { segment: seg });
-                }}
-                onOverflowClick={(hidden, hourStart, el) => {
-                  const ids = hidden.flatMap((s) => s.session_ids);
-                  openSegmentPeek(ids, hourStart, el, {
-                    title: `+${hidden.length} more · ${format(hourStart, "h a")}`,
-                    cycleSegments: hidden,
-                  });
-                }}
-                onPlanSegClick={(seg: PlanHourSeg, el) => {
-                  const wrap = calendarWrapRef.current;
-                  if (wrap) {
-                    const wrapR = wrap.getBoundingClientRect();
-                    const evR = el.getBoundingClientRect();
-                    setEventAnchor({
-                      top: evR.top - wrapR.top + wrap.scrollTop,
-                      left: evR.left - wrapR.left + wrap.scrollLeft,
-                      width: evR.width,
-                      height: evR.height,
+                height={calendarHeight}
+                bodyRef={dayTrackBodyRef}
+                emptyHint={
+                  isEmpty ? "Drag across the grid to add a block" : null
+                }
+                onHourLabelClick={(hourStart, el) => openHourPeek(hourStart, el)}
+              >
+                <DayGridCreateLayer
+                  day={date}
+                  step={step}
+                  containerRef={calendarWrapRef}
+                  onCreate={onHorizontalCreate}
+                />
+                <DayGridActualLayer
+                  day={date}
+                  slices={effectiveShowActual ? hourSlices : []}
+                  planSegs={planHourSegs}
+                  focusedPlanId={focusedEventId}
+                  containerRef={calendarWrapRef}
+                  onSegmentClick={(seg: SessionSegment, hourStart, el) => {
+                    openSegmentPeek(seg.session_ids, hourStart, el, { segment: seg });
+                  }}
+                  onOverflowClick={(hidden, hourStart, el) => {
+                    const ids = hidden.flatMap((s) => s.session_ids);
+                    openSegmentPeek(ids, hourStart, el, {
+                      title: `+${hidden.length} more · ${format(hourStart, "h a")}`,
+                      cycleSegments: hidden,
                     });
-                  }
-                  setHourPeek(null);
-                  const block = blocks.find((b) => b.id === seg.blockId);
-                  if (block) {
-                    setSelected(block);
-                    setFocusedEventId(block.id);
-                    onSelectedDayChange?.(startOfDay(new Date(block.start_at)));
-                  } else if (seg.isDraft) {
-                    setFocusedEventId(seg.blockId);
-                    setSelected(null);
+                  }}
+                  onPlanSegClick={(seg: PlanHourSeg, el) => {
+                    const wrap = calendarWrapRef.current;
+                    if (wrap) {
+                      const wrapR = wrap.getBoundingClientRect();
+                      const evR = el.getBoundingClientRect();
+                      setEventAnchor({
+                        top: evR.top - wrapR.top + wrap.scrollTop,
+                        left: evR.left - wrapR.left + wrap.scrollLeft,
+                        width: evR.width,
+                        height: evR.height,
+                      });
+                    }
+                    setHourPeek(null);
+                    const block = blocks.find((b) => b.id === seg.blockId);
+                    if (block) {
+                      setSelected(block);
+                      setFocusedEventId(block.id);
+                      onSelectedDayChange?.(startOfDay(new Date(block.start_at)));
+                    } else if (seg.isDraft) {
+                      setFocusedEventId(seg.blockId);
+                      setSelected(null);
+                    }
+                  }}
+                />
+              </PlannerDayTrack>
+            ) : (
+              <DnDCalendar
+                localizer={localizer}
+                events={events}
+                view={view}
+                onView={(next) => setView(next)}
+                date={date}
+                onNavigate={(newDate, nextView) => {
+                  setDate(newDate);
+                  onSelectedDayChange?.(startOfDay(newDate));
+                  if (nextView === Views.DAY || nextView === Views.WEEK || nextView === Views.MONTH) {
+                    setView(nextView);
                   }
                 }}
+                step={step}
+                timeslots={Math.max(1, 60 / step)}
+                allDayMaxRows={0}
+                allDayAccessor={() => false}
+                showMultiDayTimes
+                selectable
+                resizable={false}
+                toolbar={false}
+                draggableAccessor={(e: CalendarEvent) =>
+                  !e.isActual && focusedEventId == null
+                }
+                onEventDrop={onEventDrop as never}
+                onSelectEvent={onSelectEvent as never}
+                onSelectSlot={onSelectSlot}
+                eventPropGetter={eventStyleGetter as never}
+                components={{
+                  event: EventChip as never,
+                }}
+                views={calendarViews}
+                defaultView={Views.DAY}
+                style={{ height: calendarHeight, width: "100%" }}
               />
-            ) : null}
+            )}
           </HourSliceProvider>
         </CalendarFocusContext.Provider>
 
@@ -1443,10 +1547,15 @@ export function PlannerCalendar({
           >
             <PlannerBlockForm
               defaultStart={slotStart}
-              onCancel={() => setSlotStart(null)}
+              defaultDuration={slotDuration}
+              onCancel={() => {
+                setSlotStart(null);
+                setSlotDuration(60);
+              }}
               onSubmit={async (data) => {
                 await createPlannerBlock(data);
                 setSlotStart(null);
+                setSlotDuration(60);
                 await load();
               }}
             />
@@ -1520,6 +1629,7 @@ export function PlannerCalendar({
             />
           </div>
         )}
+      </div>
       </div>
     </div>
   );

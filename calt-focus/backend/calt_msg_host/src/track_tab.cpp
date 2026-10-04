@@ -39,6 +39,36 @@ std::string IsoUtcNow() {
   return buf;
 }
 
+/** Add seconds to an ISO-Z stamp (second resolution). Supports negative offsets. */
+std::string IsoUtcAddSeconds(const std::string& iso, int seconds) {
+  // Parse YYYY-MM-DDTHH:MM:SS
+  if (iso.size() < 19) return IsoUtcNow();
+  SYSTEMTIME st{};
+  st.wYear = (WORD)atoi(iso.c_str());
+  st.wMonth = (WORD)atoi(iso.c_str() + 5);
+  st.wDay = (WORD)atoi(iso.c_str() + 8);
+  st.wHour = (WORD)atoi(iso.c_str() + 11);
+  st.wMinute = (WORD)atoi(iso.c_str() + 14);
+  st.wSecond = (WORD)atoi(iso.c_str() + 17);
+  FILETIME ft;
+  if (!SystemTimeToFileTime(&st, &ft)) return IsoUtcNow();
+  ULARGE_INTEGER uli;
+  uli.LowPart = ft.dwLowDateTime;
+  uli.HighPart = ft.dwHighDateTime;
+  long long delta = (long long)seconds * 10000000LL;
+  long long next = (long long)uli.QuadPart + delta;
+  if (next < 0) next = 0;
+  uli.QuadPart = (unsigned long long)next;
+  ft.dwLowDateTime = uli.LowPart;
+  ft.dwHighDateTime = uli.HighPart;
+  SYSTEMTIME out{};
+  FileTimeToSystemTime(&ft, &out);
+  char buf[40];
+  snprintf(buf, sizeof(buf), "%04u-%02u-%02uT%02u:%02u:%02u.000Z", out.wYear, out.wMonth, out.wDay,
+           out.wHour, out.wMinute, out.wSecond);
+  return buf;
+}
+
 int ResolveUserId(sqlite3* db) {
   int uid = 0;
   sqlite3_stmt* st = nullptr;
@@ -56,6 +86,47 @@ int ResolveUserId(sqlite3* db) {
     }
   }
   return uid;
+}
+
+/** Extend an open selftracker row for the same app if last activity was recent (≤120s). */
+bool TryExtendSession(sqlite3* db, int uid, const std::string& app, const std::string& title,
+                      const std::string& now) {
+  // now-120s as lower bound (lexicographic ISO-Z works for same-length stamps)
+  std::string since = IsoUtcAddSeconds(now, -120);
+  sqlite3_stmt* st = nullptr;
+  const char* sql =
+      "SELECT session_id, end_time FROM tracked_sessions "
+      "WHERE user_id=? AND source='selftracker' AND app_name=? AND end_time>=? "
+      "ORDER BY start_time DESC LIMIT 1;";
+  if (sqlite3_prepare_v2(db, sql, -1, &st, nullptr) != SQLITE_OK) return false;
+  sqlite3_bind_int(st, 1, uid);
+  sqlite3_bind_text(st, 2, app.c_str(), -1, SQLITE_TRANSIENT);
+  sqlite3_bind_text(st, 3, since.c_str(), -1, SQLITE_TRANSIENT);
+  if (sqlite3_step(st) != SQLITE_ROW) {
+    sqlite3_finalize(st);
+    return false;
+  }
+  const char* sid = reinterpret_cast<const char*>(sqlite3_column_text(st, 0));
+  const char* endPrev = reinterpret_cast<const char*>(sqlite3_column_text(st, 1));
+  std::string sessionId = sid ? sid : "";
+  std::string prevEnd = endPrev ? endPrev : "";
+  sqlite3_finalize(st);
+  if (sessionId.empty()) return false;
+
+  std::string newEnd = IsoUtcAddSeconds(now, 20);
+  // Never shorten an already-longer cushion from the initial insert.
+  if (!prevEnd.empty() && prevEnd > newEnd) newEnd = prevEnd;
+  sqlite3_stmt* up = nullptr;
+  if (sqlite3_prepare_v2(db,
+                         "UPDATE tracked_sessions SET end_time=?, window_title=? WHERE session_id=?;",
+                         -1, &up, nullptr) != SQLITE_OK)
+    return false;
+  sqlite3_bind_text(up, 1, newEnd.c_str(), -1, SQLITE_TRANSIENT);
+  sqlite3_bind_text(up, 2, title.c_str(), -1, SQLITE_TRANSIENT);
+  sqlite3_bind_text(up, 3, sessionId.c_str(), -1, SQLITE_TRANSIENT);
+  bool ok = sqlite3_step(up) == SQLITE_DONE && sqlite3_changes(db) > 0;
+  sqlite3_finalize(up);
+  return ok;
 }
 
 }  // namespace
@@ -103,6 +174,19 @@ bool TrackTabToSqlite(const std::string& url, const std::string& title, const st
     return false;
   }
 
+  std::string now = IsoUtcNow();
+  std::string app = domain.empty() ? "msedge.exe" : ("msedge:" + domain);
+  std::string tit = title.empty() ? url : title;
+  if (tit.size() > 200) tit.resize(200);
+
+  // Heartbeat: extend the open row so Focus calendar gets real duration (≥45s).
+  if (TryExtendSession(db, uid, app, tit, now)) {
+    sqlite3_close(db);
+    return true;
+  }
+
+  // New visit: start now, end = now+60s so a single hit clears the 45s calendar floor.
+  std::string end = IsoUtcAddSeconds(now, 60);
   const char* sql =
       "INSERT INTO tracked_sessions "
       "(session_id, user_id, task_id, start_time, end_time, source, category, "
@@ -115,19 +199,14 @@ bool TrackTabToSqlite(const std::string& url, const std::string& title, const st
     return false;
   }
 
-  std::string now = IsoUtcNow();
   char sid[96];
   snprintf(sid, sizeof(sid), "selftracker-%lu-%s", (unsigned long)GetTickCount(),
            domain.empty() ? "tab" : domain.c_str());
 
-  std::string app = domain.empty() ? "msedge.exe" : ("msedge:" + domain);
-  std::string tit = title.empty() ? url : title;
-  if (tit.size() > 200) tit.resize(200);
-
   sqlite3_bind_text(st, 1, sid, -1, SQLITE_TRANSIENT);
   sqlite3_bind_int(st, 2, uid);
   sqlite3_bind_text(st, 3, now.c_str(), -1, SQLITE_TRANSIENT);
-  sqlite3_bind_text(st, 4, now.c_str(), -1, SQLITE_TRANSIENT);
+  sqlite3_bind_text(st, 4, end.c_str(), -1, SQLITE_TRANSIENT);
   sqlite3_bind_text(st, 5, tit.c_str(), -1, SQLITE_TRANSIENT);
   sqlite3_bind_text(st, 6, app.c_str(), -1, SQLITE_TRANSIENT);
 

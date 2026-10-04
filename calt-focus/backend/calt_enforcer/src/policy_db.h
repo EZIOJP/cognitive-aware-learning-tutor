@@ -25,6 +25,9 @@ std::wstring DefaultPolicyJsonPath(const std::wstring& dbPath);
 bool WriteEnforcerPolicyJson(const std::wstring& jsonPath, const EnforcerSnapshot& snap,
                              bool anti_tamper, bool protect_uninstall);
 
+/** Best-effort mirror of Arm snapshot into enforcer_runtime (avoids stale SQLite reads). */
+bool SyncEnforcerRuntimeSqlite(const std::wstring& dbPath, const EnforcerSnapshot& snap);
+
 // Load policy with ZERO Python dependency:
 // 1) SQLite enforcer_runtime (may be stale leftover from web backend)
 // 2) Overlay/fallback data/behavior/enforcer_policy.json when present

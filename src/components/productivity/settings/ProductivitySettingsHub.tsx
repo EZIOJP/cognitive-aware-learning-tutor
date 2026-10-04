@@ -9,36 +9,42 @@ import { DeviceBlockPanel } from "../DeviceBlockPanel";
 import { DesktopManagedBanner } from "../DesktopManagedBanner";
 import { EnforcerWriteGate } from "../EnforcerWriteGate";
 
+/** Prefer MakeSettingsApp in Focus; hub kept for Study interstitial / deep links. */
 export type SettingsSectionId =
   | "overview"
+  | "blocks"
   | "now"
   | "sites"
   | "apps"
   | "unlock"
   | "productive"
   | "filters"
-  | "tools";
+  | "tools"
+  | "more";
 
 const NAV: { id: SettingsSectionId; label: string; blurb: string }[] = [
-  { id: "overview", label: "Overview", blurb: "How blocking works" },
-  { id: "now", label: "Now", blurb: "Mode, earn, Arm" },
-  { id: "sites", label: "Sites", blurb: "SoftLand lists & schedule" },
-  { id: "apps", label: "Apps", blurb: "Kill list & Arm" },
-  { id: "unlock", label: "Unlock", blurb: "Goal, pass, reward" },
-  { id: "productive", label: "Productive", blurb: "Scores & categories" },
-  { id: "filters", label: "Filters", blurb: "Hosts porn block" },
-  { id: "tools", label: "Tools", blurb: "Demo, watch, export" },
+  { id: "overview", label: "Overview", blurb: "What’s active" },
+  { id: "blocks", label: "Blocks", blurb: "Sites, apps, filters" },
+  { id: "unlock", label: "Unlock", blurb: "Goal, pass, Arm" },
+  { id: "productive", label: "Productive", blurb: "What counts" },
+  { id: "more", label: "More", blurb: "Demo, export" },
 ];
 
 export type ProductivitySettingsHubProps = {
   section: SettingsSectionId;
   onSectionChange: (id: SettingsSectionId) => void;
   onPolicySaved?: () => void;
-  /** Scoring / session tools that need page timeline state */
   productiveExtra?: ReactNode;
-  /** Demo, watch, reminders, export, setup — owned by the page */
   toolsContent?: ReactNode;
 };
+
+function navHighlight(section: SettingsSectionId): SettingsSectionId {
+  if (section === "sites" || section === "apps" || section === "filters" || section === "blocks")
+    return "blocks";
+  if (section === "now") return "unlock";
+  if (section === "tools" || section === "more") return "more";
+  return section;
+}
 
 export function ProductivitySettingsHub({
   section,
@@ -47,187 +53,222 @@ export function ProductivitySettingsHub({
   productiveExtra,
   toolsContent,
 }: ProductivitySettingsHubProps) {
-  return (
-    <EnforcerWriteGate>
-    <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
-      <nav
-        aria-label="Settings groups"
-        className="lg:sticky lg:top-20 lg:w-52 shrink-0 space-y-1 rounded-2xl border border-white/10 bg-white/[0.03] p-2"
-      >
-        {NAV.map((item) => {
-          const active = section === item.id;
-          return (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => onSectionChange(item.id)}
-              className={`w-full rounded-xl px-3 py-2 text-left transition-colors ${
-                active
-                  ? "bg-white/10 text-foreground"
-                  : "text-muted-foreground hover:bg-white/5 hover:text-foreground/90"
-              }`}
-            >
-              <span className="block text-xs font-semibold">{item.label}</span>
-              <span className="block text-[10px] opacity-80 mt-0.5">{item.blurb}</span>
-            </button>
-          );
-        })}
-      </nav>
+  const highlight = navHighlight(section);
+  const blockSub =
+    section === "apps" || section === "filters" ? section : ("sites" as const);
 
-      <div className="min-w-0 flex-1 space-y-6">
-        {section === "overview" && (
-          <div className="space-y-4">
-            <WeaponCallout />
-            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:p-6 space-y-3">
-              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Jump to a group
-              </p>
-              <div className="grid gap-2 sm:grid-cols-2">
-                {(
-                  [
-                    ["sites", "Sites — allow / watch / block + week schedule"],
-                    ["apps", "Apps — OS kill list and Arm"],
-                    ["unlock", "Unlock — daily goal, day pass, reward day"],
-                    ["now", "Now — live mode, spend earned, Arm switch"],
-                  ] as const
-                ).map(([id, label]) => (
-                  <button
-                    key={id}
-                    type="button"
-                    onClick={() => onSectionChange(id)}
-                    className="rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-left text-[12px] text-foreground/90 hover:border-sky-400/30 hover:bg-sky-500/5"
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <NativeOrApiBadge kind="native" />
-                <span className="text-[11px] text-muted-foreground self-center">
-                  SoftLand, Arm, lists, schedules, Plan, Bible, Journal — enforcer only
-                </span>
-              </div>
+  const gatedBody = (
+    <>
+      {highlight === "overview" && (
+        <div className="space-y-4">
+          <WeaponCallout />
+          <div className="rounded-2xl border border-border/40 bg-muted/15 p-4 sm:p-5 space-y-3">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+              Jump
+            </p>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {(
+                [
+                  ["blocks", "Blocks — sites, apps, device filter"],
+                  ["unlock", "Unlock — goal, pass, Arm"],
+                  ["productive", "Productive — scoring"],
+                  ["more", "More — demo, export"],
+                ] as const
+              ).map(([id, label]) => (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() =>
+                    onSectionChange(id === "blocks" ? "sites" : id === "more" ? "tools" : id)
+                  }
+                  className="rounded-xl border border-border/40 bg-background/35 px-3 py-2.5 text-left text-[12px] text-foreground/90 hover:border-sky-400/30 hover:bg-sky-500/5"
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <NativeOrApiBadge kind="native" />
+              <span className="text-[11px] text-muted-foreground self-center">
+                SoftLand = sites · Arm = kills · SoftLand ON ≠ Armed
+              </span>
             </div>
           </div>
-        )}
+        </div>
+      )}
 
-        {section === "now" && (
+      {highlight === "blocks" && (
+        <div className="space-y-6">
+          <div className="flex flex-wrap gap-1 rounded-xl border border-border/40 bg-muted/15 p-1">
+            {(
+              [
+                ["sites", "Sites"],
+                ["apps", "Apps"],
+                ["filters", "Filters"],
+              ] as const
+            ).map(([id, label]) => (
+              <button
+                key={id}
+                type="button"
+                onClick={() => onSectionChange(id)}
+                className={`rounded-lg px-3 py-1.5 text-[12px] ${
+                  blockSub === id ? "bg-foreground/10 text-foreground" : "text-muted-foreground"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          {blockSub === "sites" && (
+            <>
+              <SettingSection
+                title="SoftLand master"
+                why="Turns site blocking on or off. Does not Arm OS kills."
+                availability="native"
+              >
+                <ProductivityPolicyPanel variant="softland" onSaved={onPolicySaved} />
+              </SettingSection>
+              <SettingSection
+                title="Site lists"
+                why="Allow always wins. Watch is study-only. Block survives reward days."
+                availability="native"
+              >
+                <SoftLandSiteRulesPanel />
+              </SettingSection>
+              <SettingSection
+                title="Schedule"
+                why="First matching week window sets study/free mode."
+                availability="native"
+              >
+                <GateSchedulesPanel />
+              </SettingSection>
+            </>
+          )}
+          {blockSub === "apps" && (
+            <SettingSection
+              title="Apps (Arm)"
+              why="OS process kills only. SoftLand site lists never belong here."
+              availability="native"
+            >
+              <AppKillRulesPanel />
+            </SettingSection>
+          )}
+          {blockSub === "filters" && (
+            <SettingSection
+              title="Filters"
+              why="Permanent PC-wide porn block via Windows hosts."
+              availability="native"
+            >
+              <DeviceBlockPanel />
+            </SettingSection>
+          )}
+        </div>
+      )}
+
+      {highlight === "unlock" && (
+        <div className="space-y-6">
+          <SettingSection
+            title="Unlock"
+            why="Earn goal+Bible, reward day, or day pass. SoftLand ON ≠ Armed."
+            availability="native"
+          >
+            <ProductivityPolicyPanel variant="unlock" onSaved={onPolicySaved} />
+          </SettingSection>
           <SettingSection
             title="Now"
-            why="Live SoftLand mode and OS Arm. Edit site lists under Sites; full kill list under Apps."
+            why="Live SoftLand mode and OS Arm."
             availability="native"
           >
             <FocusControlPanel />
           </SettingSection>
-        )}
+        </div>
+      )}
 
-        {section === "sites" && (
-          <div className="space-y-6">
-            <SettingSection
-              title="SoftLand master"
-              why="Turns site blocking on or off. Does not Arm OS kills."
-              availability="native"
-            >
-              <ProductivityPolicyPanel variant="softland" onSaved={onPolicySaved} />
-            </SettingSection>
-            <SettingSection
-              title="Site lists"
-              why="Allow always wins. Watch is study-only. Block survives reward days."
-              availability="native"
-            >
-              <SoftLandSiteRulesPanel />
-            </SettingSection>
-            <SettingSection
-              title="Schedule"
-              why="First matching week window sets study/free mode. Use the day strip like a mini calendar."
-              availability="native"
-            >
-              <GateSchedulesPanel />
-            </SettingSection>
-          </div>
-        )}
-
-        {section === "apps" && (
+      {highlight === "productive" && (
+        <div className="space-y-6">
           <SettingSection
-            title="Apps (Arm)"
-            why="OS process kills only. SoftLand site lists never belong here. Arm from Now or below."
-            availability="native"
-          >
-            <AppKillRulesPanel />
-            <p className="text-[11px] text-muted-foreground px-1">
-              Arm / Disarm and lock mode live on{" "}
-              <button
-                type="button"
-                className="underline text-sky-300/90"
-                onClick={() => onSectionChange("now")}
-              >
-                Now
-              </button>
-              .
-            </p>
-          </SettingSection>
-        )}
-
-        {section === "unlock" && (
-          <SettingSection
-            title="Unlock"
-            why="Three doors: earn goal+Bible chapter, spend a reward day, or use a day pass. Daily goal is the same number as Plan’s daily focus."
+            title="What counts as productive"
+            why="Threshold and categories feed the unlock clock."
             availability="api"
           >
-            <p className="text-[11px] text-amber-200/80 rounded-lg border border-amber-400/20 bg-amber-500/5 px-3 py-2">
-              Until native unlock accounting (P5a), day-pass / reward claim need the API. A day pass may
-              not open watch sites in SoftLand yet — prefer a reward day or free spend for browsing.
-            </p>
-            <ProductivityPolicyPanel variant="unlock" onSaved={onPolicySaved} />
+            <ProductivityPolicyPanel variant="scoring" onSaved={onPolicySaved} />
           </SettingSection>
-        )}
+          {productiveExtra}
+        </div>
+      )}
 
-        {section === "productive" && (
-          <div className="space-y-6">
-            <SettingSection
-              title="What counts as productive"
-              why="Threshold and categories feed the unlock clock. Not SoftLand site rules."
-              availability="api"
+      {highlight === "more" && (
+        <SettingSection title="More" why="Demo clock, watch sync, reminders, export, install docs.">
+          <DesktopManagedBanner feature="Watch sync and some tools" />
+          {toolsContent}
+        </SettingSection>
+      )}
+    </>
+  );
+
+  return (
+    <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:gap-6">
+      <nav
+        aria-label="Settings groups"
+        className="lg:sticky lg:top-20 lg:w-52 shrink-0 space-y-0.5 rounded-2xl border border-border/40 bg-muted/15 p-1.5"
+      >
+        {NAV.map((item) => {
+          const active = highlight === item.id;
+          return (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() =>
+                onSectionChange(
+                  item.id === "blocks" ? "sites" : item.id === "more" ? "tools" : item.id,
+                )
+              }
+              className={`w-full rounded-xl px-3 py-2 text-left transition-colors ${
+                active
+                  ? "bg-foreground/10 text-foreground"
+                  : "text-muted-foreground hover:bg-background/40 hover:text-foreground"
+              }`}
             >
-              <ProductivityPolicyPanel variant="scoring" onSaved={onPolicySaved} />
-            </SettingSection>
-            {productiveExtra}
-          </div>
-        )}
-
-        {section === "filters" && (
-          <SettingSection
-            title="PC-wide filters"
-            why="Windows hosts file — all apps, needs admin. Separate from SoftLand’s porn heuristic."
-            availability="api"
-          >
-            <DeviceBlockPanel />
-          </SettingSection>
-        )}
-
-        {section === "tools" && (
-          <SettingSection
-            title="Tools"
-            why="Demo clock, watch sync, reminders, export, and install docs."
-          >
-            <DesktopManagedBanner feature="Watch sync and some tools" />
-            {toolsContent}
-          </SettingSection>
+              <div className="text-[13px] font-medium">{item.label}</div>
+              <div className="text-[10px] opacity-70">{item.blurb}</div>
+            </button>
+          );
+        })}
+      </nav>
+      <div className="min-w-0 flex-1">
+        {highlight === "overview" || highlight === "more" ? (
+          gatedBody
+        ) : (
+          <EnforcerWriteGate>{gatedBody}</EnforcerWriteGate>
         )}
       </div>
     </div>
-    </EnforcerWriteGate>
   );
 }
 
 export function parseSettingsSection(raw: string | null): SettingsSectionId {
   const id = (raw || "overview").toLowerCase();
-  if (NAV.some((n) => n.id === id)) return id as SettingsSectionId;
-  // Legacy hashes / anchors
-  if (id === "focus" || id === "enforcer") return "now";
-  if (id === "policy" || id === "rules" || id === "schedules") return "sites";
+  if (NAV.some((n) => n.id === id)) {
+    if (id === "blocks") return "sites";
+    if (id === "more") return "tools";
+    return id as SettingsSectionId;
+  }
+  if (id === "sites" || id === "apps" || id === "filters" || id === "tools" || id === "now") {
+    return id as SettingsSectionId;
+  }
+  if (id === "focus" || id === "enforcer") return "unlock";
+  if (id === "rules" || id === "policy" || id === "schedules") return "sites";
   if (id === "scoring" || id === "classification") return "productive";
-  if (id === "watch" || id === "demo" || id === "demo-mode" || id === "export" || id === "setup" || id === "reminders" || id === "planning")
+  if (
+    id === "watch" ||
+    id === "demo" ||
+    id === "demo-mode" ||
+    id === "export" ||
+    id === "setup" ||
+    id === "reminders" ||
+    id === "planning"
+  ) {
     return "tools";
+  }
   return "overview";
 }

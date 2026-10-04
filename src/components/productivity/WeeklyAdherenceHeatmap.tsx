@@ -10,6 +10,8 @@ type Props = {
   windowLabel?: string;
   /** Adherence % threshold for streak (0–1). Default 0.75 to match green cells */
   streakThreshold?: number;
+  /** Focus-aware empty copy (avoids Study run.bat messaging) */
+  emptyHint?: string;
 };
 
 function cellClass(d: AdherenceDay): string {
@@ -41,6 +43,7 @@ export function WeeklyAdherenceHeatmap({
   loading,
   windowLabel,
   streakThreshold = 0.75,
+  emptyHint,
 }: Props) {
   const streak = computeStreak(days, streakThreshold);
   const pctLabel = Math.round(streakThreshold * 100);
@@ -76,8 +79,9 @@ export function WeeklyAdherenceHeatmap({
           ))}
         </div>
       ) : days.length === 0 ? (
-        <p className="rounded-lg border border-dashed border-white/15 bg-white/[0.03] px-3 py-4 text-center text-xs text-muted-foreground">
-          No adherence data for this window yet — plan blocks and track a day to fill the strip.
+        <p className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-3 text-center text-xs text-muted-foreground">
+          {emptyHint ||
+            "No adherence data for this window yet — plan blocks and track a day to fill the strip."}
         </p>
       ) : (
         <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
@@ -91,7 +95,7 @@ export function WeeklyAdherenceHeatmap({
                   const [y, m, day] = d.date.split("-").map(Number);
                   onSelectDay(new Date(y, m - 1, day));
                 }}
-                className={`flex flex-col items-center justify-center gap-0.5 py-1.5 px-0.5 rounded-lg border text-[10px] sm:text-xs transition-colors hover:brightness-110 ${cellClass(d)} ${selected ? "ring-2 ring-violet-400/60" : ""}`}
+                className={`flex flex-col items-center justify-center gap-0.5 py-1.5 px-0.5 rounded-lg border text-[10px] sm:text-xs transition-colors hover:brightness-110 ${cellClass(d)} ${selected ? "ring-2 ring-primary/50" : ""}`}
               >
                 <span className="font-medium opacity-80">{weekdayLabel(d.date)}</span>
                 <span className="text-base sm:text-lg font-bold tabular-nums leading-none">

@@ -1,29 +1,28 @@
 # Focus frontend (FE)
 
-UI for CALT Focus (Calendar / Plan / Settings / Focus / Bible / Journal).
+Lean **Focus-only** SPA for `calt_focus.exe` (Calendar / Plan / Settings / Focus / Bible / Journal).
 
-**Product context:** see [../README.md](../README.md) (idea + architecture).  
-This folder is only the **Vite entry**; most React still lives in shared repo `src/` so Study can show interstitials.
+**Product context:** [../README.md](../README.md)  
+**Design:** [docs/superpowers/specs/2026-09-14-lean-focus-fe-design.md](../../docs/superpowers/specs/2026-09-14-lean-focus-fe-design.md)
 
 ## This folder
 
 | Item | Path |
 |------|------|
 | Vite config | `calt-focus/frontend/vite.config.ts` |
+| Entry | `index.html` → `app/main.tsx` → `app/FocusApp.tsx` |
 | Scripts | `npm run dev:focus` · `npm run build:focus` → repo `dist-focus/` |
 | Design host | http://127.0.0.1:5180/ |
-| Mirrors | `/calt-data` → `data/productivity/behavior` · `/calt-bible` → `data/productivity/bible` |
 
-Writes (SoftLand/Arm/Plan) need **`calt_focus.exe`** + enforcer pipe — the design host is read/hot-reload only.
+**Does not load** Study plugins (GRE / math / notes / mermaid / EEG registry). Shared productivity React still lives under repo `src/` and is imported selectively.
 
-## Shared React sources to review (repo `src/`)
+Writes (SoftLand/Arm/Plan) need **`calt_focus.exe`** + enforcer pipe.
 
-- Pages: `ProductivityPage.tsx`, `FocusPage.tsx`, `JournalPage.tsx`, `pages/bible/**`
-- UI: `components/productivity/**` (Settings hub, SoftLand, Arm, plan cards, write gate)
-- Clients: `api/focusMirrors.ts`, `plannerClient.ts`, `bibleClient.ts`, `journalClient.ts`, `behaviorClient.ts`
-- Bridge: `lib/enforcerNativeCmd.ts` → named pipe
-- Shell detect: `utils/focusDesktopShell.ts`, `focusDataUrl.ts`, `bibleCorpus.ts`
-- Plugins: `productivity_plugin.tsx`, `bible_plugin.tsx`
-- Chrome: `layout/AppSidebar.tsx`, `app/App.tsx` (Focus = HashRouter)
+## Shared sources (library)
 
-Out of scope: vocab, math, notes, quiz Study pages.
+- Pages: `ProductivityPage`, `FocusPage`, `JournalPage`, `pages/bible/**`
+- UI: `components/productivity/**`
+- Clients: `plannerClient`, `focusMirrors`, `bibleClient`, `journalClient`, `enforcerNativeCmd`
+- Chrome: `layout/AppSidebar` (Focus shell sections)
+
+Study full app entry remains `src/main.tsx` + `src/app/App.tsx` for `:8000`.

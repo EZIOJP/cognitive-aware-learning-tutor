@@ -4,13 +4,11 @@ import {
   Clock,
   Loader2,
   Play,
-  SkipForward,
   Sparkles,
 } from "lucide-react";
 import {
   completePlannerBlock,
   fetchPlannerBlocks,
-  rollForwardPlannerBlock,
   startPlannerBlock,
   type PlannerBlock,
 } from "../../api/plannerClient";
@@ -253,15 +251,6 @@ export function ActivePlanBlockCards({ day, refreshKey = 0, onChanged }: Props) 
               className="inline-flex items-center gap-1 rounded-lg border border-white/15 px-2.5 py-1 text-[11px] hover:bg-white/5 disabled:opacity-50"
             >
               <CheckCircle2 size={11} /> Complete
-            </button>
-            <button
-              type="button"
-              disabled={busy}
-              onClick={() => void run(block.id, () => rollForwardPlannerBlock(block.id))}
-              className="inline-flex items-center gap-1 rounded-lg border border-white/15 px-2.5 py-1 text-[11px] hover:bg-white/5 disabled:opacity-50"
-              title="Mark rolled and reschedule remaining time"
-            >
-              <SkipForward size={11} /> Roll forward
             </button>
           </div>
         ) : null}

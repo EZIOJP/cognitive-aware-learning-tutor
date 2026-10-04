@@ -42,14 +42,21 @@ async function loadWeb(): Promise<WebBible | null> {
   if (cache) return cache;
   if (loadPromise) return loadPromise;
   loadPromise = (async () => {
+    const base = focusBibleBaseUrl();
+    const urls = [`${base}/structured/web.json`, `${base}/structured/web/web.json`];
     try {
-      const r = await fetch(`${focusBibleBaseUrl()}/structured/web.json`, { cache: "force-cache" });
-      if (!r.ok) return null;
-      const j = (await r.json()) as WebBible;
-      if (!j?.books?.length) return null;
-      cache = j;
-      return j;
-    } catch {
+      for (const url of urls) {
+        try {
+          const r = await fetch(url, { cache: "force-cache" });
+          if (!r.ok) continue;
+          const j = (await r.json()) as WebBible;
+          if (!j?.books?.length) continue;
+          cache = j;
+          return j;
+        } catch {
+          /* try next */
+        }
+      }
       return null;
     } finally {
       loadPromise = null;

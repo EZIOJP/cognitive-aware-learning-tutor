@@ -34,6 +34,11 @@ powershell -File scripts\desktop_tracker\install\install_calt_msg_host.ps1 -Exte
 rem Daily
 scripts\desktop_tracker\run\run_calt_desktop.bat
 scripts\desktop_tracker\run\run_native_enforcer_console.bat
+
+rem SoftLand / Arm block-mode suite (fixture SoftLand + Arm unit + sync)
+python scripts\desktop_tracker\run\block_mode_suite.py
+rem Live SoftLand probes + optional Arm fixture kills (restores snapshot)
+python scripts\desktop_tracker\run\block_mode_suite.py --live --arm-kills
 ```
 
 Focus tray: **Update UI** (React only) · **Update stack** (full script) · **Apply pending update && restart**.

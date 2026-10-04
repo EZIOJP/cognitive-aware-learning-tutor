@@ -5,6 +5,7 @@
 import type { DesktopStats, GoalsStatusResponse } from "./behaviorClient";
 import { isFocusDesktopShell } from "../utils/focusDesktopShell";
 import { focusDataUrl } from "../utils/focusDataUrl";
+import { timedFocusFetch } from "../lib/focusPerfLog";
 
 export type DayRollupMirror = {
   schema_version?: number;
@@ -12,6 +13,7 @@ export type DayRollupMirror = {
   updated_at?: string;
   productive_minutes?: number;
   productive_seconds?: number;
+  daily_focus_minutes?: number;
   threshold?: number;
   session_count?: number;
   day_unlocked?: boolean;
@@ -53,7 +55,9 @@ function productiveSecondsFromRollup(r: DayRollupMirror | null | undefined): num
 export async function fetchDayRollupMirror(): Promise<DayRollupMirror | null> {
   if (!isFocusDesktopShell()) return null;
   try {
-    const res = await fetch(focusDataUrl("day_rollup.json"), { cache: "no-store" });
+    const res = await timedFocusFetch("day_rollup.json", focusDataUrl("day_rollup.json"), {
+      cache: "no-store",
+    });
     if (!res.ok) return null;
     const j = (await res.json()) as DayRollupMirror;
     return j && typeof j === "object" ? j : null;
@@ -66,9 +70,43 @@ export async function fetchDayRollupMirror(): Promise<DayRollupMirror | null> {
 export async function fetchEnforcerStatusMirror(): Promise<EnforcerStatusMirror | null> {
   if (!isFocusDesktopShell()) return null;
   try {
-    const res = await fetch(focusDataUrl("enforcer_status.json"), { cache: "no-store" });
+    const res = await timedFocusFetch(
+      "enforcer_status.json",
+      focusDataUrl("enforcer_status.json"),
+      { cache: "no-store" },
+    );
     if (!res.ok) return null;
     const j = (await res.json()) as EnforcerStatusMirror;
+    return j && typeof j === "object" ? j : null;
+  } catch {
+    return null;
+  }
+}
+
+/** day_loop.json — Home/tasks/bible flags without pipe. */
+export async function fetchDayLoopMirror(): Promise<Record<string, unknown> | null> {
+  if (!isFocusDesktopShell()) return null;
+  try {
+    const res = await timedFocusFetch("day_loop.json", focusDataUrl("day_loop.json"), {
+      cache: "no-store",
+    });
+    if (!res.ok) return null;
+    const j = (await res.json()) as Record<string, unknown>;
+    return j && typeof j === "object" ? j : null;
+  } catch {
+    return null;
+  }
+}
+
+/** day_status.json — pass/reward/ledger without pipe. */
+export async function fetchDayStatusMirror(): Promise<Record<string, unknown> | null> {
+  if (!isFocusDesktopShell()) return null;
+  try {
+    const res = await timedFocusFetch("day_status.json", focusDataUrl("day_status.json"), {
+      cache: "no-store",
+    });
+    if (!res.ok) return null;
+    const j = (await res.json()) as Record<string, unknown>;
     return j && typeof j === "object" ? j : null;
   } catch {
     return null;

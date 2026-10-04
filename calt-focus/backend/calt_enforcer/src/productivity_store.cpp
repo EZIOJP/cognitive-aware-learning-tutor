@@ -546,6 +546,11 @@ std::wstring ProductivityBehaviorDirFromDb(const std::wstring& dbPath) {
   return Join(DirOf(dbPath), L"behavior");
 }
 
+std::wstring ProductivityCurrentBehaviorDir() {
+  if (gDbPath.empty()) return {};
+  return ProductivityBehaviorDirFromDb(gDbPath);
+}
+
 bool ProductivityStoreOpen(const std::wstring& dbPath) {
   ProductivityStoreClose();
   gDbPath = dbPath;
@@ -693,7 +698,7 @@ bool ProductivityMigrateAndImport(const std::wstring& softlandJsonPath) {
           "    \"day_pass\": {\"date\": null, \"spent\": false, \"remaining_seconds\": 0},\n"
           "    \"reward_day_active\": false, \"earned_ledger_seconds\": 0},\n"
           "  \"goals\": {\"daily_focus_minutes\": 0, \"goal_met\": false, \"bible_done\": false,\n"
-          "    \"plan_confirmed_for_date\": null, \"plan_confirmed\": false},\n"
+          "    \"bible_done_for_date\": null, \"plan_confirmed_for_date\": null, \"plan_confirmed\": false},\n"
           "  \"mode_flags\": {}\n}\n";
     }
     std::string now = IsoLocalNow();
@@ -999,16 +1004,113 @@ std::string NormalizeTs(const std::string& iso) {
   return o;
 }
 
+/** Convert any ISO input to UTC `YYYY-MM-DDTHH:MM:SS` for SQLite string compare vs Z stamps. */
 std::string ToStoreTs(const std::string& iso) {
-  std::string n = NormalizeTs(iso);
-  if (n.size() >= 19) return n.substr(0, 19);
-  return n;
+  if (iso.empty()) return {};
+
+  // Parse YYYY-MM-DD[T ]HH:MM:SS and optional Z / ±HH:MM
+  if (iso.size() < 19 || iso[4] != '-' || iso[7] != '-') {
+    std::string n = NormalizeTs(iso);
+    if (n.size() >= 19 && n[10] == ' ') {
+      return n.substr(0, 10) + "T" + n.substr(11, 8);
+    }
+    return n;
+  }
+
+  int year = atoi(iso.c_str());
+  int month = atoi(iso.c_str() + 5);
+  int day = atoi(iso.c_str() + 8);
+  size_t tpos = iso.find('T');
+  if (tpos == std::string::npos) tpos = iso.find('t');
+  if (tpos == std::string::npos) tpos = iso.find(' ');
+  if (tpos == std::string::npos || tpos + 8 >= iso.size()) {
+    char buf[32];
+    snprintf(buf, sizeof(buf), "%04d-%02d-%02dT00:00:00", year, month, day);
+    return buf;
+  }
+  int hour = atoi(iso.c_str() + tpos + 1);
+  int minute = atoi(iso.c_str() + tpos + 4);
+  int second = atoi(iso.c_str() + tpos + 7);
+
+  int offMin = 0;
+  bool hasOffset = false;
+  size_t z = iso.find('Z');
+  if (z == std::string::npos) z = iso.find('z');
+  if (z == std::string::npos) {
+    for (size_t i = tpos + 8; i < iso.size(); ++i) {
+      if (iso[i] == '+' || iso[i] == '-') {
+        hasOffset = true;
+        int sign = iso[i] == '-' ? -1 : 1;
+        int hh = atoi(iso.c_str() + i + 1);
+        int mm = 0;
+        size_t colon = iso.find(':', i + 1);
+        // avoid HH:MM:SS colon — offset colon is after ±HH
+        if (colon != std::string::npos && colon > i + 1) mm = atoi(iso.c_str() + colon + 1);
+        offMin = sign * (hh * 60 + mm);
+        break;
+      }
+    }
+  }
+
+  if (hasOffset && offMin != 0) {
+    // wall = UTC + offset → UTC = wall - offset
+    long long secs =
+        (long long)second + (long long)minute * 60 + (long long)hour * 3600 - (long long)offMin * 60;
+    int d = day, mo = month, y = year;
+    auto dim = [](int y_, int m_) {
+      static const int mdays[] = {0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+      int n = mdays[m_];
+      if (m_ == 2 && ((y_ % 4 == 0 && y_ % 100 != 0) || (y_ % 400 == 0))) n = 29;
+      return n;
+    };
+    while (secs < 0) {
+      secs += 86400;
+      d -= 1;
+      if (d < 1) {
+        mo -= 1;
+        if (mo < 1) {
+          mo = 12;
+          y -= 1;
+        }
+        d = dim(y, mo);
+      }
+    }
+    while (secs >= 86400) {
+      secs -= 86400;
+      d += 1;
+      if (d > dim(y, mo)) {
+        d = 1;
+        mo += 1;
+        if (mo > 12) {
+          mo = 1;
+          y += 1;
+        }
+      }
+    }
+    hour = (int)(secs / 3600);
+    minute = (int)((secs % 3600) / 60);
+    second = (int)(secs % 60);
+    day = d;
+    month = mo;
+    year = y;
+  }
+
+  char out[32];
+  snprintf(out, sizeof(out), "%04d-%02d-%02dT%02d:%02d:%02d", year, month, day, hour, minute,
+           second);
+  return out;
 }
 
 std::string ToApiIso(const std::string& stored) {
   if (stored.empty()) return "";
-  std::string s = NormalizeTs(stored);
-  if (s.size() >= 10 && s[10] == ' ') s[10] = 'T';
+  std::string s = stored;
+  for (char& c : s) {
+    if (c == ' ') c = 'T';
+  }
+  size_t dot = s.find('.');
+  if (dot != std::string::npos) s = s.substr(0, dot);
+  size_t z = s.find('Z');
+  if (z != std::string::npos) s = s.substr(0, z);
   if (s.size() >= 19) s = s.substr(0, 19);
   if (!s.empty() && s.back() != 'Z') s += "Z";
   return s;
@@ -2149,8 +2251,9 @@ std::string ProductivityPlanOverlayJson(const std::string& fromIso, const std::s
   sqlite3_stmt* st = nullptr;
   const char* sql =
       "SELECT session_id, start_time, end_time, source, category, app_name, window_title, "
-      "task_id FROM tracked_sessions WHERE user_id=? AND start_time < ? AND end_time > ? "
-      "ORDER BY start_time ASC LIMIT 120;";
+      "task_id FROM tracked_sessions WHERE user_id=? AND start_time < ? AND "
+      "(end_time IS NULL OR end_time = '' OR end_time > ?) "
+      "ORDER BY start_time ASC LIMIT 500;";
   if (sqlite3_prepare_v2(gDb, sql, -1, &st, nullptr) != SQLITE_OK) {
     return "{\"sessions\":[],\"hour_slices\":[]}";
   }

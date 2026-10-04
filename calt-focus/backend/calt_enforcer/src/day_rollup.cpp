@@ -54,6 +54,57 @@ std::string LocalDateStr() {
   return buf;
 }
 
+// Local calendar day [start,end) as UTC ISO-Z for comparing against tracked_sessions (Z stamps).
+void LocalDayUtcBoundsZ(std::string& dayStartZ, std::string& dayEndZ) {
+  SYSTEMTIME localMidnight{};
+  GetLocalTime(&localMidnight);
+  localMidnight.wHour = 0;
+  localMidnight.wMinute = 0;
+  localMidnight.wSecond = 0;
+  localMidnight.wMilliseconds = 0;
+
+  SYSTEMTIME utcStart{};
+  if (!TzSpecificLocalTimeToSystemTime(nullptr, &localMidnight, &utcStart)) {
+    // Fallback: treat local date digits as UTC (legacy behavior).
+    std::string today = LocalDateStr();
+    dayStartZ = today + "T00:00:00.000Z";
+    dayEndZ = today + "T23:59:59.999Z";
+    return;
+  }
+
+  FILETIME ft{};
+  SystemTimeToFileTime(&utcStart, &ft);
+  ULARGE_INTEGER uli{};
+  uli.LowPart = ft.dwLowDateTime;
+  uli.HighPart = ft.dwHighDateTime;
+  // +1 local day ≈ add 24h in UTC filetime (DST edges: re-convert next local midnight).
+  SYSTEMTIME localNext = localMidnight;
+  FILETIME ftLocal{};
+  SystemTimeToFileTime(&localNext, &ftLocal);
+  ULARGE_INTEGER uliLocal{};
+  uliLocal.LowPart = ftLocal.dwLowDateTime;
+  uliLocal.HighPart = ftLocal.dwHighDateTime;
+  uliLocal.QuadPart += 864000000000ULL;  // 24h in 100ns
+  ftLocal.dwLowDateTime = uliLocal.LowPart;
+  ftLocal.dwHighDateTime = uliLocal.HighPart;
+  FileTimeToSystemTime(&ftLocal, &localNext);
+  SYSTEMTIME utcEnd{};
+  if (!TzSpecificLocalTimeToSystemTime(nullptr, &localNext, &utcEnd)) {
+    uli.QuadPart += 864000000000ULL;
+    ft.dwLowDateTime = uli.LowPart;
+    ft.dwHighDateTime = uli.HighPart;
+    FileTimeToSystemTime(&ft, &utcEnd);
+  }
+
+  char buf[40];
+  snprintf(buf, sizeof(buf), "%04u-%02u-%02uT%02u:%02u:%02u.%03uZ", utcStart.wYear, utcStart.wMonth,
+           utcStart.wDay, utcStart.wHour, utcStart.wMinute, utcStart.wSecond, utcStart.wMilliseconds);
+  dayStartZ = buf;
+  snprintf(buf, sizeof(buf), "%04u-%02u-%02uT%02u:%02u:%02u.%03uZ", utcEnd.wYear, utcEnd.wMonth,
+           utcEnd.wDay, utcEnd.wHour, utcEnd.wMinute, utcEnd.wSecond, utcEnd.wMilliseconds);
+  dayEndZ = buf;
+}
+
 std::string IsoLocalNow() {
   SYSTEMTIME st;
   GetLocalTime(&st);
@@ -323,10 +374,9 @@ void TickDayRollup(const std::wstring& dbPath, const std::wstring& behaviorDir) 
   }
 
   const std::string today = LocalDateStr();
-  // Local day bounds as UTC-ish ISO prefixes — sessions store Z stamps.
-  // Use overlap: start < dayEnd AND (end IS NULL OR end > dayStart)
-  std::string dayStart = today + "T00:00:00";
-  std::string dayEnd = today + "T23:59:59";
+  std::string dayStartZ;
+  std::string dayEndZ;
+  LocalDayUtcBoundsZ(dayStartZ, dayEndZ);
 
   sqlite3_stmt* st = nullptr;
   const char* sql =
@@ -339,9 +389,6 @@ void TickDayRollup(const std::wstring& dbPath, const std::wstring& behaviorDir) 
     sqlite3_close(db);
     return;
   }
-  std::string dayEndZ = dayEnd + ".999Z";
-  std::string dayStartZ = dayStart + ".000Z";
-  // Prefer Z-suffixed compare; also bind plain for local writers
   sqlite3_bind_text(st, 1, dayEndZ.c_str(), -1, SQLITE_TRANSIENT);
   sqlite3_bind_text(st, 2, dayStartZ.c_str(), -1, SQLITE_TRANSIENT);
 
@@ -421,7 +468,15 @@ void TickDayRollup(const std::wstring& dbPath, const std::wstring& behaviorDir) 
   }
 
   int prodMin = (int)(prodSec / 60);
-  bool goalMet = prodMin >= 60;  // display default; policy threshold separate
+  int focusGoal = 180;
+  {
+    std::string pol = ReadFileUtf8(Join(behaviorDir, L"softland_policy.json"));
+    if (pol.empty()) pol = ReadFileUtf8(Join(behaviorDir, L"..\\softland_policy.json"));
+    int fromPol = 0;
+    if (!pol.empty() && JsonGetIntNear(pol, "daily_focus_minutes", &fromPol) && fromPol > 0)
+      focusGoal = fromPol;
+  }
+  bool goalMet = prodMin >= focusGoal;
   std::ostringstream js;
   js << "{\n"
      << "  \"schema_version\": 1,\n"
@@ -430,6 +485,7 @@ void TickDayRollup(const std::wstring& dbPath, const std::wstring& behaviorDir) 
      << "  \"productive_minutes\": " << prodMin << ",\n"
      << "  \"productive_seconds\": " << prodSec << ",\n"
      << "  \"threshold\": " << gRules.threshold << ",\n"
+     << "  \"daily_focus_minutes\": " << focusGoal << ",\n"
      << "  \"session_count\": " << sessionCount << ",\n"
      << "  \"day_unlocked\": " << (goalMet ? "true" : "false") << ",\n"
      << "  \"goal_met\": " << (goalMet ? "true" : "false") << ",\n"

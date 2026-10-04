@@ -1,0 +1,4954 @@
+{
+  "started_at": "2026-09-14T00:30:43+05:30",
+  "finished_at": "2026-09-14T00:31:44+05:30",
+  "passed": 115,
+  "failed": 0,
+  "skipped": 1,
+  "gateway_ok": true,
+  "restored": true,
+  "notes": [],
+  "artifact_dir": "C:\\Users\\Lenovo\\Desktop\\Cognitive-Aware Learning Tutor\\docs\\superpowers\\exports\\focus-qa-artifacts",
+  "results": [
+    {
+      "id": "softland.fixture.study.https://youtube.com",
+      "title": "SoftLand study: https://youtube.com",
+      "suite": "softland",
+      "category": "positive",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": {
+        "action": "block",
+        "reason": "watch_list"
+      },
+      "actual": {
+        "action": "block",
+        "reason": "watch_list",
+        "mode": "study",
+        "enforce": true
+      },
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Set fixture SoftLand cell=study",
+          "expected": "policy written",
+          "actual": "written",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "msg_host get_mode('https://youtube.com')",
+          "expected": "block",
+          "actual": "block/watch_list",
+          "ok": true
+        },
+        {
+          "n": 3,
+          "action": "Compare action+reason",
+          "expected": "{\"action\": \"block\", \"reason\": \"watch_list\"}",
+          "actual": "{\"action\": \"block\", \"reason\": \"watch_list\"}",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "fixture",
+        "softland",
+        "positive"
+      ]
+    },
+    {
+      "id": "softland.fixture.study.https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "title": "SoftLand study: https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "suite": "softland",
+      "category": "positive",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": {
+        "action": "block",
+        "reason": "watch_list"
+      },
+      "actual": {
+        "action": "block",
+        "reason": "watch_list",
+        "mode": "study",
+        "enforce": true
+      },
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Set fixture SoftLand cell=study",
+          "expected": "policy written",
+          "actual": "reuse",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "msg_host get_mode('https://www.youtube.com/watch?v=dQw4w9WgXcQ')",
+          "expected": "block",
+          "actual": "block/watch_list",
+          "ok": true
+        },
+        {
+          "n": 3,
+          "action": "Compare action+reason",
+          "expected": "{\"action\": \"block\", \"reason\": \"watch_list\"}",
+          "actual": "{\"action\": \"block\", \"reason\": \"watch_list\"}",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "fixture",
+        "softland",
+        "positive"
+      ]
+    },
+    {
+      "id": "softland.fixture.study.http://youtube.com",
+      "title": "SoftLand study: http://youtube.com",
+      "suite": "softland",
+      "category": "positive",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": {
+        "action": "block",
+        "reason": "watch_list"
+      },
+      "actual": {
+        "action": "block",
+        "reason": "watch_list",
+        "mode": "study",
+        "enforce": true
+      },
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Set fixture SoftLand cell=study",
+          "expected": "policy written",
+          "actual": "reuse",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "msg_host get_mode('http://youtube.com')",
+          "expected": "block",
+          "actual": "block/watch_list",
+          "ok": true
+        },
+        {
+          "n": 3,
+          "action": "Compare action+reason",
+          "expected": "{\"action\": \"block\", \"reason\": \"watch_list\"}",
+          "actual": "{\"action\": \"block\", \"reason\": \"watch_list\"}",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "fixture",
+        "softland",
+        "positive"
+      ]
+    },
+    {
+      "id": "softland.fixture.study.https://m.youtube.com",
+      "title": "SoftLand study: https://m.youtube.com",
+      "suite": "softland",
+      "category": "positive",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": {
+        "action": "block",
+        "reason": "watch_list"
+      },
+      "actual": {
+        "action": "block",
+        "reason": "watch_list",
+        "mode": "study",
+        "enforce": true
+      },
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Set fixture SoftLand cell=study",
+          "expected": "policy written",
+          "actual": "reuse",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "msg_host get_mode('https://m.youtube.com')",
+          "expected": "block",
+          "actual": "block/watch_list",
+          "ok": true
+        },
+        {
+          "n": 3,
+          "action": "Compare action+reason",
+          "expected": "{\"action\": \"block\", \"reason\": \"watch_list\"}",
+          "actual": "{\"action\": \"block\", \"reason\": \"watch_list\"}",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "fixture",
+        "softland",
+        "positive"
+      ]
+    },
+    {
+      "id": "softland.fixture.study.https://music.youtube.com",
+      "title": "SoftLand study: https://music.youtube.com",
+      "suite": "softland",
+      "category": "positive",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": {
+        "action": "block",
+        "reason": "watch_list"
+      },
+      "actual": {
+        "action": "block",
+        "reason": "watch_list",
+        "mode": "study",
+        "enforce": true
+      },
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Set fixture SoftLand cell=study",
+          "expected": "policy written",
+          "actual": "reuse",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "msg_host get_mode('https://music.youtube.com')",
+          "expected": "block",
+          "actual": "block/watch_list",
+          "ok": true
+        },
+        {
+          "n": 3,
+          "action": "Compare action+reason",
+          "expected": "{\"action\": \"block\", \"reason\": \"watch_list\"}",
+          "actual": "{\"action\": \"block\", \"reason\": \"watch_list\"}",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "fixture",
+        "softland",
+        "positive"
+      ]
+    },
+    {
+      "id": "softland.fixture.study.https://youtu.be/abc",
+      "title": "SoftLand study: https://youtu.be/abc",
+      "suite": "softland",
+      "category": "positive",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": {
+        "action": "block",
+        "reason": "watch_list"
+      },
+      "actual": {
+        "action": "block",
+        "reason": "watch_list",
+        "mode": "study",
+        "enforce": true
+      },
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Set fixture SoftLand cell=study",
+          "expected": "policy written",
+          "actual": "reuse",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "msg_host get_mode('https://youtu.be/abc')",
+          "expected": "block",
+          "actual": "block/watch_list",
+          "ok": true
+        },
+        {
+          "n": 3,
+          "action": "Compare action+reason",
+          "expected": "{\"action\": \"block\", \"reason\": \"watch_list\"}",
+          "actual": "{\"action\": \"block\", \"reason\": \"watch_list\"}",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "fixture",
+        "softland",
+        "positive"
+      ]
+    },
+    {
+      "id": "softland.fixture.study.https://reddit.com",
+      "title": "SoftLand study: https://reddit.com",
+      "suite": "softland",
+      "category": "positive",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": {
+        "action": "block",
+        "reason": "watch_list"
+      },
+      "actual": {
+        "action": "block",
+        "reason": "watch_list",
+        "mode": "study",
+        "enforce": true
+      },
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Set fixture SoftLand cell=study",
+          "expected": "policy written",
+          "actual": "reuse",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "msg_host get_mode('https://reddit.com')",
+          "expected": "block",
+          "actual": "block/watch_list",
+          "ok": true
+        },
+        {
+          "n": 3,
+          "action": "Compare action+reason",
+          "expected": "{\"action\": \"block\", \"reason\": \"watch_list\"}",
+          "actual": "{\"action\": \"block\", \"reason\": \"watch_list\"}",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "fixture",
+        "softland",
+        "positive"
+      ]
+    },
+    {
+      "id": "softland.fixture.study.https://www.reddit.com/r/python",
+      "title": "SoftLand study: https://www.reddit.com/r/python",
+      "suite": "softland",
+      "category": "positive",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": {
+        "action": "block",
+        "reason": "watch_list"
+      },
+      "actual": {
+        "action": "block",
+        "reason": "watch_list",
+        "mode": "study",
+        "enforce": true
+      },
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Set fixture SoftLand cell=study",
+          "expected": "policy written",
+          "actual": "reuse",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "msg_host get_mode('https://www.reddit.com/r/python')",
+          "expected": "block",
+          "actual": "block/watch_list",
+          "ok": true
+        },
+        {
+          "n": 3,
+          "action": "Compare action+reason",
+          "expected": "{\"action\": \"block\", \"reason\": \"watch_list\"}",
+          "actual": "{\"action\": \"block\", \"reason\": \"watch_list\"}",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "fixture",
+        "softland",
+        "positive"
+      ]
+    },
+    {
+      "id": "softland.fixture.study.https://facebook.com",
+      "title": "SoftLand study: https://facebook.com",
+      "suite": "softland",
+      "category": "positive",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": {
+        "action": "block",
+        "reason": "watch_list"
+      },
+      "actual": {
+        "action": "block",
+        "reason": "watch_list",
+        "mode": "study",
+        "enforce": true
+      },
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Set fixture SoftLand cell=study",
+          "expected": "policy written",
+          "actual": "reuse",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "msg_host get_mode('https://facebook.com')",
+          "expected": "block",
+          "actual": "block/watch_list",
+          "ok": true
+        },
+        {
+          "n": 3,
+          "action": "Compare action+reason",
+          "expected": "{\"action\": \"block\", \"reason\": \"watch_list\"}",
+          "actual": "{\"action\": \"block\", \"reason\": \"watch_list\"}",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "fixture",
+        "softland",
+        "positive"
+      ]
+    },
+    {
+      "id": "softland.fixture.study.https://meet.google.com",
+      "title": "SoftLand study: https://meet.google.com",
+      "suite": "softland",
+      "category": "positive",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": {
+        "action": "allow",
+        "reason": "allow_list"
+      },
+      "actual": {
+        "action": "allow",
+        "reason": "allow_list",
+        "mode": "study",
+        "enforce": true
+      },
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Set fixture SoftLand cell=study",
+          "expected": "policy written",
+          "actual": "reuse",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "msg_host get_mode('https://meet.google.com')",
+          "expected": "allow",
+          "actual": "allow/allow_list",
+          "ok": true
+        },
+        {
+          "n": 3,
+          "action": "Compare action+reason",
+          "expected": "{\"action\": \"allow\", \"reason\": \"allow_list\"}",
+          "actual": "{\"action\": \"allow\", \"reason\": \"allow_list\"}",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "fixture",
+        "softland",
+        "positive"
+      ]
+    },
+    {
+      "id": "softland.fixture.study.https://docs.meet.google.com",
+      "title": "SoftLand study: https://docs.meet.google.com",
+      "suite": "softland",
+      "category": "positive",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": {
+        "action": "allow",
+        "reason": "allow_list"
+      },
+      "actual": {
+        "action": "allow",
+        "reason": "allow_list",
+        "mode": "study",
+        "enforce": true
+      },
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Set fixture SoftLand cell=study",
+          "expected": "policy written",
+          "actual": "reuse",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "msg_host get_mode('https://docs.meet.google.com')",
+          "expected": "allow",
+          "actual": "allow/allow_list",
+          "ok": true
+        },
+        {
+          "n": 3,
+          "action": "Compare action+reason",
+          "expected": "{\"action\": \"allow\", \"reason\": \"allow_list\"}",
+          "actual": "{\"action\": \"allow\", \"reason\": \"allow_list\"}",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "fixture",
+        "softland",
+        "positive"
+      ]
+    },
+    {
+      "id": "softland.fixture.study.https://wikipedia.org",
+      "title": "SoftLand study: https://wikipedia.org",
+      "suite": "softland",
+      "category": "positive",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": {
+        "action": "allow",
+        "reason": "allow_list"
+      },
+      "actual": {
+        "action": "allow",
+        "reason": "allow_list",
+        "mode": "study",
+        "enforce": true
+      },
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Set fixture SoftLand cell=study",
+          "expected": "policy written",
+          "actual": "reuse",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "msg_host get_mode('https://wikipedia.org')",
+          "expected": "allow",
+          "actual": "allow/allow_list",
+          "ok": true
+        },
+        {
+          "n": 3,
+          "action": "Compare action+reason",
+          "expected": "{\"action\": \"allow\", \"reason\": \"allow_list\"}",
+          "actual": "{\"action\": \"allow\", \"reason\": \"allow_list\"}",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "fixture",
+        "softland",
+        "positive"
+      ]
+    },
+    {
+      "id": "softland.fixture.study.https://en.wikipedia.org/wiki/Test",
+      "title": "SoftLand study: https://en.wikipedia.org/wiki/Test",
+      "suite": "softland",
+      "category": "positive",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": {
+        "action": "allow",
+        "reason": "allow_list"
+      },
+      "actual": {
+        "action": "allow",
+        "reason": "allow_list",
+        "mode": "study",
+        "enforce": true
+      },
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Set fixture SoftLand cell=study",
+          "expected": "policy written",
+          "actual": "reuse",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "msg_host get_mode('https://en.wikipedia.org/wiki/Test')",
+          "expected": "allow",
+          "actual": "allow/allow_list",
+          "ok": true
+        },
+        {
+          "n": 3,
+          "action": "Compare action+reason",
+          "expected": "{\"action\": \"allow\", \"reason\": \"allow_list\"}",
+          "actual": "{\"action\": \"allow\", \"reason\": \"allow_list\"}",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "fixture",
+        "softland",
+        "positive"
+      ]
+    },
+    {
+      "id": "softland.fixture.study.https://pornhub.com",
+      "title": "SoftLand study: https://pornhub.com",
+      "suite": "softland",
+      "category": "positive",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": {
+        "action": "block",
+        "reason": "porn"
+      },
+      "actual": {
+        "action": "block",
+        "reason": "porn",
+        "mode": "study",
+        "enforce": true
+      },
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Set fixture SoftLand cell=study",
+          "expected": "policy written",
+          "actual": "reuse",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "msg_host get_mode('https://pornhub.com')",
+          "expected": "block",
+          "actual": "block/porn",
+          "ok": true
+        },
+        {
+          "n": 3,
+          "action": "Compare action+reason",
+          "expected": "{\"action\": \"block\", \"reason\": \"porn\"}",
+          "actual": "{\"action\": \"block\", \"reason\": \"porn\"}",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "fixture",
+        "softland",
+        "positive"
+      ]
+    },
+    {
+      "id": "softland.fixture.study.https://www.pornhub.com/video",
+      "title": "SoftLand study: https://www.pornhub.com/video",
+      "suite": "softland",
+      "category": "positive",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": {
+        "action": "block",
+        "reason": "porn"
+      },
+      "actual": {
+        "action": "block",
+        "reason": "porn",
+        "mode": "study",
+        "enforce": true
+      },
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Set fixture SoftLand cell=study",
+          "expected": "policy written",
+          "actual": "reuse",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "msg_host get_mode('https://www.pornhub.com/video')",
+          "expected": "block",
+          "actual": "block/porn",
+          "ok": true
+        },
+        {
+          "n": 3,
+          "action": "Compare action+reason",
+          "expected": "{\"action\": \"block\", \"reason\": \"porn\"}",
+          "actual": "{\"action\": \"block\", \"reason\": \"porn\"}",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "fixture",
+        "softland",
+        "positive"
+      ]
+    },
+    {
+      "id": "softland.fixture.study.https://example.xxx",
+      "title": "SoftLand study: https://example.xxx",
+      "suite": "softland",
+      "category": "positive",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": {
+        "action": "block",
+        "reason": "porn"
+      },
+      "actual": {
+        "action": "block",
+        "reason": "porn",
+        "mode": "study",
+        "enforce": true
+      },
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Set fixture SoftLand cell=study",
+          "expected": "policy written",
+          "actual": "reuse",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "msg_host get_mode('https://example.xxx')",
+          "expected": "block",
+          "actual": "block/porn",
+          "ok": true
+        },
+        {
+          "n": 3,
+          "action": "Compare action+reason",
+          "expected": "{\"action\": \"block\", \"reason\": \"porn\"}",
+          "actual": "{\"action\": \"block\", \"reason\": \"porn\"}",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "fixture",
+        "softland",
+        "positive"
+      ]
+    },
+    {
+      "id": "softland.fixture.study.https://twitter.com",
+      "title": "SoftLand study: https://twitter.com",
+      "suite": "softland",
+      "category": "positive",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": {
+        "action": "block",
+        "reason": "block_extra"
+      },
+      "actual": {
+        "action": "block",
+        "reason": "block_extra",
+        "mode": "study",
+        "enforce": true
+      },
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Set fixture SoftLand cell=study",
+          "expected": "policy written",
+          "actual": "reuse",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "msg_host get_mode('https://twitter.com')",
+          "expected": "block",
+          "actual": "block/block_extra",
+          "ok": true
+        },
+        {
+          "n": 3,
+          "action": "Compare action+reason",
+          "expected": "{\"action\": \"block\", \"reason\": \"block_extra\"}",
+          "actual": "{\"action\": \"block\", \"reason\": \"block_extra\"}",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "fixture",
+        "softland",
+        "positive"
+      ]
+    },
+    {
+      "id": "softland.fixture.study.https://x.com/home",
+      "title": "SoftLand study: https://x.com/home",
+      "suite": "softland",
+      "category": "positive",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": {
+        "action": "block",
+        "reason": "block_extra"
+      },
+      "actual": {
+        "action": "block",
+        "reason": "block_extra",
+        "mode": "study",
+        "enforce": true
+      },
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Set fixture SoftLand cell=study",
+          "expected": "policy written",
+          "actual": "reuse",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "msg_host get_mode('https://x.com/home')",
+          "expected": "block",
+          "actual": "block/block_extra",
+          "ok": true
+        },
+        {
+          "n": 3,
+          "action": "Compare action+reason",
+          "expected": "{\"action\": \"block\", \"reason\": \"block_extra\"}",
+          "actual": "{\"action\": \"block\", \"reason\": \"block_extra\"}",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "fixture",
+        "softland",
+        "positive"
+      ]
+    },
+    {
+      "id": "softland.fixture.study.https://alwaysblock.example/path",
+      "title": "SoftLand study: https://alwaysblock.example/path",
+      "suite": "softland",
+      "category": "positive",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": {
+        "action": "block",
+        "reason": "block_extra"
+      },
+      "actual": {
+        "action": "block",
+        "reason": "block_extra",
+        "mode": "study",
+        "enforce": true
+      },
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Set fixture SoftLand cell=study",
+          "expected": "policy written",
+          "actual": "reuse",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "msg_host get_mode('https://alwaysblock.example/path')",
+          "expected": "block",
+          "actual": "block/block_extra",
+          "ok": true
+        },
+        {
+          "n": 3,
+          "action": "Compare action+reason",
+          "expected": "{\"action\": \"block\", \"reason\": \"block_extra\"}",
+          "actual": "{\"action\": \"block\", \"reason\": \"block_extra\"}",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "fixture",
+        "softland",
+        "positive"
+      ]
+    },
+    {
+      "id": "softland.fixture.study.https://github.com",
+      "title": "SoftLand study: https://github.com",
+      "suite": "softland",
+      "category": "positive",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": {
+        "action": "allow",
+        "reason": "not_listed"
+      },
+      "actual": {
+        "action": "allow",
+        "reason": "not_listed",
+        "mode": "study",
+        "enforce": true
+      },
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Set fixture SoftLand cell=study",
+          "expected": "policy written",
+          "actual": "reuse",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "msg_host get_mode('https://github.com')",
+          "expected": "allow",
+          "actual": "allow/not_listed",
+          "ok": true
+        },
+        {
+          "n": 3,
+          "action": "Compare action+reason",
+          "expected": "{\"action\": \"allow\", \"reason\": \"not_listed\"}",
+          "actual": "{\"action\": \"allow\", \"reason\": \"not_listed\"}",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "fixture",
+        "softland",
+        "positive"
+      ]
+    },
+    {
+      "id": "softland.fixture.study.https://random-not-listed-9f3a.test",
+      "title": "SoftLand study: https://random-not-listed-9f3a.test",
+      "suite": "softland",
+      "category": "positive",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": {
+        "action": "allow",
+        "reason": "not_listed"
+      },
+      "actual": {
+        "action": "allow",
+        "reason": "not_listed",
+        "mode": "study",
+        "enforce": true
+      },
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Set fixture SoftLand cell=study",
+          "expected": "policy written",
+          "actual": "reuse",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "msg_host get_mode('https://random-not-listed-9f3a.test')",
+          "expected": "allow",
+          "actual": "allow/not_listed",
+          "ok": true
+        },
+        {
+          "n": 3,
+          "action": "Compare action+reason",
+          "expected": "{\"action\": \"allow\", \"reason\": \"not_listed\"}",
+          "actual": "{\"action\": \"allow\", \"reason\": \"not_listed\"}",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "fixture",
+        "softland",
+        "positive"
+      ]
+    },
+    {
+      "id": "softland.fixture.study.https://localhost:3000",
+      "title": "SoftLand study: https://localhost:3000",
+      "suite": "softland",
+      "category": "positive",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": {
+        "action": "allow",
+        "reason": "allow_list"
+      },
+      "actual": {
+        "action": "allow",
+        "reason": "allow_list",
+        "mode": "study",
+        "enforce": true
+      },
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Set fixture SoftLand cell=study",
+          "expected": "policy written",
+          "actual": "reuse",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "msg_host get_mode('https://localhost:3000')",
+          "expected": "allow",
+          "actual": "allow/allow_list",
+          "ok": true
+        },
+        {
+          "n": 3,
+          "action": "Compare action+reason",
+          "expected": "{\"action\": \"allow\", \"reason\": \"allow_list\"}",
+          "actual": "{\"action\": \"allow\", \"reason\": \"allow_list\"}",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "fixture",
+        "softland",
+        "positive"
+      ]
+    },
+    {
+      "id": "softland.fixture.study.http://127.0.0.1/admin",
+      "title": "SoftLand study: http://127.0.0.1/admin",
+      "suite": "softland",
+      "category": "positive",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": {
+        "action": "allow",
+        "reason": "allow_list"
+      },
+      "actual": {
+        "action": "allow",
+        "reason": "allow_list",
+        "mode": "study",
+        "enforce": true
+      },
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Set fixture SoftLand cell=study",
+          "expected": "policy written",
+          "actual": "reuse",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "msg_host get_mode('http://127.0.0.1/admin')",
+          "expected": "allow",
+          "actual": "allow/allow_list",
+          "ok": true
+        },
+        {
+          "n": 3,
+          "action": "Compare action+reason",
+          "expected": "{\"action\": \"allow\", \"reason\": \"allow_list\"}",
+          "actual": "{\"action\": \"allow\", \"reason\": \"allow_list\"}",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "fixture",
+        "softland",
+        "positive"
+      ]
+    },
+    {
+      "id": "softland.fixture.study.https://192.168.1.1",
+      "title": "SoftLand study: https://192.168.1.1",
+      "suite": "softland",
+      "category": "positive",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": {
+        "action": "allow",
+        "reason": "not_listed"
+      },
+      "actual": {
+        "action": "allow",
+        "reason": "not_listed",
+        "mode": "study",
+        "enforce": true
+      },
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Set fixture SoftLand cell=study",
+          "expected": "policy written",
+          "actual": "reuse",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "msg_host get_mode('https://192.168.1.1')",
+          "expected": "allow",
+          "actual": "allow/not_listed",
+          "ok": true
+        },
+        {
+          "n": 3,
+          "action": "Compare action+reason",
+          "expected": "{\"action\": \"allow\", \"reason\": \"not_listed\"}",
+          "actual": "{\"action\": \"allow\", \"reason\": \"not_listed\"}",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "fixture",
+        "softland",
+        "positive"
+      ]
+    },
+    {
+      "id": "softland.fixture.study.empty",
+      "title": "SoftLand study: empty",
+      "suite": "softland",
+      "category": "positive",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": {
+        "action": "allow",
+        "reason": "no_host"
+      },
+      "actual": {
+        "action": "allow",
+        "reason": "no_host",
+        "mode": "study",
+        "enforce": false
+      },
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Set fixture SoftLand cell=study",
+          "expected": "policy written",
+          "actual": "reuse",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "msg_host get_mode('')",
+          "expected": "allow",
+          "actual": "allow/no_host",
+          "ok": true
+        },
+        {
+          "n": 3,
+          "action": "Compare action+reason",
+          "expected": "{\"action\": \"allow\", \"reason\": \"no_host\"}",
+          "actual": "{\"action\": \"allow\", \"reason\": \"no_host\"}",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "fixture",
+        "softland",
+        "positive"
+      ]
+    },
+    {
+      "id": "softland.fixture.study.not-a-url",
+      "title": "SoftLand study: not-a-url",
+      "suite": "softland",
+      "category": "positive",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": {
+        "action": "allow",
+        "reason": "not_listed"
+      },
+      "actual": {
+        "action": "allow",
+        "reason": "not_listed",
+        "mode": "study",
+        "enforce": true
+      },
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Set fixture SoftLand cell=study",
+          "expected": "policy written",
+          "actual": "reuse",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "msg_host get_mode('not-a-url')",
+          "expected": "allow",
+          "actual": "allow/not_listed",
+          "ok": true
+        },
+        {
+          "n": 3,
+          "action": "Compare action+reason",
+          "expected": "{\"action\": \"allow\", \"reason\": \"not_listed\"}",
+          "actual": "{\"action\": \"allow\", \"reason\": \"not_listed\"}",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "fixture",
+        "softland",
+        "positive"
+      ]
+    },
+    {
+      "id": "softland.fixture.study.https://study.local.test",
+      "title": "SoftLand study: https://study.local.test",
+      "suite": "softland",
+      "category": "positive",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": {
+        "action": "allow",
+        "reason": "allow_list"
+      },
+      "actual": {
+        "action": "allow",
+        "reason": "allow_list",
+        "mode": "study",
+        "enforce": true
+      },
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Set fixture SoftLand cell=study",
+          "expected": "policy written",
+          "actual": "reuse",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "msg_host get_mode('https://study.local.test')",
+          "expected": "allow",
+          "actual": "allow/allow_list",
+          "ok": true
+        },
+        {
+          "n": 3,
+          "action": "Compare action+reason",
+          "expected": "{\"action\": \"allow\", \"reason\": \"allow_list\"}",
+          "actual": "{\"action\": \"allow\", \"reason\": \"allow_list\"}",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "fixture",
+        "softland",
+        "positive"
+      ]
+    },
+    {
+      "id": "softland.fixture.free.https://youtube.com",
+      "title": "SoftLand free: https://youtube.com",
+      "suite": "softland",
+      "category": "positive",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": {
+        "action": "allow",
+        "reason": [
+          "reward_day",
+          "free_window",
+          "free_mode"
+        ]
+      },
+      "actual": {
+        "action": "allow",
+        "reason": "reward_day",
+        "mode": "free",
+        "enforce": true
+      },
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Set fixture SoftLand cell=free",
+          "expected": "policy written",
+          "actual": "written",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "msg_host get_mode('https://youtube.com')",
+          "expected": "allow",
+          "actual": "allow/reward_day",
+          "ok": true
+        },
+        {
+          "n": 3,
+          "action": "Compare action+reason",
+          "expected": "{\"action\": \"allow\", \"reason\": [\"reward_day\", \"free_window\", \"free_mode\"]}",
+          "actual": "{\"action\": \"allow\", \"reason\": \"reward_day\"}",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "fixture",
+        "softland",
+        "positive"
+      ]
+    },
+    {
+      "id": "softland.fixture.free.https://reddit.com",
+      "title": "SoftLand free: https://reddit.com",
+      "suite": "softland",
+      "category": "positive",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": {
+        "action": "allow",
+        "reason": [
+          "reward_day",
+          "free_window",
+          "free_mode"
+        ]
+      },
+      "actual": {
+        "action": "allow",
+        "reason": "reward_day",
+        "mode": "free",
+        "enforce": true
+      },
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Set fixture SoftLand cell=free",
+          "expected": "policy written",
+          "actual": "reuse",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "msg_host get_mode('https://reddit.com')",
+          "expected": "allow",
+          "actual": "allow/reward_day",
+          "ok": true
+        },
+        {
+          "n": 3,
+          "action": "Compare action+reason",
+          "expected": "{\"action\": \"allow\", \"reason\": [\"reward_day\", \"free_window\", \"free_mode\"]}",
+          "actual": "{\"action\": \"allow\", \"reason\": \"reward_day\"}",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "fixture",
+        "softland",
+        "positive"
+      ]
+    },
+    {
+      "id": "softland.fixture.free.https://facebook.com",
+      "title": "SoftLand free: https://facebook.com",
+      "suite": "softland",
+      "category": "positive",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": {
+        "action": "allow",
+        "reason": [
+          "reward_day",
+          "free_window",
+          "free_mode"
+        ]
+      },
+      "actual": {
+        "action": "allow",
+        "reason": "reward_day",
+        "mode": "free",
+        "enforce": true
+      },
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Set fixture SoftLand cell=free",
+          "expected": "policy written",
+          "actual": "reuse",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "msg_host get_mode('https://facebook.com')",
+          "expected": "allow",
+          "actual": "allow/reward_day",
+          "ok": true
+        },
+        {
+          "n": 3,
+          "action": "Compare action+reason",
+          "expected": "{\"action\": \"allow\", \"reason\": [\"reward_day\", \"free_window\", \"free_mode\"]}",
+          "actual": "{\"action\": \"allow\", \"reason\": \"reward_day\"}",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "fixture",
+        "softland",
+        "positive"
+      ]
+    },
+    {
+      "id": "softland.fixture.free.https://pornhub.com",
+      "title": "SoftLand free: https://pornhub.com",
+      "suite": "softland",
+      "category": "positive",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": {
+        "action": "block",
+        "reason": "porn"
+      },
+      "actual": {
+        "action": "block",
+        "reason": "porn",
+        "mode": "free",
+        "enforce": true
+      },
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Set fixture SoftLand cell=free",
+          "expected": "policy written",
+          "actual": "reuse",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "msg_host get_mode('https://pornhub.com')",
+          "expected": "block",
+          "actual": "block/porn",
+          "ok": true
+        },
+        {
+          "n": 3,
+          "action": "Compare action+reason",
+          "expected": "{\"action\": \"block\", \"reason\": \"porn\"}",
+          "actual": "{\"action\": \"block\", \"reason\": \"porn\"}",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "fixture",
+        "softland",
+        "positive"
+      ]
+    },
+    {
+      "id": "softland.fixture.free.https://twitter.com",
+      "title": "SoftLand free: https://twitter.com",
+      "suite": "softland",
+      "category": "positive",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": {
+        "action": "block",
+        "reason": "block_extra"
+      },
+      "actual": {
+        "action": "block",
+        "reason": "block_extra",
+        "mode": "free",
+        "enforce": true
+      },
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Set fixture SoftLand cell=free",
+          "expected": "policy written",
+          "actual": "reuse",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "msg_host get_mode('https://twitter.com')",
+          "expected": "block",
+          "actual": "block/block_extra",
+          "ok": true
+        },
+        {
+          "n": 3,
+          "action": "Compare action+reason",
+          "expected": "{\"action\": \"block\", \"reason\": \"block_extra\"}",
+          "actual": "{\"action\": \"block\", \"reason\": \"block_extra\"}",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "fixture",
+        "softland",
+        "positive"
+      ]
+    },
+    {
+      "id": "softland.fixture.free.https://x.com",
+      "title": "SoftLand free: https://x.com",
+      "suite": "softland",
+      "category": "positive",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": {
+        "action": "block",
+        "reason": "block_extra"
+      },
+      "actual": {
+        "action": "block",
+        "reason": "block_extra",
+        "mode": "free",
+        "enforce": true
+      },
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Set fixture SoftLand cell=free",
+          "expected": "policy written",
+          "actual": "reuse",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "msg_host get_mode('https://x.com')",
+          "expected": "block",
+          "actual": "block/block_extra",
+          "ok": true
+        },
+        {
+          "n": 3,
+          "action": "Compare action+reason",
+          "expected": "{\"action\": \"block\", \"reason\": \"block_extra\"}",
+          "actual": "{\"action\": \"block\", \"reason\": \"block_extra\"}",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "fixture",
+        "softland",
+        "positive"
+      ]
+    },
+    {
+      "id": "softland.fixture.free.https://meet.google.com",
+      "title": "SoftLand free: https://meet.google.com",
+      "suite": "softland",
+      "category": "positive",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": {
+        "action": "allow",
+        "reason": "allow_list"
+      },
+      "actual": {
+        "action": "allow",
+        "reason": "allow_list",
+        "mode": "free",
+        "enforce": true
+      },
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Set fixture SoftLand cell=free",
+          "expected": "policy written",
+          "actual": "reuse",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "msg_host get_mode('https://meet.google.com')",
+          "expected": "allow",
+          "actual": "allow/allow_list",
+          "ok": true
+        },
+        {
+          "n": 3,
+          "action": "Compare action+reason",
+          "expected": "{\"action\": \"allow\", \"reason\": \"allow_list\"}",
+          "actual": "{\"action\": \"allow\", \"reason\": \"allow_list\"}",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "fixture",
+        "softland",
+        "positive"
+      ]
+    },
+    {
+      "id": "softland.fixture.free.https://github.com",
+      "title": "SoftLand free: https://github.com",
+      "suite": "softland",
+      "category": "positive",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": {
+        "action": "allow",
+        "reason": [
+          "reward_day",
+          "free_window",
+          "free_mode"
+        ]
+      },
+      "actual": {
+        "action": "allow",
+        "reason": "reward_day",
+        "mode": "free",
+        "enforce": true
+      },
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Set fixture SoftLand cell=free",
+          "expected": "policy written",
+          "actual": "reuse",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "msg_host get_mode('https://github.com')",
+          "expected": "allow",
+          "actual": "allow/reward_day",
+          "ok": true
+        },
+        {
+          "n": 3,
+          "action": "Compare action+reason",
+          "expected": "{\"action\": \"allow\", \"reason\": [\"reward_day\", \"free_window\", \"free_mode\"]}",
+          "actual": "{\"action\": \"allow\", \"reason\": \"reward_day\"}",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "fixture",
+        "softland",
+        "positive"
+      ]
+    },
+    {
+      "id": "softland.fixture.off.https://youtube.com",
+      "title": "SoftLand off: https://youtube.com",
+      "suite": "softland",
+      "category": "positive",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": {
+        "action": "allow",
+        "reason": "softland_off"
+      },
+      "actual": {
+        "action": "allow",
+        "reason": "softland_off",
+        "mode": "free",
+        "enforce": false
+      },
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Set fixture SoftLand cell=off",
+          "expected": "policy written",
+          "actual": "written",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "msg_host get_mode('https://youtube.com')",
+          "expected": "allow",
+          "actual": "allow/softland_off",
+          "ok": true
+        },
+        {
+          "n": 3,
+          "action": "Compare action+reason",
+          "expected": "{\"action\": \"allow\", \"reason\": \"softland_off\"}",
+          "actual": "{\"action\": \"allow\", \"reason\": \"softland_off\"}",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "fixture",
+        "softland",
+        "positive"
+      ]
+    },
+    {
+      "id": "softland.fixture.off.https://pornhub.com",
+      "title": "SoftLand off: https://pornhub.com",
+      "suite": "softland",
+      "category": "positive",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": {
+        "action": "allow",
+        "reason": "softland_off"
+      },
+      "actual": {
+        "action": "allow",
+        "reason": "softland_off",
+        "mode": "free",
+        "enforce": false
+      },
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Set fixture SoftLand cell=off",
+          "expected": "policy written",
+          "actual": "reuse",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "msg_host get_mode('https://pornhub.com')",
+          "expected": "allow",
+          "actual": "allow/softland_off",
+          "ok": true
+        },
+        {
+          "n": 3,
+          "action": "Compare action+reason",
+          "expected": "{\"action\": \"allow\", \"reason\": \"softland_off\"}",
+          "actual": "{\"action\": \"allow\", \"reason\": \"softland_off\"}",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "fixture",
+        "softland",
+        "positive"
+      ]
+    },
+    {
+      "id": "softland.fixture.off.https://twitter.com",
+      "title": "SoftLand off: https://twitter.com",
+      "suite": "softland",
+      "category": "positive",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": {
+        "action": "allow",
+        "reason": "softland_off"
+      },
+      "actual": {
+        "action": "allow",
+        "reason": "softland_off",
+        "mode": "free",
+        "enforce": false
+      },
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Set fixture SoftLand cell=off",
+          "expected": "policy written",
+          "actual": "reuse",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "msg_host get_mode('https://twitter.com')",
+          "expected": "allow",
+          "actual": "allow/softland_off",
+          "ok": true
+        },
+        {
+          "n": 3,
+          "action": "Compare action+reason",
+          "expected": "{\"action\": \"allow\", \"reason\": \"softland_off\"}",
+          "actual": "{\"action\": \"allow\", \"reason\": \"softland_off\"}",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "fixture",
+        "softland",
+        "positive"
+      ]
+    },
+    {
+      "id": "softland.fixture.off.https://alwaysblock.example",
+      "title": "SoftLand off: https://alwaysblock.example",
+      "suite": "softland",
+      "category": "positive",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": {
+        "action": "allow",
+        "reason": "softland_off"
+      },
+      "actual": {
+        "action": "allow",
+        "reason": "softland_off",
+        "mode": "free",
+        "enforce": false
+      },
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Set fixture SoftLand cell=off",
+          "expected": "policy written",
+          "actual": "reuse",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "msg_host get_mode('https://alwaysblock.example')",
+          "expected": "allow",
+          "actual": "allow/softland_off",
+          "ok": true
+        },
+        {
+          "n": 3,
+          "action": "Compare action+reason",
+          "expected": "{\"action\": \"allow\", \"reason\": \"softland_off\"}",
+          "actual": "{\"action\": \"allow\", \"reason\": \"softland_off\"}",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "fixture",
+        "softland",
+        "positive"
+      ]
+    },
+    {
+      "id": "softland.fixture.incubate.https://youtube.com",
+      "title": "SoftLand incubate: https://youtube.com",
+      "suite": "softland",
+      "category": "positive",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": {
+        "action": "block",
+        "reason": "incubation"
+      },
+      "actual": {
+        "action": "block",
+        "reason": "incubation",
+        "mode": "study",
+        "enforce": true
+      },
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Set fixture SoftLand cell=incubate",
+          "expected": "policy written",
+          "actual": "written",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "msg_host get_mode('https://youtube.com')",
+          "expected": "block",
+          "actual": "block/incubation",
+          "ok": true
+        },
+        {
+          "n": 3,
+          "action": "Compare action+reason",
+          "expected": "{\"action\": \"block\", \"reason\": \"incubation\"}",
+          "actual": "{\"action\": \"block\", \"reason\": \"incubation\"}",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "fixture",
+        "softland",
+        "positive"
+      ]
+    },
+    {
+      "id": "softland.fixture.incubate.https://pornhub.com",
+      "title": "SoftLand incubate: https://pornhub.com",
+      "suite": "softland",
+      "category": "positive",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": {
+        "action": "block",
+        "reason": [
+          "incubation",
+          "porn"
+        ]
+      },
+      "actual": {
+        "action": "block",
+        "reason": "incubation",
+        "mode": "study",
+        "enforce": true
+      },
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Set fixture SoftLand cell=incubate",
+          "expected": "policy written",
+          "actual": "reuse",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "msg_host get_mode('https://pornhub.com')",
+          "expected": "block",
+          "actual": "block/incubation",
+          "ok": true
+        },
+        {
+          "n": 3,
+          "action": "Compare action+reason",
+          "expected": "{\"action\": \"block\", \"reason\": [\"incubation\", \"porn\"]}",
+          "actual": "{\"action\": \"block\", \"reason\": \"incubation\"}",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "fixture",
+        "softland",
+        "positive"
+      ]
+    },
+    {
+      "id": "softland.fixture.incubate.https://meet.google.com",
+      "title": "SoftLand incubate: https://meet.google.com",
+      "suite": "softland",
+      "category": "positive",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": {
+        "action": "allow",
+        "reason": "allow_list"
+      },
+      "actual": {
+        "action": "allow",
+        "reason": "allow_list",
+        "mode": "study",
+        "enforce": true
+      },
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Set fixture SoftLand cell=incubate",
+          "expected": "policy written",
+          "actual": "reuse",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "msg_host get_mode('https://meet.google.com')",
+          "expected": "allow",
+          "actual": "allow/allow_list",
+          "ok": true
+        },
+        {
+          "n": 3,
+          "action": "Compare action+reason",
+          "expected": "{\"action\": \"allow\", \"reason\": \"allow_list\"}",
+          "actual": "{\"action\": \"allow\", \"reason\": \"allow_list\"}",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "fixture",
+        "softland",
+        "positive"
+      ]
+    },
+    {
+      "id": "softland.fixture.study.HTTPS://YouTube.COM/Watch?V=1",
+      "title": "Case-insensitive YouTube host",
+      "suite": "softland",
+      "category": "edge",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": {
+        "action": "block",
+        "reason": "watch_list"
+      },
+      "actual": {
+        "action": "block",
+        "reason": "watch_list",
+        "mode": "study",
+        "enforce": true
+      },
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Set fixture SoftLand cell=study",
+          "expected": "policy written",
+          "actual": "written",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "msg_host get_mode('HTTPS://YouTube.COM/Watch?V=1')",
+          "expected": "block",
+          "actual": "block/watch_list",
+          "ok": true
+        },
+        {
+          "n": 3,
+          "action": "Compare action+reason",
+          "expected": "{\"action\": \"block\", \"reason\": \"watch_list\"}",
+          "actual": "{\"action\": \"block\", \"reason\": \"watch_list\"}",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "fixture",
+        "softland",
+        "edge"
+      ]
+    },
+    {
+      "id": "softland.fixture.study.https://youtube.com.",
+      "title": "EDGE: trailing-dot host currently not_listed (not watch_list)",
+      "suite": "softland",
+      "category": "edge",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": {
+        "action": "allow",
+        "reason": "not_listed"
+      },
+      "actual": {
+        "action": "allow",
+        "reason": "not_listed",
+        "mode": "study",
+        "enforce": true
+      },
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Set fixture SoftLand cell=study",
+          "expected": "policy written",
+          "actual": "reuse",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "msg_host get_mode('https://youtube.com.')",
+          "expected": "allow",
+          "actual": "allow/not_listed",
+          "ok": true
+        },
+        {
+          "n": 3,
+          "action": "Compare action+reason",
+          "expected": "{\"action\": \"allow\", \"reason\": \"not_listed\"}",
+          "actual": "{\"action\": \"allow\", \"reason\": \"not_listed\"}",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "fixture",
+        "softland",
+        "edge"
+      ]
+    },
+    {
+      "id": "softland.fixture.study.https://youtube.com:443/watch",
+      "title": "Explicit :443 port",
+      "suite": "softland",
+      "category": "edge",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": {
+        "action": "block",
+        "reason": "watch_list"
+      },
+      "actual": {
+        "action": "block",
+        "reason": "watch_list",
+        "mode": "study",
+        "enforce": true
+      },
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Set fixture SoftLand cell=study",
+          "expected": "policy written",
+          "actual": "reuse",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "msg_host get_mode('https://youtube.com:443/watch')",
+          "expected": "block",
+          "actual": "block/watch_list",
+          "ok": true
+        },
+        {
+          "n": 3,
+          "action": "Compare action+reason",
+          "expected": "{\"action\": \"block\", \"reason\": \"watch_list\"}",
+          "actual": "{\"action\": \"block\", \"reason\": \"watch_list\"}",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "fixture",
+        "softland",
+        "edge"
+      ]
+    },
+    {
+      "id": "softland.fixture.study.https://user:pass@youtube.com/",
+      "title": "EDGE: userinfo URL currently not_listed (host parse)",
+      "suite": "softland",
+      "category": "edge",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": {
+        "action": "allow",
+        "reason": "not_listed"
+      },
+      "actual": {
+        "action": "allow",
+        "reason": "not_listed",
+        "mode": "study",
+        "enforce": true
+      },
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Set fixture SoftLand cell=study",
+          "expected": "policy written",
+          "actual": "reuse",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "msg_host get_mode('https://user:pass@youtube.com/')",
+          "expected": "allow",
+          "actual": "allow/not_listed",
+          "ok": true
+        },
+        {
+          "n": 3,
+          "action": "Compare action+reason",
+          "expected": "{\"action\": \"allow\", \"reason\": \"not_listed\"}",
+          "actual": "{\"action\": \"allow\", \"reason\": \"not_listed\"}",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "fixture",
+        "softland",
+        "edge"
+      ]
+    },
+    {
+      "id": "softland.fixture.study.https://www.www.youtube.com",
+      "title": "Double-www subdomain",
+      "suite": "softland",
+      "category": "edge",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": {
+        "action": "block",
+        "reason": "watch_list"
+      },
+      "actual": {
+        "action": "block",
+        "reason": "watch_list",
+        "mode": "study",
+        "enforce": true
+      },
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Set fixture SoftLand cell=study",
+          "expected": "policy written",
+          "actual": "reuse",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "msg_host get_mode('https://www.www.youtube.com')",
+          "expected": "block",
+          "actual": "block/watch_list",
+          "ok": true
+        },
+        {
+          "n": 3,
+          "action": "Compare action+reason",
+          "expected": "{\"action\": \"block\", \"reason\": \"watch_list\"}",
+          "actual": "{\"action\": \"block\", \"reason\": \"watch_list\"}",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "fixture",
+        "softland",
+        "edge"
+      ]
+    },
+    {
+      "id": "softland.fixture.study.https://notyoutube.com",
+      "title": "Suffix lookalike notyoutube.com",
+      "suite": "softland",
+      "category": "edge",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": {
+        "action": "allow",
+        "reason": "not_listed"
+      },
+      "actual": {
+        "action": "allow",
+        "reason": "not_listed",
+        "mode": "study",
+        "enforce": true
+      },
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Set fixture SoftLand cell=study",
+          "expected": "policy written",
+          "actual": "reuse",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "msg_host get_mode('https://notyoutube.com')",
+          "expected": "allow",
+          "actual": "allow/not_listed",
+          "ok": true
+        },
+        {
+          "n": 3,
+          "action": "Compare action+reason",
+          "expected": "{\"action\": \"allow\", \"reason\": \"not_listed\"}",
+          "actual": "{\"action\": \"allow\", \"reason\": \"not_listed\"}",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "fixture",
+        "softland",
+        "edge"
+      ]
+    },
+    {
+      "id": "softland.fixture.study.https://youtube.com.evil.test",
+      "title": "Evil suffix after youtube.com",
+      "suite": "softland",
+      "category": "edge",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": {
+        "action": "allow",
+        "reason": "not_listed"
+      },
+      "actual": {
+        "action": "allow",
+        "reason": "not_listed",
+        "mode": "study",
+        "enforce": true
+      },
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Set fixture SoftLand cell=study",
+          "expected": "policy written",
+          "actual": "reuse",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "msg_host get_mode('https://youtube.com.evil.test')",
+          "expected": "allow",
+          "actual": "allow/not_listed",
+          "ok": true
+        },
+        {
+          "n": 3,
+          "action": "Compare action+reason",
+          "expected": "{\"action\": \"allow\", \"reason\": \"not_listed\"}",
+          "actual": "{\"action\": \"allow\", \"reason\": \"not_listed\"}",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "fixture",
+        "softland",
+        "edge"
+      ]
+    },
+    {
+      "id": "softland.fixture.study.javascript:alert(1)",
+      "title": "javascript: URL",
+      "suite": "softland",
+      "category": "edge",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": {
+        "action": "allow",
+        "reason": [
+          "no_host",
+          "not_listed",
+          "softland_off"
+        ]
+      },
+      "actual": {
+        "action": "allow",
+        "reason": "not_listed",
+        "mode": "study",
+        "enforce": true
+      },
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Set fixture SoftLand cell=study",
+          "expected": "policy written",
+          "actual": "reuse",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "msg_host get_mode('javascript:alert(1)')",
+          "expected": "allow",
+          "actual": "allow/not_listed",
+          "ok": true
+        },
+        {
+          "n": 3,
+          "action": "Compare action+reason",
+          "expected": "{\"action\": \"allow\", \"reason\": [\"no_host\", \"not_listed\", \"softland_off\"]}",
+          "actual": "{\"action\": \"allow\", \"reason\": \"not_listed\"}",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "fixture",
+        "softland",
+        "edge"
+      ]
+    },
+    {
+      "id": "softland.fixture.study.data:text/html,hi",
+      "title": "data: URL",
+      "suite": "softland",
+      "category": "edge",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": {
+        "action": "allow",
+        "reason": [
+          "no_host",
+          "not_listed"
+        ]
+      },
+      "actual": {
+        "action": "allow",
+        "reason": "not_listed",
+        "mode": "study",
+        "enforce": true
+      },
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Set fixture SoftLand cell=study",
+          "expected": "policy written",
+          "actual": "reuse",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "msg_host get_mode('data:text/html,hi')",
+          "expected": "allow",
+          "actual": "allow/not_listed",
+          "ok": true
+        },
+        {
+          "n": 3,
+          "action": "Compare action+reason",
+          "expected": "{\"action\": \"allow\", \"reason\": [\"no_host\", \"not_listed\"]}",
+          "actual": "{\"action\": \"allow\", \"reason\": \"not_listed\"}",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "fixture",
+        "softland",
+        "edge"
+      ]
+    },
+    {
+      "id": "softland.fixture.study.about:blank",
+      "title": "about:blank",
+      "suite": "softland",
+      "category": "edge",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": {
+        "action": "allow",
+        "reason": [
+          "no_host",
+          "not_listed"
+        ]
+      },
+      "actual": {
+        "action": "allow",
+        "reason": "not_listed",
+        "mode": "study",
+        "enforce": true
+      },
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Set fixture SoftLand cell=study",
+          "expected": "policy written",
+          "actual": "reuse",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "msg_host get_mode('about:blank')",
+          "expected": "allow",
+          "actual": "allow/not_listed",
+          "ok": true
+        },
+        {
+          "n": 3,
+          "action": "Compare action+reason",
+          "expected": "{\"action\": \"allow\", \"reason\": [\"no_host\", \"not_listed\"]}",
+          "actual": "{\"action\": \"allow\", \"reason\": \"not_listed\"}",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "fixture",
+        "softland",
+        "edge"
+      ]
+    },
+    {
+      "id": "softland.fixture.study.   ",
+      "title": "Whitespace-only URL",
+      "suite": "softland",
+      "category": "edge",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": {
+        "action": "allow",
+        "reason": [
+          "no_host",
+          "not_listed"
+        ]
+      },
+      "actual": {
+        "action": "allow",
+        "reason": "not_listed",
+        "mode": "study",
+        "enforce": true
+      },
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Set fixture SoftLand cell=study",
+          "expected": "policy written",
+          "actual": "reuse",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "msg_host get_mode('   ')",
+          "expected": "allow",
+          "actual": "allow/not_listed",
+          "ok": true
+        },
+        {
+          "n": 3,
+          "action": "Compare action+reason",
+          "expected": "{\"action\": \"allow\", \"reason\": [\"no_host\", \"not_listed\"]}",
+          "actual": "{\"action\": \"allow\", \"reason\": \"not_listed\"}",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "fixture",
+        "softland",
+        "edge"
+      ]
+    },
+    {
+      "id": "softland.fixture.study.https://xn--n3h.com",
+      "title": "Punycode host",
+      "suite": "softland",
+      "category": "edge",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": {
+        "action": "allow",
+        "reason": "not_listed"
+      },
+      "actual": {
+        "action": "allow",
+        "reason": "not_listed",
+        "mode": "study",
+        "enforce": true
+      },
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Set fixture SoftLand cell=study",
+          "expected": "policy written",
+          "actual": "reuse",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "msg_host get_mode('https://xn--n3h.com')",
+          "expected": "allow",
+          "actual": "allow/not_listed",
+          "ok": true
+        },
+        {
+          "n": 3,
+          "action": "Compare action+reason",
+          "expected": "{\"action\": \"allow\", \"reason\": \"not_listed\"}",
+          "actual": "{\"action\": \"allow\", \"reason\": \"not_listed\"}",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "fixture",
+        "softland",
+        "edge"
+      ]
+    },
+    {
+      "id": "softland.fixture.free.https://pornhub.com",
+      "title": "NEGATIVE: porn stays blocked in FREE",
+      "suite": "softland",
+      "category": "negative",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": {
+        "action": "block",
+        "reason": "porn"
+      },
+      "actual": {
+        "action": "block",
+        "reason": "porn",
+        "mode": "free",
+        "enforce": true
+      },
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Set fixture SoftLand cell=free",
+          "expected": "policy written",
+          "actual": "written",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "msg_host get_mode('https://pornhub.com')",
+          "expected": "block",
+          "actual": "block/porn",
+          "ok": true
+        },
+        {
+          "n": 3,
+          "action": "Compare action+reason",
+          "expected": "{\"action\": \"block\", \"reason\": \"porn\"}",
+          "actual": "{\"action\": \"block\", \"reason\": \"porn\"}",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "fixture",
+        "softland",
+        "negative"
+      ]
+    },
+    {
+      "id": "softland.fixture.free.https://twitter.com",
+      "title": "NEGATIVE: block_extra stays blocked in FREE",
+      "suite": "softland",
+      "category": "negative",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": {
+        "action": "block",
+        "reason": "block_extra"
+      },
+      "actual": {
+        "action": "block",
+        "reason": "block_extra",
+        "mode": "free",
+        "enforce": true
+      },
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Set fixture SoftLand cell=free",
+          "expected": "policy written",
+          "actual": "reuse",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "msg_host get_mode('https://twitter.com')",
+          "expected": "block",
+          "actual": "block/block_extra",
+          "ok": true
+        },
+        {
+          "n": 3,
+          "action": "Compare action+reason",
+          "expected": "{\"action\": \"block\", \"reason\": \"block_extra\"}",
+          "actual": "{\"action\": \"block\", \"reason\": \"block_extra\"}",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "fixture",
+        "softland",
+        "negative"
+      ]
+    },
+    {
+      "id": "softland.fixture.off.https://pornhub.com",
+      "title": "NEGATIVE: SoftLand OFF must allow porn (no SoftLand block)",
+      "suite": "softland",
+      "category": "negative",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": {
+        "action": "allow",
+        "reason": "softland_off"
+      },
+      "actual": {
+        "action": "allow",
+        "reason": "softland_off",
+        "mode": "free",
+        "enforce": false
+      },
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Set fixture SoftLand cell=off",
+          "expected": "policy written",
+          "actual": "written",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "msg_host get_mode('https://pornhub.com')",
+          "expected": "allow",
+          "actual": "allow/softland_off",
+          "ok": true
+        },
+        {
+          "n": 3,
+          "action": "Compare action+reason",
+          "expected": "{\"action\": \"allow\", \"reason\": \"softland_off\"}",
+          "actual": "{\"action\": \"allow\", \"reason\": \"softland_off\"}",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "fixture",
+        "softland",
+        "negative"
+      ]
+    },
+    {
+      "id": "softland.fixture.incubate.https://youtube.com",
+      "title": "NEGATIVE: incubation overrides FREE watch",
+      "suite": "softland",
+      "category": "negative",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": {
+        "action": "block",
+        "reason": "incubation"
+      },
+      "actual": {
+        "action": "block",
+        "reason": "incubation",
+        "mode": "study",
+        "enforce": true
+      },
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Set fixture SoftLand cell=incubate",
+          "expected": "policy written",
+          "actual": "written",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "msg_host get_mode('https://youtube.com')",
+          "expected": "block",
+          "actual": "block/incubation",
+          "ok": true
+        },
+        {
+          "n": 3,
+          "action": "Compare action+reason",
+          "expected": "{\"action\": \"block\", \"reason\": \"incubation\"}",
+          "actual": "{\"action\": \"block\", \"reason\": \"incubation\"}",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "fixture",
+        "softland",
+        "negative"
+      ]
+    },
+    {
+      "id": "arm.unit.steam.exe->['steam.exe']",
+      "title": "Arm match: steam.exe vs ['steam.exe']",
+      "suite": "arm",
+      "category": "positive",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": true,
+      "actual": true,
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Normalize process 'steam.exe'",
+          "expected": "token",
+          "actual": "steam.exe",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "Match against ['steam.exe']",
+          "expected": "True",
+          "actual": "True",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "arm",
+        "unit"
+      ]
+    },
+    {
+      "id": "arm.unit.STEAM.EXE->['steam.exe']",
+      "title": "Arm match: STEAM.EXE vs ['steam.exe']",
+      "suite": "arm",
+      "category": "positive",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": true,
+      "actual": true,
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Normalize process 'STEAM.EXE'",
+          "expected": "token",
+          "actual": "steam.exe",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "Match against ['steam.exe']",
+          "expected": "True",
+          "actual": "True",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "arm",
+        "unit"
+      ]
+    },
+    {
+      "id": "arm.unit.steam->['steam.exe']",
+      "title": "Arm match: steam vs ['steam.exe']",
+      "suite": "arm",
+      "category": "positive",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": true,
+      "actual": true,
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Normalize process 'steam'",
+          "expected": "token",
+          "actual": "steam",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "Match against ['steam.exe']",
+          "expected": "True",
+          "actual": "True",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "arm",
+        "unit"
+      ]
+    },
+    {
+      "id": "arm.unit.steam.exe->['steam']",
+      "title": "Arm match: steam.exe vs ['steam']",
+      "suite": "arm",
+      "category": "positive",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": true,
+      "actual": true,
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Normalize process 'steam.exe'",
+          "expected": "token",
+          "actual": "steam.exe",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "Match against ['steam']",
+          "expected": "True",
+          "actual": "True",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "arm",
+        "unit"
+      ]
+    },
+    {
+      "id": "arm.unit.steam.exe->['C:\\\\Games\\\\Steam\\\\steam.exe']",
+      "title": "Arm match: steam.exe vs ['C:\\\\Games\\\\Steam\\\\steam.exe']",
+      "suite": "arm",
+      "category": "positive",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": true,
+      "actual": true,
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Normalize process 'steam.exe'",
+          "expected": "token",
+          "actual": "steam.exe",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "Match against ['C:\\\\Games\\\\Steam\\\\steam.exe']",
+          "expected": "True",
+          "actual": "True",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "arm",
+        "unit"
+      ]
+    },
+    {
+      "id": "arm.unit.notepad.exe->['steam.exe']",
+      "title": "Arm match: notepad.exe vs ['steam.exe']",
+      "suite": "arm",
+      "category": "positive",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": false,
+      "actual": false,
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Normalize process 'notepad.exe'",
+          "expected": "token",
+          "actual": "notepad.exe",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "Match against ['steam.exe']",
+          "expected": "False",
+          "actual": "False",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "arm",
+        "unit"
+      ]
+    },
+    {
+      "id": "arm.unit.calt_test_block_target.exe->['calt_test_block_target.exe']",
+      "title": "Arm match: calt_test_block_target.exe vs ['calt_test_block_target.exe']",
+      "suite": "arm",
+      "category": "positive",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": true,
+      "actual": true,
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Normalize process 'calt_test_block_target.exe'",
+          "expected": "token",
+          "actual": "calt_test_block_target.exe",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "Match against ['calt_test_block_target.exe']",
+          "expected": "True",
+          "actual": "True",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "arm",
+        "unit"
+      ]
+    },
+    {
+      "id": "arm.unit.calt_test_safe.exe->['calt_test_block_target.exe']",
+      "title": "Arm match: calt_test_safe.exe vs ['calt_test_block_target.exe']",
+      "suite": "arm",
+      "category": "positive",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": false,
+      "actual": false,
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Normalize process 'calt_test_safe.exe'",
+          "expected": "token",
+          "actual": "calt_test_safe.exe",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "Match against ['calt_test_block_target.exe']",
+          "expected": "False",
+          "actual": "False",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "arm",
+        "unit"
+      ]
+    },
+    {
+      "id": "arm.unit.explorer.exe->['explorer.exe']",
+      "title": "Arm match: explorer.exe vs ['explorer.exe']",
+      "suite": "arm",
+      "category": "positive",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": false,
+      "actual": false,
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Normalize process 'explorer.exe'",
+          "expected": "token",
+          "actual": "explorer.exe",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "Match against ['explorer.exe']",
+          "expected": "False",
+          "actual": "False",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "arm",
+        "unit"
+      ]
+    },
+    {
+      "id": "arm.unit.python.exe->['python.exe']",
+      "title": "Arm match: python.exe vs ['python.exe']",
+      "suite": "arm",
+      "category": "positive",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": false,
+      "actual": false,
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Normalize process 'python.exe'",
+          "expected": "token",
+          "actual": "python.exe",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "Match against ['python.exe']",
+          "expected": "False",
+          "actual": "False",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "arm",
+        "unit"
+      ]
+    },
+    {
+      "id": "arm.unit.calt_enforcer.exe->['calt_enforcer.exe']",
+      "title": "Arm match: calt_enforcer.exe vs ['calt_enforcer.exe']",
+      "suite": "arm",
+      "category": "positive",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": false,
+      "actual": false,
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Normalize process 'calt_enforcer.exe'",
+          "expected": "token",
+          "actual": "calt_enforcer.exe",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "Match against ['calt_enforcer.exe']",
+          "expected": "False",
+          "actual": "False",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "arm",
+        "unit"
+      ]
+    },
+    {
+      "id": "arm.unit.extra.Mixed-case process name",
+      "title": "Mixed-case process name",
+      "suite": "arm",
+      "category": "edge",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": true,
+      "actual": true,
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Normalize 'Steam.exe'",
+          "expected": "token",
+          "actual": "steam.exe",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "Match vs ['steam.exe']",
+          "expected": "True",
+          "actual": "True",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "arm",
+        "unit",
+        "edge"
+      ]
+    },
+    {
+      "id": "arm.unit.extra.Mixed-case policy token",
+      "title": "Mixed-case policy token",
+      "suite": "arm",
+      "category": "edge",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": true,
+      "actual": true,
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Normalize 'steam.exe'",
+          "expected": "token",
+          "actual": "steam.exe",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "Match vs ['STEAM.EXE']",
+          "expected": "True",
+          "actual": "True",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "arm",
+        "unit",
+        "edge"
+      ]
+    },
+    {
+      "id": "arm.unit.extra.NEGATIVE: unlisted chrome must not match",
+      "title": "NEGATIVE: unlisted chrome must not match",
+      "suite": "arm",
+      "category": "negative",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": false,
+      "actual": false,
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Normalize 'chrome.exe'",
+          "expected": "token",
+          "actual": "chrome.exe",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "Match vs ['steam.exe']",
+          "expected": "False",
+          "actual": "False",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "arm",
+        "unit",
+        "negative"
+      ]
+    },
+    {
+      "id": "arm.unit.extra.NEGATIVE: similar name must not fuzzy-match",
+      "title": "NEGATIVE: similar name must not fuzzy-match",
+      "suite": "arm",
+      "category": "negative",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": false,
+      "actual": false,
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Normalize 'steamwebhelper.exe'",
+          "expected": "token",
+          "actual": "steamwebhelper.exe",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "Match vs ['steam.exe']",
+          "expected": "False",
+          "actual": "False",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "arm",
+        "unit",
+        "negative"
+      ]
+    },
+    {
+      "id": "arm.unit.extra.Empty process name",
+      "title": "Empty process name",
+      "suite": "arm",
+      "category": "edge",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": false,
+      "actual": false,
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Normalize ''",
+          "expected": "token",
+          "actual": "",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "Match vs ['steam.exe']",
+          "expected": "False",
+          "actual": "False",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "arm",
+        "unit",
+        "edge"
+      ]
+    },
+    {
+      "id": "arm.unit.extra.NEGATIVE: empty policy list never kills",
+      "title": "NEGATIVE: empty policy list never kills",
+      "suite": "arm",
+      "category": "negative",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": false,
+      "actual": false,
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Normalize 'steam.exe'",
+          "expected": "token",
+          "actual": "steam.exe",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "Match vs []",
+          "expected": "False",
+          "actual": "False",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "arm",
+        "unit",
+        "negative"
+      ]
+    },
+    {
+      "id": "arm.unit.extra.Empty policy token ignored",
+      "title": "Empty policy token ignored",
+      "suite": "arm",
+      "category": "edge",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": false,
+      "actual": false,
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Normalize 'steam.exe'",
+          "expected": "token",
+          "actual": "steam.exe",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "Match vs ['']",
+          "expected": "False",
+          "actual": "False",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "arm",
+        "unit",
+        "edge"
+      ]
+    },
+    {
+      "id": "arm.unit.extra.NEGATIVE: protected Focus never killed",
+      "title": "NEGATIVE: protected Focus never killed",
+      "suite": "arm",
+      "category": "negative",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": false,
+      "actual": false,
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Normalize 'calt_focus.exe'",
+          "expected": "token",
+          "actual": "calt_focus.exe",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "Match vs ['calt_focus.exe']",
+          "expected": "False",
+          "actual": "False",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "arm",
+        "unit",
+        "negative"
+      ]
+    },
+    {
+      "id": "arm.unit.extra.Full path process basename",
+      "title": "Full path process basename",
+      "suite": "arm",
+      "category": "edge",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": true,
+      "actual": true,
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Normalize 'C:\\\\Games\\\\steam.exe'",
+          "expected": "token",
+          "actual": "steam.exe",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "Match vs ['steam.exe']",
+          "expected": "True",
+          "actual": "True",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "arm",
+        "unit",
+        "edge"
+      ]
+    },
+    {
+      "id": "sync.pre.status_vs_effective_arm",
+      "title": "Status armed matches effective Arm",
+      "suite": "sync",
+      "category": "positive",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": false,
+      "actual": false,
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Read enforcer_status.json armed",
+          "expected": "False",
+          "actual": "False",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "sync"
+      ]
+    },
+    {
+      "id": "sync.pre.sqlite_vs_json_arm",
+      "title": "SQLite Arm mirrors JSON",
+      "suite": "sync",
+      "category": "positive",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": {
+        "json_armed": false,
+        "json_exes": []
+      },
+      "actual": {
+        "sql_armed": false,
+        "sql_exes": []
+      },
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Compare enforcer_runtime vs policy JSON",
+          "expected": "match",
+          "actual": "match",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "sync"
+      ]
+    },
+    {
+      "id": "sync.pre.sqlite_vs_json_softland",
+      "title": "SQLite SoftLand enabled matches JSON",
+      "suite": "sync",
+      "category": "positive",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": false,
+      "actual": false,
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Compare SoftLand enabled",
+          "expected": "False",
+          "actual": "False",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "sync"
+      ]
+    },
+    {
+      "id": "gateway.read.status.snapshot",
+      "title": "Gateway status.snapshot",
+      "suite": "gateway",
+      "category": "positive",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": "ok:true",
+      "actual": {
+        "ok": true,
+        "id": "4bc44bcb-dfd2-485b-89fa-a4e3136284fa",
+        "gateway_seq": 3688,
+        "as_of": "2026-09-14T00:30:46",
+        "softland_enabled": false,
+        "free_until": null,
+        "incubation_until": null,
+        "reward_day_active": false,
+        "earned_ledger_seconds": 6000
+      },
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Call status.snapshot",
+          "expected": "ok:true JSON",
+          "actual": "{\"ok\":true,\"id\":\"4bc44bcb-dfd2-485b-89fa-a4e3136284fa\",\"gateway_seq\":3688,\"as_of\":\"2026-09-14T00:30:46\",\"softland_enabled\":false,\"free_until\":null,\"incubation_until\":null,\"reward_d",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "gateway",
+        "read"
+      ]
+    },
+    {
+      "id": "gateway.read.day.status",
+      "title": "Gateway day.status",
+      "suite": "gateway",
+      "category": "positive",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": "ok:true",
+      "actual": {
+        "ok": true,
+        "id": "2171376c-c572-4e53-8f27-d939cde67f0f",
+        "gateway_seq": 3688,
+        "as_of": "2026-09-14T00:30:49",
+        "softland_enabled": false,
+        "free_until": null,
+        "incubation_until": null,
+        "reward_day_active": false,
+        "earned_ledger_seconds": 6000,
+        "qualified_days": 10,
+        "reward_earned": 2,
+        "reward_granted": 3,
+        "reward_spent": 5,
+        "reward_available": 0,
+        "days_to_next_reward": 2,
+        "passes_limit": 2,
+        "passes_used": 0,
+        "pass_today": false,
+        "earned_today_seconds": 0,
+        "balance_seconds": 6000
+      },
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Call day.status",
+          "expected": "ok:true JSON",
+          "actual": "{\"ok\":true,\"id\":\"2171376c-c572-4e53-8f27-d939cde67f0f\",\"gateway_seq\":3688,\"as_of\":\"2026-09-14T00:30:49\",\"softland_enabled\":false,\"free_until\":null,\"incubation_until\":null,\"reward_d",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "gateway",
+        "read"
+      ]
+    },
+    {
+      "id": "gateway.read.reward.status",
+      "title": "Gateway reward.status",
+      "suite": "gateway",
+      "category": "positive",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": "ok:true",
+      "actual": {
+        "ok": true,
+        "id": "0100d0e4-6012-46e9-813e-89d3ca74bd7d",
+        "gateway_seq": 3688,
+        "as_of": "2026-09-14T00:30:52",
+        "softland_enabled": false,
+        "free_until": null,
+        "incubation_until": null,
+        "reward_day_active": false,
+        "earned_ledger_seconds": 6000,
+        "qualified_days": 10,
+        "reward_earned": 2,
+        "reward_granted": 3,
+        "reward_spent": 5,
+        "reward_available": 0,
+        "days_to_next_reward": 2
+      },
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Call reward.status",
+          "expected": "ok:true JSON",
+          "actual": "{\"ok\":true,\"id\":\"0100d0e4-6012-46e9-813e-89d3ca74bd7d\",\"gateway_seq\":3688,\"as_of\":\"2026-09-14T00:30:52\",\"softland_enabled\":false,\"free_until\":null,\"incubation_until\":null,\"reward_d",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "gateway",
+        "read"
+      ]
+    },
+    {
+      "id": "gateway.read.day.loop_snapshot",
+      "title": "Gateway day.loop_snapshot",
+      "suite": "gateway",
+      "category": "positive",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": "ok:true",
+      "actual": {
+        "ok": true,
+        "id": "c77c67dc-7d5c-427a-8391-498446c3453e",
+        "gateway_seq": 3688,
+        "as_of": "2026-09-14T00:30:55",
+        "softland_enabled": false,
+        "free_until": null,
+        "incubation_until": null,
+        "reward_day_active": false,
+        "earned_ledger_seconds": 6000,
+        "loop": {
+          "date": "2026-09-14",
+          "planned_minutes": 0,
+          "tracked_productive_minutes": 0,
+          "threshold_minutes": 0,
+          "tasks_total": 0,
+          "tasks_done": 0,
+          "checkboxes_ok": true,
+          "time_ok": false,
+          "dual_gate_ok": false,
+          "closeout_free_granted": false,
+          "free_until": null,
+          "bedtime_hm": null,
+          "wake_hm": null,
+          "bedtime_active": false,
+          "emergency_until": null,
+          "bible_done": true,
+          "plan_confirmed": true,
+          "softland_enabled": false,
+          "tasks": []
+        }
+      },
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Call day.loop_snapshot",
+          "expected": "ok:true JSON",
+          "actual": "{\"ok\":true,\"id\":\"c77c67dc-7d5c-427a-8391-498446c3453e\",\"gateway_seq\":3688,\"as_of\":\"2026-09-14T00:30:55\",\"softland_enabled\":false,\"free_until\":null,\"incubation_until\":null,\"reward_d",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "gateway",
+        "read"
+      ]
+    },
+    {
+      "id": "gateway.read.ledger.snapshot",
+      "title": "Gateway ledger.snapshot",
+      "suite": "gateway",
+      "category": "positive",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": "ok:true",
+      "actual": {
+        "ok": true,
+        "id": "ac8d9a50-4126-4947-8403-5eff801a8d1c",
+        "gateway_seq": 3688,
+        "as_of": "2026-09-14T00:30:58",
+        "softland_enabled": false,
+        "free_until": null,
+        "incubation_until": null,
+        "reward_day_active": false,
+        "earned_ledger_seconds": 6000,
+        "ledger": [
+          {
+            "ts": "2026-09-13T15:28:24",
+            "kind": "earn",
+            "seconds": 1800,
+            "note": "daily_goal",
+            "source": "gateway"
+          },
+          {
+            "ts": "2026-09-13T15:28:22",
+            "kind": "earn",
+            "seconds": 900,
+            "note": "chapter_done",
+            "source": "gateway"
+          },
+          {
+            "ts": "2026-09-11T22:03:38",
+            "kind": "earn",
+            "seconds": 600,
+            "note": "plan_confirmed",
+            "source": "day_loop"
+          },
+          {
+            "ts": "2026-09-11T15:50:37",
+            "kind": "earn",
+            "seconds": 1800,
+            "note": "daily_goal",
+            "source": "gateway"
+          },
+          {
+            "ts": "2026-09-11T15:50:36",
+            "kind": "earn",
+            "seconds": 900,
+            "note": "chapter_done",
+            "source": "gateway"
+          },
+          {
+            "ts": "2026-09-11T08:58:57",
+            "kind": "adjust",
+            "seconds": -1500,
+            "note": "p5a smoke reset",
+            "source": "gateway"
+          },
+          {
+            "ts": "2026-09-11T08:58:46",
+            "kind": "reward_day",
+            "seconds": 0,
+            "note": "reward day off",
+            "source": "gateway"
+          },
+          {
+            "ts": "2026-09-08T18:46:55",
+            "kind": "reward_day",
+            "seconds": 0,
+            "note": "reward day on",
+            "source": "gateway"
+          },
+          {
+            "ts": "2026-09-08T18:46:54",
+            "kind": "reward_day",
+            "seconds": 0,
+            "note": "reward day off",
+            "source": "gateway"
+          },
+          {
+            "ts": "2026-09-08T18:42:07",
+            "kind": "spend",
+            "seconds": 900,
+            "note": "phase2 smoke cleanup",
+            "source": "gateway"
+          },
+          {
+            "ts": "2026-09-08T18:28:34",
+            "kind": "spend",
+            "seconds": 300,
+            "note": "free window 5m",
+            "source": "gateway"
+          },
+          {
+            "ts": "2026-09-08T18:23:40",
+            "kind": "spend",
+            "seconds": 600,
+            "note": "free window 10m",
+            "source": "gateway"
+          },
+          {
+            "ts": "2026-09-08T18:23:37",
+            "kind": "earn",
+            "seconds": 1800,
+            "note": "smoke earn",
+            "source": "gateway"
+          }
+        ],
+        "balance_seconds": 6000
+      },
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Call ledger.snapshot",
+          "expected": "ok:true JSON",
+          "actual": "{\"ok\":true,\"id\":\"ac8d9a50-4126-4947-8403-5eff801a8d1c\",\"gateway_seq\":3688,\"as_of\":\"2026-09-14T00:30:58\",\"softland_enabled\":false,\"free_until\":null,\"incubation_until\":null,\"reward_d",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "gateway",
+        "read"
+      ]
+    },
+    {
+      "id": "gateway.read.device_block.status",
+      "title": "Gateway device_block.status",
+      "suite": "gateway",
+      "category": "positive",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": "ok:true",
+      "actual": {
+        "ok": true,
+        "id": "87a5e9b9-8060-49de-b054-df5c729a3bc3",
+        "gateway_seq": 3688,
+        "as_of": "2026-09-14T00:31:01",
+        "softland_enabled": false,
+        "free_until": null,
+        "incubation_until": null,
+        "reward_day_active": false,
+        "earned_ledger_seconds": 6000,
+        "device_block": {
+          "settings": {
+            "enabled": true,
+            "block_porn": true,
+            "block_watch": false,
+            "block_social": true,
+            "source": "theporndude.com"
+          },
+          "active": true,
+          "configured_domain_count": 106,
+          "managed_host_entries": 72,
+          "needs_sync": true,
+          "refresh": "idle",
+          "refresh_error": "",
+          "cache_as_of": "",
+          "hosts_path": "C:\\WINDOWS\\System32\\drivers\\etc\\hosts",
+          "verify_sample": {
+            "hostname": "pornhub.com",
+            "in_hosts": true,
+            "blocked": true
+          }
+        }
+      },
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Call device_block.status",
+          "expected": "ok:true JSON",
+          "actual": "{\"ok\":true,\"id\":\"87a5e9b9-8060-49de-b054-df5c729a3bc3\",\"gateway_seq\":3688,\"as_of\":\"2026-09-14T00:31:01\",\"softland_enabled\":false,\"free_until\":null,\"incubation_until\":null,\"reward_d",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "gateway",
+        "read"
+      ]
+    },
+    {
+      "id": "gateway.neg.arm.set.unlock",
+      "title": "NEGATIVE: arm.set with wrong unlock (may reject if password lock active)",
+      "suite": "gateway",
+      "category": "negative",
+      "ok": true,
+      "status": "SKIP",
+      "error_code": "OK",
+      "expected": "reject when password lock active",
+      "actual": {
+        "ok": true,
+        "id": "a2ebc937-b0f0-4e19-a940-2dda769bb809",
+        "gateway_seq": 3689,
+        "as_of": "2026-09-14T00:31:04",
+        "softland_enabled": false,
+        "free_until": null,
+        "incubation_until": null,
+        "reward_day_active": false,
+        "earned_ledger_seconds": 6000
+      },
+      "detail": "lock_mode may be none \u2014 wrong unlock not enforced; skipped strict assert",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Call arm.set (negative)",
+          "expected": "reject / ok:false / error",
+          "actual": "",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "gateway",
+        "negative",
+        "unlock"
+      ]
+    },
+    {
+      "id": "gateway.neg.softland.set_enabled.bad_payload",
+      "title": "NEGATIVE: softland.set_enabled missing enabled field",
+      "suite": "gateway",
+      "category": "negative",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": "reject / ok:false",
+      "actual": {
+        "ok": false,
+        "id": "807c20ce-08e6-4492-a967-353417494234",
+        "error": "bad_payload"
+      },
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Call softland.set_enabled (negative)",
+          "expected": "reject / ok:false / error",
+          "actual": "{\"ok\":false,\"id\":\"807c20ce-08e6-4492-a967-353417494234\",\"error\":\"bad_payload\"}",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "gateway",
+        "negative",
+        "bad_payload"
+      ]
+    },
+    {
+      "id": "gateway.neg.this.op.does.not.exist.unknown_op",
+      "title": "NEGATIVE: unknown gateway op",
+      "suite": "gateway",
+      "category": "negative",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": "reject / ok:false",
+      "actual": {
+        "ok": false,
+        "id": "2d2caf40-7bca-45fa-9760-14a6fe5d3269",
+        "error": "unknown_op"
+      },
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Call this.op.does.not.exist (negative)",
+          "expected": "reject / ok:false / error",
+          "actual": "{\"ok\":false,\"id\":\"2d2caf40-7bca-45fa-9760-14a6fe5d3269\",\"error\":\"unknown_op\"}",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "gateway",
+        "negative",
+        "unknown_op"
+      ]
+    },
+    {
+      "id": "gateway.neg.reward.claim.reward",
+      "title": "NEGATIVE: reward.claim when available may be 0 (reject or no-op fail)",
+      "suite": "gateway",
+      "category": "negative",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": "reject / ok:false",
+      "actual": {
+        "ok": false,
+        "id": "f4255038-c4a6-4d68-852e-25746d90454d",
+        "error": "confirm_required"
+      },
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Call reward.claim (negative)",
+          "expected": "reject / ok:false / error",
+          "actual": "{\"ok\":false,\"id\":\"f4255038-c4a6-4d68-852e-25746d90454d\",\"error\":\"confirm_required\"}",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "gateway",
+        "negative",
+        "reward"
+      ]
+    },
+    {
+      "id": "gateway.info.softland_ne_arm",
+      "title": "INFO: SoftLand and Arm are independent switches",
+      "suite": "gateway",
+      "category": "positive",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": "independent",
+      "actual": {
+        "softland_enabled": false,
+        "hard_block_armed": false
+      },
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Read mirrors",
+          "expected": "both readable",
+          "actual": "ok",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "gateway",
+        "info"
+      ]
+    },
+    {
+      "id": "softland.live.https://youtube.com",
+      "title": "Live SoftLand probe (watch)",
+      "suite": "softland",
+      "category": "positive",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": "allow/softland_off",
+      "actual": {
+        "action": "allow",
+        "reason": "softland_off"
+      },
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Read live softland_enabled",
+          "expected": "False",
+          "actual": "False",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "Live get_mode('https://youtube.com')",
+          "expected": "softland_off allow",
+          "actual": "allow/softland_off",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "live",
+        "watch"
+      ]
+    },
+    {
+      "id": "softland.live.https://pornhub.com",
+      "title": "Live SoftLand probe (porn)",
+      "suite": "softland",
+      "category": "positive",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": "allow/softland_off",
+      "actual": {
+        "action": "allow",
+        "reason": "softland_off"
+      },
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Read live softland_enabled",
+          "expected": "False",
+          "actual": "False",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "Live get_mode('https://pornhub.com')",
+          "expected": "softland_off allow",
+          "actual": "allow/softland_off",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "live",
+        "porn"
+      ]
+    },
+    {
+      "id": "softland.live.https://meet.google.com",
+      "title": "Live SoftLand probe (allow)",
+      "suite": "softland",
+      "category": "positive",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": "allow/softland_off",
+      "actual": {
+        "action": "allow",
+        "reason": "softland_off"
+      },
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Read live softland_enabled",
+          "expected": "False",
+          "actual": "False",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "Live get_mode('https://meet.google.com')",
+          "expected": "softland_off allow",
+          "actual": "allow/softland_off",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "live",
+        "allow"
+      ]
+    },
+    {
+      "id": "softland.live.https://github.com",
+      "title": "Live SoftLand probe (other)",
+      "suite": "softland",
+      "category": "positive",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": "allow/softland_off",
+      "actual": {
+        "action": "allow",
+        "reason": "softland_off"
+      },
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Read live softland_enabled",
+          "expected": "False",
+          "actual": "False",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "Live get_mode('https://github.com')",
+          "expected": "softland_off allow",
+          "actual": "allow/softland_off",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "live",
+        "other"
+      ]
+    },
+    {
+      "id": "softland.live.https://twitter.com",
+      "title": "Live SoftLand probe (block_extra)",
+      "suite": "softland",
+      "category": "positive",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": "allow/softland_off",
+      "actual": {
+        "action": "allow",
+        "reason": "softland_off"
+      },
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Read live softland_enabled",
+          "expected": "False",
+          "actual": "False",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "Live get_mode('https://twitter.com')",
+          "expected": "softland_off allow",
+          "actual": "allow/softland_off",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "live",
+        "block_extra"
+      ]
+    },
+    {
+      "id": "softland.live.empty",
+      "title": "Live SoftLand probe (empty)",
+      "suite": "softland",
+      "category": "positive",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": "allow/softland_off",
+      "actual": {
+        "action": "allow",
+        "reason": "softland_off"
+      },
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Read live softland_enabled",
+          "expected": "False",
+          "actual": "False",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "Live get_mode('')",
+          "expected": "softland_off allow",
+          "actual": "allow/softland_off",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "live",
+        "empty"
+      ]
+    },
+    {
+      "id": "softland.live.not-a-url",
+      "title": "Live SoftLand probe (garbage)",
+      "suite": "softland",
+      "category": "positive",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": "allow/softland_off",
+      "actual": {
+        "action": "allow",
+        "reason": "softland_off"
+      },
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Read live softland_enabled",
+          "expected": "False",
+          "actual": "False",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "Live get_mode('not-a-url')",
+          "expected": "softland_off allow",
+          "actual": "allow/softland_off",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "live",
+        "garbage"
+      ]
+    },
+    {
+      "id": "arm.live.set_fixture_list",
+      "title": "Arm live: set disposable kill list",
+      "suite": "arm",
+      "category": "positive",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": "arm.set ok",
+      "actual": "{\"ok\":true,\"id\":\"83ba57fc-10ad-4348-a4df-e10dd75adff1\",\"gateway_seq\":3690,\"as_of\":\"2026-09-14T00:31:18\",\"softland_enabled\":false,\"free_until\":null,\"incubation_until\":null,\"reward_day_active\":false,\"earned_ledger_seconds\":6000}",
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "gateway arm.set fixture list + Arm ON",
+          "expected": "ok",
+          "actual": "{\"ok\":true,\"id\":\"83ba57fc-10ad-4348-a4df-e10dd75adff1\",\"gateway_seq\":3690,\"as_of\":\"2026-09-14T00:31:18\",\"softland_enabled\":false,\"free_until\":null,\"incubation_until\":null,\"reward_day_active\":false,\"ea",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "arm",
+        "live"
+      ]
+    },
+    {
+      "id": "arm.live.safe_not_killed",
+      "title": "NEGATIVE: unlisted safe EXE must survive Arm",
+      "suite": "arm",
+      "category": "negative",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": true,
+      "actual": true,
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Launch calt_test_safe.exe",
+          "expected": "alive",
+          "actual": "True",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "Wait enforcer tick",
+          "expected": "not killed",
+          "actual": "alive",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "arm",
+        "live",
+        "negative"
+      ]
+    },
+    {
+      "id": "arm.live.block_target_killed",
+      "title": "Arm ON kills listed fixture target",
+      "suite": "arm",
+      "category": "positive",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": false,
+      "actual": false,
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Launch calt_test_block_target.exe",
+          "expected": "listed",
+          "actual": "launched",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "Wait enforcer tick",
+          "expected": "killed",
+          "actual": "killed",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "arm",
+        "live"
+      ]
+    },
+    {
+      "id": "arm.live.disarm",
+      "title": "Arm live: disarm (clear lock_mode)",
+      "suite": "arm",
+      "category": "positive",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": "ok",
+      "actual": "{\"ok\":true,\"id\":\"4299445b-a90b-4bf9-aeda-ebbf98a14db0\",\"gateway_seq\":3691,\"as_of\":\"2026-09-14T00:31:26\",\"softland_enabled\":false,\"free_until\":null,\"incubation_until\":null,\"reward_day_active\":false,\"ea",
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "arm.set hard_block_armed=false lock_mode=none",
+          "expected": "ok",
+          "actual": "{\"ok\":true,\"id\":\"4299445b-a90b-4bf9-aeda-ebbf98a14db0\",\"gateway_seq\":3691,\"as_of\":\"2026-09-14T00:31:26\",\"softland_enable",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "arm",
+        "live"
+      ]
+    },
+    {
+      "id": "arm.live.disarmed_no_kill",
+      "title": "NEGATIVE: Arm OFF must not kill listed EXE",
+      "suite": "arm",
+      "category": "negative",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": true,
+      "actual": true,
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Disarm",
+          "expected": "disarmed",
+          "actual": "ok",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "Respawn listed target",
+          "expected": "stays alive",
+          "actual": "True",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "arm",
+        "live",
+        "negative"
+      ]
+    },
+    {
+      "id": "arm.live.wrong_password_no_disarm",
+      "title": "NEGATIVE: wrong unlock password must not disarm",
+      "suite": "arm",
+      "category": "negative",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": "reject or stay armed",
+      "actual": {
+        "gateway_ok": true,
+        "out": "{\"ok\":false,\"id\":\"9c779846-7c14-463c-9b4f-5333d60e6e91\",\"error\":\"unlock_failed\"}",
+        "hard_block_armed": true
+      },
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Arm ON with lock_mode=password",
+          "expected": "armed",
+          "actual": "armed",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "arm.set disarm with wrong provided_unlock",
+          "expected": "reject/stay armed",
+          "actual": "ok=True armed=True",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "arm",
+        "live",
+        "negative",
+        "unlock"
+      ]
+    },
+    {
+      "id": "ui.route._",
+      "title": "UI home (index.html)",
+      "suite": "ui",
+      "category": "positive",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": "200 html shell",
+      "actual": {
+        "status": 200,
+        "sample": "\n  <!DOCTYPE html>\n  <html lang=\"en\">\n    <head>\n      <meta charset=\"UTF-8\" />\n      <meta name=\"viewport\" content=\"wid"
+      },
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "HTTP GET http://127.0.0.1:4177/",
+          "expected": "200 + html",
+          "actual": "status=200 bytes~532",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "Note target hash route /",
+          "expected": "reachable via SPA",
+          "actual": "/",
+          "ok": true
+        }
+      ],
+      "screenshots": [
+        "C:\\Users\\Lenovo\\Desktop\\Cognitive-Aware Learning Tutor\\docs\\superpowers\\exports\\focus-qa-artifacts\\screenshots\\ui.route.__pass.png"
+      ],
+      "tags": [
+        "ui",
+        "smoke"
+      ]
+    },
+    {
+      "id": "ui.route._#_productivity_tab_home",
+      "title": "UI productivity home hash",
+      "suite": "ui",
+      "category": "positive",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": "200 html shell",
+      "actual": {
+        "status": 200,
+        "sample": "\n  <!DOCTYPE html>\n  <html lang=\"en\">\n    <head>\n      <meta charset=\"UTF-8\" />\n      <meta name=\"viewport\" content=\"wid"
+      },
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "HTTP GET http://127.0.0.1:4177/",
+          "expected": "200 + html",
+          "actual": "status=200 bytes~532",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "Note target hash route /#/productivity?tab=home",
+          "expected": "reachable via SPA",
+          "actual": "/#/productivity?tab=home",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "ui",
+        "smoke"
+      ]
+    },
+    {
+      "id": "ui.route._#_productivity_tab_settings",
+      "title": "UI settings hash",
+      "suite": "ui",
+      "category": "positive",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": "200 html shell",
+      "actual": {
+        "status": 200,
+        "sample": "\n  <!DOCTYPE html>\n  <html lang=\"en\">\n    <head>\n      <meta charset=\"UTF-8\" />\n      <meta name=\"viewport\" content=\"wid"
+      },
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "HTTP GET http://127.0.0.1:4177/",
+          "expected": "200 + html",
+          "actual": "status=200 bytes~532",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "Note target hash route /#/productivity?tab=settings",
+          "expected": "reachable via SPA",
+          "actual": "/#/productivity?tab=settings",
+          "ok": true
+        }
+      ],
+      "screenshots": [
+        "C:\\Users\\Lenovo\\Desktop\\Cognitive-Aware Learning Tutor\\docs\\superpowers\\exports\\focus-qa-artifacts\\screenshots\\ui.route.___productivity_tab_settings_pass.png"
+      ],
+      "tags": [
+        "ui",
+        "smoke"
+      ]
+    },
+    {
+      "id": "ui.route._#_productivity_tab_blocker",
+      "title": "UI blocker hash",
+      "suite": "ui",
+      "category": "positive",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": "200 html shell",
+      "actual": {
+        "status": 200,
+        "sample": "\n  <!DOCTYPE html>\n  <html lang=\"en\">\n    <head>\n      <meta charset=\"UTF-8\" />\n      <meta name=\"viewport\" content=\"wid"
+      },
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "HTTP GET http://127.0.0.1:4177/",
+          "expected": "200 + html",
+          "actual": "status=200 bytes~532",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "Note target hash route /#/productivity?tab=blocker",
+          "expected": "reachable via SPA",
+          "actual": "/#/productivity?tab=blocker",
+          "ok": true
+        }
+      ],
+      "screenshots": [
+        "C:\\Users\\Lenovo\\Desktop\\Cognitive-Aware Learning Tutor\\docs\\superpowers\\exports\\focus-qa-artifacts\\screenshots\\ui.route.___productivity_tab_blocker_pass.png"
+      ],
+      "tags": [
+        "ui",
+        "smoke"
+      ]
+    },
+    {
+      "id": "ui.route._#_productivity_tab_focus",
+      "title": "UI focus hash",
+      "suite": "ui",
+      "category": "positive",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": "200 html shell",
+      "actual": {
+        "status": 200,
+        "sample": "\n  <!DOCTYPE html>\n  <html lang=\"en\">\n    <head>\n      <meta charset=\"UTF-8\" />\n      <meta name=\"viewport\" content=\"wid"
+      },
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "HTTP GET http://127.0.0.1:4177/",
+          "expected": "200 + html",
+          "actual": "status=200 bytes~532",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "Note target hash route /#/productivity?tab=focus",
+          "expected": "reachable via SPA",
+          "actual": "/#/productivity?tab=focus",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "ui",
+        "smoke"
+      ]
+    },
+    {
+      "id": "ui.route._#_journal",
+      "title": "UI journal hash",
+      "suite": "ui",
+      "category": "positive",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": "200 html shell",
+      "actual": {
+        "status": 200,
+        "sample": "\n  <!DOCTYPE html>\n  <html lang=\"en\">\n    <head>\n      <meta charset=\"UTF-8\" />\n      <meta name=\"viewport\" content=\"wid"
+      },
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "HTTP GET http://127.0.0.1:4177/",
+          "expected": "200 + html",
+          "actual": "status=200 bytes~532",
+          "ok": true
+        },
+        {
+          "n": 2,
+          "action": "Note target hash route /#/journal",
+          "expected": "reachable via SPA",
+          "actual": "/#/journal",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "ui",
+        "smoke"
+      ]
+    },
+    {
+      "id": "ui.neg.missing_asset_404",
+      "title": "NEGATIVE: missing static asset returns 404",
+      "suite": "ui",
+      "category": "negative",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": "404",
+      "actual": "404",
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "GET http://127.0.0.1:4177/this-asset-should-not-exist-focus-qa.js",
+          "expected": "404",
+          "actual": "404",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "ui",
+        "negative"
+      ]
+    },
+    {
+      "id": "restore.snapshot",
+      "title": "Restore SoftLand/Arm snapshot",
+      "suite": "gateway",
+      "category": "positive",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": "restored",
+      "actual": "ok",
+      "detail": "SoftLand/Arm snapshot restored",
+      "steps": [],
+      "screenshots": [],
+      "tags": []
+    },
+    {
+      "id": "sync.post.status_vs_effective_arm",
+      "title": "Status armed matches effective Arm",
+      "suite": "sync",
+      "category": "positive",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": false,
+      "actual": false,
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Read enforcer_status.json armed",
+          "expected": "False",
+          "actual": "False",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "sync"
+      ]
+    },
+    {
+      "id": "sync.post.sqlite_vs_json_arm",
+      "title": "SQLite Arm mirrors JSON",
+      "suite": "sync",
+      "category": "positive",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": {
+        "json_armed": false,
+        "json_exes": []
+      },
+      "actual": {
+        "sql_armed": false,
+        "sql_exes": []
+      },
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Compare enforcer_runtime vs policy JSON",
+          "expected": "match",
+          "actual": "match",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "sync"
+      ]
+    },
+    {
+      "id": "sync.post.sqlite_vs_json_softland",
+      "title": "SQLite SoftLand enabled matches JSON",
+      "suite": "sync",
+      "category": "positive",
+      "ok": true,
+      "status": "PASS",
+      "error_code": "OK",
+      "expected": false,
+      "actual": false,
+      "detail": "",
+      "steps": [
+        {
+          "n": 1,
+          "action": "Compare SoftLand enabled",
+          "expected": "False",
+          "actual": "False",
+          "ok": true
+        }
+      ],
+      "screenshots": [],
+      "tags": [
+        "sync"
+      ]
+    }
+  ]
+}

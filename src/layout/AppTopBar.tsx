@@ -1,6 +1,6 @@
 import { useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { useLocation, useNavigate } from "react-router";
-import { BookOpen, CircleUserRound, Shield } from "lucide-react";
+import { CircleUserRound, Shield } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { ThemeToggle } from "../components/theme/ThemeToggle";
 import { useAuth } from "../context/AuthContext";
@@ -17,20 +17,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "../app/components/ui/dropdown-menu";
-
-/** Study FE (Vite) preferred; API-only hosts can still open docs later. */
-const STUDY_SITE_URL = "http://127.0.0.1:5173/";
-
-function openStudyInBrowser() {
-  const w = window as Window & {
-    chrome?: { webview?: { postMessage: (m: unknown) => void } };
-  };
-  if (w.chrome?.webview?.postMessage) {
-    w.chrome.webview.postMessage({ type: "open_external", v: 1, url: STUDY_SITE_URL });
-    return;
-  }
-  window.open(STUDY_SITE_URL, "_blank", "noopener,noreferrer");
-}
+import { matchLongestPrefix, PAGE_SUBTITLES, resolvePageTitle } from "./pageTitles";
 
 const LONG_PRESS_MS = 600;
 const ROCKET_COLOR = "#fb923c";
@@ -59,112 +46,17 @@ function FlatRocket({ color, className }: { color: string; className?: string })
   );
 }
 
-/** Exact + nested route titles. Longest prefix wins for child paths. */
-const PAGE_TITLES: Record<string, string> = {
-  "/": "Study Hub",
-  "/admin": "Admin",
-  "/profile": "Profile",
-  "/settings": "Settings",
-  "/settings/ai": "AI Control",
-  "/settings/theme": "Theme",
-  "/settings/plugins": "Plugins",
-  "/settings/features": "Feature Studio",
-  "/math-tutor": "Math Tutor",
-  "/math-tutor/reports": "Math Reports",
-  "/math-tutor/recognize-test": "Math Recognize",
-  "/math-tutor/train": "Math Train",
-  "/gre-vocab": "GRE Vocabulary",
-  "/gre-vocab/add-words": "Add Words",
-  "/gre-vocab/read": "Vocab Read",
-  "/gre-vocab/cycle": "Vocab Cycle",
-  "/lecture-notes": "Lecture Notes",
-  "/review": "Study Loop",
-  "/study-room": "Study Room",
-  "/journal": "Journal",
-  "/productivity": "Calendar",
-  "/productivity/focus": "Focus",
-  "/life-tracker": "Life Tracker",
-  "/nutrition": "Nutrition",
-  "/focus/calibrate": "Focus Calibrate",
-};
-
-const PAGE_SUBTITLES: Record<string, string> = {
-  "/": "Your daily learning home",
-  "/gre-vocab": "Adaptive vocabulary practice",
-  "/math-tutor": "Topics, drills, and progress",
-  "/productivity": "Plan, track, and review focus",
-  "/productivity/focus": "Gate control and native enforcer",
-  "/lecture-notes": "Capture and study lectures",
-  "/review": "Vocab · lecture · math · decks · FSRS",
-  "/settings": "Appearance, AI, and plugins",
-  "/settings/theme": "Preview and switch look",
-  "/journal": "Reflect and track mood",
-  "/life-tracker": "Habits and life score",
-  "/nutrition": "Macros and meals",
-};
-
-function matchLongestPrefix(pathname: string, table: Record<string, string>): string | null {
-  let best: string | null = null;
-  let bestLen = -1;
-  for (const [path, label] of Object.entries(table)) {
-    if (path === "/") {
-      if (pathname === "/" && path.length > bestLen) {
-        best = label;
-        bestLen = path.length;
-      }
-      continue;
-    }
-    if ((pathname === path || pathname.startsWith(`${path}/`)) && path.length > bestLen) {
-      best = label;
-      bestLen = path.length;
-    }
-  }
-  return best;
-}
-
-function humanizeSegment(segment: string): string {
-  return segment
-    .split("-")
-    .filter(Boolean)
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(" ");
-}
-
-function resolvePageTitle(
-  pathname: string,
-  navItems: { to: string; label: string }[]
-): string {
-  const fromMap = matchLongestPrefix(pathname, PAGE_TITLES);
-  if (fromMap) return fromMap;
-
-  let bestLabel: string | null = null;
-  let bestLen = -1;
-  for (const item of navItems) {
-    const path = item.to.startsWith("/") ? item.to : `/${item.to}`;
-    if (path === "/") continue;
-    if ((pathname === path || pathname.startsWith(`${path}/`)) && path.length > bestLen) {
-      bestLabel = item.label;
-      bestLen = path.length;
-    }
-  }
-  if (bestLabel) return bestLabel;
-
-  const segments = pathname.split("/").filter(Boolean);
-  if (segments.length === 0) return "Study Hub";
-  return humanizeSegment(segments[segments.length - 1] ?? "Study Companion");
-}
-
-/** Plan: top bar = profile, theme, pomodoro only. EEG / mirror live on dashboard & plugin pages. */
+/** Plan: Study top bar = profile, theme, pomodoro. Focus shell moves chrome into the sidebar. */
 export function AppTopBar() {
   const nav = useNavigate();
   const { pathname } = useLocation();
   const { user, isAuthenticated, isAdmin } = useAuth();
   const plugins = usePluginsOptional();
+  const focusShell = isFocusDesktopShell();
   const focusMirrorOn =
     Boolean(plugins?.isLoaded) && (plugins?.enabledIds.includes("focus-mirror") ?? false);
   const title = resolvePageTitle(pathname, plugins?.getNavItems() ?? []);
-  const subtitle =
-    matchLongestPrefix(pathname, PAGE_SUBTITLES) ?? "Cognitive-aware learning hub";
+  const subtitle = matchLongestPrefix(pathname, PAGE_SUBTITLES) ?? "Cognitive-aware learning hub";
 
   const barRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLDivElement>(null);
@@ -174,13 +66,16 @@ export function AppTopBar() {
   const [rocketPass, setRocketPass] = useState(0);
   const [flight, setFlight] = useState<{ fromX: number; toX: number; y: number } | null>(null);
 
+  /* Focus: page title lives in the sidebar brand row. */
+  if (focusShell) return null;
+
   const measureFlight = () => {
     const bar = barRef.current;
-    const title = titleRef.current;
+    const titleEl = titleRef.current;
     const timer = timerRef.current;
-    if (!bar || !title || !timer) return null;
+    if (!bar || !titleEl || !timer) return null;
     const br = bar.getBoundingClientRect();
-    const tr = title.getBoundingClientRect();
+    const tr = titleEl.getBoundingClientRect();
     const tm = timer.getBoundingClientRect();
     const rocketW = 28;
     const fromX = Math.max(0, tr.right - br.left - 2);
@@ -264,21 +159,12 @@ export function AppTopBar() {
           <h1 className="topbar-title-card__heading" data-text={title}>
             {title}
           </h1>
-          <p className="topbar-title-card__sub hidden sm:block">{subtitle}</p>
+          {subtitle ? (
+            <p className="topbar-title-card__sub hidden sm:block">{subtitle}</p>
+          ) : null}
         </div>
 
         <div className="relative z-10 flex items-center gap-3">
-          {isFocusDesktopShell() && (
-            <button
-              type="button"
-              onClick={openStudyInBrowser}
-              className="gloss-dock-btn inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium text-foreground/90 hover:scale-[1.02] transition-transform"
-              title="Open CALT Study in your browser"
-            >
-              <BookOpen className="h-3.5 w-3.5" aria-hidden />
-              <span className="hidden sm:inline">Open Study</span>
-            </button>
-          )}
           <DashboardChromeDock />
           {focusMirrorOn && <FaceTrackerDock />}
           <div ref={timerRef} className="inline-flex">

@@ -38,7 +38,7 @@ Quiz mandate is **Done** (regressions only). EEG soft-fail is **Done** (flash ne
 
 ---
 
-**Focus FE/BE (clean tree):** [calt-focus/](calt-focus/README.md) → `frontend/` · `backend/` · `extensions/`. Shared React still under `src/` (listed in frontend README). Do not treat Study `:8000` as SoftLand brain.
+**Focus product (canonical):** sibling repo `C:\Users\Lenovo\Desktop\calt-focus` (own git). This monorepo’s [calt-focus/MOVED.md](calt-focus/MOVED.md) is legacy. Study `:8000` is not SoftLand brain.
 
 ## Architecture (locked)
 

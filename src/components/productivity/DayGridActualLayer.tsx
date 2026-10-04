@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, type RefObject } from "react";
 import { format } from "date-fns";
 import type { HourSlice, SessionSegment } from "./hourSliceTypes";
-import { HourCell, HourMinuteScale } from "./HourCell";
+import { HourCell } from "./HourCell";
 import { slicesForDay } from "./HourSliceProvider";
 import { PlanHourSegBlock } from "./PlanHourSegBlock";
 import { segsByHour, type PlanHourSeg } from "./planHourSegments";
@@ -26,15 +26,60 @@ function measureDaySlots(wrap: HTMLElement): {
   hours: SlotGeom[];
   ruler: RulerGeom;
 } | null {
+  const wrapR = wrap.getBoundingClientRect();
+
+  // Prefer unified day track (single coordinate space).
+  // Geometry is relative to the track body (positioning containing block).
+  const trackBody = wrap.querySelector("[data-day-track-body]") as HTMLElement | null;
+  if (trackBody) {
+    const bodyR = trackBody.getBoundingClientRect();
+    const rows = Array.from(trackBody.querySelectorAll("[data-day-track-row]")) as HTMLElement[];
+    const column: SlotGeom = {
+      top: 0,
+      left: 0,
+      width: bodyR.width,
+      height: bodyR.height,
+    };
+    const ruler: RulerGeom = {
+      top: 0,
+      left: 0,
+      width: column.width,
+    };
+    if (rows.length === 0) {
+      const h = column.height / 24;
+      return {
+        column,
+        ruler,
+        hours: Array.from({ length: 24 }, (_, i) => ({
+          top: i * h,
+          height: h,
+          left: 0,
+          width: column.width,
+        })),
+      };
+    }
+    return {
+      column,
+      ruler,
+      hours: rows.map((row) => {
+        const r = row.getBoundingClientRect();
+        return {
+          top: r.top - bodyR.top,
+          height: r.height,
+          left: 0,
+          width: column.width,
+        };
+      }),
+    };
+  }
+
   const daySlot = wrap.querySelector(".rbc-time-content .rbc-day-slot") as HTMLElement | null;
   const content = wrap.querySelector(".rbc-time-content") as HTMLElement | null;
   if (!daySlot || !content) return null;
 
-  const wrapR = wrap.getBoundingClientRect();
   const dayR = daySlot.getBoundingClientRect();
   const contentR = content.getBoundingClientRect();
 
-  // Sticky top axis: pinned to the visible top of the time grid (day column only).
   const ruler: RulerGeom = {
     top: Math.max(0, contentR.top - wrapR.top),
     left: dayR.left - wrapR.left,
@@ -50,7 +95,7 @@ function measureDaySlots(wrap: HTMLElement): {
 
   const groups = Array.from(daySlot.querySelectorAll(".rbc-timeslot-group")) as HTMLElement[];
   if (groups.length === 0) {
-    const h = dayR.height / 24;
+    const h = column.height / 24;
     return {
       column,
       ruler,
@@ -92,9 +137,36 @@ export function DayGridActualLayer({
   const daySlices = useMemo(() => slicesForDay(slices, dayKey), [slices, dayKey]);
   const byHour = useMemo(() => {
     const m = new Map<number, HourSlice>();
-    for (const s of daySlices) m.set(s.hour, s);
+    const todayKey = format(new Date(), "yyyy-MM-dd");
+    const viewingToday = dayKey === todayKey;
+    const now = new Date();
+    // Minutes since local midnight — used to hide *future* tracked chips only.
+    const nowMinOfDay = viewingToday ? now.getHours() * 60 + now.getMinutes() : null;
+
+    for (const s of daySlices) {
+      if (nowMinOfDay == null) {
+        m.set(s.hour, s);
+        continue;
+      }
+      const hourStart = s.hour * 60;
+      // Entirely after "now" — skip (don't paint into the future).
+      if (hourStart >= nowMinOfDay) continue;
+      const kept = s.segments
+        .map((seg) => {
+          const segStart = hourStart + seg.start_min;
+          const segEnd = hourStart + seg.end_min;
+          if (segStart >= nowMinOfDay) return null;
+          if (segEnd <= nowMinOfDay) return seg;
+          // Clip the open end of the current hour to the clock.
+          const clippedEnd = Math.max(seg.start_min + 1, nowMinOfDay - hourStart);
+          return { ...seg, end_min: Math.min(60, clippedEnd) };
+        })
+        .filter((seg): seg is SessionSegment => seg != null);
+      if (!kept.length) continue;
+      m.set(s.hour, kept.length === s.segments.length ? s : { ...s, segments: kept });
+    }
     return m;
-  }, [daySlices]);
+  }, [daySlices, dayKey]);
   const plansByHour = useMemo(() => segsByHour(planSegs), [planSegs]);
 
   const [geom, setGeom] = useState<{
@@ -159,7 +231,7 @@ export function DayGridActualLayer({
 
   return (
     <div className="day-grid-actual-layer" aria-hidden={false}>
-      {/* Full-height vertical rails at 15 / 30 / 45 — aligned with top minute axis */}
+      {/* Vertical minute rails only — top 0–60 axis lives in planner-cal-minute-bar */}
       <div
         className="day-grid-minute-rails"
         style={{
@@ -173,22 +245,6 @@ export function DayGridActualLayer({
         }}
         aria-hidden
       />
-
-      {/* Persistent 0–60 minute axis — same left/width as day column so block edges align */}
-      <div
-        className="day-grid-minute-ruler"
-        style={{
-          position: "absolute",
-          top: geom.ruler.top,
-          left: geom.ruler.left,
-          width: geom.ruler.width,
-          zIndex: 12,
-          pointerEvents: "none",
-        }}
-        title="Minutes within each hour (0–60). Plan and activity blocks map left→right to start/end minutes."
-      >
-        <HourMinuteScale />
-      </div>
 
       {Array.from({ length: hourCount }, (_, hour) => {
         const slice = byHour.get(hour);

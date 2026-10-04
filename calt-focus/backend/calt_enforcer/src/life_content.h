@@ -10,6 +10,9 @@ std::string LifeJournalSummaryJson(const std::string& dayYmd, int userId = 1);
 std::string LifeJournalLogJson(int limit, int userId = 1);
 bool LifeJournalUpsert(const std::string& payloadJson, int userId, std::string* outEntryJson);
 
+/** journal_today.json + journal_log.json for Focus FE reads. */
+bool PublishJournalMirrors(const std::wstring& behaviorDir, int userId = 1);
+
 // --- Bible progress ---
 /** Ensure today's row; import legacy day_*.json once if SQLite empty. */
 void LifeBibleEnsureToday(int userId, const std::wstring& bibleDataDir);
@@ -32,4 +35,23 @@ bool LifeBibleDevotionDone(int userId, const std::string& slot, bool done,
 bool LifeBibleDevotionNotes(int userId, const std::string& slot, const std::string& notes,
                             const std::wstring& bibleDataDir, std::string* outJson);
 
+/** Set today's chapter for a slot and update the progress cursor. */
+bool LifeBibleDevotionAssign(int userId, const std::string& slot, const std::string& book,
+                             int chapter, const std::wstring& bibleDataDir, std::string* outJson);
+
+/** Step prev/next for a slot (delta -1 or +1). */
+bool LifeBibleDevotionStep(int userId, const std::string& slot, int delta,
+                           const std::wstring& bibleDataDir, std::string* outJson);
+
+/** Save or reset editable prayer text for a slot. */
+bool LifeBibleDevotionPrayer(int userId, const std::string& slot, const std::string& text,
+                             bool reset, const std::wstring& bibleDataDir, std::string* outJson);
+
 std::string LifeBibleDevotionTodayJson(int userId, const std::wstring& bibleDataDir);
+
+/**
+ * Publish SQLite devotion SoT → behavior/bible_devotion.json for Focus FE reads
+ * (calt-data.app) — no named-pipe round-trip for load.
+ */
+bool PublishBibleDevotionMirror(const std::wstring& behaviorDir, const std::wstring& bibleDataDir,
+                                int userId = 1);

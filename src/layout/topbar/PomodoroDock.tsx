@@ -1,6 +1,4 @@
-import { useEffect, useRef } from "react";
 import { Timer, Play, Pause, RotateCcw } from "lucide-react";
-import { useStudySession } from "../../context/StudySessionContext";
 import { usePomodoro } from "../../context/PomodoroContext";
 import { Button } from "../../app/components/ui/button";
 import {
@@ -9,8 +7,18 @@ import {
   PopoverTrigger,
 } from "../../app/components/ui/popover";
 
-export function PomodoroDock() {
-  const { handleSessionComplete } = useStudySession();
+export function PomodoroDock({
+  align = "end",
+  side = "bottom",
+  compact = false,
+}: {
+  align?: "start" | "center" | "end";
+  side?: "top" | "right" | "bottom" | "left";
+  /** Icon-only trigger for narrow rails (collapsed Focus sidebar). */
+  compact?: boolean;
+} = {}) {
+  // Do not import StudySession here — Focus lean bundle must not pull math/EEG.
+  // Study App wires pomodoro → session complete in StudySessionProvider.
   const {
     mode,
     isRunning,
@@ -22,14 +30,6 @@ export function PomodoroDock() {
     progress,
   } = usePomodoro();
 
-  const prevCountRef = useRef(sessionCount);
-  useEffect(() => {
-    if (sessionCount > prevCountRef.current) {
-      handleSessionComplete();
-      prevCountRef.current = sessionCount;
-    }
-  }, [sessionCount, handleSessionComplete]);
-
   const onToggle = () => {
     if (!isRunning && timeLeft <= 1) {
       reset();
@@ -38,23 +38,26 @@ export function PomodoroDock() {
     toggle();
   };
 
-  const onCompleteFocus = () => {
-    handleSessionComplete();
-  };
-
   return (
     <Popover>
       <PopoverTrigger asChild>
         <button
           type="button"
-          className="gloss-dock-btn flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-medium"
-          aria-label="Pomodoro timer"
+          className={
+            compact
+              ? "gloss-dock-btn flex h-9 w-9 items-center justify-center rounded-xl p-0"
+              : "gloss-dock-btn flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-medium"
+          }
+          aria-label={`Pomodoro timer ${formatTime(timeLeft)}`}
+          title={formatTime(timeLeft)}
         >
-          <Timer className={`w-4 h-4 ${mode === "focus" ? "text-orange-500" : "text-sky-500"}`} />
-          <span className="font-mono tabular-nums">{formatTime(timeLeft)}</span>
+          <Timer className={`w-4 h-4 shrink-0 ${mode === "focus" ? "text-orange-500" : "text-sky-500"}`} />
+          {!compact ? (
+            <span className="font-mono tabular-nums">{formatTime(timeLeft)}</span>
+          ) : null}
         </button>
       </PopoverTrigger>
-      <PopoverContent className="gloss-popover w-72 p-4" align="end" sideOffset={8}>
+      <PopoverContent className="gloss-popover w-72 p-4" align={align} side={side} sideOffset={8}>
         <div className="flex flex-col items-center gap-3">
           <p className="text-xs text-muted-foreground w-full capitalize">
             {mode === "focus" ? "Focus session" : "Break"}
@@ -75,11 +78,6 @@ export function PomodoroDock() {
             <Button size="sm" variant="outline" onClick={reset}>
               <RotateCcw className="w-4 h-4" />
             </Button>
-            {mode === "focus" && (
-              <Button size="sm" variant="ghost" className="text-xs" onClick={onCompleteFocus}>
-                Done
-              </Button>
-            )}
           </div>
           <p className="text-xs text-muted-foreground">Focus sessions completed: {sessionCount}</p>
         </div>

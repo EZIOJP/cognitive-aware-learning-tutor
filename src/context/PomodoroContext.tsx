@@ -110,6 +110,10 @@ export function PomodoroProvider({ children }: { children: ReactNode }) {
   return <PomodoroContext.Provider value={value}>{children}</PomodoroContext.Provider>;
 }
 
+export function usePomodoroOptional() {
+  return useContext(PomodoroContext);
+}
+
 export function usePomodoro() {
   const ctx = useContext(PomodoroContext);
   if (!ctx) throw new Error("usePomodoro must be used within PomodoroProvider");

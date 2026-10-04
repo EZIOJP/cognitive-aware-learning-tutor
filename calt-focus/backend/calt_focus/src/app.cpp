@@ -6,10 +6,14 @@
 #include "paths.h"
 #include "status_badge.h"
 
+#include <dwmapi.h>
 #include <objbase.h>
 #include <shellapi.h>
+#include <tlhelp32.h>
 
 #include <cstring>
+#include <fstream>
+#include <sstream>
 #include <string>
 
 namespace {
@@ -17,6 +21,15 @@ namespace {
 constexpr wchar_t kMainClass[] = L"CALTFocusMain";
 constexpr wchar_t kMsgClass[] = L"CALTFocusMsg";
 constexpr UINT kTipTimerId = 77;
+constexpr UINT WM_FOCUS_SHELL = WM_APP + 55;
+constexpr WPARAM SHELL_RELOAD_UI = 1;
+constexpr WPARAM SHELL_ENSURE_TRAY = 2;
+constexpr WPARAM SHELL_QUIT = 3;
+constexpr WPARAM SHELL_OPEN_SETTINGS = 4;
+constexpr WPARAM SHELL_POPUP_TRAY = 5;
+constexpr WPARAM SHELL_RESTART_ENFORCER = 6;
+
+UINT g_taskbar_created = 0;
 
 bool AlreadyRunning() {
   HANDLE mutex = CreateMutexW(nullptr, FALSE, L"Local\\CALT.FocusShell.A");
@@ -59,9 +72,23 @@ int FocusApp::Run(HINSTANCE instance) {
   CreateMessageWindow(instance);
   CreateMainWindow(instance);
 
+  if (!g_taskbar_created) {
+    g_taskbar_created = RegisterWindowMessageW(L"TaskbarCreated");
+  }
+
+  // Tray must use a real top-level HWND — HWND_MESSAGE often fails on Win11.
   tray_ = std::make_unique<TrayIcon>();
   HICON icon = MakeDotIcon();
-  tray_->Create(msg_hwnd_, icon, L"CALT Focus");
+  if (!tray_->Create(main_hwnd_, icon, L"CALT Focus")) {
+    MessageBoxW(
+        main_hwnd_,
+        L"Could not add the system tray icon.\n\n"
+        L"Windows 11 often hides new icons — click the ^ chevron near the clock "
+        L"and pin \"CALT Focus\".\n\n"
+        L"Use the Focus menu (•••) in the top bar for Reload / Settings / Quit.",
+        L"CALT Focus",
+        MB_OK | MB_ICONWARNING);
+  }
   tray_->SetOnRun([this]() { RunStack(); });
   tray_->SetOnStartStack([this]() { StartWebStack(); });
   tray_->SetOnStartApi([this]() { StartApiOnly(); });
@@ -75,7 +102,14 @@ int FocusApp::Run(HINSTANCE instance) {
   tray_->SetOnUpdateUi([this]() { UpdateUi(); });
   tray_->SetOnUpdateStack([this]() { UpdateStack(); });
   tray_->SetOnApplyUpdate([this]() { ApplyPendingUpdate(); });
+  tray_->SetOnRestartEnforcer([this]() { RestartEnforcer(); });
   tray_->SetOnQuit([this]() { Quit(); });
+
+  if (tray_ && tray_->IsAdded()) {
+    tray_->ShowBalloon(
+        L"CALT Focus",
+        L"Running in the system tray. Win11: click ^ near the clock if the icon is hidden.");
+  }
 
   webview_ = std::make_unique<WebViewHost>();
   pending_url_ = CalendarUrl();
@@ -154,6 +188,30 @@ void FocusApp::CreateMainWindow(HINSTANCE instance) {
       0, kMainClass, L"CALT Focus — Productivity", WS_OVERLAPPEDWINDOW,
       CW_USEDEFAULT, CW_USEDEFAULT, 1100, 740,
       nullptr, nullptr, instance, this);
+
+  // Match Focus dark chrome (#050505) — kills the default light Windows caption.
+  if (main_hwnd_) {
+#ifndef DWMWA_USE_IMMERSIVE_DARK_MODE
+#define DWMWA_USE_IMMERSIVE_DARK_MODE 20
+#endif
+#ifndef DWMWA_BORDER_COLOR
+#define DWMWA_BORDER_COLOR 34
+#endif
+#ifndef DWMWA_CAPTION_COLOR
+#define DWMWA_CAPTION_COLOR 35
+#endif
+#ifndef DWMWA_TEXT_COLOR
+#define DWMWA_TEXT_COLOR 36
+#endif
+    BOOL dark = TRUE;
+    DwmSetWindowAttribute(main_hwnd_, DWMWA_USE_IMMERSIVE_DARK_MODE, &dark, sizeof(dark));
+    const COLORREF caption = RGB(0x05, 0x05, 0x05);
+    const COLORREF border = RGB(0x05, 0x05, 0x05);
+    const COLORREF text = RGB(0xe8, 0xea, 0xed);
+    DwmSetWindowAttribute(main_hwnd_, DWMWA_CAPTION_COLOR, &caption, sizeof(caption));
+    DwmSetWindowAttribute(main_hwnd_, DWMWA_BORDER_COLOR, &border, sizeof(border));
+    DwmSetWindowAttribute(main_hwnd_, DWMWA_TEXT_COLOR, &text, sizeof(text));
+  }
 }
 
 void FocusApp::CreateMessageWindow(HINSTANCE instance) {
@@ -165,8 +223,8 @@ void FocusApp::CreateMessageWindow(HINSTANCE instance) {
   RegisterClassExW(&wc);
 
   msg_hwnd_ = CreateWindowExW(
-      0, kMsgClass, L"CALT Focus Tray", 0,
-      0, 0, 0, 0, HWND_MESSAGE, nullptr, instance, this);
+      0, kMsgClass, L"CALT Focus Tray Timer", WS_POPUP,
+      0, 0, 0, 0, nullptr, nullptr, instance, this);
 }
 
 LRESULT CALLBACK FocusApp::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
@@ -185,15 +243,53 @@ LRESULT CALLBACK FocusApp::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lP
 }
 
 LRESULT FocusApp::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
-  if (hwnd == msg_hwnd_ && tray_) {
+  // Tray is bound to main_hwnd_ (not the message-only window).
+  if (hwnd == main_hwnd_ && tray_) {
     if (msg == TrayIcon::WM_TRAY || msg == WM_COMMAND) {
       tray_->HandleMessage(msg, wParam, lParam);
       return 0;
     }
-    if (msg == WM_TIMER && wParam == kTipTimerId) {
-      RefreshTrayTip();
-      return 0;
+  }
+  if (hwnd == msg_hwnd_ && msg == WM_TIMER && wParam == kTipTimerId) {
+    RefreshTrayTip();
+    PushStatusTick();
+    return 0;
+  }
+  if (msg == WM_FOCUS_SHELL) {
+    switch (wParam) {
+      case SHELL_RELOAD_UI:
+        ReloadUi();
+        return 0;
+      case SHELL_ENSURE_TRAY:
+        if (tray_) {
+          tray_->EnsureAdded();
+          tray_->ShowBalloon(
+              L"CALT Focus",
+              L"Tray icon refreshed. Win11: click ^ near the clock if still hidden.");
+        }
+        return 0;
+      case SHELL_QUIT:
+        Quit();
+        return 0;
+      case SHELL_OPEN_SETTINGS:
+        OpenSettings();
+        return 0;
+      case SHELL_POPUP_TRAY:
+        if (tray_) tray_->PopupMenu();
+        return 0;
+      case SHELL_RESTART_ENFORCER:
+        RestartEnforcer();
+        return 0;
+      default:
+        break;
     }
+  }
+  if (g_taskbar_created && msg == g_taskbar_created) {
+    if (tray_) {
+      tray_->Destroy();
+      tray_->EnsureAdded();
+    }
+    return 0;
   }
 
   switch (msg) {
@@ -205,6 +301,10 @@ LRESULT FocusApp::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
     case WM_CLOSE:
       // Hide to tray instead of quit
       ShowWindow(main_hwnd_, SW_HIDE);
+      if (tray_) {
+        tray_->EnsureAdded();
+        tray_->ShowBalloon(L"CALT Focus", L"Still running in the tray. Right-click for menu.");
+      }
       return 0;
     case WM_DESTROY:
       if (hwnd == main_hwnd_) {
@@ -447,6 +547,107 @@ void FocusApp::EnsureEnforcer() {
   ShellExecuteW(nullptr, L"open", console.c_str(), nullptr, root.c_str(), SW_SHOWMINNOACTIVE);
 }
 
+namespace {
+
+void KillAllEnforcerProcesses() {
+  HANDLE snap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+  if (snap == INVALID_HANDLE_VALUE) return;
+  PROCESSENTRY32W pe{};
+  pe.dwSize = sizeof(pe);
+  if (Process32FirstW(snap, &pe)) {
+    do {
+      if (_wcsicmp(pe.szExeFile, L"calt_enforcer.exe") == 0) {
+        HANDLE h = OpenProcess(PROCESS_TERMINATE, FALSE, pe.th32ProcessID);
+        if (h) {
+          TerminateProcess(h, 1);
+          CloseHandle(h);
+        }
+      }
+    } while (Process32NextW(snap, &pe));
+  }
+  CloseHandle(snap);
+}
+
+bool StartEnforcerService() {
+  SC_HANDLE scm = OpenSCManagerW(nullptr, nullptr, SC_MANAGER_CONNECT);
+  if (!scm) return false;
+  SC_HANDLE svc = OpenServiceW(scm, L"CALTEnforcer", SERVICE_QUERY_STATUS | SERVICE_START | SERVICE_STOP);
+  if (!svc) {
+    CloseServiceHandle(scm);
+    return false;
+  }
+  SERVICE_STATUS st{};
+  if (QueryServiceStatus(svc, &st) && st.dwCurrentState == SERVICE_RUNNING) {
+    ControlService(svc, SERVICE_CONTROL_STOP, &st);
+    for (int i = 0; i < 40; ++i) {
+      Sleep(100);
+      if (!QueryServiceStatus(svc, &st) || st.dwCurrentState == SERVICE_STOPPED) break;
+    }
+  }
+  const BOOL started = StartServiceW(svc, 0, nullptr);
+  CloseServiceHandle(svc);
+  CloseServiceHandle(scm);
+  return started == TRUE;
+}
+
+}  // namespace
+
+void FocusApp::RestartEnforcer() {
+  if (tray_) {
+    tray_->ShowBalloon(L"CALT Focus", L"Restarting enforcer (desktop tracker)…");
+  }
+
+  // Prefer graceful service stop; then force-kill any leftover console instance.
+  SC_HANDLE scm = OpenSCManagerW(nullptr, nullptr, SC_MANAGER_CONNECT);
+  if (scm) {
+    SC_HANDLE svc = OpenServiceW(scm, L"CALTEnforcer", SERVICE_STOP | SERVICE_QUERY_STATUS);
+    if (svc) {
+      SERVICE_STATUS st{};
+      ControlService(svc, SERVICE_CONTROL_STOP, &st);
+      for (int i = 0; i < 50; ++i) {
+        Sleep(100);
+        if (!QueryServiceStatus(svc, &st) || st.dwCurrentState == SERVICE_STOPPED) break;
+      }
+      CloseServiceHandle(svc);
+    }
+    CloseServiceHandle(scm);
+  }
+  KillAllEnforcerProcesses();
+  Sleep(400);
+
+  const std::wstring lock = DataBehaviorDir() + L"\\enforcer_owner.lock";
+  DeleteFileW(lock.c_str());
+
+  bool ok = StartEnforcerService();
+  if (!ok) {
+    // ProgramData install path (service binary) or console bat.
+    const std::wstring pd =
+        std::wstring(L"C:\\ProgramData\\CALT\\enforcer\\calt_enforcer.exe");
+    if (GetFileAttributesW(pd.c_str()) != INVALID_FILE_ATTRIBUTES) {
+      ShellExecuteW(nullptr, L"open", pd.c_str(), nullptr,
+                    L"C:\\ProgramData\\CALT\\enforcer", SW_HIDE);
+      ok = true;
+    } else {
+      EnsureEnforcer();
+      ok = true;
+    }
+  }
+
+  Sleep(1500);
+  RefreshTrayTip();
+  const EnforcerBadge b = ReadEnforcerBadge();
+  if (tray_) {
+    std::wstring body = L"Enforcer: ";
+    body += b.LiveLabel();
+    body += L" · Tracker: ";
+    body += b.LiveLabel();
+    if (!ok && !b.ok) {
+      body = L"Restart attempted — still DOWN. Run install_native_enforcer.ps1 as Admin.";
+    }
+    tray_->ShowBalloon(L"CALT Focus", body.c_str());
+  }
+}
+
 void FocusApp::StartWebStack() {
   if (tray_) {
     tray_->ShowBalloon(L"CALT Focus", L"Starting API (:8000) + Frontend (:5173)…");
@@ -538,7 +739,13 @@ void FocusApp::NavigateShell(const std::wstring& url) {
   if (HasPrebuiltWebUi()) {
     // Phase 7: Calendar/Plan/Settings open without auto-starting :8000.
     if (webview_ && webview_->Ready() && EnsurePrebuiltUiReady()) {
-      webview_->Navigate(url);
+      // Same SPA document: only change the hash — full Navigate() reloads JS and feels slow.
+      const size_t hashPos = url.find(L'#');
+      if (hashPos != std::wstring::npos) {
+        webview_->NavigateHash(url.substr(hashPos));
+      } else {
+        webview_->Navigate(url);
+      }
       ShowWindow(main_hwnd_, SW_SHOW);
       SetForegroundWindow(main_hwnd_);
       return;
@@ -828,6 +1035,37 @@ void FocusApp::RefreshTrayTip() {
       tray_->ShowBalloon(L"CALT blocked an app", body.c_str());
     }
   }
+}
+
+namespace {
+
+std::string ReadUtf8File(const std::wstring& path) {
+  std::ifstream in(path.c_str(), std::ios::binary);
+  if (!in) return {};
+  std::ostringstream ss;
+  ss << in.rdbuf();
+  std::string body = ss.str();
+  // Trim BOM / whitespace so we can embed as a JSON value.
+  while (!body.empty() && (body.back() == '\n' || body.back() == '\r' || body.back() == ' ')) {
+    body.pop_back();
+  }
+  if (!body.empty() && body.front() == '{') return body;
+  return {};
+}
+
+}  // namespace
+
+void FocusApp::PushStatusTick() {
+  if (!webview_ || !webview_->Ready()) return;
+  const std::string status = ReadUtf8File(EnforcerStatusPath());
+  const std::string softland = ReadUtf8File(SoftlandPolicyPath());
+  if (status.empty() && softland.empty()) return;
+  std::string msg = "{\"type\":\"status_tick\",\"enforcer_status\":";
+  msg += status.empty() ? "null" : status;
+  msg += ",\"softland\":";
+  msg += softland.empty() ? "null" : softland;
+  msg += "}";
+  webview_->PostWebMessageJson(msg);
 }
 
 HICON FocusApp::MakeDotIcon() {

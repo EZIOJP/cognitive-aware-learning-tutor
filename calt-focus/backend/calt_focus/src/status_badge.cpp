@@ -2,6 +2,8 @@
 
 #include "paths.h"
 
+#include <windows.h>
+
 #include <fstream>
 #include <sstream>
 
@@ -20,7 +22,6 @@ bool JsonBool(const std::string& body, const char* key, bool def = false) {
   const auto t = body.find("true", colon);
   const auto f = body.find("false", colon);
   if (t != std::string::npos && (f == std::string::npos || t < f)) {
-    // ensure within ~32 chars of colon
     if (t - colon < 32) {
       return true;
     }
@@ -56,7 +57,47 @@ std::wstring JsonString(const std::string& body, const char* key) {
   return std::wstring(raw.begin(), raw.end());
 }
 
+// Rough age from ISO "YYYY-MM-DDTHH:MM:SSZ" vs local UTC now (seconds). -1 if unparsable.
+long StatusAgeSeconds(const std::wstring& iso) {
+  if (iso.size() < 19) return -1;
+  SYSTEMTIME st{};
+  st.wYear = (WORD)_wtoi(iso.substr(0, 4).c_str());
+  st.wMonth = (WORD)_wtoi(iso.substr(5, 2).c_str());
+  st.wDay = (WORD)_wtoi(iso.substr(8, 2).c_str());
+  st.wHour = (WORD)_wtoi(iso.substr(11, 2).c_str());
+  st.wMinute = (WORD)_wtoi(iso.substr(14, 2).c_str());
+  st.wSecond = (WORD)_wtoi(iso.substr(17, 2).c_str());
+  FILETIME ft{};
+  if (!SystemTimeToFileTime(&st, &ft)) return -1;
+  ULARGE_INTEGER then{};
+  then.LowPart = ft.dwLowDateTime;
+  then.HighPart = ft.dwHighDateTime;
+  FILETIME nowFt{};
+  GetSystemTimeAsFileTime(&nowFt);
+  ULARGE_INTEGER now{};
+  now.LowPart = nowFt.dwLowDateTime;
+  now.HighPart = nowFt.dwHighDateTime;
+  if (now.QuadPart < then.QuadPart) return 0;
+  return (long)((now.QuadPart - then.QuadPart) / 10000000ULL);
+}
+
 }  // namespace
+
+bool EnforcerBadge::Fresh() const {
+  if (!ok) return false;
+  if (updated_at.empty()) return owns;  // legacy mirrors without stamp
+  long age = StatusAgeSeconds(updated_at);
+  if (age < 0) return owns;
+  return age <= 45;
+}
+
+const wchar_t* EnforcerBadge::LiveLabel() const {
+  if (!ok) return L"DOWN";
+  if (owns && Fresh()) return L"LIVE";
+  if (ok && Fresh()) return L"LIVE";
+  if (ok) return L"STALE";
+  return L"DOWN";
+}
 
 EnforcerBadge ReadEnforcerBadge() {
   EnforcerBadge b;
@@ -80,6 +121,7 @@ EnforcerBadge ReadEnforcerBadge() {
   if (b.last_kill_exe.empty()) {
     b.last_kill_exe = JsonString(body, "last_kill");
   }
+  b.updated_at = JsonString(body, "updated_at");
   return b;
 }
 
@@ -91,7 +133,6 @@ bool FocusBlocksActive() {
   if (b.ok && b.armed) {
     return true;
   }
-  // SoftLand SoT: softland_policy.json (status may lag one tick).
   const std::wstring path = SoftlandPolicyPath();
   std::ifstream in(path.c_str());
   if (!in) {
@@ -104,11 +145,15 @@ bool FocusBlocksActive() {
 
 std::wstring FormatTrayTooltip(const EnforcerBadge& b) {
   if (!b.ok) {
-    return L"CALT Focus — enforcer status unavailable";
+    return L"CALT Focus — Enforcer: DOWN · Tracker: DOWN";
   }
-  std::wstring tip = L"CALT Focus";
-  tip += b.owns ? L" · owns" : L" · no lock";
-  tip += b.armed ? L" · armed" : L" · disarmed";
+  // Desktop tracker is the enforcer session loop — same live signal.
+  const wchar_t* live = b.LiveLabel();
+  std::wstring tip = L"CALT Focus — Enforcer: ";
+  tip += live;
+  tip += L" · Tracker: ";
+  tip += live;
+  tip += b.armed ? L" · Armed" : L" · Disarmed";
   if (!b.last_kill_exe.empty()) {
     tip += L" · last ";
     tip += b.last_kill_exe;

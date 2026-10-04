@@ -1,0 +1,126 @@
+/* Curved SVG scrollbar — follows container border-radius */
+
+.curved-scrollbar {
+  --curved-radius: 28px;
+  --curved-thumb: rgb(0, 188, 255);
+  --curved-thumb-active: dodgerblue;
+  --curved-thumb-width: 4;
+  --curved-thumb-width-active: 6;
+  --curved-track: transparent;
+  --curved-track-active: rgba(255, 255, 255, 0.08);
+  --curved-track-width: 4;
+  --curved-track-width-active: 6;
+  --curved-border: color-mix(in srgb, var(--border, rgba(255, 255, 255, 0.12)) 80%, transparent);
+
+  position: relative;
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  border-radius: var(--curved-radius);
+  overflow: hidden;
+  contain: layout paint;
+}
+
+.curved-scrollbar--lime {
+  --curved-thumb: rgb(154, 230, 0);
+  --curved-thumb-active: rgb(124, 207, 0);
+  --curved-radius: 20px;
+}
+
+.curved-scrollbar--accent {
+  --curved-thumb: color-mix(in srgb, var(--primary, #38bdf8) 85%, white);
+  --curved-thumb-active: var(--primary, #0ea5e9);
+}
+
+.curved-scrollbar__content {
+  height: 100%;
+  max-height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0.75rem 1.25rem 0.75rem 0.75rem;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.curved-scrollbar__content::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+/* Unpadded variant for shell / sidebar chrome */
+.curved-scrollbar__content--flush {
+  padding: 0;
+}
+
+.curved-scrollbar__svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 4;
+  transition: opacity 160ms ease;
+}
+
+.curved-scrollbar__svg:has(:active) {
+  --curved-thumb-width: var(--curved-thumb-width-active);
+  --curved-track-width: var(--curved-track-width-active);
+  --curved-track: var(--curved-track-active);
+}
+
+.curved-scrollbar__track {
+  fill: none;
+  stroke: var(--curved-track);
+  stroke-width: var(--curved-track-width);
+  stroke-linecap: round;
+  transition:
+    stroke 150ms ease-in-out,
+    stroke-width 150ms ease-in-out;
+}
+
+.curved-scrollbar__thumb {
+  fill: none;
+  stroke: var(--curved-thumb);
+  stroke-width: var(--curved-thumb-width);
+  stroke-linecap: round;
+  pointer-events: auto;
+  cursor: grab;
+  transition:
+    stroke 150ms ease-in-out,
+    stroke-width 150ms ease-in-out;
+}
+
+.curved-scrollbar__thumb:active {
+  stroke: var(--curved-thumb-active);
+  cursor: grabbing;
+}
+
+/* Soft card shell for demos / panels that want the bordered look */
+.curved-scrollbar--card {
+  border: 1px solid var(--curved-border);
+  background: color-mix(in srgb, var(--card, rgba(15, 23, 42, 0.55)) 88%, transparent);
+}
+
+@media (max-width: 640px) {
+  .curved-scrollbar {
+    --curved-radius: min(var(--curved-radius), 22px);
+    --curved-thumb-width: 3.5;
+    --curved-track-width: 3.5;
+  }
+
+  .curved-scrollbar__content {
+    padding: 0.65rem 1.1rem 0.65rem 0.65rem;
+  }
+}
+
+/* Prefer reduced motion: keep function, drop width transitions */
+@media (prefers-reduced-motion: reduce) {
+  .curved-scrollbar__track,
+  .curved-scrollbar__thumb,
+  .curved-scrollbar__svg {
+    transition: none;
+  }
+}

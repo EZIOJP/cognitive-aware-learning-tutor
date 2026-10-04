@@ -4,6 +4,7 @@ import { cva, type VariantProps } from "class-variance-authority";
 
 import { cn } from "./utils";
 import { useTheme } from "../../../context/ThemeContext";
+import { SpecularButton, type SpecularButtonSize } from "./SpecularButton";
 
 const buttonVariants = cva(
   "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-[var(--btn-radius-override,var(--radius))] text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
@@ -20,6 +21,8 @@ const buttonVariants = cva(
         ghost:
           "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
         link: "text-primary underline-offset-4 hover:underline",
+        /** React Bits specular rim (WebGL) — use sparingly for primary CTAs */
+        specular: "",
       },
       size: {
         default: "h-9 px-4 py-2 has-[>svg]:px-3",
@@ -35,15 +38,40 @@ const buttonVariants = cva(
   },
 );
 
+function mapSpecularSize(size: VariantProps<typeof buttonVariants>["size"]): SpecularButtonSize {
+  if (size === "sm" || size === "icon") return "sm";
+  if (size === "lg") return "lg";
+  return "md";
+}
+
 const Button = React.forwardRef<
   HTMLButtonElement,
   React.ComponentProps<"button"> &
     VariantProps<typeof buttonVariants> & {
       asChild?: boolean;
     }
->(function Button({ className, variant, size, asChild = false, ...props }, ref) {
-  const Comp = asChild ? Slot : "button";
+>(function Button({ className, variant, size, asChild = false, children, ...props }, ref) {
   const { buttonVariant } = useTheme();
+
+  if (variant === "specular") {
+    const { type = "button", disabled, onClick } = props;
+    void ref;
+    return (
+      <SpecularButton
+        type={type}
+        disabled={disabled}
+        onClick={onClick}
+        size={mapSpecularSize(size)}
+        className={className}
+        radius={size === "sm" || size === "icon" ? 12 : 16}
+        autoAnimate
+      >
+        {children}
+      </SpecularButton>
+    );
+  }
+
+  const Comp = asChild ? Slot : "button";
   const heroClass =
     buttonVariant !== "default"
       ? cn("hero-styled", `hero-btn-${buttonVariant}`)
@@ -56,7 +84,9 @@ const Button = React.forwardRef<
       data-variant={variant ?? "default"}
       className={cn(buttonVariants({ variant, size }), heroClass, className)}
       {...props}
-    />
+    >
+      {children}
+    </Comp>
   );
 });
 Button.displayName = "Button";

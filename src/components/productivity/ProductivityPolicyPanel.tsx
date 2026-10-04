@@ -10,7 +10,7 @@ import {
   type DistractionGate,
   type ProductivityPolicy,
 } from "../../api/behaviorClient";
-import { requestRewardDay } from "../../api/bibleClient";
+import { requestRewardDay, requestBibleDayPass } from "../../api/bibleClient";
 import {
   GOALS_UPDATED_EVENT,
   goalMinutesToFocusHours,
@@ -143,19 +143,27 @@ export function ProductivityPolicyPanel({ onSaved, variant = "all" }: Props) {
           "../../lib/enforcerNativeCmd"
         );
         if (isFocusEnforcerBridgeAvailable()) {
-          await enforcerNativeCmd("softland.set_enabled", {
-            enabled: Boolean(saved.softland_enabled ?? saved.hard_block_enabled),
-          });
+          const enabled = Boolean(saved.softland_enabled ?? saved.hard_block_enabled);
+          const payload: { enabled: boolean; confirm?: string } = { enabled };
+          // Server requires confirm=UNLOCK when turning SoftLand off (commitment device).
+          if (!enabled) payload.confirm = "UNLOCK";
+          const native = await enforcerNativeCmd("softland.set_enabled", payload);
+          if (native && native.ok === false && native.error === "confirm_required") {
+            throw new Error('Type UNLOCK to turn SoftLand off (gateway confirm required).');
+          }
         }
-      } catch {
-        /* HTTP save already applied; gateway optional */
+      } catch (e) {
+        if (e instanceof Error && e.message.includes("UNLOCK")) throw e;
+        /* HTTP save already applied; gateway optional when bridge down */
       }
       setPolicy({
         ...saved,
         softland_enabled: saved.softland_enabled ?? saved.hard_block_enabled ?? false,
         hard_block_enabled: saved.softland_enabled ?? saved.hard_block_enabled ?? false,
       });
-      await saveCategoryScores(scores);
+      await saveCategoryScores(scores).catch(() => {
+        /* Focus shell: category scores may be Study-only until native classify write */
+      });
       const hours = goalMinutesToFocusHours(saved.daily_goal_minutes ?? 240);
       const local = loadProductivityGoals();
       if (local.focusHoursPerDay !== hours) {
@@ -238,10 +246,11 @@ export function ProductivityPolicyPanel({ onSaved, variant = "all" }: Props) {
         {showSoftlandToggle && (
         <div className="flex items-start justify-between gap-2">
           <div>
-            <p className="text-xs font-semibold text-amber-100">SoftLand on</p>
+            <p className="text-xs font-semibold text-sky-100">SoftLand (sites)</p>
             <p className="text-[11px] text-muted-foreground mt-0.5">
-              Site blocking in Edge only — does <strong className="text-foreground/80">not</strong> Arm OS
-              kills. Arm lives under Settings → Now / Apps.
+              On: blocks listed / watch / built-in sites in Edge when mode says so. Off: SoftLand
+              allows all sites (hosts-file device lock and Arm stay independent). SoftLand ON never
+              means Armed.
             </p>
           </div>
           <label className="flex items-center gap-2 text-xs shrink-0">
@@ -252,7 +261,7 @@ export function ProductivityPolicyPanel({ onSaved, variant = "all" }: Props) {
                 const on = e.target.checked;
                 if (!on && (policy.softland_enabled ?? policy.hard_block_enabled)) {
                   const ok = window.prompt(
-                    "Type UNLOCK to turn off SoftLand game-bank commitment:",
+                    "Type UNLOCK to turn SoftLand (site block) off:",
                   );
                   if (ok !== "UNLOCK") return;
                 }
@@ -370,6 +379,43 @@ export function ProductivityPolicyPanel({ onSaved, variant = "all" }: Props) {
                 ? `Use reward day (${gate?.reward_day_status?.available} banked)`
                 : `Earn reward day (${gate?.reward_day_status?.days_to_next_reward ?? 4} days left)`}
           </button>
+          <div className="rounded-md border border-amber-400/20 bg-amber-500/5 p-2.5 space-y-2">
+            <p className="text-[11px] text-muted-foreground">
+              Day pass: 2 per week. Buys SoftLand free until midnight (does not Arm).
+              {gate?.day_pass_status
+                ? ` · ${gate.day_pass_status.remaining ?? 0} left this week`
+                : ""}
+            </p>
+            <button
+              type="button"
+              className="text-xs px-3 py-1.5 rounded-md bg-amber-500/15 text-amber-100 border border-amber-400/30 hover:bg-amber-500/25 disabled:opacity-40"
+              disabled={Boolean(
+                gate?.day_pass ||
+                  gate?.day_unlimited ||
+                  (gate?.day_pass_status?.remaining ?? 0) <= 0,
+              )}
+              onClick={() => {
+                const ok = window.prompt('Use one day pass? Type PASS:');
+                if (ok !== "PASS") return;
+                void (async () => {
+                  try {
+                    const r = await requestBibleDayPass("PASS");
+                    const g = await fetchDistractionGate().catch(() => null);
+                    setGate(g);
+                    setHint(r.message || "Day pass active until midnight.");
+                  } catch (e: unknown) {
+                    setError(e instanceof Error ? e.message : "Day pass failed");
+                  }
+                })();
+              }}
+            >
+              {gate?.day_pass || gate?.day_unlimited
+                ? "Pass already active today"
+                : (gate?.day_pass_status?.remaining ?? 0) > 0
+                  ? `Use day pass (${gate?.day_pass_status?.remaining} left)`
+                  : "No day passes left this week"}
+            </button>
+          </div>
         </div>
         {gate && (
           <div className="rounded-md border border-white/10 bg-black/30 p-2.5 flex gap-3 items-center">

@@ -1,5 +1,5 @@
 import type { HourSlice, SessionSegment } from "./hourSliceTypes";
-import { complexityTier, visibleSegments } from "./hourSliceTypes";
+import { complexityTier } from "./hourSliceTypes";
 import { SegmentBlock } from "./SegmentBlock";
 
 type Props = {
@@ -36,37 +36,27 @@ export function HourMinuteScale({ compact = false }: { compact?: boolean }) {
   );
 }
 
-export function HourCell({ slice, contFromPrev, contIntoNext, onSegmentClick, onOverflowClick }: Props) {
+export function HourCell({ slice, contFromPrev, contIntoNext, onSegmentClick }: Props) {
   const tier = complexityTier(slice.lane_count);
-  const { shown, hidden, overflowN } = visibleSegments(slice);
+  // Paint every sample on the same vertical band; concurrent apps overlap by time.
+  const shown = slice.segments;
 
   return (
-    <div className={`hour-cell hour-cell--${tier}`} data-hour={slice.hour} data-lanes={slice.lane_count}>
-      {/* Full-height body: left/width % match sticky top 0–60 scale */}
+    <div className={`hour-cell hour-cell--${tier}`} data-hour={slice.hour} data-overlap="1">
       <div className="hour-cell__body">
-        {shown.map((seg) => (
-          <SegmentBlock
-            key={`${seg.session_group_id}:${seg.start_min}:${seg.end_min}`}
-            segment={seg}
-            tier={tier}
-            seamLeft={contFromPrev.has(seg.session_group_id) && seg.start_min === 0}
-            seamRight={contIntoNext.has(seg.session_group_id) && seg.end_min === 60}
-            onClick={onSegmentClick}
-          />
-        ))}
-        {overflowN > 0 ? (
-          <button
-            type="button"
-            className="hour-seg-overflow"
-            title={`${overflowN} more activities`}
-            onClick={(e) => {
-              e.stopPropagation();
-              onOverflowClick?.(hidden, e.currentTarget);
-            }}
-          >
-            +{overflowN}
-          </button>
-        ) : null}
+        {shown.map((seg) => {
+          const key = `${seg.session_group_id}:${seg.start_min}:${seg.end_min}`;
+          return (
+            <SegmentBlock
+              key={key}
+              segment={seg}
+              tier={tier}
+              seamLeft={contFromPrev.has(seg.session_group_id) && seg.start_min === 0}
+              seamRight={contIntoNext.has(seg.session_group_id) && seg.end_min === 60}
+              onClick={onSegmentClick}
+            />
+          );
+        })}
       </div>
     </div>
   );

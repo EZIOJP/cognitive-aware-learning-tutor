@@ -29,20 +29,13 @@ export function complexityTier(laneCount: number): "full" | "side" | "compressed
   return "overflow";
 }
 
-/** Visible segments for an hour (duration-weighted top 3 when overflow). */
+/** All segments paint overlapping; no lane/strip truncation. */
 export function visibleSegments(slice: HourSlice): {
   shown: SessionSegment[];
   hidden: SessionSegment[];
   overflowN: number;
 } {
-  const segs = [...slice.segments];
-  if (complexityTier(slice.lane_count) !== "overflow") {
-    return { shown: segs, hidden: [], overflowN: 0 };
-  }
-  const ranked = [...segs].sort((a, b) => b.duration_min - a.duration_min || a.lane_index - b.lane_index);
-  const shown = ranked.slice(0, 3);
-  const hidden = ranked.slice(3);
-  return { shown, hidden, overflowN: hidden.length };
+  return { shown: [...slice.segments], hidden: [], overflowN: 0 };
 }
 
 export function abbreviateLabel(label: string, max = 6): string {

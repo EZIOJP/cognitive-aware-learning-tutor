@@ -23,6 +23,8 @@ class FocusApp {
   void StartApiOnly();
   void StartFrontendOnly();
   void EnsureEnforcer();
+  /** Stop + start CALTEnforcer (or console fallback). Desktop tracker rides along. */
+  void RestartEnforcer();
   bool EnsurePrebuiltUiReady();
   bool EnsureFocusStaticServer();
   bool RunLifecycleCommand(const wchar_t* command, bool wait);
@@ -43,6 +45,8 @@ class FocusApp {
   std::wstring SettingsUrlBusted() const;
   void Quit();
   void RefreshTrayTip();
+  /** Phase C: push mirror snapshot into WebView (no pipe). */
+  void PushStatusTick();
   HICON MakeDotIcon();
 
   HINSTANCE instance_ = nullptr;

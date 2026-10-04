@@ -20,6 +20,7 @@ std::wstring BaseName(const std::wstring& path) {
 
 bool GetForegroundInfo(ForegroundInfo& out) {
   out = ForegroundInfo{};
+
   HWND hwnd = GetForegroundWindow();
   if (!hwnd) return false;
 
@@ -36,14 +37,23 @@ bool GetForegroundInfo(ForegroundInfo& out) {
 
   wchar_t path[MAX_PATH];
   DWORD n = MAX_PATH;
-  BOOL ok = QueryFullProcessImageNameW(h, 0, path, &n);
+  bool ok = false;
+  if (QueryFullProcessImageNameW(h, 0, path, &n) && n > 0) {
+    out.exe = ToLower(BaseName(path));
+    out.title = title;
+    if (out.title.size() > 200) out.title.resize(200);
+    out.pid = pid;
+    out.ok = !out.exe.empty();
+    ok = out.ok;
+  }
   CloseHandle(h);
-  if (!ok || n == 0) return false;
+  return ok;
+}
 
-  out.exe = ToLower(BaseName(path));
-  out.title = title;
-  if (out.title.size() > 200) out.title.resize(200);
-  out.pid = pid;
-  out.ok = !out.exe.empty();
-  return out.ok;
+ULONGLONG GetInteractiveIdleMs() {
+  LASTINPUTINFO lii{};
+  lii.cbSize = sizeof(lii);
+  if (!GetLastInputInfo(&lii)) return 0;
+  DWORD tick = GetTickCount();
+  return (ULONGLONG)(tick - lii.dwTime);
 }

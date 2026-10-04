@@ -72,6 +72,7 @@ data/vocab_app.db     ← Study only (not SoftLand SoT)
 ```text
 calt-focus/
   README.md          ← you are here (architecture + idea)
+  REVIEW.md          ← external AI review map (FE is in repo src/)
   frontend/          ← Vite design host entry (FE build)
   backend/           ← C++ enforcer + Focus shell + msg-host (BE)
   extensions/        ← Gate + SelfTracker
@@ -79,11 +80,13 @@ calt-focus/
 
 | Layer | Open | Role |
 |-------|------|------|
-| FE | [frontend/README.md](./frontend/README.md) | `npm run build:focus` / `dev:focus`; shared React still under repo `src/` |
+| FE | [frontend/README.md](./frontend/README.md) + selective repo **`src/`** | **Lean Focus SPA** (`FocusApp`); `npm run build:focus` / `dev:focus`. Study stays on shared `src/main.tsx`. |
 | BE | [backend/README.md](./backend/README.md) | SoftLand/Arm/Plan/Bible/Journal SoT |
 | Ext | [extensions/README.md](./extensions/README.md) | Browser Gate + track |
+| Review | [REVIEW.md](./REVIEW.md) | What to open when reviewing Focus only |
 
-`native/` at repo root is a **redirect only** — real natives are under `calt-focus/backend/`.
+`native/` at repo root is a **redirect only** — real natives are under `calt-focus/backend/`.  
+**React for Focus** ships from `calt-focus/frontend/app/FocusApp.tsx` (lean). Shared productivity modules remain in repo-root `src/`; Study uses `src/main.tsx`.
 
 ---
 
@@ -97,6 +100,8 @@ scripts\desktop_tracker\build\build_calt_msg_host.bat
 scripts\desktop_tracker\run\run_calt_desktop.bat
 ```
 
+- **Quit Focus only:** `calt-focus\quit_calt_focus.bat` (`taskkill /F calt_focus.exe`)
+- **Close + restart Focus:** `calt-focus\restart_calt_focus.bat`
 - Design host (UI only): `npm run dev:focus` → http://127.0.0.1:5180/  
 - SoftLand/Arm/Plan **writes** need `calt_focus.exe` + enforcer pipe (design host cannot mutate)  
 - Tray: Productivity menus first; Study `:8000` / Vite under **Advanced**
@@ -108,6 +113,7 @@ scripts\desktop_tracker\run\run_calt_desktop.bat
 | Doc | What it is |
 |-----|------------|
 | **This file** | Idea + architecture + map |
+| [REVIEW.md](./REVIEW.md) | External AI: where FE/BE live + SoftLand connectivity |
 | [AGENTS.md](../AGENTS.md) | Repo-wide product lock (two products) |
 | [Focus standalone design](../docs/superpowers/specs/2026-09-11-calt-focus-standalone-productivity-design.md) | Phased door cutover 0→7 |
 | [Landing / what works offline](../docs/superpowers/exports/2026-09-11-focus-standalone-landing.md) | Smoke checklist |

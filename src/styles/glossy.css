@@ -60,7 +60,8 @@
   gap: 0.08rem;
   max-width: min(52vw, 30rem);
   min-width: 0;
-  padding: 0.15rem 0.1rem 0.2rem;
+  /* Extra horizontal room so Caveat glyphs aren’t clipped by overflow. */
+  padding: 0.15rem 0.55rem 0.2rem 0.2rem;
   border-radius: 0;
   background: transparent;
   border: none;
@@ -73,6 +74,9 @@
   margin: 0;
   max-width: 100%;
   padding-bottom: 0.42rem;
+  /* Script italic overhang — keep inside overflow:hidden box. */
+  padding-right: 0.4em;
+  padding-left: 0.06em;
   font-family: "Caveat", "Segoe Script", cursive;
   font-weight: 700;
   font-size: clamp(1.55rem, 2.4vw, 1.95rem);
@@ -85,6 +89,7 @@
   z-index: 1;
   -webkit-text-stroke: 0;
   text-shadow: none;
+  box-decoration-break: clone;
 }
 
 .topbar-title-card__heading::before {
@@ -150,10 +155,10 @@ html[data-topbar-title-font="sans"] .topbar-title-card__heading {
   letter-spacing: -0.03em;
 }
 html[data-topbar-title-font="cursive"] .topbar-title-card__heading {
-  font-family: "Caveat", "Segoe Script", cursive;
-  font-weight: 700;
+  font-family: "Great Vibes", "Oooh Baby", "Caveat", cursive;
+  font-weight: 400;
   font-style: normal;
-  letter-spacing: 0.01em;
+  letter-spacing: 0.02em;
 }
 
 /* Size */
@@ -218,7 +223,564 @@ html[data-topbar-title-style="contour"] .topbar-title-card__heading::after {
 .gloss-sidebar:hover,
 .gloss-sidebar:focus-within {
   background: color-mix(in srgb, var(--gloss-surface) 62%, transparent);
-  border-right-color: var(--border, var(--gloss-border));
+  border-right-color: transparent;
+}
+
+/* Overlay drawer — frosted glass over pages */
+.gloss-sidebar--overlay {
+  background: color-mix(in srgb, var(--gloss-surface) 42%, transparent);
+  border-right: 1px solid color-mix(in srgb, var(--border, #333) 55%, transparent);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+}
+
+.gloss-sidebar--overlay-open {
+  background: color-mix(in srgb, var(--gloss-surface) 48%, transparent);
+  box-shadow: 8px 0 28px rgba(0, 0, 0, 0.22);
+}
+
+/* Focus unified rail — stronger frost when expanded */
+.gloss-sidebar--focus.gloss-sidebar--focus-open {
+  background: color-mix(in srgb, var(--gloss-surface) 38%, transparent);
+  border-right: 1px solid color-mix(in srgb, var(--border, #333) 45%, transparent);
+  backdrop-filter: blur(28px) saturate(155%);
+  -webkit-backdrop-filter: blur(28px) saturate(155%);
+  box-shadow: 10px 0 36px rgba(0, 0, 0, 0.28);
+}
+
+.focus-rail-btn {
+  background: transparent;
+  border: none;
+}
+
+/* Footer shares the frosted panel — no second “strip” surface */
+.gloss-sidebar--overlay-open .sidebar-focus-footer {
+  background: transparent;
+}
+
+.gloss-sidebar--overlay:hover,
+.gloss-sidebar--overlay:focus-within {
+  background: color-mix(in srgb, var(--gloss-surface) 52%, transparent);
+}
+
+/* —— Collapsed rail: hide as one unit; hover/focus reveals the whole sidebar —— */
+:root {
+  --rail-autohide-in: 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  --rail-autohide-out: 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.gloss-sidebar--autohide {
+  background: transparent !important;
+  border-right-color: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: none !important;
+  opacity: 0;
+  transform: translateX(-10px);
+  pointer-events: auto;
+  overflow: hidden !important;
+  transition:
+    opacity var(--rail-autohide-out),
+    transform var(--rail-autohide-out),
+    background var(--rail-autohide-out),
+    border-color var(--rail-autohide-out),
+    box-shadow var(--rail-autohide-out),
+    backdrop-filter var(--rail-autohide-out);
+}
+
+.gloss-sidebar--autohide:hover,
+.gloss-sidebar--autohide:focus-within {
+  opacity: 1;
+  transform: translateX(0);
+  background: color-mix(in srgb, var(--gloss-surface) 72%, transparent) !important;
+  border-right-color: color-mix(in srgb, var(--border) 55%, transparent) !important;
+  backdrop-filter: blur(18px) saturate(1.15) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(1.15) !important;
+  box-shadow: 4px 0 24px color-mix(in srgb, var(--background) 35%, transparent);
+  transition:
+    opacity var(--rail-autohide-in),
+    transform var(--rail-autohide-in),
+    background var(--rail-autohide-in),
+    border-color var(--rail-autohide-in),
+    box-shadow var(--rail-autohide-in),
+    backdrop-filter var(--rail-autohide-in);
+}
+
+.gloss-sidebar--autohide .sidebar-ghost-scroll,
+.gloss-sidebar--autohide .sidebar-focus-footer,
+.gloss-sidebar--autohide .sidebar-rail-header {
+  overflow: hidden;
+}
+
+/* Labels unused in whole-rail mode (kept for a11y helpers if reintroduced) */
+.sidebar-ghost-label {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --rail-autohide-in: 0.01s linear;
+    --rail-autohide-out: 0.01s linear;
+  }
+  .gloss-sidebar--autohide {
+    transform: none;
+  }
+  .gloss-sidebar--autohide:hover,
+  .gloss-sidebar--autohide:focus-within {
+    transform: none;
+  }
+}
+
+/* Brand row — wordmark + circular menu, no boxed chip */
+.sidebar-bible-card {
+  --sbc-ink: var(--foreground);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  max-width: 100%;
+  padding: 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+.sidebar-bible-card__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-width: 0;
+  color: var(--sbc-ink);
+  font-family: inherit;
+  font-weight: 600;
+  font-size: 0.8125rem;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.sidebar-bible-card__mark {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 0.15rem;
+  background: var(--primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent);
+  flex-shrink: 0;
+}
+
+.sidebar-bible-card__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  color: var(--sbc-ink);
+  background: transparent;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.sidebar-bible-card__btn:hover {
+  background: color-mix(in srgb, var(--foreground) 8%, transparent);
+}
+
+.sidebar-bible-card__btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--ring, var(--primary));
+}
+
+/*
+ * Focus brand block — symmetrical layout math:
+ * PANEL 300px · tight gutter · sticker well uses minimal --sticker-bleed
+ * so SVG contour (feMorphology) never clips L/R/T/B.
+ */
+.focus-sidebar-brand {
+  --focus-brand-gutter: 10px;
+  --sticker-bleed: 2px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+  box-sizing: border-box;
+  width: 100%;
+  /* Tight pad — title may expand into the brand well */
+  padding: 8px var(--focus-brand-gutter) 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  overflow: visible;
+}
+
+.focus-sidebar-status-foot {
+  margin-top: auto;
+  padding: 10px var(--focus-brand-gutter, 20px) 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.focus-sidebar-sticker-well {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-sizing: border-box;
+  width: 100%;
+  /* Minimal pad — sticker grows freely; filter halo can bleed */
+  padding: var(--sticker-bleed);
+  overflow: visible;
+}
+
+.contour-sticker-label {
+  overflow: visible !important;
+}
+
+/* Supersample sticker: paint at 2×, CSS-scale to 1× (sharper filter raster) */
+.sidebar-page-title-hires {
+  --sticker-ss: 2;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: max-content;
+  max-width: none;
+  transform: scale(calc(1 / var(--sticker-ss)));
+  transform-origin: center center;
+  /* Collapse phantom layout from pre-scale box */
+  margin-block: calc(-0.65em * (var(--sticker-ss) - 1));
+}
+
+.focus-sidebar-status {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.focus-sidebar-status:has(> :only-child) {
+  grid-template-columns: 1fr;
+}
+
+.focus-sidebar-status__chip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 1.65rem;
+  padding: 0.2rem 0.45rem;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  text-align: center;
+  color: rgba(156, 163, 175, 0.95);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.focus-sidebar-status__chip.is-on {
+  border-color: rgba(16, 185, 129, 0.35);
+  background: rgba(16, 185, 129, 0.1);
+  color: rgba(110, 231, 183, 0.98);
+}
+
+.focus-sidebar-status__chip.is-armed {
+  border-color: rgba(244, 63, 94, 0.35);
+  background: rgba(244, 63, 94, 0.1);
+  color: rgba(253, 164, 175, 0.98);
+}
+
+.focus-sidebar-status__chip.is-off {
+  border-color: rgba(255, 255, 255, 0.1);
+  color: rgba(156, 163, 175, 0.85);
+}
+
+/* Focus sidebar sticker: True Contour SVG die-cut */
+.sidebar-page-title.topbar-title-card {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  max-width: 100%;
+  width: 100%;
+  padding: 0;
+  gap: 0;
+  overflow: visible;
+  box-sizing: border-box;
+}
+
+.sidebar-page-title .topbar-title-card__heading,
+.sidebar-contour-title {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  font-family: "Great Vibes", cursive;
+  font-weight: 400;
+  /* Base size; hires wrapper doubles then scales back */
+  font-size: calc(1.85rem * (var(--sidebar-sticker-scale, 100) / 100));
+  line-height: 1.4;
+  letter-spacing: 0.01em;
+  padding: 0;
+  margin: 0;
+  text-align: center;
+  overflow: visible;
+  text-overflow: clip;
+  -webkit-text-stroke: 0;
+  color: var(--sidebar-sticker-core, #111827);
+  text-shadow: none;
+  filter: url(#calt-contour-live);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: geometricPrecision;
+}
+
+.sidebar-page-title-hires .sidebar-page-title .topbar-title-card__heading {
+  font-size: calc(
+    1.85rem * var(--sticker-ss, 2) * (var(--sidebar-sticker-scale, 100) / 100)
+  );
+}
+
+/* Settings preview uses the same hi-res path */
+.sidebar-page-title-hires .sidebar-contour-title {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: geometricPrecision;
+}
+
+/* Expanded Focus drawer: don't clip the sticker halo */
+[data-focus-sidebar="1"][data-sidebar-collapsed="0"] > .gloss-sidebar--focus {
+  overflow-x: visible !important;
+}
+
+.sidebar-page-title .topbar-title-card__heading::after {
+  content: none;
+  display: none;
+}
+
+/* Calligraphy / cursive / brush families */
+html[data-sidebar-sticker-font="great-vibes"] .sidebar-page-title .topbar-title-card__heading,
+html[data-sidebar-sticker-font="great-vibes"] .sidebar-contour-title {
+  font-family: "Great Vibes", cursive;
+}
+html[data-sidebar-sticker-font="allura"] .sidebar-page-title .topbar-title-card__heading,
+html[data-sidebar-sticker-font="allura"] .sidebar-contour-title {
+  font-family: "Allura", "Great Vibes", cursive;
+}
+html[data-sidebar-sticker-font="alex-brush"] .sidebar-page-title .topbar-title-card__heading,
+html[data-sidebar-sticker-font="alex-brush"] .sidebar-contour-title {
+  font-family: "Alex Brush", "Great Vibes", cursive;
+}
+html[data-sidebar-sticker-font="pinyon"] .sidebar-page-title .topbar-title-card__heading,
+html[data-sidebar-sticker-font="pinyon"] .sidebar-contour-title {
+  font-family: "Pinyon Script", "Great Vibes", cursive;
+}
+html[data-sidebar-sticker-font="tangerine"] .sidebar-page-title .topbar-title-card__heading,
+html[data-sidebar-sticker-font="tangerine"] .sidebar-contour-title {
+  font-family: "Tangerine", "Great Vibes", cursive;
+  font-weight: 700;
+}
+html[data-sidebar-sticker-font="italianno"] .sidebar-page-title .topbar-title-card__heading,
+html[data-sidebar-sticker-font="italianno"] .sidebar-contour-title {
+  font-family: "Italianno", "Great Vibes", cursive;
+}
+html[data-sidebar-sticker-font="parisienne"] .sidebar-page-title .topbar-title-card__heading,
+html[data-sidebar-sticker-font="parisienne"] .sidebar-contour-title {
+  font-family: "Parisienne", "Great Vibes", cursive;
+}
+html[data-sidebar-sticker-font="sacramento"] .sidebar-page-title .topbar-title-card__heading,
+html[data-sidebar-sticker-font="sacramento"] .sidebar-contour-title {
+  font-family: "Sacramento", "Oooh Baby", cursive;
+}
+html[data-sidebar-sticker-font="dancing"] .sidebar-page-title .topbar-title-card__heading,
+html[data-sidebar-sticker-font="dancing"] .sidebar-contour-title {
+  font-family: "Dancing Script", cursive;
+  font-weight: 700;
+}
+html[data-sidebar-sticker-font="pacifico"] .sidebar-page-title .topbar-title-card__heading,
+html[data-sidebar-sticker-font="pacifico"] .sidebar-contour-title {
+  font-family: "Pacifico", cursive;
+}
+html[data-sidebar-sticker-font="oooh-baby"] .sidebar-page-title .topbar-title-card__heading,
+html[data-sidebar-sticker-font="oooh-baby"] .sidebar-contour-title {
+  font-family: "Oooh Baby", cursive;
+}
+html[data-sidebar-sticker-font="caveat"] .sidebar-page-title .topbar-title-card__heading,
+html[data-sidebar-sticker-font="caveat"] .sidebar-contour-title {
+  font-family: "Caveat", cursive;
+  font-weight: 700;
+}
+html[data-sidebar-sticker-font="monsieur"] .sidebar-page-title .topbar-title-card__heading,
+html[data-sidebar-sticker-font="monsieur"] .sidebar-contour-title {
+  font-family: "Monsieur La Doulaise", "Great Vibes", cursive;
+}
+html[data-sidebar-sticker-font="mrs-saint"] .sidebar-page-title .topbar-title-card__heading,
+html[data-sidebar-sticker-font="mrs-saint"] .sidebar-contour-title {
+  font-family: "Mrs Saint Delafield", "Great Vibes", cursive;
+}
+html[data-sidebar-sticker-font="imperial"] .sidebar-page-title .topbar-title-card__heading,
+html[data-sidebar-sticker-font="imperial"] .sidebar-contour-title {
+  font-family: "Imperial Script", "Great Vibes", cursive;
+}
+html[data-sidebar-sticker-font="bonheur"] .sidebar-page-title .topbar-title-card__heading,
+html[data-sidebar-sticker-font="bonheur"] .sidebar-contour-title {
+  font-family: "Bonheur Royale", "Great Vibes", cursive;
+}
+html[data-sidebar-sticker-font="euphoria"] .sidebar-page-title .topbar-title-card__heading,
+html[data-sidebar-sticker-font="euphoria"] .sidebar-contour-title {
+  font-family: "Euphoria Script", "Great Vibes", cursive;
+}
+html[data-sidebar-sticker-font="arizonia"] .sidebar-page-title .topbar-title-card__heading,
+html[data-sidebar-sticker-font="arizonia"] .sidebar-contour-title {
+  font-family: "Arizonia", "Great Vibes", cursive;
+}
+html[data-sidebar-sticker-font="bilbo"] .sidebar-page-title .topbar-title-card__heading,
+html[data-sidebar-sticker-font="bilbo"] .sidebar-contour-title {
+  font-family: "Bilbo Swash Caps", "Great Vibes", cursive;
+}
+html[data-sidebar-sticker-font="whisper"] .sidebar-page-title .topbar-title-card__heading,
+html[data-sidebar-sticker-font="whisper"] .sidebar-contour-title {
+  font-family: "Whisper", "Great Vibes", cursive;
+}
+html[data-sidebar-sticker-font="satisfy"] .sidebar-page-title .topbar-title-card__heading,
+html[data-sidebar-sticker-font="satisfy"] .sidebar-contour-title {
+  font-family: "Satisfy", cursive;
+}
+html[data-sidebar-sticker-font="yellowtail"] .sidebar-page-title .topbar-title-card__heading,
+html[data-sidebar-sticker-font="yellowtail"] .sidebar-contour-title {
+  font-family: "Yellowtail", cursive;
+}
+html[data-sidebar-sticker-font="kaushan"] .sidebar-page-title .topbar-title-card__heading,
+html[data-sidebar-sticker-font="kaushan"] .sidebar-contour-title {
+  font-family: "Kaushan Script", cursive;
+}
+html[data-sidebar-sticker-font="homemade"] .sidebar-page-title .topbar-title-card__heading,
+html[data-sidebar-sticker-font="homemade"] .sidebar-contour-title {
+  font-family: "Homemade Apple", cursive;
+}
+
+/* Settings preview uses hero-scale dilation (near 1:1 tool px) */
+.sidebar-sticker-preview .sidebar-contour-title,
+.sidebar-sticker-preview .sidebar-page-title .topbar-title-card__heading {
+  filter: url(#calt-contour-live-hero) !important;
+}
+
+.gloss-dock-btn {
+  background: color-mix(in srgb, var(--gloss-surface) 88%, var(--background, #050505));
+}
+
+.gloss-sidebar {
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-right: 1px solid transparent;
+  box-shadow: none;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.gloss-sidebar:hover,
+.gloss-sidebar:focus-within {
+  background: color-mix(in srgb, var(--gloss-surface) 62%, transparent);
+  border-right-color: transparent;
+}
+
+/* Overlay drawer — frosted glass over pages */
+.gloss-sidebar--overlay {
+  background: color-mix(in srgb, var(--gloss-surface) 42%, transparent);
+  border-right: 1px solid color-mix(in srgb, var(--border, #333) 55%, transparent);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+}
+
+.gloss-sidebar--overlay-open {
+  background: color-mix(in srgb, var(--gloss-surface) 48%, transparent);
+  box-shadow: 8px 0 28px rgba(0, 0, 0, 0.22);
+}
+
+/* Focus unified rail — stronger frost when expanded */
+.gloss-sidebar--focus.gloss-sidebar--focus-open {
+  background: color-mix(in srgb, var(--gloss-surface) 38%, transparent);
+  border-right: 1px solid color-mix(in srgb, var(--border, #333) 45%, transparent);
+  backdrop-filter: blur(28px) saturate(155%);
+  -webkit-backdrop-filter: blur(28px) saturate(155%);
+  box-shadow: 10px 0 36px rgba(0, 0, 0, 0.28);
+}
+
+.focus-rail-btn {
+  background: transparent;
+  border: none;
+}
+
+/* Footer shares the frosted panel — no second “strip” surface */
+.gloss-sidebar--overlay-open .sidebar-focus-footer {
+  background: transparent;
+}
+
+.gloss-sidebar--overlay:hover,
+.gloss-sidebar--overlay:focus-within {
+  background: color-mix(in srgb, var(--gloss-surface) 52%, transparent);
+}
+
+/* —— Collapsed rail: hide as one unit; hover/focus reveals the whole sidebar —— */
+:root {
+  --rail-autohide-in: 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  --rail-autohide-out: 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.gloss-sidebar--autohide {
+  background: transparent !important;
+  border-right-color: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: none !important;
+  opacity: 0;
+  transform: translateX(-10px);
+  pointer-events: auto;
+  overflow: hidden !important;
+  transition:
+    opacity var(--rail-autohide-out),
+    transform var(--rail-autohide-out),
+    background var(--rail-autohide-out),
+    border-color var(--rail-autohide-out),
+    box-shadow var(--rail-autohide-out),
+    backdrop-filter var(--rail-autohide-out);
+}
+
+.gloss-sidebar--autohide:hover,
+.gloss-sidebar--autohide:focus-within {
+  opacity: 1;
+  transform: translateX(0);
+  background: color-mix(in srgb, var(--gloss-surface) 72%, transparent) !important;
+  border-right-color: color-mix(in srgb, var(--border) 55%, transparent) !important;
+  backdrop-filter: blur(18px) saturate(1.15) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(1.15) !important;
+  box-shadow: 4px 0 24px color-mix(in srgb, var(--background) 35%, transparent);
+  transition:
+    opacity var(--rail-autohide-in),
+    transform var(--rail-autohide-in),
+    background var(--rail-autohide-in),
+    border-color var(--rail-autohide-in),
+    box-shadow var(--rail-autohide-in),
+    backdrop-filter var(--rail-autohide-in);
+}
+
+.gloss-sidebar--autohide .sidebar-ghost-scroll,
+.gloss-sidebar--autohide .sidebar-focus-footer,
+.gloss-sidebar--autohide .sidebar-rail-header {
+  overflow: hidden;
+}
+
+/* Labels unused in whole-rail mode (kept for a11y helpers if reintroduced) */
+.sidebar-ghost-label {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --rail-autohide-in: 0.01s linear;
+    --rail-autohide-out: 0.01s linear;
+  }
+  .gloss-sidebar--autohide {
+    transform: none;
+  }
+  .gloss-sidebar--autohide:hover,
+  .gloss-sidebar--autohide:focus-within {
+    transform: none;
+  }
 }
 
 /* Brand row — wordmark + circular menu, no boxed chip */
@@ -359,3 +921,503 @@ html[data-topbar-title-style="contour"] .topbar-title-card__heading::after {
     animation: none;
   }
 }
+
+/* Home day-progress — liquid fill (L→R) */
+@keyframes day-water-wave {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 48px 0;
+  }
+}
+
+@keyframes day-water-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-2px);
+  }
+}
+
+@keyframes day-water-bubble {
+  0% {
+    transform: translateY(120%) scale(0.45);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.85;
+  }
+  70% {
+    opacity: 0.65;
+  }
+  100% {
+    transform: translateY(-140%) scale(1.05);
+    opacity: 0;
+  }
+}
+
+@keyframes day-water-crest {
+  0%,
+  100% {
+    opacity: 0.55;
+    filter: blur(0.2px);
+    transform: scaleY(1);
+  }
+  50% {
+    opacity: 1;
+    filter: blur(0.6px);
+    transform: scaleY(1.08);
+  }
+}
+
+.day-water {
+  position: absolute;
+  inset: 0 auto 0 0;
+  z-index: 0;
+  overflow: hidden;
+  transition: width 0.7s ease-out;
+  will-change: width;
+}
+
+.day-water--time {
+  top: 0;
+  bottom: 0;
+}
+
+.day-water--tasks {
+  top: auto;
+  height: 52%;
+  bottom: 0;
+}
+
+.day-water__body {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(125, 211, 252, 0.35) 0%,
+    rgba(14, 165, 233, 0.5) 42%,
+    rgba(2, 132, 199, 0.62) 100%
+  );
+}
+
+.day-water--ok .day-water__body {
+  background: linear-gradient(
+    180deg,
+    rgba(110, 231, 183, 0.38) 0%,
+    rgba(16, 185, 129, 0.52) 45%,
+    rgba(5, 150, 105, 0.65) 100%
+  );
+}
+
+.day-water--tasks .day-water__body {
+  background: linear-gradient(
+    180deg,
+    rgba(251, 191, 36, 0.28) 0%,
+    rgba(245, 158, 11, 0.5) 55%,
+    rgba(217, 119, 6, 0.58) 100%
+  );
+}
+
+.day-water--tasks.day-water--ok .day-water__body {
+  background: linear-gradient(
+    180deg,
+    rgba(167, 243, 208, 0.35) 0%,
+    rgba(52, 211, 153, 0.5) 55%,
+    rgba(16, 185, 129, 0.6) 100%
+  );
+}
+
+.day-water__surface {
+  position: absolute;
+  inset: 0;
+  opacity: 0.55;
+  background-image: radial-gradient(
+      ellipse 14px 5px at 10px 10px,
+      rgba(255, 255, 255, 0.16),
+      transparent 70%
+    ),
+    radial-gradient(ellipse 18px 6px at 34px 16px, rgba(255, 255, 255, 0.1), transparent 70%);
+  background-size: 48px 100%;
+  animation: day-water-wave 2.2s linear infinite, day-water-bob 2.6s ease-in-out infinite;
+  mix-blend-mode: soft-light;
+  pointer-events: none;
+}
+
+.day-water__bubbles {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.day-water__bubble {
+  position: absolute;
+  bottom: 0;
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 32% 28%, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.35) 28%, transparent 55%),
+    radial-gradient(circle at 70% 72%, rgba(125, 211, 252, 0.35), transparent 60%),
+    radial-gradient(circle at 50% 50%, rgba(186, 230, 253, 0.2), rgba(14, 165, 233, 0.12) 70%);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  box-shadow:
+    inset 0 0 2px rgba(255, 255, 255, 0.55),
+    0 0 4px rgba(125, 211, 252, 0.25);
+  animation: day-water-bubble var(--dur, 2.8s) ease-in infinite;
+  animation-delay: var(--delay, 0s);
+  opacity: 0;
+}
+
+.day-water__crest {
+  position: absolute;
+  top: -10%;
+  bottom: -10%;
+  right: -1px;
+  width: 10px;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.55) 40%,
+    rgba(186, 230, 253, 0.9) 70%,
+    rgba(255, 255, 255, 0.35)
+  );
+  box-shadow:
+    0 0 14px rgba(125, 211, 252, 0.75),
+    0 0 28px rgba(56, 189, 248, 0.35);
+  animation: day-water-crest 1.4s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.day-water--ok .day-water__crest {
+  box-shadow:
+    0 0 14px rgba(110, 231, 183, 0.75),
+    0 0 28px rgba(52, 211, 153, 0.35);
+}
+
+.day-water--tasks .day-water__crest {
+  width: 7px;
+  box-shadow:
+    0 0 10px rgba(251, 191, 36, 0.7),
+    0 0 20px rgba(245, 158, 11, 0.3);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .day-water__surface,
+  .day-water__bubble,
+  .day-water__crest {
+    animation: none !important;
+  }
+
+  .day-water__crest {
+    opacity: 0.8;
+  }
+}
+
+/* Plan tab step rail — segmented control (replaces numbered wizard circles) */
+.plan-step-rail {
+  list-style: none;
+  margin: 0;
+  padding: 0.2rem;
+  display: grid;
+  gap: 0.2rem;
+  border-radius: 0.75rem;
+  border: 1px solid color-mix(in srgb, var(--border, #333) 55%, transparent);
+  background: color-mix(in srgb, var(--gloss-surface, #111) 35%, transparent);
+}
+
+.plan-step-rail--3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.plan-step-rail--5 {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.plan-step-rail__btn {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  min-height: 2rem;
+  padding: 0.35rem 0.4rem;
+  border: none;
+  border-radius: 0.55rem;
+  background: transparent;
+  color: rgba(156, 163, 175, 0.78);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  transition:
+    background-color 140ms ease,
+    color 140ms ease,
+    box-shadow 140ms ease;
+}
+
+.plan-step-rail__btn:hover {
+  color: rgba(226, 232, 240, 0.95);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.plan-step-rail__btn.is-active {
+  color: color-mix(in srgb, var(--primary, #34d399) 90%, white);
+  background: color-mix(in srgb, var(--primary, #10b981) 18%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary, #10b981) 35%, transparent);
+}
+
+.plan-step-rail__btn.is-done {
+  color: rgba(167, 243, 208, 0.88);
+}
+
+.plan-step-rail__check {
+  flex-shrink: 0;
+  opacity: 0.9;
+}
+
+.plan-step-rail__label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 420px) {
+  .plan-step-rail--5 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .plan-step-rail--5 li:nth-child(n + 4) {
+    grid-column: span 1;
+  }
+}
+
+/* Plan → Goals: focus hero + Blocker tabs */
+.goals-panel {
+  border-radius: 1rem;
+  border: 1px solid rgba(52, 211, 153, 0.18);
+  background:
+    linear-gradient(165deg, rgba(16, 185, 129, 0.07), transparent 42%),
+    rgba(0, 0, 0, 0.22);
+  padding: 1rem 1.05rem 1.1rem;
+}
+
+.goals-focus-hero {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  padding: 0.6rem 0.75rem;
+  border-radius: 0.7rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(0, 0, 0, 0.32);
+}
+
+.goals-focus-hero__row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.goals-focus-hero__label {
+  margin: 0;
+  font-size: 0.625rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(156, 163, 175, 0.9);
+}
+
+.goals-focus-hero__value-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.3rem;
+  margin-top: 0.1rem;
+}
+
+.goals-focus-hero__value {
+  font-size: 1.65rem;
+  font-weight: 650;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: rgba(236, 253, 245, 0.96);
+  font-variant-numeric: tabular-nums;
+}
+
+.goals-focus-hero__unit {
+  font-size: 0.75rem;
+  color: rgba(156, 163, 175, 0.85);
+}
+
+.goals-focus-hero__stepper {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 0.55rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.goals-focus-hero__stepper button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.85rem;
+  height: 1.2rem;
+  border: none;
+  background: transparent;
+  color: rgba(156, 163, 175, 0.95);
+  cursor: pointer;
+}
+
+.goals-focus-hero__stepper button + button {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.goals-focus-hero__stepper button:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(243, 244, 246, 0.95);
+}
+
+.goals-focus-hero__bar {
+  height: 0.28rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.goals-focus-hero__fill {
+  height: 100%;
+  border-radius: inherit;
+  background: #34d399;
+  transition: width 0.25s ease;
+}
+
+.goals-focus-hero__fill.is-met {
+  background: #fbbf24;
+}
+
+.goals-focus-hero__status {
+  margin: 0.3rem 0 0;
+  font-size: 0.625rem;
+  color: rgba(156, 163, 175, 0.92);
+}
+
+.goals-focus-hero__status.is-met {
+  color: rgba(252, 211, 77, 0.95);
+}
+
+.goals-today-plan {
+  padding: 0.55rem 0.65rem 0.65rem;
+  border-radius: 0.7rem;
+  border: 1px solid rgba(56, 189, 248, 0.16);
+  background: rgba(0, 0, 0, 0.28);
+}
+
+.goals-blocker__tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.2rem;
+  padding: 0.2rem;
+  border-radius: 0.7rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(0, 0, 0, 0.28);
+}
+
+.goals-blocker__tab {
+  min-height: 1.85rem;
+  border: none;
+  border-radius: 0.5rem;
+  background: transparent;
+  color: rgba(156, 163, 175, 0.85);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.goals-blocker__tab:hover {
+  color: rgba(229, 231, 235, 0.95);
+}
+
+.goals-blocker__tab.is-active {
+  background: rgba(56, 189, 248, 0.16);
+  color: rgba(224, 242, 254, 0.98);
+}
+
+.goals-blocker__panel {
+  padding: 0.65rem 0.15rem 0.1rem;
+}
+
+.goals-todos {
+  padding-top: 0.15rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* —— Focus shell: full-bleed pages + solid overlay rail (no glass) —— */
+/* Peek is pointer-driven only (data-rail-hot). Leave = instant vanish. */
+.focus-sidebar-edge {
+  --focus-edge-hit: 10px;
+  width: var(--focus-edge-hit);
+  transition: none;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--foreground, #fff) 14%, transparent) 0%,
+    transparent 100%
+  );
+}
+
+.focus-sidebar-edge[data-rail-hot="1"] {
+  width: 56px;
+  background: transparent;
+}
+
+/* Fully opaque — --gloss-surface is intentionally translucent elsewhere */
+.gloss-sidebar--focus.gloss-sidebar--focus-open {
+  background: #0a0a0c !important;
+  background-color: #0a0a0c !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.1) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: 12px 0 32px rgba(0, 0, 0, 0.55);
+  isolation: isolate;
+}
+
+.gloss-sidebar--focus.gloss-sidebar--autohide {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  transform: none !important;
+  background: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: none !important;
+  border-right-color: transparent !important;
+  transition: none !important;
+  pointer-events: none;
+}
+
+.focus-sidebar-edge[data-rail-hot="1"] .gloss-sidebar--focus.gloss-sidebar--autohide {
+  opacity: 1 !important;
+  visibility: visible !important;
+  transform: none !important;
+  background: #0a0a0c !important;
+  background-color: #0a0a0c !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.1) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: 8px 0 24px rgba(0, 0, 0, 0.5);
+  isolation: isolate;
+  pointer-events: auto;
+  transition: none !important;
+}
+
+html.light .gloss-sidebar--focus.gloss-sidebar--focus-open,
+html.light .focus-sidebar-edge[data-rail-hot="1"] .gloss-sidebar--focus.gloss-sidebar--autohide {
+  background: #f4f4f5 !important;
+  background-color: #f4f4f5 !important;
+  border-right-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+

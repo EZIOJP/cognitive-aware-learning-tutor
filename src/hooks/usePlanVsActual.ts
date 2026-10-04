@@ -18,23 +18,38 @@ export type FetchState<T> = {
 
 function useFetch<T>(
   fetcher: () => Promise<T>,
-  deps: unknown[],
+  /** Changing these shows a cold skeleton (new day/range). */
+  identityDeps: unknown[],
   initial: T,
+  enabled = true,
+  /** Soft deps (refresh ticks) keep prior data on screen. */
+  softDeps: unknown[] = [],
 ): FetchState<T> {
   const [data, setData] = useState<T>(initial);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(enabled);
   const [error, setError] = useState<string | null>(null);
   const [tick, setTick] = useState(0);
+  const [loadedKey, setLoadedKey] = useState("");
+  const identityKey = identityDeps.map(String).join("\0");
 
   const refetch = useCallback(() => setTick((k) => k + 1), []);
 
   useEffect(() => {
+    if (!enabled) {
+      setLoading(false);
+      setError(null);
+      return;
+    }
     let cancelled = false;
-    setLoading(true);
+    const cold = loadedKey !== identityKey;
+    if (cold) setLoading(true);
     setError(null);
     fetcher()
       .then((result) => {
-        if (!cancelled) setData(result);
+        if (!cancelled) {
+          setData(result);
+          setLoadedKey(identityKey);
+        }
       })
       .catch((e: unknown) => {
         if (!cancelled) {
@@ -48,18 +63,23 @@ function useFetch<T>(
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [...deps, tick]);
+  }, [...identityDeps, ...softDeps, tick, enabled]);
 
   return { data, loading, error, refetch };
 }
 
-export function usePlannerBlocks(from: Date, to: Date): FetchState<PlannerBlock[]> {
+export function usePlannerBlocks(
+  from: Date,
+  to: Date,
+  enabled = true,
+): FetchState<PlannerBlock[]> {
   const fromMs = from.getTime();
   const toMs = to.getTime();
   return useFetch(
     () => fetchPlannerBlocks(new Date(fromMs), new Date(toMs)),
     [fromMs, toMs],
     [],
+    enabled,
   );
 }
 
@@ -67,21 +87,26 @@ export function useActualOverlay(
   from: Date,
   to: Date,
   refreshKey = 0,
+  enabled = true,
 ): FetchState<ActualSession[]> {
   const fromMs = from.getTime();
   const toMs = to.getTime();
   return useFetch(
     () => fetchActualOverlay(new Date(fromMs), new Date(toMs)),
-    [fromMs, toMs, refreshKey],
+    [fromMs, toMs],
     [],
+    enabled,
+    [refreshKey],
   );
 }
 
 export function useDesktopTimeline(day: string, refreshKey = 0): FetchState<DesktopTimeline | null> {
   return useFetch(
     () => fetchDesktopTimeline(day),
-    [day, refreshKey],
+    [day],
     null,
+    true,
+    [refreshKey],
   );
 }
 

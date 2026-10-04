@@ -10,10 +10,10 @@ describe("calendarLayerVisibility", () => {
     });
   });
 
-  it("keeps plan-only agendas planned and hides desktop actuals", () => {
+  it("keeps plan-only agendas planned and still allows tracked actuals", () => {
     expect(calendarLayerVisibility({ planned: false, actual: true, planningOnly: true })).toEqual({
       showPlanned: true,
-      showActual: false,
+      showActual: true,
       loadOverlay: true,
     });
   });

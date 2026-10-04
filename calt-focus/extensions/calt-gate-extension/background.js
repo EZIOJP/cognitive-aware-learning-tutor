@@ -6,11 +6,11 @@
 
 /* global GATE_API_URL, GATE_ALERT_URL, GATE_EXT_LOG_URL, GATE_ALERT_GAP_MS, FORCE_WATCH_HOSTS,
    FORCE_PORN_HOSTS, isStrictDayMode, TEMP_ALLOW_STORAGE_KEY, TEMP_ALLOW_MS, pruneTempAllows,
-   buildTempAllowGrant, upsertTempAllow, isTempAllowExcludedHost,
+   buildTempAllowGrant, upsertTempAllow, isTempAllowExcludedHost, isHostTempAllowed,
    tempAllowUntilForHost, browserPolicyOrFallback, shouldBlockUrl, dnrHostList, listMatch,
    redirectTargetUrl, isCaltSpaUrl, blockKindForUrl, hostnameFromUrl,
    isForceWatchHost, isForcePornHost, classifyHostCategory, isExtensionOrInternalUrl,
-   applyContentScoreFromPolicy, CALT_BIBLE_URL, CALT_PRODUCTIVITY_URL */
+   applyContentScoreFromPolicy, CALT_BIBLE_URL, CALT_PRODUCTIVITY_URL, isFreeDay */
 
 // Shared helpers are prepended by scripts/build_extension_workers.ps1 into service_worker.js
 
@@ -35,7 +35,6 @@ var lastDnrPornFingerprint = "";
 /** Hosts currently covered by active DNR — SoftLand skips these only. */
 var activeDnrWatchHosts = [];
 var activeDnrPornHosts = [];
-var gatePollTimer = null;
 var lastAlertAt = 0;
 var softLandDone = Object.create(null);
 var softLandInFlight = Object.create(null);
@@ -48,15 +47,29 @@ var REDIRECT_COOLDOWN_MS = 30000;
 var redirectCooldownUntil = 0;
 var lastNotifyAt = 0;
 var NOTIFY_GAP_MS = 8000;
+/** Study :8000 side-channels (WS / alerts / HTTP gate). Default OFF. */
+var studyHttpFallback = false;
+/** Last native host health (ping / get_mode / get_softland_doc). */
+var nativeHostOk = null;
+var GET_MODE_TTL_MS = 2500;
+var getModeCache = Object.create(null);
+var nativePort = null;
+var nativeQueue = [];
+var nativeInFlight = false;
+var gateBootstrapped = false;
 
-extAPI.storage.local.get(["gateCache", "redirectsEnabled", "tempAllows"], function (result) {
-  if (result.gateCache) gateCache = result.gateCache;
-  if (typeof result.redirectsEnabled === "boolean") redirectsEnabled = result.redirectsEnabled;
-  if (Array.isArray(result.tempAllows)) {
-    tempAllowsCache =
-      typeof pruneTempAllows === "function" ? pruneTempAllows(result.tempAllows, Date.now()) : result.tempAllows;
+extAPI.storage.local.get(
+  ["gateCache", "redirectsEnabled", "tempAllows", "caltGateHttpFallback", "caltSoftlandHttpFallback"],
+  function (result) {
+    if (result.gateCache) gateCache = result.gateCache;
+    if (typeof result.redirectsEnabled === "boolean") redirectsEnabled = result.redirectsEnabled;
+    if (Array.isArray(result.tempAllows)) {
+      tempAllowsCache =
+        typeof pruneTempAllows === "function" ? pruneTempAllows(result.tempAllows, Date.now()) : result.tempAllows;
+    }
+    studyHttpFallback = Boolean(result.caltGateHttpFallback || result.caltSoftlandHttpFallback);
   }
-});
+);
 
 function lockedPageUrl() {
   return extAPI.runtime.getURL("locked.html");
@@ -95,6 +108,7 @@ function gateCacheForBlockCheck() {
 }
 
 function reportGateAlert(kind, detail) {
+  if (!studyHttpFallback) return;
   var now = Date.now();
   if (now - lastAlertAt < (GATE_ALERT_GAP_MS || 45000)) return;
   lastAlertAt = now;
@@ -111,6 +125,7 @@ function reportGateAlert(kind, detail) {
 }
 
 function logExtensionEvent(event, payload) {
+  if (!studyHttpFallback) return;
   var url = typeof GATE_EXT_LOG_URL !== "undefined" ? GATE_EXT_LOG_URL : "";
   if (!url) return;
   try {
@@ -125,6 +140,127 @@ function logExtensionEvent(event, payload) {
   } catch (e) {
     /* ignore */
   }
+}
+
+function invalidateGetModeCache(hostHint) {
+  if (!hostHint) {
+    getModeCache = Object.create(null);
+    return;
+  }
+  var h = String(hostHint).toLowerCase().replace(/^www\./, "");
+  Object.keys(getModeCache).forEach(function (k) {
+    if (k.indexOf(h) >= 0) delete getModeCache[k];
+  });
+}
+
+function getModeCacheKey(url) {
+  try {
+    var u = new URL(String(url || ""));
+    return (u.hostname + u.pathname).toLowerCase().replace(/^www\./, "").slice(0, 220);
+  } catch (e) {
+    return String(url || "").slice(0, 220);
+  }
+}
+
+function failNativeQueue() {
+  nativeInFlight = false;
+  try {
+    if (nativePort) nativePort.disconnect();
+  } catch (e) {}
+  nativePort = null;
+  nativeHostOk = false;
+  var q = nativeQueue.splice(0, nativeQueue.length);
+  for (var i = 0; i < q.length; i++) {
+    try {
+      clearTimeout(q[i].timer);
+    } catch (e2) {}
+    q[i].resolve(null);
+  }
+}
+
+function pumpNativeQueue() {
+  if (nativeInFlight || !nativeQueue.length) return;
+  if (!extAPI.runtime || typeof extAPI.runtime.connectNative !== "function") {
+    failNativeQueue();
+    return;
+  }
+  var job = nativeQueue[0];
+  nativeInFlight = true;
+  try {
+    if (!nativePort) {
+      nativePort = extAPI.runtime.connectNative("com.calt.msg_host");
+      nativePort.onDisconnect.addListener(function () {
+        if (!nativeInFlight && !nativeQueue.length) {
+          nativePort = null;
+          return;
+        }
+        failNativeQueue();
+      });
+    }
+  } catch (e) {
+    nativeQueue.shift();
+    nativeInFlight = false;
+    nativeHostOk = false;
+    job.resolve(null);
+    pumpNativeQueue();
+    return;
+  }
+  var settled = false;
+  var onMsg = null;
+  function finish(msg, killPort) {
+    if (settled) return;
+    settled = true;
+    try {
+      clearTimeout(job.timer);
+    } catch (e2) {}
+    if (onMsg && nativePort) {
+      try {
+        nativePort.onMessage.removeListener(onMsg);
+      } catch (e3) {}
+    }
+    if (nativeQueue[0] === job) nativeQueue.shift();
+    nativeInFlight = false;
+    if (killPort) {
+      try {
+        if (nativePort) nativePort.disconnect();
+      } catch (e4) {}
+      nativePort = null;
+    }
+    if (msg && typeof msg === "object") nativeHostOk = msg.ok !== false;
+    else if (killPort) nativeHostOk = false;
+    job.resolve(msg && typeof msg === "object" ? msg : null);
+    pumpNativeQueue();
+  }
+  job.timer = setTimeout(function () {
+    finish(null, true);
+  }, job.timeoutMs || 1200);
+  try {
+    onMsg = function (msg) {
+      finish(msg, false);
+    };
+    nativePort.onMessage.addListener(onMsg);
+    nativePort.postMessage(job.message);
+  } catch (e5) {
+    finish(null, true);
+  }
+}
+
+function nativeCall(message, timeoutMs) {
+  return new Promise(function (resolve) {
+    nativeQueue.push({
+      message: message,
+      timeoutMs: timeoutMs || 1200,
+      resolve: resolve,
+      timer: null,
+    });
+    pumpNativeQueue();
+  });
+}
+
+async function softlandNativePing() {
+  var msg = await nativeCall({ type: "ping", schema_version: 1 }, 800);
+  nativeHostOk = Boolean(msg && msg.ok && msg.type === "pong");
+  return nativeHostOk;
 }
 
 function redirectsPausedByCircuit() {
@@ -337,6 +473,8 @@ function noteGateFetchFailure() {
 }
 
 function connectGateNotifyWs() {
+  // Study gate notify WS — opt-in only (same flag as HTTP distraction-gate).
+  if (!studyHttpFallback) return;
   var url = typeof GATE_NOTIFY_WS_URL !== "undefined" ? GATE_NOTIFY_WS_URL : "ws://127.0.0.1:8000/ws/gate";
   if (gateNotifyWs && (gateNotifyWs.readyState === WebSocket.OPEN || gateNotifyWs.readyState === WebSocket.CONNECTING)) {
     return;
@@ -355,6 +493,7 @@ function connectGateNotifyWs() {
     };
     gateNotifyWs.onclose = function () {
       gateNotifyWs = null;
+      if (!studyHttpFallback) return;
       try {
         extAPI.alarms.create("gate-ws-retry", { delayInMinutes: 1 });
       } catch (e2) {
@@ -374,71 +513,99 @@ function connectGateNotifyWs() {
   }
 }
 
+async function softlandNativeGetDoc() {
+  return nativeCall({ type: "get_softland_doc", schema_version: 1 }, 1200);
+}
+
+async function applyGatePayload(g, opts) {
+  opts = opts || {};
+  lastGateFetchAt = Date.now();
+  noteGateFetchSuccess();
+  var morning = g.morning || {};
+  var browser = g.browser || {};
+  gateCache = {
+    ok: true,
+    stale: false,
+    degraded: false,
+    source: g.source || opts.source || "unknown",
+    fetched_at: lastGateFetchAt,
+    policy_gen: g.policy_gen ?? null,
+    locked: Boolean(g.locked),
+    unlocked: Boolean(g.unlocked),
+    enabled: Boolean(g.enabled),
+    remaining_minutes: g.remaining_minutes ?? null,
+    chapter_goal_met: Boolean(g.chapter_goal_met),
+    day_unlimited: Boolean(g.day_unlimited),
+    day_pass: Boolean(g.day_pass),
+    reward_day: Boolean(g.reward_day),
+    productive_minutes: g.productive_minutes ?? 0,
+    daily_goal_minutes: g.daily_goal_minutes ?? 0,
+    suggested_links: Array.isArray(g.suggested_links) ? g.suggested_links : [],
+    current_block: g.current_block || null,
+    morning: {
+      next: morning.next || "open",
+      bible_done: Boolean(morning.bible_done),
+      plan_done: Boolean(morning.plan_done),
+      bible_url: morning.bible_url || null,
+      plan_url: morning.plan_url || null,
+      redirect_url: morning.redirect_url || null,
+      hint: morning.hint || "",
+    },
+    browser: browser,
+    enforce: Boolean(browser.enforce) || Boolean(g.locked),
+  };
+  await extAPI.storage.local.set({ gateCache: gateCache });
+  if (typeof applyContentScoreFromPolicy === "function") {
+    applyContentScoreFromPolicy(browserPolicyOrFallback(browser));
+  }
+  var modeNow = String(browser.mode || "").toLowerCase();
+  var freeNow =
+    Boolean(g.day_unlimited) || Boolean(g.reward_day) || modeNow === "free";
+  var modeKey =
+    modeNow +
+    "|" +
+    (freeNow ? "1" : "0") +
+    "|" +
+    Boolean(browser.block_watch_sites) +
+    "|" +
+    Boolean(g.locked);
+  var forceDnr = modeKey !== lastGateModeKey;
+  if (forceDnr) lastGateModeKey = modeKey;
+  await syncDeclarativeWatchBlock({ force: forceDnr || opts.force });
+  await syncDeclarativePornBlock({ force: forceDnr || opts.force });
+  scheduleGatePollAlarm();
+}
+
 async function pollGate(opts) {
   opts = opts || {};
   var now = Date.now();
   if (!opts.force && lastGateFetchAt && now - lastGateFetchAt < desiredGatePollMs() - 500) return;
   try {
+    var native = await softlandNativeGetDoc();
+    if (native && native.ok !== false && (native.browser || native.enabled !== undefined)) {
+      await applyGatePayload(native, { force: opts.force, source: "native" });
+      return;
+    }
+
+    // Study HTTP distraction-gate is opt-in debug only (caltGateHttpFallback / caltSoftlandHttpFallback).
+    var st = await extAPI.storage.local.get(["caltGateHttpFallback", "caltSoftlandHttpFallback"]);
+    studyHttpFallback = Boolean(st && (st.caltGateHttpFallback || st.caltSoftlandHttpFallback));
+    if (!studyHttpFallback) {
+      throw new Error(
+        native && native.error
+          ? "native:" + native.error
+          : "native_softland_doc_unavailable"
+      );
+    }
+
     var r = await fetch(GATE_API_URL, { cache: "no-store", headers: caltExtensionHeaders() });
     if (!r.ok) throw new Error("HTTP " + r.status);
     var g = await r.json();
-    lastGateFetchAt = Date.now();
-    noteGateFetchSuccess();
-    var morning = g.morning || {};
-    var browser = g.browser || {};
-    gateCache = {
-      ok: true,
-      stale: false,
-      degraded: false,
-      fetched_at: lastGateFetchAt,
-      policy_gen: g.policy_gen ?? null,
-      locked: Boolean(g.locked),
-      unlocked: Boolean(g.unlocked),
-      enabled: Boolean(g.enabled),
-      remaining_minutes: g.remaining_minutes ?? null,
-      chapter_goal_met: Boolean(g.chapter_goal_met),
-      day_unlimited: Boolean(g.day_unlimited),
-      day_pass: Boolean(g.day_pass),
-      reward_day: Boolean(g.reward_day),
-      productive_minutes: g.productive_minutes ?? 0,
-      daily_goal_minutes: g.daily_goal_minutes ?? 0,
-      suggested_links: Array.isArray(g.suggested_links) ? g.suggested_links : [],
-      current_block: g.current_block || null,
-      morning: {
-        next: morning.next || "open",
-        bible_done: Boolean(morning.bible_done),
-        plan_done: Boolean(morning.plan_done),
-        bible_url: morning.bible_url || null,
-        plan_url: morning.plan_url || null,
-        redirect_url: morning.redirect_url || null,
-        hint: morning.hint || "",
-      },
-      browser: browser,
-      enforce: Boolean(browser.enforce) || Boolean(g.locked),
-    };
-    await extAPI.storage.local.set({ gateCache: gateCache });
-    if (typeof applyContentScoreFromPolicy === "function") {
-      applyContentScoreFromPolicy(browserPolicyOrFallback(browser));
-    }
-    var modeNow = String(browser.mode || "").toLowerCase();
-    var freeNow =
-      Boolean(g.day_unlimited) || Boolean(g.reward_day) || modeNow === "free";
-    var modeKey =
-      modeNow +
-      "|" +
-      (freeNow ? "1" : "0") +
-      "|" +
-      Boolean(browser.block_watch_sites) +
-      "|" +
-      Boolean(g.locked);
-    var forceDnr = modeKey !== lastGateModeKey;
-    if (forceDnr) lastGateModeKey = modeKey;
-    await syncDeclarativeWatchBlock({ force: forceDnr || opts.force });
-    await syncDeclarativePornBlock({ force: forceDnr || opts.force });
-    startPoll();
+    g.source = "http";
+    await applyGatePayload(g, { force: opts.force, source: "http" });
   } catch (e) {
     noteGateFetchFailure();
-    startPoll();
+    scheduleGatePollAlarm();
     var err = String(e && e.message ? e.message : e);
     var prev = gateCache && typeof gateCache === "object" ? gateCache : null;
     var prevBrowser = (prev && prev.browser) || {};
@@ -511,39 +678,43 @@ function desiredGatePollMs() {
   return base;
 }
 
-function startPoll() {
+/** MV3-friendly: chrome.alarms only (no setInterval dual-poll). */
+function scheduleGatePollAlarm() {
   var ms = desiredGatePollMs();
-  if (gatePollTimer && GATE_POLL_MS === ms) return;
   GATE_POLL_MS = ms;
-  if (gatePollTimer) {
-    clearInterval(gatePollTimer);
-    gatePollTimer = null;
+  var mins = Math.max(1, Math.min(10, Math.round(ms / 60000) || 5));
+  try {
+    extAPI.alarms.create("gate-poll", { periodInMinutes: mins });
+  } catch (e) {
+    /* ignore */
   }
-  gatePollTimer = setInterval(function () {
-    void pollGate();
-  }, GATE_POLL_MS);
 }
 
-extAPI.alarms.create("gate-poll", { periodInMinutes: 5 });
+function bootstrapGate() {
+  if (gateBootstrapped) {
+    scheduleGatePollAlarm();
+    return;
+  }
+  gateBootstrapped = true;
+  scheduleGatePollAlarm();
+  void softlandNativePing();
+  void pollGate({ force: true });
+  if (studyHttpFallback) connectGateNotifyWs();
+}
+
 extAPI.alarms.onAlarm.addListener(function (alarm) {
   if (alarm.name === "gate-poll") void pollGate({ force: true });
-  if (alarm.name === "gate-ws-retry") connectGateNotifyWs();
+  if (alarm.name === "gate-ws-retry" && studyHttpFallback) connectGateNotifyWs();
 });
 
 extAPI.runtime.onInstalled.addListener(function () {
-  startPoll();
-  connectGateNotifyWs();
-  void pollGate({ force: true });
+  bootstrapGate();
 });
 extAPI.runtime.onStartup.addListener(function () {
-  startPoll();
-  connectGateNotifyWs();
-  void pollGate({ force: true });
+  bootstrapGate();
 });
 
-startPoll();
-connectGateNotifyWs();
-void pollGate({ force: true });
+bootstrapGate();
 
 async function softLandBlockedTab(tabId, spaUrl, meta) {
   if (tabId == null || !redirectsEnabled || redirectsPausedByCircuit()) return false;
@@ -609,55 +780,24 @@ async function softLandBlockedTab(tabId, spaUrl, meta) {
 }
 
 async function softlandNativeGetMode(url) {
-  // SoftLand decide: Gate → com.calt.msg_host → C++ only (no Study :8000 HTTP).
-  return new Promise(function (resolve) {
-    try {
-      if (!extAPI.runtime || typeof extAPI.runtime.connectNative !== "function") {
-        resolve(null);
-        return;
-      }
-      var port;
-      try {
-        port = extAPI.runtime.connectNative("com.calt.msg_host");
-      } catch (e) {
-        resolve(null);
-        return;
-      }
-      var done = false;
-      var timer = setTimeout(function () {
-        if (done) return;
-        done = true;
-        try {
-          port.disconnect();
-        } catch (e2) {}
-        resolve(null);
-      }, 900);
-      port.onMessage.addListener(function (msg) {
-        if (done) return;
-        done = true;
-        clearTimeout(timer);
-        try {
-          port.disconnect();
-        } catch (e3) {}
-        resolve(msg && typeof msg === "object" ? msg : null);
-      });
-      port.onDisconnect.addListener(function () {
-        if (done) return;
-        done = true;
-        clearTimeout(timer);
-        resolve(null);
-      });
-      port.postMessage({
-        type: "get_mode",
-        schema_version: 1,
-        url: String(url || ""),
-        tab_id: null,
-        now: null,
-      });
-    } catch (e) {
-      resolve(null);
-    }
-  });
+  var key = getModeCacheKey(url);
+  var hit = getModeCache[key];
+  var now = Date.now();
+  if (hit && now - hit.at < GET_MODE_TTL_MS) return hit.msg;
+  var msg = await nativeCall(
+    {
+      type: "get_mode",
+      schema_version: 1,
+      url: String(url || ""),
+      tab_id: null,
+      now: null,
+    },
+    900
+  );
+  if (msg && typeof msg === "object") {
+    getModeCache[key] = { at: now, msg: msg };
+  }
+  return msg;
 }
 
 async function maybeRedirectTab(tabId, url, title) {
@@ -676,7 +816,18 @@ async function maybeRedirectTab(tabId, url, title) {
     return false;
   }
 
-  // Native SoftLand only — if msg_host fails, fail-closed (no SoftLand redirect).
+  // Extension-local 60s temp allow (C++ SoftLand has no temp-allow list).
+  if (host && typeof isHostTempAllowed === "function") {
+    var pol =
+      typeof browserPolicyOrFallback === "function"
+        ? browserPolicyOrFallback(gateCache && gateCache.browser)
+        : {};
+    if (isHostTempAllowed(host, tempAllowsCache, Date.now(), pol)) {
+      return false;
+    }
+  }
+
+  // Native SoftLand only — if msg_host fails, no SoftLand redirect (DNR still covers lists).
   var native = await softlandNativeGetMode(url);
   if (native && native.ok !== false && native.action) {
     if (native.action === "allow" || native.action === "none") return false;
@@ -730,13 +881,26 @@ extAPI.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
     }
     var lockUrl = String(msg.url || "");
     var tabId = sender && sender.tab && sender.tab.id;
-    // Prod P3: honor native SoftLand (off / free → do not SoftLand from content score alone).
     void (async function () {
       var native = await softlandNativeGetMode(lockUrl);
-      if (native && native.ok !== false) {
-        if (!native.softland_enabled || native.action === "allow" || native.mode === "free") {
-          return;
-        }
+      // Align with navigation: no native answer → do not SoftLand from content score alone.
+      if (!native || native.ok === false) return;
+      if (!native.softland_enabled || native.action === "allow" || native.mode === "free") {
+        return;
+      }
+      if (native.action !== "block" || native.enforce === false) return;
+      var hostCs = "";
+      try {
+        hostCs = typeof hostnameFromUrl === "function" ? hostnameFromUrl(lockUrl) : "";
+      } catch (eCs) {
+        hostCs = "";
+      }
+      if (hostCs && typeof isHostTempAllowed === "function") {
+        var polCs =
+          typeof browserPolicyOrFallback === "function"
+            ? browserPolicyOrFallback(gateCache && gateCache.browser)
+            : {};
+        if (isHostTempAllowed(hostCs, tempAllowsCache, Date.now(), polCs)) return;
       }
       reportGateAlert(
         "distraction",
@@ -753,12 +917,22 @@ extAPI.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
     return false;
   }
   if (msg.type === "GET_GATE") {
-    sendResponse({ gateCache: gateCache, redirectsEnabled: redirectsEnabled });
+    sendResponse({
+      gateCache: gateCache,
+      redirectsEnabled: redirectsEnabled,
+      nativeHostOk: nativeHostOk,
+      studyHttpFallback: studyHttpFallback,
+    });
     return false;
   }
   if (msg.type === "REFRESH_GATE") {
-    void pollGate().then(function () {
-      sendResponse({ ok: true, gateCache: gateCache });
+    void pollGate({ force: true }).then(function () {
+      sendResponse({
+        ok: true,
+        gateCache: gateCache,
+        nativeHostOk: nativeHostOk,
+        studyHttpFallback: studyHttpFallback,
+      });
     });
     return true;
   }
@@ -814,6 +988,7 @@ extAPI.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
       payload[key] = list;
       payload.tempAllows = list;
       extAPI.storage.local.set(payload, function () {
+        invalidateGetModeCache(grant.entry.host);
         sendResponse({
           ok: true,
           host: grant.entry.host,

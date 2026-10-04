@@ -206,10 +206,11 @@ export function aggregatePlannedByTask(
 ): { name: string; hours: number }[] {
   const totals = new Map<string, number>();
   for (const b of blocks) {
+    const mapped = b.task_id != null ? taskTitleById.get(b.task_id) : undefined;
     const key =
-      b.task_id == null
-        ? "Unassigned"
-        : taskTitleById.get(b.task_id) ?? `Task #${b.task_id}`;
+      mapped ||
+      b.title?.trim() ||
+      (b.task_id != null ? `Task #${b.task_id}` : b.category?.trim() || "Unassigned");
     totals.set(key, (totals.get(key) ?? 0) + b.planned_minutes);
   }
   return [...totals.entries()]
@@ -295,7 +296,8 @@ export const TRACKER_MERGE_GAP_SEC = 120;
 
 /** Calendar: aggressive merge so react-big-calendar stays readable. */
 export const CALENDAR_MERGE_GAP_SEC = 900;
-export const CALENDAR_MIN_DISPLAY_SEC = 120;
+/** Show merged runs ≥20s — browser track_tab ticks are short; 45s hid almost all Edge rows. */
+export const CALENDAR_MIN_DISPLAY_SEC = 20;
 
 const IGNORED_TRACKER_APPS = [/^move\s*mouse/i, /movemouse/i, /^caffeine/i, /dontsleep/i, /lockapp/i, /steamwebhelper/i];
 
@@ -348,7 +350,12 @@ type Mergeable = {
 
 
 function durationSec(start: string, end: string): number {
-  return Math.max(0, Math.round((new Date(end).getTime() - new Date(start).getTime()) / 1000));
+  const a = new Date(start).getTime();
+  const b = new Date(end).getTime();
+  if (!Number.isFinite(a) || !Number.isFinite(b)) return 0;
+  // SelfTracker used to write point samples (start==end); treat as one telemetry tick.
+  if (b <= a) return 20;
+  return Math.max(0, Math.round((b - a) / 1000));
 }
 
 /** Browser apps often appear as a suffix on the window title (“… — Zen Browser”). */
@@ -474,8 +481,12 @@ export function mergeAdjacentIntervals<T extends Mergeable>(
 
   for (const item of sorted) {
     const startMs = new Date(item.start_time).getTime();
-    const endMs = new Date(item.end_time).getTime();
-    if (endMs <= startMs) continue;
+    let endMs = new Date(item.end_time).getTime();
+    // Browser track_tab used to write point samples (start==end); pad one telemetry tick.
+    if (Number.isFinite(startMs) && Number.isFinite(endMs) && endMs <= startMs) {
+      endMs = startMs + 20_000;
+    }
+    if (!Number.isFinite(startMs) || !Number.isFinite(endMs) || endMs <= startMs) continue;
 
     const key = mergeKey(item);
     const prev = lastByKey.get(key);
@@ -483,20 +494,24 @@ export function mergeAdjacentIntervals<T extends Mergeable>(
     const gapSec = prev ? (startMs - prevEndMs) / 1000 : Infinity;
 
     if (prev && (gapSec <= maxGapSec || startMs <= prevEndMs)) {
+      // O(1): any other app whose latest end bridges the gap blocks the merge.
+      // (Sorted-by-start input ⇒ all prior rows start before this sample.)
       let intervening = false;
-      for (const other of out) {
-        if (mergeKey(other) === key) continue;
-        const oStart = new Date(other.start_time).getTime();
+      for (const [otherKey, other] of lastByKey) {
+        if (otherKey === key) continue;
         const oEnd = new Date(other.end_time).getTime();
-        if (oStart < startMs && oEnd > prevEndMs) {
+        if (oEnd > prevEndMs) {
           intervening = true;
           break;
         }
       }
       if (!intervening) {
-        const nextEnd = endMs >= prevEndMs ? item.end_time : prev.end_time;
-        prev.end_time = nextEnd;
-        const child = childFrom(item);
+        const paddedEnd = endMs >= prevEndMs ? new Date(endMs).toISOString() : prev.end_time;
+        prev.end_time = paddedEnd;
+        const child = childFrom({
+          ...item,
+          end_time: endMs > startMs ? new Date(endMs).toISOString() : item.end_time,
+        });
         // Active time = sum of children, not wall-clock span across gaps
         prev.children.push(child);
         prev.merged_count = prev.children.length;
@@ -520,7 +535,10 @@ export function mergeAdjacentIntervals<T extends Mergeable>(
       }
     }
 
-    const child = childFrom(item);
+    const child = childFrom({
+      ...item,
+      end_time: endMs > startMs ? new Date(endMs).toISOString() : item.end_time,
+    });
     const row: MergedInterval = {
       session_id: child.session_id,
       start_time: child.start_time,
@@ -699,7 +717,7 @@ function addFocusBoundaryPoints(
 
 /**
  * Builds the plain-language focus story used by Calendar analytics.
- * It uses only existing planned blocks and scored tracker sessions.
+ * Pre-parses plan intervals once; avoids O(sessions×blocks×segments) date parsing.
  */
 export function buildFocusRhythm(
   blocks: PlannerBlock[],
@@ -714,12 +732,52 @@ export function buildFocusRhythm(
   const buckets = new Map<string, FocusRhythmBucket>();
   const distractionSources = new Map<string, number>();
 
+  type PlanIv = { start: number; end: number };
+  const planRaw: PlanIv[] = [];
+  for (const block of blocks) {
+    if (!block.start_at || !block.end_at) continue;
+    const bs = parseApiDate(block.start_at).getTime();
+    const be = parseApiDate(block.end_at).getTime();
+    if (!Number.isFinite(bs) || !Number.isFinite(be) || be <= bs) continue;
+    const start = Math.max(rangeStart, bs);
+    const end = Math.min(rangeEnd, be);
+    if (end > start) planRaw.push({ start, end });
+  }
+  planRaw.sort((a, b) => a.start - b.start);
+  const plan: PlanIv[] = [];
+  for (const p of planRaw) {
+    const last = plan[plan.length - 1];
+    if (last && p.start <= last.end) last.end = Math.max(last.end, p.end);
+    else plan.push({ start: p.start, end: p.end });
+  }
+
+  /** True if [a,b) overlaps any planned interval (plan is sorted + merged). */
+  const overlapsPlan = (a: number, b: number): boolean => {
+    let lo = 0;
+    let hi = plan.length - 1;
+    let i = plan.length;
+    while (lo <= hi) {
+      const mid = (lo + hi) >> 1;
+      if (plan[mid].end <= a) lo = mid + 1;
+      else {
+        i = mid;
+        hi = mid - 1;
+      }
+    }
+    for (; i < plan.length; i += 1) {
+      const p = plan[i];
+      if (p.start >= b) break;
+      if (p.start < b && p.end > a) return true;
+    }
+    return false;
+  };
+
   const add = (
-    at: Date,
+    atMs: number,
     kind: "zoneMinutes" | "pulledAwayMinutes" | "focusedElsewhereMinutes",
     minutes: number,
   ) => {
-    const bucketStart = focusBucketStart(at, view);
+    const bucketStart = focusBucketStart(new Date(atMs), view);
     const key = bucketStart.toISOString();
     const existing = buckets.get(key) ?? {
       key,
@@ -749,35 +807,31 @@ export function buildFocusRhythm(
 
     const points = new Set<number>([start, end]);
     addFocusBoundaryPoints(points, start, end, view);
-    for (const block of blocks) {
-      const blockStart = parseApiDate(block.start_at).getTime();
-      const blockEnd = parseApiDate(block.end_at).getTime();
-      if (!Number.isFinite(blockStart) || !Number.isFinite(blockEnd) || blockEnd <= start || blockStart >= end) {
-        continue;
-      }
-      points.add(Math.max(start, blockStart), Math.min(end, blockEnd));
+    for (const p of plan) {
+      if (p.end <= start) continue;
+      if (p.start >= end) break;
+      if (p.start > start && p.start < end) points.add(p.start);
+      if (p.end > start && p.end < end) points.add(p.end);
     }
 
     const sorted = [...points].sort((a, b) => a - b);
+    const productive = (session.productivity_score ?? 0) >= productiveThreshold;
+    const distractName =
+      session.site?.trim() || shortAppName(session.app_name) || session.category?.trim() || "Activity";
+
     for (let i = 0; i < sorted.length - 1; i += 1) {
       const partStart = sorted[i];
       const partEnd = sorted[i + 1];
       const minutes = (partEnd - partStart) / 60_000;
       if (minutes <= 0) continue;
-      const isOnPlan = blocks.some((block) => {
-        const blockStart = parseApiDate(block.start_at).getTime();
-        const blockEnd = parseApiDate(block.end_at).getTime();
-        return Number.isFinite(blockStart) && Number.isFinite(blockEnd) && blockStart < partEnd && blockEnd > partStart;
-      });
-      const productive = (session.productivity_score ?? 0) >= productiveThreshold;
+      const isOnPlan = overlapsPlan(partStart, partEnd);
       if (isOnPlan && productive) {
-        add(new Date(partStart), "zoneMinutes", minutes);
+        add(partStart, "zoneMinutes", minutes);
       } else if (isOnPlan) {
-        add(new Date(partStart), "pulledAwayMinutes", minutes);
-        const name = session.site?.trim() || shortAppName(session.app_name) || session.category?.trim() || "Activity";
-        distractionSources.set(name, (distractionSources.get(name) ?? 0) + minutes);
+        add(partStart, "pulledAwayMinutes", minutes);
+        distractionSources.set(distractName, (distractionSources.get(distractName) ?? 0) + minutes);
       } else if (productive) {
-        add(new Date(partStart), "focusedElsewhereMinutes", minutes);
+        add(partStart, "focusedElsewhereMinutes", minutes);
       }
     }
   }

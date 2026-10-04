@@ -46,7 +46,10 @@ $obj = [ordered]@{
   type = "stdio"
   allowed_origins = $origins
 }
-($obj | ConvertTo-Json -Compress:$false) | Set-Content -Path $ManifestPath -Encoding UTF8
+# Chromium rejects / mis-parses UTF-8 BOM on native-host manifests ("host forbidden").
+$json = ($obj | ConvertTo-Json -Compress:$false)
+$utf8NoBom = New-Object System.Text.UTF8Encoding $false
+[System.IO.File]::WriteAllText($ManifestPath, $json + "`n", $utf8NoBom)
 
 $keys = @(
   "HKCU:\Software\Google\Chrome\NativeMessagingHosts\com.calt.msg_host",

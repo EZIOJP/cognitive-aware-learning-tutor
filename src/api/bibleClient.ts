@@ -1,6 +1,7 @@
 import { resolveApiUrl } from "../utils/resolveBackendUrl";
 import { enforcerNativeCmd, isFocusEnforcerBridgeAvailable } from "../lib/enforcerNativeCmd";
 import { isFocusDesktopShell } from "../utils/focusDesktopShell";
+import { focusDataUrl } from "../utils/focusDataUrl";
 import { readFocusBibleChapter } from "../utils/bibleCorpus";
 
 const TOKEN_KEY = "vocab:auth-token";
@@ -27,10 +28,24 @@ async function lifeGateway(
   payload: Record<string, unknown> = {},
   timeoutMs = 12000,
 ): Promise<Record<string, unknown>> {
-  const res = await enforcerNativeCmd(op, payload, timeoutMs);
-  if (!res) throw new Error("enforcer_unreachable");
-  if (res.ok === false) throw new Error(String(res.error || "enforcer_cmd_failed"));
-  return res as Record<string, unknown>;
+  if (!isFocusEnforcerBridgeAvailable()) throw new Error("enforcer_unreachable");
+  let lastErr = "enforcer_unreachable";
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const res = await enforcerNativeCmd(op, payload, timeoutMs);
+    if (!res) {
+      lastErr = "enforcer_unreachable";
+    } else if (res.ok !== false && !res.error) {
+      return res as Record<string, unknown>;
+    } else if (res.error && res.error !== "timeout" && res.error !== "queue_dropped" && res.error !== "coalesced") {
+      throw new Error(String(res.error));
+    } else {
+      lastErr = res.error ? String(res.error) : "enforcer_unreachable";
+    }
+    await new Promise((r) => window.setTimeout(r, 200 + attempt * 250));
+  }
+  throw new Error(lastErr === "timeout" || lastErr === "queue_dropped" || lastErr === "coalesced"
+    ? "enforcer_unreachable"
+    : lastErr);
 }
 
 export type BibleBookmark = {
@@ -276,7 +291,42 @@ export type DayPassStatus = {
   confirm_phrase: string;
 };
 
+function dayStatusToPass(res: Record<string, unknown>): DayPassStatus {
+  const used = Number(res.passes_used ?? 0);
+  const limit = Number(res.passes_limit ?? 2);
+  return {
+    week_start: String(res.week_start || ""),
+    limit,
+    used,
+    remaining: Math.max(0, limit - used),
+    already_active_today: Boolean(res.pass_today),
+    confirm_phrase: "PASS",
+  };
+}
+
+/** Native unlock ledger snapshot (P5a) — Focus shell only. */
+export async function fetchNativeDayStatus(): Promise<Record<string, unknown> | null> {
+  if (!isFocusDesktopShell() || !isFocusEnforcerBridgeAvailable()) return null;
+  try {
+    return await lifeGateway("day.status", {}, 8000);
+  } catch {
+    return null;
+  }
+}
+
 export async function fetchDayPassStatus(): Promise<DayPassStatus> {
+  if (isFocusDesktopShell()) {
+    try {
+      const r = await fetch(focusDataUrl("day_status.json"), { cache: "no-store" });
+      if (r.ok) return dayStatusToPass((await r.json()) as Record<string, unknown>);
+    } catch {
+      /* fall through */
+    }
+    if (isFocusEnforcerBridgeAvailable()) {
+      const res = await lifeGateway("day.status", {}, 8000);
+      return dayStatusToPass(res);
+    }
+  }
   const res = await fetch(resolveApiUrl("/api/bible/day-pass"), { headers: authHeaders() });
   if (!res.ok) throw new Error(`bible/day-pass: ${res.status}`);
   return res.json();
@@ -289,6 +339,25 @@ export async function requestBibleDayPass(confirm: string): Promise<{
   day_pass_status?: DayPassStatus;
   gate?: Record<string, unknown>;
 }> {
+  if (isFocusDesktopShell() && isFocusEnforcerBridgeAvailable()) {
+    const phrase = String(confirm || "").trim().toUpperCase();
+    if (phrase !== "PASS") throw new Error("Type PASS to confirm day pass");
+    try {
+      const res = await lifeGateway("day.grant_pass", { confirm: "PASS" }, 10000);
+      const status = dayStatusToPass(res);
+      return {
+        ok: true,
+        message: "Day pass granted — SoftLand free until midnight.",
+        day_pass: true,
+        day_pass_status: status,
+      };
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      if (msg === "confirm_required") throw new Error("Type PASS to confirm day pass");
+      if (msg === "pass_quota_exhausted") throw new Error("Day pass quota exhausted (2/week)");
+      throw e instanceof Error ? e : new Error(msg);
+    }
+  }
   const res = await fetch(resolveApiUrl("/api/bible/day-pass"), {
     method: "POST",
     headers: authHeaders(),
@@ -314,6 +383,25 @@ export async function requestRewardDay(confirm: string): Promise<{
   active_today?: boolean;
   gate?: Record<string, unknown>;
 }> {
+  if (isFocusDesktopShell() && isFocusEnforcerBridgeAvailable()) {
+    const phrase = String(confirm || "").trim().toUpperCase();
+    if (phrase !== "REWARD") throw new Error("Type REWARD to claim a reward day");
+    try {
+      const res = await lifeGateway("reward.claim", { confirm: "REWARD" }, 10000);
+      return {
+        ok: true,
+        message: "Reward day active — free mode until midnight.",
+        available: Number(res.reward_available ?? 0),
+        active_today: true,
+      };
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      if (msg === "confirm_required") throw new Error("Type REWARD to claim a reward day");
+      if (msg === "no_reward_available") throw new Error("No reward day available yet");
+      if (msg === "already_unlocked") throw new Error("Reward day already active today");
+      throw e instanceof Error ? e : new Error(msg);
+    }
+  }
   const res = await fetch(resolveApiUrl("/api/bible/reward-day"), {
     method: "POST",
     headers: authHeaders(),
@@ -343,6 +431,7 @@ export type DevotionSlotInfo = {
   note: string;
   done?: boolean;
   notes?: string;
+  journal?: string;
   lords_prayer?: string;
   prayer?: string;
   book?: string;
@@ -356,6 +445,7 @@ export type DevotionSlotInfo = {
 };
 
 export type DevotionTodayPayload = {
+  day?: string;
   morning: DevotionSlotInfo;
   afternoon: DevotionSlotInfo;
   evening: DevotionSlotInfo;
@@ -368,21 +458,64 @@ export type DevotionTodayPayload = {
   hymns_catalog?: { id: string; title: string; theme: string }[];
 };
 
+async function hydrateDevotionChapters(d: DevotionTodayPayload): Promise<DevotionTodayPayload> {
+  const tc = d.today_chapter;
+  if (tc?.book && tc?.chapter) {
+    d.morning_chapter =
+      (await readFocusBibleChapter(tc.book, tc.chapter)) || d.morning_chapter;
+  } else if (!d.morning_chapter) {
+    d.morning_chapter = (await readFocusBibleChapter("Genesis", 1)) || d.morning_chapter;
+  }
+  if (d.afternoon?.book && d.afternoon?.chapter) {
+    d.afternoon_chapter =
+      (await readFocusBibleChapter(d.afternoon.book, d.afternoon.chapter)) || d.afternoon_chapter;
+  }
+  if (d.evening?.book && d.evening?.chapter) {
+    d.evening_chapter =
+      (await readFocusBibleChapter(d.evening.book, d.evening.chapter)) || d.evening_chapter;
+  }
+  return d;
+}
+
+/** Focus: SQLite → behavior/bible_devotion.json (no pipe). Verses from calt-bible corpus. */
+function localYmd(): string {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+async function fetchDevotionFromMirror(): Promise<DevotionTodayPayload | null> {
+  try {
+    const r = await fetch(focusDataUrl("bible_devotion.json"), { cache: "no-store" });
+    if (!r.ok) return null;
+    const d = (await r.json()) as DevotionTodayPayload;
+    if (!d?.today_chapter && !d?.morning) return null;
+    // Stale yesterday mirrors look "already done" and break Mark chapter done.
+    const day = typeof d.day === "string" ? d.day : "";
+    if (day && day !== localYmd()) return null;
+    return hydrateDevotionChapters(d);
+  } catch {
+    return null;
+  }
+}
+
 export async function fetchDevotionToday(version = "web"): Promise<DevotionTodayPayload> {
-  if (lifeTransport() === "gateway") {
-    const res = await lifeGateway("bible.devotion.today", { version });
-    const d = (res.devotion as DevotionTodayPayload) || ({} as DevotionTodayPayload);
-    const tc = d.today_chapter;
-    if (tc?.book && tc?.chapter) {
-      d.morning_chapter = await readFocusBibleChapter(tc.book, tc.chapter);
+  if (isFocusDesktopShell()) {
+    const fromMirror = await fetchDevotionFromMirror();
+    if (fromMirror) return fromMirror;
+    // One-shot seed: ask enforcer to project SQLite → mirror, then read the file.
+    if (isFocusEnforcerBridgeAvailable()) {
+      try {
+        await lifeGateway("bible.devotion.today", { version });
+      } catch {
+        /* mirror may still appear if another writer published */
+      }
+      const seeded = await fetchDevotionFromMirror();
+      if (seeded) return seeded;
     }
-    if (d.afternoon?.book && d.afternoon?.chapter) {
-      d.afternoon_chapter = await readFocusBibleChapter(d.afternoon.book, d.afternoon.chapter);
-    }
-    if (d.evening?.book && d.evening?.chapter) {
-      d.evening_chapter = await readFocusBibleChapter(d.evening.book, d.evening.chapter);
-    }
-    return d;
+    throw new Error("bible_devotion.json missing — start calt_enforcer once to publish from SQLite");
   }
   const r = await fetch(
     resolveApiUrl(`/api/bible/devotion/today?version=${encodeURIComponent(version)}`),
@@ -424,4 +557,30 @@ export async function saveDevotionNotes(
   });
   if (!r.ok) throw new Error(`bible/devotion/notes: ${r.status}`);
   return r.json();
+}
+
+export async function assignDevotionChapter(
+  slot: DevotionSlot,
+  book: string,
+  chapter: number,
+): Promise<DevotionTodayPayload> {
+  const res = await lifeGateway("bible.devotion.assign", { slot, book, chapter });
+  return (res.devotion as DevotionTodayPayload) || ({} as DevotionTodayPayload);
+}
+
+export async function stepDevotionChapter(
+  slot: DevotionSlot,
+  delta: -1 | 1,
+): Promise<DevotionTodayPayload> {
+  const res = await lifeGateway("bible.devotion.step", { slot, delta });
+  return (res.devotion as DevotionTodayPayload) || ({} as DevotionTodayPayload);
+}
+
+export async function saveDevotionPrayer(
+  slot: DevotionSlot,
+  text: string,
+  reset = false,
+): Promise<DevotionTodayPayload> {
+  const res = await lifeGateway("bible.devotion.prayer", { slot, text, reset });
+  return (res.devotion as DevotionTodayPayload) || ({} as DevotionTodayPayload);
 }

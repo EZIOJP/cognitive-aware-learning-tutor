@@ -63,12 +63,26 @@ var REDIRECT_COOLDOWN_MS = 180000;
 var redirectCooldownUntil = 0;
 /** In-memory temp allows: { host, until }[] — synced with chrome.storage.local. */
 var tempAllowsCache = [];
+/** Study :8000 gate WS / HTTP / Jarvis tab-cmd — default OFF (native Focus path). */
+var studyHttpFallback = false;
+var trackerBootstrapped = false;
 
 const BULK_FLUSH_MINUTES = 3;
 const BULK_FLUSH_MAX = 25;
 
 extAPI.storage.local.get(
-  ["dailyLog", "tabSwitchCount", "outboundQueue", "gateCache", "redirectsEnabled", "caltTabId", "lastJarvisLine", "tempAllows"],
+  [
+    "dailyLog",
+    "tabSwitchCount",
+    "outboundQueue",
+    "gateCache",
+    "redirectsEnabled",
+    "caltTabId",
+    "lastJarvisLine",
+    "tempAllows",
+    "caltGateHttpFallback",
+    "caltSoftlandHttpFallback",
+  ],
   (result) => {
     if (result.dailyLog) dailyLog = result.dailyLog;
     if (result.tabSwitchCount) tabSwitchCount = result.tabSwitchCount;
@@ -84,6 +98,7 @@ extAPI.storage.local.get(
     if (Array.isArray(result.tempAllows)) {
       tempAllowsCache = pruneTempAllows(result.tempAllows, Date.now());
     }
+    studyHttpFallback = Boolean(result.caltGateHttpFallback || result.caltSoftlandHttpFallback);
   },
 );
 
@@ -118,6 +133,8 @@ function noteGateFetchFailure() {
 }
 
 function connectGateNotifyWs() {
+  // Study gate notify — opt-in only (caltGateHttpFallback). Default: native poll via Gate + alarms.
+  if (!studyHttpFallback) return;
   var url = typeof GATE_NOTIFY_WS_URL !== "undefined" ? GATE_NOTIFY_WS_URL : "ws://127.0.0.1:8000/ws/gate";
   if (gateNotifyWs && (gateNotifyWs.readyState === WebSocket.OPEN || gateNotifyWs.readyState === WebSocket.CONNECTING)) {
     return;
@@ -136,6 +153,7 @@ function connectGateNotifyWs() {
     };
     gateNotifyWs.onclose = function () {
       gateNotifyWs = null;
+      if (!studyHttpFallback) return;
       extAPI.alarms.create("gate-ws-retry", { delayInMinutes: 1 });
     };
     gateNotifyWs.onerror = function () {
@@ -166,19 +184,65 @@ function desiredGatePollMs() {
   return base;
 }
 
-function startLightGatePoll() {
+/** Prefer chrome.alarms (MV3). Drop setInterval dual-poll. */
+function scheduleLightGatePoll() {
   var ms = desiredGatePollMs();
-  if (gatePollTimer && currentGatePollMs === ms) return;
+  currentGatePollMs = ms;
+  var mins = Math.max(1, Math.min(10, Math.round(ms / 60000) || 5));
+  try {
+    extAPI.alarms.create("gate-poll", { periodInMinutes: mins });
+  } catch (e) {
+    /* ignore */
+  }
   if (gatePollTimer) {
     clearInterval(gatePollTimer);
     gatePollTimer = null;
   }
-  currentGatePollMs = ms;
-  gatePollTimer = setInterval(function () {
-    // Cache + DNR fingerprint only — NEVER enforce/tabs.query on this timer.
-    void pollDistractionGate({ opportunistic: true, enforce: false });
-    void pollCaltTabCommand();
-  }, ms);
+}
+
+async function softlandNativeGetDoc() {
+  return new Promise(function (resolve) {
+    try {
+      if (!extAPI.runtime || typeof extAPI.runtime.connectNative !== "function") {
+        resolve(null);
+        return;
+      }
+      var port;
+      try {
+        port = extAPI.runtime.connectNative("com.calt.msg_host");
+      } catch (e) {
+        resolve(null);
+        return;
+      }
+      var done = false;
+      var timer = setTimeout(function () {
+        if (done) return;
+        done = true;
+        try {
+          port.disconnect();
+        } catch (e2) {}
+        resolve(null);
+      }, 1200);
+      port.onMessage.addListener(function (msg) {
+        if (done) return;
+        done = true;
+        clearTimeout(timer);
+        try {
+          port.disconnect();
+        } catch (e3) {}
+        resolve(msg && typeof msg === "object" ? msg : null);
+      });
+      port.onDisconnect.addListener(function () {
+        if (done) return;
+        done = true;
+        clearTimeout(timer);
+        resolve(null);
+      });
+      port.postMessage({ type: "get_softland_doc", schema_version: 1 });
+    } catch (e4) {
+      resolve(null);
+    }
+  });
 }
 
 function redirectsPausedByCircuit() {
@@ -212,33 +276,35 @@ function noteSoftLandAttempt() {
 var PYTHON_TELEMETRY_STORAGE_KEY = "caltPythonTelemetry";
 
 extAPI.runtime.onInstalled.addListener(() => {
-  scheduleAlarms();
-  startLightGatePoll();
-  connectWebSocket();
-  connectGateNotifyWs();
-  pollDistractionGate();
+  bootstrapTracker();
 });
 
 extAPI.runtime.onStartup.addListener(() => {
-  scheduleAlarms();
-  startLightGatePoll();
-  connectWebSocket();
-  connectGateNotifyWs();
-  pollDistractionGate();
+  bootstrapTracker();
 });
 
-scheduleAlarms();
-startLightGatePoll();
-connectWebSocket();
-connectGateNotifyWs();
-pollDistractionGate();
-try {
-  startBrowserTelemetry(extAPI, function () {
-    return gateCache;
-  });
-} catch (e) {
-  console.warn("SelfTracker: telemetry start failed", e);
+function bootstrapTracker() {
+  if (trackerBootstrapped) {
+    scheduleAlarms();
+    scheduleLightGatePoll();
+    return;
+  }
+  trackerBootstrapped = true;
+  scheduleAlarms();
+  scheduleLightGatePoll();
+  connectWebSocket();
+  if (studyHttpFallback) connectGateNotifyWs();
+  void pollDistractionGate({ force: true, enforce: false });
+  try {
+    startBrowserTelemetry(extAPI, function () {
+      return gateCache;
+    });
+  } catch (e) {
+    console.warn("SelfTracker: telemetry start failed", e);
+  }
 }
+
+bootstrapTracker();
 
 function isPythonBehaviorTelemetryEnabled(cb) {
   try {
@@ -305,9 +371,7 @@ function caltExtensionHeaders() {
 
 async function pollDistractionGate(opts) {
   opts = opts || {};
-  // Default: light poll refreshes cache/DNR only. Full tab sweep only when enforce:true
-  // (1 min alarm / explicit REFRESH / toggle redirects).
-  var doEnforce = opts.enforce === true;
+  // Default: light poll refreshes cache only. Blocking owned by CALT Gate.
   var now = Date.now();
   if (
     !opts.force &&
@@ -318,6 +382,64 @@ async function pollDistractionGate(opts) {
     return;
   }
   try {
+    var native = await softlandNativeGetDoc();
+    if (native && native.ok !== false && (native.browser || native.enabled !== undefined)) {
+      var gn = native;
+      lastGateFetchAt = Date.now();
+      noteGateFetchSuccess();
+      var morningN = gn.morning || {};
+      var browserN = gn.browser || {};
+      gateCache = {
+        ok: true,
+        stale: false,
+        degraded: false,
+        source: gn.source || "native",
+        fetched_at: lastGateFetchAt,
+        policy_gen: gn.policy_gen ?? null,
+        locked: Boolean(gn.locked),
+        unlocked: Boolean(gn.unlocked),
+        enabled: Boolean(gn.enabled),
+        remaining_minutes: gn.remaining_minutes ?? null,
+        chapter_goal_met: Boolean(gn.chapter_goal_met),
+        day_unlimited: Boolean(gn.day_unlimited),
+        day_pass: Boolean(gn.day_pass),
+        reward_day: Boolean(gn.reward_day),
+        productive_minutes: gn.productive_minutes ?? 0,
+        daily_goal_minutes: gn.daily_goal_minutes ?? 0,
+        suggested_links: Array.isArray(gn.suggested_links) ? gn.suggested_links : [],
+        current_block: gn.current_block || null,
+        morning: {
+          next: morningN.next || "open",
+          bible_done: Boolean(morningN.bible_done),
+          plan_done: Boolean(morningN.plan_done),
+          bible_url: morningN.bible_url || null,
+          plan_url: morningN.plan_url || null,
+          redirect_url: morningN.redirect_url || null,
+          hint: morningN.hint || "",
+        },
+        browser: browserN,
+        enforce: Boolean(browserN.enforce) || Boolean(gn.locked),
+      };
+      await extAPI.storage.local.set({ gateCache });
+      scheduleLightGatePoll();
+      scheduleAlarms();
+      return;
+    }
+
+    var st = await new Promise(function (resolve) {
+      try {
+        extAPI.storage.local.get(["caltGateHttpFallback", "caltSoftlandHttpFallback"], resolve);
+      } catch (eSt) {
+        resolve({});
+      }
+    });
+    studyHttpFallback = Boolean(st && (st.caltGateHttpFallback || st.caltSoftlandHttpFallback));
+    if (!studyHttpFallback) {
+      throw new Error(
+        native && native.error ? "native:" + native.error : "native_softland_doc_unavailable"
+      );
+    }
+
     const r = await fetch(GATE_API_URL, { cache: "no-store", headers: caltExtensionHeaders() });
     if (!r.ok) throw new Error("HTTP " + r.status);
     const g = await r.json();
@@ -329,6 +451,7 @@ async function pollDistractionGate(opts) {
       ok: true,
       stale: false,
       degraded: false,
+      source: "http",
       fetched_at: lastGateFetchAt,
       policy_gen: g.policy_gen ?? null,
       locked: Boolean(g.locked),
@@ -356,12 +479,11 @@ async function pollDistractionGate(opts) {
       enforce: Boolean(browser.enforce) || Boolean(g.locked),
     };
     await extAPI.storage.local.set({ gateCache });
-    startLightGatePoll();
+    scheduleLightGatePoll();
     scheduleAlarms();
-    // Blocking / DNR owned by CALT Gate — tracker only caches mode for UI + Jarvis.
   } catch (e) {
     noteGateFetchFailure();
-    startLightGatePoll();
+    scheduleLightGatePoll();
     // Fail-closed for study/bible — but NEVER re-arm YouTube block while already FREE.
     const err = String(e && e.message ? e.message : e);
     const prev = gateCache && typeof gateCache === "object" ? gateCache : null;
@@ -374,7 +496,6 @@ async function pollDistractionGate(opts) {
     const keepArmed = Boolean(prev && (prev.enabled || prev.locked || prev.enforce));
     if (prev && (prev.ok || prev.degraded) && (keepStrict || keepArmed || prevFree)) {
       const browser = Object.assign({}, prevBrowser, {
-        // Keep FREE watch/social open across API blips; distraction filter stays on.
         block_watch_sites: prevFree ? false : true,
         block_social: prevFree ? false : prevBrowser.block_social === true,
         block_other: prevFree ? false : true,
@@ -398,7 +519,6 @@ async function pollDistractionGate(opts) {
         browser: browser,
       });
     } else {
-      // No usable cache: default fail-closed study (watch + adult blocked).
       gateCache = {
         ok: true,
         stale: true,
@@ -720,6 +840,7 @@ function broadcastJarvisLine(kind) {
 }
 
 async function pollCaltTabCommand() {
+  if (!studyHttpFallback) return;
   try {
     var r = await fetch(CALT_TAB_CMD_URL + "?consume=1", { cache: "no-store" });
     if (!r.ok) return;
@@ -982,14 +1103,17 @@ if (extAPI.idle && extAPI.idle.setDetectionInterval) {
 }
 
 extAPI.alarms.onAlarm.addListener((alarm) => {
-  if (alarm.name === "ws-retry" || alarm.name === "ws-keepalive" || alarm.name === "gate-ws-retry") {
+  if (alarm.name === "ws-retry" || alarm.name === "ws-keepalive") {
     connectWebSocket();
-    connectGateNotifyWs();
+    return;
+  }
+  if (alarm.name === "gate-ws-retry") {
+    if (studyHttpFallback) connectGateNotifyWs();
     return;
   }
   if (alarm.name === "gate-poll") {
-    // 5 min backup: refresh + rare enforce sweep.
-    void pollDistractionGate({ enforce: true });
+    void pollDistractionGate({ force: true, enforce: false });
+    if (studyHttpFallback) void pollCaltTabCommand();
     return;
   }
   if (alarm.name === "flush") {

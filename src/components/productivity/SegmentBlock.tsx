@@ -32,18 +32,17 @@ type Props = {
 };
 
 export function SegmentBlock({ segment, tier, seamLeft, seamRight, onClick }: Props) {
-  // Horizontal = minutes (0→60). Overlap allowed: full hour height, stack by z-index.
+  // Horizontal = minutes (0→60). Concurrent apps share one full-height band and
+  // stack by z-index (shorter / later on top) instead of exclusive lanes or density strips.
   const start = Math.max(0, Math.min(60, segment.start_min));
   const end = Math.max(start, Math.min(60, segment.end_min));
   const dur = Math.max(1, end - start);
   const leftPct = (start / 60) * 100;
   const widthPct = (dur / 60) * 100;
-  // Above plan chips (z≈8–18) so concurrent apps stay clickable; shorter apps on top.
+  // Above plan chips (z≈8–18); shorter windows float above longer ones for clicks.
   const zIndex =
     segment.source === "sleep" ? 12 : 22 + Math.min(40, Math.round(60 - dur) + segment.lane_index);
 
-  // Always paint a label when we can; narrow chips get a short abbrev (CSS ellipsizes).
-  // Previously compressed hid labels below ~18% width (~11m), so 3–10m apps looked blank.
   const maxChars =
     tier === "full" || tier === "side"
       ? 24
@@ -70,8 +69,8 @@ export function SegmentBlock({ segment, tier, seamLeft, seamRight, onClick }: Pr
       style={{
         left: `${leftPct}%`,
         width: `${widthPct}%`,
-        top: 0,
-        height: "100%",
+        top: "2px",
+        height: "calc(100% - 4px)",
         zIndex,
         background: segmentFill(segment),
         borderTopLeftRadius: radiusLeft,

@@ -1,15 +1,45 @@
 @echo off
-setlocal
-call "%~dp0_common.bat"
+setlocal EnableDelayedExpansion
+rem Native Device lock remove — no Python. Pass confirm as %%1.
+call "%~dp0_common.bat" env-only
 if errorlevel 1 exit /b 1
+
+set "CONFIRM=%~1"
+if "%CONFIRM%"=="" (
+  echo ERROR: confirm phrase required. Example:
+  echo   %~nx0 "DEVICE LOCK"
+  exit /b 2
+)
 
 net session >nul 2>&1
 if errorlevel 1 (
-  powershell -NoProfile -ExecutionPolicy Bypass -Command "Start-Process -FilePath '%~f0' -Verb RunAs"
+  echo Requesting admin...
+  powershell -NoProfile -ExecutionPolicy Bypass -Command "Start-Process -FilePath '%~f0' -ArgumentList '\"%CONFIRM%\"' -Verb RunAs"
   exit /b 0
 )
 
 cd /d "%ROOT%"
-"%PY%" -m backend.behavior.device_block_cli remove
+
+set "EXE="
+if exist "%ROOT%\calt-focus\backend\calt_enforcer\build\Release\calt_enforcer.exe" set "EXE=%ROOT%\calt-focus\backend\calt_enforcer\build\Release\calt_enforcer.exe"
+if exist "%ROOT%\calt-focus\backend\calt_enforcer\build\calt_enforcer.exe" set "EXE=%ROOT%\calt-focus\backend\calt_enforcer\build\calt_enforcer.exe"
+if not defined EXE if exist "%ROOT%\scripts\desktop_tracker\installer\installer_payload\bin\calt_enforcer.exe" set "EXE=%ROOT%\scripts\desktop_tracker\installer\installer_payload\bin\calt_enforcer.exe"
+
+if not defined EXE (
+  echo ERROR: calt_enforcer.exe not found — build native enforcer first.
+  pause
+  exit /b 1
+)
+
+echo Removing Device lock via "%EXE%"
+"%EXE%" --device-block-remove --confirm "%CONFIRM%"
+set RC=%ERRORLEVEL%
+if %RC% NEQ 0 (
+  echo FAILED rc=%RC%
+  pause
+  exit /b %RC%
+)
+
+echo Removed.
 pause
 endlocal

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { BrowserRouter, HashRouter, Routes, Route, Navigate } from "react-router";
 import { ThemeProvider } from "../context/ThemeContext";
 import { StudySessionProvider } from "../context/StudySessionContext";
@@ -16,13 +16,14 @@ import { AddWordsPage } from "../pages/vocab/AddWordsPage";
 import { JournalPage } from "../pages/JournalPage";
 
 // Import registry and trigger registration of all plugins
-import "../plugins"; 
+import "../plugins";
 import { PluginRegistryProvider, usePlugins } from "../plugins/registry";
 import { FeatureStudioPage } from "../pages/settings/FeatureStudioPage";
 import { EasterProvider } from "../easter";
 import { AppErrorBoundary } from "../components/layout/AppErrorBoundary";
 import { EegSnapTestPage } from "../pages/EegSnapTestPage";
 import { isFocusDesktopShell } from "../utils/focusDesktopShell";
+import { installFocusStatusPushListener } from "../lib/focusStatusBus";
 
 function JournalRoute() {
   if (!isFocusDesktopShell()) {
@@ -31,8 +32,12 @@ function JournalRoute() {
   return <JournalPage />;
 }
 
-/** Prebuilt Focus shell: HashRouter for file://, calt.app virtual host, or :5174 static serve. */
+/** Prebuilt Focus shell: HashRouter for file://, calt.app, or :5174 static serve.
+ * Design host :5180 uses BrowserRouter so Cursor Simple Browser is not blank on bare /. */
 function useDesktopShellRouter(): boolean {
+  if (typeof window !== "undefined" && window.location.port === "5180") {
+    return false;
+  }
   return isFocusDesktopShell();
 }
 
@@ -50,7 +55,7 @@ function AppRoutes() {
           index
           element={
             isFocusDesktopShell() ? (
-              <Navigate to="/productivity" replace />
+              <Navigate to="/productivity?tab=home" replace />
             ) : (
               <HomePage />
             )
@@ -82,7 +87,7 @@ function AppRoutes() {
         <Route
           path="*"
           element={
-            <Navigate to={isFocusDesktopShell() ? "/productivity" : "/"} replace />
+            <Navigate to={isFocusDesktopShell() ? "/productivity?tab=home" : "/"} replace />
           }
         />
       </Route>
@@ -107,6 +112,8 @@ function DynamicProviders({ children }: { children: React.ReactNode }) {
 export default function App() {
   const shell = useDesktopShellRouter();
   const Router = shell ? HashRouter : BrowserRouter;
+
+  useEffect(() => installFocusStatusPushListener(), []);
 
   return (
     <ThemeProvider>

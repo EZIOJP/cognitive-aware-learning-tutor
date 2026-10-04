@@ -1538,10 +1538,14 @@ class DeviceBlockSettingsIn(BaseModel):
 
 @router.get("/api/behavior/device-block")
 def get_device_block(user: User = Depends(get_current_user)):
-    """Device-wide hosts block status (all browsers / apps on this PC)."""
-    from backend.behavior import device_block as db_store
+    """Retired — Device lock is native calt_enforcer (Focus Settings → Filters)."""
+    _ = user
+    from fastapi import HTTPException
 
-    return db_store.status()
+    raise HTTPException(
+        status_code=410,
+        detail="Device lock moved to calt_enforcer. Use Focus Settings → Filters (device_block.* gateway).",
+    )
 
 
 class StudyLoopGateIn(BaseModel):
@@ -1577,52 +1581,38 @@ def put_device_block(
     body: DeviceBlockSettingsIn,
     user: User = Depends(get_current_user),
 ):
-    """Enable/disable CALT hosts block and optionally apply immediately."""
-    from backend.behavior import device_block as db_store
+    """Retired — no Python Device lock writes after native cutover."""
+    _ = body, user
+    from fastapi import HTTPException
 
-    cur = db_store.load_settings()
-    patch = body.model_dump(exclude_unset=True, exclude={"apply_now"})
-    cur.update(patch)
-    db_store.save_settings(cur)
-    try:
-        from backend.behavior.gate_notify import invalidate_gate_cache
-
-        invalidate_gate_cache(user.id, reason="device_block_settings")
-    except Exception:
-        pass
-    out = {"settings": cur, **db_store.status()}
-    if body.apply_now:
-        applied = db_store.apply_from_settings()
-        out["apply"] = applied
-        if not applied.get("ok"):
-            out["needs_admin"] = bool(applied.get("needs_admin"))
-            out["apply_script"] = applied.get("apply_script") or "scripts\\device_block_apply.bat"
-    return out
+    raise HTTPException(
+        status_code=410,
+        detail="Device lock moved to calt_enforcer. Use Focus Settings → Filters.",
+    )
 
 
 @router.post("/api/behavior/device-block/apply")
 def post_device_block_apply(user: User = Depends(get_current_user)):
-    from backend.behavior import device_block as db_store
+    _ = user
+    from fastapi import HTTPException
 
-    return db_store.apply_from_settings()
+    raise HTTPException(status_code=410, detail="Use scripts\\device_block_apply.bat / calt_enforcer --device-block-apply")
 
 
 @router.post("/api/behavior/device-block/refresh-list")
 def post_device_block_refresh_list(user: User = Depends(get_current_user)):
-    """Scrape theporndude.com index and refresh cached porn domain list."""
-    from backend.behavior import device_block as db_store
-    from backend.behavior import porn_blocklist as tpd
+    _ = user
+    from fastapi import HTTPException
 
-    listed = tpd.refresh_if_stale(force=True)
-    applied = db_store.apply_from_settings()
-    return {"list": listed, "apply": applied, **db_store.status()}
+    raise HTTPException(status_code=410, detail="Use device_block.refresh_list on calt_enforcer gateway")
 
 
 @router.post("/api/behavior/device-block/remove")
 def post_device_block_remove(user: User = Depends(get_current_user)):
-    from backend.behavior import device_block as db_store
+    _ = user
+    from fastapi import HTTPException
 
-    return db_store.remove_all()
+    raise HTTPException(status_code=410, detail="Use scripts\\device_block_remove.bat / calt_enforcer --device-block-remove")
 
 
 @router.get("/api/behavior/demo-clock")

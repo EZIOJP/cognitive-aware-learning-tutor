@@ -1,0 +1,1064 @@
+{
+  "started_at": "2026-09-13T14:12:58+05:30",
+  "finished_at": "2026-09-13T14:13:24+05:30",
+  "passed": 73,
+  "failed": 0,
+  "skipped": 0,
+  "gateway_ok": true,
+  "restored": true,
+  "notes": [],
+  "results": [
+    {
+      "id": "softland.study.https://youtube.com",
+      "layer": "softland_fixture",
+      "ok": true,
+      "expected": {
+        "action": "block",
+        "reason": "watch_list"
+      },
+      "actual": {
+        "action": "block",
+        "reason": "watch_list",
+        "mode": "study",
+        "enforce": true
+      },
+      "detail": "",
+      "skipped": false
+    },
+    {
+      "id": "softland.study.https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "layer": "softland_fixture",
+      "ok": true,
+      "expected": {
+        "action": "block",
+        "reason": "watch_list"
+      },
+      "actual": {
+        "action": "block",
+        "reason": "watch_list",
+        "mode": "study",
+        "enforce": true
+      },
+      "detail": "",
+      "skipped": false
+    },
+    {
+      "id": "softland.study.http://youtube.com",
+      "layer": "softland_fixture",
+      "ok": true,
+      "expected": {
+        "action": "block",
+        "reason": "watch_list"
+      },
+      "actual": {
+        "action": "block",
+        "reason": "watch_list",
+        "mode": "study",
+        "enforce": true
+      },
+      "detail": "",
+      "skipped": false
+    },
+    {
+      "id": "softland.study.https://m.youtube.com",
+      "layer": "softland_fixture",
+      "ok": true,
+      "expected": {
+        "action": "block",
+        "reason": "watch_list"
+      },
+      "actual": {
+        "action": "block",
+        "reason": "watch_list",
+        "mode": "study",
+        "enforce": true
+      },
+      "detail": "",
+      "skipped": false
+    },
+    {
+      "id": "softland.study.https://music.youtube.com",
+      "layer": "softland_fixture",
+      "ok": true,
+      "expected": {
+        "action": "block",
+        "reason": "watch_list"
+      },
+      "actual": {
+        "action": "block",
+        "reason": "watch_list",
+        "mode": "study",
+        "enforce": true
+      },
+      "detail": "",
+      "skipped": false
+    },
+    {
+      "id": "softland.study.https://youtu.be/abc",
+      "layer": "softland_fixture",
+      "ok": true,
+      "expected": {
+        "action": "block",
+        "reason": "watch_list"
+      },
+      "actual": {
+        "action": "block",
+        "reason": "watch_list",
+        "mode": "study",
+        "enforce": true
+      },
+      "detail": "",
+      "skipped": false
+    },
+    {
+      "id": "softland.study.https://reddit.com",
+      "layer": "softland_fixture",
+      "ok": true,
+      "expected": {
+        "action": "block",
+        "reason": "watch_list"
+      },
+      "actual": {
+        "action": "block",
+        "reason": "watch_list",
+        "mode": "study",
+        "enforce": true
+      },
+      "detail": "",
+      "skipped": false
+    },
+    {
+      "id": "softland.study.https://www.reddit.com/r/python",
+      "layer": "softland_fixture",
+      "ok": true,
+      "expected": {
+        "action": "block",
+        "reason": "watch_list"
+      },
+      "actual": {
+        "action": "block",
+        "reason": "watch_list",
+        "mode": "study",
+        "enforce": true
+      },
+      "detail": "",
+      "skipped": false
+    },
+    {
+      "id": "softland.study.https://facebook.com",
+      "layer": "softland_fixture",
+      "ok": true,
+      "expected": {
+        "action": "block",
+        "reason": "watch_list"
+      },
+      "actual": {
+        "action": "block",
+        "reason": "watch_list",
+        "mode": "study",
+        "enforce": true
+      },
+      "detail": "",
+      "skipped": false
+    },
+    {
+      "id": "softland.study.https://meet.google.com",
+      "layer": "softland_fixture",
+      "ok": true,
+      "expected": {
+        "action": "allow",
+        "reason": "allow_list"
+      },
+      "actual": {
+        "action": "allow",
+        "reason": "allow_list",
+        "mode": "study",
+        "enforce": true
+      },
+      "detail": "",
+      "skipped": false
+    },
+    {
+      "id": "softland.study.https://docs.meet.google.com",
+      "layer": "softland_fixture",
+      "ok": true,
+      "expected": {
+        "action": "allow",
+        "reason": "allow_list"
+      },
+      "actual": {
+        "action": "allow",
+        "reason": "allow_list",
+        "mode": "study",
+        "enforce": true
+      },
+      "detail": "",
+      "skipped": false
+    },
+    {
+      "id": "softland.study.https://wikipedia.org",
+      "layer": "softland_fixture",
+      "ok": true,
+      "expected": {
+        "action": "allow",
+        "reason": "allow_list"
+      },
+      "actual": {
+        "action": "allow",
+        "reason": "allow_list",
+        "mode": "study",
+        "enforce": true
+      },
+      "detail": "",
+      "skipped": false
+    },
+    {
+      "id": "softland.study.https://en.wikipedia.org/wiki/Test",
+      "layer": "softland_fixture",
+      "ok": true,
+      "expected": {
+        "action": "allow",
+        "reason": "allow_list"
+      },
+      "actual": {
+        "action": "allow",
+        "reason": "allow_list",
+        "mode": "study",
+        "enforce": true
+      },
+      "detail": "",
+      "skipped": false
+    },
+    {
+      "id": "softland.study.https://pornhub.com",
+      "layer": "softland_fixture",
+      "ok": true,
+      "expected": {
+        "action": "block",
+        "reason": "porn"
+      },
+      "actual": {
+        "action": "block",
+        "reason": "porn",
+        "mode": "study",
+        "enforce": true
+      },
+      "detail": "",
+      "skipped": false
+    },
+    {
+      "id": "softland.study.https://www.pornhub.com/video",
+      "layer": "softland_fixture",
+      "ok": true,
+      "expected": {
+        "action": "block",
+        "reason": "porn"
+      },
+      "actual": {
+        "action": "block",
+        "reason": "porn",
+        "mode": "study",
+        "enforce": true
+      },
+      "detail": "",
+      "skipped": false
+    },
+    {
+      "id": "softland.study.https://example.xxx",
+      "layer": "softland_fixture",
+      "ok": true,
+      "expected": {
+        "action": "block",
+        "reason": "porn"
+      },
+      "actual": {
+        "action": "block",
+        "reason": "porn",
+        "mode": "study",
+        "enforce": true
+      },
+      "detail": "",
+      "skipped": false
+    },
+    {
+      "id": "softland.study.https://twitter.com",
+      "layer": "softland_fixture",
+      "ok": true,
+      "expected": {
+        "action": "block",
+        "reason": "block_extra"
+      },
+      "actual": {
+        "action": "block",
+        "reason": "block_extra",
+        "mode": "study",
+        "enforce": true
+      },
+      "detail": "",
+      "skipped": false
+    },
+    {
+      "id": "softland.study.https://x.com/home",
+      "layer": "softland_fixture",
+      "ok": true,
+      "expected": {
+        "action": "block",
+        "reason": "block_extra"
+      },
+      "actual": {
+        "action": "block",
+        "reason": "block_extra",
+        "mode": "study",
+        "enforce": true
+      },
+      "detail": "",
+      "skipped": false
+    },
+    {
+      "id": "softland.study.https://alwaysblock.example/path",
+      "layer": "softland_fixture",
+      "ok": true,
+      "expected": {
+        "action": "block",
+        "reason": "block_extra"
+      },
+      "actual": {
+        "action": "block",
+        "reason": "block_extra",
+        "mode": "study",
+        "enforce": true
+      },
+      "detail": "",
+      "skipped": false
+    },
+    {
+      "id": "softland.study.https://github.com",
+      "layer": "softland_fixture",
+      "ok": true,
+      "expected": {
+        "action": "allow",
+        "reason": "not_listed"
+      },
+      "actual": {
+        "action": "allow",
+        "reason": "not_listed",
+        "mode": "study",
+        "enforce": true
+      },
+      "detail": "",
+      "skipped": false
+    },
+    {
+      "id": "softland.study.https://random-not-listed-9f3a.test",
+      "layer": "softland_fixture",
+      "ok": true,
+      "expected": {
+        "action": "allow",
+        "reason": "not_listed"
+      },
+      "actual": {
+        "action": "allow",
+        "reason": "not_listed",
+        "mode": "study",
+        "enforce": true
+      },
+      "detail": "",
+      "skipped": false
+    },
+    {
+      "id": "softland.study.https://localhost:3000",
+      "layer": "softland_fixture",
+      "ok": true,
+      "expected": {
+        "action": "allow",
+        "reason": "allow_list"
+      },
+      "actual": {
+        "action": "allow",
+        "reason": "allow_list",
+        "mode": "study",
+        "enforce": true
+      },
+      "detail": "",
+      "skipped": false
+    },
+    {
+      "id": "softland.study.http://127.0.0.1/admin",
+      "layer": "softland_fixture",
+      "ok": true,
+      "expected": {
+        "action": "allow",
+        "reason": "allow_list"
+      },
+      "actual": {
+        "action": "allow",
+        "reason": "allow_list",
+        "mode": "study",
+        "enforce": true
+      },
+      "detail": "",
+      "skipped": false
+    },
+    {
+      "id": "softland.study.https://192.168.1.1",
+      "layer": "softland_fixture",
+      "ok": true,
+      "expected": {
+        "action": "allow",
+        "reason": "not_listed"
+      },
+      "actual": {
+        "action": "allow",
+        "reason": "not_listed",
+        "mode": "study",
+        "enforce": true
+      },
+      "detail": "",
+      "skipped": false
+    },
+    {
+      "id": "softland.study.empty",
+      "layer": "softland_fixture",
+      "ok": true,
+      "expected": {
+        "action": "allow",
+        "reason": "no_host"
+      },
+      "actual": {
+        "action": "allow",
+        "reason": "no_host",
+        "mode": "study",
+        "enforce": false
+      },
+      "detail": "",
+      "skipped": false
+    },
+    {
+      "id": "softland.study.not-a-url",
+      "layer": "softland_fixture",
+      "ok": true,
+      "expected": {
+        "action": "allow",
+        "reason": "not_listed"
+      },
+      "actual": {
+        "action": "allow",
+        "reason": "not_listed",
+        "mode": "study",
+        "enforce": true
+      },
+      "detail": "",
+      "skipped": false
+    },
+    {
+      "id": "softland.study.https://study.local.test",
+      "layer": "softland_fixture",
+      "ok": true,
+      "expected": {
+        "action": "allow",
+        "reason": "allow_list"
+      },
+      "actual": {
+        "action": "allow",
+        "reason": "allow_list",
+        "mode": "study",
+        "enforce": true
+      },
+      "detail": "",
+      "skipped": false
+    },
+    {
+      "id": "softland.free.https://youtube.com",
+      "layer": "softland_fixture",
+      "ok": true,
+      "expected": {
+        "action": "allow",
+        "reason": [
+          "reward_day",
+          "free_window",
+          "free_mode"
+        ]
+      },
+      "actual": {
+        "action": "allow",
+        "reason": "reward_day",
+        "mode": "free",
+        "enforce": true
+      },
+      "detail": "",
+      "skipped": false
+    },
+    {
+      "id": "softland.free.https://reddit.com",
+      "layer": "softland_fixture",
+      "ok": true,
+      "expected": {
+        "action": "allow",
+        "reason": [
+          "reward_day",
+          "free_window",
+          "free_mode"
+        ]
+      },
+      "actual": {
+        "action": "allow",
+        "reason": "reward_day",
+        "mode": "free",
+        "enforce": true
+      },
+      "detail": "",
+      "skipped": false
+    },
+    {
+      "id": "softland.free.https://facebook.com",
+      "layer": "softland_fixture",
+      "ok": true,
+      "expected": {
+        "action": "allow",
+        "reason": [
+          "reward_day",
+          "free_window",
+          "free_mode"
+        ]
+      },
+      "actual": {
+        "action": "allow",
+        "reason": "reward_day",
+        "mode": "free",
+        "enforce": true
+      },
+      "detail": "",
+      "skipped": false
+    },
+    {
+      "id": "softland.free.https://pornhub.com",
+      "layer": "softland_fixture",
+      "ok": true,
+      "expected": {
+        "action": "block",
+        "reason": "porn"
+      },
+      "actual": {
+        "action": "block",
+        "reason": "porn",
+        "mode": "free",
+        "enforce": true
+      },
+      "detail": "",
+      "skipped": false
+    },
+    {
+      "id": "softland.free.https://twitter.com",
+      "layer": "softland_fixture",
+      "ok": true,
+      "expected": {
+        "action": "block",
+        "reason": "block_extra"
+      },
+      "actual": {
+        "action": "block",
+        "reason": "block_extra",
+        "mode": "free",
+        "enforce": true
+      },
+      "detail": "",
+      "skipped": false
+    },
+    {
+      "id": "softland.free.https://x.com",
+      "layer": "softland_fixture",
+      "ok": true,
+      "expected": {
+        "action": "block",
+        "reason": "block_extra"
+      },
+      "actual": {
+        "action": "block",
+        "reason": "block_extra",
+        "mode": "free",
+        "enforce": true
+      },
+      "detail": "",
+      "skipped": false
+    },
+    {
+      "id": "softland.free.https://meet.google.com",
+      "layer": "softland_fixture",
+      "ok": true,
+      "expected": {
+        "action": "allow",
+        "reason": "allow_list"
+      },
+      "actual": {
+        "action": "allow",
+        "reason": "allow_list",
+        "mode": "free",
+        "enforce": true
+      },
+      "detail": "",
+      "skipped": false
+    },
+    {
+      "id": "softland.free.https://github.com",
+      "layer": "softland_fixture",
+      "ok": true,
+      "expected": {
+        "action": "allow",
+        "reason": [
+          "reward_day",
+          "free_window",
+          "free_mode"
+        ]
+      },
+      "actual": {
+        "action": "allow",
+        "reason": "reward_day",
+        "mode": "free",
+        "enforce": true
+      },
+      "detail": "",
+      "skipped": false
+    },
+    {
+      "id": "softland.off.https://youtube.com",
+      "layer": "softland_fixture",
+      "ok": true,
+      "expected": {
+        "action": "allow",
+        "reason": "softland_off"
+      },
+      "actual": {
+        "action": "allow",
+        "reason": "softland_off",
+        "mode": "free",
+        "enforce": false
+      },
+      "detail": "",
+      "skipped": false
+    },
+    {
+      "id": "softland.off.https://pornhub.com",
+      "layer": "softland_fixture",
+      "ok": true,
+      "expected": {
+        "action": "allow",
+        "reason": "softland_off"
+      },
+      "actual": {
+        "action": "allow",
+        "reason": "softland_off",
+        "mode": "free",
+        "enforce": false
+      },
+      "detail": "",
+      "skipped": false
+    },
+    {
+      "id": "softland.off.https://twitter.com",
+      "layer": "softland_fixture",
+      "ok": true,
+      "expected": {
+        "action": "allow",
+        "reason": "softland_off"
+      },
+      "actual": {
+        "action": "allow",
+        "reason": "softland_off",
+        "mode": "free",
+        "enforce": false
+      },
+      "detail": "",
+      "skipped": false
+    },
+    {
+      "id": "softland.off.https://alwaysblock.example",
+      "layer": "softland_fixture",
+      "ok": true,
+      "expected": {
+        "action": "allow",
+        "reason": "softland_off"
+      },
+      "actual": {
+        "action": "allow",
+        "reason": "softland_off",
+        "mode": "free",
+        "enforce": false
+      },
+      "detail": "",
+      "skipped": false
+    },
+    {
+      "id": "softland.incubate.https://youtube.com",
+      "layer": "softland_fixture",
+      "ok": true,
+      "expected": {
+        "action": "block",
+        "reason": "incubation"
+      },
+      "actual": {
+        "action": "block",
+        "reason": "incubation",
+        "mode": "study",
+        "enforce": true
+      },
+      "detail": "",
+      "skipped": false
+    },
+    {
+      "id": "softland.incubate.https://pornhub.com",
+      "layer": "softland_fixture",
+      "ok": true,
+      "expected": {
+        "action": "block",
+        "reason": [
+          "incubation",
+          "porn"
+        ]
+      },
+      "actual": {
+        "action": "block",
+        "reason": "incubation",
+        "mode": "study",
+        "enforce": true
+      },
+      "detail": "",
+      "skipped": false
+    },
+    {
+      "id": "softland.incubate.https://meet.google.com",
+      "layer": "softland_fixture",
+      "ok": true,
+      "expected": {
+        "action": "allow",
+        "reason": "allow_list"
+      },
+      "actual": {
+        "action": "allow",
+        "reason": "allow_list",
+        "mode": "study",
+        "enforce": true
+      },
+      "detail": "",
+      "skipped": false
+    },
+    {
+      "id": "arm.unit.steam.exe->['steam.exe']",
+      "layer": "arm_unit",
+      "ok": true,
+      "expected": true,
+      "actual": true,
+      "detail": "",
+      "skipped": false
+    },
+    {
+      "id": "arm.unit.STEAM.EXE->['steam.exe']",
+      "layer": "arm_unit",
+      "ok": true,
+      "expected": true,
+      "actual": true,
+      "detail": "",
+      "skipped": false
+    },
+    {
+      "id": "arm.unit.steam->['steam.exe']",
+      "layer": "arm_unit",
+      "ok": true,
+      "expected": true,
+      "actual": true,
+      "detail": "",
+      "skipped": false
+    },
+    {
+      "id": "arm.unit.steam.exe->['steam']",
+      "layer": "arm_unit",
+      "ok": true,
+      "expected": true,
+      "actual": true,
+      "detail": "",
+      "skipped": false
+    },
+    {
+      "id": "arm.unit.steam.exe->['C:\\\\Games\\\\Steam\\\\steam.exe']",
+      "layer": "arm_unit",
+      "ok": true,
+      "expected": true,
+      "actual": true,
+      "detail": "",
+      "skipped": false
+    },
+    {
+      "id": "arm.unit.notepad.exe->['steam.exe']",
+      "layer": "arm_unit",
+      "ok": true,
+      "expected": false,
+      "actual": false,
+      "detail": "",
+      "skipped": false
+    },
+    {
+      "id": "arm.unit.calt_test_block_target.exe->['calt_test_block_target.exe']",
+      "layer": "arm_unit",
+      "ok": true,
+      "expected": true,
+      "actual": true,
+      "detail": "",
+      "skipped": false
+    },
+    {
+      "id": "arm.unit.calt_test_safe.exe->['calt_test_block_target.exe']",
+      "layer": "arm_unit",
+      "ok": true,
+      "expected": false,
+      "actual": false,
+      "detail": "",
+      "skipped": false
+    },
+    {
+      "id": "arm.unit.explorer.exe->['explorer.exe']",
+      "layer": "arm_unit",
+      "ok": true,
+      "expected": false,
+      "actual": false,
+      "detail": "",
+      "skipped": false
+    },
+    {
+      "id": "arm.unit.python.exe->['python.exe']",
+      "layer": "arm_unit",
+      "ok": true,
+      "expected": false,
+      "actual": false,
+      "detail": "",
+      "skipped": false
+    },
+    {
+      "id": "arm.unit.calt_enforcer.exe->['calt_enforcer.exe']",
+      "layer": "arm_unit",
+      "ok": true,
+      "expected": false,
+      "actual": false,
+      "detail": "",
+      "skipped": false
+    },
+    {
+      "id": "sync.pre.status_vs_effective_arm",
+      "layer": "sync",
+      "ok": true,
+      "expected": false,
+      "actual": false,
+      "detail": "sticky lock may force armed while JSON hard_block_armed is false",
+      "skipped": false
+    },
+    {
+      "id": "sync.pre.sqlite_vs_json_arm",
+      "layer": "sync",
+      "ok": true,
+      "expected": {
+        "json_armed": false,
+        "json_exes": []
+      },
+      "actual": {
+        "sql_armed": false,
+        "sql_exes": []
+      },
+      "detail": "",
+      "skipped": false
+    },
+    {
+      "id": "sync.pre.sqlite_vs_json_softland",
+      "layer": "sync",
+      "ok": true,
+      "expected": false,
+      "actual": false,
+      "detail": "",
+      "skipped": false
+    },
+    {
+      "id": "sync.pre.softland_ne_arm_independence",
+      "layer": "sync",
+      "ok": true,
+      "expected": "independent",
+      "actual": {
+        "softland_enabled": false,
+        "json_hard_block_armed": false,
+        "effective_armed": false
+      },
+      "detail": "informational: SoftLand and Arm are separate switches",
+      "skipped": false
+    },
+    {
+      "id": "softland.live.https://youtube.com",
+      "layer": "softland_live",
+      "ok": true,
+      "expected": "softland_off allow",
+      "actual": {
+        "action": "allow",
+        "reason": "softland_off",
+        "mode": "free"
+      },
+      "detail": "",
+      "skipped": false
+    },
+    {
+      "id": "softland.live.https://pornhub.com",
+      "layer": "softland_live",
+      "ok": true,
+      "expected": "softland_off allow",
+      "actual": {
+        "action": "allow",
+        "reason": "softland_off",
+        "mode": "free"
+      },
+      "detail": "",
+      "skipped": false
+    },
+    {
+      "id": "softland.live.https://meet.google.com",
+      "layer": "softland_live",
+      "ok": true,
+      "expected": "softland_off allow",
+      "actual": {
+        "action": "allow",
+        "reason": "softland_off",
+        "mode": "free"
+      },
+      "detail": "",
+      "skipped": false
+    },
+    {
+      "id": "softland.live.https://github.com",
+      "layer": "softland_live",
+      "ok": true,
+      "expected": "softland_off allow",
+      "actual": {
+        "action": "allow",
+        "reason": "softland_off",
+        "mode": "free"
+      },
+      "detail": "",
+      "skipped": false
+    },
+    {
+      "id": "softland.live.https://twitter.com",
+      "layer": "softland_live",
+      "ok": true,
+      "expected": "softland_off allow",
+      "actual": {
+        "action": "allow",
+        "reason": "softland_off",
+        "mode": "free"
+      },
+      "detail": "",
+      "skipped": false
+    },
+    {
+      "id": "gateway.status.snapshot",
+      "layer": "gateway",
+      "ok": true,
+      "expected": "ok",
+      "actual": "{\"ok\":true,\"id\":\"6c2480d8-9098-480f-bd29-bce61d8a83b1\",\"gateway_seq\":3660,\"as_of\":\"2026-09-13T14:13:02\",\"softland_enabled\":false,\"free_until\":null,\"incubation_until\":null,\"reward_day_active\":false,\"earned_ledger_seconds\":3300}",
+      "detail": "",
+      "skipped": false
+    },
+    {
+      "id": "arm.live.set_fixture_list",
+      "layer": "arm_live",
+      "ok": true,
+      "expected": "arm.set ok",
+      "actual": "{\"ok\":true,\"id\":\"e881d059-8bfa-4138-aef1-e56c57822209\",\"gateway_seq\":3661,\"as_of\":\"2026-09-13T14:13:05\",\"softland_enabled\":false,\"free_until\":null,\"incubation_until\":null,\"reward_day_active\":false,\"earned_ledger_seconds\":3300}",
+      "detail": "",
+      "skipped": false
+    },
+    {
+      "id": "arm.live.safe_not_killed",
+      "layer": "arm_live",
+      "ok": true,
+      "expected": true,
+      "actual": true,
+      "detail": "misfire if killed",
+      "skipped": false
+    },
+    {
+      "id": "arm.live.block_target_killed",
+      "layer": "arm_live",
+      "ok": true,
+      "expected": false,
+      "actual": false,
+      "detail": "expected killed when Arm ON + listed",
+      "skipped": false
+    },
+    {
+      "id": "arm.live.disarm",
+      "layer": "arm_live",
+      "ok": true,
+      "expected": "ok",
+      "actual": "{\"ok\":true,\"id\":\"82af1fb6-b6de-4f90-a37b-3036a3eb79e3\",\"gateway_seq\":3662,\"as_of\":\"2026-09-13T14:13:13\",\"softland_enabled\":false,\"free_until\":null,\"incubation_until\":null,\"reward_day_active\":false,\"ea",
+      "detail": "",
+      "skipped": false
+    },
+    {
+      "id": "arm.live.disarmed_no_kill",
+      "layer": "arm_live",
+      "ok": true,
+      "expected": true,
+      "actual": true,
+      "detail": "Arm OFF must not kill listed exe",
+      "skipped": false
+    },
+    {
+      "id": "restore.snapshot",
+      "layer": "gateway",
+      "ok": true,
+      "expected": "restored",
+      "actual": "ok",
+      "detail": "SoftLand/Arm snapshot restored",
+      "skipped": false
+    },
+    {
+      "id": "sync.post.status_vs_effective_arm",
+      "layer": "sync",
+      "ok": true,
+      "expected": false,
+      "actual": false,
+      "detail": "sticky lock may force armed while JSON hard_block_armed is false",
+      "skipped": false
+    },
+    {
+      "id": "sync.post.sqlite_vs_json_arm",
+      "layer": "sync",
+      "ok": true,
+      "expected": {
+        "json_armed": false,
+        "json_exes": []
+      },
+      "actual": {
+        "sql_armed": false,
+        "sql_exes": []
+      },
+      "detail": "",
+      "skipped": false
+    },
+    {
+      "id": "sync.post.sqlite_vs_json_softland",
+      "layer": "sync",
+      "ok": true,
+      "expected": false,
+      "actual": false,
+      "detail": "",
+      "skipped": false
+    },
+    {
+      "id": "sync.post.softland_ne_arm_independence",
+      "layer": "sync",
+      "ok": true,
+      "expected": "independent",
+      "actual": {
+        "softland_enabled": false,
+        "json_hard_block_armed": false,
+        "effective_armed": false
+      },
+      "detail": "informational: SoftLand and Arm are separate switches",
+      "skipped": false
+    }
+  ]
+}

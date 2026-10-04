@@ -173,15 +173,15 @@ std::wstring ProductivityUrl() {
   if (HasPrebuiltWebUi()) {
     if (const wchar_t* mode = _wgetenv(L"CALT_FOCUS_UI_MODE")) {
       if (_wcsicmp(mode, L"file") == 0) {
-        return FileUrlFromPath(Join(DistDir(), L"index.html")) + L"#/productivity";
+        return FileUrlFromPath(Join(DistDir(), L"index.html")) + L"#/productivity?tab=home";
       }
       if (_wcsicmp(mode, L"static") == 0) {
-        return L"http://127.0.0.1:5174/index.html#/productivity";
+        return L"http://127.0.0.1:5174/index.html#/productivity?tab=home";
       }
     }
-    return L"https://calt.app/index.html#/productivity";
+    return L"https://calt.app/index.html#/productivity?tab=home";
   }
-  return L"http://127.0.0.1:5173/productivity";
+  return L"http://127.0.0.1:5173/productivity?tab=home";
 }
 
 std::wstring SettingsUrl() {
@@ -215,15 +215,16 @@ std::wstring CalendarUrl() {
   if (HasPrebuiltWebUi()) {
     if (const wchar_t* mode = _wgetenv(L"CALT_FOCUS_UI_MODE")) {
       if (_wcsicmp(mode, L"file") == 0) {
-        return FileUrlFromPath(Join(DistDir(), L"index.html")) + L"#/productivity";
+        return FileUrlFromPath(Join(DistDir(), L"index.html")) +
+               L"#/productivity?tab=calendar";
       }
       if (_wcsicmp(mode, L"static") == 0) {
-        return L"http://127.0.0.1:5174/index.html#/productivity";
+        return L"http://127.0.0.1:5174/index.html#/productivity?tab=calendar";
       }
     }
-    return L"https://calt.app/index.html#/productivity";
+    return L"https://calt.app/index.html#/productivity?tab=calendar";
   }
-  return L"http://127.0.0.1:5173/productivity";
+  return L"http://127.0.0.1:5173/productivity?tab=calendar";
 }
 
 std::wstring PlanUrl() {

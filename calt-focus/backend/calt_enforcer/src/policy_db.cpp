@@ -250,6 +250,40 @@ std::wstring DefaultPolicyJsonPath(const std::wstring& dbPath) {
   return dataDir + L"\\behavior\\enforcer_policy.json";
 }
 
+bool SyncEnforcerRuntimeSqlite(const std::wstring& dbPath, const EnforcerSnapshot& snap) {
+  sqlite3* db = nullptr;
+  if (sqlite3_open_v2(Narrow(dbPath).c_str(), &db, SQLITE_OPEN_READWRITE, nullptr) != SQLITE_OK) {
+    if (db) sqlite3_close(db);
+    return false;
+  }
+  sqlite3_busy_timeout(db, 2000);
+  std::ostringstream exes;
+  exes << "[";
+  for (size_t i = 0; i < snap.exes.size(); ++i) {
+    if (i) exes << ", ";
+    exes << "\"" << Narrow(snap.exes[i]) << "\"";
+  }
+  exes << "]";
+  const std::string exesJson = exes.str();
+  sqlite3_stmt* st = nullptr;
+  const char* sql =
+      "UPDATE enforcer_runtime SET hard_block_armed=?, gate_locked=?, incubation_active=?, "
+      "exes_json=?, note='synced_from_enforcer_gateway', updated_at=datetime('now') "
+      "WHERE id=(SELECT id FROM enforcer_runtime ORDER BY id DESC LIMIT 1);";
+  if (sqlite3_prepare_v2(db, sql, -1, &st, nullptr) != SQLITE_OK) {
+    sqlite3_close(db);
+    return false;
+  }
+  sqlite3_bind_int(st, 1, snap.armed ? 1 : 0);
+  sqlite3_bind_int(st, 2, snap.locked ? 1 : 0);
+  sqlite3_bind_int(st, 3, snap.incubation ? 1 : 0);
+  sqlite3_bind_text(st, 4, exesJson.c_str(), -1, SQLITE_TRANSIENT);
+  const bool ok = sqlite3_step(st) == SQLITE_DONE;
+  sqlite3_finalize(st);
+  sqlite3_close(db);
+  return ok;
+}
+
 bool WriteEnforcerPolicyJson(const std::wstring& jsonPath, const EnforcerSnapshot& snap,
                              bool anti_tamper, bool protect_uninstall) {
   auto narrow = [](const std::wstring& w) -> std::string {
@@ -299,7 +333,9 @@ bool WriteEnforcerPolicyJson(const std::wstring& jsonPath, const EnforcerSnapsho
 }
 
 std::vector<std::wstring> AntiTamperExeList() {
-  // CALT original list — Task Manager + common process explorers + time tools.
+  // CALT original list — Task Manager + process explorers + time tools.
+  // Also shell hosts that can Unregister-ScheduledTask while Arm is locked
+  // (default install is a user Scheduled Task — PowerShell was a one-line bypass).
   return {
       L"taskmgr.exe",
       L"procexp.exe",
@@ -310,6 +346,11 @@ std::vector<std::wstring> AntiTamperExeList() {
       L"perfmon.exe",
       L"w32tm.exe",
       L"tzutil.exe",
+      L"powershell.exe",
+      L"powershell_ise.exe",
+      L"pwsh.exe",
+      L"windowsterminal.exe",
+      L"wt.exe",
   };
 }
 

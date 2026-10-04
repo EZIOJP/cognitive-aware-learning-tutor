@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "CALT SelfTracker (Edge / Chrome)",
-  "version": "1.5.27",
-  "description": "Browse tracking / telemetry (Edge as Edge + active tab URL). SoftLand = CALT Gate. Control = web Focus.",
+  "version": "1.5.28",
+  "description": "Browse tracking via calt_msg_host track_tab. SoftLand = CALT Gate. Study :8000 optional debug only.",
   "permissions": [
     "tabs",
     "activeTab",

@@ -16,6 +16,8 @@ import {
   type EnforcerStatusMirror,
 } from "../../api/focusMirrors";
 import { enforcerNativeCmd, isFocusEnforcerBridgeAvailable } from "../../lib/enforcerNativeCmd";
+import { invalidateFocusStatusBus } from "../../lib/focusStatusBus";
+import { useFocusStatus } from "../../hooks/useFocusStatus";
 import { isFocusDesktopShell } from "../../utils/focusDesktopShell";
 import { focusDataUrl } from "../../utils/focusDataUrl";
 
@@ -51,7 +53,7 @@ async function loadOfflineSoftLandWhy(): Promise<OfflineSoftLandWhy | null> {
       why = "Incubation active (offline). Entertainment stays blocked until the clock below.";
       untilLabel = incub;
     } else if (free) {
-      why = "Free window on file (offline). Live ledger/spend needs API.";
+      why = "Free window on file (offline). Spend earned minutes from Unlock → Now.";
       untilLabel = free;
     }
     return {
@@ -92,14 +94,44 @@ export function FocusControlPanel() {
 
   const [offlineWhy, setOfflineWhy] = useState<OfflineSoftLandWhy | null>(null);
   const [offlineEnf, setOfflineEnf] = useState<EnforcerStatusMirror | null>(null);
+  const status = useFocusStatus();
+
+  // Prefer shared bus for SoftLand/Arm chips — avoids a second pipe poller.
+  useEffect(() => {
+    if (!isFocusDesktopShell()) return;
+    const j = status.softland;
+    if (j) {
+      const softlandOn = Boolean(j.softland_enabled);
+      const incub = j.runtime?.incubation_until || "";
+      const free = j.runtime?.free_until || "";
+      let why = softlandOn
+        ? "SoftLand on (status bus / softland_policy.json)."
+        : "SoftLand off (status bus).";
+      let untilLabel = "";
+      if (incub) {
+        why = "Incubation active. Entertainment stays blocked until the clock below.";
+        untilLabel = incub;
+      } else if (free) {
+        why = "Free window on file. Spend earned minutes from Unlock → Now.";
+        untilLabel = free;
+      }
+      setOfflineWhy({
+        why,
+        untilLabel,
+        softlandOn,
+        asOf: j.updated_at || new Date().toISOString(),
+      });
+    }
+    if (status.enforcerStatus) setOfflineEnf(status.enforcerStatus);
+  }, [status.updatedAt, status.softland, status.enforcerStatus]);
 
   const refresh = useCallback(async () => {
+    if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
     try {
       const s = await fetchFocusDashboard();
       setSnap(s);
       setErr(null);
-      setOfflineWhy(null);
-      setOfflineEnf(null);
+      // Keep bus-backed offline mirrors; don't clear them on dashboard success.
       const list = s.enforcer_policy?.exes;
       if (Array.isArray(list) && list.length) {
         setExes(list.map(String));
@@ -116,19 +148,33 @@ export function FocusControlPanel() {
       }
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e));
-      const [offline, enfStatus] = await Promise.all([
-        loadOfflineSoftLandWhy(),
-        fetchEnforcerStatusMirror(),
-      ]);
-      setOfflineWhy(offline);
-      setOfflineEnf(enfStatus);
     }
   }, []);
 
   useEffect(() => {
-    void refresh();
-    const t = window.setInterval(() => void refresh(), 2500);
-    return () => window.clearInterval(t);
+    let cancelled = false;
+    let inFlight = false;
+    const tick = async () => {
+      if (cancelled || inFlight) return;
+      inFlight = true;
+      try {
+        await refresh();
+      } finally {
+        inFlight = false;
+      }
+    };
+    void tick();
+    // Dashboard is secondary; shared bus covers SoftLand/Arm freshness at 4s.
+    const t = window.setInterval(() => void tick(), 30_000);
+    const onVis = () => {
+      if (document.visibilityState === "visible") void tick();
+    };
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      cancelled = true;
+      window.clearInterval(t);
+      document.removeEventListener("visibilitychange", onVis);
+    };
   }, [refresh]);
 
   useEffect(() => {
@@ -196,7 +242,10 @@ export function FocusControlPanel() {
         const native = await enforcerNativeCmd("softland.spend_free", { minutes });
         if (native?.ok) {
           setHint(`Spent ${minutes} earned minute(s) via enforcer gateway.`);
-          window.setTimeout(() => void refresh(), 400);
+          window.setTimeout(() => {
+            invalidateFocusStatusBus({ pipe: true });
+            void refresh();
+          }, 400);
           return;
         }
         if (native && native.error === "insufficient_ledger") {
@@ -252,7 +301,10 @@ export function FocusControlPanel() {
                 ? `Armed via enforcer gateway — kills: ${killList.join(", ") || "(empty list)"}`
                 : `Policy written via gateway, but status looks unhealthy — check enforcer.`,
             );
-            window.setTimeout(() => void refresh(), 400);
+            window.setTimeout(() => {
+            invalidateFocusStatusBus({ pipe: true });
+            void refresh();
+          }, 400);
             return;
           }
         }
@@ -277,13 +329,17 @@ export function FocusControlPanel() {
             gate_locked: false,
             incubation_active: false,
             exes: killList,
-            lock_mode: mode,
+            // Clear strong lock on disarm so ApplyStickyLock cannot re-arm next tick.
+            lock_mode: "none",
             provided_unlock: provided,
             anti_tamper: antiTamper,
           });
           if (native?.ok) {
             setHint("Disarmed via enforcer gateway.");
-            window.setTimeout(() => void refresh(), 400);
+            window.setTimeout(() => {
+            invalidateFocusStatusBus({ pipe: true });
+            void refresh();
+          }, 400);
             return;
           }
           if (native?.error === "unlock_failed") {
@@ -301,7 +357,10 @@ export function FocusControlPanel() {
         setSnap(res.snapshot);
         setHint("Disarmed — enforcer_policy.json cleared.");
       }
-      window.setTimeout(() => void refresh(), 400);
+      window.setTimeout(() => {
+        invalidateFocusStatusBus({ pipe: true });
+        void refresh();
+      }, 400);
     } catch (e) {
       window.alert(e instanceof Error ? e.message : String(e));
     } finally {
@@ -357,7 +416,10 @@ export function FocusControlPanel() {
         setProtectUninstall(false);
         setHint("Uninstall protect off — Apps & features entry restored.");
       }
-      window.setTimeout(() => void refresh(), 400);
+      window.setTimeout(() => {
+        invalidateFocusStatusBus({ pipe: true });
+        void refresh();
+      }, 400);
     } catch (e) {
       window.alert(e instanceof Error ? e.message : String(e));
     } finally {
@@ -384,9 +446,10 @@ export function FocusControlPanel() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h2 className="text-xl font-semibold tracking-tight text-foreground">Focus</h2>
+          <h2 className="text-xl font-semibold tracking-tight text-foreground">Now</h2>
           <p className="text-sm text-muted-foreground mt-1 max-w-xl">
-            OS app kills = Enforcer below. Browser SoftLand = Edge CALT Gate → API (mode card).
+            SoftLand = websites in the browser. Arm = OS kill list (~1.5s). SoftLand ON ≠ Armed —
+            turning SoftLand on does not arm anything.
           </p>
         </div>
         <button
@@ -414,13 +477,69 @@ export function FocusControlPanel() {
             <br />
             or Admin: install_native_enforcer.ps1
           </p>
+          {isFocusDesktopShell() ? (
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => {
+                const w = window as Window & {
+                  chrome?: { webview?: { postMessage: (m: unknown) => void } };
+                };
+                if (w.chrome?.webview?.postMessage) {
+                  w.chrome.webview.postMessage({
+                    type: "focus_shell",
+                    v: 1,
+                    action: "restart_enforcer",
+                  });
+                  setHint("Restarting enforcer… check tray tip in a few seconds.");
+                  window.setTimeout(() => {
+                    invalidateFocusStatusBus({ pipe: true });
+                    void refresh();
+                  }, 2500);
+                } else {
+                  window.alert("Restart only works inside calt_focus.exe WebView.");
+                }
+              }}
+              className="rounded-lg border border-amber-400/50 bg-amber-500/20 px-3 py-1.5 text-xs text-amber-50 hover:bg-amber-500/30"
+            >
+              Restart enforcer (tracker)
+            </button>
+          ) : null}
         </div>
       )}
 
       {enforcerHealthy && (
-        <p className="text-xs text-emerald-300/90">
-          Enforcer live · status {ageLabel} · {enf?.status_source}
-        </p>
+        <div className="flex flex-wrap items-center gap-3 text-xs">
+          <p className="text-emerald-300/90">
+            Enforcer LIVE · Tracker LIVE · status {ageLabel}
+            {enf?.status_source ? ` · ${enf.status_source}` : ""}
+          </p>
+          {isFocusDesktopShell() ? (
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => {
+                const w = window as Window & {
+                  chrome?: { webview?: { postMessage: (m: unknown) => void } };
+                };
+                if (!w.chrome?.webview?.postMessage) return;
+                w.chrome.webview.postMessage({
+                  type: "focus_shell",
+                  v: 1,
+                  action: "restart_enforcer",
+                });
+                setHint("Restarting enforcer…");
+                window.setTimeout(() => {
+                  invalidateFocusStatusBus({ pipe: true });
+                  void refresh();
+                }, 2500);
+              }}
+              className="rounded-lg border border-border px-2.5 py-1 text-[11px] hover:bg-muted/40"
+            >
+              Restart enforcer
+            </button>
+          ) : null}
+        </div>
       )}
 
       <div className="rounded-xl border border-sky-500/25 bg-sky-500/5 px-3 py-2.5 text-xs text-muted-foreground space-y-1">
@@ -534,8 +653,12 @@ export function FocusControlPanel() {
         </div>
       </SectionBar>
 
-      <SectionBar title="Enforcer">
-        <div className="rounded-xl border border-border bg-card/60 p-4 space-y-3 max-w-xl">
+      <SectionBar title="Arm (apps)">
+        <p className="text-[11px] text-muted-foreground -mt-1 mb-2 max-w-xl">
+          Arm on: kills processes on the kill list about every 1.5s. Arm off: no OS kills. Edit the
+          list under Blocks → Apps. SoftLand site lists never belong here.
+        </p>
+        <div className="rounded-xl border border-rose-400/20 bg-card/60 p-4 space-y-3 max-w-xl">
           <div className="flex flex-wrap items-center gap-2">
             <span
               className={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${

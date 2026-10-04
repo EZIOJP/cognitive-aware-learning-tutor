@@ -1,50 +1,31 @@
-import { useCallback, useEffect, useState, type ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import { AlertTriangle } from "lucide-react";
-import {
-  enforcerNativeCmd,
-  isFocusEnforcerBridgeAvailable,
-} from "../../lib/enforcerNativeCmd";
 import { isFocusDesktopShell } from "../../utils/focusDesktopShell";
+import { isFocusEnforcerBridgeAvailable } from "../../lib/enforcerNativeCmd";
+import { useFocusStatus } from "../../hooks/useFocusStatus";
 
 type Reachability = "unknown" | "ok" | "down" | "no_bridge";
 
 /**
- * Phase 1 (decision 3A): when the Focus→enforcer pipe is down, hard-block writes.
- * Never optimistic-queue; never look armed when the enforcer is unreachable.
+ * Reachability from the shared status bus (no per-panel pipe poll).
  */
-export function useEnforcerReachability(pollMs = 4000): Reachability {
-  const [state, setState] = useState<Reachability>(() =>
-    isFocusDesktopShell() ? "unknown" : "no_bridge",
-  );
+export function useEnforcerReachability(): Reachability {
+  const snap = useFocusStatus();
 
-  const probe = useCallback(async () => {
-    if (!isFocusDesktopShell()) {
-      setState("no_bridge");
-      return;
-    }
-    if (!isFocusEnforcerBridgeAvailable()) {
-      setState("no_bridge");
-      return;
-    }
-    const res = await enforcerNativeCmd("status.snapshot", {}, 2500);
-    if (!res) {
-      setState("down");
-      return;
-    }
-    if (res.ok === false || res.error === "enforcer_unreachable" || res.error === "timeout") {
-      setState("down");
-      return;
-    }
-    setState("ok");
-  }, []);
+  if (!isFocusDesktopShell()) return "no_bridge";
+  if (!isFocusEnforcerBridgeAvailable()) return "no_bridge";
+  if (!snap.updatedAt) return "unknown";
 
-  useEffect(() => {
-    void probe();
-    const t = window.setInterval(() => void probe(), pollMs);
-    return () => window.clearInterval(t);
-  }, [probe, pollMs]);
+  if (snap.pipeOk === false) return "down";
 
-  return state;
+  const m = snap.enforcerStatus;
+  if (m?.owns || m?.lock_present || m?.armed != null) {
+    const ageMs = m.updated_at ? Date.now() - Date.parse(m.updated_at) : Infinity;
+    if (Number.isFinite(ageMs) && ageMs < 60_000) return "ok";
+  }
+  if (snap.pipeOk === true) return "ok";
+  if (snap.source === "sidecar" || snap.source === "push") return "ok";
+  return "unknown";
 }
 
 export function EnforcerUnreachableBanner({ reachability }: { reachability: Reachability }) {
@@ -75,13 +56,15 @@ export function EnforcerUnreachableBanner({ reachability }: { reachability: Reac
 /** Wraps write-capable Settings content: blocks pointer events when enforcer is down. */
 export function EnforcerWriteGate({ children }: { children: ReactNode }) {
   const reachability = useEnforcerReachability();
-  // Treat unknown as locked until the first probe succeeds (never look writable while unsure).
-  const locked =
-    reachability === "down" || reachability === "no_bridge" || reachability === "unknown";
+  // Only lock when we know writes cannot work — "unknown" stays interactive (mirrors may still load).
+  const locked = reachability === "down" || reachability === "no_bridge";
 
   return (
     <div className="space-y-4">
-      {reachability !== "unknown" && <EnforcerUnreachableBanner reachability={reachability} />}
+      <EnforcerUnreachableBanner reachability={reachability} />
+      {reachability === "unknown" ? (
+        <p className="text-[11px] text-muted-foreground">Checking enforcer…</p>
+      ) : null}
       <div
         className={locked ? "pointer-events-none select-none opacity-45" : undefined}
         aria-disabled={locked || undefined}

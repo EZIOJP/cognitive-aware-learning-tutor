@@ -1,4 +1,12 @@
-import { forwardRef, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  forwardRef,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type MouseEvent as ReactMouseEvent,
+} from "react";
 import { blockColor } from "../../api/plannerClient";
 import type { PlannerBlock, ActualSession } from "../../api/plannerClient";
 import { useActualOverlay, usePlannerBlocks } from "../../hooks/usePlanVsActual";
@@ -21,14 +29,37 @@ import {
   type MergedInterval,
 } from "./planVsActualUtils";
 
+/** Wider gap for ribbon paint — fewer DOM/SVG nodes; detail panel still uses merged children. */
+const RIBBON_MERGE_GAP_SEC = 300;
+
 type Props = {
   day: Date;
   refreshKey?: number;
+  focusShell?: boolean;
+  offline?: boolean;
+  onOpenPlan?: () => void;
+  /** Shared fetch from PlanVsActualDashboard — skips duplicate hooks when set. */
+  blocks?: PlannerBlock[];
+  overlay?: ActualSession[];
+  loading?: boolean;
+  error?: string | null;
 };
 
 type FocusState =
   | { kind: "actual"; interval: MergedInterval; onPlan: boolean; productive: boolean; sleep?: boolean }
   | { kind: "planned"; block: PlannerBlock };
+
+type PaintedActual = {
+  key: string;
+  interval: MergedInterval;
+  leftPct: number;
+  widthPct: number;
+  onPlan: boolean;
+  productive: boolean;
+  sleep: boolean;
+  fill: string;
+  title: string;
+};
 
 function overlayToMergeable(s: ActualSession) {
   if (!s.start_time || !s.end_time) return null;
@@ -66,38 +97,94 @@ function formatHour(h: number): string {
   return `${h - 12}pm`;
 }
 
-export const DayRibbon = forwardRef<HTMLDivElement, Props>(function DayRibbon({ day, refreshKey = 0 }, ref) {
+export const DayRibbon = forwardRef<HTMLDivElement, Props>(function DayRibbon(
+  {
+    day,
+    refreshKey = 0,
+    focusShell = false,
+    offline = false,
+    onOpenPlan,
+    blocks: blocksProp,
+    overlay: overlayProp,
+    loading: loadingProp,
+    error: errorProp,
+  },
+  ref,
+) {
   const dayStr = toDayString(day);
   const from = startOfDay(day);
   const to = endOfDay(day);
   const wrapRef = useRef<HTMLDivElement>(null);
+  const actualTrackRef = useRef<HTMLDivElement>(null);
   const [focus, setFocus] = useState<FocusState | null>(null);
   const [anchor, setAnchor] = useState<EventAnchorRect | null>(null);
 
-  const { data: blocks, loading: blocksLoading, error: blocksError } = usePlannerBlocks(from, to);
-  const { data: overlay, loading: overlayLoading, error: overlayError } = useActualOverlay(
-    from,
-    to,
-    refreshKey,
-  );
+  const useShared = blocksProp != null && overlayProp != null;
+  const fetchedBlocks = usePlannerBlocks(from, to, !useShared);
+  const fetchedOverlay = useActualOverlay(from, to, refreshKey, !useShared);
+
+  const blocks = useShared ? blocksProp! : fetchedBlocks.data;
+  const overlay = useShared ? overlayProp! : fetchedOverlay.data;
+  const blocksError = useShared ? errorProp ?? null : fetchedBlocks.error;
+  const overlayError = useShared ? errorProp ?? null : fetchedOverlay.error;
+  // Cold skeleton only when we have nothing to paint yet.
+  const loading =
+    (useShared ? Boolean(loadingProp) : fetchedBlocks.loading || fetchedOverlay.loading) &&
+    blocks.length === 0 &&
+    overlay.length === 0;
 
   const { intervals, sleepIntervals } = useMemo(() => {
     const sleepSessions = overlay.filter(isSleepSession);
     const restSessions = overlay.filter((s) => !isSleepSession(s));
     const clipped = clipSessionsAgainstSleep(restSessions, sleepSessions);
     const toRows = (rows: ActualSession[]) =>
-      rows
-        .map(overlayToMergeable)
-        .filter((row): row is NonNullable<typeof row> => row != null);
+      rows.map(overlayToMergeable).filter((row): row is NonNullable<typeof row> => row != null);
     return {
-      intervals: mergeAdjacentIntervals(toRows(clipped)),
-      sleepIntervals: mergeAdjacentIntervals(toRows(sleepSessions)),
+      intervals: mergeAdjacentIntervals(toRows(clipped), RIBBON_MERGE_GAP_SEC),
+      sleepIntervals: mergeAdjacentIntervals(toRows(sleepSessions), RIBBON_MERGE_GAP_SEC),
     };
   }, [overlay]);
 
-  const { axisStart, axisEnd } = computeAxisWindow(blocks, [...intervals, ...sleepIntervals], day);
-  const hours = hourLabels(axisStart, axisEnd);
-  const loading = blocksLoading || overlayLoading;
+  const { axisStart, axisEnd } = useMemo(
+    () => computeAxisWindow(blocks, [...intervals, ...sleepIntervals], day),
+    [blocks, intervals, sleepIntervals, day],
+  );
+  const hours = useMemo(() => hourLabels(axisStart, axisEnd), [axisStart, axisEnd]);
+
+  const paintedActual = useMemo((): PaintedActual[] => {
+    const out: PaintedActual[] = [];
+    const push = (iv: MergedInterval, sleep: boolean, idx: number) => {
+      const clipped = minutesClippedToDay(iv.start_time, iv.end_time, day);
+      if (!clipped) return;
+      const style = toSegmentStyle(clipped.startMin, clipped.endMin, axisStart, axisEnd);
+      const leftPct = Number.parseFloat(style.left);
+      const widthPct = Number.parseFloat(style.width);
+      if (!Number.isFinite(leftPct) || !Number.isFinite(widthPct) || widthPct <= 0) return;
+      const onPlan = sleep ? false : actualOverlapsPlanned(clipped.startMin, clipped.endMin, blocks);
+      const productive = (iv.productivity_score ?? 0) >= PRODUCTIVE_THRESHOLD;
+      const fill = sleep
+        ? "#6366f1"
+        : onPlan
+          ? productive
+            ? "#10b981"
+            : "#f43f5e"
+          : "#f59e0b";
+      out.push({
+        key: `${sleep ? "sleep" : "act"}-${iv.start_time}-${idx}`,
+        interval: iv,
+        leftPct,
+        widthPct,
+        onPlan,
+        productive,
+        sleep,
+        fill,
+        title: mergedIntervalLabel(iv),
+      });
+    };
+    sleepIntervals.forEach((iv, i) => push(iv, true, i));
+    intervals.forEach((iv, i) => push(iv, false, i));
+    return out;
+  }, [intervals, sleepIntervals, blocks, day, axisStart, axisEnd]);
 
   const dayLabel = day.toLocaleDateString(undefined, {
     weekday: "long",
@@ -113,11 +200,49 @@ export const DayRibbon = forwardRef<HTMLDivElement, Props>(function DayRibbon({ 
     setAnchor({
       top: evR.top - wrapR.top + wrap.scrollTop,
       left: evR.left - wrapR.left + wrap.scrollLeft,
-      width: evR.width,
+      width: Math.max(8, evR.width),
       height: evR.height,
     });
     setFocus(next);
   }, []);
+
+  const onActualSvgClick = useCallback(
+    (e: ReactMouseEvent<SVGSVGElement>) => {
+      const track = actualTrackRef.current;
+      if (!track || paintedActual.length === 0) return;
+      const r = track.getBoundingClientRect();
+      if (r.width < 1) return;
+      const pct = ((e.clientX - r.left) / r.width) * 100;
+      // Prefer shorter / topmost segments covering this x (last painted wins).
+      let hit: PaintedActual | null = null;
+      for (const seg of paintedActual) {
+        if (pct >= seg.leftPct && pct <= seg.leftPct + seg.widthPct) hit = seg;
+      }
+      if (!hit) return;
+      const anchorEl = track;
+      openAt(anchorEl, {
+        kind: "actual",
+        interval: hit.interval,
+        onPlan: hit.onPlan,
+        productive: hit.productive,
+        sleep: hit.sleep,
+      });
+      // Narrow popup to the clicked slice.
+      const wrap = wrapRef.current;
+      if (wrap) {
+        const wrapR = wrap.getBoundingClientRect();
+        const left = r.left - wrapR.left + wrap.scrollLeft + (hit.leftPct / 100) * r.width;
+        const width = Math.max(8, (hit.widthPct / 100) * r.width);
+        setAnchor({
+          top: r.top - wrapR.top + wrap.scrollTop,
+          left,
+          width,
+          height: r.height,
+        });
+      }
+    },
+    [paintedActual, openAt],
+  );
 
   useEffect(() => {
     setFocus(null);
@@ -138,6 +263,16 @@ export const DayRibbon = forwardRef<HTMLDivElement, Props>(function DayRibbon({ 
   const containerW = wrapRef.current?.clientWidth ?? 600;
   const containerH = wrapRef.current?.clientHeight ?? 200;
 
+  const rawError = blocksError || overlayError;
+  const friendlyError =
+    !rawError
+      ? null
+      : rawError === "enforcer_unreachable" || offline
+        ? focusShell
+          ? "Enforcer unreachable — open Focus from the tray to load plan vs actual."
+          : rawError
+        : rawError;
+
   return (
     <div ref={ref} className="scroll-mt-4">
       <div
@@ -148,7 +283,8 @@ export const DayRibbon = forwardRef<HTMLDivElement, Props>(function DayRibbon({ 
         onClickCapture={(e) => {
           if (!focus) return;
           const t = e.target as HTMLElement;
-          if (t.closest('[role="dialog"]') || t.closest(".ribbon-segment")) return;
+          if (t.closest('[role="dialog"]') || t.closest(".ribbon-segment") || t.closest("[data-ribbon-actual]"))
+            return;
           setFocus(null);
           setAnchor(null);
         }}
@@ -157,12 +293,12 @@ export const DayRibbon = forwardRef<HTMLDivElement, Props>(function DayRibbon({ 
           <div>
             <h3 className="font-medium text-sm">Day ribbon — {dayLabel}</h3>
             <p className="text-[10px] text-muted-foreground mt-0.5">
-              Watch sleep clips overnight PC time. Sessions within 2 minutes are grouped.
+              Planned vs actual on one timeline. Click a segment for details.
             </p>
           </div>
-          {(blocksError || overlayError) && (
-            <span className="text-[11px] text-muted-foreground">{blocksError || overlayError}</span>
-          )}
+          {friendlyError ? (
+            <span className="text-[11px] text-muted-foreground text-right max-w-[14rem]">{friendlyError}</span>
+          ) : null}
         </div>
 
         <div className="relative min-w-0">
@@ -170,7 +306,6 @@ export const DayRibbon = forwardRef<HTMLDivElement, Props>(function DayRibbon({ 
             {hours.map((h, i) => {
               const pct = ((h * 60 - axisStart) / Math.max(1, axisEnd - axisStart)) * 100;
               const clamped = Math.min(100, Math.max(0, pct));
-              // Keep tick alignment with tracks below; pin edge labels so they stay fully visible.
               const isFirst = i === 0 || clamped <= 0.5;
               const isLast = i === hours.length - 1 || clamped >= 99.5;
               const alignClass = isFirst
@@ -201,8 +336,17 @@ export const DayRibbon = forwardRef<HTMLDivElement, Props>(function DayRibbon({ 
                 <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Planned</div>
                 <div className="relative h-8 rounded-lg bg-white/5 overflow-hidden">
                   {blocks.length === 0 && (
-                    <span className="absolute inset-0 flex items-center justify-center text-[11px] text-muted-foreground">
-                      No planned blocks
+                    <span className="absolute inset-0 flex items-center justify-center gap-2 text-[11px] text-muted-foreground">
+                      {offline ? "Plan unavailable offline" : "No planned blocks"}
+                      {!offline && onOpenPlan ? (
+                        <button
+                          type="button"
+                          onClick={onOpenPlan}
+                          className="text-primary hover:underline underline-offset-2"
+                        >
+                          Open Plan
+                        </button>
+                      ) : null}
                     </span>
                   )}
                   {blocks.map((b) => {
@@ -215,7 +359,7 @@ export const DayRibbon = forwardRef<HTMLDivElement, Props>(function DayRibbon({ 
                       <button
                         key={b.id}
                         type="button"
-                        className="ribbon-segment absolute top-0 bottom-0 opacity-90 rounded-sm cursor-pointer hover:brightness-110 focus:outline-none focus:ring-1 focus:ring-violet-400/60"
+                        className="ribbon-segment absolute top-0 bottom-0 opacity-90 rounded-sm cursor-pointer hover:brightness-110 focus:outline-none focus:ring-1 focus:ring-primary/50"
                         style={{ ...style, backgroundColor: color }}
                         title={`${b.title} · ${fmtDurationMinutes(b.planned_minutes)} · ${b.category}`}
                         onClick={(e) => openAt(e.currentTarget, { kind: "planned", block: b })}
@@ -227,64 +371,45 @@ export const DayRibbon = forwardRef<HTMLDivElement, Props>(function DayRibbon({ 
 
               <div>
                 <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Actual</div>
-                <div className="relative h-8 rounded-lg bg-white/5 overflow-hidden">
-                  {intervals.length === 0 && sleepIntervals.length === 0 && (
+                <div
+                  ref={actualTrackRef}
+                  data-ribbon-actual="1"
+                  className="relative h-8 rounded-lg bg-white/5 overflow-hidden"
+                >
+                  {paintedActual.length === 0 && (
                     <span className="absolute inset-0 flex items-center justify-center text-[11px] text-muted-foreground">
-                      No tracked activity
+                      {offline
+                        ? "Tracking loads with the enforcer"
+                        : focusShell
+                          ? "No tracked activity yet"
+                          : "No tracked activity"}
                     </span>
                   )}
-                  {sleepIntervals.map((iv, idx) => {
-                    const clipped = minutesClippedToDay(iv.start_time, iv.end_time, day);
-                    if (!clipped) return null;
-                    const style = toSegmentStyle(clipped.startMin, clipped.endMin, axisStart, axisEnd);
-                    return (
-                      <button
-                        key={`sleep-${iv.start_time}-${idx}`}
-                        type="button"
-                        className="ribbon-segment absolute top-0 bottom-0 rounded-sm cursor-pointer hover:brightness-110 focus:outline-none focus:ring-1 focus:ring-indigo-400/60 bg-indigo-500 opacity-80"
-                        style={style}
-                        title={mergedIntervalLabel(iv)}
-                        onClick={(e) =>
-                          openAt(e.currentTarget, {
-                            kind: "actual",
-                            interval: iv,
-                            onPlan: false,
-                            productive: false,
-                            sleep: true,
-                          })
-                        }
-                      />
-                    );
-                  })}
-                  {intervals.map((iv, idx) => {
-                    const clipped = minutesClippedToDay(iv.start_time, iv.end_time, day);
-                    if (!clipped) return null;
-                    const style = toSegmentStyle(clipped.startMin, clipped.endMin, axisStart, axisEnd);
-                    const onPlan = actualOverlapsPlanned(clipped.startMin, clipped.endMin, blocks);
-                    const productive = (iv.productivity_score ?? 0) >= PRODUCTIVE_THRESHOLD;
-                    const segmentClass = onPlan
-                      ? productive
-                        ? "bg-emerald-500"
-                        : "bg-rose-500"
-                      : "bg-amber-500";
-                    return (
-                      <button
-                        key={`${iv.start_time}-${idx}`}
-                        type="button"
-                        className={`ribbon-segment absolute top-0 bottom-0 rounded-sm cursor-pointer hover:brightness-110 focus:outline-none focus:ring-1 focus:ring-sky-400/60 ${segmentClass} opacity-85`}
-                        style={style}
-                        title={mergedIntervalLabel(iv)}
-                        onClick={(e) =>
-                          openAt(e.currentTarget, {
-                            kind: "actual",
-                            interval: iv,
-                            onPlan,
-                            productive,
-                          })
-                        }
-                      />
-                    );
-                  })}
+                  {paintedActual.length > 0 ? (
+                    <svg
+                      className="absolute inset-0 h-full w-full cursor-pointer"
+                      viewBox="0 0 1000 32"
+                      preserveAspectRatio="none"
+                      role="img"
+                      aria-label="Actual activity ribbon"
+                      onClick={onActualSvgClick}
+                    >
+                      {paintedActual.map((seg) => (
+                        <rect
+                          key={seg.key}
+                          x={(seg.leftPct / 100) * 1000}
+                          y={2}
+                          width={Math.max(1.5, (seg.widthPct / 100) * 1000)}
+                          height={28}
+                          rx={2}
+                          fill={seg.fill}
+                          opacity={0.88}
+                        >
+                          <title>{seg.title}</title>
+                        </rect>
+                      ))}
+                    </svg>
+                  ) : null}
                 </div>
               </div>
             </div>
@@ -303,7 +428,6 @@ export const DayRibbon = forwardRef<HTMLDivElement, Props>(function DayRibbon({ 
             <span className="flex items-center gap-1">
               <span className="w-2 h-2 rounded-sm bg-indigo-500" /> Sleep
             </span>
-            <span className="text-sky-300/60">Click a segment for details</span>
           </div>
         </div>
 
@@ -322,10 +446,10 @@ export const DayRibbon = forwardRef<HTMLDivElement, Props>(function DayRibbon({ 
               focus.sleep
                 ? "drift"
                 : focus.onPlan
-                ? focus.productive
-                  ? "focus"
-                  : "distraction"
-                : "drift"
+                  ? focus.productive
+                    ? "focus"
+                    : "distraction"
+                  : "drift"
             }
             onClose={() => {
               setFocus(null);

@@ -1,12 +1,12 @@
-import { useState, useEffect, useCallback, useMemo, useRef, type ReactNode } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef, lazy, Suspense, type ReactNode } from "react";
 import {
-  Monitor, Globe, RefreshCw, AlertCircle, CheckCircle2,
-  Clock, Zap, Terminal, Code2, BookOpen, PenLine,
-  Gamepad2, Music, MessageSquare, FileText, Folder, Cpu, CalendarDays,
+  Monitor, Globe, CheckCircle2,
+  Terminal, Code2, BookOpen, PenLine,
+  Gamepad2, Music, MessageSquare, FileText, Folder, Cpu,
   ChevronDown, ChevronRight, Download, Loader2,
 } from "lucide-react";
 import { Views, type View } from "react-big-calendar";
-import { fetchDesktopStats, fetchBrowserStats, fetchTrackerHealth, fetchDesktopTimeline, forceTrackerSync, clearDemoClock, fetchDemoClock, fetchGoalsStatus } from "../api/behaviorClient";
+import { fetchDesktopStats, fetchBrowserStats, fetchTrackerHealth, fetchDesktopTimeline, clearDemoClock, fetchDemoClock, fetchGoalsStatus } from "../api/behaviorClient";
 import type { DesktopStats, BrowserStats, AppSession, BrowserSite, BrowserDomain, TrackerHealth, DesktopTimeline, DemoClockStatus, GoalsStatusResponse } from "../api/behaviorClient";
 import {
   dayRollupToDesktopStats,
@@ -15,13 +15,21 @@ import {
   fetchDayRollupMirror,
 } from "../api/focusMirrors";
 import { isFocusDesktopShell } from "../utils/focusDesktopShell";
-import { PlannerCalendar } from "../components/productivity/PlannerCalendar";
+import { useFocusStatus } from "../hooks/useFocusStatus";
 import { GlanceBar } from "../components/productivity/GlanceBar";
-import { ActivePlanBlockCards } from "../components/productivity/ActivePlanBlockCards";
-import { FocusDesignHostBanner } from "../components/productivity/FocusDesignHostBanner";
+import HomeModeBoard from "../components/productivity/HomeModeBoard";
+import DayLoopLanding from "../components/productivity/DayLoopLanding";
+import BedtimeOverlay from "../components/productivity/BedtimeOverlay";
+import MorningBibleOverlay from "../components/productivity/MorningBibleOverlay";
+import MorningPlanOverlay from "../components/productivity/MorningPlanOverlay";
 import { PlanVsActualDashboard } from "../components/productivity/PlanVsActualDashboard";
 import { ConfirmPlanButton } from "../components/productivity/ConfirmPlanButton";
 import { TimetablePanel } from "../components/productivity/TimetablePanel";
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from "../app/components/ui/resizable";
 import {
   ProductivitySettingsTab,
   parseSettingsSection,
@@ -31,7 +39,6 @@ import { RoutinesPanel } from "../components/productivity/RoutinesPanel";
 import { ProposeStepPanel, applyRangeForHorizon } from "../components/productivity/ProposeStepPanel";
 import { proposeBlockStatKind, blockDurationMinutes } from "../components/productivity/proposeBlockStats";
 import { Link, useSearchParams } from "react-router";
-import { useEaster, useLongPress } from "../easter";
 import {
   fetchAdherence,
   createPlannerBlock,
@@ -40,10 +47,7 @@ import {
   proposeWeekFromExport,
   mergeProposeResult,
   applyProposedBlocks,
-  applyMyDay,
-  revertLastApply,
   fetchPlanDrift,
-  fetchMorningOrderRule,
   fetchPlannerBlocks,
   syncPlannerToGoogleCalendar,
   type AdherenceSummary,
@@ -66,8 +70,13 @@ import {
   statsRangeForView,
   type CalendarStatsView,
 } from "../components/productivity/planVsActualUtils";
+import { studyMinutesFromBlocks } from "../components/productivity/fillFocusStudyGaps";
 import { endOfDay, startOfDay } from "date-fns";
 import { formatHoursMinsFromSeconds } from "../utils/formatDuration";
+
+const PlannerCalendar = lazy(() =>
+  import("../components/productivity/PlannerCalendar").then((m) => ({ default: m.PlannerCalendar })),
+);
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -432,8 +441,7 @@ function DayTimeline({ timeline, listTotalSeconds }: { timeline: DesktopTimeline
 
 export function ProductivityPage() {
   const focusShell = isFocusDesktopShell();
-  const { burst } = useEaster();
-  const trackerEgg = useLongPress(600, () => burst("cat"));
+  const focusStatus = useFocusStatus();
   const [desktop, setDesktop] = useState<DesktopStats | null>(null);
   const [browser, setBrowser] = useState<BrowserStats | null>(null);
   const [trackerHealth, setTrackerHealth] = useState<TrackerHealth | null>(null);
@@ -454,11 +462,18 @@ export function ProductivityPage() {
     return new Date();
   });
   const [calendarView, setCalendarView] = useState<View>(Views.DAY);
+  const [calendarVisited, setCalendarVisited] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const [demoClock, setDemoClock] = useState<DemoClockStatus | null>(null);
   const rawTab = searchParams.get("tab");
-  const tab: "calendar" | "plan" | "settings" =
-    rawTab === "plan" || rawTab === "settings" ? rawTab : "calendar";
+  /** Sidebar owns nav: Home | Calendar | Planner | Analytics | Settings (+ Bible route). */
+  const tab: "home" | "calendar" | "plan" | "analytics" | "settings" =
+    rawTab === "calendar" ||
+    rawTab === "plan" ||
+    rawTab === "analytics" ||
+    rawTab === "settings"
+      ? rawTab
+      : "home";
   const settingsSection = parseSettingsSection(searchParams.get("section"));
   const setSettingsSection = useCallback(
     (id: SettingsSectionId) => {
@@ -474,21 +489,22 @@ export function ProductivityPage() {
     },
     [setSearchParams],
   );
+  useEffect(() => {
+    if (tab === "calendar") setCalendarVisited(true);
+  }, [tab]);
+
   const setTab = useCallback(
-    (id: "calendar" | "plan" | "settings") => {
-      if (id === "calendar") {
+    (id: "home" | "calendar" | "plan" | "analytics" | "settings") => {
+      if (id === "calendar" || id === "home") {
         setPlannerDay(startOfDay(new Date()));
         setCalendarView(Views.DAY);
       }
       setSearchParams(
         (prev) => {
           const next = new URLSearchParams(prev);
-          if (id === "calendar") {
-            next.delete("tab");
-            next.delete("day");
-          } else {
-            next.set("tab", id);
-          }
+          next.set("tab", id);
+          if (id !== "settings") next.delete("section");
+          if (id === "home") next.delete("day");
           return next;
         },
         { replace: true },
@@ -497,8 +513,6 @@ export function ProductivityPage() {
     [setSearchParams],
   );
   const [plannerRefresh, setPlannerRefresh] = useState(0);
-  const [syncing, setSyncing] = useState(false);
-  const [syncHint, setSyncHint] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
   const [exportHint, setExportHint] = useState<string | null>(null);
   const [exportDays, setExportDays] = useState(7);
@@ -519,6 +533,8 @@ export function ProductivityPage() {
     hints: true,
     policy: true,
     wearable: true,
+    tables: true,
+    sessions: true,
   });
   const [exportProductiveOnly, setExportProductiveOnly] = useState(false);
   const [proposing, setProposing] = useState(false);
@@ -539,9 +555,7 @@ export function ProductivityPage() {
   const [dayLockedHours, setDayLockedHours] = useState(0);
   /** Goals step only checks off after Save or Next — not because defaults prefill text */
   const [goalsConfirmed, setGoalsConfirmed] = useState(false);
-  const [applyingDay, setApplyingDay] = useState(false);
   const [planDrift, setPlanDrift] = useState<PlanDriftSummary | null>(null);
-  const [morningRule, setMorningRule] = useState<string | null>(null);
 
   const onRoutinesChange = useCallback((rows: PlannerRoutine[]) => {
     setHasRoutines(rows.length > 0);
@@ -552,9 +566,6 @@ export function ProductivityPage() {
   const proposeDone = Boolean(proposed?.length) || planAppliedThisSession;
   const finishDone = planAppliedThisSession;
   const syncDone = planAppliedThisSession; // last step available after apply
-  const planStepOrder = focusShell
-    ? (["routines", "goals", "done"] as const)
-    : (["routines", "goals", "propose", "done", "sync"] as const);
   const planStepRef = useRef<HTMLDivElement>(null);
 
   // Focus shell: never land on Study-only propose/sync steps
@@ -586,19 +597,16 @@ export function ProductivityPage() {
       .catch(() => {
         if (!cancelled) setPlanDrift(null);
       });
-    void fetchMorningOrderRule(plannerDayKey)
-      .then((r) => {
-        if (!cancelled) setMorningRule(r.rule);
-      })
-      .catch(() => {
-        if (!cancelled) setMorningRule(null);
-      });
     return () => {
       cancelled = true;
     };
   }, [plannerDayKey, plannerRefresh, lastRefresh]);
 
   useEffect(() => {
+    if (focusShell) {
+      setDemoClock(null);
+      return;
+    }
     let cancelled = false;
     void fetchDemoClock()
       .then((d) => {
@@ -610,7 +618,7 @@ export function ProductivityPage() {
     return () => {
       cancelled = true;
     };
-  }, [plannerRefresh, lastRefresh]);
+  }, [plannerRefresh, lastRefresh, focusShell]);
 
   useEffect(() => {
     const raw = searchParams.get("day");
@@ -633,14 +641,8 @@ export function ProductivityPage() {
     void fetchPlannerBlocks(from, to)
       .then((rows) => {
         if (cancelled) return;
-        const mins = rows
-          .filter((b) => b.status !== "rolled")
-          .reduce((sum, b) => {
-            const a = new Date(b.start_at).getTime();
-            const e = new Date(b.end_at).getTime();
-            return sum + Math.max(0, (e - a) / 60_000);
-          }, 0);
-        setDayLockedHours(mins / 60);
+        // Hero "planned" = study/work toward focus goal (not routines/free).
+        setDayLockedHours(studyMinutesFromBlocks(rows) / 60);
       })
       .catch(() => {
         if (!cancelled) setDayLockedHours(0);
@@ -718,36 +720,45 @@ export function ProductivityPage() {
   }, [plannerDay, plannerRefresh, focusShell]);
 
   useEffect(() => {
+    if (focusShell) {
+      // Focus: SoftLand goals come from status bus / rollup — never Study :8000.
+      void fetchDayRollupMirror().then((rollup) => {
+        setGoalsStatus(dayRollupToGoalsStatus(rollup));
+      });
+      return;
+    }
     const day = toApiDay(plannerDay);
     void fetchGoalsStatus(day)
       .then(setGoalsStatus)
-      .catch(async () => {
-        if (isFocusDesktopShell()) {
-          const rollup = await fetchDayRollupMirror();
-          setGoalsStatus(dayRollupToGoalsStatus(rollup));
-        } else {
-          setGoalsStatus(null);
-        }
-      });
-  }, [plannerDay, plannerRefresh]);
+      .catch(() => setGoalsStatus(null));
+  }, [plannerDay, plannerRefresh, focusShell]);
+
+  // Keep GlanceBar / Home tracked minutes in sync with native rollup (DB → day_rollup.json).
+  useEffect(() => {
+    if (!focusShell || !focusStatus.dayRollup) return;
+    setDesktop(dayRollupToDesktopStats(focusStatus.dayRollup));
+    setGoalsStatus((prev) => dayRollupToGoalsStatus(focusStatus.dayRollup) ?? prev);
+  }, [focusShell, focusStatus.updatedAt, focusStatus.dayRollup]);
 
   /** Header + GlanceBar — follow selected month/week/day. */
   const loadCore = useCallback(async () => {
     if (isFocusDesktopShell()) {
-      // Phase 5: prefer day_rollup mirror; soft-fail API — zeros, not error spam.
+      // Enforcer mirrors only — no Study :8000 desktop-stats.
       const rollup = await fetchDayRollupMirror();
-      const results = await Promise.allSettled([
-        fetchDesktopStatsForRange(statsRange.from, statsRange.to),
-        fetchTrackerHealth(),
-      ]);
       if (rollup) {
         setDesktop(dayRollupToDesktopStats(rollup));
-      } else if (results[0].status === "fulfilled") {
-        setDesktop(results[0].value);
       } else {
         setDesktop(emptyDesktopStats(toApiDay(statsRange.from)));
       }
-      if (results[1].status === "fulfilled") setTrackerHealth(results[1].value);
+      setTrackerHealth({
+        tracker_alive: Boolean(rollup),
+        status: rollup ? "running" : "no_data",
+        last_event_at: null,
+        sessions_today: rollup?.session_count ?? 0,
+        total_seconds_today: Math.round((rollup?.productive_minutes ?? 0) * 60),
+        source: "day_rollup",
+        hint: rollup ? "Native day rollup" : "Waiting for enforcer rollup",
+      });
       return;
     }
     const results = await Promise.allSettled([
@@ -761,28 +772,27 @@ export function ProductivityPage() {
   /** Screen-time extras — KPIs detail + timeline for the focused day. */
   const loadScreenTime = useCallback(async () => {
     const timelineDay = toApiDay(plannerDay);
+    if (isFocusDesktopShell()) {
+      setBrowser({
+        connected: false,
+        events_today: 0,
+        total_events: 0,
+        top_category: "",
+        avg_productivity_score: 0,
+        top_domains: [],
+        recent_sites: [],
+        category_breakdown: {},
+        date: timelineDay,
+        source: "offline",
+      });
+      setTimeline(null);
+      return;
+    }
     const results = await Promise.allSettled([
       fetchBrowserStatsForRange(statsRange.from, statsRange.to),
       fetchDesktopTimeline(timelineDay),
     ]);
     if (results[0].status === "fulfilled") setBrowser(results[0].value);
-    else if (isFocusDesktopShell()) {
-      // Soft empty when Study API down in Focus shell
-      setBrowser((prev) =>
-        prev ?? {
-          connected: false,
-          events_today: 0,
-          total_events: 0,
-          top_category: "",
-          avg_productivity_score: 0,
-          top_domains: [],
-          recent_sites: [],
-          category_breakdown: {},
-          date: timelineDay,
-          source: "offline",
-        },
-      );
-    }
     if (results[1].status === "fulfilled") setTimeline(results[1].value);
   }, [plannerDay.getTime(), statsRange.from.getTime(), statsRange.to.getTime()]);
 
@@ -795,29 +805,6 @@ export function ProductivityPage() {
     setLastRefresh(new Date());
     setLoading(false);
   }, [loadCore, loadScreenTime]);
-
-  const syncTracker = useCallback(async () => {
-    setSyncing(true);
-    setSyncHint(null);
-    try {
-      const result = await forceTrackerSync();
-      await load();
-      void loadAdherence(plannerDay);
-      setPlannerRefresh((k) => k + 1);
-      void loadDue();
-      setSyncHint(
-        result.flushed
-          ? `Synced · last activity ${result.last_event_at ? new Date(result.last_event_at).toLocaleTimeString() : "now"}`
-          : result.message,
-      );
-      setTimeout(() => setSyncHint(null), 3500);
-    } catch (e: unknown) {
-      setSyncHint(e instanceof Error ? e.message : "Sync failed");
-      setTimeout(() => setSyncHint(null), 4000);
-    } finally {
-      setSyncing(false);
-    }
-  }, [load, loadAdherence, loadDue, plannerDay]);
 
   const applyExportWindow = useCallback(
     (startIso: string, endIso: string, note?: string | null) => {
@@ -852,7 +839,7 @@ export function ProductivityPage() {
     [applyExportWindow, exportEndDay],
   );
 
-  const exportWeek = useCallback(async (format: "json" | "csv") => {
+  const exportWeek = useCallback(async (format: "json" | "csv" | "csv_wide") => {
     setExporting(true);
     setExportHint(null);
     try {
@@ -933,7 +920,6 @@ export function ProductivityPage() {
           horizon_days: horizonDays,
         });
         const merged = mergedRes.blocks;
-        if (mergedRes.rule) setMorningRule(mergedRes.rule);
 
         setProposed(merged);
         const label =
@@ -1035,86 +1021,55 @@ export function ProductivityPage() {
     [proposed, bumpPlanner],
   );
 
-  const runApplyMyDay = useCallback(async () => {
-    setApplyingDay(true);
-    setExportHint(null);
-    try {
-      const goals = loadProductivityGoals();
-      const res = await applyMyDay({
-        goals: formatGoalsForPrompt(goals),
-        study_tasks: goals.studyTasks,
-      });
-      if (!res.ok) throw new Error(res.error || "Apply my day failed");
-      setExportHint(
-        `Apply my day · routines +${res.routines_created ?? 0} · blocks +${res.study_created ?? 0}`,
-      );
-      setPlanAppliedThisSession(true);
-      setProposed(null);
-      setProposeMeta(null);
-      bumpPlanner();
-      setPlanStep("done");
-    } catch (e: unknown) {
-      setExportHint(e instanceof Error ? e.message : "Apply my day failed");
-    } finally {
-      setApplyingDay(false);
-    }
-  }, [bumpPlanner]);
-
-  const runRevertApply = useCallback(async () => {
-    setApplyingDay(true);
-    setExportHint(null);
-    try {
-      const res = await revertLastApply();
-      if (!res.ok) throw new Error(res.error || "Nothing to revert");
-      setExportHint(`Reverted ${res.restored ?? 0} blocks from last apply`);
-      bumpPlanner();
-    } catch (e: unknown) {
-      setExportHint(e instanceof Error ? e.message : "Revert failed");
-    } finally {
-      setApplyingDay(false);
-    }
-  }, [bumpPlanner]);
-
   useEffect(() => {
     void loadDue();
   }, [loadDue]);
 
-  // Initial + tab-aware polling: always core; screen-time extras on Calendar (and Settings for overrides).
+  // Initial + polling: do NOT re-fetch on every tab switch (that made Settings feel slow).
   useEffect(() => {
     let cancelled = false;
-    const tick = async () => {
+    const tick = async (showSpinner: boolean) => {
       if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
-      setLoading(true);
+      if (showSpinner) setLoading(true);
       await loadCore();
-      if (!cancelled && (tab === "calendar" || tab === "settings")) {
-        await loadScreenTime();
-      }
+      await loadScreenTime();
       if (cancelled) return;
       setLastRefresh(new Date());
-      setLoading(false);
+      if (showSpinner) setLoading(false);
     };
-    void tick();
+    void tick(true);
     const id = setInterval(() => {
-      void tick();
+      void tick(false);
     }, 60_000);
     return () => {
       cancelled = true;
       clearInterval(id);
     };
-  }, [loadCore, loadScreenTime, tab]);
+  }, [loadCore, loadScreenTime]);
+
+  // Soft refresh on tab enter — Focus shell skips (mirrors + status bus already tick).
+  useEffect(() => {
+    if (focusShell) return;
+    if (tab !== "home" && tab !== "calendar" && tab !== "settings") return;
+    void loadScreenTime();
+  }, [tab, loadScreenTime, focusShell]);
 
   useEffect(() => {
+    // Focus: defer adherence so day.loop_snapshot isn't stuck behind plan.adherence on cold start.
+    if (focusShell) {
+      const id = window.setTimeout(() => void loadAdherence(plannerDay), 2500);
+      return () => window.clearTimeout(id);
+    }
     void loadAdherence(plannerDay);
-  }, [plannerDay, loadAdherence]);
+  }, [plannerDay, loadAdherence, focusShell]);
 
   const trackerStatus = trackerHealth?.status ?? (desktop?.tracker_running ? "running" : "no_data");
-  const trackerRunning = trackerStatus === "running" || trackerHealth?.process_alive === true;
-  const trackerStale = trackerStatus === "stale" && !trackerHealth?.process_alive;
   const maxSec = desktop?.sessions[0]?.seconds ?? 1;
   const totalHours = desktop ? (desktop.total_seconds / 3600).toFixed(1) : "—";
   const avgScore = desktop?.avg_productivity_score ?? 0;
 
   return (
+    <>
     <div className="h-full overflow-y-auto bg-background text-foreground px-0 py-0 sm:px-0">
       <div className="w-full max-w-none space-y-5 pb-16">
 
@@ -1144,130 +1099,46 @@ export function ProductivityPage() {
         </div>
       ) : null}
 
-      <FocusDesignHostBanner />
-
-      {/* Header: tabs + actions (page title lives in AppTopBar) */}
-      <div className="gloss-panel rounded-3xl border border-border/50 p-4">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="grid grid-cols-3 rounded-xl border border-border/50 bg-background/35 p-1 text-sm">
-            {([
-              { id: "calendar" as const, label: "Calendar" },
-              { id: "plan" as const, label: "Plan" },
-              { id: "settings" as const, label: "Settings" },
-            ]).map(({ id, label }) => (
-              <button
-                key={id}
-                type="button"
-                onClick={() => setTab(id)}
-                className={`rounded-lg px-3 py-1.5 text-center transition-colors ${
-                  tab === id ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-accent/60 hover:text-foreground"
-                }`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-
-          <div className="flex flex-wrap items-center justify-end gap-2">
-            <button
-              type="button"
-              onClick={() => void syncTracker()}
-              disabled={syncing || loading}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-sm transition-colors hover:bg-primary/90 disabled:opacity-50"
-              title="Flush the desktop tracker session into the DB, then reload stats"
-            >
-              <Zap size={13} className={syncing ? "animate-pulse" : ""} />
-              Update tracker
-            </button>
-            <button
-              type="button"
-              onClick={load}
-              disabled={loading}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-background/50 hover:bg-accent/60 text-sm border border-border/50 transition-colors disabled:opacity-50"
-              title="Reload planner stats and screen-time data (no tracker flush)"
-            >
-              <RefreshCw size={13} className={loading ? "animate-spin" : ""} />
-              Reload
-            </button>
-            <span
-              {...trackerEgg}
-              className={`inline-flex cursor-pointer items-center gap-1 rounded-full border px-2.5 py-1 text-xs select-none ${
-                trackerRunning
-                  ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
-                  : trackerStale
-                    ? "border-yellow-500/30 bg-yellow-500/10 text-yellow-300"
-                    : "border-orange-500/30 bg-orange-500/10 text-orange-300"
-              }`}
-              title={[
-                trackerRunning
-                  ? "Standalone tracker running · long-press…"
-                  : trackerStale
-                    ? "Tracker data is stale"
-                    : "Tracker not installed or no data yet",
-                `Refreshed ${lastRefresh.toLocaleTimeString()}`,
-                trackerHealth?.last_event_at
-                  ? `Last tracked ${new Date(trackerHealth.last_event_at).toLocaleString()}`
-                  : null,
-              ]
-                .filter(Boolean)
-                .join(" · ")}
-            >
-              {trackerRunning ? (
-                <CheckCircle2 size={11} className="shrink-0" />
-              ) : trackerStale ? (
-                <Clock size={11} className="shrink-0" />
-              ) : (
-                <AlertCircle size={11} className="shrink-0" />
-              )}
-              {trackerRunning ? "Tracker on" : trackerStale ? "Tracker stale" : "Tracker off"}
-            </span>
-            {syncHint && (
-              <span className="max-w-[220px] truncate rounded-full border border-emerald-500/25 bg-emerald-500/10 px-2.5 py-1 text-xs text-emerald-300" title={syncHint}>
-                {syncHint}
-              </span>
-            )}
-            {exportHint && (tab === "plan" || tab === "settings") && (
-              <span className="max-w-[220px] truncate rounded-full border border-sky-500/25 bg-sky-500/10 px-2.5 py-1 text-xs text-sky-300" title={exportHint}>
-                {exportHint}
-              </span>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Tracker setup / partial-fetch banners removed — data still loads; status chip remains. */}
-
-      {tab === "calendar" && (
+      {tab === "home" && (
       <div className="space-y-6">
-        <GlanceBar
-          desktop={desktop}
-          dueReviews={dueReviews}
-          rangeLabel={statsRange.label}
-          sleepHours={sleepHours}
-          sleepScore={sleepScore}
-          goalsStatus={goalsStatus}
-          onScheduleReview={() => {
-            const start = new Date(plannerDay);
-            if (toApiDay(plannerDay) === toApiDay(new Date())) {
-              start.setMinutes(start.getMinutes() + 15 - (start.getMinutes() % 15));
-            } else {
-              start.setHours(9, 0, 0, 0);
-            }
-            void createPlannerBlock({
-              title: "SRS review",
-              category: "review",
-              start_at: start.toISOString(),
-              duration_minutes: Math.min(30, 15 + dueReviews * 2),
-            }).then(() => bumpPlanner());
-          }}
-        />
-
-        <ActivePlanBlockCards
-          day={plannerDay}
-          refreshKey={plannerRefresh}
-          onChanged={bumpPlanner}
-        />
-
+        {focusShell ? (
+          <HomeModeBoard
+            day={plannerDay}
+            refreshKey={plannerRefresh}
+            desktop={desktop}
+            dueReviews={dueReviews}
+            rangeLabel={statsRange.label}
+            sleepHours={sleepHours}
+            sleepScore={sleepScore}
+            goalsStatus={goalsStatus}
+            onScheduleReview={() => {
+              const start = new Date(plannerDay);
+              if (toApiDay(plannerDay) === toApiDay(new Date())) {
+                start.setMinutes(start.getMinutes() + 15 - (start.getMinutes() % 15));
+              } else {
+                start.setHours(9, 0, 0, 0);
+              }
+              void createPlannerBlock({
+                title: "SRS review",
+                category: "review",
+                start_at: start.toISOString(),
+                duration_minutes: Math.min(30, 15 + dueReviews * 2),
+              }).then(() => bumpPlanner());
+            }}
+          />
+        ) : (
+          <>
+            <DayLoopLanding />
+            <GlanceBar
+              desktop={desktop}
+              dueReviews={dueReviews}
+              rangeLabel={statsRange.label}
+              sleepHours={sleepHours}
+              sleepScore={sleepScore}
+              goalsStatus={goalsStatus}
+            />
+          </>
+        )}
         {planDrift && planDrift.block_count > 0 ? (
           <div className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 space-y-1">
             <p className="text-xs font-medium text-foreground">Plan vs actual</p>
@@ -1283,7 +1154,6 @@ export function ProductivityPage() {
             )}
           </div>
         ) : null}
-
         {!focusShell ? (
           <ShutdownRitualPanel
             day={plannerDay}
@@ -1294,8 +1164,13 @@ export function ProductivityPage() {
             onComplete={() => bumpPlanner()}
           />
         ) : null}
+      </div>
+      )}
 
-        <div className="w-full bg-white/[0.03] border border-white/10 rounded-2xl p-5 sm:p-6">
+      {(tab === "calendar" || calendarVisited) && (
+      <div className={tab === "calendar" ? "space-y-6" : "hidden"} aria-hidden={tab !== "calendar"}>
+        <div className="w-full">
+          <Suspense fallback={<p className="text-sm text-muted-foreground px-2 py-6">Opening calendar…</p>}>
           <PlannerCalendar
             expanded
             refreshKey={plannerRefresh}
@@ -1303,12 +1178,6 @@ export function ProductivityPage() {
             onSelectedDayChange={setPlannerDay}
             view={calendarView}
             onViewChange={setCalendarView}
-            headerTitle={
-              <h2 className="planner-cal-header__title">
-                <CalendarDays size={16} className="planner-cal-header__title-icon" aria-hidden />
-                Planner calendar
-              </h2>
-            }
             headerBadge={
               adherence ? (
                 <span
@@ -1323,24 +1192,30 @@ export function ProductivityPage() {
               ) : null
             }
           />
+          </Suspense>
         </div>
+      </div>
+      )}
 
-        <div className="space-y-5 rounded-2xl border border-white/10 bg-white/[0.03] p-5 sm:p-6">
+      {tab === "analytics" && (
+      <div className="space-y-6">
+        <div className="space-y-5 rounded-2xl border border-white/10 bg-white/[0.03] p-5 sm:p-6 gloss-panel">
           <PlanVsActualDashboard
             selectedDay={plannerDay}
             onSelectedDayChange={setPlannerDay}
             refreshKey={plannerRefresh}
-            trackerHealth={trackerHealth}
+            trackerHealth={focusShell ? null : trackerHealth}
             adherenceDays={adherenceWindow}
             adherenceEnd={adherenceEnd}
             analyticsFrom={statsRange.from}
             analyticsTo={statsRange.to}
             analyticsView={statsView}
+            onNavigateTab={setTab}
           />
         </div>
 
         {!focusShell ? (
-        <details className="group rounded-2xl border border-white/10 bg-white/[0.03] open:pb-4">
+        <details className="group rounded-2xl border border-white/10 bg-white/[0.03] open:pb-4" open>
           <summary className="cursor-pointer list-none flex items-center gap-2 px-5 py-3.5 text-sm font-medium text-muted-foreground hover:text-foreground">
             <ChevronRight size={14} className="transition-transform group-open:rotate-90 text-primary" />
             Weekly digest
@@ -1351,7 +1226,7 @@ export function ProductivityPage() {
         </details>
         ) : null}
 
-        <details className="group rounded-2xl border border-white/10 bg-white/[0.03] open:pb-4">
+        <details className="group rounded-2xl border border-white/10 bg-white/[0.03] open:pb-4" open={!focusShell}>
           <summary className="cursor-pointer list-none flex items-center gap-2 px-5 py-3.5 text-sm font-medium text-muted-foreground hover:text-foreground">
             <ChevronRight size={14} className="transition-transform group-open:rotate-90 text-primary" />
             Screen time details
@@ -1380,12 +1255,26 @@ export function ProductivityPage() {
               )}
 
               {!loading && (!desktop?.sessions || desktop.sessions.length === 0) && (
-                <div className="text-center py-8 text-muted-foreground text-sm space-y-2">
-                  <Monitor size={28} className="mx-auto opacity-30" />
-                  <p>No desktop data yet.</p>
-                  <code className="block bg-black/40 px-3 py-1.5 rounded-lg text-xs font-mono mx-auto w-fit">
-                    scripts\install_tracker_startup.bat
-                  </code>
+                <div className="text-center py-6 text-muted-foreground text-sm space-y-2">
+                  <Monitor size={24} className="mx-auto opacity-30" />
+                  <p>
+                    {focusShell
+                      ? "No desktop sessions in this range yet — productive minutes still show above when day rollup is available."
+                      : "No desktop data yet."}
+                  </p>
+                  {!focusShell ? (
+                    <code className="block bg-black/40 px-3 py-1.5 rounded-lg text-xs font-mono mx-auto w-fit">
+                      scripts\install_tracker_startup.bat
+                    </code>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setTab("settings")}
+                      className="text-xs text-primary hover:underline underline-offset-2"
+                    >
+                      Open Settings
+                    </button>
+                  )}
                 </div>
               )}
 
@@ -1496,105 +1385,50 @@ export function ProductivityPage() {
       )}
 
       {tab === "plan" && (
-      <div className="grid gap-5 xl:grid-cols-2 items-start">
+      <ResizablePanelGroup
+        direction="horizontal"
+        autoSaveId="calt-plan-calendar-split"
+        className="min-h-[min(70vh,calc(100vh-5.5rem))] gap-0 rounded-2xl"
+      >
         {/* Left: planning steps */}
-        <div className="flex min-w-0 flex-col gap-3 xl:sticky xl:top-3 xl:h-[calc(100vh-5.5rem)] xl:max-h-[calc(100vh-5.5rem)]">
-          <div className="shrink-0 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2.5 space-y-2">
-            <h2 className="text-sm font-semibold text-foreground">Today’s plan</h2>
-            <p className="text-[11px] text-muted-foreground">
-              {focusShell
-                ? "Routines + goals via enforcer. Add blocks on the calendar — LLM Build and Google Watch stay in Study Advanced."
-                : (
-                  <>
-                    Work the steps below, then tap <strong className="text-foreground">Confirm plan</strong> to
-                    leave planning mode.
-                  </>
-                )}
-            </p>
-            {morningRule ? (
-              <p className="text-[10px] text-emerald-200/90 border border-emerald-500/20 rounded-lg px-2 py-1 bg-emerald-500/5">
-                {morningRule}
-              </p>
-            ) : null}
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                disabled={applyingDay}
-                onClick={() => void runApplyMyDay()}
-                className="rounded-lg bg-primary px-2 py-2 text-[11px] text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-              >
-                {applyingDay ? "Applying…" : "Apply my day"}
-              </button>
-              <button
-                type="button"
-                disabled={applyingDay}
-                onClick={() => void runRevertApply()}
-                className="rounded-lg border border-white/10 px-2 py-2 text-[11px] hover:bg-white/5 disabled:opacity-50"
-              >
-                Revert last apply
-              </button>
-            </div>
-            <ConfirmPlanButton size="block" />
-          </div>
-          <nav aria-label="Plan steps" className="shrink-0 px-1 pt-0.5 pb-0.5">
-            <ol className={`relative grid ${focusShell ? "grid-cols-3" : "grid-cols-5"}`}>
-              <div
-                aria-hidden
-                className="pointer-events-none absolute left-[10%] right-[10%] top-[9px] h-px bg-white/15"
-              />
-              <div
-                aria-hidden
-                className="pointer-events-none absolute left-[10%] top-[9px] h-px bg-emerald-500/70 transition-[width] duration-300"
-                style={{
-                  width: `${Math.max(0, planStepOrder.indexOf(planStep as (typeof planStepOrder)[number])) * (100 / Math.max(1, planStepOrder.length - 1)) * 0.8}%`,
-                }}
-              />
+        <ResizablePanel defaultSize={44} minSize={28} className="min-w-0">
+        <div className="flex h-full min-w-0 flex-col gap-3.5 pr-2 xl:max-h-[calc(100vh-5.5rem)] xl:overflow-y-auto">
+          <nav aria-label="Plan steps" className="shrink-0">
+            <ol
+              className={`plan-step-rail ${
+                focusShell ? "plan-step-rail--3" : "plan-step-rail--5"
+              }`}
+            >
               {(
                 focusShell
                   ? ([
-                      { id: "routines" as const, n: 1, label: "Routines", done: routinesDone },
-                      { id: "goals" as const, n: 2, label: "Goals", done: goalsDone },
-                      { id: "done" as const, n: 3, label: "Ready", done: finishDone || goalsDone },
+                      { id: "routines" as const, label: "Routines", done: routinesDone },
+                      { id: "goals" as const, label: "Goals", done: goalsDone },
+                      { id: "done" as const, label: "Ready", done: finishDone || goalsDone },
                     ] as const)
                   : ([
-                      { id: "routines" as const, n: 1, label: "Routines", done: routinesDone },
-                      { id: "goals" as const, n: 2, label: "Goals", done: goalsDone },
-                      { id: "propose" as const, n: 3, label: "Build", done: proposeDone },
-                      { id: "done" as const, n: 4, label: "Apply", done: finishDone },
-                      { id: "sync" as const, n: 5, label: "Watch", done: syncDone && planStep === "sync" },
+                      { id: "routines" as const, label: "Routines", done: routinesDone },
+                      { id: "goals" as const, label: "Goals", done: goalsDone },
+                      { id: "propose" as const, label: "Build", done: proposeDone },
+                      { id: "done" as const, label: "Apply", done: finishDone },
+                      { id: "sync" as const, label: "Watch", done: syncDone && planStep === "sync" },
                     ] as const)
               ).map((s) => {
                 const active = planStep === s.id;
                 return (
-                  <li key={s.id} className="relative z-[1] flex justify-center">
+                  <li key={s.id} className="min-w-0">
                     <button
                       type="button"
                       onClick={() => setPlanStep(s.id)}
                       aria-current={active ? "step" : undefined}
-                      className="flex flex-col items-center gap-1 min-w-0"
+                      className={`plan-step-rail__btn ${active ? "is-active" : ""} ${
+                        s.done && !active ? "is-done" : ""
+                      }`}
                     >
-                      <span
-                        className={`flex h-[18px] w-[18px] items-center justify-center rounded-full border text-[9px] font-semibold transition-colors ${
-                          s.done
-                            ? "border-emerald-500 bg-emerald-500 text-white"
-                            : active
-                              ? "border-primary bg-primary text-primary-foreground ring-2 ring-primary/30"
-                              : "border-white/25 bg-background text-muted-foreground"
-                        }`}
-                      >
-                        {s.done ? <CheckCircle2 size={11} /> : s.n}
-                      </span>
-                      <span
-                        className={`text-[10px] leading-none ${
-                          active
-                            ? "font-semibold text-foreground"
-                            : s.done
-                              ? "text-emerald-200/90"
-                              : "text-muted-foreground"
-                        }`}
-                      >
-                        {s.label}
-                      </span>
+                      {s.done && !active ? (
+                        <CheckCircle2 size={12} className="plan-step-rail__check" aria-hidden />
+                      ) : null}
+                      <span className="plan-step-rail__label">{s.label}</span>
                     </button>
                   </li>
                 );
@@ -1606,12 +1440,146 @@ export function ProductivityPage() {
             ref={planStepRef}
             className="min-h-0 flex-1 overflow-y-auto overscroll-contain pr-1 space-y-3"
           >
+          {(() => {
+            const stepActions = (
+              <div className="space-y-2 border-t border-white/10 pt-3">
+                <ConfirmPlanButton size="block" />
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  {planStep === "routines" ? (
+                    <>
+                      <span className="text-[11px] text-muted-foreground">
+                        Lock times, then set focus hours
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setPlanStep("goals")}
+                        className="rounded-xl bg-primary px-4 py-2 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+                      >
+                        Next · Goals
+                      </button>
+                    </>
+                  ) : planStep === "goals" ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setPlanStep("routines")}
+                        className="rounded-xl border border-white/10 px-4 py-2 text-xs hover:bg-white/5"
+                      >
+                        Back
+                      </button>
+                      <div className="flex items-center gap-2">
+                        <Link
+                          to="/journal"
+                          className="text-xs text-primary hover:underline inline-flex items-center gap-1"
+                        >
+                          <PenLine size={12} /> Journal
+                        </Link>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setGoalsConfirmed(true);
+                            setPlanStep(focusShell ? "done" : "propose");
+                          }}
+                          className="rounded-xl bg-primary px-4 py-2 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+                        >
+                          {focusShell ? "Next · Ready" : "Next · Build"}
+                        </button>
+                      </div>
+                    </>
+                  ) : planStep === "propose" ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setPlanStep("goals")}
+                        className="rounded-xl border border-white/10 px-4 py-2 text-xs hover:bg-white/5"
+                      >
+                        Back
+                      </button>
+                      {proposed?.length ? (
+                        <button
+                          type="button"
+                          disabled={proposing}
+                          onClick={() =>
+                            void applyPropose(
+                              applyRangeForHorizon(proposeRangeStart, horizonDays, proposeHorizon),
+                            )
+                          }
+                          className="rounded-xl bg-primary px-4 py-2 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                        >
+                          {proposing
+                            ? "Applying…"
+                            : proposeHorizon === "day"
+                              ? "Apply today"
+                              : proposeHorizon === "week"
+                                ? "Apply this week"
+                                : proposeHorizon === "month"
+                                  ? "Apply this month"
+                                  : `Apply ${horizonDays} days`}
+                        </button>
+                      ) : (
+                        <span className="text-[11px] text-muted-foreground">
+                          Generate a schedule to continue
+                        </span>
+                      )}
+                    </>
+                  ) : planStep === "done" ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setPlanStep(focusShell ? "goals" : "propose")}
+                        className="rounded-xl border border-white/10 px-4 py-2 text-xs hover:bg-white/5"
+                      >
+                        Back
+                      </button>
+                      {!focusShell ? (
+                        <button
+                          type="button"
+                          onClick={() => setPlanStep("sync")}
+                          className="rounded-xl bg-primary px-4 py-2 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+                        >
+                          Next · Watch
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => setTab("calendar")}
+                          className="rounded-xl bg-primary px-4 py-2 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+                        >
+                          Open Calendar
+                        </button>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setPlanStep(finishDone ? "done" : "propose")}
+                        className="rounded-xl border border-white/10 px-4 py-2 text-xs hover:bg-white/5"
+                      >
+                        Back
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setTab("calendar")}
+                        className="rounded-xl bg-primary px-4 py-2 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+                      >
+                        See tracking
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
+            );
+
+            return (
+              <>
           {planStep === "routines" && (
             <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 space-y-4">
               <div>
                 <h2 className="text-sm font-semibold text-foreground">1 · Routines</h2>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Lock fixed times first (meals, workout, devotion). The day list on the right updates as you apply.
+                  Lock fixed times first (meals, workout, devotion) and set sleep / wake. The day list on the
+                  right updates as you apply.
                 </p>
               </div>
               <div className="space-y-4">
@@ -1634,22 +1602,26 @@ export function ProductivityPage() {
                 </details>
                 ) : null}
               </div>
+              {stepActions}
             </div>
           )}
 
           {planStep === "goals" && (
-            <div className="space-y-3">
-              <ProductivityGoalsPanel
-                adherence={adherence}
-                lockedHours={dayLockedHours}
-                sleepScore={sleepScore}
-                onGoalsTextChange={(text) => setProposeGoals(text)}
-                onConfirmed={() => setGoalsConfirmed(true)}
-              />
-            </div>
+            <ProductivityGoalsPanel
+              adherence={adherence}
+              lockedHours={dayLockedHours}
+              sleepScore={sleepScore}
+              planRefreshKey={plannerRefresh}
+              onPlanBlocksChange={bumpPlanner}
+              onOpenCalendar={() => setTab("calendar")}
+              onGoalsTextChange={(text) => setProposeGoals(text)}
+              onConfirmed={() => setGoalsConfirmed(true)}
+              footer={stepActions}
+            />
           )}
 
           {planStep === "propose" && !focusShell && (
+            <div className="space-y-3">
               <ProposeStepPanel
                 horizon={proposeHorizon}
                 onHorizonChange={setProposeHorizon}
@@ -1671,6 +1643,10 @@ export function ProductivityPage() {
                   setProposeMeta(null);
                 }}
               />
+              <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3">
+                {stepActions}
+              </div>
+            </div>
           )}
 
           {planStep === "done" && (
@@ -1746,6 +1722,7 @@ export function ProductivityPage() {
                   </button>
                 </div>
               )}
+              {stepActions}
             </div>
           )}
 
@@ -1763,126 +1740,27 @@ export function ProductivityPage() {
                 )}
               </div>
               <GoogleCalendarSyncPanel refreshKey={plannerRefresh} />
+              <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3">
+                {stepActions}
+              </div>
             </div>
           )}
+              </>
+            );
+          })()}
 
-          </div>
-
-          {/* Sticky step footer — always visible in the left column */}
-          <div className="shrink-0 space-y-2 rounded-xl border border-white/10 bg-background/90 backdrop-blur-sm px-3 py-2.5">
-            <ConfirmPlanButton size="block" />
-            <div className="flex flex-wrap items-center justify-between gap-2">
-            {planStep === "routines" ? (
-              <>
-                <span className="text-[11px] text-muted-foreground">Lock times, then set focus hours</span>
-                <button
-                  type="button"
-                  onClick={() => setPlanStep("goals")}
-                  className="rounded-xl bg-primary px-4 py-2 text-xs font-medium text-primary-foreground hover:bg-primary/90"
-                >
-                  Next · Goals
-                </button>
-              </>
-            ) : planStep === "goals" ? (
-              <>
-                <button
-                  type="button"
-                  onClick={() => setPlanStep("routines")}
-                  className="rounded-xl border border-white/10 px-4 py-2 text-xs hover:bg-white/5"
-                >
-                  Back
-                </button>
-                <div className="flex items-center gap-2">
-                  <Link to="/journal" className="text-xs text-primary hover:underline inline-flex items-center gap-1">
-                    <PenLine size={12} /> Journal
-                  </Link>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setGoalsConfirmed(true);
-                      setPlanStep(focusShell ? "done" : "propose");
-                    }}
-                    className="rounded-xl bg-primary px-4 py-2 text-xs font-medium text-primary-foreground hover:bg-primary/90"
-                  >
-                    {focusShell ? "Next · Ready" : "Next · Build"}
-                  </button>
-                </div>
-              </>
-            ) : planStep === "propose" ? (
-              <>
-                <button
-                  type="button"
-                  onClick={() => setPlanStep("goals")}
-                  className="rounded-xl border border-white/10 px-4 py-2 text-xs hover:bg-white/5"
-                >
-                  Back
-                </button>
-                {proposed?.length ? (
-                  <button
-                    type="button"
-                    disabled={proposing}
-                    onClick={() =>
-                      void applyPropose(
-                        applyRangeForHorizon(proposeRangeStart, horizonDays, proposeHorizon),
-                      )
-                    }
-                    className="rounded-xl bg-primary px-4 py-2 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-                  >
-                    {proposing
-                      ? "Applying…"
-                      : proposeHorizon === "day"
-                        ? "Apply today"
-                        : proposeHorizon === "week"
-                          ? "Apply this week"
-                          : proposeHorizon === "month"
-                            ? "Apply this month"
-                            : `Apply ${horizonDays} days`}
-                  </button>
-                ) : (
-                  <span className="text-[11px] text-muted-foreground">Generate a schedule to continue</span>
-                )}
-              </>
-            ) : planStep === "done" ? (
-              <>
-                <button
-                  type="button"
-                  onClick={() => setPlanStep("propose")}
-                  className="rounded-xl border border-white/10 px-4 py-2 text-xs hover:bg-white/5"
-                >
-                  Back
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPlanStep("sync")}
-                  className="rounded-xl bg-primary px-4 py-2 text-xs font-medium text-primary-foreground hover:bg-primary/90"
-                >
-                  Next · Watch
-                </button>
-              </>
-            ) : (
-              <>
-                <button
-                  type="button"
-                  onClick={() => setPlanStep(finishDone ? "done" : "propose")}
-                  className="rounded-xl border border-white/10 px-4 py-2 text-xs hover:bg-white/5"
-                >
-                  Back
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setTab("calendar")}
-                  className="rounded-xl bg-primary px-4 py-2 text-xs font-medium text-primary-foreground hover:bg-primary/90"
-                >
-                  See tracking
-                </button>
-              </>
-            )}
-            </div>
           </div>
         </div>
+        </ResizablePanel>
+
+        <ResizableHandle
+          withHandle
+          className="mx-1 bg-border/40 data-[resize-handle-active]:bg-primary/50"
+        />
 
         {/* Right: planning calendar */}
-        <div className="min-w-0 rounded-2xl border border-white/10 bg-white/[0.03] p-4 xl:sticky xl:top-3 xl:max-h-[calc(100vh-5.5rem)] xl:overflow-y-auto space-y-3">
+        <ResizablePanel defaultSize={56} minSize={32} className="min-w-0">
+        <div className="min-h-0 h-full min-w-0 rounded-2xl border border-white/10 bg-white/[0.03] p-4 pl-3 space-y-3 xl:max-h-[calc(100vh-5.5rem)] xl:overflow-y-auto">
           <div className="flex items-center justify-between gap-2 px-0.5">
             <div>
               <h2 className="text-sm font-semibold text-foreground">Schedule preview</h2>
@@ -1893,6 +1771,7 @@ export function ProductivityPage() {
               </p>
             </div>
           </div>
+          <Suspense fallback={<p className="text-sm text-muted-foreground px-2 py-4">Opening calendar…</p>}>
           <PlannerCalendar
             expanded
             planningOnly
@@ -1904,8 +1783,10 @@ export function ProductivityPage() {
             draftBlocks={proposed}
             onDraftBlocksChange={setProposed}
           />
+          </Suspense>
         </div>
-      </div>
+        </ResizablePanel>
+      </ResizablePanelGroup>
       )}
 
       {tab === "settings" && (
@@ -1924,9 +1805,11 @@ export function ProductivityPage() {
         onLoad={() => void load()}
         onDemoChanged={() => {
           setPlannerRefresh((n) => n + 1);
-          void fetchDemoClock()
-            .then(setDemoClock)
-            .catch(() => setDemoClock(null));
+          if (!focusShell) {
+            void fetchDemoClock()
+              .then(setDemoClock)
+              .catch(() => setDemoClock(null));
+          }
         }}
         onJumpToDay={(day) => {
           setPlannerDay(day);
@@ -1958,6 +1841,10 @@ export function ProductivityPage() {
 
     </div>
     </div>
+    {focusShell ? <MorningBibleOverlay /> : null}
+    {focusShell ? <MorningPlanOverlay /> : null}
+    {focusShell ? <BedtimeOverlay /> : null}
+    </>
   );
 }
 

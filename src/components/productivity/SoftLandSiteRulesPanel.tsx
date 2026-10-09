@@ -5,6 +5,8 @@ import {
   saveSoftLandSiteRules,
   type SoftLandSiteRules,
 } from "../../api/behaviorClient";
+import { useFocusStatus, useFreeDay } from "../../hooks/useFocusStatus";
+import { softlandSurgeryOpen } from "../../lib/dayGate";
 import { enforcerNativeCmd, isFocusEnforcerBridgeAvailable } from "../../lib/enforcerNativeCmd";
 import { isFocusDesktopShell } from "../../utils/focusDesktopShell";
 import { focusDataUrl } from "../../utils/focusDataUrl";
@@ -127,6 +129,9 @@ export function SoftLandSiteRulesPanel({
   hideSave = false,
   saveRef,
 }: SoftLandSiteRulesPanelProps) {
+  const freeDay = useFreeDay();
+  const status = useFocusStatus();
+  const canEditLists = softlandSurgeryOpen(status, freeDay);
   const [data, setData] = useState<SoftLandSiteRules | null>(null);
   const [drafts, setDrafts] = useState<Record<ListKey, string>>({
     allow_extra: "",
@@ -204,7 +209,16 @@ export function SoftLandSiteRulesPanel({
   };
 
   const save = useCallback(async () => {
-    if (!data) return;
+    if (!data || !canEditLists) {
+      if (!canEditLists) {
+        setError(
+          "Finish morning Bible" +
+            (status.dayLoop?.planning_enabled ? " + Confirm plan" : "") +
+            ", or use a free day / day pass.",
+        );
+      }
+      return;
+    }
     setSaving(true);
     setError(null);
     try {
@@ -236,7 +250,7 @@ export function SoftLandSiteRulesPanel({
     } finally {
       setSaving(false);
     }
-  }, [data]);
+  }, [data, canEditLists, status.dayLoop?.planning_enabled]);
 
   useEffect(() => {
     if (saveRef) saveRef.current = () => save();
@@ -296,7 +310,7 @@ export function SoftLandSiteRulesPanel({
             <button
               type="button"
               onClick={() => void save()}
-              disabled={saving}
+              disabled={saving || !canEditLists}
               className="inline-flex items-center gap-1 rounded-lg bg-emerald-600/70 px-2 py-1 text-[11px] disabled:opacity-50"
             >
               <Save size={11} /> {saving ? "…" : saved ? "Saved" : "Save"}
@@ -417,6 +431,9 @@ export function SoftLandSiteRulesPanel({
       <p className="text-[12px] text-muted-foreground leading-relaxed">
         The built-in watch list (YouTube, Reddit, X, Instagram and 11 more) cannot be edited. Put a
         site in Allow to open it.
+        {!canEditLists
+          ? " Finish morning Bible (and Confirm plan if Planning is on), or claim a free day / pass, to edit lists."
+          : ""}
       </p>
 
       {!hideSave ? (
@@ -424,7 +441,7 @@ export function SoftLandSiteRulesPanel({
           <button
             type="button"
             onClick={() => void save()}
-            disabled={saving}
+            disabled={saving || !canEditLists}
             className="min-h-11 inline-flex items-center gap-1.5 rounded-lg border border-[#0B6B63] bg-[#0B6B63] px-5 text-[13px] font-medium text-white hover:opacity-90 disabled:opacity-50"
           >
             <Save size={14} /> {saving ? "Saving…" : saved ? "Saved" : "Save site rules"}

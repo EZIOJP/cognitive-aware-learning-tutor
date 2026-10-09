@@ -34,9 +34,26 @@ export type SoftlandPolicySnap = {
     free_until?: string | null;
     incubation_until?: string | null;
     bedtime_active?: boolean;
+    reward_day_active?: boolean;
+    day_pass?: { date?: string | null; spent?: boolean };
   };
   goals?: Record<string, unknown>;
+  reward_day_active?: boolean;
+  day_pass?: { date?: string | null; spent?: boolean };
 };
+
+function localYmd(d = new Date()): string {
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+}
+
+/** A claimed free day or a day pass spent today. A goal-met free window is not enough. */
+export function isFreeDay(softland: SoftlandPolicySnap | null | undefined): boolean {
+  if (!softland) return false;
+  if (softland.reward_day_active || softland.runtime?.reward_day_active) return true;
+  const pass = softland.day_pass || softland.runtime?.day_pass;
+  return Boolean(pass?.spent && pass.date && pass.date.slice(0, 10) === localYmd());
+}
 
 export type FocusStatusSnapshot = {
   updatedAt: number;
@@ -124,14 +141,6 @@ async function loadSoftland(): Promise<SoftlandPolicySnap | null> {
   }
 }
 
-function localYmd(): string {
-  const d = new Date();
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
-}
-
 /** Prefer SoftLand goals mirror for bible/plan flags — updates before the next pipe reconcile. */
 function syncDayLoopFromSoftland(
   dayLoop: DayLoopSnapshot | null,
@@ -147,17 +156,22 @@ function syncDayLoopFromSoftland(
   const planDate =
     typeof goals.plan_confirmed_for_date === "string" ? goals.plan_confirmed_for_date : "";
   const planConfirmed = planFlag && planDate === today;
+  // Session-first: missing planning_enabled means Confirm-plan phase is OFF.
+  const planningEnabled =
+    typeof goals.planning_enabled === "boolean" ? goals.planning_enabled : false;
   const loopDate = typeof dayLoop.date === "string" ? dayLoop.date : "";
   const dateOk = !loopDate || loopDate === today;
   const next = {
     ...dayLoop,
     bible_done: dateOk ? bibleDone : false,
     plan_confirmed: dateOk ? planConfirmed : false,
+    planning_enabled: planningEnabled,
     ...(loopDate && loopDate !== today ? { date: today } : null),
   };
   if (
     dayLoop.bible_done === next.bible_done &&
     dayLoop.plan_confirmed === next.plan_confirmed &&
+    dayLoop.planning_enabled === next.planning_enabled &&
     loopDate === next.date
   ) {
     return dayLoop;

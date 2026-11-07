@@ -4,6 +4,7 @@ import FocusControlPanel from "../FocusControlPanel";
 import SoftLandSiteRulesPanel from "../SoftLandSiteRulesPanel";
 import GateSchedulesPanel from "../GateSchedulesPanel";
 import AppKillRulesPanel from "../AppKillRulesPanel";
+import AppTimeLimitsPanel from "../AppTimeLimitsPanel";
 import ProductivityPolicyPanel from "../ProductivityPolicyPanel";
 import { DeviceBlockPanel } from "../DeviceBlockPanel";
 import { DesktopManagedBanner } from "../DesktopManagedBanner";
@@ -27,7 +28,7 @@ const NAV: { id: SettingsSectionId; label: string; blurb: string }[] = [
   { id: "blocks", label: "Blocks", blurb: "Sites, apps, filters" },
   { id: "unlock", label: "Unlock", blurb: "Goal, pass, Arm" },
   { id: "productive", label: "Productive", blurb: "What counts" },
-  { id: "more", label: "More", blurb: "Demo, export" },
+  { id: "more", label: "More", blurb: "Demo, export, import, update" },
 ];
 
 export type ProductivitySettingsHubProps = {
@@ -145,13 +146,22 @@ export function ProductivitySettingsHub({
             </>
           )}
           {blockSub === "apps" && (
-            <SettingSection
-              title="Apps (Arm)"
-              why="OS process kills only. SoftLand site lists never belong here."
-              availability="native"
-            >
-              <AppKillRulesPanel />
-            </SettingSection>
+            <>
+              <SettingSection
+                title="Time limits"
+                why="Daily minutes per app. When they're used, the enforcer closes that app until midnight."
+                availability="native"
+              >
+                <AppTimeLimitsPanel />
+              </SettingSection>
+              <SettingSection
+                title="Apps (Arm)"
+                why="OS process kills only. SoftLand site lists never belong here."
+                availability="native"
+              >
+                <AppKillRulesPanel />
+              </SettingSection>
+            </>
           )}
           {blockSub === "filters" && (
             <SettingSection

@@ -36,6 +36,7 @@ import {
   type SettingsSectionId,
 } from "../components/productivity/ProductivitySettingsTab";
 import { RoutinesPanel } from "../components/productivity/RoutinesPanel";
+import { PlanningRangePanel } from "../components/productivity/PlanningRangePanel";
 import { ProposeStepPanel, applyRangeForHorizon } from "../components/productivity/ProposeStepPanel";
 import { proposeBlockStatKind, blockDurationMinutes } from "../components/productivity/proposeBlockStats";
 import { Link, useSearchParams } from "react-router";
@@ -55,7 +56,6 @@ import {
   type ProposedPlannerBlock,
   type PlannerRoutine,
 } from "../api/plannerClient";
-import { fetchDueReview } from "../api/globalQuizClient";
 import { fetchHubDaily } from "../api/hubClient";
 import ShutdownRitualPanel from "../components/productivity/ShutdownRitualPanel";
 import WeeklyDigestPanel from "../components/productivity/WeeklyDigestPanel";
@@ -449,7 +449,6 @@ export function ProductivityPage() {
   const [loading, setLoading] = useState(true);
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
   const [adherence, setAdherence] = useState<AdherenceSummary | null>(null);
-  const [dueReviews, setDueReviews] = useState(0);
   const [sleepHours, setSleepHours] = useState<number | null>(null);
   const [sleepScore, setSleepScore] = useState<number | null>(null);
   const [goalsStatus, setGoalsStatus] = useState<GoalsStatusResponse | null>(null);
@@ -681,32 +680,48 @@ export function ProductivityPage() {
     }
   }, []);
 
-  const loadDue = useCallback(async () => {
-    if (focusShell) {
-      setDueReviews(0);
-      return;
-    }
-    try {
-      const d = await fetchDueReview(5);
-      setDueReviews(d.count ?? d.items?.length ?? 0);
-    } catch {
-      setDueReviews(0);
-    }
-  }, [focusShell]);
-
   const bumpPlanner = useCallback(() => {
     setPlannerRefresh((k) => k + 1);
     void loadAdherence(plannerDay);
-    void loadDue();
-  }, [plannerDay, loadAdherence, loadDue]);
+  }, [plannerDay, loadAdherence]);
 
   useEffect(() => {
+    const day = toApiDay(plannerDay);
     if (focusShell) {
-      setSleepHours(null);
-      setSleepScore(null);
+      // Focus: life / wearable mirrors — never Study hub :8000.
+      void (async () => {
+        try {
+          const { fetchLifeDaily } = await import("../api/hubClient");
+          const { fetchWearableDay } = await import("../api/wearablesClient");
+          const [life, wear] = await Promise.all([
+            fetchLifeDaily(day === toApiDay(new Date()) ? "today" : day),
+            fetchWearableDay(day),
+          ]);
+          const hours =
+            (typeof wear?.sleep_hours === "number" && wear.sleep_hours > 0
+              ? wear.sleep_hours
+              : null) ??
+            (typeof life?.sleep_hours === "number" && life.sleep_hours > 0
+              ? life.sleep_hours
+              : null);
+          const score =
+            (typeof wear?.sleep_score === "number" && wear.sleep_score > 0
+              ? wear.sleep_score
+              : null) ??
+            (typeof life?.sleep_quality === "number" && life.sleep_quality > 0
+              ? life.sleep_quality > 5
+                ? life.sleep_quality
+                : life.sleep_quality * 20
+              : null);
+          setSleepHours(hours);
+          setSleepScore(score);
+        } catch {
+          setSleepHours(null);
+          setSleepScore(null);
+        }
+      })();
       return;
     }
-    const day = toApiDay(plannerDay);
     void fetchHubDaily(day)
       .then((h) => {
         if (h && (h.sleep_minutes || 0) > 0) setSleepHours(h.sleep_minutes / 60);
@@ -866,7 +881,13 @@ export function ProductivityPage() {
         exportStartDay === addApiDays(exportEndDay, -(days - 1))
           ? `${exportStartDay} → ${exportEndDay}`
           : `${days}d ending ${exportEndDay}`;
-      setExportHint(`Downloaded ${rangeLabel} ${format.toUpperCase()}${emptyNote}`);
+      setExportHint(
+        `Saved ${rangeLabel} ${format.toUpperCase()}${emptyNote}` +
+          (typeof window !== "undefined" &&
+          (window as Window & { chrome?: { webview?: unknown } }).chrome?.webview
+            ? " → Downloads"
+            : ""),
+      );
     } catch (e: unknown) {
       setExportHint(e instanceof Error ? e.message : "Export failed");
     } finally {
@@ -1022,8 +1043,8 @@ export function ProductivityPage() {
   );
 
   useEffect(() => {
-    void loadDue();
-  }, [loadDue]);
+    void loadAdherence(plannerDay);
+  }, [plannerDay, loadAdherence]);
 
   // Initial + polling: do NOT re-fetch on every tab switch (that made Settings feel slow).
   useEffect(() => {
@@ -1106,32 +1127,16 @@ export function ProductivityPage() {
             day={plannerDay}
             refreshKey={plannerRefresh}
             desktop={desktop}
-            dueReviews={dueReviews}
             rangeLabel={statsRange.label}
             sleepHours={sleepHours}
             sleepScore={sleepScore}
             goalsStatus={goalsStatus}
-            onScheduleReview={() => {
-              const start = new Date(plannerDay);
-              if (toApiDay(plannerDay) === toApiDay(new Date())) {
-                start.setMinutes(start.getMinutes() + 15 - (start.getMinutes() % 15));
-              } else {
-                start.setHours(9, 0, 0, 0);
-              }
-              void createPlannerBlock({
-                title: "SRS review",
-                category: "review",
-                start_at: start.toISOString(),
-                duration_minutes: Math.min(30, 15 + dueReviews * 2),
-              }).then(() => bumpPlanner());
-            }}
           />
         ) : (
           <>
             <DayLoopLanding />
             <GlanceBar
               desktop={desktop}
-              dueReviews={dueReviews}
               rangeLabel={statsRange.label}
               sleepHours={sleepHours}
               sleepScore={sleepScore}
@@ -1388,11 +1393,11 @@ export function ProductivityPage() {
       <ResizablePanelGroup
         direction="horizontal"
         autoSaveId="calt-plan-calendar-split"
-        className="min-h-[min(70vh,calc(100vh-5.5rem))] gap-0 rounded-2xl"
+        className="h-[min(70vh,calc(100vh-5.5rem))] min-h-[min(70vh,calc(100vh-5.5rem))] gap-0 rounded-2xl"
       >
-        {/* Left: planning steps */}
-        <ResizablePanel defaultSize={44} minSize={28} className="min-w-0">
-        <div className="flex h-full min-w-0 flex-col gap-3.5 pr-2 xl:max-h-[calc(100vh-5.5rem)] xl:overflow-y-auto">
+        {/* Left: planning steps — equal height with Schedule preview */}
+        <ResizablePanel defaultSize={44} minSize={28} className="min-h-0 min-w-0">
+        <div className="flex h-full min-h-0 min-w-0 flex-col gap-3.5 pr-2 xl:max-h-[calc(100vh-5.5rem)]">
           <nav aria-label="Plan steps" className="shrink-0">
             <ol
               className={`plan-step-rail ${
@@ -1404,7 +1409,7 @@ export function ProductivityPage() {
                   ? ([
                       { id: "routines" as const, label: "Routines", done: routinesDone },
                       { id: "goals" as const, label: "Goals", done: goalsDone },
-                      { id: "done" as const, label: "Ready", done: finishDone || goalsDone },
+                      { id: "done" as const, label: "Range", done: finishDone || goalsDone },
                     ] as const)
                   : ([
                       { id: "routines" as const, label: "Routines", done: routinesDone },
@@ -1438,26 +1443,27 @@ export function ProductivityPage() {
 
           <div
             ref={planStepRef}
-            className="min-h-0 flex-1 overflow-y-auto overscroll-contain pr-1 space-y-3"
+            className="flex min-h-0 flex-1 flex-col"
           >
           {(() => {
             const stepActions = (
               <div className="space-y-2 border-t border-white/10 pt-3">
-                <ConfirmPlanButton size="block" />
-                <div className="flex flex-wrap items-center justify-between gap-2">
+                {planStep !== "routines" ? <ConfirmPlanButton size="block" /> : null}
+                <div
+                  className={
+                    planStep === "routines"
+                      ? "flex flex-wrap items-center justify-end gap-2"
+                      : "flex flex-wrap items-center justify-between gap-2"
+                  }
+                >
                   {planStep === "routines" ? (
-                    <>
-                      <span className="text-[11px] text-muted-foreground">
-                        Lock times, then set focus hours
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => setPlanStep("goals")}
-                        className="rounded-xl bg-primary px-4 py-2 text-xs font-medium text-primary-foreground hover:bg-primary/90"
-                      >
-                        Next · Goals
-                      </button>
-                    </>
+                    <button
+                      type="button"
+                      onClick={() => setPlanStep("goals")}
+                      className="rounded-xl bg-primary px-4 py-2 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+                    >
+                      Next · Goals
+                    </button>
                   ) : planStep === "goals" ? (
                     <>
                       <button
@@ -1482,7 +1488,7 @@ export function ProductivityPage() {
                           }}
                           className="rounded-xl bg-primary px-4 py-2 text-xs font-medium text-primary-foreground hover:bg-primary/90"
                         >
-                          {focusShell ? "Next · Ready" : "Next · Build"}
+                          {focusShell ? "Next · Range" : "Next · Build"}
                         </button>
                       </div>
                     </>
@@ -1572,20 +1578,11 @@ export function ProductivityPage() {
             );
 
             return (
-              <>
-          {planStep === "routines" && (
-            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 space-y-4">
-              <div>
-                <h2 className="text-sm font-semibold text-foreground">1 · Routines</h2>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Lock fixed times first (meals, workout, devotion) and set sleep / wake. The day list on the
-                  right updates as you apply.
-                </p>
-              </div>
-              <div className="space-y-4">
-                <div className="rounded-xl border border-white/10 bg-black/20 p-4">
-                  <RoutinesPanel onApplied={bumpPlanner} onRoutinesChange={onRoutinesChange} />
-                </div>
+          planStep === "routines" ? (
+            <div className="flex min-h-0 flex-1 flex-col rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+              <h2 className="shrink-0 text-sm font-semibold tracking-tight text-foreground">1 · Routines</h2>
+              <div className="mt-4 min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain pr-1">
+                <RoutinesPanel onApplied={bumpPlanner} onRoutinesChange={onRoutinesChange} />
                 {!focusShell ? (
                 <details open className="rounded-xl border border-white/10 bg-black/20 open:pb-1">
                   <summary className="cursor-pointer list-none px-4 py-3 text-xs font-medium text-muted-foreground hover:text-foreground">
@@ -1602,150 +1599,148 @@ export function ProductivityPage() {
                 </details>
                 ) : null}
               </div>
-              {stepActions}
+              <div className="mt-4 shrink-0">{stepActions}</div>
             </div>
-          )}
-
-          {planStep === "goals" && (
-            <ProductivityGoalsPanel
-              adherence={adherence}
-              lockedHours={dayLockedHours}
-              sleepScore={sleepScore}
-              planRefreshKey={plannerRefresh}
-              onPlanBlocksChange={bumpPlanner}
-              onOpenCalendar={() => setTab("calendar")}
-              onGoalsTextChange={(text) => setProposeGoals(text)}
-              onConfirmed={() => setGoalsConfirmed(true)}
-              footer={stepActions}
-            />
-          )}
-
-          {planStep === "propose" && !focusShell && (
-            <div className="space-y-3">
-              <ProposeStepPanel
-                horizon={proposeHorizon}
-                onHorizonChange={setProposeHorizon}
-                customHorizonDays={customHorizonDays}
-                onCustomHorizonDaysChange={setCustomHorizonDays}
-                horizonDays={horizonDays}
-                rangeStart={proposeRangeStart}
-                exportDays={exportDays}
-                onExportDaysChange={setExportDaysWindow}
-                proposing={proposing}
-                onGenerate={(mode) => void runPropose(mode)}
-                exportHint={exportHint}
-                proposed={proposed}
-                proposeMeta={proposeMeta}
-                onProposedChange={setProposed}
-                onApply={(range) => void applyPropose(range)}
-                onDismissDraft={() => {
-                  setProposed(null);
-                  setProposeMeta(null);
-                }}
-              />
-              <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3">
+          ) : planStep === "goals" ? (
+            <div className="flex min-h-0 flex-1 flex-col rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+              <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pr-1">
+                <ProductivityGoalsPanel
+                  adherence={adherence}
+                  lockedHours={dayLockedHours}
+                  sleepScore={sleepScore}
+                  planRefreshKey={plannerRefresh}
+                  onPlanBlocksChange={bumpPlanner}
+                  onOpenCalendar={() => setTab("calendar")}
+                  onGoalsTextChange={(text) => setProposeGoals(text)}
+                  onConfirmed={() => setGoalsConfirmed(true)}
+                />
+              </div>
+              <div className="mt-4 shrink-0">{stepActions}</div>
+            </div>
+          ) : planStep === "propose" && !focusShell ? (
+            <div className="flex min-h-0 flex-1 flex-col gap-3">
+              <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pr-1">
+                <ProposeStepPanel
+                  horizon={proposeHorizon}
+                  onHorizonChange={setProposeHorizon}
+                  customHorizonDays={customHorizonDays}
+                  onCustomHorizonDaysChange={setCustomHorizonDays}
+                  horizonDays={horizonDays}
+                  rangeStart={proposeRangeStart}
+                  exportDays={exportDays}
+                  onExportDaysChange={setExportDaysWindow}
+                  proposing={proposing}
+                  onGenerate={(mode) => void runPropose(mode)}
+                  exportHint={exportHint}
+                  proposed={proposed}
+                  proposeMeta={proposeMeta}
+                  onProposedChange={setProposed}
+                  onApply={(range) => void applyPropose(range)}
+                  onDismissDraft={() => {
+                    setProposed(null);
+                    setProposeMeta(null);
+                  }}
+                />
+              </div>
+              <div className="shrink-0 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3">
                 {stepActions}
               </div>
             </div>
-          )}
-
-          {planStep === "done" && (
-            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 space-y-4">
-              <div>
+          ) : planStep === "done" ? (
+            <div className="flex min-h-0 flex-1 flex-col rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+              <div className="shrink-0">
                 <h2 className="text-sm font-semibold text-foreground">
-                  {focusShell ? "3 · Ready" : "4 · Apply"}
+                  {focusShell ? "3 · Range" : "4 · Apply"}
                 </h2>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {focusShell
+                    ? "Lock the days, apply routines across them, then fine-tune on Calendar."
+                    : "Apply your draft to the calendar, then sync to Watch when ready."}
+                </p>
               </div>
-              {focusShell ? (
-                <div className="space-y-3">
-                  <p className="text-sm text-emerald-200">
-                    Routines and goals are Focus-native. Edit blocks on Calendar — SoftLand follows active plan blocks via the enforcer.
+              <div className="mt-4 min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain pr-1">
+                <PlanningRangePanel onApplied={bumpPlanner} />
+                {focusShell ? (
+                  <p className="text-sm text-emerald-200/90">
+                    SoftLand follows active plan blocks. Fine-tune any day on Calendar after you apply.
                   </p>
-                  <button
-                    type="button"
-                    onClick={() => setTab("calendar")}
-                    className="rounded-xl bg-primary px-4 py-2.5 text-xs font-medium text-primary-foreground hover:bg-primary/90"
-                  >
-                    Open Calendar
-                  </button>
-                </div>
-              ) : finishDone ? (
-                <div className="space-y-3">
-                  <p className="text-sm text-emerald-200">
-                    Your schedule is on the calendar. Next: push it to Google so Amazfit can see it.
-                  </p>
-                  {exportHint ? (
-                    <p className="text-xs text-sky-300 break-words" title={exportHint}>{exportHint}</p>
-                  ) : null}
-                  <div className="grid grid-cols-2 gap-2">
+                ) : finishDone ? (
+                  <div className="space-y-3">
+                    <p className="text-sm text-emerald-200">
+                      Your schedule is on the calendar. Next: push it to Google so Amazfit can see it.
+                    </p>
+                    {exportHint ? (
+                      <p className="break-words text-xs text-sky-300" title={exportHint}>{exportHint}</p>
+                    ) : null}
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setPlanStep("propose")}
+                        className="rounded-xl border border-white/10 px-3 py-2.5 text-xs hover:bg-white/5"
+                      >
+                        Build again
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setPlanStep("sync")}
+                        className="rounded-xl bg-primary px-3 py-2.5 text-xs text-primary-foreground hover:bg-primary/90"
+                      >
+                        Next · Watch sync
+                      </button>
+                    </div>
+                  </div>
+                ) : proposed?.length ? (
+                  <div className="space-y-3">
+                    <p className="text-sm text-foreground">
+                      Draft ready · {proposed.length} block{proposed.length === 1 ? "" : "s"}. Open Build
+                      and use Apply to write them to the calendar.
+                    </p>
                     <button
                       type="button"
                       onClick={() => setPlanStep("propose")}
-                      className="rounded-xl border border-white/10 px-3 py-2.5 text-xs hover:bg-white/5"
+                      className="rounded-xl bg-primary px-4 py-2.5 text-xs font-medium text-primary-foreground hover:bg-primary/90"
                     >
-                      Build again
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setPlanStep("sync")}
-                      className="rounded-xl bg-primary px-3 py-2.5 text-xs text-primary-foreground hover:bg-primary/90"
-                    >
-                      Next · Watch sync
+                      Open Build to apply
                     </button>
                   </div>
-                </div>
-              ) : proposed?.length ? (
-                <div className="space-y-3">
-                  <p className="text-sm text-foreground">
-                    Draft ready · {proposed.length} block{proposed.length === 1 ? "" : "s"}. Open Build
-                    and use Apply to write them to the calendar.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => setPlanStep("propose")}
-                    className="rounded-xl bg-primary px-4 py-2.5 text-xs font-medium text-primary-foreground hover:bg-primary/90"
-                  >
-                    Open Build to apply
-                  </button>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <p className="text-sm text-muted-foreground">
-                    Nothing applied yet. Generate a draft in Build, then apply it to the calendar.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => setPlanStep("propose")}
-                    className="rounded-xl bg-primary px-4 py-2.5 text-xs font-medium text-primary-foreground hover:bg-primary/90"
-                  >
-                    Go to Build
-                  </button>
-                </div>
-              )}
-              {stepActions}
-            </div>
-          )}
-
-          {planStep === "sync" && !focusShell && (
-            <div className="space-y-3">
-              <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 space-y-2">
-                <h2 className="text-sm font-semibold text-foreground">5 · Watch (Google → Amazfit)</h2>
-                <p className="text-xs text-muted-foreground">
-                  Last planning step — push today&apos;s blocks to Google Calendar so Zepp/Amazfit can show them.
-                </p>
-                {finishDone ? (
-                  <p className="text-xs text-emerald-200/90">Schedule already applied — sync when ready.</p>
                 ) : (
-                  <p className="text-xs text-amber-200/90">Apply a schedule in step 4 first for a full push.</p>
+                  <div className="space-y-3">
+                    <p className="text-sm text-muted-foreground">
+                      Nothing applied yet. Generate a draft in Build, then apply it to the calendar.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setPlanStep("propose")}
+                      className="rounded-xl bg-primary px-4 py-2.5 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+                    >
+                      Go to Build
+                    </button>
+                  </div>
                 )}
               </div>
-              <GoogleCalendarSyncPanel refreshKey={plannerRefresh} />
-              <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3">
+              <div className="mt-4 shrink-0">{stepActions}</div>
+            </div>
+          ) : planStep === "sync" && !focusShell ? (
+            <div className="flex min-h-0 flex-1 flex-col gap-3">
+              <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain pr-1">
+                <div className="space-y-2 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+                  <h2 className="text-sm font-semibold text-foreground">5 · Watch (Google → Amazfit)</h2>
+                  <p className="text-xs text-muted-foreground">
+                    Last planning step — push today&apos;s blocks to Google Calendar so Zepp/Amazfit can show them.
+                  </p>
+                  {finishDone ? (
+                    <p className="text-xs text-emerald-200/90">Schedule already applied — sync when ready.</p>
+                  ) : (
+                    <p className="text-xs text-amber-200/90">Apply a schedule in step 4 first for a full push.</p>
+                  )}
+                </div>
+                <GoogleCalendarSyncPanel refreshKey={plannerRefresh} />
+              </div>
+              <div className="shrink-0 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3">
                 {stepActions}
               </div>
             </div>
-          )}
-              </>
+          ) : null
             );
           })()}
 
@@ -1759,8 +1754,8 @@ export function ProductivityPage() {
         />
 
         {/* Right: planning calendar */}
-        <ResizablePanel defaultSize={56} minSize={32} className="min-w-0">
-        <div className="min-h-0 h-full min-w-0 rounded-2xl border border-white/10 bg-white/[0.03] p-4 pl-3 space-y-3 xl:max-h-[calc(100vh-5.5rem)] xl:overflow-y-auto">
+        <ResizablePanel defaultSize={56} minSize={32} className="min-h-0 min-w-0">
+        <div className="flex h-full min-h-0 min-w-0 flex-col space-y-3 rounded-2xl border border-white/10 bg-white/[0.03] p-4 pl-3 xl:max-h-[calc(100vh-5.5rem)] xl:overflow-y-auto">
           <div className="flex items-center justify-between gap-2 px-0.5">
             <div>
               <h2 className="text-sm font-semibold text-foreground">Schedule preview</h2>

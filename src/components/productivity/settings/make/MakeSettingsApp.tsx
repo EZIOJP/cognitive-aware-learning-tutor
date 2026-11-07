@@ -5,10 +5,12 @@ import SoftLandSiteRulesPanel, { SOFTLAND_LADDER_ONE_LINER } from "../../SoftLan
 import SoftLandModeFlagsPanel from "../../SoftLandModeFlagsPanel";
 import GateSchedulesPanel from "../../GateSchedulesPanel";
 import AppKillRulesPanel from "../../AppKillRulesPanel";
+import AppTimeLimitsPanel from "../../AppTimeLimitsPanel";
 import ProductivityPolicyPanel from "../../ProductivityPolicyPanel";
 import { DeviceBlockPanel } from "../../DeviceBlockPanel";
 import { EnforcerWriteGate, useEnforcerReachability } from "../../EnforcerWriteGate";
 import { FocusPerfReviewPanel } from "../../FocusPerfReviewPanel";
+import { FocusAiStatusChip } from "../../FocusAiStatusChip";
 import { SidebarTitleStickerPanel } from "../SidebarTitleStickerPanel";
 import { useFocusStatus } from "../../../../hooks/useFocusStatus";
 import { isFocusDesktopShell } from "../../../../utils/focusDesktopShell";
@@ -36,7 +38,7 @@ const NAV: { id: SettingsSectionId; label: string; blurb: string }[] = [
   { id: "blocks", label: "Blocks", blurb: "Sites, apps, filters" },
   { id: "unlock", label: "Unlock", blurb: "Goal, pass, Arm" },
   { id: "productive", label: "Productive", blurb: "What counts" },
-  { id: "more", label: "More", blurb: isFocusDesktopShell() ? "Look, export" : "Look, demo, export" },
+  { id: "more", label: "More", blurb: isFocusDesktopShell() ? "Look, export, import, update" : "Look, demo, export" },
 ];
 
 const WRITE_SECTIONS: SettingsSectionId[] = [
@@ -144,6 +146,7 @@ function LiveStatusStrip({ className = "" }: { className?: string }) {
       >
         {enfLabel}
       </span>
+      <FocusAiStatusChip ping compact />
       {productiveMin != null ? (
         <span className="ml-auto text-[#E8E6DF]">
           Today {productiveMin}
@@ -163,9 +166,20 @@ function OverviewSection({ onJump }: { onJump: (id: SettingsSectionId) => void }
         <p className="text-foreground font-semibold text-[15px]">Day flow</p>
         <ol className="list-decimal pl-5 space-y-1.5">
           <li>Tick a Bible chapter. Until then sites show the morning gate.</li>
-          <li>Confirm the plan. Site block turns on, Arm turns on.</li>
+          <li>
+            Confirm the plan (optional — turn off under More → Planning). Site block + Arm couple
+            when the day opens.
+          </li>
           <li>Reach your daily goal. Sites open for the rest of the day.</li>
+          <li>Home todos + Jarvis brief use your LLM host (OpenRouter / 9Router).</li>
         </ol>
+        <button
+          type="button"
+          className="text-xs text-primary underline-offset-2 hover:underline"
+          onClick={() => onJump("tools")}
+        >
+          Configure LLM host / Jarvis →
+        </button>
       </Card>
     </div>
   );
@@ -256,14 +270,23 @@ function BlocksSection({
       )}
 
       {sub === "apps" && (
-        <Card>
-          <h3 className="text-[15px] font-semibold mb-1">Kill list</h3>
-          <p className="text-[13px] text-muted-foreground mb-3">
-            Armed means any of these apps is closed on sight. Website domains never go here. Click an
-            app to remove it.
-          </p>
-          <AppKillRulesPanel />
-        </Card>
+        <div className="space-y-5">
+          <Card>
+            <h3 className="text-[15px] font-semibold mb-1">Time limits</h3>
+            <p className="text-[13px] text-muted-foreground mb-3">
+              A daily budget per app. When the minutes are gone, CALT closes that app until midnight.
+            </p>
+            <AppTimeLimitsPanel />
+          </Card>
+          <Card>
+            <h3 className="text-[15px] font-semibold mb-1">Kill list</h3>
+            <p className="text-[13px] text-muted-foreground mb-3">
+              Armed means any of these apps is closed on sight. Website domains never go here. Click an
+              app to remove it.
+            </p>
+            <AppKillRulesPanel />
+          </Card>
+        </div>
       )}
 
       {sub === "filters" && (
@@ -302,20 +325,24 @@ function UnlockSection({ onPolicySaved }: { onPolicySaved?: () => void }) {
 }
 
 function ProductiveSection({
-  onPolicySaved,
   productiveExtra,
 }: {
   onPolicySaved?: () => void;
   productiveExtra?: ReactNode;
 }) {
+  // Scoring grids / inert mode flags (strict_allowlist, block_keywords, …) are not
+  // wired to Focus enforcement — hide the fake controls so Settings doesn't look broken.
   return (
     <div className="space-y-6">
       <SectionHeader
         title="Productive"
-        description="What minutes count toward the unlock clock — categories and thresholds, not site rules."
+        description="Minutes come from the enforcer day rollup. Category scoring grids were removed — they never drove SoftLand or Arm."
       />
       <Card>
-        <ProductivityPolicyPanel variant="scoring" onSaved={onPolicySaved} />
+        <p className="text-sm text-muted-foreground leading-relaxed">
+          Unlock still uses productive minutes vs your daily goal (see Unlock). Site Allow / Watch /
+          Block live under Blocks → Sites. App kills live under Blocks → Apps and Unlock → Arm.
+        </p>
       </Card>
       {productiveExtra}
     </div>

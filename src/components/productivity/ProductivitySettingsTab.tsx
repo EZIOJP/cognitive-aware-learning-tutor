@@ -3,11 +3,18 @@ import { Download, Loader2, Terminal } from "lucide-react";
 import { DemoModePanel } from "./DemoModePanel";
 import { WearablesSyncPanel } from "./WearablesSyncPanel";
 import { PlannerRemindersPanel } from "./PlannerRemindersPanel";
+import { FocusLlmHostPanel } from "./FocusLlmHostPanel";
+import { FocusJarvisPanel } from "./FocusJarvisPanel";
+import { FocusOpenJarvisPanel } from "./FocusOpenJarvisPanel";
+import { FocusTelegramRemotePanel } from "./FocusTelegramRemotePanel";
+import { FocusEmailReportPanel } from "./FocusEmailReportPanel";
+import { QuitHowToPanel } from "./QuitHowToPanel";
 import { PlanningSettingsPanel } from "./PlanningSettingsPanel";
 import { SessionOverridePanel } from "./SessionOverridePanel";
 import { ActivitiesPanel } from "./ActivitiesPanel";
 import ClassificationReview from "./ClassificationReview";
 import { ExportRangeCalendar } from "./ExportRangeCalendar";
+import { FocusImportUpdatePanel } from "./FocusImportUpdatePanel";
 import { DesktopManagedBanner } from "./DesktopManagedBanner";
 import MakeSettingsApp, {
   parseSettingsSection,
@@ -75,6 +82,42 @@ export function ProductivitySettingsTab(props: ProductivitySettingsTabProps) {
           onPlannerChange={props.bumpPlanner}
         />
       </div>
+      <div className="space-y-2">
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          Focus AI brain
+        </h3>
+        <FocusLlmHostPanel />
+      </div>
+      <div className="space-y-2">
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Jarvis</h3>
+        <FocusJarvisPanel variant="settings" />
+      </div>
+      <div className="space-y-2">
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          OpenJarvis
+        </h3>
+        <FocusOpenJarvisPanel />
+      </div>
+      <div className="space-y-2">
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          Telegram remote
+        </h3>
+        <FocusTelegramRemotePanel />
+      </div>
+      <div className="space-y-2">
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          Email report
+        </h3>
+        <FocusEmailReportPanel />
+      </div>
+      {focusShell ? (
+        <div className="space-y-2">
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Quit
+          </h3>
+          <QuitHowToPanel />
+        </div>
+      ) : null}
       {!focusShell ? (
         <div className="space-y-2">
           <h3 className="text-xs font-semibold uppercase tracking-wider text-amber-200/90">Demo mode</h3>
@@ -143,9 +186,11 @@ export function ProductivitySettingsTab(props: ProductivitySettingsTabProps) {
           onRangeChange={(start, end) => props.applyExportWindow(start, end)}
         />
         <p className="text-[11px] text-muted-foreground leading-relaxed max-w-lg">
-          JSON includes nested <code className="text-[10px] bg-black/30 px-1 rounded">by_day</code> plus
-          tidy <code className="text-[10px] bg-black/30 px-1 rounded">tables</code> (sessions, day×hour,
-          categories, blocks). CSV is long-format multi-table for pandas/R/Sheets.
+          Burnout-ready export: nested{" "}
+          <code className="text-[10px] bg-black/30 px-1 rounded">by_day</code> plus tidy{" "}
+          <code className="text-[10px] bg-black/30 px-1 rounded">tables</code> (day×hour, categories,
+          blocks, health). In Focus desktop, files save to your{" "}
+          <span className="text-foreground/80">Downloads</span> folder (opens after export).
         </p>
         <div className="flex flex-wrap gap-2">
           <button
@@ -175,6 +220,7 @@ export function ProductivitySettingsTab(props: ProductivitySettingsTabProps) {
           </button>
         </div>
       </div>
+      <FocusImportUpdatePanel />
       <div className="space-y-2 rounded-xl border border-border/50 bg-background/35 p-4">
         <h3 className="font-semibold flex items-center gap-2 text-sm">
           <Terminal size={15} className="text-sky-400" />

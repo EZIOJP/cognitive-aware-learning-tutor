@@ -167,7 +167,8 @@ export function ExportRangeCalendar({
       />
       {presenceError && (
         <p className="mt-1 px-1 text-[10px] text-amber-300/90" title={presenceError}>
-          Markers unavailable — range pick still works.
+          Day markers offline ({presenceError.slice(0, 80)}
+          {presenceError.length > 80 ? "…" : ""}) — range pick still works.
         </p>
       )}
       <div className="mt-2 flex flex-wrap gap-3 px-1 text-[10px] text-muted-foreground">

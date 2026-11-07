@@ -1,5 +1,8 @@
 import { resolveApiUrl } from "../utils/resolveBackendUrl";
+import { planEditsOpen } from "../lib/dayGate";
+import { getFocusStatusSnapshot, isFreeDay } from "../lib/focusStatusBus";
 import { enforcerNativeCmd, isFocusEnforcerBridgeAvailable } from "../lib/enforcerNativeCmd";
+import { agentDebugLog } from "../lib/agentDebugLog";
 import { isFocusDesktopShell } from "../utils/focusDesktopShell";
 import { focusDataUrl } from "../utils/focusDataUrl";
 
@@ -57,6 +60,22 @@ async function planGateway(
   /** Hot-path reads (list/overlay) — one short try; mutations keep retries. */
   retries = 3,
 ): Promise<Record<string, unknown>> {
+  const edits = new Set([
+    "plan.upsert",
+    "plan.delete",
+    "plan.clear_day",
+    "plan.import_from_date",
+    "routine.upsert",
+    "routine.delete",
+    "routine.apply",
+    "plan.roll_forward",
+  ]);
+  if (edits.has(op) && isFocusDesktopShell()) {
+    const status = getFocusStatusSnapshot();
+    if (!planEditsOpen(status, isFreeDay(status.softland))) {
+      throw new Error("free_day_required");
+    }
+  }
   let last: Record<string, unknown> | null = null;
   const attempts = Math.max(1, retries);
   for (let attempt = 0; attempt < attempts; attempt++) {
@@ -323,24 +342,226 @@ export async function fetchActualOverlay(from: Date, to: Date): Promise<ActualSe
   return payload.sessions;
 }
 
+type SleepWindowsMirror = {
+  windows?: Array<{ date?: string; start?: string; end?: string; minutes?: number }>;
+};
+
+/**
+ * Sleep mirrors store local wall times without a Z suffix
+ * (`2026-10-09T00:15:00`). Parse as local, not UTC — `parseApiDate` would
+ * append Z and shift the block by the timezone offset (blank calendar night).
+ */
+function parseLocalWallDate(raw: string): Date {
+  const s = String(raw || "").trim();
+  if (!s) return new Date(NaN);
+  if (/[zZ]$|[+-]\d{2}:\d{2}$/.test(s)) return new Date(s);
+  const m = s.match(
+    /^(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2}):(\d{2})(?::(\d{2}))?)?/,
+  );
+  if (!m) return new Date(s);
+  return new Date(
+    Number(m[1]),
+    Number(m[2]) - 1,
+    Number(m[3]),
+    Number(m[4] || 0),
+    Number(m[5] || 0),
+    Number(m[6] || 0),
+    0,
+  );
+}
+
+/** Amazfit / CALT Sync sleep → calendar actual chips (Focus mirrors; no Study). */
+export async function sleepSessionsFromFocusMirrors(from: Date, to: Date): Promise<ActualSession[]> {
+  // Prefer Focus shell, but still try calt-data on design host / file loads.
+  const out: ActualSession[] = [];
+  const fromMs = from.getTime();
+  const toMs = to.getTime();
+  const pushWindow = (startRaw: string, endRaw: string, dayKey: string) => {
+    const start = parseLocalWallDate(startRaw);
+    const end = parseLocalWallDate(endRaw);
+    if (!Number.isFinite(start.getTime()) || !Number.isFinite(end.getTime()) || end <= start) return;
+    if (end.getTime() <= fromMs || start.getTime() >= toMs) return;
+    out.push({
+      session_id: `wearable-sleep-${dayKey}`,
+      start_time: start.toISOString(),
+      end_time: end.toISOString(),
+      source: "wearable_sleep",
+      category: "Sleep",
+      app_name: "amazfit",
+      window_title: "Sleep",
+      site: null,
+      task_id: null,
+    });
+  };
+
+  try {
+    const swRes = await fetch(focusDataUrl("sleep_windows.json"), { cache: "no-store" });
+    if (swRes.ok) {
+      const sw = (await swRes.json()) as SleepWindowsMirror;
+      for (const w of sw.windows || []) {
+        if (!w?.start || !w?.end) continue;
+        pushWindow(w.start, w.end, String(w.date || w.start).slice(0, 10));
+      }
+      // #region agent log
+      agentDebugLog({hypothesisId:'A',location:'plannerClient.ts:sleep_windows',message:'sleep_windows mirror parse',data:{from:from.toISOString(),to:to.toISOString(),rawWindows:(sw.windows||[]).map(w=>({date:w.date,start:w.start,end:w.end,minutes:w.minutes})),out:out.map(s=>({id:s.session_id,start:s.start_time,end:s.end_time,localStart:s.start_time?new Date(s.start_time).toString():null,localEnd:s.end_time?new Date(s.end_time).toString():null}))}});
+      // #endregion
+    }
+  } catch {
+    /* ignore */
+  }
+
+  if (out.length) return out;
+
+  // Fallback: wearable_day sleep (real start/end, multi windows, or bedtime-anchored).
+  try {
+    const [wearRes, lifeRes] = await Promise.all([
+      fetch(focusDataUrl("wearable_day.json"), { cache: "no-store" }),
+      fetch(focusDataUrl("life_today.json"), { cache: "no-store" }),
+    ]);
+    const wear = wearRes.ok ? ((await wearRes.json()) as Record<string, unknown>) : null;
+    const life = lifeRes.ok ? ((await lifeRes.json()) as Record<string, unknown>) : null;
+    const day = String(wear?.local_date || life?.date || dayIsoLocal(new Date())).slice(0, 10);
+    const sleepObj =
+      wear?.payload && typeof wear.payload === "object"
+        ? (wear.payload as {
+            sleep?: {
+              total_min?: number;
+              start_min?: number;
+              end_min?: number;
+              start_iso?: string;
+              end_iso?: string;
+              windows?: Array<{ start?: string; end?: string; minutes?: number }>;
+              naps?: Array<{ start_min?: number; end_min?: number; start?: string; end?: string }>;
+            };
+          }).sleep
+        : null;
+
+    // Explicit multi-windows from Fit/Zepp coerce.
+    for (const w of sleepObj?.windows || []) {
+      if (w?.start && w?.end) pushWindow(w.start, w.end, day);
+    }
+    if (out.length) return out;
+
+    if (sleepObj?.start_iso && sleepObj?.end_iso) {
+      pushWindow(sleepObj.start_iso, sleepObj.end_iso, day);
+      if (out.length) return out;
+    }
+
+    // Zepp minute-of-day (start often previous evening).
+    if (
+      typeof sleepObj?.start_min === "number" &&
+      typeof sleepObj?.end_min === "number" &&
+      sleepObj.end_min !== sleepObj.start_min
+    ) {
+      const [y, m, d] = day.split("-").map(Number);
+      const end = new Date(y, m - 1, d, 0, 0, 0, 0);
+      end.setMinutes(sleepObj.end_min);
+      const start = new Date(y, m - 1, d, 0, 0, 0, 0);
+      start.setMinutes(sleepObj.start_min);
+      if (sleepObj.end_min <= sleepObj.start_min) start.setDate(start.getDate() - 1);
+      pushWindow(start.toISOString(), end.toISOString(), day);
+      for (const nap of sleepObj.naps || []) {
+        if (nap.start && nap.end) {
+          pushWindow(nap.start, nap.end, `${day}-nap`);
+        } else if (typeof nap.start_min === "number" && typeof nap.end_min === "number") {
+          const ns = new Date(y, m - 1, d, 0, 0, 0, 0);
+          const ne = new Date(y, m - 1, d, 0, 0, 0, 0);
+          ns.setMinutes(nap.start_min);
+          ne.setMinutes(nap.end_min);
+          if (nap.end_min <= nap.start_min) ns.setDate(ns.getDate() - 1);
+          pushWindow(ns.toISOString(), ne.toISOString(), `${day}-nap`);
+        }
+      }
+      if (out.length) return out;
+    }
+
+    let mins = 0;
+    if (typeof sleepObj?.total_min === "number" && sleepObj.total_min > 0) {
+      mins = Math.round(sleepObj.total_min);
+    } else if (typeof wear?.sleep_hours === "number" && wear.sleep_hours > 0) {
+      mins = Math.round(wear.sleep_hours * 60);
+    } else if (typeof life?.sleep_hours === "number" && life.sleep_hours > 0) {
+      mins = Math.round(life.sleep_hours * 60);
+    }
+    if (mins <= 0) return out;
+    mins = Math.min(16 * 60, Math.max(1, mins));
+    // Duration-only: bedtime-anchored overnight (23:00 → +duration), not wake→00:00 strip.
+    const [y, m, d] = day.split("-").map(Number);
+    const start = new Date(y, m - 1, d, 23, 0, 0, 0);
+    start.setDate(start.getDate() - 1);
+    const end = new Date(start.getTime() + mins * 60_000);
+    pushWindow(start.toISOString(), end.toISOString(), day);
+  } catch {
+    /* ignore */
+  }
+  return out;
+}
+
+function mergeSleepIntoOverlay(
+  sessions: ActualSession[],
+  sleep: ActualSession[],
+): ActualSession[] {
+  if (!sleep.length) return sessions;
+  const have = new Set(
+    sessions
+      .filter(
+        (s) =>
+          (s.category || "").toLowerCase() === "sleep" ||
+          (s.source || "").toLowerCase() === "wearable_sleep",
+      )
+      .map((s) => s.session_id),
+  );
+  const extra = sleep.filter((s) => !have.has(s.session_id));
+  return extra.length ? [...sessions, ...extra] : sessions;
+}
+
 export async function fetchActualOverlayFull(from: Date, to: Date): Promise<ActualOverlayPayload> {
   const transport = tryPlanTransport();
-  if (transport === "offline") return { sessions: [], hour_slices: [] };
+  const sleepPromise = sleepSessionsFromFocusMirrors(from, to);
+
+  if (transport === "offline") {
+    const sleep = await sleepPromise;
+    return { sessions: sleep, hour_slices: [] };
+  }
   if (transport === "gateway") {
     try {
+      // FE timer must exceed native pipe budget so enforcer_cmd_result is not
+      // dropped on the timeout race (native 16s → FE 22s). One try — calendar
+      // pullOverlay already retries; stacking retries stuck the FE cmd queue.
       const res = await planGateway(
         "plan.overlay",
         { from: from.toISOString(), to: to.toISOString() },
-        2500,
+        22000,
         1,
       );
       const overlay = (res.overlay as ActualOverlayPayload) || { sessions: [], hour_slices: [] };
+      const sleep = await sleepPromise;
+      const merged = mergeSleepIntoOverlay(overlay.sessions ?? [], sleep);
+      // #region agent log
+      {
+        const sess = overlay.sessions ?? [];
+        const isSleep = (s: ActualSession) =>
+          (s.category || "").toLowerCase() === "sleep" ||
+          (s.source || "").toLowerCase() === "wearable_sleep";
+        const sleepS = sess.filter(isSleep);
+        const deskS = sess.filter((s) => !isSleep(s));
+        agentDebugLog({hypothesisId:'B',location:'plannerClient.ts:overlay',message:'plan.overlay merge',data:{transport,overlayTotal:sess.length,overlaySleep:sleepS.length,overlayDesktop:deskS.length,mirrorSleep:sleep.length,mergedTotal:merged.length,sleepFromOverlay:sleepS.map(s=>({id:s.session_id,start:s.start_time,end:s.end_time})),sleepFromMirror:sleep.map(s=>({id:s.session_id,start:s.start_time,end:s.end_time})),deskSample:deskS.slice(0,5).map(s=>({start:s.start_time,end:s.end_time,app:s.app_name,cat:s.category})),hourSlicesNative:(overlay.hour_slices||[]).length}});
+      }
+      // #endregion
       return {
-        sessions: overlay.sessions ?? [],
+        sessions: merged,
         hour_slices: overlay.hour_slices ?? [],
       };
-    } catch {
-      return { sessions: [], hour_slices: [] };
+    } catch (e) {
+      const sleep = await sleepPromise;
+      // #region agent log
+      agentDebugLog({hypothesisId:'C',location:'plannerClient.ts:overlay-catch',message:'plan.overlay failed; rethrow for calendar retry',data:{err:e instanceof Error?e.message:String(e),mirrorSleep:sleep.length}});
+      // #endregion
+      // Rethrow so PlannerCalendar pullOverlay retries — soft-returning sleep-only
+      // looked "successful" and left the day empty of desktop actuals forever.
+      const err = e instanceof Error ? e : new Error(String(e));
+      (err as Error & { sleepFallback?: ActualSession[] }).sleepFallback = sleep;
+      throw err;
     }
   }
   const params = new URLSearchParams({
@@ -352,8 +573,9 @@ export async function fetchActualOverlayFull(from: Date, to: Date): Promise<Actu
   });
   if (!res.ok) throw new Error(await res.text());
   const data = (await res.json()) as ActualOverlayPayload;
+  const sleep = await sleepPromise;
   return {
-    sessions: data.sessions ?? [],
+    sessions: mergeSleepIntoOverlay(data.sessions ?? [], sleep),
     hour_slices: data.hour_slices ?? [],
   };
 }
@@ -443,6 +665,17 @@ export interface PlannerRoutine {
 }
 
 export async function fetchRoutines(): Promise<PlannerRoutine[]> {
+  // Prefer live enforcer list when the pipe is up — plan_blocks.json can lag until
+  // routine.upsert/delete republish (and used to skip republish entirely).
+  const transport = tryPlanTransport();
+  if (transport === "gateway") {
+    try {
+      const res = await planGateway("routine.list", {}, 4000, 1);
+      if (Array.isArray(res.routines)) return res.routines as PlannerRoutine[];
+    } catch {
+      /* fall through to mirror / HTTP */
+    }
+  }
   if (isFocusDesktopShell()) {
     try {
       const r = await fetch(focusDataUrl("plan_blocks.json"), { cache: "no-store" });
@@ -454,10 +687,7 @@ export async function fetchRoutines(): Promise<PlannerRoutine[]> {
       /* fall through */
     }
   }
-  if (planTransport() === "gateway") {
-    const res = await planGateway("routine.list", {});
-    return (res.routines as PlannerRoutine[]) ?? [];
-  }
+  if (transport === "offline") return [];
   const res = await fetch(resolveApiUrl("/api/planner/routines"), { headers: authHeaders() });
   if (!res.ok) throw new Error(await res.text());
   const data = (await res.json()) as { routines: PlannerRoutine[] };
@@ -525,16 +755,17 @@ export async function updateRoutine(
   return data.routine;
 }
 
-export async function deleteRoutine(id: number): Promise<void> {
+export async function deleteRoutine(id: number): Promise<{ blocks_cleared: number }> {
   if (planTransport() === "gateway") {
-    await planGateway("routine.delete", { id });
-    return;
+    const res = await planGateway("routine.delete", { id });
+    return { blocks_cleared: Number(res.blocks_cleared ?? 0) };
   }
   const res = await fetch(resolveApiUrl(`/api/planner/routines/${id}`), {
     method: "DELETE",
     headers: authHeaders(),
   });
   if (!res.ok) throw new Error(await res.text());
+  return { blocks_cleared: 0 };
 }
 
 export async function applyRoutines(date?: string): Promise<{ created: number }> {
@@ -562,7 +793,7 @@ export async function applyRoutines(date?: string): Promise<{ created: number }>
   return res.json();
 }
 
-/** Max days for routine lock-in / clear range (Today · Week · Month). */
+/** Max days for routine apply / clear range (Today · Week · Month). */
 export const MAX_ROUTINE_APPLY_DAYS = 31;
 
 /** Inclusive local YMD list from → to, capped at maxDays. */
@@ -671,6 +902,102 @@ export function formatPlannerApiError(raw: string, status: number): string {
   }
 }
 
+function triggerBlobDownload(blob: Blob, filename: string): void {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+/** Focus shell: enforcer writes behavior/productivity_export.* then native copy / calt-data fetch. */
+async function downloadProductivityWeekExportFocus(
+  days: number,
+  format: "json" | "csv" | "csv_wide",
+  options?: {
+    include?: string;
+    productiveOnly?: boolean;
+    skipEmpty?: boolean;
+    endDay?: string;
+  },
+): Promise<void> {
+  const r = await enforcerNativeCmd(
+    "productivity.export",
+    {
+      days,
+      format,
+      include: options?.include,
+      productive_only: !!options?.productiveOnly,
+      skip_empty: options?.skipEmpty !== false,
+      end_day: options?.endDay,
+      // Settings exports are for trend/burnout analysis. Avoid shipping a huge
+      // raw window-title stream through WebView2; aggregate tables remain.
+      analysis_only: true,
+    },
+    90_000,
+  );
+  if (!r || r.ok === false) {
+    throw new Error(
+      (r && typeof r.error === "string" && r.error) ||
+        "Export failed (enforcer unreachable or timed out)",
+    );
+  }
+  const exp = (r.export as Record<string, unknown> | undefined) || {};
+  const file =
+    format === "json"
+      ? String(exp.json_file || "productivity_export.json")
+      : String(exp.csv_file || "productivity_export.csv");
+  const stamp = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+  const downloadName =
+    typeof exp.download_name === "string" && exp.download_name
+      ? exp.download_name
+      : format === "json"
+        ? `productivity-${days}d-${stamp}.json`
+        : format === "csv_wide"
+          ? `productivity-${days}d-${stamp}-wide.csv`
+          : `productivity-${days}d-${stamp}-long.csv`;
+
+  // Prefer native copy → Downloads. Multi-MB calt-data fetch often fails with "Failed to fetch".
+  try {
+    const { focusBehaviorFile, isFocusBehaviorFileAvailable } = await import(
+      "../lib/focusBehaviorFile"
+    );
+    if (isFocusBehaviorFileAvailable()) {
+      const native = await focusBehaviorFile({
+        op: "copy_downloads",
+        file,
+        downloadName,
+      });
+      if (native && native.ok) return;
+    }
+  } catch {
+    /* fall through to calt-data */
+  }
+
+  let res: Response;
+  try {
+    res = await fetch(`${focusDataUrl(file)}?t=${Date.now()}`, { cache: "no-store" });
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : "Network error";
+    throw new Error(
+      `Export file unreachable (${msg}). In Focus desktop, export should save to Downloads — rebuild calt_focus if this persists.`,
+    );
+  }
+  if (!res.ok) {
+    throw new Error(`Export file missing (${res.status}). Re-run export.`);
+  }
+  const blob =
+    format === "json"
+      ? new Blob([JSON.stringify(await res.json(), null, 2)], {
+          type: "application/json",
+        })
+      : await res.blob();
+  triggerBlobDownload(blob, downloadName);
+}
+
 /** Last N days of plan + tracked usage — for designing weekly timetables. */
 export async function downloadProductivityWeekExport(
   days = 7,
@@ -685,6 +1012,16 @@ export async function downloadProductivityWeekExport(
   },
 ): Promise<void> {
   const clampedDays = Math.max(1, Math.min(MAX_PRODUCTIVITY_EXPORT_DAYS, Math.floor(days) || 1));
+
+  // Focus desktop: SoT is productivity.db via enforcer — never Study :8000.
+  if (isFocusDesktopShell()) {
+    if (!isFocusEnforcerBridgeAvailable()) {
+      throw new Error("Export needs the Focus enforcer (WebView bridge).");
+    }
+    await downloadProductivityWeekExportFocus(clampedDays, format, options);
+    return;
+  }
+
   const params = new URLSearchParams({ days: String(clampedDays), format });
   if (options?.include) params.set("include", options.include);
   if (options?.productiveOnly) params.set("productive_only", "true");
@@ -716,19 +1053,14 @@ export async function downloadProductivityWeekExport(
   } else {
     blob = await res.blob();
   }
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download =
+  triggerBlobDownload(
+    blob,
     format === "json"
       ? `productivity-${clampedDays}d-${stamp}.json`
       : format === "csv_wide"
         ? `productivity-${clampedDays}d-${stamp}-wide.csv`
-        : `productivity-${clampedDays}d-${stamp}-long.csv`;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
+        : `productivity-${clampedDays}d-${stamp}-long.csv`,
+  );
 }
 
 /** Days with tracked / plan / wearable signal — for export range calendars. */
@@ -736,6 +1068,31 @@ export async function fetchExportDayPresence(
   start: string,
   end: string,
 ): Promise<{ start: string; end: string; days: string[]; count: number }> {
+  if (isFocusDesktopShell()) {
+    if (!isFocusEnforcerBridgeAvailable()) {
+      return { start, end, days: [], count: 0 };
+    }
+    const r = await enforcerNativeCmd(
+      "productivity.export_presence",
+      { start, end },
+      15_000,
+    );
+    if (!r || r.ok === false) {
+      throw new Error(
+        (r && typeof r.error === "string" && r.error) || "Day presence failed",
+      );
+    }
+    const days = Array.isArray(r.days)
+      ? (r.days as unknown[]).map((d) => String(d)).filter(Boolean)
+      : [];
+    return {
+      start: typeof r.start === "string" ? r.start : start,
+      end: typeof r.end === "string" ? r.end : end,
+      days,
+      count: typeof r.count === "number" ? r.count : days.length,
+    };
+  }
+
   const params = new URLSearchParams({ start, end });
   let res: Response;
   try {

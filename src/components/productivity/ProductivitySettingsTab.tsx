@@ -15,6 +15,7 @@ import { ActivitiesPanel } from "./ActivitiesPanel";
 import ClassificationReview from "./ClassificationReview";
 import { ExportRangeCalendar } from "./ExportRangeCalendar";
 import { FocusImportUpdatePanel } from "./FocusImportUpdatePanel";
+import { BodyCarePanel } from "./BodyCarePanel";
 import { DesktopManagedBanner } from "./DesktopManagedBanner";
 import MakeSettingsApp, {
   parseSettingsSection,
@@ -135,6 +136,7 @@ export function ProductivitySettingsTab(props: ProductivitySettingsTabProps) {
         <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Plan reminders</h3>
         <PlannerRemindersPanel />
       </div>
+      <BodyCarePanel />
       <div className="space-y-3">
         <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
           <Download size={14} /> Export

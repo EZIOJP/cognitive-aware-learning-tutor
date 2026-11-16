@@ -38,7 +38,7 @@ const NAV: { id: SettingsSectionId; label: string; blurb: string }[] = [
   { id: "blocks", label: "Blocks", blurb: "Sites, apps, filters" },
   { id: "unlock", label: "Unlock", blurb: "Goal, pass, Arm" },
   { id: "productive", label: "Productive", blurb: "What counts" },
-  { id: "more", label: "More", blurb: isFocusDesktopShell() ? "Look, export, import, update" : "Look, demo, export" },
+  { id: "more", label: "More", blurb: isFocusDesktopShell() ? "Body, export, import, update" : "Look, demo, export" },
 ];
 
 const WRITE_SECTIONS: SettingsSectionId[] = [

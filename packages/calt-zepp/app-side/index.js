@@ -5,7 +5,7 @@ import { MessageBuilder } from '../shared/message-side'
 
 const messageBuilder = new MessageBuilder()
 const MAX_LOG = 20
-const APP_VER = '4.2.0'
+const APP_VER = '4.3.0'
 
 function settingsGet(key, fallback = '') {
   try {
@@ -295,10 +295,43 @@ async function pingHealth() {
   }
 
   out.ok = out.healthOk
+  out.pingNotified = false
+  out.pingId = null
+
+  // After health OK, POST /ping so Focus hub writes a mirror + PC tray toast.
+  if (out.healthOk) {
+    const p = await postWithFallback('/api/wearables/zepp/ping', {
+      label: 'ping',
+      method: 'POST',
+      headers: authHeaders(token, true),
+      body: JSON.stringify({
+        source: 'amazfit_calt_sync',
+        message: 'Watch ping',
+        at,
+      }),
+      attempts: 2,
+    })
+    out.pingNotified = !!(p.ok && p.data && p.data.ok)
+    out.pingId = p.data && p.data.ping ? p.data.ping.id : null
+    out.base = p.base || out.base
+    out.host = p.host || out.host
+    if (!out.pingNotified) {
+      const msg = p.error
+        ? `notify ${p.error}`
+        : `notify HTTP ${p.status}`
+      out.errors.push(msg)
+      // Health worked — still treat as soft OK if notify route is old hub.
+      if (p.status === 404) {
+        out.errors.push('hub missing /ping — restart start_wearables_hub.bat')
+      }
+    }
+  }
+
   out.diag = [
     `host=${out.host}`,
     `via=${h.label || '?'}`,
     `health=${out.healthOk ? 'OK' : 'FAIL'}`,
+    `notify=${out.pingNotified ? 'OK' : 'FAIL'}`,
     ...(h.tried || []),
     ...out.errors.slice(0, 2),
   ].join(' · ')
@@ -310,7 +343,9 @@ async function pingHealth() {
   appendLog({
     at,
     ok: out.ok,
-    summary: out.ok ? `TEST OK · ${out.host} (${h.label || 'hub'})` : `TEST FAIL · ${out.errors[0] || 'error'}`,
+    summary: out.ok
+      ? `PING OK · ${out.host}${out.pingNotified ? ' · PC notified' : ' · health only'}`
+      : `PING FAIL · ${out.errors[0] || 'error'}`,
     errors: out.errors,
     steps: null,
     sleep_min: null,
@@ -608,6 +643,55 @@ AppSideService({
           .catch((e) =>
             ctx.response({
               data: { ok: false, error: errDetail(e), diag: errDetail(e) },
+            }),
+          )
+        return
+      }
+
+      // Raw dump: phone posts sensor blob to /raw; Focus hub coerces + mirrors.
+      if (method === 'SYNC_RAW') {
+        const health = (params && params.health) || {}
+        const token = String(settingsGet('ingest_token', 'calt-local-wearables'))
+        postWithFallback('/api/wearables/zepp/raw', {
+          label: 'raw',
+          method: 'POST',
+          headers: authHeaders(token, true),
+          body: JSON.stringify({
+            ...health,
+            source: health.source || 'calt_zepp_raw',
+            local_date: (params && params.localDate) || health.local_date,
+            tz_offset_min:
+              (params && params.tz_offset_min) != null
+                ? params.tz_offset_min
+                : health.tz_offset_min,
+          }),
+          attempts: 2,
+        })
+          .then((res) => {
+            const ok = !!(res.ok && res.data && res.data.ok)
+            ctx.response({
+              data: {
+                healthOk: ok,
+                ok,
+                errors: ok ? [] : [res.error || `HTTP ${res.status}`],
+                summary: ok ? 'raw OK · Focus processing' : 'raw FAIL',
+                diag: ok ? `host=${res.host}` : res.error || String(res.status),
+                host: res.host,
+                base: res.base,
+                serverEcho: res.data || null,
+                wroteLife: !!(res.data && res.data.life),
+              },
+            })
+          })
+          .catch((e) =>
+            ctx.response({
+              data: {
+                healthOk: false,
+                ok: false,
+                errors: [errDetail(e)],
+                summary: 'raw FAIL',
+                diag: errDetail(e),
+              },
             }),
           )
         return

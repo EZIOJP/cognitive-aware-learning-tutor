@@ -3,12 +3,18 @@ import { Loader2, RefreshCw, Watch } from "lucide-react";
 import {
   fetchWearableStatus,
   getWearableToken,
+  getWearablesHubUrl,
   postWearableIngest,
+  postWearablePing,
+  resolveWearablesBaseUrl,
   setWearableToken,
+  setWearablesHubUrl,
 } from "../../api/wearablesClient";
 import { WatchDayDumpCard } from "../life/WatchDayDumpCard";
-import { resolveApiUrl } from "../../utils/resolveBackendUrl";
+import { HealthServerToggle } from "../life/HealthServerToggle";
+import { isFocusDesktopShell } from "../../utils/focusDesktopShell";
 import { formatHoursMins } from "../../utils/formatDuration";
+import { focusDataUrl } from "../../utils/focusDataUrl";
 
 function fmtWhen(iso?: string | null): string {
   if (!iso) return "—";
@@ -26,7 +32,7 @@ function fmtWhen(iso?: string | null): string {
 }
 
 async function pingWearableHealth(): Promise<boolean> {
-  const base = resolveApiUrl().replace(/\/$/, "");
+  const base = resolveWearablesBaseUrl();
   const token = getWearableToken();
   const res = await fetch(`${base}/api/wearables/zepp/health`, {
     headers: {
@@ -39,18 +45,51 @@ async function pingWearableHealth(): Promise<boolean> {
   return !!data.ok;
 }
 
+type ZeppBridgeMirror = {
+  api_ok?: boolean;
+  api_version?: string;
+  last_event?: string;
+  last_source?: string;
+  last_ingest_at?: string;
+  days_written?: number;
+  db_path?: string;
+};
+
 export function WearablesSyncPanel() {
+  const focusShell = isFocusDesktopShell();
   const [token, setToken] = useState(() => getWearableToken());
+  const [hubUrl, setHubUrl] = useState(() => getWearablesHubUrl());
   const [status, setStatus] = useState<Awaited<
     ReturnType<typeof fetchWearableStatus>
   > | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [flash, setFlash] = useState(false);
+  const [pingFlash, setPingFlash] = useState<string | null>(null);
   const [lastSeenAt, setLastSeenAt] = useState<string | null>(null);
+  const [lastPingId, setLastPingId] = useState<string | null>(null);
   const [showRaw, setShowRaw] = useState(true);
+  const [zb, setZb] = useState<ZeppBridgeMirror | null>(null);
+  const [zbBusy, setZbBusy] = useState(false);
+  const [zbHint, setZbHint] = useState<string | null>(null);
 
-  const base = resolveApiUrl().replace(/\/$/, "");
+  const base = resolveWearablesBaseUrl();
+
+  const refreshZeppBridge = useCallback(async () => {
+    try {
+      const res = await fetch(`${focusDataUrl("wearables_ping.json")}?t=${Date.now()}`, {
+        cache: "no-store",
+      });
+      if (!res.ok) {
+        setZb(null);
+        return;
+      }
+      const j = (await res.json()) as ZeppBridgeMirror;
+      setZb(j?.last_source === "zeppbridge" || j?.last_event === "zeppbridge_pull" ? j : j);
+    } catch {
+      setZb(null);
+    }
+  }, []);
 
   const refresh = useCallback(async () => {
     setError(null);
@@ -60,6 +99,7 @@ export function WearablesSyncPanel() {
       const stamp =
         s.last_sync?.updated_at ||
         s.last_sync?.last_ingest_at ||
+        s.last_ping?.at ||
         null;
       if (stamp && stamp !== lastSeenAt) {
         if (lastSeenAt) setFlash(true);
@@ -71,16 +111,27 @@ export function WearablesSyncPanel() {
           window.dispatchEvent(new CustomEvent("hub:refresh"));
         }
       }
+      const pingId = s.last_ping?.id || s.last_sync?.last_ping_id || null;
+      if (pingId && pingId !== lastPingId) {
+        if (lastPingId) {
+          setPingFlash(s.last_ping?.message || s.last_sync?.last_ping_message || "Watch ping");
+          setFlash(true);
+          window.dispatchEvent(new CustomEvent("hub:refresh"));
+        }
+        setLastPingId(pingId);
+      }
     } catch (e) {
       setStatus(null);
       setError(e instanceof Error ? e.message : String(e));
     }
-  }, [lastSeenAt]);
+  }, [lastSeenAt, lastPingId]);
 
-  // One-shot when the panel opens — no live polling. Watch Dump → Send is the source of truth.
+  // Poll while open so watch Ping PC / Sync lights up Focus without manual Refresh.
   useEffect(() => {
     void refresh();
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional mount-only
+    const id = window.setInterval(() => void refresh(), 4000);
+    return () => window.clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount poll
   }, []);
 
   useEffect(() => {
@@ -89,8 +140,19 @@ export function WearablesSyncPanel() {
     return () => window.clearTimeout(t);
   }, [flash]);
 
+  useEffect(() => {
+    if (!pingFlash) return;
+    const t = window.setTimeout(() => setPingFlash(null), 6000);
+    return () => window.clearTimeout(t);
+  }, [pingFlash]);
+
   const saveToken = () => {
     setWearableToken(token);
+    void refresh();
+  };
+
+  const saveHubUrl = () => {
+    setWearablesHubUrl(hubUrl);
     void refresh();
   };
 
@@ -99,8 +161,23 @@ export function WearablesSyncPanel() {
     setError(null);
     try {
       const ok = await pingWearableHealth();
+      if (ok) {
+        try {
+          const ping = await postWearablePing("Focus UI ping");
+          setPingFlash(ping.message || "Focus UI ping");
+          setFlash(true);
+        } catch {
+          /* older hub without /ping — health alone still useful */
+        }
+      }
       await refresh();
-      if (!ok) setError("Health ping failed — is the backend / tracker hub running?");
+      if (!ok) {
+        setError(
+          focusShell
+            ? "Health ping failed — turn Health server ON (or start_calt_sync_host.bat)."
+            : "Health ping failed — is the backend / tracker hub running?",
+        );
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -132,22 +209,110 @@ export function WearablesSyncPanel() {
   const isAuthenticWatch = authentic?.verdict === "authentic_watch";
   const caps = wd?.capabilities;
 
+  const pullZeppBridge = async () => {
+    setZbBusy(true);
+    setZbHint(null);
+    try {
+      const w = window as Window & {
+        chrome?: { webview?: { postMessage: (m: unknown) => void } };
+      };
+      if (focusShell && w.chrome?.webview?.postMessage) {
+        w.chrome.webview.postMessage({
+          type: "run_repo_bat",
+          name: "run\\pull_zeppbridge.bat",
+          confirm: "zeppbridge_pull",
+        });
+        setZbHint("Pull started — reading ZeppBridge DB into Focus mirrors…");
+        window.setTimeout(() => {
+          void refresh();
+          void refreshZeppBridge();
+          setZbHint("Pulled (refresh again if Health still looks stale).");
+          setZbBusy(false);
+        }, 3500);
+        return;
+      }
+      setZbHint(
+        "Run on PC: python scripts\\run\\pull_zeppbridge.py  (ZeppBridge must be open / synced).",
+      );
+    } catch (e: unknown) {
+      setZbHint(e instanceof Error ? e.message : "Pull failed");
+    } finally {
+      if (!(focusShell && (window as Window & { chrome?: { webview?: unknown } }).chrome?.webview)) {
+        setZbBusy(false);
+      }
+    }
+  };
+
+  useEffect(() => {
+    void refreshZeppBridge();
+  }, [refreshZeppBridge]);
+
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h3 className="font-semibold flex items-center gap-2 text-sm">
-            <Watch size={16} className="text-primary" />
-            CALT Sync health dump
-          </h3>
-          <p className="mt-1 text-xs text-muted-foreground">
-            <strong>Manual only</strong> — open the watch, <strong>Dump today</strong> →{" "}
-            <strong>Send queue</strong> (Settings → <strong>Test PC</strong> first). This page does
-            not poll; use <strong>Refresh</strong> after a dump. Sensors do not backfill days the
-            app never ran.
-          </p>
+      <div className="rounded-xl border border-emerald-500/25 bg-emerald-500/5 px-3 py-3 space-y-2">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h3 className="font-semibold flex items-center gap-2 text-sm">
+              <Watch size={16} className="text-emerald-300" />
+              ZeppBridge (preferred)
+            </h3>
+            <p className="mt-1 text-xs text-muted-foreground leading-relaxed max-w-xl">
+              Desktop app syncs Amazfit → local DB. Focus pulls sleep / steps / stress into Health
+              mirrors (no phone CALT Sync needed). Local REST{" "}
+              <code className="text-foreground">127.0.0.1:43921</code> is for workout series; day
+              cards come from <code className="text-foreground">zepp.db</code>.
+            </p>
+          </div>
+          <button
+            type="button"
+            disabled={zbBusy}
+            onClick={() => void pullZeppBridge()}
+            className="flex items-center gap-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/15 px-3 py-2 text-xs text-emerald-100 hover:bg-emerald-500/25 disabled:opacity-50"
+          >
+            {zbBusy ? <Loader2 size={13} className="animate-spin" /> : <RefreshCw size={13} />}
+            Pull from ZeppBridge
+          </button>
         </div>
+        <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-muted-foreground">
+          <span>
+            API:{" "}
+            <span className={zb?.api_ok ? "text-emerald-300" : "text-amber-200"}>
+              {zb?.api_ok ? `ok ${zb.api_version || ""}` : "not seen yet — open ZeppBridge + Local REST"}
+            </span>
+          </span>
+          <span>Last pull: {fmtWhen(zb?.last_ingest_at)}</span>
+          {typeof zb?.days_written === "number" ? <span>Days: {zb.days_written}</span> : null}
+        </div>
+        {zbHint ? <p className="text-xs text-sky-300/95">{zbHint}</p> : null}
       </div>
+
+      <details className="group rounded-xl border border-border/40 bg-background/20 open:pb-1">
+        <summary className="cursor-pointer list-none px-3 py-2.5 text-sm font-semibold marker:content-none [&::-webkit-details-marker]:hidden">
+          <span className="inline-flex items-center gap-2">
+            <Watch size={16} className="text-muted-foreground" />
+            CALT Sync — legacy (optional)
+            <span className="text-[11px] font-normal text-muted-foreground">
+              collapsed · prefer ZeppBridge
+            </span>
+          </span>
+        </summary>
+        <div className="space-y-3 border-t border-border/30 px-3 pb-3 pt-2">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <p className="text-xs text-muted-foreground max-w-xl leading-relaxed">
+              {focusShell ? (
+                <>
+                  Watch app → phone → <code className="text-foreground">calt_sync_host :8765</code>.
+                  Only needed if ZeppBridge is unavailable.
+                </>
+              ) : (
+                <>
+                  Amazfit → phone <strong>CALT Sync</strong> → PC{" "}
+                  <code className="text-foreground">:8765</code>.
+                </>
+              )}
+            </p>
+            {focusShell ? <HealthServerToggle /> : null}
+          </div>
 
       <div
         className={`rounded-xl border px-3 py-3 text-xs space-y-1.5 transition-colors ${
@@ -159,16 +324,28 @@ export function WearablesSyncPanel() {
         }`}
       >
         <p className="text-[11px] text-amber-200/90 leading-relaxed">
-          Manual sync: the watch POSTs when you Send. Replays are idempotent. Status here updates
-          on <strong>Refresh</strong> or after you trigger a dump (main API{" "}
-          <code className="text-foreground">:8000</code>; watch → hub{" "}
-          <code className="text-foreground">:8765</code>).
+          {focusShell ? (
+            <>
+              Use <strong>Health server ON</strong> so <code className="text-foreground">:8765</code> is
+              listening. After Dump/Send, tap <strong>Refresh</strong>. Phone near watch (BLE); same Wi‑Fi.
+            </>
+          ) : (
+            <>
+              Manual sync: the watch POSTs when you Send. Replays are idempotent. Status here updates
+              on <strong>Refresh</strong> or after you trigger a dump (watch → hub{" "}
+              <code className="text-foreground">:8765</code>).
+            </>
+          )}
         </p>
         <div className="flex flex-wrap gap-x-4 gap-y-1 items-center">
           <span>
-            API:{" "}
+            Hub:{" "}
             <span className={status?.reachable ? "text-emerald-300" : "text-rose-300"}>
-              {status?.reachable ? "reachable" : "down / 404 — restart backend"}
+              {status?.reachable
+                ? "reachable"
+                : focusShell
+                  ? "down — start wearables hub :8765"
+                  : "down / 404 — restart backend"}
             </span>
           </span>
           <span
@@ -263,12 +440,28 @@ export function WearablesSyncPanel() {
             </span>
           ) : null}
         </div>
-        {flash && (
+        {pingFlash && (
+          <p className="text-sky-200 font-medium pt-1">
+            Watch → Focus → PC: {pingFlash}
+          </p>
+        )}
+        {flash && !pingFlash && (
           <p className="text-emerald-200 font-medium pt-1">Dump activity detected just now</p>
         )}
       </div>
 
-      {(status?.applied_to_life || status?.estimates) && (
+      {focusShell ? (
+        <div className="rounded-xl border border-white/10 bg-black/20 px-3 py-3 text-xs space-y-2">
+          <p className="font-medium text-foreground">Where it went (Focus)</p>
+          <p className="text-muted-foreground">
+            Writes <code className="text-foreground">data/productivity/behavior/wearable_day.json</code>{" "}
+            + per-day files under <code className="text-foreground">wearable_days/</code>. Amazfit CALT
+            Sync posts to <code className="text-foreground">/api/wearables/zepp</code> (
+            <code className="text-foreground">source: calt_zepp</code>
+            ).
+          </p>
+        </div>
+      ) : status?.applied_to_life || status?.estimates ? (
         <div className="rounded-xl border border-white/10 bg-black/20 px-3 py-3 text-xs space-y-2">
           <p className="font-medium text-foreground">Where it went (proof)</p>
           {status.applied_to_life ? (
@@ -305,7 +498,7 @@ export function WearablesSyncPanel() {
             </p>
           )}
         </div>
-      )}
+      ) : null}
 
       <div className="rounded-xl border border-white/10 bg-black/25 px-3 py-3 text-xs space-y-2">
         <div className="flex flex-wrap items-center justify-between gap-2">
@@ -319,8 +512,8 @@ export function WearablesSyncPanel() {
           </button>
         </div>
         <p className="text-[11px] text-muted-foreground leading-relaxed">
-          Nested JSON from CALT Sync Dump → Send. Missing sensors stay absent (never fabricated
-          zeroes). Unsupported temperature stays unavailable.
+          Nested JSON from ZeppBridge pull (preferred) or CALT Sync. Missing sensors stay
+          absent or null — never fabricated zeroes. Unsupported temperature stays unavailable.
           {wd?.local_date ? (
             <>
               {" "}
@@ -342,6 +535,18 @@ export function WearablesSyncPanel() {
       </div>
 
       <div className="flex flex-wrap gap-2 items-end">
+        {focusShell ? (
+          <label className="text-xs text-muted-foreground space-y-1 min-w-[220px] flex-1">
+            Hub URL (loopback for this panel; phone uses LAN IP)
+            <input
+              value={hubUrl}
+              onChange={(e) => setHubUrl(e.target.value)}
+              onBlur={saveHubUrl}
+              placeholder="http://127.0.0.1:8765"
+              className="w-full rounded-lg border border-white/10 bg-black/30 px-2.5 py-1.5 text-xs text-foreground"
+            />
+          </label>
+        ) : null}
         <label className="text-xs text-muted-foreground space-y-1 min-w-[200px] flex-1">
           Ingest token (must match watch Settings)
           <input
@@ -351,6 +556,15 @@ export function WearablesSyncPanel() {
             className="w-full rounded-lg border border-white/10 bg-black/30 px-2.5 py-1.5 text-xs text-foreground"
           />
         </label>
+        {focusShell ? (
+          <button
+            type="button"
+            onClick={saveHubUrl}
+            className="rounded-lg border border-white/10 px-3 py-1.5 text-xs hover:bg-white/5"
+          >
+            Save hub
+          </button>
+        ) : null}
         <button
           type="button"
           onClick={saveToken}
@@ -388,11 +602,15 @@ export function WearablesSyncPanel() {
 
       {error && (
         <p className="text-xs text-rose-300 break-words">
-          {error.includes("404")
-            ? "404 — restart the backend so /api/wearables/zepp is mounted."
+          {error.includes("404") || error.includes("Failed to fetch")
+            ? focusShell
+              ? "Hub unreachable — start calt_sync_host (:8765), then Ping health."
+              : "404 — restart the backend so /api/wearables/zepp is mounted."
             : error}
         </p>
       )}
+        </div>
+      </details>
     </div>
   );
 }

@@ -46,7 +46,6 @@ export function shouldShowDetailedBlockForm(requested: boolean, hasCalendarSlot:
 type Props = {
   day?: Date;
   refreshKey?: number;
-  dueReviews?: number;
   onPlannerChange?: () => void;
   compact?: boolean;
   /** Slot from calendar click — opens Quick add with this start time */
@@ -57,7 +56,6 @@ type Props = {
 export function TodayPanel({
   day: dayProp,
   refreshKey = 0,
-  dueReviews = 0,
   onPlannerChange,
   compact = false,
   addSlotStart = null,
@@ -302,11 +300,6 @@ export function TodayPanel({
           <span>
             <strong className="text-foreground">{todos.length}</strong> open
           </span>
-          {dueReviews > 0 && !compact && (
-            <span className="text-amber-400">
-              <strong>{dueReviews}</strong> SRS due
-            </span>
-          )}
         </div>
         {compact && (
           <div className="flex gap-2 flex-1 min-w-[200px] max-w-xl">

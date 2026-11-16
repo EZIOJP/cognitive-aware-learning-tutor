@@ -1,10 +1,10 @@
 /**
- * Desktop/web local notifications for upcoming planner blocks (P4).
- * Phone APK can reuse the same schedule later; browser Notification API for now.
+ * Settings → Day: prefs for plan reminders.
+ * Firing runs in PlannerRemindersRuntime (shell-level), not only while this panel is open.
  */
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Bell, BellOff } from "lucide-react";
-import { fetchPlannerBlocks, type PlannerBlock } from "../../api/plannerClient";
+import { fetchPlannerBlocks } from "../../api/plannerClient";
 
 const LS_ENABLED = "calt:planner:reminders";
 const LS_LEAD = "calt:planner:reminderLeadMin";
@@ -46,14 +46,13 @@ export function PlannerRemindersPanel() {
     notificationSupported() ? Notification.permission : "unsupported",
   );
   const [nextHint, setNextHint] = useState<string | null>(null);
-  const firedRef = useRef<Set<string>>(new Set());
-  const blocksRef = useRef<PlannerBlock[]>([]);
 
   useEffect(() => {
-    if (!enabled || !notificationSupported()) return;
-
+    if (!enabled || !notificationSupported()) {
+      setNextHint(null);
+      return;
+    }
     let cancelled = false;
-
     const load = async () => {
       try {
         const now = new Date();
@@ -63,10 +62,10 @@ export function PlannerRemindersPanel() {
         to.setHours(23, 59, 59, 999);
         const rows = await fetchPlannerBlocks(from, to);
         if (cancelled) return;
-        blocksRef.current = (rows || []).filter(
+        const blocks = (rows || []).filter(
           (b) => b.status !== "cancelled" && b.status !== "done" && b.status !== "rolled",
         );
-        const upcoming = blocksRef.current
+        const upcoming = blocks
           .map((b) => ({ b, t: new Date(b.start_at).getTime() }))
           .filter((x) => x.t > Date.now())
           .sort((a, c) => a.t - c.t)[0];
@@ -83,42 +82,11 @@ export function PlannerRemindersPanel() {
         if (!cancelled) setNextHint("Could not load today’s plan");
       }
     };
-
     void load();
-    const reloadId = window.setInterval(() => void load(), 5 * 60_000);
-
-    const tick = () => {
-      if (Notification.permission !== "granted") return;
-      const leadMs = lead * 60_000;
-      const now = Date.now();
-      for (const b of blocksRef.current) {
-        const start = new Date(b.start_at).getTime();
-        const key = `${b.id}:${b.start_at}`;
-        if (firedRef.current.has(key)) continue;
-        if (start - leadMs <= now && now < start + 60_000) {
-          firedRef.current.add(key);
-          try {
-            new Notification("CALT · upcoming block", {
-              body: `${b.title} starts soon (${new Date(b.start_at).toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit",
-              })})`,
-              tag: key,
-            });
-          } catch {
-            /* ignore */
-          }
-        }
-      }
-    };
-
-    const tickId = window.setInterval(tick, 30_000);
-    tick();
-
+    const id = window.setInterval(() => void load(), 5 * 60_000);
     return () => {
       cancelled = true;
-      window.clearInterval(reloadId);
-      window.clearInterval(tickId);
+      window.clearInterval(id);
     };
   }, [enabled, lead]);
 
@@ -140,7 +108,7 @@ export function PlannerRemindersPanel() {
   if (!notificationSupported()) {
     return (
       <p className="text-xs text-muted-foreground">
-        Browser notifications unsupported here — use a Chromium desktop or the future phone app.
+        Browser notifications unsupported here — use Focus desktop (WebView2) or Chromium.
       </p>
     );
   }
@@ -154,7 +122,7 @@ export function PlannerRemindersPanel() {
             Plan reminders
           </p>
           <p className="text-muted-foreground mt-0.5">
-            Desktop notification before each study block (from CALT planner — not Google).
+            Desktop notification before each plan block. Runs while Focus is open (not only this page).
           </p>
         </div>
         {enabled ? (

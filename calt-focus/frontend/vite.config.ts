@@ -53,8 +53,54 @@ function caltDataMiddleware() {
           });
         });
       };
-      serveRoot("/calt-data/", path.join(repoRoot, "data", "productivity", "behavior"));
-      serveRoot("/calt-bible/", path.join(repoRoot, "data", "productivity", "bible"));
+      // Live enforcer writes live in the standalone calt-focus repo. Study's
+      // copy of data/ is a stale snapshot and hides today's blocks.
+      const liveRoot = path.resolve(repoRoot, "..", "calt-focus", "data", "productivity");
+      const dataRoot = fs.existsSync(path.join(liveRoot, "behavior"))
+        ? liveRoot
+        : path.join(repoRoot, "data", "productivity");
+      serveRoot("/calt-data/", path.join(dataRoot, "behavior"));
+      serveRoot("/calt-bible/", path.join(dataRoot, "bible"));
+      // Math → ML offline SPA (same tree Focus maps as https://calt-learn.app)
+      const learnRoot = path.resolve(repoRoot, "..", "calt-focus", "frontend", "jp-roadmap");
+      const learnFallback = path.join(repoRoot, "frontend", "jp-roadmap");
+      const learnDir = fs.existsSync(path.join(learnRoot, "index.html"))
+        ? learnRoot
+        : learnFallback;
+      server.middlewares.use((req, res, next) => {
+        const url = (req.url || "").split("?")[0];
+        if (!url.startsWith("/calt-learn/")) return next();
+        const rel = decodeURIComponent(url.slice("/calt-learn/".length) || "index.html");
+        if (!rel || rel.includes("..")) {
+          res.statusCode = 400;
+          res.end("bad path");
+          return;
+        }
+        const file = path.resolve(learnDir, rel || "index.html");
+        if (!file.startsWith(learnDir + path.sep) && file !== learnDir) {
+          res.statusCode = 400;
+          res.end("bad path");
+          return;
+        }
+        fs.readFile(file, (err, buf) => {
+          if (err) {
+            res.statusCode = 404;
+            res.end("missing");
+            return;
+          }
+          let ct = "application/octet-stream";
+          if (file.endsWith(".html")) ct = "text/html; charset=utf-8";
+          else if (file.endsWith(".js")) ct = "text/javascript; charset=utf-8";
+          else if (file.endsWith(".css")) ct = "text/css; charset=utf-8";
+          else if (file.endsWith(".json")) ct = "application/json; charset=utf-8";
+          else if (file.endsWith(".svg")) ct = "image/svg+xml";
+          else if (file.endsWith(".png")) ct = "image/png";
+          else if (file.endsWith(".woff2")) ct = "font/woff2";
+          res.setHeader("Content-Type", ct);
+          res.setHeader("Cache-Control", "no-store");
+          res.end(buf);
+        });
+      });
     },
   };
 }

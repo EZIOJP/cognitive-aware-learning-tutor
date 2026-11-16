@@ -1,8 +1,8 @@
 {
   "name": "calt-zepp",
-  "version": "4.1.1",
+  "version": "4.3.0",
   "private": true,
-  "description": "CALT Sync 4.1 — Zepp OS 6 dump with progress + errors",
+  "description": "CALT Sync 4.3 — dump/send + auto every 3h",
   "scripts": {
     "preview": "zeus preview",
     "dev": "zeus dev",

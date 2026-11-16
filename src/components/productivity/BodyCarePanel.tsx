@@ -84,11 +84,31 @@ function Num({
   );
 }
 
-/** Lazy attention reader — only mounts Human.js when user enables it. */
+/** Renders panel with shell context if present; otherwise owns a provider. */
+function AttentionPanelMount({
+  Provider,
+  Panel,
+  useOptional,
+}: {
+  Provider: (p: { children: ReactNode; autoStart?: boolean }) => ReactNode;
+  Panel: () => ReactNode;
+  useOptional: () => unknown;
+}) {
+  const shell = useOptional();
+  if (shell) return <Panel />;
+  return (
+    <Provider autoStart>
+      <Panel />
+    </Provider>
+  );
+}
+
+/** Lazy attention reader — reuses shell FaceTracker when present; else mounts one. */
 function AttentionReaderBlock({ enabled }: { enabled: boolean }) {
   const [mod, setMod] = useState<{
-    Provider: (p: { children: ReactNode }) => ReactNode;
+    Provider: (p: { children: ReactNode; autoStart?: boolean }) => ReactNode;
     Panel: () => ReactNode;
+    useOptional: () => unknown;
   } | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -103,14 +123,18 @@ function AttentionReaderBlock({ enabled }: { enabled: boolean }) {
     setLoading(true);
     void (async () => {
       try {
-        const [{ FaceTrackerProvider }, { FocusAttentionPanel }] = await Promise.all([
+        const [ctx, panel] = await Promise.all([
           import("../../face-tracker/FaceTrackerContext"),
           import("./FocusAttentionPanel"),
         ]);
         if (cancelled) return;
         setMod({
-          Provider: FaceTrackerProvider as (p: { children: ReactNode }) => ReactNode,
-          Panel: FocusAttentionPanel as () => ReactNode,
+          Provider: ctx.FaceTrackerProvider as (p: {
+            children: ReactNode;
+            autoStart?: boolean;
+          }) => ReactNode,
+          Panel: panel.FocusAttentionPanel as () => ReactNode,
+          useOptional: ctx.useFaceTrackerOptional,
         });
         setErr(null);
       } catch (e: unknown) {
@@ -130,7 +154,8 @@ function AttentionReaderBlock({ enabled }: { enabled: boolean }) {
   if (!enabled) {
     return (
       <p className="text-[11px] text-muted-foreground">
-        Off — turn on to load the webcam attention reader (models download once).
+        Off — turn on to load the webcam attention reader (models download once). Enables posture
+        coach + sit-clock pause when you step away.
       </p>
     );
   }
@@ -144,12 +169,7 @@ function AttentionReaderBlock({ enabled }: { enabled: boolean }) {
   if (err || !mod) {
     return <p className="text-xs text-rose-300">{err || "Attention reader unavailable"}</p>;
   }
-  const { Provider, Panel } = mod;
-  return (
-    <Provider>
-      <Panel />
-    </Provider>
-  );
+  return <AttentionPanelMount {...mod} />;
 }
 
 export function BodyCarePanel() {
@@ -263,7 +283,11 @@ export function BodyCarePanel() {
     const bits: string[] = [];
     if (prefs.sitStandEnabled) bits.push(`Sit ${prefs.sitMinutes}m`);
     if (prefs.eyeRestEnabled) bits.push(`Eyes ${prefs.eyeRestMinutes}m`);
-    if (prefs.attentionEnabled) bits.push("Attention on");
+    if (prefs.attentionEnabled) {
+      bits.push("Cam on");
+      if (prefs.presencePauseSit) bits.push("pause away");
+      if (prefs.postureCoachEnabled) bits.push(`posture ${prefs.postureWarnMinutes}m`);
+    }
     return bits.length ? bits.join(" · ") : "All body care off";
   }, [prefs]);
 
@@ -275,8 +299,8 @@ export function BodyCarePanel() {
             <PersonStanding size={14} /> Body care
           </h3>
           <p className="mt-1 text-[11px] text-muted-foreground leading-relaxed max-w-lg">
-            Sit/stand + eye rest run locally in Focus. Attention reader is opt-in webcam (same models
-            as Study Focus tracker). Does not touch SoftLand or Arm.
+            Sit/stand + eye rest run locally. Opt-in webcam adds posture coach and pauses the sit
+            clock when you leave the desk. Does not touch SoftLand or Arm.
           </p>
           <p className="mt-1 text-[11px] text-sky-300/90">{summary}</p>
         </div>
@@ -327,6 +351,21 @@ export function BodyCarePanel() {
           </div>
         ) : null}
         {standHint ? <p className="pl-6 text-[11px] text-muted-foreground">{standHint}</p> : null}
+        {prefs.sitStandEnabled && prefs.attentionEnabled ? (
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border/30 pt-3 pl-6">
+            <div>
+              <p className="text-xs text-foreground/90">Pause sit clock when away</p>
+              <p className="text-[10px] text-muted-foreground">
+                No face for {prefs.presenceAwaySec}s freezes the timer (camera).
+              </p>
+            </div>
+            <Toggle
+              label="Presence pause sit"
+              on={prefs.presencePauseSit}
+              onChange={(v) => patch({ presencePauseSit: v })}
+            />
+          </div>
+        ) : null}
       </div>
 
       <div className="rounded-xl border border-border/50 bg-background/30 p-3 space-y-3">
@@ -377,6 +416,41 @@ export function BodyCarePanel() {
           />
         </div>
         <AttentionReaderBlock enabled={prefs.attentionEnabled} />
+        {prefs.attentionEnabled ? (
+          <div className="space-y-2 border-t border-border/30 pt-3">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-xs text-foreground/90">Posture coach</p>
+                <p className="text-[10px] text-muted-foreground">
+                  Neck/lean from head pitch — warn after a sustained hold.
+                </p>
+              </div>
+              <Toggle
+                label="Posture coach"
+                on={prefs.postureCoachEnabled}
+                onChange={(v) => patch({ postureCoachEnabled: v })}
+              />
+            </div>
+            {prefs.postureCoachEnabled ? (
+              <div className="flex flex-wrap items-center gap-3">
+                <Num
+                  value={prefs.postureWarnMinutes}
+                  onChange={(n) => patch({ postureWarnMinutes: n })}
+                  min={1}
+                  max={15}
+                  suffix="min poor posture"
+                />
+                <Num
+                  value={prefs.postureScoreThreshold}
+                  onChange={(n) => patch({ postureScoreThreshold: n })}
+                  min={25}
+                  max={80}
+                  suffix="score floor"
+                />
+              </div>
+            ) : null}
+          </div>
+        ) : null}
         {!focusShell ? (
           <p className="text-[10px] text-muted-foreground">
             Works in design host and Focus desktop. Grant camera when prompted.

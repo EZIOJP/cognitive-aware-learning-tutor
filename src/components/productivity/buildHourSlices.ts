@@ -4,6 +4,7 @@
  * Aligns with mergeForCalendar + backend/planner/hour_slices.py clipping.
  */
 import type { ActualSession } from "../../api/plannerClient";
+import { agentDebugLog } from "../../lib/agentDebugLog";
 import type { HourSlice, HourSliceSource, SessionSegment } from "./hourSliceTypes";
 import { mergeForCalendar, shortAppName, type MergedInterval } from "./planVsActualUtils";
 import { format } from "date-fns";
@@ -60,10 +61,22 @@ function clipRunToHour(m: MergedInterval, hourStart: Date): HourSeg | null {
   startMin = Math.max(0, Math.min(59, startMin));
   if (endMin <= startMin) endMin = Math.min(60, startMin + 1);
   const sleep = isSleepMerged(m);
+  let sleepLabel = "Sleep";
+  if (sleep) {
+    // Keep real wall-clock span in the chip so wake-day clips (00:00…) don't look
+    // like a fake midnight bedtime.
+    const rs = new Date(m.start_time);
+    const re = new Date(m.end_time);
+    if (Number.isFinite(rs.getTime()) && Number.isFinite(re.getTime())) {
+      const fmt = (d: Date) =>
+        d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+      sleepLabel = `Sleep · ${fmt(rs)}–${fmt(re)}`;
+    }
+  }
   return {
     session_group_id: `${m.app_name || m.category || "act"}|${m.start_time}`,
     source: sourceTag(m),
-    app_or_label: sleep ? "Sleep" : shortAppName(m.app_name) || m.category || "Activity",
+    app_or_label: sleep ? sleepLabel : shortAppName(m.app_name) || m.category || "Activity",
     category: sleep ? "Sleep" : m.category || "Other",
     start_min: startMin,
     end_min: endMin,
@@ -128,6 +141,46 @@ export function buildHourSlicesFromSessions(
   const out: HourSlice[] = [];
   let pins = new Map<string, number>();
 
+  // Overnight sleep that started last evening: expose as negative hours so the
+  // wake-day track can show a leading 11 PM row (not a fake midnight bedtime).
+  let leadFrom = 0;
+  for (const m of merged) {
+    if (!isSleepMerged(m)) continue;
+    const t0 = new Date(m.start_time).getTime();
+    const t1 = new Date(m.end_time).getTime();
+    if (!Number.isFinite(t0) || !Number.isFinite(t1)) continue;
+    if (t0 >= dayStart.getTime() || t1 <= dayStart.getTime()) continue;
+    const startHour = new Date(t0).getHours();
+    const hoursBefore = Math.ceil((dayStart.getTime() - t0) / 3_600_000);
+    leadFrom = Math.max(leadFrom, Math.min(6, Math.max(1, hoursBefore)));
+    for (let h = startHour; h < 24; h++) {
+      const hourStart = new Date(t0);
+      hourStart.setHours(h, 0, 0, 0);
+      if (hourStart.getTime() >= dayStart.getTime()) break;
+      const clip = clipRunToHour(m, hourStart);
+      if (!clip) continue;
+      const railHour = h - 24; // e.g. 23 → -1
+      out.push({
+        date: dateKey,
+        hour: railHour,
+        lane_count: 1,
+        segments: [
+          {
+            session_group_id: clip.session_group_id,
+            source: clip.source,
+            app_or_label: clip.app_or_label,
+            category: clip.category,
+            start_min: clip.start_min,
+            end_min: clip.end_min,
+            lane_index: 0,
+            total_lanes_this_hour: 1,
+            session_ids: clip.session_ids,
+            duration_min: Math.max(0, clip.end_min - clip.start_min),
+          },
+        ],
+      });
+    }
+  }
   for (let hour = 0; hour < 24; hour++) {
     const hourStart = new Date(dayStart);
     hourStart.setHours(hour, 0, 0, 0);
@@ -153,5 +206,49 @@ export function buildHourSlicesFromSessions(
     }));
     out.push({ date: dateKey, hour, lane_count: laneCount, segments });
   }
+  // #region agent log
+  {
+    const sleepHours = out
+      .filter((h) => h.segments.some((s) => s.source === "sleep"))
+      .map((h) => ({
+        hour: h.hour,
+        segs: h.segments
+          .filter((s) => s.source === "sleep")
+          .map((s) => ({ start_min: s.start_min, end_min: s.end_min })),
+      }));
+    const deskHours = out.filter((h) => h.segments.some((s) => s.source === "desktop")).length;
+    const mergedSleep = merged.filter(isSleepMerged).map((m) => ({
+      start: m.start_time,
+      end: m.end_time,
+      localStart: new Date(m.start_time).toString(),
+      localEnd: new Date(m.end_time).toString(),
+    }));
+    agentDebugLog({
+      hypothesisId: "D",
+      location: "buildHourSlices.ts",
+      message: "hour slices built",
+      data: {
+        dateKey,
+        sessionCount: sessions.length,
+        mergedCount: merged.length,
+        sliceHours: out.length,
+        deskHoursWithSegs: deskHours,
+        sleepHours,
+        mergedSleep,
+        negRail: out.filter((h) => h.hour < 0).map((h) => h.hour),
+        leadFrom,
+      },
+    });
+  }
+  // #endregion
   return out;
+}
+
+/** Leading rail hours (negative slice.hour count) for overnight sleep on wake day. */
+export function overnightLeadHoursFromSlices(slices: HourSlice[]): number {
+  let minH = 0;
+  for (const s of slices) {
+    if (s.hour < minH) minH = s.hour;
+  }
+  return minH < 0 ? -minH : 0;
 }

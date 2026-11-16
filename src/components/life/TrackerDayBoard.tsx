@@ -1,11 +1,81 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router";
-import { Activity, AlertTriangle, Target, Zap } from "lucide-react";
+import { Activity, AlertTriangle, Footprints, Target, Zap } from "lucide-react";
 import { fetchDayStatus, type DayStatusResponse } from "../../api/behaviorClient";
+import { fetchWearableStatus } from "../../api/wearablesClient";
+import { fetchEnforcerStatusMirror, fetchDayRollupMirror } from "../../api/focusMirrors";
+import { isFocusDesktopShell } from "../../utils/focusDesktopShell";
+import { formatHoursMins } from "../../utils/formatDuration";
 import { scoreColor } from "../productivity/GlanceBar";
-import { CommunityRanksPanel } from "./CommunityRanksPanel";
+
+function zeppStepsFromWearableDay(wd: NonNullable<Awaited<ReturnType<typeof fetchWearableStatus>>>["wearable_day"]): number | null {
+  if (!wd) return null;
+  const collector = wd.payload && typeof wd.payload === "object" ? (wd.payload as { collector?: { daily?: Record<string, unknown> } }).collector : null;
+  const raw = collector?.daily?.steps;
+  if (typeof raw === "number" && Number.isFinite(raw)) return raw;
+  if (wd.data_quality?.steps_ok === true && typeof wd.steps === "number" && Number.isFinite(wd.steps)) {
+    return wd.steps;
+  }
+  // FE zero-fill when Zepp row is missing — do not show as real steps.
+  return null;
+}
+
+async function fetchFocusDayBoard(): Promise<DayStatusResponse> {
+  const [wear, enf, rollup] = await Promise.all([
+    fetchWearableStatus().catch(() => null),
+    fetchEnforcerStatusMirror().catch(() => null),
+    fetchDayRollupMirror().catch(() => null),
+  ]);
+  const wd = wear?.wearable_day;
+  const ls = wear?.last_sync;
+  const productive = Math.max(0, Math.floor(Number(rollup?.productive_minutes) || 0));
+  const goal = Math.max(1, Math.floor(Number(rollup?.daily_focus_minutes) || 480));
+  const goalPct = Math.min(100, Math.round((productive / goal) * 100));
+  const steps = zeppStepsFromWearableDay(wd);
+  const fromZepp = wd?.source === "zeppbridge";
+  return {
+    ok: true,
+    schema: 1,
+    day: wd?.local_date || rollup?.local_date || new Date().toISOString().slice(0, 10),
+    browser_mode: "focus",
+    browser_mode_label: "Focus",
+    tracker_alive: true,
+    hard_block: {
+      armed: Boolean(enf?.armed),
+      locked: false,
+    },
+    desktop: {
+      control: "calt_focus",
+      enforcer_owns_kills: true,
+      hint: fromZepp
+        ? "ZeppBridge pull"
+        : wear?.reachable
+          ? "CALT Sync hub up"
+          : "Pull ZeppBridge or start hub :8765",
+    },
+    wearables: {
+      sleep_hours: wd?.sleep_hours ?? ls?.last_sleep_hours ?? null,
+      sleep_score: wd?.sleep_score ?? ls?.last_sleep_quality ?? null,
+      sleep_label: wd?.sleep_label ?? null,
+      steps,
+    },
+    productivity: {
+      pulse: goalPct,
+      pulse_label: fromZepp ? "ZeppBridge" : wear?.reachable ? "Hub up" : "Hub idle",
+      goal_pct: goalPct,
+      productive_label: formatHoursMins(productive),
+      goal_met: Boolean(rollup?.goal_met) || productive >= goal,
+      alerts: [],
+      focus_quality: {
+        score: steps != null ? Math.min(100, Math.round((Number(steps) / 8000) * 100)) : undefined,
+        label: steps != null ? `${Number(steps).toLocaleString()} steps` : "Waiting for Zepp day metrics",
+      },
+    },
+  };
+}
 
 export function TrackerDayBoard() {
+  const focusShell = isFocusDesktopShell();
   const [status, setStatus] = useState<DayStatusResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -14,14 +84,14 @@ export function TrackerDayBoard() {
     setBusy(true);
     setError(null);
     try {
-      const data = await fetchDayStatus();
+      const data = focusShell ? await fetchFocusDayBoard() : await fetchDayStatus();
       setStatus(data);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
       setBusy(false);
     }
-  }, []);
+  }, [focusShell]);
 
   useEffect(() => {
     void refresh();
@@ -35,27 +105,26 @@ export function TrackerDayBoard() {
   const alert = (p?.alerts || []).find((a) => a.triggered);
 
   return (
-    <section className="gloss-panel rounded-2xl p-5 space-y-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
+    <section className="gloss-panel rounded-2xl p-4 sm:p-5 space-y-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <span className="text-xs uppercase tracking-wide text-muted-foreground">Tracker board</span>
-          <h2 className="text-lg font-semibold mt-0.5">Today at a glance</h2>
-          <p className="text-sm text-muted-foreground mt-1">
-            Unified day-status — same payload as CALT Android and hub.
+          <h2 className="text-[15px] font-semibold tracking-tight">Today</h2>
+          <p className="text-[11px] text-muted-foreground mt-0.5">
+            {status?.desktop?.hint || "Focus · watch · tracker"}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           <button
             type="button"
             onClick={() => void refresh()}
             disabled={busy}
-            className="text-xs rounded-lg border border-border/50 px-2.5 py-1 hover:bg-muted/40 disabled:opacity-50"
+            className="text-[11px] rounded-lg border border-border/50 px-2.5 py-1 hover:bg-muted/40 disabled:opacity-50"
           >
-            {busy ? "Refreshing…" : "Refresh"}
+            {busy ? "…" : "Refresh"}
           </button>
           <Link
             to="/productivity?tab=calendar"
-            className="text-xs rounded-lg border border-border/50 px-2.5 py-1 hover:bg-muted/40"
+            className="text-[11px] rounded-lg border border-border/50 px-2.5 py-1 hover:bg-muted/40"
           >
             Calendar
           </Link>
@@ -65,75 +134,69 @@ export function TrackerDayBoard() {
       {error ? <p className="text-sm text-rose-300">{error}</p> : null}
 
       {!status && busy ? (
-        <p className="text-sm text-muted-foreground">Loading tracker snapshot…</p>
+        <p className="text-sm text-muted-foreground">Loading…</p>
       ) : null}
 
       {status ? (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="rounded-xl border border-border/40 bg-muted/10 p-3">
-            <div className="flex items-center gap-2 text-muted-foreground text-xs mb-1">
-              <Zap className="w-3.5 h-3.5" />
-              Pulse
+        <div className="grid gap-2 grid-cols-2 lg:grid-cols-4">
+          <div className="rounded-xl border border-border/40 bg-muted/10 px-3 py-2.5">
+            <div className="flex items-center gap-1.5 text-muted-foreground text-[10px] uppercase tracking-wide mb-1">
+              <Zap className="w-3 h-3" />
+              Goal
             </div>
-            <p className={`text-2xl font-semibold tabular-nums ${scoreColor(p?.pulse ?? 0)}`}>
-              {p?.pulse ?? "—"}
+            <p className={`text-xl font-semibold tabular-nums ${scoreColor(p?.pulse ?? p?.goal_pct ?? 0)}`}>
+              {p?.goal_pct ?? 0}%
             </p>
-            <p className="text-xs text-muted-foreground">{p?.pulse_label ?? "No data"}</p>
-          </div>
-
-          <div className="rounded-xl border border-border/40 bg-muted/10 p-3">
-            <div className="flex items-center gap-2 text-muted-foreground text-xs mb-1">
-              <Target className="w-3.5 h-3.5" />
-              Daily goal
-            </div>
-            <p className="text-2xl font-semibold tabular-nums">{p?.goal_pct ?? 0}%</p>
-            <p className="text-xs text-muted-foreground">
-              {p?.productive_label ?? "—"} productive
+            <p className="text-[11px] text-muted-foreground truncate">
+              {p?.productive_label ?? "—"}
               {p?.goal_met ? " · met" : ""}
             </p>
           </div>
 
-          <div className="rounded-xl border border-border/40 bg-muted/10 p-3">
-            <div className="flex items-center gap-2 text-muted-foreground text-xs mb-1">
-              <Activity className="w-3.5 h-3.5" />
-              Focus quality
+          <div className="rounded-xl border border-border/40 bg-muted/10 px-3 py-2.5">
+            <div className="flex items-center gap-1.5 text-muted-foreground text-[10px] uppercase tracking-wide mb-1">
+              <Footprints className="w-3 h-3" />
+              Steps
             </div>
-            <p className="text-2xl font-semibold tabular-nums">
-              {p?.focus_quality?.score ?? "—"}
+            <p className="text-xl font-semibold tabular-nums">
+              {w?.steps != null ? Number(w.steps).toLocaleString() : "—"}
             </p>
-            <p className="text-xs text-muted-foreground">
-              {p?.focus_quality?.label ?? "—"}
-              {p?.focus_quality?.switches != null ? ` · ${p.focus_quality.switches} switches` : ""}
+            <p className="text-[11px] text-muted-foreground truncate">
+              {p?.focus_quality?.label ?? "Watch"}
             </p>
           </div>
 
-          <div className="rounded-xl border border-border/40 bg-muted/10 p-3">
-            <div className="flex items-center gap-2 text-muted-foreground text-xs mb-1">
+          <div className="rounded-xl border border-border/40 bg-muted/10 px-3 py-2.5">
+            <div className="flex items-center gap-1.5 text-muted-foreground text-[10px] uppercase tracking-wide mb-1">
+              <Activity className="w-3 h-3" />
               Mode
             </div>
             <p className="text-base font-semibold">{status.browser_mode_label ?? status.browser_mode}</p>
-            <p className="text-xs text-muted-foreground">
-              Hard-block {hb?.armed ? "armed" : "off"}
-              {hb?.locked ? " · locked" : ""}
-              {status.incubation?.active
-                ? ` · incubation ${Math.max(0, Math.round((status.incubation.remaining_sec || 0) / 60))}m`
-                : ""}
-              {status.desktop?.enforcer_owns_kills ? " · enforcer on" : ""}
-              {status.tracker_alive ? " · tracker on" : " · tracker idle"}
+            <p className="text-[11px] text-muted-foreground truncate">
+              Arm {hb?.armed ? "on" : "off"}
+              {status.tracker_alive ? " · tracker" : ""}
             </p>
-            {status.desktop?.hint ? (
-              <p className="text-[11px] text-muted-foreground mt-1">{status.desktop.hint}</p>
-            ) : (
-              <p className="text-[11px] text-muted-foreground mt-1">
-                Control: CALT Desktop · Focus · sites: CALT Gate
-              </p>
-            )}
+          </div>
+
+          <div className="rounded-xl border border-border/40 bg-muted/10 px-3 py-2.5">
+            <div className="flex items-center gap-1.5 text-muted-foreground text-[10px] uppercase tracking-wide mb-1">
+              <Target className="w-3 h-3" />
+              Sleep
+            </div>
+            <p className="text-xl font-semibold tabular-nums">
+              {w?.sleep_hours != null && Number(w.sleep_hours) > 0
+                ? `${Number(w.sleep_hours).toFixed(1)}h`
+                : "—"}
+            </p>
+            <p className="text-[11px] text-muted-foreground truncate">
+              {w?.sleep_label || (w?.sleep_score != null ? `score ${w.sleep_score}` : "from watch")}
+            </p>
           </div>
         </div>
       ) : null}
 
       {status && (alert || w?.recovery_hint?.label || p?.study_mode_nudge?.active) ? (
-        <div className="space-y-2 text-sm">
+        <div className="space-y-1.5 text-sm">
           {alert ? (
             <p className="flex items-center gap-2 text-amber-300">
               <AlertTriangle className="w-4 h-4 shrink-0" />
@@ -141,7 +204,7 @@ export function TrackerDayBoard() {
             </p>
           ) : null}
           {w?.recovery_hint?.label ? (
-            <p className="text-muted-foreground">
+            <p className="text-muted-foreground text-xs">
               Recovery: {w.recovery_hint.label}
               {w.recovery_hint.suggested_focus_hours != null
                 ? ` · ~${w.recovery_hint.suggested_focus_hours}h suggested focus`
@@ -149,61 +212,21 @@ export function TrackerDayBoard() {
             </p>
           ) : null}
           {p?.study_mode_nudge?.active ? (
-            <p className="text-violet-300">Study mode nudge active after distraction alert</p>
+            <p className="text-violet-300 text-xs">Focus nudge active after distraction alert</p>
           ) : null}
         </div>
       ) : null}
 
-      {status?.comms ? (
+      {!focusShell && status?.comms ? (
         <div className="rounded-xl border border-border/40 bg-muted/10 p-3 text-sm space-y-1">
           <p className="text-xs uppercase tracking-wide text-muted-foreground">Comms</p>
           <p>
             Extension {status.comms.extension?.status ?? "unknown"}
             {status.comms.api_up ? " · API up" : " · API down"}
             {status.comms.web_up ? " · Web up" : " · Web down"}
-            {status.comms.startup_grace ? " · startup grace" : ""}
           </p>
-          <p className="text-xs text-muted-foreground">
-            SelfTracker {status.comms.extension?.selftracker_status ?? "—"}
-            {status.comms.extension?.selftracker_age_s != null
-              ? ` (${Math.round(status.comms.extension.selftracker_age_s)}s)`
-              : " (never)"}
-            {" · "}Gate {status.comms.extension?.calt_gate_status ?? "—"}
-            {status.comms.extension?.calt_gate_age_s != null
-              ? ` (${Math.round(status.comms.extension.calt_gate_age_s)}s)`
-              : " (never)"}
-            {(status.comms.extension?.false_positives || []).length
-              ? ` · FP ${status.comms.extension?.false_positives?.join(", ")}`
-              : ""}
-            {(status.comms.extension?.false_negatives || []).length
-              ? ` · FN ${status.comms.extension?.false_negatives?.join(", ")}`
-              : ""}
-          </p>
-          {status.comms.current_issue?.why ? (
-            <p className="text-amber-200 text-xs">Why: {status.comms.current_issue.why}</p>
-          ) : null}
-          {status.comms.current_issue?.how_to_fix ? (
-            <p className="text-xs text-muted-foreground">Fix: {status.comms.current_issue.how_to_fix}</p>
-          ) : null}
-          {(status.comms.why_rules_idle || []).slice(0, 2).map((line) => (
-            <p key={line} className="text-xs text-muted-foreground">
-              {line}
-            </p>
-          ))}
-          {status.comms.last_incident?.kind === "edge_closed" ? (
-            <p className="text-amber-300 text-xs">
-              Last Edge close: {status.comms.last_incident.why}
-            </p>
-          ) : null}
-          {status.comms.edge_policy?.may_close_edge ? (
-            <p className="text-amber-300 text-xs">Edge close allowed — extension confirmed absent</p>
-          ) : (
-            <p className="text-xs text-muted-foreground">Edge stays open while the extension is active or stale</p>
-          )}
         </div>
       ) : null}
-
-      <CommunityRanksPanel compact />
     </section>
   );
 }

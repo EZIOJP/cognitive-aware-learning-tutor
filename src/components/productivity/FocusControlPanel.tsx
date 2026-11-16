@@ -6,8 +6,6 @@ import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { Link } from "react-router";
 import {
   fetchFocusDashboard,
-  postFocusFreeOverride,
-  postFocusSpendEarned,
   putEnforcerPolicy,
   type FocusDashboardSnapshot,
 } from "../../api/behaviorClient";
@@ -17,7 +15,7 @@ import {
 } from "../../api/focusMirrors";
 import { enforcerNativeCmd, isFocusEnforcerBridgeAvailable } from "../../lib/enforcerNativeCmd";
 import { invalidateFocusStatusBus } from "../../lib/focusStatusBus";
-import { useFocusStatus } from "../../hooks/useFocusStatus";
+import { useFocusStatus, useFreeDay } from "../../hooks/useFocusStatus";
 import { isFocusDesktopShell } from "../../utils/focusDesktopShell";
 import { focusDataUrl } from "../../utils/focusDataUrl";
 
@@ -53,7 +51,7 @@ async function loadOfflineSoftLandWhy(): Promise<OfflineSoftLandWhy | null> {
       why = "Incubation active (offline). Entertainment stays blocked until the clock below.";
       untilLabel = incub;
     } else if (free) {
-      why = "Free window on file (offline). Spend earned minutes from Unlock → Now.";
+      why = "Free window on file. Sites can open. Games and apps stay on their time limits and kill list.";
       untilLabel = free;
     }
     return {
@@ -95,6 +93,7 @@ export function FocusControlPanel() {
   const [offlineWhy, setOfflineWhy] = useState<OfflineSoftLandWhy | null>(null);
   const [offlineEnf, setOfflineEnf] = useState<EnforcerStatusMirror | null>(null);
   const status = useFocusStatus();
+  const freeDay = useFreeDay();
 
   // Prefer shared bus for SoftLand/Arm chips — avoids a second pipe poller.
   useEffect(() => {
@@ -112,7 +111,7 @@ export function FocusControlPanel() {
         why = "Incubation active. Entertainment stays blocked until the clock below.";
         untilLabel = incub;
       } else if (free) {
-        why = "Free window on file. Spend earned minutes from Unlock → Now.";
+        why = "Free window on file. Sites can open. Games and apps stay on their time limits and kill list.";
         untilLabel = free;
       }
       setOfflineWhy({
@@ -184,9 +183,7 @@ export function FocusControlPanel() {
   }, [hint]);
 
   const active = snap?.active;
-  const earned = snap?.earned;
   const inc = snap?.incubation;
-  const actions = snap?.actions;
   const enf = snap?.enforcer;
   const pol = snap?.enforcer_policy;
 
@@ -215,56 +212,13 @@ export function FocusControlPanel() {
       (lockModeActive === "timer" && !pol?.lock_until_unix));
   const killListLocked = strongLockActive;
 
-  async function onFree() {
-    if (!actions?.can_pin_free || actions?.incubation_blocks_pin) return;
-    const pin = window.prompt("TRACKER_EXIT_PIN (or leave blank if unset)") ?? "";
-    setBusy(true);
-    try {
-      const res = await postFocusFreeOverride(pin);
-      setSnap(res.snapshot);
-      setHint("Free-time override applied.");
-    } catch (e) {
-      window.alert(e instanceof Error ? e.message : String(e));
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function onSpend() {
-    if (!actions?.can_spend_earned) return;
-    const bal = earned?.balance_minutes ?? 0;
-    const raw = window.prompt(`Spend how many earned minutes? (balance ${bal})`, String(Math.min(15, bal)));
-    if (raw == null) return;
-    const minutes = Math.max(1, Math.min(bal, parseInt(raw, 10) || 15));
-    setBusy(true);
-    try {
-      if (isFocusEnforcerBridgeAvailable()) {
-        const native = await enforcerNativeCmd("softland.spend_free", { minutes });
-        if (native?.ok) {
-          setHint(`Spent ${minutes} earned minute(s) via enforcer gateway.`);
-          window.setTimeout(() => {
-            invalidateFocusStatusBus({ pipe: true });
-            void refresh();
-          }, 400);
-          return;
-        }
-        if (native && native.error === "insufficient_ledger") {
-          throw new Error("Not enough earned minutes in native ledger.");
-        }
-        // fall through to HTTP if gateway rejected for other reasons
-      }
-      const pin = window.prompt("TRACKER_EXIT_PIN (or leave blank if unset)") ?? "";
-      const res = await postFocusSpendEarned(pin, minutes);
-      setSnap(res.snapshot);
-      setHint(`Spent ${minutes} earned minute(s).`);
-    } catch (e) {
-      window.alert(e instanceof Error ? e.message : String(e));
-    } finally {
-      setBusy(false);
-    }
-  }
-
   async function setArmed(armed: boolean) {
+    if (!freeDay) {
+      setHint(
+        "Arm changes after Confirm need a free day or day pass. During morning planning, finish Plan → Confirm first.",
+      );
+      return;
+    }
     setBusy(true);
     try {
       const killList = exes.map((s) => s.trim()).filter(Boolean);
@@ -614,42 +568,6 @@ export function FocusControlPanel() {
             </div>
           )}
 
-          <div className="rounded-xl border border-border bg-card/60 p-4 space-y-2 md:col-span-2">
-            <p className="text-xs text-muted-foreground">Earned free time</p>
-            <p className="text-sm flex justify-between">
-              <span>Balance</span>
-              <strong>{earned?.balance_minutes ?? 0} min</strong>
-            </p>
-            <p className="text-sm flex justify-between text-muted-foreground">
-              <span>Earned today</span>
-              <span>
-                {earned?.daily_earned ?? 0} / {earned?.daily_cap ?? 60}
-              </span>
-            </p>
-          </div>
-        </div>
-      </SectionBar>
-
-      <SectionBar title="Actions">
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            disabled={busy || !actions?.can_pin_free || !!actions?.incubation_blocks_pin}
-            onClick={() => void onFree()}
-            className="rounded-lg bg-emerald-600/20 border border-emerald-500/40 px-3 py-2 text-sm text-emerald-100 disabled:opacity-40"
-          >
-            Free time (PIN)…
-          </button>
-          <button
-            type="button"
-            disabled={
-              busy || !actions?.can_spend_earned || !(earned?.balance_minutes && earned.balance_minutes > 0)
-            }
-            onClick={() => void onSpend()}
-            className="rounded-lg bg-emerald-600/20 border border-emerald-500/40 px-3 py-2 text-sm text-emerald-100 disabled:opacity-40"
-          >
-            Spend earned…
-          </button>
         </div>
       </SectionBar>
 
@@ -657,6 +575,9 @@ export function FocusControlPanel() {
         <p className="text-[11px] text-muted-foreground -mt-1 mb-2 max-w-xl">
           Arm on: kills processes on the kill list about every 1.5s. Arm off: no OS kills. Edit the
           list under Blocks → Apps. SoftLand site lists never belong here.
+          {!freeDay
+            ? " Arm and disarm on a free day or a day pass (not during morning Plan)."
+            : ""}
         </p>
         <div className="rounded-xl border border-rose-400/20 bg-card/60 p-4 space-y-3 max-w-xl">
           <div className="flex flex-wrap items-center gap-2">
@@ -702,14 +623,16 @@ export function FocusControlPanel() {
               <span className="text-xs text-muted-foreground">Kill list (from policy)</span>
               <a
                 className="rounded-lg border border-sky-500/40 bg-sky-500/10 px-2.5 py-1 text-[11px] text-sky-100 hover:bg-sky-500/20"
-                href="/productivity?tab=settings#rules"
+                href="/productivity?tab=settings&section=apps"
               >
-                Edit in Blocking rules →
+                Edit kill list →
               </a>
             </div>
             <div className="flex flex-wrap gap-1.5 min-h-[2rem]">
               {exes.length === 0 ? (
-                <span className="text-[11px] text-muted-foreground">Empty — add exes under #rules before Arm.</span>
+                <span className="text-[11px] text-muted-foreground">
+                  Empty — add exes under Blocks → Apps before Arm.
+                </span>
               ) : (
                 exes.map((exe) => (
                   <span
@@ -723,14 +646,17 @@ export function FocusControlPanel() {
             </div>
             <p className="text-[11px] text-muted-foreground">
               CRUD + presets live only at{" "}
-              <a className="underline text-sky-300/90" href="/productivity?tab=settings#rules">
-                Settings → Blocking rules (#rules)
+              <a
+                className="underline text-sky-300/90"
+                href="/productivity?tab=settings&section=apps"
+              >
+                Settings → Blocks → Apps
               </a>
-              {" "}— Focus Arms the saved list (no second editor).
+              {" "}— Unlock Arms the saved list (no second editor).
             </p>
             {killListLocked ? (
               <p className="text-[11px] text-amber-200/90">
-                Locked while armed — unlock/disarm to edit the list at #rules.
+                Locked while armed — unlock/disarm to edit the list under Blocks → Apps.
               </p>
             ) : null}
           </div>
@@ -785,8 +711,8 @@ export function FocusControlPanel() {
                 onChange={(e) => void setProtectUninstallOn(e.target.checked)}
               />
               <span>
-                Protect uninstall (option B) — hide from Apps &amp; features; require Focus unlock
-                password/phrase to show again. Admin can still bypass.
+                Protect uninstall — best-effort hide from Apps &amp; features; require Focus unlock
+                password/phrase to show again. Admin can still bypass. Not a full SoftLand lock.
               </span>
             </label>
             {(protectUninstall || pol?.protect_uninstall) && (
@@ -807,7 +733,7 @@ export function FocusControlPanel() {
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
-              disabled={busy}
+              disabled={busy || !freeDay}
               onClick={() => void setArmed(true)}
               className="rounded-lg bg-rose-600/20 border border-rose-500/40 px-3 py-2 text-sm text-rose-100 disabled:opacity-40"
             >
@@ -815,7 +741,7 @@ export function FocusControlPanel() {
             </button>
             <button
               type="button"
-              disabled={busy}
+              disabled={busy || !freeDay}
               onClick={() => void setArmed(false)}
               className="rounded-lg border border-border px-3 py-2 text-sm hover:bg-muted/40 disabled:opacity-40"
             >
@@ -832,10 +758,16 @@ export function FocusControlPanel() {
       <SectionBar title="Related">
         <div className="flex flex-wrap gap-2 text-sm">
           <Link
-            to="/productivity"
+            to="/productivity?tab=calendar"
             className="rounded-lg border border-border px-3 py-1.5 text-muted-foreground hover:text-foreground"
           >
             Calendar
+          </Link>
+          <Link
+            to="/productivity?tab=settings&section=apps"
+            className="rounded-lg border border-border px-3 py-1.5 text-muted-foreground hover:text-foreground"
+          >
+            Blocks → Apps
           </Link>
           <Link
             to="/bible"

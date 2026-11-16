@@ -164,7 +164,7 @@ export function ConfirmPlanButton({
     return (
       <p className="inline-flex items-center gap-1.5 text-sm text-emerald-200">
         <CheckCircle2 className="size-4 shrink-0" />
-        Plan confirmed — SoftLand + Arm on for study
+        Plan confirmed — SoftLand + Arm on for the day
       </p>
     );
   }

@@ -2,7 +2,12 @@
  * Focus shell mirrors via calt-data.app (WebView2) or /calt-data (dev:focus :5174).
  * Phase 5: day_rollup + enforcer_status for core stats / Arm display offline.
  */
-import type { DesktopStats, GoalsStatusResponse } from "./behaviorClient";
+import type {
+  ActivitiesResponse,
+  ActivityRow,
+  DesktopStats,
+  GoalsStatusResponse,
+} from "./behaviorClient";
 import { isFocusDesktopShell } from "../utils/focusDesktopShell";
 import { focusDataUrl } from "../utils/focusDataUrl";
 import { timedFocusFetch } from "../lib/focusPerfLog";
@@ -13,6 +18,8 @@ export type DayRollupMirror = {
   updated_at?: string;
   productive_minutes?: number;
   productive_seconds?: number;
+  /** All tracked seconds today (productive + other), when enforcer publishes it. */
+  total_seconds?: number;
   daily_focus_minutes?: number;
   threshold?: number;
   session_count?: number;
@@ -29,6 +36,10 @@ export type EnforcerStatusMirror = {
   pid?: number;
   service_running?: boolean;
   softland_or_armed?: boolean;
+  focus_running?: boolean;
+  focus_relaunch_count?: number;
+  focus_last_relaunch_at?: string;
+  focus_relaunch_suppressed?: boolean;
   updated_at?: string;
 };
 
@@ -113,15 +124,48 @@ export async function fetchDayStatusMirror(): Promise<Record<string, unknown> | 
   }
 }
 
+/** day_activities.json — ranked apps for Activities panel (no Study :8000). */
+export async function fetchDayActivitiesMirror(): Promise<ActivitiesResponse | null> {
+  if (!isFocusDesktopShell()) return null;
+  try {
+    const res = await timedFocusFetch("day_activities.json", focusDataUrl("day_activities.json"), {
+      cache: "no-store",
+    });
+    if (!res.ok) return null;
+    const j = (await res.json()) as Partial<ActivitiesResponse> & { activities?: ActivityRow[] };
+    if (!j || typeof j !== "object" || !Array.isArray(j.activities)) return null;
+    return {
+      date: (j.date && String(j.date)) || todayIsoLocal(),
+      total_seconds:
+        typeof j.total_seconds === "number" && Number.isFinite(j.total_seconds)
+          ? Math.max(0, Math.floor(j.total_seconds))
+          : 0,
+      activities: j.activities,
+      uncategorized_count:
+        typeof j.uncategorized_count === "number" && Number.isFinite(j.uncategorized_count)
+          ? Math.max(0, Math.floor(j.uncategorized_count))
+          : j.activities.filter((a) => a?.uncategorized).length,
+    };
+  } catch {
+    return null;
+  }
+}
+
 /** Map rollup → DesktopStats shape for GlanceBar (zeros OK when missing). */
 export function dayRollupToDesktopStats(r: DayRollupMirror | null): DesktopStats {
   const productive = productiveSecondsFromRollup(r);
+  const total =
+    typeof r?.total_seconds === "number" && Number.isFinite(r.total_seconds)
+      ? Math.max(0, Math.floor(r.total_seconds))
+      : productive;
+  const score =
+    total > 0 ? Math.max(0, Math.min(100, Math.round((productive / total) * 100))) : 0;
   return {
     sessions: [],
-    total_seconds: productive,
-    avg_productivity_score: 0,
+    total_seconds: total,
+    avg_productivity_score: score,
     productive_seconds: productive,
-    distracting_seconds: 0,
+    distracting_seconds: Math.max(0, total - productive),
     source: r?.source || "day_rollup",
     date: (r?.local_date && String(r.local_date)) || todayIsoLocal(),
     tracker_running: Boolean(r?.session_count && r.session_count > 0),
@@ -148,12 +192,19 @@ export function emptyDesktopStats(day?: string): DesktopStats {
 export function dayRollupToGoalsStatus(r: DayRollupMirror | null): GoalsStatusResponse | null {
   if (!r) return null;
   const productive = productiveSecondsFromRollup(r);
-  const thresholdMin =
-    typeof r.threshold === "number" && Number.isFinite(r.threshold) ? Math.max(0, r.threshold) : 60;
-  const targetSeconds = Math.round(thresholdMin * 60);
+  // Goal minutes live in daily_focus_minutes — threshold is the productivity score cutoff.
+  const goalMin =
+    typeof r.daily_focus_minutes === "number" && Number.isFinite(r.daily_focus_minutes)
+      ? Math.max(0, r.daily_focus_minutes)
+      : 180;
+  const targetSeconds = Math.round(goalMin * 60);
   const pct =
     targetSeconds > 0 ? Math.min(100, Math.round((productive / targetSeconds) * 100)) : 0;
   const met = Boolean(r.goal_met);
+  const total =
+    typeof r.total_seconds === "number" && Number.isFinite(r.total_seconds)
+      ? Math.max(0, Math.floor(r.total_seconds))
+      : productive;
   return {
     date: (r.local_date && String(r.local_date)) || todayIsoLocal(),
     goals: [
@@ -169,6 +220,6 @@ export function dayRollupToGoalsStatus(r: DayRollupMirror | null): GoalsStatusRe
     ],
     alerts: [],
     productive_seconds: productive,
-    total_seconds: productive,
+    total_seconds: total,
   };
 }

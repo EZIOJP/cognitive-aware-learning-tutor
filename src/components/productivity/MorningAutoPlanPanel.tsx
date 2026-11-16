@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
 import { CheckCircle2, Clock, ListTodo, Sparkles } from "lucide-react";
+import { PlanningPrefsGearButton } from "./PlanningPrefsSheet";
 import { fetchPlannerBlocks, type PlannerBlock } from "../../api/plannerClient";
 import {
   confirmMorningPlan,
@@ -49,8 +50,8 @@ type Props = {
 };
 
 /**
- * Morning Plan sections — Auto plan · Today’s blocks · Confirm · mode hint.
- * Plan tab only (not Calendar overview).
+ * Morning Plan sections — Apply routines / Auto plan · Today’s blocks · Confirm.
+ * Plan-first day path (not Home short sessions). Plan tab only.
  */
 export function MorningAutoPlanPanel({
   day: dayProp,
@@ -239,6 +240,14 @@ export function MorningAutoPlanPanel({
 
   return (
     <div className="space-y-3">
+      <div className="flex flex-wrap items-center justify-between gap-2 px-0.5">
+        <p className="text-[11px] text-muted-foreground">
+          <span className="font-medium text-foreground/90">Bible → Plan → Apply / Confirm</span>
+          {" · "}
+          SoftLand and Arm stay out of planning
+        </p>
+        <PlanningPrefsGearButton />
+      </div>
       {mode && (
         <div
           className={`rounded-xl border px-3 py-2 text-[11px] ${
@@ -420,17 +429,20 @@ export function MorningAutoPlanPanel({
               )}
               Confirm
             </h3>
-            <span
-              className={`text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full border ${
-                morning?.plan_done
-                  ? "border-emerald-400/35 text-emerald-200/90"
-                  : confirm.windowOpen
-                    ? "border-amber-400/40 text-amber-100"
-                    : "border-white/20 text-muted-foreground"
-              }`}
-            >
-              {confirm.windowLabel}
-            </span>
+            <div className="flex flex-wrap items-center gap-2">
+              {!morning?.plan_done ? <PlanningPrefsGearButton /> : null}
+              <span
+                className={`text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full border ${
+                  morning?.plan_done
+                    ? "border-emerald-400/35 text-emerald-200/90"
+                    : confirm.windowOpen
+                      ? "border-amber-400/40 text-amber-100"
+                      : "border-white/20 text-muted-foreground"
+                }`}
+              >
+                {confirm.windowLabel}
+              </span>
+            </div>
           </div>
           <p
             className={`text-[11px] ${

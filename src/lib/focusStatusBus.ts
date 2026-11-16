@@ -91,6 +91,11 @@ let ticking = false;
 let pipeInFlight = false;
 let lastPipeAt = 0;
 let pushHealthyUntil = 0;
+/** Consecutive failed pipe probes before flipping pipeOk → false (stops live/down flicker). */
+let pipeFailStreak = 0;
+const PIPE_FAIL_STREAK_DOWN = 2;
+/** Mirror age that still counts as enforcer-alive when a probe times out. */
+const MIRROR_ALIVE_MS = 90_000;
 
 function emit() {
   for (const fn of listeners) {
@@ -235,29 +240,49 @@ async function tick(forcePipe = false): Promise<void> {
           isFocusEnforcerBridgeAvailable() &&
           Date.now() - lastPipeAt > PIPE_RECONCILE_EVERY_MS));
 
+    const mirrorAlive = (() => {
+      const m = enforcerStatus;
+      if (!m) return false;
+      if (!(m.owns || m.lock_present || m.armed != null)) return false;
+      const age = m.updated_at ? Date.now() - Date.parse(m.updated_at) : Infinity;
+      return Number.isFinite(age) && age < MIRROR_ALIVE_MS;
+    })();
+
     if (needPipe) {
       pipeInFlight = true;
       lastPipeAt = Date.now();
       try {
-        const r = await enforcerNativeCmd("status.snapshot", {}, 1500);
+        // Slightly longer timeout — gate UI used to stampede short probes and queue_drop.
+        const r = await enforcerNativeCmd("status.snapshot", {}, 2800);
         if (r && r.ok !== false && !r.error) {
           pipeOk = true;
+          pipeFailStreak = 0;
           source = "mirrors+pipe";
         } else if (r?.error === "timeout" || r?.error === "queue_dropped") {
-          pipeOk = false;
+          pipeFailStreak += 1;
+          // Keep prior ok while mirrors say enforcer is writing — avoids flicker.
+          if (pipeFailStreak >= PIPE_FAIL_STREAK_DOWN && !mirrorAlive) {
+            pipeOk = false;
+          }
         } else if (r) {
-          pipeOk = r.ok !== false;
+          const ok = r.ok !== false;
+          if (ok) {
+            pipeOk = true;
+            pipeFailStreak = 0;
+          } else {
+            pipeFailStreak += 1;
+            if (pipeFailStreak >= PIPE_FAIL_STREAK_DOWN && !mirrorAlive) pipeOk = false;
+          }
         }
       } catch {
-        pipeOk = false;
+        pipeFailStreak += 1;
+        if (pipeFailStreak >= PIPE_FAIL_STREAK_DOWN && !mirrorAlive) pipeOk = false;
       } finally {
         pipeInFlight = false;
       }
-    } else if (enforcerStatus?.owns || enforcerStatus?.lock_present) {
-      const age = enforcerStatus.updated_at
-        ? Date.now() - Date.parse(enforcerStatus.updated_at)
-        : Infinity;
-      if (Number.isFinite(age) && age < 45_000) pipeOk = true;
+    } else if (mirrorAlive) {
+      pipeOk = true;
+      pipeFailStreak = 0;
     }
 
     setSnap({

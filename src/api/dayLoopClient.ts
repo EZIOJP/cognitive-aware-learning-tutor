@@ -31,6 +31,8 @@ export type DayLoopSnapshot = {
   emergency_until: string | null;
   bible_done: boolean;
   plan_confirmed: boolean;
+  /** SoftLand goals.planning_enabled — false skips Confirm-plan morning phase. */
+  planning_enabled?: boolean;
   softland_enabled: boolean;
   tasks: DayLoopTask[];
 };
@@ -119,12 +121,16 @@ export async function evaluateDayClose(): Promise<{
   };
 }
 
-export async function setBedtime(bedtime_hm: string, wake_hm?: string): Promise<boolean> {
-  if (!isFocusEnforcerBridgeAvailable()) return false;
+export async function setBedtime(
+  bedtime_hm: string,
+  wake_hm?: string,
+): Promise<{ ok: boolean; error?: string }> {
+  if (!isFocusEnforcerBridgeAvailable()) return { ok: false, error: "enforcer_unreachable" };
   const payload: Record<string, string> = { bedtime_hm };
   if (wake_hm) payload.wake_hm = wake_hm;
   const r = await enforcerNativeCmd("softland.set_bedtime", payload);
-  return Boolean(r?.ok);
+  if (!r?.ok) return { ok: false, error: String(r?.error || "save_failed") };
+  return { ok: true };
 }
 
 export async function emergencyWinddown(minutes = 30): Promise<{ ok: boolean; error?: string }> {

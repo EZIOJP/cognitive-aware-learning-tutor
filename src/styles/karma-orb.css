@@ -1,0 +1,6 @@
+.karma-orb{position:relative;width:31px;height:31px;flex:0 0 31px;border:0;border-radius:999px;overflow:hidden;cursor:pointer;background:radial-gradient(circle at 38% 35%,#fff4b0 0 4%,#ffb000 18%,#8a3500 42%,#110d1d 72%);box-shadow:0 0 9px #ffb000,0 0 22px #ff8a004d;isolation:isolate}
+.karma-orb__ring{position:absolute;inset:4px;border:1px solid #ffe49a80;border-radius:50%;animation:karma-orb-spin 5s linear infinite}.karma-orb__ring--outer{inset:1px;border-style:dashed;animation-duration:8s}.karma-orb__ring--inner{transform:rotateX(58deg)}
+.karma-orb__core{position:absolute;inset:10px;border-radius:50%;background:#fff3bc;box-shadow:0 0 10px 4px #ffb000;animation:karma-orb-breathe 2s ease-in-out infinite}
+.karma-orb--thinking .karma-orb__ring{animation-duration:1.2s}.karma-orb--listening{box-shadow:0 0 10px #00d9ff,0 0 22px #00d9ff66;background:radial-gradient(circle,#d6fbff 0 6%,#00b8d9 28%,#063746 64%,#101217 100%)}.karma-orb--pulse .karma-orb__core{transform:scale(1.42)}
+@keyframes karma-orb-spin{to{transform:rotate(360deg)}}@keyframes karma-orb-breathe{50%{transform:scale(.72);opacity:.6}}
+@media (prefers-reduced-motion:reduce){.karma-orb__ring,.karma-orb__core{animation:none}}

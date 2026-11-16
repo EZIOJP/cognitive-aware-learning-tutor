@@ -363,7 +363,8 @@ export function LifeClockWidget({
           if (cancelled) return;
           setHub(payload);
           setLife(lifePayload);
-          setError(!payload);
+          // Focus can paint elapsed/remaining without Study hub segments.
+          setError(!payload && !lifePayload);
           const hubSleepM = Number(payload?.sleep_minutes || 0);
           setSleepMinutesOverride(hubSleepM > 0 ? hubSleepM : 0);
         })
@@ -960,7 +961,7 @@ export function LifeClockWidget({
     );
   }
 
-  if (error && !hub) {
+  if (error && !hub && !life) {
     return (
       <div className={cn(!embedded && "gloss-panel rounded-2xl p-5", "text-center py-8 space-y-2")}>
         <p className="text-sm text-muted-foreground">Could not load today&apos;s timeline.</p>

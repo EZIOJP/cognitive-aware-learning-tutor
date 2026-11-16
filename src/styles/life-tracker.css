@@ -78,34 +78,6 @@
   background: color-mix(in srgb, var(--foreground) 8%, transparent);
 }
 
-.life-tracker-source {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.7rem 0.95rem;
-  border: 1px solid color-mix(in srgb, var(--life-accent) 18%, var(--life-line));
-  border-radius: 0.85rem;
-  background: linear-gradient(90deg, var(--life-accent-soft), transparent 65%);
-  color: var(--life-muted);
-  font-size: 0.72rem;
-}
-
-.life-tracker-source > svg,
-.life-tracker-source > span:first-of-type {
-  color: var(--life-accent);
-}
-
-.life-tracker-source > span:first-of-type {
-  font-weight: 700;
-}
-
-.life-tracker-source__dot {
-  width: 0.25rem;
-  height: 0.25rem;
-  border-radius: 99px;
-  background: var(--life-violet);
-}
-
 .life-tracker-watch {
   position: relative;
   overflow: hidden;
@@ -213,22 +185,6 @@
   background: color-mix(in srgb, var(--card) 78%, transparent);
 }
 
-.life-tracker-pillars {
-  padding-top: 0.5rem;
-}
-
-.life-tracker-pillars__grid > * {
-  border-color: var(--life-line);
-  background: color-mix(in srgb, var(--card) 82%, transparent);
-  transition: border-color 180ms ease, transform 180ms ease, background 180ms ease;
-}
-
-.life-tracker-pillars__grid > *:hover {
-  border-color: color-mix(in srgb, var(--primary) 42%, var(--life-line));
-  background: color-mix(in srgb, var(--card) 94%, var(--primary) 3%);
-  transform: translateY(-2px);
-}
-
 @media (max-width: 720px) {
   .life-tracker-shell {
     padding: 1rem;
@@ -241,11 +197,6 @@
 
   .life-tracker-hero__controls {
     width: 100%;
-  }
-
-  .life-tracker-source {
-    align-items: flex-start;
-    flex-wrap: wrap;
   }
 
   .life-tracker-section-heading {

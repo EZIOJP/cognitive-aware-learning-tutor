@@ -5,6 +5,7 @@ import {
   putEnforcerPolicy,
   type FocusDashboardSnapshot,
 } from "../../api/behaviorClient";
+import { useFreeDay } from "../../hooks/useFocusStatus";
 
 /** Sensible subsets matching DEFAULT_HARD_BLOCK_EXES / Focus defaults. */
 const PRESETS: Record<string, string[]> = {
@@ -64,6 +65,7 @@ function killListLockedFrom(snap: FocusDashboardSnapshot | null): boolean {
 }
 
 export function AppKillRulesPanel() {
+  const freeDay = useFreeDay();
   const [snap, setSnap] = useState<FocusDashboardSnapshot | null>(null);
   const [exes, setExes] = useState<string[]>([]);
   const [draft, setDraft] = useState("");
@@ -123,7 +125,8 @@ export function AppKillRulesPanel() {
     void load();
   }, [load]);
 
-  const locked = killListLockedFrom(snap);
+  const passwordLocked = killListLockedFrom(snap);
+  const locked = passwordLocked || !freeDay;
   const armed = Boolean(snap?.enforcer_policy?.hard_block_armed || snap?.enforcer?.armed);
 
   const addExe = (raw: string) => {
@@ -200,7 +203,11 @@ export function AppKillRulesPanel() {
         </button>
       </div>
 
-      {locked ? (
+      {!freeDay ? (
+        <p className="text-xs text-amber-200/90">
+          The kill list changes on a free day or a day pass — not during morning Plan.
+        </p>
+      ) : passwordLocked ? (
         <p className="text-xs text-amber-200/90">
           Kill list locked while armed with password/phrase/timer — disarm on{" "}
           <a className="underline" href="/productivity?tab=settings&section=overview">

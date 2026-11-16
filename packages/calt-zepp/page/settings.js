@@ -9,6 +9,14 @@ import { screen } from './layout'
 import { queuedDays, loadChunkResume } from './queue'
 import { formatHoursMins } from '../shared/timeFmt'
 import { sidePayload } from '../shared/sidePayload'
+import {
+  autoSyncEnabled,
+  autoSyncHours,
+  setAutoSyncEnabled,
+  setAutoSyncHours,
+  applyAutoAlarm,
+  autoStatusLine,
+} from './autoAlarm'
 
 function payloadSummary() {
   try {
@@ -85,17 +93,18 @@ Page({
     })
     y += Math.round(height * 0.12)
 
-    vc.createWidget(widget.TEXT, {
+    this.autoLineW = vc.createWidget(widget.TEXT, {
       x: pad,
       y,
       w: contentW,
-      h: Math.round(height * 0.06),
-      color: 0xaaaaaa,
+      h: Math.round(height * 0.07),
+      color: 0xf0c674,
       text_size: Math.round(width * 0.03),
       align_h: align.CENTER_H,
-      text: 'Manual health dump · no plans',
+      text_style: text_style.WRAP,
+      text: autoStatusLine(),
     })
-    y += Math.round(height * 0.07)
+    y += Math.round(height * 0.08)
 
     vc.createWidget(widget.TEXT, {
       x: pad,
@@ -143,6 +152,30 @@ Page({
       })
       y += btnH + gap
     }
+
+    const refreshAutoLine = (extra) => {
+      if (!this.autoLineW) return
+      const base = autoStatusLine()
+      this.autoLineW.setProperty(prop.TEXT, extra ? `${base}\n${extra}` : base)
+    }
+
+    addBtn(
+      autoSyncEnabled() ? 'Auto sync: ON' : 'Auto sync: OFF',
+      autoSyncEnabled() ? 0x1a9b8e : 0x555555,
+      0x147a70,
+      () => {
+        setAutoSyncEnabled(!autoSyncEnabled())
+        const r = applyAutoAlarm()
+        refreshAutoLine(r.ok ? r.detail : `ERR ${r.detail}`)
+      },
+    )
+    addBtn(`Interval: ${autoSyncHours()}h (tap cycle)`, 0x2a4a6a, 0x1e364d, () => {
+      const cur = autoSyncHours()
+      const next = cur >= 12 ? 1 : cur === 1 ? 3 : cur === 3 ? 6 : cur === 6 ? 12 : 3
+      setAutoSyncHours(next)
+      const r = applyAutoAlarm()
+      refreshAutoLine(r.ok ? r.detail : `ERR ${r.detail}`)
+    })
 
     addBtn('Test PC', 0x2a4a6a, 0x1e364d, () => {
       if (!messageBuilder) return

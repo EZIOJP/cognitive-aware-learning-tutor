@@ -1,6 +1,16 @@
 import { useState, type ReactNode } from "react";
+import {
+  CircleUserRound,
+  Database,
+  LayoutDashboard,
+  Palette,
+  Settings2,
+  Shield,
+  SunMedium,
+  Unlock,
+  type LucideIcon,
+} from "lucide-react";
 import { WeaponCallout } from "../SettingPrimitives";
-import FocusControlPanel from "../../FocusControlPanel";
 import SoftLandSiteRulesPanel, { SOFTLAND_LADDER_ONE_LINER } from "../../SoftLandSiteRulesPanel";
 import SoftLandModeFlagsPanel from "../../SoftLandModeFlagsPanel";
 import GateSchedulesPanel from "../../GateSchedulesPanel";
@@ -11,14 +21,18 @@ import { DeviceBlockPanel } from "../../DeviceBlockPanel";
 import { EnforcerWriteGate, useEnforcerReachability } from "../../EnforcerWriteGate";
 import { FocusPerfReviewPanel } from "../../FocusPerfReviewPanel";
 import { FocusAiStatusChip } from "../../FocusAiStatusChip";
+import { UnlockGuidePanel } from "../../UnlockGuidePanel";
+import { ArmControlCard } from "../../ArmControlCard";
 import { SidebarTitleStickerPanel } from "../SidebarTitleStickerPanel";
+import { ThemeSettingsPanel } from "../ThemeSettingsPanel";
 import { useFocusStatus } from "../../../../hooks/useFocusStatus";
 import { isFocusDesktopShell } from "../../../../utils/focusDesktopShell";
 import { cn } from "../../../../app/components/ui/utils";
 
 /**
- * CT-like IA (pattern only — no CT code):
- * Overview → what’s on · Blocks → edit lists · Unlock → how free time works · Productive · More
+ * Production Settings IA (system-design jobs + ui-ux-pro-max chrome):
+ * Overview · Blocks · Unlock · Day · Appearance · Profile · Data · Advanced
+ * SoftLand ≠ Arm. Legacy ids (more/tools/productive/…) still parse.
  */
 export type SettingsSectionId =
   | "overview"
@@ -27,18 +41,38 @@ export type SettingsSectionId =
   | "apps"
   | "filters"
   | "unlock"
+  | "day"
+  | "appearance"
+  | "profile"
+  | "data"
+  | "advanced"
+  /** @deprecated → day */
   | "productive"
+  /** @deprecated → day */
   | "tools"
+  /** @deprecated → day */
   | "more";
 
 type BlockSubId = "sites" | "apps" | "filters";
+type NavId =
+  | "overview"
+  | "blocks"
+  | "unlock"
+  | "day"
+  | "appearance"
+  | "profile"
+  | "data"
+  | "advanced";
 
-const NAV: { id: SettingsSectionId; label: string; blurb: string }[] = [
-  { id: "overview", label: "Overview", blurb: "What’s active now" },
-  { id: "blocks", label: "Blocks", blurb: "Sites, apps, filters" },
-  { id: "unlock", label: "Unlock", blurb: "Goal, pass, Arm" },
-  { id: "productive", label: "Productive", blurb: "What counts" },
-  { id: "more", label: "More", blurb: isFocusDesktopShell() ? "Body, export, import, update" : "Look, demo, export" },
+const NAV: { id: NavId; label: string; blurb: string; Icon: LucideIcon }[] = [
+  { id: "overview", label: "Overview", blurb: "What’s on right now", Icon: LayoutDashboard },
+  { id: "blocks", label: "Blocks", blurb: "Sites, apps, filters", Icon: Shield },
+  { id: "unlock", label: "Unlock", blurb: "Free time types", Icon: Unlock },
+  { id: "day", label: "Day", blurb: "Body, ZeppBridge, plan", Icon: SunMedium },
+  { id: "appearance", label: "Appearance", blurb: "Theme, UI, sidebar look", Icon: Palette },
+  { id: "profile", label: "Profile", blurb: "Name, email, notes", Icon: CircleUserRound },
+  { id: "data", label: "Data", blurb: "Export, import, update", Icon: Database },
+  { id: "advanced", label: "Advanced", blurb: "AI, remote, review", Icon: Settings2 },
 ];
 
 const WRITE_SECTIONS: SettingsSectionId[] = [
@@ -47,36 +81,53 @@ const WRITE_SECTIONS: SettingsSectionId[] = [
   "apps",
   "filters",
   "unlock",
-  "productive",
 ];
 
 function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return (
-    <div className={`gloss-panel rounded-xl border border-border/50 p-5 ${className}`}>
-      {children}
-    </div>
-  );
+  return <div className={cn("settings-chrome__card", className)}>{children}</div>;
 }
 
 function SectionHeader({
   title,
   description,
-  badge,
 }: {
   title: string;
   description?: string;
-  badge?: ReactNode;
 }) {
   return (
     <div className="mb-5">
-      <div className="flex items-center gap-3 mb-1">
-        <h2 className="text-[15px] font-semibold text-foreground tracking-tight">{title}</h2>
-        {badge}
-      </div>
+      <h2 className="text-[1.05rem] font-semibold tracking-tight text-foreground">{title}</h2>
       {description ? (
-        <p className="text-[12px] text-muted-foreground leading-relaxed">{description}</p>
+        <p className="mt-1.5 max-w-2xl text-[13px] leading-relaxed text-muted-foreground">
+          {description}
+        </p>
       ) : null}
     </div>
+  );
+}
+
+function JumpCard({
+  kicker,
+  title,
+  blurb,
+  Icon,
+  onClick,
+}: {
+  kicker: string;
+  title: string;
+  blurb: string;
+  Icon: LucideIcon;
+  onClick: () => void;
+}) {
+  return (
+    <button type="button" onClick={onClick} className="settings-chrome__jump-btn">
+      <span className="settings-chrome__jump-kicker">
+        <Icon size={12} aria-hidden />
+        {kicker}
+      </span>
+      <p className="settings-chrome__jump-title">{title}</p>
+      <p className="settings-chrome__jump-blurb">{blurb}</p>
+    </button>
   );
 }
 
@@ -161,26 +212,82 @@ function OverviewSection({ onJump }: { onJump: (id: SettingsSectionId) => void }
   return (
     <div className="space-y-5">
       {!isFocusDesktopShell() ? <LiveStatusStrip /> : null}
-      <WeaponCallout onEditSites={() => onJump("sites")} onEditArm={() => onJump("unlock")} />
-      <Card className="space-y-2 text-[13px] text-muted-foreground leading-relaxed">
-        <p className="text-foreground font-semibold text-[15px]">Day flow</p>
-        <ol className="list-decimal pl-5 space-y-1.5">
-          <li>Tick a Bible chapter. Until then sites show the morning gate.</li>
-          <li>
-            Confirm the plan (optional — turn off under More → Planning). Site block + Arm couple
-            when the day opens.
-          </li>
-          <li>Reach your daily goal. Sites open for the rest of the day.</li>
-          <li>Home todos + Jarvis brief use your LLM host (OpenRouter / 9Router).</li>
+
+      <div className="space-y-1">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#0b6b63]">
+          Jobs
+        </p>
+        <h2 className="text-[1.15rem] font-semibold tracking-tight text-foreground">
+          What do you need to change?
+        </h2>
+        <p className="max-w-xl text-[13px] leading-relaxed text-muted-foreground">
+          Site block and Arm never share a switch. Morning path is Bible → Plan → Apply/Confirm —
+          locks wait for a free day or pass.
+        </p>
+      </div>
+
+      <WeaponCallout onEditSites={() => onJump("sites")} onEditArm={() => onJump("apps")} />
+
+      <Card className="space-y-3">
+        <p className="text-[15px] font-semibold text-foreground">Day flow</p>
+        <ol className="list-decimal space-y-1.5 pl-5 text-[13px] leading-relaxed text-muted-foreground">
+          <li>Bible chapter opens the morning gate.</li>
+          <li>Plan tab: Apply routines / edit blocks → Confirm (prefs sheet on the gate).</li>
+          <li>Hit the daily goal under Unlock; sites free for the rest of the day.</li>
         </ol>
-        <button
-          type="button"
-          className="text-xs text-primary underline-offset-2 hover:underline"
-          onClick={() => onJump("tools")}
-        >
-          Configure LLM host / Jarvis →
-        </button>
       </Card>
+
+      <div className="settings-chrome__jump">
+        <JumpCard
+          kicker="Lists"
+          Icon={Shield}
+          title="Blocks"
+          blurb="Site allow/block, app kill list, device hosts."
+          onClick={() => onJump("sites")}
+        />
+        <JumpCard
+          kicker="Freedom"
+          Icon={Unlock}
+          title="Unlock"
+          blurb="How free SoftLand time works — goal, reward, pass."
+          onClick={() => onJump("unlock")}
+        />
+        <JumpCard
+          kicker="Rhythm"
+          Icon={SunMedium}
+          title="Day"
+          blurb="Body care, watch sync, plan reminders."
+          onClick={() => onJump("day")}
+        />
+        <JumpCard
+          kicker="Look"
+          Icon={Palette}
+          title="Appearance"
+          blurb="Theme, light/dark, surfaces, sidebar title."
+          onClick={() => onJump("appearance")}
+        />
+        <JumpCard
+          kicker="You"
+          Icon={CircleUserRound}
+          title="Profile"
+          blurb="Display name, email, notes on this PC."
+          onClick={() => onJump("profile")}
+        />
+        <JumpCard
+          kicker="Backup"
+          Icon={Database}
+          title="Data"
+          blurb="Export, SoftLand import, UI update."
+          onClick={() => onJump("data")}
+        />
+        <JumpCard
+          kicker="Optional"
+          Icon={Settings2}
+          title="Advanced"
+          blurb="LLM/Jarvis, Telegram, activity review."
+          onClick={() => onJump("advanced")}
+        />
+      </div>
     </div>
   );
 }
@@ -202,6 +309,10 @@ function BlocksSection({
 
   return (
     <div className="space-y-5">
+      <SectionHeader
+        title="Blocks"
+        description="What gets blocked. Site block ≠ Arm — edit lists here; arm the kill list under Unlock."
+      />
       <div
         className="flex flex-wrap gap-4 border-b border-border/40"
         role="tablist"
@@ -217,7 +328,7 @@ function BlocksSection({
             className={cn(
               "min-h-11 px-1 pb-2 text-[15px] transition-colors -mb-px",
               sub === t.id
-                ? "border-b-[3px] border-[#0B6B63] font-semibold text-[#0B4F49]"
+                ? "border-b-[3px] border-[#0B6B63] font-semibold text-[#7DCFC4]"
                 : "border-b-[3px] border-transparent text-muted-foreground hover:text-foreground",
             )}
           >
@@ -227,50 +338,54 @@ function BlocksSection({
         ))}
       </div>
 
-      {sub === "sites" && (
-        <div className="grid gap-5 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
-          <div className="space-y-5">
-            <Card>
-              <div className="flex items-start justify-between gap-3 mb-3">
-                <div>
-                  <h3 className="text-[15px] font-semibold">Site block</h3>
-                  <p className="text-[13px] text-muted-foreground mt-1">
-                    Master switch for websites only. Off allows every site.
-                  </p>
-                </div>
+      {sub === "sites" ? (
+        <div className="grid gap-5 min-w-0 2xl:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
+          <div className="space-y-5 min-w-0">
+            <Card className="min-w-0 overflow-hidden">
+              <div className="mb-3">
+                <h3 className="text-[15px] font-semibold">Site block</h3>
+                <p className="text-[13px] text-muted-foreground mt-1">
+                  Master switch for websites only. Off allows every site.
+                </p>
               </div>
               <ProductivityPolicyPanel variant="softland" onSaved={onPolicySaved} />
             </Card>
-            <Card>
+            <Card className="min-w-0 overflow-hidden">
               <h3 className="text-[15px] font-semibold mb-1">Site rules</h3>
               <p className="text-[13px] text-muted-foreground mb-3">
-                {SOFTLAND_LADDER_ONE_LINER} Click a domain to remove it.
+                {SOFTLAND_LADDER_ONE_LINER} Tag a domain Allow / Focus / Always — click × to remove.
               </p>
-              <SoftLandSiteRulesPanel />
+              <SoftLandSiteRulesPanel mode="blocker" />
             </Card>
           </div>
-          <div className="space-y-5">
-            <Card>
+          <div className="space-y-5 min-w-0">
+            <Card className="min-w-0 overflow-hidden">
               <h3 className="text-[15px] font-semibold mb-1">What each mode blocks</h3>
               <p className="text-[13px] text-muted-foreground mb-3">
-                Social, keywords, other and strict allowlist did nothing in the code, so they are not
-                shown.
+                Live SoftLand flags only (watch sites + porn heuristic). Inert flags are omitted.
               </p>
               <SoftLandModeFlagsPanel />
             </Card>
-            <Card>
+            <Card className="min-w-0 overflow-hidden">
               <h3 className="text-[15px] font-semibold mb-1">Schedule</h3>
               <p className="text-[13px] text-muted-foreground mb-3">
                 First matching window wins. Incubation overrides both and puts you back in study.
               </p>
-              <GateSchedulesPanel />
+              <GateSchedulesPanel compact />
             </Card>
           </div>
         </div>
-      )}
+      ) : null}
 
-      {sub === "apps" && (
+      {sub === "apps" ? (
         <div className="space-y-5">
+          <Card>
+            <h3 className="text-[15px] font-semibold mb-1">Arm</h3>
+            <p className="text-[13px] text-muted-foreground mb-3">
+              Own switch from SoftLand. Edit the kill list below, then Arm.
+            </p>
+            <ArmControlCard />
+          </Card>
           <Card>
             <h3 className="text-[15px] font-semibold mb-1">Time limits</h3>
             <p className="text-[13px] text-muted-foreground mb-3">
@@ -287,9 +402,9 @@ function BlocksSection({
             <AppKillRulesPanel />
           </Card>
         </div>
-      )}
+      ) : null}
 
-      {sub === "filters" && (
+      {sub === "filters" ? (
         <Card>
           <h3 className="text-[15px] font-semibold mb-1">Device lock (hosts file)</h3>
           <p className="text-[13px] text-muted-foreground mb-3">
@@ -298,53 +413,21 @@ function BlocksSection({
           </p>
           <DeviceBlockPanel />
         </Card>
-      )}
+      ) : null}
     </div>
   );
 }
 
 function UnlockSection({ onPolicySaved }: { onPolicySaved?: () => void }) {
   return (
-    <div className="grid gap-5 xl:grid-cols-2">
-      <Card>
-        <h3 className="text-[15px] font-semibold mb-1">Daily goal</h3>
-        <p className="text-[13px] text-muted-foreground mb-3">
-          Earn free time by hitting the goal after Bible + Confirm — or skip with a reward day / pass.
-        </p>
-        <ProductivityPolicyPanel variant="unlock" onSaved={onPolicySaved} />
-      </Card>
-      <Card>
-        <h3 className="text-[15px] font-semibold mb-1">Arm</h3>
-        <p className="text-[13px] text-muted-foreground mb-3">
-          Own switch from Site block. Edit the kill list under Blocks → Apps.
-        </p>
-        <FocusControlPanel />
-      </Card>
-    </div>
-  );
-}
-
-function ProductiveSection({
-  productiveExtra,
-}: {
-  onPolicySaved?: () => void;
-  productiveExtra?: ReactNode;
-}) {
-  // Scoring grids / inert mode flags (strict_allowlist, block_keywords, …) are not
-  // wired to Focus enforcement — hide the fake controls so Settings doesn't look broken.
-  return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <SectionHeader
-        title="Productive"
-        description="Minutes come from the enforcer day rollup. Category scoring grids were removed — they never drove SoftLand or Arm."
+        title="Unlock"
+        description="How SoftLand free time works — goal met, reward day, and day pass. Arm lives under Blocks → Apps."
       />
-      <Card>
-        <p className="text-sm text-muted-foreground leading-relaxed">
-          Unlock still uses productive minutes vs your daily goal (see Unlock). Site Allow / Watch /
-          Block live under Blocks → Sites. App kills live under Blocks → Apps and Unlock → Arm.
-        </p>
+      <Card className="min-w-0 overflow-hidden">
+        <UnlockGuidePanel onSaved={onPolicySaved} />
       </Card>
-      {productiveExtra}
     </div>
   );
 }
@@ -353,15 +436,26 @@ type MakeSettingsAppProps = {
   section?: SettingsSectionId;
   onSectionChange?: (id: SettingsSectionId) => void;
   onPolicySaved?: () => void;
+  dayContent?: ReactNode;
+  profileContent?: ReactNode;
+  dataContent?: ReactNode;
+  advancedContent?: ReactNode;
+  /** @deprecated use day/data/advanced slots */
   productiveExtra?: ReactNode;
+  /** @deprecated use day/data/advanced slots */
   toolsContent?: ReactNode;
 };
 
-function navHighlight(section: SettingsSectionId): SettingsSectionId {
+function navHighlight(section: SettingsSectionId): NavId {
   if (section === "sites" || section === "apps" || section === "filters" || section === "blocks")
     return "blocks";
-  if (section === "tools" || section === "more") return "more";
-  return section;
+  if (section === "day" || section === "tools" || section === "more") return "day";
+  if (section === "appearance") return "appearance";
+  if (section === "profile") return "profile";
+  if (section === "data") return "data";
+  if (section === "advanced" || section === "productive") return "advanced";
+  if (section === "unlock") return "unlock";
+  return "overview";
 }
 
 function blockSubFromSection(section: SettingsSectionId): BlockSubId {
@@ -369,10 +463,19 @@ function blockSubFromSection(section: SettingsSectionId): BlockSubId {
   return "sites";
 }
 
+function navClickTarget(id: NavId): SettingsSectionId {
+  if (id === "blocks") return "sites";
+  return id;
+}
+
 export default function MakeSettingsApp({
   section: sectionProp,
   onSectionChange,
   onPolicySaved,
+  dayContent,
+  profileContent,
+  dataContent,
+  advancedContent,
   productiveExtra,
   toolsContent,
 }: MakeSettingsAppProps) {
@@ -386,6 +489,15 @@ export default function MakeSettingsApp({
   const highlight = navHighlight(section);
   const blockSub = blockSubFromSection(section);
 
+  // Back-compat: old single tools dump still renders under Day if new slots unused.
+  const dayBody = dayContent ?? toolsContent;
+  const advancedBody = (
+    <>
+      {advancedContent}
+      {productiveExtra}
+    </>
+  );
+
   const body =
     highlight === "overview" ? (
       <OverviewSection onJump={setSection} />
@@ -397,91 +509,139 @@ export default function MakeSettingsApp({
       />
     ) : highlight === "unlock" ? (
       <UnlockSection onPolicySaved={onPolicySaved} />
-    ) : highlight === "productive" ? (
-      <ProductiveSection onPolicySaved={onPolicySaved} productiveExtra={productiveExtra} />
+    ) : highlight === "day" ? (
+      <div>
+        <SectionHeader
+          title="Day"
+          description="Body care, wearables, and plan preferences for the daily loop."
+        />
+        {dayBody}
+      </div>
+    ) : highlight === "appearance" ? (
+      <div>
+        <SectionHeader
+          title="Appearance"
+          description="Theme, light/dark, surfaces, and the sidebar title sticker. All UI look lives here."
+        />
+        <ThemeSettingsPanel embedded />
+        <div className="mt-6 gloss-panel rounded-xl border border-border/50 p-5">
+          <SidebarTitleStickerPanel />
+        </div>
+      </div>
+    ) : highlight === "profile" ? (
+      <div>
+        <SectionHeader
+          title="Profile"
+          description="Who owns this Focus install — name and notes stay on this PC."
+        />
+        {profileContent}
+      </div>
+    ) : highlight === "data" ? (
+      <div>
+        <SectionHeader
+          title="Data"
+          description="Export analytics, import SoftLand site lists, check for Focus UI updates."
+        />
+        {dataContent}
+      </div>
     ) : (
       <div>
         <SectionHeader
-          title="More"
-          description="Preferences and tools that aren’t block lists — look, demo clock, watch sync, export, setup."
+          title="Advanced"
+          description="Optional AI voice, remote control, and activity classification. Safe to ignore."
         />
-        <div className="mb-6 gloss-panel rounded-xl border border-border/50 p-5">
-          <SidebarTitleStickerPanel />
-        </div>
-        <div className="mb-6">
+        <div className="mb-5">
           <FocusPerfReviewPanel />
         </div>
-        {toolsContent}
+        {advancedBody}
       </div>
     );
 
   return (
-    <div className="flex flex-col min-h-[70vh] h-full bg-background text-foreground overflow-hidden">
-      <header className="flex-shrink-0 border-b border-border/50 bg-card/30 px-4 pt-4 pb-3 sm:px-6">
-        <div className="flex flex-wrap items-end justify-between gap-2 mb-3">
-          <div>
-            <h1 className="text-[15px] font-semibold text-foreground tracking-tight">Settings</h1>
-            <p className="text-[12px] text-muted-foreground mt-0.5">
-              Site block and Arm are separate switches. Turning one on never turns on the other.
-            </p>
-          </div>
+    <div className="settings-chrome settings-chrome__shell text-foreground">
+      <aside className="settings-chrome__rail" aria-label="Settings navigation">
+        <div className="settings-chrome__brand">
+          <h1>Settings</h1>
+          <p>Site block and Arm are separate. Turning one on never turns on the other.</p>
         </div>
-        {isFocusDesktopShell() ? <LiveStatusStrip className="mb-3" /> : null}
-        <nav className="flex flex-wrap gap-2" aria-label="Settings sections">
-          {NAV.map(({ id, label, blurb }) => (
-            <button
-              key={id}
-              type="button"
-              title={blurb}
-              onClick={() => setSection(id === "blocks" ? "sites" : id === "more" ? "tools" : id)}
-              className={cn(
-                "min-h-11 rounded-full px-4 text-[14px] font-medium border transition-colors",
-                highlight === id
-                  ? "border-[#1C1B19] bg-[#1C1B19] text-white"
-                  : "border-[#D6D3CA] bg-background text-foreground hover:bg-accent/40",
-              )}
-            >
-              {label}
-            </button>
-          ))}
+        <nav className="settings-chrome__nav" aria-label="Settings sections">
+          {NAV.map(({ id, label, blurb, Icon }) => {
+            const active = highlight === id;
+            return (
+              <button
+                key={id}
+                type="button"
+                aria-current={active ? "page" : undefined}
+                onClick={() => setSection(navClickTarget(id))}
+                className={cn("settings-chrome__nav-btn", active && "is-active")}
+              >
+                <Icon size={16} className="settings-chrome__nav-icon" aria-hidden />
+                <span className="min-w-0">
+                  <span className="settings-chrome__nav-label">{label}</span>
+                  <span className="settings-chrome__nav-blurb">{blurb}</span>
+                </span>
+              </button>
+            );
+          })}
         </nav>
-      </header>
+      </aside>
 
-      <main className="flex-1 overflow-y-auto p-5 sm:p-6">
-        {WRITE_SECTIONS.includes(section) || highlight === "blocks" ? (
-          <EnforcerWriteGate>{body}</EnforcerWriteGate>
-        ) : (
-          body
-        )}
-      </main>
+      <div className="settings-chrome__main">
+        {isFocusDesktopShell() ? (
+          <div className="settings-chrome__status">
+            <LiveStatusStrip />
+          </div>
+        ) : null}
+        <main className="settings-chrome__body">
+          {WRITE_SECTIONS.includes(section) || highlight === "blocks" ? (
+            <EnforcerWriteGate>{body}</EnforcerWriteGate>
+          ) : (
+            body
+          )}
+        </main>
+      </div>
     </div>
   );
 }
 
 export function parseSettingsSection(raw: string | null): SettingsSectionId {
   const id = (raw || "overview").toLowerCase();
-  if (NAV.some((n) => n.id === id)) {
-    if (id === "blocks") return "sites";
-    if (id === "more") return "tools";
-    return id as SettingsSectionId;
-  }
-  if (id === "sites" || id === "apps" || id === "filters" || id === "tools") {
-    return id as SettingsSectionId;
-  }
+
+  if (id === "blocks") return "sites";
+  if (id === "more" || id === "tools") return "day";
+  if (id === "productive" || id === "scoring" || id === "classification") return "advanced";
+  if (id === "theme" || id === "ui" || id === "look" || id === "sticker") return "appearance";
+
+  const known: SettingsSectionId[] = [
+    "overview",
+    "sites",
+    "apps",
+    "filters",
+    "unlock",
+    "day",
+    "appearance",
+    "profile",
+    "data",
+    "advanced",
+  ];
+  if (known.includes(id as SettingsSectionId)) return id as SettingsSectionId;
+
   // Legacy hub / Make rail ids
   if (id === "now" || id === "focus" || id === "enforcer") return "unlock";
   if (id === "rules" || id === "policy" || id === "schedules") return "sites";
-  if (id === "scoring" || id === "classification") return "productive";
   if (
     id === "watch" ||
-    id === "demo" ||
-    id === "demo-mode" ||
-    id === "export" ||
-    id === "setup" ||
     id === "reminders" ||
-    id === "planning"
+    id === "planning" ||
+    id === "body" ||
+    id === "bodycare"
   ) {
-    return "tools";
+    return "day";
+  }
+  if (id === "account" || id === "owner" || id === "me" || id === "user") return "profile";
+  if (id === "export" || id === "import" || id === "update" || id === "setup") return "data";
+  if (id === "demo" || id === "demo-mode" || id === "jarvis" || id === "llm" || id === "telegram") {
+    return "advanced";
   }
   return "overview";
 }

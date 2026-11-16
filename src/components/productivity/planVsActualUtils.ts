@@ -301,10 +301,62 @@ export const CALENDAR_MIN_DISPLAY_SEC = 20;
 
 const IGNORED_TRACKER_APPS = [/^move\s*mouse/i, /movemouse/i, /^caffeine/i, /dontsleep/i, /lockapp/i, /steamwebhelper/i];
 
+const BROWSER_APP_RE =
+  /^(chrome|msedge|msedgewebview2|firefox|brave|opera|vivaldi|iexplore|arc|zen|chromium|waterfox|librewolf|browser)(\.exe)?$/i;
+const BROWSER_SOURCE_RE =
+  /^(extension|track_tab|browser|web|url|gate|native_messaging|selftracker)$/i;
+
 export function isIgnoredTrackerApp(appName?: string | null, title?: string | null): boolean {
   const hay = `${appName ?? ""} ${title ?? ""}`.trim();
   if (!hay) return false;
   return IGNORED_TRACKER_APPS.some((re) => re.test(hay));
+}
+
+/** Host embedded in tracker app_name (`msedge:youtube.com` / `chrome:github.com`). */
+export function hostFromBrowserAppName(appName?: string | null): string {
+  const a = (appName || "").trim().toLowerCase();
+  if (!a) return "";
+  const colon = a.lastIndexOf(":");
+  if (colon <= 0 || colon + 1 >= a.length) return "";
+  const left = a.slice(0, colon).replace(/\.exe$/i, "");
+  if (!BROWSER_APP_RE.test(left) && left !== "selftracker") return "";
+  let host = a.slice(colon + 1).trim();
+  if (host.startsWith("www.")) host = host.slice(4);
+  if (!/^[a-z0-9][a-z0-9.-]{1,78}\.[a-z]{2,}$/.test(host)) return "";
+  return host;
+}
+
+/** Browser page / URL sessions (calendar + Home sites). */
+export function isBrowserPageSession(s: {
+  app_name?: string | null;
+  window_title?: string | null;
+  site?: string | null;
+  source?: string | null;
+}): boolean {
+  const src = (s.source || "").trim();
+  if (src && BROWSER_SOURCE_RE.test(src)) return true;
+  if ((s.site || "").trim()) return true;
+  if (hostFromBrowserAppName(s.app_name)) return true;
+  const appRaw = (s.app_name || "").trim();
+  if (appRaw && BROWSER_APP_RE.test(appRaw)) return true;
+  const short = shortAppName(appRaw).toLowerCase();
+  if (short && BROWSER_APP_RE.test(short)) return true;
+  if (appImpliedByWindowTitle(s.window_title)) return true;
+  return false;
+}
+
+/** Bare browser process with no site label — calendar noise; drop these only. */
+export function isBareBrowserShell(s: {
+  app_name?: string | null;
+  window_title?: string | null;
+  site?: string | null;
+  source?: string | null;
+}): boolean {
+  if ((s.site || "").trim() || hostFromBrowserAppName(s.app_name)) return false;
+  const appRaw = (s.app_name || "").trim();
+  if (appRaw && BROWSER_APP_RE.test(appRaw)) return true;
+  const short = shortAppName(appRaw).toLowerCase();
+  return Boolean(short && BROWSER_APP_RE.test(short));
 }
 
 export type MergedInterval = {
@@ -589,7 +641,8 @@ export function mergeForCalendar(sessions: ActualSession[]): MergedInterval[] {
       (s.source || "").toLowerCase() === "wearable_sleep" ||
       (s.app_name || "").toLowerCase() === "amazfit",
   );
-  const rest = sessions.filter((s) => !sleep.includes(s));
+  // Include browser/site actuals (youtube.com, …). Drop only bare msedge/chrome shells.
+  const rest = sessions.filter((s) => !sleep.includes(s) && !isBareBrowserShell(s));
   const clippedRest = clipSessionsAgainstSleep(rest, sleep);
   const mergedRest = mergeActualSessions(clippedRest, CALENDAR_MERGE_GAP_SEC).filter(
     (m) => m.duration_seconds >= CALENDAR_MIN_DISPLAY_SEC,
@@ -650,6 +703,8 @@ export function clipSessionsAgainstSleep(
 
 export function shortAppName(name: string | null | undefined): string {
   if (!name) return "Activity";
+  const embedded = hostFromBrowserAppName(name);
+  if (embedded) return embedded;
   return name.replace(/\.exe$/i, "").replace(/\.app$/i, "");
 }
 
@@ -870,7 +925,7 @@ export function intervalDisplayName(m: {
   const cat = (m.category || "").toLowerCase();
   const app = (m.app_name || "").toLowerCase();
   if (cat === "sleep" || app === "amazfit") return "Sleep";
-  const site = (m.site || "").trim();
+  const site = (m.site || "").trim() || hostFromBrowserAppName(m.app_name);
   if (site && /\./.test(site) && !/\s/.test(site)) return site;
   if (app.includes(".") && !app.endsWith(".exe") && !app.startsWith("calt_spa")) {
     return shortAppName(m.app_name);

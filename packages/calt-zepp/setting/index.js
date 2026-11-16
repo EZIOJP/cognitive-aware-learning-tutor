@@ -55,7 +55,7 @@ AppSettingsPage({
       [
         Text(
           { style: { fontSize: '18px', fontWeight: '600', marginBottom: '4px' } },
-          ['CALT Sync 4.2'],
+          ['CALT Sync 4.3'],
         ),
         Text(
           {
@@ -70,7 +70,7 @@ AppSettingsPage({
             },
           },
           [
-            'Rich health dump → PC. Tries tracker hub :8765 first, then FastAPI :8000 on the same LAN IP. Dump on watch, then Send. Sensors do not invent history.',
+            'Rich health dump → Focus hub :8765. Dump & Send on the watch, or enable Auto sync (every 3h) in watch Settings. Phone + PC on same Wi‑Fi. Sensors do not invent history.',
           ],
         ),
 

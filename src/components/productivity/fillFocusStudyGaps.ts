@@ -5,6 +5,10 @@ import {
   type StudyTask,
 } from "../../api/plannerClient";
 
+type Gap = { start: number; end: number };
+
+const WEEKDAY_KEYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"] as const;
+
 export function isFreeCategory(cat: string): boolean {
   const c = (cat || "").trim().toLowerCase();
   return (
@@ -24,6 +28,131 @@ export function isFreeCategory(cat: string): boolean {
 export function isStudyFocusCategory(cat: string): boolean {
   const c = (cat || "").trim().toLowerCase();
   return c === "study" || c === "work" || c === "coursework" || c === "deep_work" || c === "focus";
+}
+
+/** Life/routine anchors applied from Routines (not study/work). */
+export function isRoutineLifeCategory(cat: string): boolean {
+  const c = (cat || "").trim().toLowerCase();
+  return c === "food" || c === "personal" || c === "spiritual";
+}
+
+/**
+ * Free minutes between today's first and last routine blocks.
+ *
+ * Formula:
+ * - Take scheduled routine blocks (food / personal / spiritual)
+ * - span = firstRoutine.start → lastRoutine.end (minute-of-day)
+ * - available = span length − minutes covered by any routine in that span
+ *   (i.e. sum of gaps *between* routines inside the span; no pre-first / post-last)
+ * - Study/work blocks do not reduce this capacity (they fill it)
+ *
+ * Returns 0 when there are no routines, a single routine, or only contiguous
+ * routines with no interior gaps. Overnight (end ≤ start) uses duration and
+ * clamps to midnight — cross-midnight spans are not modeled as multi-day.
+ */
+export function availableRoutineGapMinutes(blocks: PlannerBlock[]): number {
+  const routines = blocks.filter(
+    (b) =>
+      b.status !== "cancelled" &&
+      b.status !== "rolled" &&
+      isRoutineLifeCategory(b.category || ""),
+  );
+  if (routines.length === 0) return 0;
+  return availableGapMinutesFromSpans(routines.map(blockSpanMinutes));
+}
+
+/** Same as {@link availableRoutineGapMinutes}, rounded to 0.1h. */
+export function availableRoutineGapHours(blocks: PlannerBlock[]): number {
+  return Math.round((availableRoutineGapMinutes(blocks) / 60) * 10) / 10;
+}
+
+function parseHmToDayMinutes(hm: string | null | undefined): number | null {
+  if (!hm || !/^\d{1,2}:\d{2}/.test(hm)) return null;
+  const [h, m] = hm.split(":").map((x) => Number(x) || 0);
+  if (h < 0 || h > 23 || m < 0 || m > 59) return null;
+  return h * 60 + m;
+}
+
+export type RoutineScheduleLike = {
+  start_time?: string | null;
+  end_time?: string | null;
+  duration_minutes?: number | null;
+  days?: string[] | null;
+  enabled?: boolean;
+  category?: string | null;
+};
+
+/** Enabled routines for this weekday as minute-of-day spans. */
+export function routineScheduleSpansForDay(
+  routines: RoutineScheduleLike[],
+  day: Date = new Date(),
+): Gap[] {
+  const key = WEEKDAY_KEYS[day.getDay()];
+  const out: Gap[] = [];
+  for (const r of routines) {
+    if (r.enabled === false) continue;
+    const cat = (r.category || "").trim().toLowerCase();
+    if (cat && isStudyFocusCategory(cat)) continue;
+    const days = Array.isArray(r.days) && r.days.length > 0 ? r.days.map((d) => d.toLowerCase()) : null;
+    if (days && !days.includes(key)) continue;
+    const start = parseHmToDayMinutes(r.start_time);
+    if (start == null) continue;
+    let end = parseHmToDayMinutes(r.end_time ?? null);
+    if (end == null || end <= start) {
+      const dur = Math.max(15, Number(r.duration_minutes) || 30);
+      end = start + dur;
+    }
+    if (end > start) out.push({ start, end: Math.min(24 * 60, end) });
+  }
+  return out;
+}
+
+/** Gap minutes from arbitrary routine spans (schedule or applied). */
+export function availableGapMinutesFromSpans(spans: { start: number; end: number }[]): number {
+  if (!spans.length) return 0;
+  const spanStart = Math.min(...spans.map((s) => s.start));
+  const spanEnd = Math.max(...spans.map((s) => s.end));
+  if (!(spanEnd > spanStart)) return 0;
+
+  const sorted = [...spans]
+    .map((g) => ({
+      start: Math.max(spanStart, g.start),
+      end: Math.min(spanEnd, g.end),
+    }))
+    .filter((g) => g.end > g.start)
+    .sort((a, b) => a.start - b.start);
+
+  const merged: Gap[] = [];
+  for (const g of sorted) {
+    const last = merged[merged.length - 1];
+    if (last && g.start <= last.end) {
+      last.end = Math.max(last.end, g.end);
+    } else {
+      merged.push({ start: g.start, end: g.end });
+    }
+  }
+
+  let occupied = 0;
+  for (const m of merged) occupied += m.end - m.start;
+  return Math.max(0, spanEnd - spanStart - occupied);
+}
+
+/**
+ * Max focus hours for the day: prefer today's enabled routine *schedule*
+ * (first→last template), else fall back to applied routine plan blocks.
+ */
+export function availableFocusGapHours(opts: {
+  blocks: PlannerBlock[];
+  routines?: RoutineScheduleLike[] | null;
+  day?: Date;
+}): number {
+  const day = opts.day ?? new Date();
+  const scheduleSpans = routineScheduleSpansForDay(opts.routines || [], day);
+  const fromSchedule = availableGapMinutesFromSpans(scheduleSpans);
+  if (fromSchedule > 0) {
+    return Math.round((fromSchedule / 60) * 10) / 10;
+  }
+  return availableRoutineGapHours(opts.blocks);
 }
 
 /** Auto-filled study blocks we may trim when the focus goal shrinks. */
@@ -69,8 +198,6 @@ export function studyMinutesFromBlocks(blocks: PlannerBlock[]): number {
   }
   return n;
 }
-
-type Gap = { start: number; end: number };
 
 function freeGaps(occupied: Gap[], windowStart: number, windowEnd: number): Gap[] {
   const sorted = [...occupied]

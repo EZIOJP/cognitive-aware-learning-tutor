@@ -1,126 +1,115 @@
-/* Curved SVG scrollbar — follows container border-radius */
+/* Glass scrollbar — straight, thin, nearly invisible until hover/scroll.
+   Class names keep `curved-scrollbar*` aliases so Focus shell CSS keeps matching. */
 
+.glass-scrollbar,
 .curved-scrollbar {
-  --curved-radius: 28px;
-  --curved-thumb: rgb(0, 188, 255);
-  --curved-thumb-active: dodgerblue;
-  --curved-thumb-width: 4;
-  --curved-thumb-width-active: 6;
-  --curved-track: transparent;
-  --curved-track-active: rgba(255, 255, 255, 0.08);
-  --curved-track-width: 4;
-  --curved-track-width-active: 6;
-  --curved-border: color-mix(in srgb, var(--border, rgba(255, 255, 255, 0.12)) 80%, transparent);
+  --glass-thumb: color-mix(in srgb, rgba(255, 255, 255, 0.35) 70%, rgba(125, 207, 196, 0.45));
+  --glass-thumb-hover: color-mix(in srgb, rgba(255, 255, 255, 0.5) 55%, rgba(125, 207, 196, 0.65));
+  --glass-track: transparent;
+  --glass-size: 6px;
 
   position: relative;
   width: 100%;
   min-width: 0;
   min-height: 0;
   height: 100%;
-  border-radius: var(--curved-radius);
   overflow: hidden;
   contain: layout paint;
 }
 
+.glass-scrollbar--lime,
 .curved-scrollbar--lime {
-  --curved-thumb: rgb(154, 230, 0);
-  --curved-thumb-active: rgb(124, 207, 0);
-  --curved-radius: 20px;
+  --glass-thumb: color-mix(in srgb, rgba(255, 255, 255, 0.28) 60%, rgba(154, 230, 0, 0.45));
+  --glass-thumb-hover: color-mix(in srgb, rgba(255, 255, 255, 0.4) 50%, rgba(154, 230, 0, 0.7));
 }
 
+.glass-scrollbar--accent,
 .curved-scrollbar--accent {
-  --curved-thumb: color-mix(in srgb, var(--primary, #38bdf8) 85%, white);
-  --curved-thumb-active: var(--primary, #0ea5e9);
+  --glass-thumb: color-mix(in srgb, rgba(255, 255, 255, 0.3) 55%, var(--primary, #38bdf8) 45%);
+  --glass-thumb-hover: color-mix(in srgb, rgba(255, 255, 255, 0.45) 40%, var(--primary, #0ea5e9) 60%);
 }
 
+.glass-scrollbar__content,
 .curved-scrollbar__content {
   height: 100%;
   max-height: 100%;
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding: 0.75rem 1.25rem 0.75rem 0.75rem;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
+  padding: 0.75rem 1rem 0.75rem 0.75rem;
+  /* Firefox: nearly invisible until hover */
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--glass-thumb) 28%, transparent) var(--glass-track);
 }
 
+.glass-scrollbar__content:hover,
+.curved-scrollbar__content:hover {
+  scrollbar-color: color-mix(in srgb, var(--glass-thumb-hover) 70%, transparent) var(--glass-track);
+}
+
+/* WebKit / Edge / WebView2 — glass pill on the right edge */
+.glass-scrollbar__content::-webkit-scrollbar,
 .curved-scrollbar__content::-webkit-scrollbar {
-  display: none;
-  width: 0;
-  height: 0;
+  width: var(--glass-size);
+  height: var(--glass-size);
+}
+
+.glass-scrollbar__content::-webkit-scrollbar-track,
+.curved-scrollbar__content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.glass-scrollbar__content::-webkit-scrollbar-thumb,
+.curved-scrollbar__content::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--glass-thumb) 22%, transparent);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, rgba(255, 255, 255, 0.14) 35%, transparent);
+  transition: background 160ms ease;
+}
+
+.glass-scrollbar__content:hover::-webkit-scrollbar-thumb,
+.curved-scrollbar__content:hover::-webkit-scrollbar-thumb,
+.glass-scrollbar__content::-webkit-scrollbar-thumb:hover,
+.curved-scrollbar__content::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--glass-thumb-hover) 72%, transparent);
+  background-clip: padding-box;
+}
+
+.glass-scrollbar__content::-webkit-scrollbar-thumb:active,
+.curved-scrollbar__content::-webkit-scrollbar-thumb:active {
+  background: color-mix(in srgb, var(--glass-thumb-hover) 88%, transparent);
+  background-clip: padding-box;
+}
+
+.glass-scrollbar__content::-webkit-scrollbar-corner,
+.curved-scrollbar__content::-webkit-scrollbar-corner {
+  background: transparent;
 }
 
 /* Unpadded variant for shell / sidebar chrome */
+.glass-scrollbar__content--flush,
 .curved-scrollbar__content--flush {
   padding: 0;
 }
 
-.curved-scrollbar__svg {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: 4;
-  transition: opacity 160ms ease;
+/* Focus main column — symmetric inset (no SVG gutter). */
+.glass-scrollbar__content--focus-shell,
+.curved-scrollbar__content--focus-shell {
+  padding: 0;
 }
 
-.curved-scrollbar__svg:has(:active) {
-  --curved-thumb-width: var(--curved-thumb-width-active);
-  --curved-track-width: var(--curved-track-width-active);
-  --curved-track: var(--curved-track-active);
-}
-
-.curved-scrollbar__track {
-  fill: none;
-  stroke: var(--curved-track);
-  stroke-width: var(--curved-track-width);
-  stroke-linecap: round;
-  transition:
-    stroke 150ms ease-in-out,
-    stroke-width 150ms ease-in-out;
-}
-
+/* Legacy SVG hooks — no-op (component no longer injects them). */
+.curved-scrollbar__svg,
+.curved-scrollbar__track,
 .curved-scrollbar__thumb {
-  fill: none;
-  stroke: var(--curved-thumb);
-  stroke-width: var(--curved-thumb-width);
-  stroke-linecap: round;
-  pointer-events: auto;
-  cursor: grab;
-  transition:
-    stroke 150ms ease-in-out,
-    stroke-width 150ms ease-in-out;
+  display: none !important;
 }
 
-.curved-scrollbar__thumb:active {
-  stroke: var(--curved-thumb-active);
-  cursor: grabbing;
-}
-
-/* Soft card shell for demos / panels that want the bordered look */
-.curved-scrollbar--card {
-  border: 1px solid var(--curved-border);
-  background: color-mix(in srgb, var(--card, rgba(15, 23, 42, 0.55)) 88%, transparent);
-}
-
-@media (max-width: 640px) {
-  .curved-scrollbar {
-    --curved-radius: min(var(--curved-radius), 22px);
-    --curved-thumb-width: 3.5;
-    --curved-track-width: 3.5;
-  }
-
-  .curved-scrollbar__content {
-    padding: 0.65rem 1.1rem 0.65rem 0.65rem;
-  }
-}
-
-/* Prefer reduced motion: keep function, drop width transitions */
 @media (prefers-reduced-motion: reduce) {
-  .curved-scrollbar__track,
-  .curved-scrollbar__thumb,
-  .curved-scrollbar__svg {
+  .glass-scrollbar__content::-webkit-scrollbar-thumb,
+  .curved-scrollbar__content::-webkit-scrollbar-thumb {
     transition: none;
   }
 }

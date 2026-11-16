@@ -3,11 +3,22 @@
  */
 import { Loader2, Play, ScanFace, Square } from "lucide-react";
 import { useFaceTracker } from "../../face-tracker/FaceTrackerContext";
+import { loadBodyCarePrefs } from "../../lib/bodyCarePrefs";
 
 export function FocusAttentionPanel() {
-  const { tracking, toggleTracking, status, error, payload, profileName, VideoElement } =
-    useFaceTracker();
+  const {
+    tracking,
+    toggleTracking,
+    status,
+    error,
+    payload,
+    postureScore,
+    focus,
+    profileName,
+    VideoElement,
+  } = useFaceTracker();
   const live = Boolean(payload?.face_detected);
+  const prefs = loadBodyCarePrefs();
 
   return (
     <div className="space-y-2 rounded-lg border border-border/40 bg-black/20 p-3">
@@ -24,7 +35,7 @@ export function FocusAttentionPanel() {
                 : "bg-muted text-muted-foreground"
           }`}
         >
-          {live ? payload?.attitude : tracking ? (status === "loading" ? "loading" : "no face") : "off"}
+          {live ? payload?.attitude : tracking ? (status === "loading" ? "loading" : "away") : "off"}
         </span>
       </div>
       <div className="flex flex-wrap items-center gap-2">
@@ -49,16 +60,35 @@ export function FocusAttentionPanel() {
       </div>
       {error ? <p className="text-xs text-rose-300">{error}</p> : null}
       {payload?.face_detected ? (
-        <p className="text-sm">
-          Attention <span className="font-mono text-primary">{payload.attention}%</span>
-          {" · "}
-          Blinks <span className="font-mono">{payload.blink_rate}/min</span>
-        </p>
+        <div className="space-y-1">
+          <p className="text-sm">
+            Attention <span className="font-mono text-primary">{payload.attention}%</span>
+            {" · "}
+            Blinks <span className="font-mono">{payload.blink_rate}/min</span>
+            {postureScore != null ? (
+              <>
+                {" · "}
+                Posture <span className="font-mono text-amber-200/90">{postureScore}</span>
+              </>
+            ) : null}
+          </p>
+          {prefs.postureCoachEnabled && postureScore != null && postureScore < prefs.postureScoreThreshold ? (
+            <p className="text-[11px] text-amber-200/90">
+              Lean/slouch hold — straighten to avoid a nudge after {prefs.postureWarnMinutes}m.
+            </p>
+          ) : null}
+        </div>
       ) : tracking ? (
-        <p className="text-[11px] text-amber-200/90">Waiting for face…</p>
+        <p className="text-[11px] text-amber-200/90">
+          {focus.no_face
+            ? prefs.presencePauseSit
+              ? "Away — sit clock paused."
+              : "Waiting for face…"
+            : "Waiting for face…"}
+        </p>
       ) : (
         <p className="text-[11px] text-muted-foreground">
-          Start to score attention from webcam (local). Camera stays on this machine.
+          Start to score attention + posture from webcam (local). Camera stays on this machine.
         </p>
       )}
     </div>

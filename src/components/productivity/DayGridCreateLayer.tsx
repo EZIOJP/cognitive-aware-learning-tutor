@@ -2,13 +2,6 @@ import { useEffect, useRef, useState, type RefObject } from "react";
 
 /** Create-drag allotment while painting (display step stays separate). */
 const CREATE_STEP = 1;
-/** Commit to horizontal intent after this much X travel. */
-const AXIS_COMMIT_PX = 5;
-/**
- * Enter multi-hour mode: pointer must leave the origin row by this fraction
- * of a row (no Alt/Shift — pure motion).
- */
-const ROW_BREAKOUT_FRAC = 0.42;
 
 type Props = {
   day: Date;
@@ -77,10 +70,8 @@ function findScrollParents(el: HTMLElement | null): HTMLElement[] {
 }
 
 /**
- * Continuum create (option A): one event from anchored start → live end.
- * - Left/right: stay on the start hour (no row hop from tremor / auto-scroll).
- * - Clear vertical travel into another row: blend across hours (partial / full / partial).
- * - No modifier keys.
+ * Continuum create: one event from anchored start → live end.
+ * Stays on the origin hour only (no carry into adjacent rows).
  */
 export function DayGridCreateLayer({ day, containerRef, onCreate }: Props) {
   const step = CREATE_STEP;
@@ -249,33 +240,9 @@ export function DayGridCreateLayer({ day, containerRef, onCreate }: Props) {
 
     const sampleLive = (e: PointerEvent, d: NonNullable<typeof dragRef.current>) => {
       const min = softSnap(minFromX(e.clientX, d.geo), step, 60);
-      const hourRaw = hourFromY(e.clientY, d.geo);
-      const absDx = Math.abs(e.clientX - d.originClientX);
-      const absDy = Math.abs(e.clientY - d.originClientY);
-      const breakoutPx = d.geo.rowH * ROW_BREAKOUT_FRAC;
-
-      // Engage multi-hour when the pointer has clearly entered another row
-      // (distance past origin row), not from tiny diagonal tremor.
-      if (
-        !d.multiHour &&
-        hourRaw !== d.originHour &&
-        absDy >= breakoutPx &&
-        absDy > absDx * 0.85
-      ) {
-        d.multiHour = true;
-      }
-      // Also engage if they've traveled ~half a row vertically even before
-      // hour index flips (smooth blend toward the boundary).
-      if (!d.multiHour && absDy >= breakoutPx && absDy > absDx + AXIS_COMMIT_PX) {
-        d.multiHour = true;
-      }
-
-      if (d.multiHour) {
-        d.liveAbs = hourRaw * 60 + min;
-      } else {
-        // Sticky single-hour: end stays on the origin row
-        d.liveAbs = d.originHour * 60 + min;
-      }
+      // Sticky single-hour only — never carry the draft into another row.
+      d.multiHour = false;
+      d.liveAbs = d.originHour * 60 + min;
 
       // Minimum visible span
       if (Math.abs(d.liveAbs - d.originAbs) < 0.35) {

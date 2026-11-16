@@ -13,11 +13,14 @@ import { postFaceStatus } from "../api/faceClient";
 import { postFocusEventEnd, postFocusEventStart } from "../api/focusClient";
 import { getActiveProfile, getActiveProfileName } from "./calibration";
 import { FocusState, type FocusPayload } from "./focusState";
+import { scorePosture } from "./posture";
 import { BlinkRateTracker, scoreAttention, type FaceStatusPayload } from "./scoring";
 import { useHumanTracker } from "./useHumanTracker";
 import { usePomodoro } from "../context/PomodoroContext";
 import { WaveDetector } from "./waveDetector";
 import { triggerWaveSnapshot } from "./waveSnapshot";
+import { clearBodyCareVision, publishBodyCareVision } from "../lib/bodyCareVisionBus";
+import { loadBodyCarePrefs } from "../lib/bodyCarePrefs";
 
 const POST_INTERVAL_MS = 1000;
 
@@ -30,6 +33,8 @@ type FaceTrackerContextValue = {
   error: string | null;
   payload: FaceStatusPayload | null;
   focus: FocusPayload;
+  /** Live posture score 0–100 (desk neck/lean proxy). */
+  postureScore: number | null;
   profileName: string | null;
   lastSnapshotMarker: string | null;
   videoRef: RefObject<HTMLVideoElement | null>;
@@ -50,7 +55,14 @@ export function useFaceTrackerOptional() {
   return useContext(FaceTrackerContext);
 }
 
-export function FaceTrackerProvider({ children }: { children: ReactNode }) {
+export function FaceTrackerProvider({
+  children,
+  autoStart = false,
+}: {
+  children: ReactNode;
+  /** Start webcam as soon as models are ready (Focus Body care shell host). */
+  autoStart?: boolean;
+}) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const blinkRef = useRef(new BlinkRateTracker());
   const focusRef = useRef(new FocusState());
@@ -65,6 +77,7 @@ export function FaceTrackerProvider({ children }: { children: ReactNode }) {
 
   const [tracking, setTracking] = useState(false);
   const [payload, setPayload] = useState<FaceStatusPayload | null>(null);
+  const [postureScore, setPostureScore] = useState<number | null>(null);
   const [focus, setFocus] = useState<FocusPayload>({
     not_focused: false,
     head_turned_away: false,
@@ -96,6 +109,8 @@ export function FaceTrackerProvider({ children }: { children: ReactNode }) {
     waveRef.current.reset();
     blinkRef.current.reset();
     setPayload(null);
+    setPostureScore(null);
+    clearBodyCareVision();
     setFocus({
       not_focused: false,
       head_turned_away: false,
@@ -120,13 +135,42 @@ export function FaceTrackerProvider({ children }: { children: ReactNode }) {
   }, [tracking, stopTracking, startTracking]);
 
   useEffect(() => {
+    if (!autoStart || tracking || onCalibrate) return;
+    startTracking();
+  }, [autoStart, tracking, onCalibrate, startTracking]);
+
+  useEffect(() => {
+    return () => {
+      clearBodyCareVision();
+    };
+  }, []);
+
+  useEffect(() => {
     if (!active || !reading) return;
     const profile = getActiveProfile();
+    const prefs = loadBodyCarePrefs();
     const blinkRate = blinkRef.current.update(reading.eyeOpenness, profile.eyelidBaseline);
     const scored = scoreAttention(reading, profile, blinkRate);
+    const posture = scorePosture(reading, profile, prefs.postureScoreThreshold);
     const focusPayload = focusRef.current.update(reading, profile, profile.eyelidBaseline);
-    setPayload(scored);
+    setPayload({
+      ...scored,
+      details: {
+        ...scored.details,
+        posture_score: posture.score,
+        pitch_delta: posture.pitchDelta,
+      },
+    });
+    setPostureScore(posture.score);
     setFocus(focusPayload);
+
+    publishBodyCareVision({
+      tracking: true,
+      faceDetected: reading.faceDetected,
+      postureScore: posture.score,
+      slouching: posture.slouching,
+      attention: scored.attention,
+    });
 
     if (waveRef.current.update(reading, reading.waveGesture)) {
       void triggerWaveSnapshot().then((marker) => {
@@ -186,6 +230,7 @@ export function FaceTrackerProvider({ children }: { children: ReactNode }) {
         error,
         payload,
         focus,
+        postureScore,
         profileName,
         lastSnapshotMarker,
         videoRef,

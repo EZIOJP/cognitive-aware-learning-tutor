@@ -10,6 +10,7 @@
  */
 
 import { recordFocusPerf } from "./focusPerfLog";
+import { agentDebugLog } from "./agentDebugLog";
 
 type EnforcerCmdResult = {
   ok?: boolean;
@@ -94,12 +95,21 @@ async function runOne(item: QueueItem): Promise<void> {
     };
 
     w.chrome.webview.addEventListener("message", onMsg);
+    // Keep native budget under the FE timer, but leave enough headroom for
+    // bible.devotion.* (host floors those to 15s) so FE does not time out first.
+    const isBibleWrite = item.op.startsWith("bible.");
+    const reserveMs = isBibleWrite ? 500 : 1500;
+    const nativeTimeoutMs = Math.max(
+      800,
+      Math.min(30000, item.timeoutMs > reserveMs + 200 ? item.timeoutMs - reserveMs : item.timeoutMs),
+    );
     w.chrome.webview.postMessage({
       type: "enforcer_cmd",
       v: 1,
       id,
       op: item.op,
       payload: item.payload,
+      timeoutMs: nativeTimeoutMs,
     });
   });
 
@@ -125,6 +135,24 @@ async function runOne(item: QueueItem): Promise<void> {
     error: err,
     detail: err ? JSON.stringify(result).slice(0, 240) : undefined,
   });
+
+  // #region agent log
+  if (item.op === "plan.overlay" || err) {
+    agentDebugLog({
+      hypothesisId: "G",
+      location: "enforcerNativeCmd.ts:runOne",
+      message: "enforcer cmd finished",
+      data: {
+        op: item.op,
+        timeoutMs: item.timeoutMs,
+        queueWaitMs: Math.round(queueWaitMs),
+        roundTripMs: Math.round(roundTripMs),
+        ok: !err,
+        error: err || null,
+      },
+    });
+  }
+  // #endregion
 
   item.resolve(result);
 }
@@ -179,13 +207,35 @@ export async function enforcerNativeCmd(
 ): Promise<EnforcerCmdResult | null> {
   if (!hasWebViewBridge()) return null;
   return new Promise((resolve) => {
-    queue.push({ op, payload, timeoutMs, enqueuedAt: performance.now(), resolve });
+    const item: QueueItem = {
+      op,
+      payload,
+      timeoutMs,
+      enqueuedAt: performance.now(),
+      resolve,
+    };
+    // User writes / overlays jump the queue — status probes must not starve Bible assign.
+    const PRIORITY_PREFIX = ["plan.overlay", "bible.", "softland.", "arm.", "day.confirm"];
+    const isPriority = PRIORITY_PREFIX.some((p) => op === p || op.startsWith(p));
+    if (isPriority) {
+      queue.unshift(item);
+    } else {
+      queue.push(item);
+    }
     coalesceStatusProbes();
     // Cap backlog: drop oldest status probes so UI writes stay responsive.
     if (queue.length > 8) {
       const kept: QueueItem[] = [];
       for (const q of queue) {
-        if (kept.length >= 6 && (q.op === "status.snapshot" || q.op === "day.status")) {
+        const qPriority = PRIORITY_PREFIX.some((p) => q.op === p || q.op.startsWith(p));
+        if (
+          kept.length >= 6 &&
+          !qPriority &&
+          (q.op === "status.snapshot" ||
+            q.op === "day.status" ||
+            q.op === "day.loop_snapshot" ||
+            q.op === "reward.status")
+        ) {
           q.resolve({ ok: false, error: "queue_dropped" });
           recordFocusPerf({
             kind: "enforcer_cmd",

@@ -93,7 +93,12 @@ export function focusShellAction(
     | "open_openjarvis"
     | "update_ui"
     | "update_stack"
-    | "apply_update",
+    | "apply_update"
+    | "run_stack"
+    | "ensure_enforcer"
+    | "start_api"
+    | "start_frontend"
+    | "start_web_stack",
 ): boolean {
   if (!hasWebViewBridge()) return false;
   const w = window as Window & {

@@ -374,14 +374,17 @@ export function SoftLandSiteRulesPanel({
       {error ? <p className="text-xs text-rose-300">{error}</p> : null}
       {via && saved ? <p className="text-[11px] text-emerald-300">Saved via {via}</p> : null}
 
-      <div className="grid gap-3 md:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {LISTS_SOFTLAND.map(({ key, title, hint, chipClass }) => (
-          <div key={key} className="rounded-xl border border-border/40 bg-background/30 p-3 space-y-2">
+          <div
+            key={key}
+            className="min-w-0 overflow-hidden rounded-xl border border-border/40 bg-background/30 p-3 space-y-2"
+          >
             <div>
               <p className="text-xs font-medium">{title}</p>
-              <p className="text-[11px] text-muted-foreground">{hint}</p>
+              <p className="text-[11px] text-muted-foreground leading-snug">{hint}</p>
             </div>
-            <div className="flex flex-wrap gap-1.5 min-h-[1.25rem]">
+            <div className="flex flex-wrap gap-1.5 min-h-[1.25rem] content-start">
               {(data[key] || []).length === 0 ? (
                 <span className="text-[10px] text-muted-foreground">None</span>
               ) : (
@@ -390,7 +393,7 @@ export function SoftLandSiteRulesPanel({
                     key={host}
                     type="button"
                     onClick={() => removeDomain(host)}
-                    className={`text-[10px] px-2 py-0.5 rounded border ${chipClass}`}
+                    className={`max-w-full truncate text-[10px] px-2 py-0.5 rounded border ${chipClass}`}
                     title="Remove"
                   >
                     {host} ×
@@ -398,7 +401,7 @@ export function SoftLandSiteRulesPanel({
                 ))
               )}
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-1.5 min-w-0">
               <input
                 value={drafts[key]}
                 onChange={(e) => setDrafts((d) => ({ ...d, [key]: e.target.value }))}
@@ -411,7 +414,7 @@ export function SoftLandSiteRulesPanel({
                 }}
                 placeholder="add domain"
                 aria-label={`Add ${title} domain`}
-                className="min-h-11 flex-1 rounded-lg border border-border/50 bg-background px-3 text-[13px]"
+                className="min-h-11 min-w-0 flex-1 rounded-lg border border-border/50 bg-background px-3 text-[13px]"
               />
               <button
                 type="button"
@@ -419,9 +422,11 @@ export function SoftLandSiteRulesPanel({
                   addDomain(key, drafts[key]);
                   setDrafts((d) => ({ ...d, [key]: "" }));
                 }}
-                className="min-h-11 inline-flex items-center gap-1 rounded-lg border border-border/50 px-3 text-[13px]"
+                className="min-h-11 w-11 shrink-0 inline-flex items-center justify-center rounded-lg border border-border/50"
+                title={`Add ${title} domain`}
+                aria-label={`Add ${title} domain`}
               >
-                <Plus size={12} /> Add
+                <Plus size={14} />
               </button>
             </div>
           </div>
@@ -432,7 +437,7 @@ export function SoftLandSiteRulesPanel({
         The built-in watch list (YouTube, Reddit, X, Instagram and 11 more) cannot be edited. Put a
         site in Allow to open it.
         {!canEditLists
-          ? " Finish morning Bible (and Confirm plan if Planning is on), or claim a free day / pass, to edit lists."
+          ? " Finish Bible → Plan → Confirm first. After that, claim a free day / pass to edit lock lists."
           : ""}
       </p>
 

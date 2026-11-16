@@ -5,17 +5,18 @@
     "appId": 1088801,
     "appType": "app",
     "version": {
-      "code": 19,
-      "name": "4.2.0"
+      "code": 21,
+      "name": "4.3.1"
     },
     "icon": "icon.png",
     "vender": "calt",
-    "description": "CALT Sync 4.2 — rich dump, hub+API dual POST"
+    "description": "CALT Sync 4.3.1 — Sync + Ping PC toast + optional auto"
   },
   "permissions": [
     "data:os.device.info",
     "data:user.info",
     "device:os.local_storage",
+    "device:os.alarm",
     "data:user.hd.sleep",
     "data:user.hd.heart_rate",
     "data:user.hd.step",

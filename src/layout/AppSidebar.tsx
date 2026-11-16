@@ -16,7 +16,10 @@ import {
   BookMarked,
   ChartColumn,
   NotebookPen,
+  HeartPulse,
+  Apple,
   BookOpen,
+  GraduationCap,
   CircleUserRound,
   MoreHorizontal,
   RefreshCw,
@@ -121,8 +124,11 @@ function focusShellSections(): { id: NavSectionId; label: string; items: Sidebar
       id: "life",
       label: "Life",
       items: [
+        { to: "/life", label: "Health", icon: HeartPulse, end: true, category: "focus" },
+        { to: "/nutrition", label: "NutriNode", icon: Apple, end: true, category: "focus" },
         { to: "/bible", label: "Bible", icon: BookMarked, end: true, category: "focus" },
         { to: "/journal", label: "Journal", icon: NotebookPen, end: true, category: "focus" },
+        { to: "/math", label: "Math → ML", icon: GraduationCap, end: true, category: "focus" },
       ],
     },
     {
@@ -140,6 +146,11 @@ function focusShellSections(): { id: NavSectionId; label: string; items: Sidebar
     },
   ];
 }
+
+/** SoftLand master (sites) — SoftLand ON ≠ Arm. */
+const SETTINGS_SOFTLAND = "/productivity?tab=settings&section=sites";
+/** Arm / hard_block_armed (kills) — separate from SoftLand. */
+const SETTINGS_ARM = "/productivity?tab=settings&section=unlock";
 
 function FocusStatusChips({ collapsed }: { collapsed: boolean }) {
   const [softlandOn, setSoftlandOn] = useState<boolean | null>(null);
@@ -174,33 +185,39 @@ function FocusStatusChips({ collapsed }: { collapsed: boolean }) {
 
   if (softlandOn == null && armed == null) return null;
 
-  const statusLabel = [
-    softlandOn != null ? (softlandOn ? "SoftLand on" : "SoftLand off") : null,
-    armed != null ? (armed ? "Armed" : "Disarmed") : null,
-  ]
-    .filter(Boolean)
-    .join(" · ");
+  const softlandLabel = softlandOn ? "SoftLand on" : "SoftLand off";
+  const armLabel = armed ? "Armed" : "Disarmed";
+  const softlandTitle =
+    "SoftLand = sites · open Settings Site block. SoftLand ON ≠ Armed.";
+  const armTitle = "Arm = kills · open Settings Arm. SoftLand ON ≠ Armed.";
 
   if (collapsed) {
     return (
       <div
         className="flex flex-col items-center gap-1 px-1"
-        aria-label={statusLabel || "SoftLand status"}
-        title={statusLabel || "SoftLand status"}
+        role="group"
+        aria-label="SoftLand and Arm status"
       >
         {softlandOn != null ? (
-          <span
+          <Link
+            to={SETTINGS_SOFTLAND}
             className={cn(
-              "h-2 w-2 rounded-full",
-              softlandOn ? "bg-emerald-400" : "bg-muted-foreground/40",
+              "block h-2 w-2 rounded-full outline-none transition-opacity hover:opacity-100 focus-visible:ring-2 focus-visible:ring-emerald-400/60",
+              softlandOn ? "bg-emerald-400 opacity-90" : "bg-muted-foreground/40 opacity-80",
             )}
-            aria-label={softlandOn ? "SoftLand on" : "SoftLand off"}
+            title={softlandTitle}
+            aria-label={`${softlandLabel} — open SoftLand settings`}
           />
         ) : null}
         {armed != null ? (
-          <span
-            className={cn("h-2 w-2 rounded-full", armed ? "bg-rose-400" : "bg-muted-foreground/40")}
-            aria-label={armed ? "Armed" : "Disarmed"}
+          <Link
+            to={SETTINGS_ARM}
+            className={cn(
+              "block h-2 w-2 rounded-full outline-none transition-opacity hover:opacity-100 focus-visible:ring-2 focus-visible:ring-rose-400/60",
+              armed ? "bg-rose-400 opacity-90" : "bg-muted-foreground/40 opacity-80",
+            )}
+            title={armTitle}
+            aria-label={`${armLabel} — open Arm settings`}
           />
         ) : null}
       </div>
@@ -210,31 +227,38 @@ function FocusStatusChips({ collapsed }: { collapsed: boolean }) {
   return (
     <div
       className="flex flex-wrap gap-1.5 px-0.5"
-      title="SoftLand = sites · Arm = kills · SoftLand ON ≠ Armed"
+      role="group"
+      aria-label="SoftLand = sites · Arm = kills · SoftLand ON ≠ Armed"
     >
       {softlandOn != null ? (
-        <span
+        <Link
+          to={SETTINGS_SOFTLAND}
           className={cn(
-            "text-[10px] font-mono px-2 py-1 rounded-md border tracking-wide",
+            "text-[10px] font-mono px-2 py-1 rounded-md border tracking-wide transition-colors",
             softlandOn
-              ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
-              : "border-border/50 text-muted-foreground",
+              ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300 hover:border-emerald-500/50 hover:bg-emerald-500/15"
+              : "border-border/50 text-muted-foreground hover:border-border hover:bg-accent/40",
           )}
+          title={softlandTitle}
+          aria-label={`${softlandLabel} — open SoftLand settings`}
         >
           SoftLand {softlandOn ? "on" : "off"}
-        </span>
+        </Link>
       ) : null}
       {armed != null ? (
-        <span
+        <Link
+          to={SETTINGS_ARM}
           className={cn(
-            "text-[10px] font-mono px-2 py-1 rounded-md border tracking-wide",
+            "text-[10px] font-mono px-2 py-1 rounded-md border tracking-wide transition-colors",
             armed
-              ? "border-rose-500/30 bg-rose-500/10 text-rose-300"
-              : "border-border/50 text-muted-foreground",
+              ? "border-rose-500/30 bg-rose-500/10 text-rose-300 hover:border-rose-500/50 hover:bg-rose-500/15"
+              : "border-border/50 text-muted-foreground hover:border-border hover:bg-accent/40",
           )}
+          title={armTitle}
+          aria-label={`${armLabel} — open Arm settings`}
         >
-          {armed ? "Armed" : "Disarmed"}
-        </span>
+          {armLabel}
+        </Link>
       ) : null}
     </div>
   );

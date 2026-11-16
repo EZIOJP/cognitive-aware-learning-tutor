@@ -1,0 +1,313 @@
+/**
+ * Focus Settings chrome tokens — productivity tool, dense, calm.
+ * Aligned with Focus ink/teal (not purple AI defaults).
+ */
+.settings-chrome {
+  --set-ink: #1c1b19;
+  --set-ink-soft: #3a3834;
+  --set-paper: color-mix(in srgb, var(--background) 92%, #e8e6df);
+  --set-rail: color-mix(in srgb, var(--card, var(--background)) 88%, #1c1b19);
+  --set-teal: var(--focus-teal, #0d7a70);
+  --set-teal-soft: var(--focus-teal-soft, color-mix(in srgb, #0d7a70 18%, transparent));
+  --set-teal-ring: color-mix(in srgb, var(--focus-teal, #0d7a70) 35%, transparent);
+  --set-amber: var(--focus-amber, #c47b3a);
+  --set-line: var(--focus-line, color-mix(in srgb, var(--border) 80%, transparent));
+  --set-radius: var(--focus-radius, 16px);
+  --set-gap: 0.75rem;
+}
+
+.settings-chrome {
+  background:
+    radial-gradient(1200px 400px at 0% 0%, color-mix(in srgb, #0b6b63 8%, transparent), transparent 55%),
+    var(--background);
+}
+
+/*
+ * Settings rides the Focus shell glass scrollport (no nested freeze).
+ * Rail stays sticky on desktop; body grows with content.
+ * Nested chrome scrollbars stay visually quiet; shell thumb remains.
+ */
+.settings-chrome *:not(.glass-scrollbar__content):not(.curved-scrollbar__content),
+.settings-no-scrollbar *:not(.glass-scrollbar__content):not(.curved-scrollbar__content) {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.settings-chrome *:not(.glass-scrollbar__content):not(.curved-scrollbar__content)::-webkit-scrollbar,
+.settings-no-scrollbar *:not(.glass-scrollbar__content):not(.curved-scrollbar__content)::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+.settings-chrome__shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  width: 100%;
+}
+
+@media (min-width: 900px) {
+  .settings-chrome__shell {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+}
+
+.settings-chrome__rail {
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--set-line);
+  background: color-mix(in srgb, var(--card, var(--background)) 70%, transparent);
+  backdrop-filter: blur(10px);
+}
+
+@media (min-width: 900px) {
+  .settings-chrome__rail {
+    position: sticky;
+    top: 0;
+    align-self: flex-start;
+    width: 13.5rem;
+    max-height: calc(100vh - 1.5rem);
+    border-bottom: none;
+    border-right: 1px solid var(--set-line);
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .settings-chrome__rail .settings-chrome__nav {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: thin;
+  }
+}
+
+.settings-chrome__brand {
+  padding: 1rem 1rem 0.5rem;
+}
+
+.settings-chrome__brand h1 {
+  font-size: 1.05rem;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  color: var(--foreground);
+  line-height: 1.2;
+}
+
+.settings-chrome__brand p {
+  margin-top: 0.35rem;
+  font-size: 0.72rem;
+  line-height: 1.45;
+  color: var(--muted-foreground);
+  max-width: 36rem;
+}
+
+.settings-chrome__nav {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0.4rem;
+  padding: 0.65rem 0.85rem 0.85rem;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none !important;
+}
+
+.settings-chrome__nav::-webkit-scrollbar {
+  width: 0 !important;
+  height: 0 !important;
+  display: none !important;
+}
+
+@media (min-width: 900px) {
+  .settings-chrome__nav {
+    flex-direction: column;
+    flex-wrap: nowrap;
+    overflow: visible;
+    padding: 0.5rem 0.65rem 1rem;
+    gap: 0.25rem;
+  }
+}
+
+.settings-chrome__nav-btn {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  min-height: 2.75rem;
+  min-width: max-content;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  padding: 0.55rem 0.75rem;
+  text-align: left;
+  transition:
+    background 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease;
+}
+
+@media (min-width: 900px) {
+  .settings-chrome__nav-btn {
+    min-width: 0;
+    width: 100%;
+  }
+}
+
+.settings-chrome__nav-btn:hover {
+  background: color-mix(in srgb, var(--accent, #fff) 45%, transparent);
+}
+
+.settings-chrome__nav-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--background), 0 0 0 4px var(--set-teal-ring);
+}
+
+.settings-chrome__nav-btn.is-active {
+  background: var(--set-ink);
+  border-color: var(--set-ink);
+  color: #f5f3ec;
+}
+
+.settings-chrome__nav-btn.is-active .settings-chrome__nav-blurb {
+  color: color-mix(in srgb, #f5f3ec 70%, transparent);
+}
+
+.settings-chrome__nav-icon {
+  margin-top: 0.1rem;
+  flex-shrink: 0;
+  opacity: 0.9;
+}
+
+.settings-chrome__nav-label {
+  font-size: 0.84rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.settings-chrome__nav-blurb {
+  display: none;
+  margin-top: 0.15rem;
+  font-size: 0.68rem;
+  font-weight: 400;
+  line-height: 1.35;
+  color: var(--muted-foreground);
+}
+
+@media (min-width: 900px) {
+  .settings-chrome__nav-blurb {
+    display: block;
+  }
+}
+
+.settings-chrome__main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.settings-chrome__status {
+  flex-shrink: 0;
+  padding: 0.65rem 1rem 0;
+}
+
+@media (min-width: 900px) {
+  .settings-chrome__status {
+    padding: 0.85rem 1.25rem 0;
+  }
+}
+
+.settings-chrome__body {
+  flex: 1;
+  overflow: visible;
+  padding: 1rem;
+  padding-bottom: 2.5rem;
+}
+
+@media (min-width: 900px) {
+  .settings-chrome__body {
+    padding: 1.15rem 1.35rem 2rem;
+  }
+}
+
+.settings-chrome__card {
+  border-radius: var(--set-radius);
+  border: 1px solid var(--set-line);
+  background: color-mix(in srgb, var(--card, var(--background)) 55%, transparent);
+  padding: 1.1rem 1.15rem;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.settings-chrome__jump {
+  display: grid;
+  gap: 0.65rem;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 560px) {
+  .settings-chrome__jump {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1100px) {
+  .settings-chrome__jump {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.settings-chrome__jump-btn {
+  min-height: 5.25rem;
+  border-radius: var(--set-radius);
+  border: 1px solid var(--set-line);
+  background: color-mix(in srgb, var(--background) 70%, transparent);
+  padding: 0.9rem 1rem;
+  text-align: left;
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    transform 160ms ease;
+}
+
+.settings-chrome__jump-btn:hover {
+  border-color: var(--set-teal-ring);
+  background: var(--set-teal-soft);
+}
+
+.settings-chrome__jump-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--background), 0 0 0 4px var(--set-teal-ring);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .settings-chrome__jump-btn:hover {
+    transform: translateY(-1px);
+  }
+}
+
+.settings-chrome__jump-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--set-teal);
+}
+
+.settings-chrome__jump-title {
+  margin-top: 0.35rem;
+  font-size: 0.95rem;
+  font-weight: 650;
+  letter-spacing: -0.015em;
+  color: var(--foreground);
+}
+
+.settings-chrome__jump-blurb {
+  margin-top: 0.3rem;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  color: var(--muted-foreground);
+}

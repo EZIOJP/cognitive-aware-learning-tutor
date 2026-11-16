@@ -1,5 +1,6 @@
 import { resolveApiUrl } from "../utils/resolveBackendUrl";
 import { formatHoursMins } from "../utils/formatDuration";
+import { isFocusDesktopShell } from "../utils/focusDesktopShell";
 
 const TOKEN_KEY = "vocab:auth-token";
 
@@ -51,8 +52,126 @@ export type InsightsDailyPayload = {
   overall_performance: "excellent" | "good" | "needs-improvement";
 };
 
+function localDateKeyNow(): string {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+function hourOfLocalIso(iso: string): number | null {
+  const t = Date.parse(iso);
+  if (!Number.isFinite(t)) return null;
+  const d = new Date(t);
+  return d.getHours() + d.getMinutes() / 60 + d.getSeconds() / 3600;
+}
+
+/** Focus shell: synthesize hub daily from enforcer mirrors (no Study :8000). */
+async function fetchHubDailyFromFocusMirrors(day: string): Promise<HubDailyPayload | null> {
+  const { focusDataUrl } = await import("../utils/focusDataUrl");
+  const dateKey = day === "today" ? localDateKeyNow() : String(day).slice(0, 10);
+  const isToday = dateKey === localDateKeyNow();
+
+  const [life, rollupRes, sleepRes, wearRes] = await Promise.all([
+    fetchLifeDailyFromMirror(day === "today" ? "today" : dateKey).catch(() => null),
+    fetch(focusDataUrl("day_rollup.json"), { cache: "no-store" }).catch(() => null),
+    fetch(focusDataUrl("sleep_windows.json"), { cache: "no-store" }).catch(() => null),
+    fetch(
+      focusDataUrl(isToday ? "wearable_day.json" : `wearable_days/${dateKey}.json`),
+      { cache: "no-store" },
+    ).catch(() => null),
+  ]);
+
+  const rollup = rollupRes?.ok
+    ? ((await rollupRes.json()) as {
+        local_date?: string;
+        productive_minutes?: number;
+      })
+    : null;
+  const sleepPack = sleepRes?.ok
+    ? ((await sleepRes.json()) as {
+        windows?: Array<{ date?: string; start?: string; end?: string; minutes?: number }>;
+      })
+    : null;
+  const wear = wearRes?.ok
+    ? ((await wearRes.json()) as {
+        sleep_hours?: number | null;
+        sleep_score?: number | null;
+        steps?: number | null;
+      })
+    : null;
+
+  const segments: HubSegment[] = [];
+  const win = (sleepPack?.windows || []).find((w) => String(w.date || "").slice(0, 10) === dateKey);
+  if (win?.start && win?.end) {
+    const startH = hourOfLocalIso(win.start);
+    const endH = hourOfLocalIso(win.end);
+    const mins =
+      typeof win.minutes === "number" && win.minutes > 0
+        ? win.minutes
+        : startH != null && endH != null
+          ? Math.max(1, Math.round(((endH - startH + 24) % 24) * 60))
+          : 0;
+    if (startH != null && endH != null && mins >= 12) {
+      const crosses = endH < startH || String(win.start).slice(0, 10) !== String(win.end).slice(0, 10);
+      segments.push({
+        label: "Sleep",
+        type: "sleep",
+        startHour: startH,
+        endHour: endH,
+        color: "#6366f1",
+        crossesMidnight: crosses,
+      });
+    }
+  }
+
+  const productive =
+    rollup && (!rollup.local_date || rollup.local_date === dateKey)
+      ? Math.max(0, Math.floor(Number(rollup.productive_minutes) || 0))
+      : Math.max(0, Math.floor(Number(life?.study_minutes) || 0));
+
+  const sleepHours =
+    presentPositive(wear?.sleep_hours) ??
+    presentPositive(life?.sleep_hours) ??
+    (typeof win?.minutes === "number" ? win.minutes / 60 : 0);
+  const sleepMinutes = Math.max(0, Math.round(sleepHours * 60));
+
+  const now = new Date();
+  const currentHour = isToday
+    ? now.getHours() + now.getMinutes() / 60 + now.getSeconds() / 3600
+    : 24;
+  const timeLeft = Math.max(0, 24 - currentHour);
+  const percentElapsed = Math.round((Math.min(24, currentHour) / 24) * 1000) / 10;
+
+  return {
+    date: dateKey,
+    segments,
+    productive_minutes: productive,
+    productive_label: formatHoursMins(productive),
+    sleep_minutes: sleepMinutes,
+    sleep_label: sleepMinutes > 0 ? formatHoursMins(sleepMinutes) : undefined,
+    sleep_score: wear?.sleep_score ?? life?.sleep_quality ?? null,
+    life_score: typeof life?.life_score === "number" ? life.life_score : 0,
+    time_left_hours: Math.round(timeLeft * 10) / 10,
+    percent_elapsed: percentElapsed,
+    current_hour: currentHour,
+    stats: {
+      tracker_productive_minutes: productive,
+      steps: Number(wear?.steps) || 0,
+    },
+  };
+}
+
+function presentPositive(n: number | null | undefined): number | null {
+  return typeof n === "number" && Number.isFinite(n) && n > 0 ? n : null;
+}
+
 export async function fetchHubDaily(day = "today"): Promise<HubDailyPayload | null> {
   try {
+    if (isFocusDesktopShell()) {
+      return await fetchHubDailyFromFocusMirrors(day);
+    }
     const res = await fetch(`${resolveApiUrl()}/api/hub/daily/${day}`, { headers: hubHeaders() });
     if (!res.ok) return null;
     return (await res.json()) as HubDailyPayload;
@@ -120,8 +239,75 @@ export type LifeDailyApi = {
   meditation_minutes?: number;
 };
 
+async function fetchLifeDailyFromMirror(day: string): Promise<LifeDailyApi | null> {
+  const { focusDataUrl } = await import("../utils/focusDataUrl");
+  const key = day === "today" ? "today" : String(day).slice(0, 10);
+  // Prefer enforcer-packed 14-day history (one file) when asking for a dated row.
+  if (key !== "today") {
+    try {
+      const packRes = await fetch(focusDataUrl("life_history_14.json"), { cache: "no-store" });
+      if (packRes.ok) {
+        const pack = (await packRes.json()) as { days?: LifeDailyApi[] };
+        const hit = (pack.days || []).find((d) => String(d?.date || "").slice(0, 10) === key);
+        if (hit) return hit;
+      }
+    } catch {
+      /* fall through to per-day file */
+    }
+  }
+  const name = key === "today" ? "life_today.json" : `life_days/${key}.json`;
+  const mr = await fetch(focusDataUrl(name), { cache: "no-store" });
+  if (!mr.ok) return null;
+  return (await mr.json()) as LifeDailyApi;
+}
+
+/** Focus shell: one mirror read for the Life Score trend (enforcer-maintained). */
+export async function fetchLifeHistory14(): Promise<LifeDailyApi[]> {
+  if (!isFocusDesktopShell()) {
+    const today = new Date();
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const keyOf = (d: Date) =>
+      `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    const days: string[] = [];
+    for (let i = 13; i >= 0; i--) {
+      const dt = new Date(today);
+      dt.setDate(dt.getDate() - i);
+      days.push(keyOf(dt));
+    }
+    const rows = await Promise.all(days.map((d) => fetchLifeDaily(d)));
+    return days.map((d, i) => rows[i] || { date: d, empty: true });
+  }
+  try {
+    const { focusDataUrl } = await import("../utils/focusDataUrl");
+    const res = await fetch(focusDataUrl("life_history_14.json"), { cache: "no-store" });
+    if (res.ok) {
+      const pack = (await res.json()) as { days?: LifeDailyApi[] };
+      if (Array.isArray(pack.days) && pack.days.length) return pack.days;
+    }
+  } catch {
+    /* fall through */
+  }
+  // Legacy: parallel per-day mirrors (still no hub).
+  const today = new Date();
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const days: string[] = [];
+  for (let i = 13; i >= 0; i--) {
+    const dt = new Date(today);
+    dt.setDate(dt.getDate() - i);
+    days.push(`${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}`);
+  }
+  const rows = await Promise.all(days.map((d) => fetchLifeDailyFromMirror(d).catch(() => null)));
+  return days.map((d, i) => rows[i] || { date: d, empty: true });
+}
+
 export async function fetchLifeDaily(day = "today"): Promise<LifeDailyApi | null> {
   try {
+    if (isFocusDesktopShell()) {
+      // Mirrors first — enforcer maintains life_*; hub is ingest-only.
+      const mirrored = await fetchLifeDailyFromMirror(day).catch(() => null);
+      if (mirrored) return mirrored;
+      return null;
+    }
     const res = await fetch(`${resolveApiUrl()}/api/life/daily/${day}`, { headers: hubHeaders() });
     if (!res.ok) return null;
     return (await res.json()) as LifeDailyApi;

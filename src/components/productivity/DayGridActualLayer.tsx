@@ -18,7 +18,7 @@ type Props = {
   onPlanSegClick?: (seg: PlanHourSeg, el: HTMLElement) => void;
 };
 
-type SlotGeom = { top: number; height: number; left: number; width: number };
+type SlotGeom = { top: number; height: number; left: number; width: number; railHour?: number };
 type RulerGeom = { top: number; left: number; width: number };
 
 function measureDaySlots(wrap: HTMLElement): {
@@ -55,19 +55,23 @@ function measureDaySlots(wrap: HTMLElement): {
           height: h,
           left: 0,
           width: column.width,
+          railHour: i,
         })),
       };
     }
     return {
       column,
       ruler,
-      hours: rows.map((row) => {
+      hours: rows.map((row, i) => {
         const r = row.getBoundingClientRect();
+        const attr = row.getAttribute("data-hour");
+        const railHour = attr != null && attr !== "" ? Number(attr) : i;
         return {
           top: r.top - bodyR.top,
           height: r.height,
           left: 0,
           width: column.width,
+          railHour: Number.isFinite(railHour) ? railHour : i,
         };
       }),
     };
@@ -201,13 +205,17 @@ export function DayGridActualLayer({
   const continuity = useMemo(() => {
     const fromPrev = new Map<number, Set<string>>();
     const intoNext = new Map<number, Set<string>>();
-    for (let h = 0; h < 24; h++) {
+    const keys = [...byHour.keys()].sort((a, b) => a - b);
+    for (const h of keys) {
       fromPrev.set(h, new Set());
       intoNext.set(h, new Set());
     }
-    for (let h = 0; h < 23; h++) {
+    for (let i = 0; i < keys.length - 1; i++) {
+      const h = keys[i];
+      const n = keys[i + 1];
+      if (n !== h + 1) continue;
       const a = byHour.get(h);
-      const b = byHour.get(h + 1);
+      const b = byHour.get(n);
       if (!a || !b) continue;
       const aIds = new Set(
         a.segments.filter((s) => s.end_min === 60).map((s) => s.session_group_id),
@@ -218,7 +226,7 @@ export function DayGridActualLayer({
       for (const id of aIds) {
         if (bIds.has(id)) {
           intoNext.get(h)!.add(id);
-          fromPrev.get(h + 1)!.add(id);
+          fromPrev.get(n)!.add(id);
         }
       }
     }
@@ -226,8 +234,6 @@ export function DayGridActualLayer({
   }, [byHour]);
 
   if (!geom) return null;
-
-  const hourCount = geom.hours.length || 24;
 
   return (
     <div className="day-grid-actual-layer" aria-hidden={false}>
@@ -246,16 +252,20 @@ export function DayGridActualLayer({
         aria-hidden
       />
 
-      {Array.from({ length: hourCount }, (_, hour) => {
+      {geom.hours.map((slot, idx) => {
+        const hour = slot.railHour ?? idx;
         const slice = byHour.get(hour);
-        const plans = plansByHour.get(hour) ?? [];
-        const slot = geom.hours[hour];
-        if (!slot) return null;
+        const plans = hour >= 0 ? (plansByHour.get(hour) ?? []) : [];
         const hourStart = new Date(day);
-        hourStart.setHours(hour, 0, 0, 0);
+        if (hour < 0) {
+          hourStart.setDate(hourStart.getDate() - 1);
+          hourStart.setHours(24 + hour, 0, 0, 0);
+        } else {
+          hourStart.setHours(hour, 0, 0, 0);
+        }
         return (
           <div
-            key={hour}
+            key={`slot-${hour}`}
             className="day-grid-hour-slot"
             style={{
               position: "absolute",

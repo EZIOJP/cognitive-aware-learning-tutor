@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { Check, ChevronLeft, ChevronRight, Save } from "lucide-react";
-import { useNavigate } from "react-router";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Check, ChevronLeft, ChevronRight, Play, Save } from "lucide-react";
+import { useLocation, useNavigate } from "react-router";
 import {
   assignDevotionChapter,
   bibleChapterHeartbeat,
@@ -21,6 +21,8 @@ import {
   useEnforcerReachability,
 } from "../../components/productivity/EnforcerWriteGate";
 import { isFocusDesktopShell } from "../../utils/focusDesktopShell";
+import { isFocusEnforcerBridgeAvailable } from "../../lib/enforcerNativeCmd";
+import { focusShellAction } from "../../lib/focusBehaviorFile";
 
 type TabId = DevotionSlot;
 
@@ -115,12 +117,14 @@ function ReadingPicker({
   slot,
   book,
   chapter,
-  onChanged,
+  locked,
+  onAssigned,
 }: {
   slot: DevotionSlot;
   book: string;
   chapter: number;
-  onChanged: () => void;
+  locked: boolean;
+  onAssigned: (devotion: DevotionTodayPayload) => void;
 }) {
   const [draftBook, setDraftBook] = useState(book);
   const [draftChapter, setDraftChapter] = useState(String(chapter || 1));
@@ -133,11 +137,17 @@ function ReadingPicker({
   }, [book, chapter]);
 
   const apply = async (nextBook: string, nextChapter: number) => {
+    if (locked || !isFocusEnforcerBridgeAvailable()) {
+      setErr("Enforcer bridge needed — Ensure enforcer from the ⋯ menu, then retry.");
+      return;
+    }
     setBusy(true);
     setErr(null);
     try {
-      await assignDevotionChapter(slot, nextBook, nextChapter);
-      onChanged();
+      const devotion = await assignDevotionChapter(slot, nextBook, nextChapter);
+      onAssigned(devotion);
+      invalidateFocusStatusBus({ pipe: false });
+      window.dispatchEvent(new Event(MORNING_UPDATED_EVENT));
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e));
     } finally {
@@ -146,17 +156,25 @@ function ReadingPicker({
   };
 
   const step = async (delta: -1 | 1) => {
+    if (locked || !isFocusEnforcerBridgeAvailable()) {
+      setErr("Enforcer bridge needed — Ensure enforcer from the ⋯ menu, then retry.");
+      return;
+    }
     setBusy(true);
     setErr(null);
     try {
-      await stepDevotionChapter(slot, delta);
-      onChanged();
+      const devotion = await stepDevotionChapter(slot, delta);
+      onAssigned(devotion);
+      invalidateFocusStatusBus({ pipe: false });
+      window.dispatchEvent(new Event(MORNING_UPDATED_EVENT));
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e));
     } finally {
       setBusy(false);
     }
   };
+
+  const disabled = busy || locked;
 
   return (
     <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
@@ -165,7 +183,7 @@ function ReadingPicker({
       </span>
       <button
         type="button"
-        disabled={busy}
+        disabled={disabled}
         onClick={() => void step(-1)}
         className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-white/10 hover:bg-white/5 disabled:opacity-50"
         aria-label="Previous chapter"
@@ -174,7 +192,7 @@ function ReadingPicker({
       </button>
       <button
         type="button"
-        disabled={busy}
+        disabled={disabled}
         onClick={() => void step(1)}
         className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-white/10 hover:bg-white/5 disabled:opacity-50"
         aria-label="Next chapter"
@@ -185,8 +203,9 @@ function ReadingPicker({
         <span className="sr-only">Book</span>
         <select
           value={draftBook}
+          disabled={disabled}
           onChange={(e) => setDraftBook(e.target.value)}
-          className="rounded-md border border-white/10 bg-black/40 px-2 py-1 text-xs sm:text-sm min-w-[8rem] text-foreground"
+          className="rounded-md border border-white/10 bg-black/40 px-2 py-1 text-xs sm:text-sm min-w-[8rem] text-foreground disabled:opacity-50"
           aria-label="Book"
         >
           {COMMON_BOOKS.map((b) => (
@@ -205,17 +224,18 @@ function ReadingPicker({
           type="number"
           min={1}
           value={draftChapter}
+          disabled={disabled}
           onChange={(e) => setDraftChapter(e.target.value)}
-          className="w-14 rounded-md border border-white/10 bg-black/40 px-2 py-1 text-xs sm:text-sm text-foreground"
+          className="w-14 rounded-md border border-white/10 bg-black/40 px-2 py-1 text-xs sm:text-sm text-foreground disabled:opacity-50"
           aria-label="Chapter"
         />
       </label>
       {slot === "afternoon" ? (
         <button
           type="button"
-          disabled={busy}
+          disabled={disabled}
           onClick={() => void apply("Proverbs", Number(draftChapter) || 1)}
-          className="rounded-md border border-amber-500/30 bg-amber-500/10 px-2 py-1 text-[11px] text-amber-100"
+          className="rounded-md border border-amber-500/30 bg-amber-500/10 px-2 py-1 text-[11px] text-amber-100 disabled:opacity-50"
         >
           Proverbs
         </button>
@@ -223,21 +243,36 @@ function ReadingPicker({
       {slot === "evening" ? (
         <button
           type="button"
-          disabled={busy}
+          disabled={disabled}
           onClick={() => void apply("Psalms", Number(draftChapter) || 1)}
-          className="rounded-md border border-sky-500/30 bg-sky-500/10 px-2 py-1 text-[11px] text-sky-100"
+          className="rounded-md border border-sky-500/30 bg-sky-500/10 px-2 py-1 text-[11px] text-sky-100 disabled:opacity-50"
         >
           Psalms
         </button>
       ) : null}
       <button
         type="button"
-        disabled={busy}
+        disabled={disabled}
         onClick={() => void apply(draftBook, Math.max(1, Number(draftChapter) || 1))}
         className="rounded-md bg-primary/90 px-2.5 py-1 text-[11px] sm:text-xs font-medium text-primary-foreground disabled:opacity-50"
       >
-        Set for today
+        {busy ? "Saving…" : "Set for today"}
       </button>
+      {locked || !isFocusEnforcerBridgeAvailable() ? (
+        <button
+          type="button"
+          onClick={() => {
+            if (!focusShellAction("ensure_enforcer")) {
+              setErr("Open CALT Focus from the tray — design host cannot write Bible SoT.");
+            } else {
+              setErr("Starting enforcer — retry Set for today in a few seconds.");
+            }
+          }}
+          className="inline-flex items-center gap-1 rounded-md border border-amber-400/40 bg-amber-500/15 px-2.5 py-1 text-[11px] text-amber-50"
+        >
+          <Play size={12} /> Ensure enforcer
+        </button>
+      ) : null}
       {err ? <p className="w-full text-xs text-rose-300">{err}</p> : null}
     </div>
   );
@@ -353,6 +388,8 @@ function JournalField({
 
 export function BibleReaderPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const slotPicked = useRef(false);
   const reach = useEnforcerReachability();
   const writesLocked =
     isFocusDesktopShell() && (reach === "down" || reach === "no_bridge");
@@ -366,6 +403,18 @@ export function BibleReaderPage() {
     setData(payload);
     return payload;
   }, []);
+
+  const applyAssignedDevotion = useCallback(
+    async (devotion: DevotionTodayPayload) => {
+      if (devotion?.today_chapter || devotion?.morning) {
+        setData(devotion);
+        setError(null);
+        return;
+      }
+      await load().then(() => setError(null));
+    },
+    [load],
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -384,6 +433,25 @@ export function BibleReaderPage() {
       cancelled = true;
     };
   }, [load]);
+
+  useEffect(() => {
+    const raw = `${location.search || ""}${location.hash || ""}`;
+    const q = raw.includes("?") ? raw.slice(raw.indexOf("?") + 1) : "";
+    const slot = new URLSearchParams(q).get("slot");
+    if (slot === "morning" || slot === "afternoon" || slot === "evening") {
+      slotPicked.current = true;
+      setTab(slot);
+    }
+  }, [location.search, location.hash]);
+
+  useEffect(() => {
+    if (!data || slotPicked.current) return;
+    slotPicked.current = true;
+    const hour = new Date().getHours();
+    if (hour >= 17 && !data.evening?.done) setTab("evening");
+    else if (hour >= 12 && !data.afternoon?.done) setTab("afternoon");
+    else setTab("morning");
+  }, [data]);
 
   const today = data?.today_chapter;
   const goal = data?.chapter_goal;
@@ -442,7 +510,16 @@ export function BibleReaderPage() {
         navigate("/productivity?tab=plan");
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      const msg = e instanceof Error ? e.message : String(e);
+      if (msg.includes("slot_not_open")) {
+        setError(
+          slot === "afternoon"
+            ? "Afternoon reading opens at 12:00."
+            : "Evening reading opens at 17:00.",
+        );
+      } else {
+        setError(msg);
+      }
     }
   };
 
@@ -500,9 +577,9 @@ export function BibleReaderPage() {
         : data?.evening_chapter;
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] flex-col gap-3 p-4 sm:p-6">
+    <div className="flex min-h-0 flex-1 flex-col gap-3">
       {writesLocked ? <EnforcerUnreachableBanner reachability={reach} /> : null}
-      <div className="gloss-panel rounded-xl px-3 py-2 sm:px-4 sm:py-2.5 shrink-0 space-y-2">
+      <div className="focus-panel gloss-panel rounded-xl px-3 py-2 sm:px-4 sm:py-2.5 shrink-0 space-y-2">
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
           <h1 className="text-base sm:text-lg font-semibold tracking-tight whitespace-nowrap shrink-0">
             Devotion
@@ -576,7 +653,8 @@ export function BibleReaderPage() {
               slot={tab}
               book={activeBookChapter.book}
               chapter={activeBookChapter.chapter}
-              onChanged={() => void load().then(() => setError(null))}
+              locked={writesLocked}
+              onAssigned={(devotion) => void applyAssignedDevotion(devotion)}
             />
           </div>
         ) : null}
@@ -591,7 +669,7 @@ export function BibleReaderPage() {
 
       {data?.today_chapter?.done && tab === "morning" && (
         <div className="rounded-lg border border-teal-500/30 bg-teal-500/10 px-3 py-2 text-xs sm:text-sm text-teal-100 shrink-0">
-          Morning done. SoftLand is unlocked for planning.{" "}
+          Morning done. Finish the plan next. Afternoon reading opens at 12:00, evening at 17:00.{" "}
           <button
             type="button"
             className="underline"
@@ -602,7 +680,7 @@ export function BibleReaderPage() {
         </div>
       )}
 
-      <div className="min-h-0 flex-1 overflow-y-auto rounded-xl border border-white/10 bg-black/40 px-4 sm:px-6 py-4 sm:py-5 space-y-5">
+      <div className="focus-panel min-h-0 flex-1 overflow-y-auto rounded-xl px-4 sm:px-6 py-4 sm:py-5 space-y-5">
         {loading && !data ? (
           <p className="text-base text-muted-foreground">Loading devotion…</p>
         ) : data ? (

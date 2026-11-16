@@ -1,6 +1,6 @@
 /**
- * Manual health dumper — Dump captures, Send flushes queue.
- * No autosync. PC / desktop / web never pull the watch on a timer.
+ * CALT Sync — one-tap Dump & Send.
+ * Optional auto: watch alarm wakes this page every N hours (default 3) → Sync.
  */
 import { createWidget, widget, align, text_style, prop } from '@zos/ui'
 import { push } from '@zos/router'
@@ -10,6 +10,7 @@ import { log } from '@zos/utils'
 import { buildHealthSnapshot, snapshotSummary, sleepDisplayMinutes } from './sensors'
 import { screen } from './layout'
 import { sidePayload } from '../shared/sidePayload'
+import { autoStatusLine, markAutoRan } from './autoAlarm'
 import {
   queueSnapshot,
   snapshotForDay,
@@ -52,7 +53,7 @@ function fmtSyncError(err, result) {
   const raw = pieces.join(' · ')
   const d = raw.toLowerCase()
   if (d.includes('timed out') || d.includes('timeout')) {
-    return 'BLE timeout · keep watch + phone awake, tap Send again'
+    return 'BLE timeout · keep watch + phone awake, tap Sync again'
   }
   if (d.includes('localhost') || d.includes('127.0.0.1')) {
     return 'Use PC LAN IP in phone settings, not localhost'
@@ -63,12 +64,12 @@ function fmtSyncError(err, result) {
   if (d.includes('401') || d.includes('unauthorized')) {
     return 'Token rejected · calt-local-wearables'
   }
-  if (d.includes('413')) return 'Dump too large · retry Send (resumes chunk)'
+  if (d.includes('413')) return 'Dump too large · retry Sync (resumes chunk)'
   if (d.includes('network') || d.includes('-2') || (d.includes('fail') && d.includes('fetch'))) {
     return 'Phone cannot reach PC · same Wi-Fi, hub :8765 or API :8000'
   }
   const short = raw.replace(/\s+/g, ' ').trim()
-  return (short || 'Send failed · swipe to log').slice(0, 96)
+  return (short || 'Sync failed · swipe to log').slice(0, 96)
 }
 
 function persistProgress(text) {
@@ -160,8 +161,9 @@ Page({
 
     const S = screen()
     const { pad, contentW, width, height } = S
-    const btnH = Math.round(height * 0.14)
-    const gap = Math.round(pad * 0.35)
+    const syncSize = Math.round(Math.min(width, height) * 0.4)
+    const syncX = Math.round((width - syncSize) / 2)
+    const syncY = Math.round(height * 0.22)
 
     // Do not hit every sensor just to paint the home screen.
     const queuedToday = snapshotForDay(localDateKey())
@@ -169,34 +171,52 @@ Page({
 
     createWidget(widget.TEXT, {
       x: pad,
-      y: Math.round(height * 0.06),
+      y: Math.round(height * 0.05),
       w: contentW,
-      h: Math.round(height * 0.07),
+      h: Math.round(height * 0.06),
       color: 0xffffff,
       text_size: Math.round(width * 0.055),
       align_h: align.CENTER_H,
-      text: 'CALT Dump',
+      text: 'CALT Sync',
     })
 
     this.snapW = createWidget(widget.TEXT, {
       x: pad,
-      y: Math.round(height * 0.14),
+      y: Math.round(height * 0.11),
       w: contentW,
-      h: Math.round(height * 0.16),
+      h: Math.round(height * 0.09),
       color: 0x88c0bb,
-      text_size: Math.round(width * 0.036),
+      text_size: Math.round(width * 0.032),
       align_h: align.CENTER_H,
       text_style: text_style.WRAP,
-      text: queuedToday ? snapshotSummary(queuedToday) : 'Tap Dump today',
+      text: queuedToday ? snapshotSummary(queuedToday) : 'Tap Sync',
     })
+
+    createWidget(widget.BUTTON, {
+      x: syncX,
+      y: syncY,
+      w: syncSize,
+      h: syncSize,
+      radius: Math.round(syncSize / 2),
+      text: 'Sync',
+      text_size: Math.round(width * 0.07),
+      normal_color: 0x1a9b8e,
+      press_color: 0x147a70,
+      click_func: () => {
+        this.doDump()
+        this.doSend(messageBuilder)
+      },
+    })
+
+    const below = syncY + syncSize + Math.round(pad * 0.25)
 
     this.queueW = createWidget(widget.TEXT, {
       x: pad,
-      y: Math.round(height * 0.30),
+      y: below,
       w: contentW,
-      h: Math.round(height * 0.06),
+      h: Math.round(height * 0.05),
       color: 0xf0c674,
-      text_size: Math.round(width * 0.03),
+      text_size: Math.round(width * 0.028),
       align_h: align.CENTER_H,
       text_style: text_style.WRAP,
       text: `Queue ${queueDepth()}/7 days`,
@@ -204,11 +224,11 @@ Page({
 
     this.progressW = createWidget(widget.TEXT, {
       x: pad,
-      y: Math.round(height * 0.36),
+      y: below + Math.round(height * 0.05),
       w: contentW,
-      h: Math.round(height * 0.06),
+      h: Math.round(height * 0.05),
       color: COLOR_MUTED,
-      text_size: Math.round(width * 0.03),
+      text_size: Math.round(width * 0.028),
       align_h: align.CENTER_H,
       text_style: text_style.WRAP,
       text: 'Idle',
@@ -216,69 +236,67 @@ Page({
 
     this.statusW = createWidget(widget.TEXT, {
       x: pad,
-      y: Math.round(height * 0.42),
+      y: below + Math.round(height * 0.10),
       w: contentW,
       h: Math.round(height * 0.08),
       color: COLOR_MUTED,
-      text_size: Math.round(width * 0.028),
+      text_size: Math.round(width * 0.026),
       align_h: align.CENTER_H,
       text_style: text_style.WRAP,
-      text: 'Dump then Send',
+      text: 'One tap · dump & send',
     })
 
-    let y = Math.round(height * 0.52)
-    createWidget(widget.BUTTON, {
+    this.autoW = createWidget(widget.TEXT, {
       x: pad,
-      y,
+      y: below + Math.round(height * 0.18),
       w: contentW,
-      h: btnH,
-      radius: Math.round(btnH * 0.22),
-      text: 'Dump today',
-      text_size: Math.round(width * 0.045),
+      h: Math.round(height * 0.035),
+      color: 0x88c0bb,
+      text_size: Math.round(width * 0.024),
+      align_h: align.CENTER_H,
+      text_style: text_style.WRAP,
+      text: autoStatusLine(),
+    })
+
+    const pingH = Math.round(height * 0.07)
+    createWidget(widget.BUTTON, {
+      x: Math.round(width * 0.25),
+      y: below + Math.round(height * 0.23),
+      w: Math.round(width * 0.5),
+      h: pingH,
+      radius: Math.round(pingH / 2),
+      text: 'Ping PC',
+      text_size: Math.round(width * 0.035),
       normal_color: 0x2a4a6a,
       press_color: 0x1e364d,
-      click_func: () => this.doDump(),
+      click_func: () => this.doPing(messageBuilder),
     })
-    y += btnH + gap
 
-    createWidget(widget.BUTTON, {
-      x: pad,
-      y,
-      w: contentW,
-      h: btnH,
-      radius: Math.round(btnH * 0.22),
-      text: 'Dump & Send',
-      text_size: Math.round(width * 0.045),
-      normal_color: 0x3d5a80,
-      press_color: 0x2c4160,
-      click_func: () => {
-        this.doDump()
-        this.doSend(messageBuilder)
-      },
-    })
-    y += btnH + gap
-
-    createWidget(widget.BUTTON, {
-      x: pad,
-      y,
-      w: contentW,
-      h: btnH,
-      radius: Math.round(btnH * 0.22),
-      text: 'Send queue',
-      text_size: Math.round(width * 0.045),
-      normal_color: 0x1a9b8e,
-      press_color: 0x147a70,
-      click_func: () => this.doSend(messageBuilder),
-    })
-    y += btnH + gap
+    // Auto-launch from alarm: dump + send once UI + BLE are ready.
+    try {
+      const g = getApp().globalData || (getApp()._options && getApp()._options.globalData) || {}
+      if (g.autoLaunch) {
+        g.autoLaunch = false
+        this.setStatus('Auto sync…', COLOR_BUSY)
+        setTimeout(() => {
+          try {
+            this.doDump()
+            this.doSend(messageBuilder, { fromAuto: true })
+          } catch (e) {
+            logger.log(`auto ${e}`)
+            this.setError('Auto sync failed · tap Sync')
+          }
+        }, 400)
+      }
+    } catch (_) {}
 
     createWidget(widget.TEXT, {
       x: pad,
-      y,
+      y: Math.round(height * 0.92),
       w: contentW,
-      h: Math.round(height * 0.06),
+      h: Math.round(height * 0.05),
       color: 0x666666,
-      text_size: Math.round(width * 0.028),
+      text_size: Math.round(width * 0.026),
       align_h: align.CENTER_H,
       text: 'Swipe · settings / log',
     })
@@ -313,7 +331,7 @@ Page({
 
   setError(text) {
     persistError(text)
-    this.setProgress('Failed · tap Send to retry', COLOR_ERR)
+    this.setProgress('Failed · tap Sync to retry', COLOR_ERR)
     this.setStatus(text, COLOR_ERR)
   },
 
@@ -332,6 +350,28 @@ Page({
     )
   },
 
+  doPing(messageBuilder) {
+    this.clearError()
+    this.setProgress('Pinging Focus hub…', COLOR_BUSY)
+    this.setStatus('Watch → phone → PC', COLOR_BUSY)
+    messageBuilder
+      .request({ method: 'PING' })
+      .then((res) => {
+        const result = sidePayload(res)
+        if (result && result.ok) {
+          const notified = result.pingNotified ? ' · PC toast' : ''
+          this.setProgress('Ping OK', COLOR_OK)
+          this.setStatus(`Hub reachable${notified}`, COLOR_OK)
+          return
+        }
+        this.setError(fmtSyncError(null, result) || 'Ping failed')
+      })
+      .catch((e) => {
+        this.setError(fmtSyncError(e, null))
+        logger.log(`ping ${e}`)
+      })
+  },
+
   doDump() {
     this.clearError()
     this.setProgress('Capturing sensors…', COLOR_BUSY)
@@ -342,18 +382,19 @@ Page({
     if (this.snapW) this.snapW.setProperty(prop.TEXT, snapshotSummary(health))
     this.refreshQueueLabel()
     this.setProgress('Queued today', COLOR_OK)
-    this.setStatus('Press Send queue', COLOR_OK)
+    this.setStatus('Sending…', COLOR_OK)
   },
 
-  doSend(messageBuilder) {
+  doSend(messageBuilder, opts) {
     if (this._syncing) {
       this.setStatus('Already sending…', COLOR_BUSY)
       return
     }
+    const fromAuto = !!(opts && opts.fromAuto)
     this._syncing = true
     this.clearError()
     this.setProgress('Starting…', COLOR_BUSY)
-    this.setStatus('Sending to phone', COLOR_BUSY)
+    this.setStatus(fromAuto ? 'Auto sending…' : 'Sending to phone', COLOR_BUSY)
 
     const today = localDateKey()
     // Ensure today exists if user forgot Dump
@@ -373,7 +414,7 @@ Page({
     if (!days.length) {
       this._syncing = false
       this.setProgress('Idle', COLOR_MUTED)
-      this.setStatus('Nothing to send · Dump today first', COLOR_ERR)
+      this.setStatus('Nothing to send · tap Sync again', COLOR_ERR)
       return
     }
 
@@ -391,10 +432,16 @@ Page({
         // current day, so no later run can recover them — say so instead of
         // reporting a clean fill.
         const gaps = gapDays(today)
+        if (fromAuto) markAutoRan()
+        if (self.autoW) {
+          try {
+            self.autoW.setProperty(prop.TEXT, autoStatusLine())
+          } catch (_) {}
+        }
         self.setStatus(
           gaps.length
-            ? `Sent ${days.length}d · ${gaps.length}d never captured`
-            : `Done · filled thru ${today}`,
+            ? `${fromAuto ? 'Auto · ' : ''}Sent ${days.length}d · ${gaps.length}d never captured`
+            : `${fromAuto ? 'Auto · ' : ''}Done · filled thru ${today}`,
           gaps.length ? COLOR_BUSY : COLOR_OK,
         )
         persistError('')

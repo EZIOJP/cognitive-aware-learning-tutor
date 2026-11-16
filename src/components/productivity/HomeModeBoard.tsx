@@ -1,18 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState, type CSSProperties } from "react";
 import { endOfDay, startOfDay } from "date-fns";
-import {
-  Check,
-  ChevronDown,
-  Loader2,
-  Plus,
-  Shield,
-  Target,
-  Trash2,
-} from "lucide-react";
+import { Check, Loader2, Plus, Trash2 } from "lucide-react";
 import {
   deleteDayTask,
   evaluateDayClose,
   setDayTaskDone,
+  upsertDayTask,
   type DayLoopSnapshot,
   type DayLoopTask,
 } from "../../api/dayLoopClient";
@@ -20,33 +13,24 @@ import {
   fetchPlannerBlocks,
   type PlannerBlock,
 } from "../../api/plannerClient";
-import { enforcerNativeCmd, isFocusEnforcerBridgeAvailable } from "../../lib/enforcerNativeCmd";
+import { isFocusEnforcerBridgeAvailable } from "../../lib/enforcerNativeCmd";
+import ActiveWorkSessionEnd from "./ActiveWorkSessionEnd";
+import { FocusJarvisPanel } from "./FocusJarvisPanel";
+import {
+  GOALS_UPDATED_EVENT,
+  loadProductivityGoals,
+  persistProductivityGoals,
+  type ExtraGoal,
+} from "./ProductivityGoalsPanel";
 import { invalidateFocusStatusBus } from "../../lib/focusStatusBus";
 import { useFocusStatus } from "../../hooks/useFocusStatus";
 import { isFocusDesktopShell } from "../../utils/focusDesktopShell";
 import { cn } from "../../app/components/ui/utils";
 import { MORNING_UPDATED_EVENT } from "./ConfirmPlanButton";
-import { GlanceBar } from "./GlanceBar";
+import { GlanceBar, RailProgressCell } from "./GlanceBar";
 import type { DesktopStats, GoalsStatusResponse } from "../../api/behaviorClient";
 import { formatHoursMins } from "../../utils/formatDuration";
 
-type SiteRules = {
-  allow_extra: string[];
-  watch_extra: string[];
-  block_extra: string[];
-};
-
-function asList(v: unknown): string[] {
-  if (!Array.isArray(v)) return [];
-  return v.map((x) => String(x || "").trim().toLowerCase()).filter(Boolean);
-}
-
-function normalizeDomain(raw: string): string {
-  let s = raw.trim().toLowerCase().replace(/^https?:\/\//, "");
-  s = s.split("/")[0] || "";
-  if (s.startsWith("www.")) s = s.slice(4);
-  return s;
-}
 
 function pickActiveBlock(blocks: PlannerBlock[], now: Date): PlannerBlock | null {
   const open = blocks.filter(
@@ -78,14 +62,6 @@ function formatTime(iso: string): string {
   } catch {
     return "—";
   }
-}
-
-function dayBounds(day: Date): { start: number; end: number } {
-  const start = new Date(day);
-  start.setHours(0, 0, 0, 0);
-  const end = new Date(day);
-  end.setHours(24, 0, 0, 0);
-  return { start: start.getTime(), end: end.getTime() };
 }
 
 function clamp01(n: number): number {
@@ -166,249 +142,250 @@ function modeTone(mode: string): { glow: string } {
   return { glow: "text-foreground" };
 }
 
-type BlockCardProps = {
-  title: string;
-  subtitle?: string;
-  accent: "sky" | "rose";
-  icon: ReactNode;
-  domains: string[];
-  listCount: number;
-  canEdit: boolean;
-  draft: string;
-  onDraft: (v: string) => void;
-  onAdd: () => void;
-  onRemove: (host: string) => void;
-  saving: boolean;
-};
-
-function BlockCard({
-  title,
-  subtitle,
-  accent,
-  icon,
-  domains,
-  listCount,
-  canEdit,
-  draft,
-  onDraft,
-  onAdd,
-  onRemove,
-  saving,
-}: BlockCardProps) {
-  const userTouched = useRef(false);
-  const [open, setOpen] = useState(domains.length === 0);
-
-  useEffect(() => {
-    if (userTouched.current) return;
-    setOpen(domains.length === 0);
-  }, [domains.length]);
-
-  const border =
-    accent === "rose"
-      ? "border-rose-400/25 hover:border-rose-400/40"
-      : "border-sky-400/25 hover:border-sky-400/40";
-  const chip =
-    accent === "rose"
-      ? "bg-rose-500/15 text-rose-100"
-      : "bg-sky-500/15 text-sky-100";
-
-  return (
-    <div
-      className={cn(
-        "rounded-2xl border bg-muted/15 overflow-hidden",
-        border,
-        accent === "rose" ? "border-l-[3px] border-l-rose-400/70" : "border-l-[3px] border-l-sky-400/70",
-      )}
-    >
-      <button
-        type="button"
-        className="w-full flex items-center gap-3 px-4 py-3.5 text-left"
-        onClick={() => {
-          userTouched.current = true;
-          setOpen((v) => !v);
-        }}
-        aria-expanded={open}
-      >
-        <span className={cn("flex size-8 items-center justify-center rounded-lg shrink-0", chip)}>
-          {icon}
-        </span>
-        <span className="min-w-0 flex-1">
-          <span className="flex flex-wrap items-center gap-2">
-            <span className="text-sm font-semibold text-foreground">{title}</span>
-            <span className="rounded-full border border-border/40 px-2 py-0.5 text-[10px] text-muted-foreground tabular-nums">
-              {listCount} on list
-            </span>
-            <span
-              className={cn(
-                "rounded-full px-2 py-0.5 text-[10px] font-medium",
-                listCount > 0 || accent === "rose"
-                  ? "bg-emerald-500/15 text-emerald-100"
-                  : "bg-muted/40 text-muted-foreground",
-              )}
-            >
-              {listCount > 0 || accent === "rose" ? "On" : "Off"}
-            </span>
-          </span>
-          {subtitle ? (
-            <span className="mt-0.5 block text-[11px] text-muted-foreground">{subtitle}</span>
-          ) : null}
-        </span>
-        <ChevronDown
-          className={cn(
-            "size-4 shrink-0 text-muted-foreground transition-transform duration-200",
-            open && "rotate-180",
-          )}
-          aria-hidden
-        />
-      </button>
-
-      {open ? (
-        <div className="border-t border-border/30 px-4 py-3 space-y-3">
-          <div className="flex flex-wrap gap-3 text-[11px] text-muted-foreground">
-            <span>
-              Listed sites{" "}
-              <strong className="text-foreground/90 tabular-nums">{listCount}</strong>
-            </span>
-            <span>
-              Blocks today{" "}
-              <strong className="text-foreground/90 tabular-nums">—</strong>
-              <span className="opacity-70"> (native counter soon)</span>
-            </span>
-          </div>
-
-          <ul className="max-h-40 space-y-1 overflow-y-auto">
-            {domains.map((host) => (
-              <li
-                key={host}
-                className="flex items-center gap-2 rounded-lg border border-border/40 bg-background/40 px-2.5 py-1.5 text-xs"
-              >
-                <span className="min-w-0 flex-1 truncate font-mono text-foreground/90">{host}</span>
-                {canEdit ? (
-                  <button
-                    type="button"
-                    className="text-muted-foreground hover:text-rose-300"
-                    aria-label={`Remove ${host}`}
-                    onClick={() => onRemove(host)}
-                    disabled={saving}
-                  >
-                    <Trash2 className="size-3.5" />
-                  </button>
-                ) : null}
-              </li>
-            ))}
-            {!domains.length ? (
-              <li className="text-[11px] text-muted-foreground px-0.5">No custom hosts yet.</li>
-            ) : null}
-          </ul>
-
-          {canEdit ? (
-            <div className="flex gap-2">
-              <input
-                value={draft}
-                onChange={(e) => onDraft(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") onAdd();
-                }}
-                placeholder="add.domain.com"
-                className="min-w-0 flex-1 rounded-lg border border-white/15 bg-black/30 px-2.5 py-1.5 text-xs font-mono"
-              />
-              <button
-                type="button"
-                className="inline-flex items-center gap-1 rounded-lg border border-white/15 bg-white/5 px-2.5 py-1.5 text-xs hover:bg-white/10 disabled:opacity-50"
-                onClick={onAdd}
-                disabled={saving}
-              >
-                <Plus className="size-3.5" />
-                Add
-              </button>
-            </div>
-          ) : (
-            <p className="text-[10px] text-muted-foreground">
-              Plan confirmed — list locked for this day. Edit again before Confirm plan, or in Settings.
-            </p>
-          )}
-        </div>
-      ) : null}
-    </div>
-  );
+function formatLeft(ms: number): string {
+  if (ms <= 0) return "0m";
+  const total = Math.round(ms / 60_000);
+  if (total < 60) return `${total}m left`;
+  const h = Math.floor(total / 60);
+  const m = total % 60;
+  return m ? `${h}h ${m}m left` : `${h}h left`;
 }
 
-function DayBlocksTimeline({
-  day,
-  blocks,
-  activeId,
-}: {
-  day: Date;
-  blocks: PlannerBlock[];
-  activeId?: string | number | null;
-}) {
-  const { start, end } = dayBounds(day);
-  const span = Math.max(1, end - start);
-  const now = Date.now();
-  const nowPct = clamp01((now - start) / span) * 100;
+function blockProgress(b: PlannerBlock, now: number): number {
+  const a = new Date(b.start_at).getTime();
+  const z = new Date(b.end_at).getTime();
+  if (!Number.isFinite(a) || !Number.isFinite(z) || z <= a) return 0;
+  if (now >= z || b.status === "done") return 100;
+  if (now <= a) return 0;
+  return Math.round(clamp01((now - a) / (z - a)) * 100);
+}
+
+/** Planned work completed (done / remaining vs planned). */
+function blockAdherence(b: PlannerBlock): number {
+  if (b.status === "done") return 100;
+  const planned = Math.max(0, Number(b.planned_minutes) || 0);
+  const rem = Math.max(0, Number(b.remaining_minutes ?? planned));
+  if (planned <= 0) return 0;
+  return Math.round(clamp01((planned - rem) / planned) * 100);
+}
+
+function pickRibbonSlots(
+  blocks: PlannerBlock[],
+  _activeId: string | number | null | undefined,
+  now: number,
+): { past: PlannerBlock | null; current: PlannerBlock | null; future: PlannerBlock | null; timeLeft: string } {
   const visible = blocks
     .filter((b) => b.status !== "cancelled" && b.status !== "rolled")
     .slice()
     .sort((a, b) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime());
 
   if (!visible.length) {
-    return (
-      <p className="mt-2.5 text-[11px] text-muted-foreground">
-        No planned blocks today — add some in Planner.
-      </p>
-    );
+    return { past: null, current: null, future: null, timeLeft: "" };
   }
 
+  // Current is only a block whose window contains now. A later block stays in Next.
+  const current =
+    visible.find((b) => {
+      const a = new Date(b.start_at).getTime();
+      const z = new Date(b.end_at).getTime();
+      return a <= now && now < z;
+    }) ?? null;
+  let past: PlannerBlock | null = null;
+  for (const b of visible) {
+    if (new Date(b.end_at).getTime() <= now) past = b;
+  }
+  const future =
+    visible.find((b) => b !== current && new Date(b.start_at).getTime() > now) ?? null;
+
+  const timeLeft = current
+    ? formatLeft(new Date(current.end_at).getTime() - now)
+    : "";
+
+  return { past, current, future, timeLeft };
+}
+
+/**
+ * Local midnight → next midnight.
+ * The bar is how far through the day you are. The label is what is still left.
+ * Filling only the leftover slice made 2h left look like an empty bar.
+ */
+function localDayRemaining(now: number): { throughPct: number; label: string } {
+  const d = new Date(now);
+  const start = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  const span = 24 * 60 * 60 * 1000;
+  const elapsed = Math.max(0, Math.min(span, now - start));
+  const left = Math.max(0, span - elapsed);
+  return {
+    throughPct: Math.round(clamp01(elapsed / span) * 100),
+    label: formatLeft(left),
+  };
+}
+
+function formatUntilClock(iso: string): string {
+  const d = new Date(iso);
+  if (!Number.isFinite(d.getTime())) return iso;
+  return d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+}
+
+function BlockRailCell({
+  role,
+  block,
+  now,
+  timeLeft,
+}: {
+  role: "past" | "now" | "next";
+  block: PlannerBlock | null;
+  now: number;
+  timeLeft?: string;
+}) {
+  const isNow = role === "now";
+  const isPast = role === "past";
+  const workPct = block && isPast ? blockAdherence(block) : 0;
+  const hasWorkSignal =
+    !!block && isPast && (block.status === "done" || workPct > 0);
+  const elapsed = block && isNow ? blockProgress(block, now) : 0;
+  // Past: adherence when known; else schedule-through so the cell still reads as a bar.
+  const throughPct = block && isPast ? blockProgress(block, now) : 0;
+  const pct = isPast ? (hasWorkSignal ? workPct : throughPct) : isNow ? elapsed : 0;
+
+  const label = isPast
+    ? hasWorkSignal
+      ? "Past · adherence"
+      : "Past block"
+    : isNow
+      ? "Current · time left"
+      : "Next block";
+  const primary = !block
+    ? "—"
+    : isPast
+      ? hasWorkSignal
+        ? `${workPct}%`
+        : formatTime(block.start_at)
+      : isNow && timeLeft
+        ? timeLeft.replace(/\s*left$/i, "")
+        : formatTime(block.start_at);
+  const sub = block
+    ? block.title || "Untitled"
+    : isPast
+      ? "No earlier"
+      : isNow
+        ? "None running"
+        : "Nothing next";
+
+  const fillClass = isPast
+    ? (hasWorkSignal ? workPct : throughPct) >= 100
+      ? "bg-emerald-400/20"
+      : "bg-sky-400/16"
+    : isNow
+      ? "bg-teal-400/18"
+      : "bg-white/[0.04]";
+  const barClass = isPast
+    ? (hasWorkSignal ? workPct : throughPct) >= 100
+      ? "bg-emerald-400/70"
+      : "bg-sky-400/60"
+    : isNow
+      ? "bg-teal-300/80"
+      : "bg-white/20";
+
   return (
-    <div className="mt-3 space-y-2">
-      <div className="relative h-2.5 rounded-full bg-white/8 overflow-hidden border border-white/10">
-        {visible.map((b) => {
-          const a = new Date(b.start_at).getTime();
-          const z = new Date(b.end_at).getTime();
-          const left = clamp01((a - start) / span) * 100;
-          const width = Math.max(1.5, clamp01((z - a) / span) * 100);
-          const isActive = activeId != null && String(b.id) === String(activeId);
-          return (
-            <div
-              key={b.id}
-              title={`${b.title} · ${formatRange(b.start_at, b.end_at)}`}
-              className={cn(
-                "absolute top-0 bottom-0 rounded-full",
-                isActive ? "bg-sky-400/80" : "bg-white/25",
-              )}
-              style={{ left: `${left}%`, width: `${width}%` }}
-            />
-          );
-        })}
-        {now >= start && now <= end ? (
-          <div
-            className="absolute top-0 bottom-0 w-0.5 bg-amber-300/90"
-            style={{ left: `${nowPct}%` }}
-            aria-hidden
-          />
+    <RailProgressCell
+      pct={pct}
+      fillClass={fillClass}
+      barClass={barClass}
+      title={block ? `${block.title} · ${formatRange(block.start_at, block.end_at)}` : undefined}
+      ariaLabel={
+        !block
+          ? label
+          : isPast
+            ? hasWorkSignal
+              ? `Past block ${block.title}, ${workPct} percent adherence`
+              : `Past block ${block.title}`
+            : isNow
+              ? `Current block ${block.title}, ${timeLeft || "in progress"}`
+              : `Next block ${block.title}`
+      }
+    >
+      <div className="flex items-center gap-1.5 min-w-0">
+        <span
+          className={cn(
+            "text-lg font-semibold tabular-nums leading-none truncate",
+            !block
+              ? "text-muted-foreground/50"
+              : isNow
+                ? "text-teal-100"
+                : isPast && hasWorkSignal
+                  ? workPct >= 100
+                    ? "text-emerald-200"
+                    : "text-sky-100"
+                  : "text-foreground/90",
+          )}
+        >
+          {primary}
+        </span>
+        {isNow && timeLeft && block ? (
+          <span className="text-[10px] tabular-nums text-amber-100/80 shrink-0">left</span>
         ) : null}
       </div>
-      <div className="flex gap-1.5 overflow-x-auto pb-0.5">
-        {visible.map((b) => {
-          const isActive = activeId != null && String(b.id) === String(activeId);
-          return (
-            <span
-              key={b.id}
-              className={cn(
-                "shrink-0 rounded-md border px-2 py-1 text-[10px]",
-                isActive
-                  ? "border-sky-400/40 bg-sky-500/15 text-sky-100"
-                  : "border-white/10 bg-black/25 text-muted-foreground",
-              )}
-              title={formatRange(b.start_at, b.end_at)}
-            >
-              <span className="tabular-nums text-foreground/80">{formatTime(b.start_at)}</span>
-              <span className="mx-1 opacity-40">·</span>
-              <span className="max-w-[7rem] truncate inline-block align-bottom">{b.title}</span>
-            </span>
-          );
-        })}
+      <p className="mt-1 text-[10px] uppercase tracking-wider text-muted-foreground truncate">{label}</p>
+      <p className="mt-0.5 text-[11px] text-muted-foreground/85 truncate">{sub}</p>
+    </RailProgressCell>
+  );
+}
+
+function DayRemainingBar() {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(id);
+  }, []);
+  const { throughPct, label } = localDayRemaining(now);
+  return (
+    <div
+      className="relative h-12 border-t border-border/40 bg-black/45 overflow-hidden"
+      role="img"
+      aria-label={`Day ${throughPct} percent through, ${label}`}
+    >
+      <div className="pointer-events-none absolute inset-0 z-0" aria-hidden>
+        {[25, 50, 75].map((mark) => (
+          <div
+            key={mark}
+            className="absolute top-0 bottom-0 w-px bg-white/10"
+            style={{ left: `${mark}%` }}
+          />
+        ))}
       </div>
+      <WaterFill pct={throughPct} ok={throughPct >= 50} variant="time" />
+      <div className="relative z-[1] flex h-full items-center justify-between gap-3 px-3.5">
+        <span className="text-[10px] uppercase tracking-[0.16em] text-white/80 drop-shadow">
+          Day · {throughPct}%
+        </span>
+        <span className="text-sm font-semibold tabular-nums text-white drop-shadow">{label}</span>
+      </div>
+    </div>
+  );
+}
+
+/** Glance-style divided rail: past · now · next (one each). */
+function DayBlocksRail({
+  blocks,
+  activeId,
+}: {
+  blocks: PlannerBlock[];
+  activeId?: string | number | null;
+}) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = window.setInterval(() => setNow(Date.now()), 15_000);
+    return () => window.clearInterval(id);
+  }, []);
+
+  const { past, current, future, timeLeft } = pickRibbonSlots(blocks, activeId, now);
+
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-px bg-white/[0.06] border-t border-white/10">
+      <BlockRailCell role="past" block={past} now={now} />
+      <BlockRailCell role="now" block={current} now={now} timeLeft={timeLeft} />
+      <BlockRailCell role="next" block={future} now={now} />
     </div>
   );
 }
@@ -417,44 +394,36 @@ type Props = {
   day: Date;
   refreshKey?: number;
   desktop: DesktopStats | null;
-  dueReviews: number;
   rangeLabel?: string;
   sleepHours?: number | null;
   sleepScore?: number | null;
   goalsStatus?: GoalsStatusResponse | null;
-  onScheduleReview?: () => void;
 };
 
 /**
- * Home: current SoftLand mode + today’s stats + goal/distraction cards + tasks.
+ * Home: SoftLand mode + glance + past/now/next blocks + tasks.
  */
 export default function HomeModeBoard({
   day,
   refreshKey = 0,
   desktop,
-  dueReviews,
   rangeLabel = "today",
   sleepHours = null,
   sleepScore = null,
   goalsStatus = null,
-  onScheduleReview,
 }: Props) {
   const focus = isFocusDesktopShell();
   const status = useFocusStatus();
   const [loop, setLoop] = useState<DayLoopSnapshot | null>(null);
-  const [rules, setRules] = useState<SiteRules>({
-    allow_extra: [],
-    watch_extra: [],
-    block_extra: [],
-  });
   const [modeLabel, setModeLabel] = useState("—");
   const [active, setActive] = useState<PlannerBlock | null>(null);
   const [dayBlocks, setDayBlocks] = useState<PlannerBlock[]>([]);
   const [loading, setLoading] = useState(false);
-  const [saving, setSaving] = useState(false);
   const [hint, setHint] = useState<string | null>(null);
-  const [draftWatch, setDraftWatch] = useState("");
-  const [draftBlock, setDraftBlock] = useState("");
+  const [newTitle, setNewTitle] = useState("");
+  const [extraGoals, setExtraGoals] = useState<ExtraGoal[]>(
+    () => loadProductivityGoals().extraGoals,
+  );
   const [previewTasks, setPreviewTasks] = useState<
     { id: number; title: string; done: boolean }[]
   >(() => {
@@ -469,14 +438,10 @@ export default function HomeModeBoard({
     }
     return [
       { id: 1, title: "Deep work block", done: false },
-      { id: 2, title: "SRS review", done: false },
+      { id: 2, title: "Plan check-in", done: false },
       { id: 3, title: "Evening wrap-up", done: false },
     ];
   });
-  const previewSeeded = useRef(false);
-
-  const canEditLists = !(loop?.plan_confirmed);
-
   // SoftLand + day-loop from shared bus (no per-panel pipe poll).
   useEffect(() => {
     if (!focus) return;
@@ -487,12 +452,6 @@ export default function HomeModeBoard({
     else if (j.runtime?.free_until) setModeLabel("FREE");
     else if (j.softland_enabled) setModeLabel("STUDY");
     else setModeLabel("OFF");
-    const sr = j.site_rules || {};
-    setRules({
-      allow_extra: asList(sr.allow_extra),
-      watch_extra: asList(sr.watch_extra),
-      block_extra: asList(sr.block_extra),
-    });
   }, [focus, status.updatedAt, status.dayLoop, status.softland]);
 
   const refreshPlan = useCallback(async () => {
@@ -512,7 +471,6 @@ export default function HomeModeBoard({
 
   useEffect(() => {
     void refreshPlan();
-    // Plan list is heavier — much slower than status bus tick.
     const t = window.setInterval(() => void refreshPlan(), 45_000);
     const onMorning = () => {
       invalidateFocusStatusBus({ pipe: true });
@@ -525,27 +483,12 @@ export default function HomeModeBoard({
     };
   }, [refreshPlan, refreshKey]);
 
-  // Design host: prefer today’s planned blocks as the checklist once they load.
   useEffect(() => {
-    if (isFocusEnforcerBridgeAvailable()) return;
-    if (previewSeeded.current) return;
-    const open = dayBlocks.filter(
-      (b) => b.status !== "cancelled" && b.status !== "rolled",
-    );
-    if (!open.length) return;
-    previewSeeded.current = true;
-    const next = open.map((b) => ({
-      id: b.id,
-      title: b.title || "Untitled block",
-      done: b.status === "done",
-    }));
-    setPreviewTasks(next);
-    try {
-      localStorage.setItem("calt-home-preview-tasks", JSON.stringify(next));
-    } catch {
-      /* ignore */
-    }
-  }, [dayBlocks]);
+    const sync = () => setExtraGoals(loadProductivityGoals().extraGoals);
+    sync();
+    window.addEventListener(GOALS_UPDATED_EVENT, sync);
+    return () => window.removeEventListener(GOALS_UPDATED_EVENT, sync);
+  }, []);
 
   const persistPreviewTasks = (next: { id: number; title: string; done: boolean }[]) => {
     setPreviewTasks(next);
@@ -554,46 +497,6 @@ export default function HomeModeBoard({
     } catch {
       /* ignore */
     }
-  };
-
-  const persistRules = useCallback(async (next: SiteRules) => {
-    setRules(next);
-    if (!isFocusEnforcerBridgeAvailable()) {
-      setHint("List edits need calt_focus.exe (enforcer pipe). Design host is preview-only.");
-      return;
-    }
-    setSaving(true);
-    try {
-      const res = await enforcerNativeCmd("softland.patch_site_rules", {
-        allow_extra: next.allow_extra,
-        watch_extra: next.watch_extra,
-        block_extra: next.block_extra,
-      });
-      if (!res?.ok) setHint(String(res?.error || "Could not save SoftLand lists"));
-      else {
-        setHint(null);
-        invalidateFocusStatusBus({ pipe: true });
-      }
-    } finally {
-      setSaving(false);
-    }
-  }, []);
-
-  const addDomain = (key: "watch_extra" | "block_extra", raw: string, clear: () => void) => {
-    if (!canEditLists) return;
-    const host = normalizeDomain(raw);
-    if (!host || !host.includes(".")) return;
-    if (rules[key].includes(host)) {
-      clear();
-      return;
-    }
-    void persistRules({ ...rules, [key]: [...rules[key], host] });
-    clear();
-  };
-
-  const removeDomain = (key: "watch_extra" | "block_extra", host: string) => {
-    if (!canEditLists) return;
-    void persistRules({ ...rules, [key]: rules[key].filter((h) => h !== host) });
   };
 
   const goalName = useMemo(() => {
@@ -615,6 +518,22 @@ export default function HomeModeBoard({
     invalidateFocusStatusBus({ pipe: true });
   }
 
+  function toggleExtraGoal(id: string) {
+    const next = loadProductivityGoals();
+    next.extraGoals = next.extraGoals.map((g) =>
+      g.id === id ? { ...g, done: !g.done } : g,
+    );
+    persistProductivityGoals(next);
+    setExtraGoals(next.extraGoals);
+  }
+
+  function removeExtraGoal(id: string) {
+    const next = loadProductivityGoals();
+    next.extraGoals = next.extraGoals.filter((g) => g.id !== id);
+    persistProductivityGoals(next);
+    setExtraGoals(next.extraGoals);
+  }
+
   if (!focus) return null;
 
   const tasks = loop?.tasks || [];
@@ -633,9 +552,6 @@ export default function HomeModeBoard({
   ) {
     trackedCandidates.push(Math.max(0, Math.floor(status.dayRollup.productive_seconds / 60)));
   }
-  if (desktop && Number.isFinite(desktop.total_seconds)) {
-    trackedCandidates.push(Math.max(0, Math.round(desktop.total_seconds / 60)));
-  }
   if (desktop && Number.isFinite(desktop.productive_seconds)) {
     trackedCandidates.push(Math.max(0, Math.round(desktop.productive_seconds / 60)));
   }
@@ -648,46 +564,8 @@ export default function HomeModeBoard({
       }`
     : goalName;
 
-  const planned = loop?.planned_minutes ?? 0;
-  const trackedForGate = trackedMin ?? 0;
-  const threshold = loop?.threshold_minutes ?? Math.round(planned * 0.5);
-  const timeDenom = threshold > 0 ? threshold : planned > 0 ? planned : 0;
-  const timeOk = Boolean(loop?.time_ok);
-  const checksOk = Boolean(loop?.checkboxes_ok);
-
   const previewing = !loop && !isFocusEnforcerBridgeAvailable();
   const checklist = previewing ? previewTasks : tasks;
-  const taskTotal = previewing
-    ? checklist.length
-    : (loop?.tasks_total ?? tasks.length);
-  const taskDone = previewing
-    ? checklist.filter((t) => t.done).length
-    : (loop?.tasks_done ?? tasks.filter((t) => t.done).length);
-  const taskPct =
-    taskTotal > 0 ? Math.min(100, Math.round((taskDone / taskTotal) * 100)) : 0;
-
-  const dailyGoal = goalsStatus?.goals?.[0];
-  const goalCurrentMin = previewing
-    ? Math.round((dailyGoal?.current_seconds ?? goalsStatus?.productive_seconds ?? 0) / 60)
-    : trackedForGate;
-  const goalTargetMin = previewing
-    ? Math.max(
-        1,
-        Math.round((dailyGoal?.target_seconds ?? 0) / 60) || timeDenom || 120,
-      )
-    : timeDenom || planned || 0;
-  const timePct = previewing
-    ? Math.min(100, Math.round(dailyGoal?.pct ?? (goalCurrentMin / goalTargetMin) * 100))
-    : timeDenom > 0
-      ? Math.min(100, Math.round((trackedForGate / timeDenom) * 100))
-      : 0;
-  const gatePct = taskTotal > 0 ? Math.min(timePct, taskPct) : timePct;
-
-  const fillTimePct = timePct;
-  const fillTaskPct = taskPct;
-  const fillTimeOk = previewing ? fillTimePct >= 100 : timeOk;
-  const fillChecksOk = previewing ? taskTotal > 0 && taskDone === taskTotal : checksOk;
-  const fillGatePct = previewing ? fillTimePct : gatePct;
 
   async function onChecklistToggle(id: number, done: boolean) {
     if (previewing) {
@@ -700,104 +578,112 @@ export default function HomeModeBoard({
     if (t) await toggleTask(t);
   }
 
-  return (
-    <div className="space-y-4">
-      {/* One card: mode + timeline + glance + day progress */}
-      <section className="gloss-panel rounded-2xl border border-border/40 overflow-hidden">
-        <div className="flex flex-col sm:flex-row sm:items-stretch">
-          <div className="min-w-0 flex-1 px-4 pt-3.5 pb-3.5">
-            <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-              <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 min-w-0">
-                <h2 className={cn("text-3xl font-semibold tracking-tight leading-none", tone.glow)}>
-                  {modeLabel}
-                </h2>
-                {loop?.free_until ? (
-                  <span className="rounded-md border border-emerald-500/25 bg-emerald-500/10 px-2 py-0.5 text-[11px] text-emerald-100">
-                    Free until {loop.free_until}
-                  </span>
-                ) : null}
-              </div>
-              <div className="flex items-center gap-2 shrink-0">
-                {loading ? <Loader2 className="size-3.5 animate-spin text-muted-foreground" /> : null}
-                {loop?.plan_confirmed ? (
-                  <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[10px] text-emerald-100">
-                    Plan locked
-                  </span>
-                ) : null}
-              </div>
-            </div>
+  async function addTask() {
+    const title = newTitle.trim();
+    if (!title) return;
+    if (previewing || !isFocusEnforcerBridgeAvailable()) {
+      const id = Date.now();
+      persistPreviewTasks([...previewTasks, { id, title, done: false }]);
+      setNewTitle("");
+      return;
+    }
+    await upsertDayTask({ title, done: false });
+    setNewTitle("");
+    invalidateFocusStatusBus({ pipe: true });
+  }
 
-            <p className="mt-2 text-sm text-muted-foreground truncate" title={modeDetail}>
+  const openExtras = extraGoals.filter((g) => g.title.trim());
+  const cardTotal = checklist.length + openExtras.length;
+  const cardDone =
+    checklist.filter((t) => t.done).length + openExtras.filter((g) => g.done).length;
+  const cardPct = cardTotal ? Math.round((cardDone / cardTotal) * 100) : 0;
+  const softlandGoalMin = Number(
+    (status.softland?.goals as { daily_focus_minutes?: number } | undefined)?.daily_focus_minutes,
+  );
+  const dailyFocusMin =
+    (typeof status.dayRollup?.daily_focus_minutes === "number" &&
+    status.dayRollup.daily_focus_minutes > 0
+      ? status.dayRollup.daily_focus_minutes
+      : Number.isFinite(softlandGoalMin) && softlandGoalMin > 0
+        ? softlandGoalMin
+        : 0) || 0;
+  const trackedForGoal = trackedMin ?? 0;
+
+  return (
+    <div className="space-y-5">
+      {/* Mode card first: SoftLand mode + glance + blocks + tasks */}
+      <section className="focus-panel focus-panel--hero">
+        <div className="flex items-start justify-between gap-4 px-5 pt-5 pb-4">
+          <div className="min-w-0">
+            <p className="focus-kicker mb-2">Today</p>
+            <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+              <h2 className={cn("focus-mode-title", tone.glow)}>
+                {modeLabel}
+              </h2>
+              {loop?.free_until ? (
+                <span className="text-sm text-[color:var(--focus-teal-bright,#8fd6cc)]">
+                  until {formatUntilClock(loop.free_until)}
+                </span>
+              ) : status.dayRollup?.goal_met ? (
+                <span className="text-sm text-[color:var(--focus-teal-bright,#8fd6cc)]">goal met</span>
+              ) : null}
+              {loading ? <Loader2 className="size-3.5 animate-spin text-muted-foreground" /> : null}
+            </div>
+            <p className="mt-2 text-[15px] text-foreground/85 truncate" title={modeDetail}>
               {modeDetail}
             </p>
-
-            <DayBlocksTimeline day={day} blocks={dayBlocks} activeId={active?.id} />
-
+            <p className="mt-1 text-[12px] text-muted-foreground">
+              {loop?.plan_confirmed ? "Plan locked" : "Plan open"}
+              {dailyFocusMin > 0 ? ` · goal ${dailyFocusMin}m` : ""}
+            </p>
+            {!loop?.free_until &&
+            !status.dayRollup?.goal_met &&
+            dailyFocusMin > 0 &&
+            trackedForGoal < dailyFocusMin ? (
+              <p className="mt-1 text-[11px] text-muted-foreground/90">
+                Goal free at {dailyFocusMin}m tracked · now {trackedForGoal}m
+              </p>
+            ) : null}
             {hint ? (
               <p className="mt-1.5 text-[11px] text-amber-100/90">{hint}</p>
             ) : null}
           </div>
-
-          <div className="sm:w-[11.5rem] sm:border-l border-t sm:border-t-0 border-border/40 px-4 py-3.5 flex flex-col justify-center bg-muted/20">
-            <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+          <div className="shrink-0 text-right pt-1">
+            <p className="focus-kicker">
               Tracked · {rangeLabel}
             </p>
-            <p className="mt-1 text-2xl font-semibold tabular-nums tracking-tight text-sky-100 leading-none">
+            <p className="mt-1.5 text-2xl font-semibold tabular-nums tracking-tight text-foreground leading-none">
               {trackedLabel}
             </p>
           </div>
         </div>
 
+        <DayBlocksRail blocks={dayBlocks} activeId={active?.id} />
+
         <GlanceBar
           variant="rail"
           hideTracked
           desktop={desktop}
-          dueReviews={dueReviews}
           rangeLabel={rangeLabel}
           sleepHours={sleepHours}
           sleepScore={sleepScore}
           goalsStatus={goalsStatus}
-          onScheduleReview={onScheduleReview}
         />
 
-        {/* Day progress fill — water L→R with bubbles + crest */}
-        <div
-          className="relative h-12 border-t border-border/40 bg-black/45 overflow-hidden"
-          role="img"
-          aria-label={`Day progress ${fillGatePct} percent`}
-        >
-          <div className="pointer-events-none absolute inset-0 z-0" aria-hidden>
-            {[25, 50, 75].map((mark) => (
-              <div
-                key={mark}
-                className="absolute top-0 bottom-0 w-px bg-white/10"
-                style={{ left: `${mark}%` }}
-              />
-            ))}
-          </div>
-          <WaterFill pct={fillTimePct} ok={fillTimeOk} variant="time" />
-          <WaterFill pct={fillTaskPct} ok={fillChecksOk} variant="tasks" />
-          <div className="relative z-[1] flex h-full items-center justify-between gap-3 px-3.5">
-            <div className="flex items-baseline gap-2 min-w-0">
-              <span className="text-[10px] uppercase tracking-[0.16em] text-white/70 drop-shadow">
-                Time
-              </span>
-              <span className="text-sm font-semibold tabular-nums text-white drop-shadow">
-                {fillTimePct}%
-              </span>
-            </div>
-            <div className="flex items-baseline gap-2 shrink-0">
-              <span className="text-[10px] uppercase tracking-[0.16em] text-white/70 drop-shadow">
-                Tasks
-              </span>
-              <span className="text-sm font-semibold tabular-nums text-white drop-shadow">
-                {taskTotal > 0 ? `${fillTaskPct}%` : "—"}
-              </span>
-            </div>
-          </div>
-        </div>
+        <DayRemainingBar />
 
-        <div className="px-3 py-2.5 border-t border-border/30">
+        <div className="relative overflow-hidden border-t border-border/30">
+          <div className="pointer-events-none absolute inset-0 bg-black/20" aria-hidden />
+          <div
+            className="pointer-events-none absolute inset-y-0 left-0 bg-gradient-to-r from-emerald-500/55 via-emerald-400/40 to-emerald-300/25 shadow-[inset_-3px_0_0_0_rgba(167,243,208,0.9)] transition-[width] duration-500"
+            style={{ width: `${cardPct}%` }}
+            role="progressbar"
+            aria-valuenow={cardPct}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label={`Goals ${cardDone} of ${cardTotal}`}
+          />
+          <div className="relative z-[1] px-3 py-2.5">
           {isFocusEnforcerBridgeAvailable() ? (
             <div className="flex justify-end mb-1.5">
               <button
@@ -819,7 +705,17 @@ export default function HomeModeBoard({
             </div>
           ) : null}
 
-          <ul className="divide-y divide-border/30 rounded-lg border border-border/40 overflow-hidden bg-black/20">
+          <div className="mb-1.5 flex items-center justify-between gap-2">
+            <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+              Goals · todos
+            </p>
+            <span className="text-[10px] tabular-nums text-muted-foreground">
+              {cardDone}/{cardTotal}
+              {cardTotal ? ` · ${cardPct}%` : ""}
+            </span>
+          </div>
+
+          <ul className="divide-y divide-white/10 rounded-lg border border-white/10 overflow-hidden">
             {checklist.map((t) => (
               <li key={t.id} className="flex items-center gap-2 px-2.5 py-1.5">
                 <button
@@ -840,7 +736,7 @@ export default function HomeModeBoard({
                 >
                   {t.title}
                 </span>
-                {!previewing && canEditLists && isFocusEnforcerBridgeAvailable() ? (
+                {!previewing && isFocusEnforcerBridgeAvailable() ? (
                   <button
                     type="button"
                     className="text-muted-foreground hover:text-rose-300"
@@ -852,55 +748,73 @@ export default function HomeModeBoard({
                 ) : null}
               </li>
             ))}
-            {!checklist.length ? (
+            {openExtras.map((g) => (
+              <li key={g.id} className="flex items-center gap-2 px-2.5 py-1.5">
+                <button
+                  type="button"
+                  className={cn(
+                    "size-4 rounded-[3px] border flex items-center justify-center shrink-0 transition-colors",
+                    g.done
+                      ? "border-sky-400/40 bg-sky-500/15"
+                      : "border-border/60 hover:border-foreground/40",
+                  )}
+                  onClick={() => toggleExtraGoal(g.id)}
+                  aria-label={g.done ? "Mark incomplete" : "Mark done"}
+                >
+                  {g.done ? <Check className="size-2.5 text-sky-300" /> : null}
+                </button>
+                <span
+                  className={`flex-1 text-[13px] leading-snug ${g.done ? "line-through text-muted-foreground" : "text-foreground/90"}`}
+                >
+                  {g.title}
+                </span>
+                <span className="text-[9px] uppercase tracking-wider text-sky-200/50 shrink-0">
+                  side
+                </span>
+                <button
+                  type="button"
+                  className="text-muted-foreground hover:text-rose-300 shrink-0"
+                  onClick={() => removeExtraGoal(g.id)}
+                  aria-label="Remove side todo"
+                >
+                  <Trash2 className="size-3" />
+                </button>
+              </li>
+            ))}
+            {!checklist.length && !openExtras.length ? (
               <li className="px-2.5 py-2 text-[11px] text-muted-foreground">
-                No tasks yet — planned blocks or day-loop tasks will show here.
+                No todos yet — add a day-loop task or Plan → Goals side todos.
               </li>
             ) : null}
           </ul>
+
+          <div className="mt-2 flex gap-2">
+            <input
+              className="flex-1 rounded-lg border border-border/40 bg-black/30 px-2.5 py-1.5 text-[13px]"
+              placeholder="Add goal todo…"
+              value={newTitle}
+              onChange={(e) => setNewTitle(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") void addTask();
+              }}
+            />
+            <button
+              type="button"
+              className="inline-flex items-center gap-1 rounded-lg border border-border/40 bg-white/5 px-2.5 py-1.5 text-[11px] hover:bg-white/10"
+              onClick={() => void addTask()}
+              title="Add day-loop task (dual-gate checklist)"
+            >
+              <Plus className="size-3.5" /> Add
+            </button>
+          </div>
+          </div>
         </div>
       </section>
 
-      {/* Blocks */}
-      <section className="gloss-panel rounded-2xl border border-border/40 p-4 space-y-3">
-        <div className="flex items-baseline justify-between gap-2 px-0.5">
-          <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-              Blocks
-            </p>
-            <p className="mt-0.5 text-[11px] text-muted-foreground">SoftLand site lists for this day</p>
-          </div>
-        </div>
-        <div className="flex flex-col gap-3">
-          <BlockCard
-            title="Goal-oriented block"
-            subtitle="Watch list — blocked in STUDY; opens in FREE"
-            accent="sky"
-            icon={<Target className="size-4" />}
-            domains={rules.watch_extra}
-            listCount={rules.watch_extra.length}
-            canEdit={canEditLists}
-            draft={draftWatch}
-            onDraft={setDraftWatch}
-            onAdd={() => addDomain("watch_extra", draftWatch, () => setDraftWatch(""))}
-            onRemove={(h) => removeDomain("watch_extra", h)}
-            saving={saving}
-          />
-          <BlockCard
-            title="Distraction block"
-            accent="rose"
-            icon={<Shield className="size-4" />}
-            domains={rules.block_extra}
-            listCount={rules.block_extra.length}
-            canEdit={canEditLists}
-            draft={draftBlock}
-            onDraft={setDraftBlock}
-            onAdd={() => addDomain("block_extra", draftBlock, () => setDraftBlock(""))}
-            onRemove={(h) => removeDomain("block_extra", h)}
-            saving={saving}
-          />
-        </div>
-      </section>
+      <FocusJarvisPanel variant="home" />
+
+      {/* Plan-first: no short/dynamic session create — end leftover only */}
+      <ActiveWorkSessionEnd />
     </div>
   );
 }

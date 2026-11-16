@@ -1,35 +1,28 @@
-import { Children, useCallback, useEffect, useMemo, useState, type ComponentType, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   computeScores,
   type DailyEntry,
 } from "../context/GoalTrackerContext";
 import { LifeClockWidget } from "../components/hub/LifeClockWidget";
 import { FaceTrackerPanel } from "../components/face/FaceTrackerPanel";
-import { usePlugins } from "../plugins/registry";
-import { fetchLifeDaily, type LifeDailyApi } from "../api/hubClient";
-import { fetchWearableDay, type WearableDay } from "../api/wearablesClient";
+import { usePluginsOptional } from "../plugins/registry";
+import { fetchLifeDaily, fetchLifeHistory14, type LifeDailyApi } from "../api/hubClient";
+import {
+  fetchWearableDay,
+  fetchWearableStatus,
+  type WearableDay,
+} from "../api/wearablesClient";
 import { WatchDayDumpCard } from "../components/life/WatchDayDumpCard";
 import { TrackerDayBoard } from "../components/life/TrackerDayBoard";
+import { HealthServerToggle } from "../components/life/HealthServerToggle";
+import { isFocusDesktopShell } from "../utils/focusDesktopShell";
 import {
-  Moon,
-  Dumbbell,
-  Droplets,
-  Brain,
-  Monitor,
-  TreePine,
-  Smile,
-  Clock,
-  CheckSquare,
-  TrendingUp,
-  ChevronDown,
-  ChevronUp,
   ChevronLeft,
   ChevronRight,
-  Flame,
   RefreshCw,
+  TrendingUp,
   Watch,
 } from "lucide-react";
-import { Card } from "../app/components/ui/card";
 import { useEaster, useLongPress } from "../easter";
 
 function localDateKey(d = new Date()): string {
@@ -54,6 +47,25 @@ function formatDayLabel(key: string): string {
     month: "long",
     day: "numeric",
   });
+}
+
+/** Relative + clock for last Amazfit CALT Sync near the Life Score ring. */
+function formatWatchSyncLabel(iso: string | null | undefined): string | null {
+  if (!iso) return null;
+  const t = new Date(iso).getTime();
+  if (!Number.isFinite(t)) return null;
+  const mins = Math.max(0, Math.round((Date.now() - t) / 60_000));
+  const clock = new Date(t).toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  if (mins < 1) return `just now · ${clock}`;
+  if (mins < 60) return `${mins}m ago · ${clock}`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 36) return `${hours}h ago · ${clock}`;
+  return clock;
 }
 
 function emptyEntry(date: string): DailyEntry {
@@ -128,49 +140,6 @@ function ScoreRing({ score, label, color }: { score: number; label: string; colo
   );
 }
 
-function StatRow({
-  icon: Icon,
-  label,
-  value,
-  unit,
-  source,
-}: {
-  icon: ComponentType<{ className?: string }>;
-  label: string;
-  value: number | string;
-  unit?: string;
-  source?: string;
-}) {
-  const unmarked = !source || source === "—";
-  if (unmarked) return null;
-
-  return (
-    <div className="flex items-center gap-3">
-      <Icon className="w-4 h-4 text-muted-foreground shrink-0" />
-      <span className="text-xs text-muted-foreground w-28 shrink-0">{label}</span>
-      <span className="text-sm font-semibold flex-1">
-        {value}
-        {unit ? <span className="text-xs font-normal text-muted-foreground ml-1">{unit}</span> : null}
-      </span>
-      <span className="text-[10px] uppercase tracking-wide text-muted-foreground">{source}</span>
-    </div>
-  );
-}
-
-function PillarEmptyHint() {
-  return (
-    <p className="text-xs text-muted-foreground py-1">
-      No sourced inputs for this day yet — score uses defaults until sensors or habits fill in.
-    </p>
-  );
-}
-
-function PillarBody({ children }: { children: ReactNode }) {
-  const rows = Children.toArray(children).filter(Boolean);
-  if (rows.length === 0) return <PillarEmptyHint />;
-  return <>{rows}</>;
-}
-
 const PILLAR_COLORS: Record<string, string> = {
   Health: "#10b981",
   Productivity: "#6366f1",
@@ -181,13 +150,13 @@ const PILLAR_COLORS: Record<string, string> = {
 export function LifeTrackerPage() {
   const { burst } = useEaster();
   const scoreEgg = useLongPress(700, () => burst("fireworks"));
-  const [expandedPillar, setExpandedPillar] = useState<string | null>("Health");
   const [refreshing, setRefreshing] = useState(false);
   const [selectedDay, setSelectedDay] = useState(() => localDateKey());
   const [entry, setEntry] = useState<DailyEntry>(() => emptyEntry(localDateKey()));
   const [history, setHistory] = useState<DailyEntry[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [wearableDay, setWearableDay] = useState<WearableDay | null>(null);
+  const [lastWatchSyncAt, setLastWatchSyncAt] = useState<string | null>(null);
 
   const todayKey = localDateKey();
   const isToday = selectedDay === todayKey;
@@ -200,13 +169,35 @@ export function LifeTrackerPage() {
     const apiDay = day === todayKey ? "today" : day;
     const remote = await fetchLifeDaily(apiDay);
     if (!opts?.skipWearable) {
-      const watch = await fetchWearableDay(day).catch(() => null);
-      if (watch) setWearableDay(watch);
+      const [watch, status] = await Promise.all([
+        fetchWearableDay(day).catch(() => null),
+        fetchWearableStatus().catch(() => null),
+      ]);
+      const hasWatch =
+        !!watch &&
+        (watch.local_date ||
+          watch.synced_at ||
+          watch.steps != null ||
+          watch.sleep_hours != null ||
+          watch.hr_last != null ||
+          watch.hr_avg != null);
+      setWearableDay(hasWatch ? watch : null);
+      const stamp =
+        (hasWatch && (watch?.synced_at || watch?.last_captured_at || watch?.captured_at)) ||
+        status?.last_sync?.last_ingest_at ||
+        status?.last_sync?.updated_at ||
+        status?.last_ping?.at ||
+        null;
+      setLastWatchSyncAt(typeof stamp === "string" && stamp ? stamp : null);
     }
-    if (!remote) {
-      if (!opts?.silent) {
-        setLoadError("Could not load that day from the API");
-        setEntry(emptyEntry(day));
+    if (!remote || remote.empty) {
+      setEntry(apiToEntry(remote, day));
+      if (!opts?.silent && !remote) {
+        setLoadError(
+          isFocusDesktopShell()
+            ? "No life mirror yet — Sync from Amazfit CALT Sync."
+            : "Could not load that day from the API",
+        );
       }
       return;
     }
@@ -214,17 +205,8 @@ export function LifeTrackerPage() {
   }, [todayKey]);
 
   const loadHistory = useCallback(async () => {
-    const days: string[] = [];
-    for (let i = 13; i >= 0; i--) {
-      days.push(shiftDay(todayKey, -i));
-    }
-    const rows = await Promise.all(
-      days.map(async (d) => {
-        const remote = await fetchLifeDaily(d === todayKey ? "today" : d);
-        return apiToEntry(remote, d);
-      }),
-    );
-    setHistory(rows);
+    const rows = await fetchLifeHistory14();
+    setHistory(rows.map((r) => apiToEntry(r, String(r.date || todayKey).slice(0, 10))));
   }, [todayKey]);
 
   useEffect(() => {
@@ -232,14 +214,16 @@ export function LifeTrackerPage() {
   }, [selectedDay, loadDay]);
 
   useEffect(() => {
-    const onHub = () => void loadDay(selectedDay, { silent: true });
+    const onHub = () => {
+      void loadDay(selectedDay, { silent: true });
+      void loadHistory();
+    };
     window.addEventListener("hub:refresh", onHub);
     return () => window.removeEventListener("hub:refresh", onHub);
-  }, [selectedDay, loadDay]);
+  }, [selectedDay, loadDay, loadHistory]);
 
   useEffect(() => {
     if (!isToday) return;
-    // Life row only — wearables are manual Dump→Send; do not poll /zepp/day.
     const id = window.setInterval(
       () => void loadDay(selectedDay, { silent: true, skipWearable: true }),
       60_000,
@@ -271,20 +255,32 @@ export function LifeTrackerPage() {
           : "Rest & Reset";
 
   const chartDays = history.slice(-14);
-  const { enabledIds } = usePlugins();
+  const focusShell = isFocusDesktopShell();
+  const lastSyncLabel = formatWatchSyncLabel(lastWatchSyncAt);
+  const plugins = usePluginsOptional();
+  const enabledIds = plugins?.enabledIds ?? [];
 
   return (
-    <div className="life-tracker-page h-full min-h-0 overflow-y-auto bg-background text-foreground">
-      <div className="life-tracker-shell mx-auto w-full max-w-7xl space-y-6 pb-10">
+    <div
+      className={
+        focusShell
+          ? "life-tracker-page focus-shell-page-root h-full min-h-0 overflow-visible bg-background text-foreground"
+          : "life-tracker-page h-full min-h-0 overflow-y-auto bg-background text-foreground"
+      }
+    >
+      <div className="life-tracker-shell mx-auto w-full max-w-6xl space-y-5 pb-10">
         <header className="life-tracker-hero">
           <div className="life-tracker-hero__copy">
-            <span className="life-tracker-hero__eyebrow">Daily wellbeing</span>
+            <span className="life-tracker-hero__eyebrow">Life</span>
             <h1>Life Tracker</h1>
             <p>
-              Your sleep, movement, focus, and digital balance — organized around one day at a time.
+              {focusShell
+                ? "ZeppBridge day metrics (null ≠ 0) plus today’s focus balance."
+                : "Sleep, movement, focus, and digital balance — one day at a time."}
             </p>
           </div>
           <div className="life-tracker-hero__controls flex flex-wrap items-center gap-2">
+            <HealthServerToggle />
             <button
               type="button"
               onClick={() => void onRefresh()}
@@ -335,51 +331,53 @@ export function LifeTrackerPage() {
           </div>
         </header>
 
-        {loadError && (
-          <p className="text-sm text-rose-300">{loadError}</p>
-        )}
+        {loadError && <p className="text-sm text-rose-300">{loadError}</p>}
 
         {isToday ? <TrackerDayBoard /> : null}
 
-        <div className="life-tracker-source">
-          <Watch className="w-4 h-4 shrink-0" />
-          <span>Watch-connected day</span>
-          <span className="life-tracker-source__dot" />
-          <span>Sleep &amp; activity update from Amazfit sync</span>
-        </div>
+        <div className="life-tracker-overview grid gap-5 xl:grid-cols-[minmax(0,1.15fr)_minmax(20rem,0.85fr)]">
+          <div className="space-y-5 min-w-0">
+            <section className="life-tracker-watch gloss-panel rounded-2xl p-5">
+              <div className="life-tracker-section-heading">
+                <div>
+                  <span>Watch</span>
+                  <h2>{formatDayLabel(selectedDay)}</h2>
+                </div>
+                {lastSyncLabel ? (
+                  <span className="life-tracker-section-heading__day inline-flex items-center gap-1">
+                    <Watch className="w-3 h-3" />
+                    {lastSyncLabel}
+                  </span>
+                ) : (
+                  <span className="life-tracker-section-heading__day">Sync pending</span>
+                )}
+              </div>
+              <WatchDayDumpCard
+                day={wearableDay}
+                localDate={selectedDay}
+                onSleepCorrected={() => {
+                  void loadDay(selectedDay);
+                  void loadHistory();
+                }}
+              />
+            </section>
 
-        <section className="life-tracker-watch gloss-panel rounded-2xl p-5">
-          <div className="life-tracker-section-heading">
-            <div>
-              <span>Watch insights</span>
-              <h2>Day from your watch</h2>
-            </div>
-            <span className="life-tracker-section-heading__day">{formatDayLabel(selectedDay)}</span>
-          </div>
-          <p className="life-tracker-watch__hint">
-            Sleep, steps, and vitals for this day in one view. Zeros and missing sensors stay hidden.
-          </p>
-          <WatchDayDumpCard day={wearableDay} />
-        </section>
-
-        <div className="life-tracker-overview grid gap-6 xl:grid-cols-[minmax(0,1.25fr)_minmax(22rem,0.75fr)]">
-          <div className="life-tracker-clock min-w-0">
             <section className="gloss-panel rounded-2xl p-5">
               <div className="life-tracker-section-heading life-tracker-section-heading--compact">
                 <div>
-                  <span>Day in view</span>
+                  <span>Day clock</span>
                   <h2>Time balance</h2>
                 </div>
               </div>
               <LifeClockWidget embedded showLegend={false} day={selectedDay} />
             </section>
 
-            {enabledIds.includes("focus-mirror") && <FaceTrackerPanel />}
+            {!focusShell && enabledIds.includes("focus-mirror") && <FaceTrackerPanel />}
           </div>
 
-          <aside className="life-tracker-summary space-y-6 min-w-0">
+          <aside className="life-tracker-summary space-y-5 min-w-0">
             <div className="life-tracker-score gloss-panel rounded-2xl p-6">
-              <span className="life-tracker-score__eyebrow">Today’s balance</span>
+              <span className="life-tracker-score__eyebrow">Balance</span>
               <div className="flex items-center gap-3 mb-4">
                 <div className="relative w-20 h-20 cursor-pointer select-none" {...scoreEgg} title="Long-press…">
                   <svg className="w-full h-full -rotate-90" viewBox="0 0 80 80">
@@ -409,7 +407,7 @@ export function LifeTrackerPage() {
                     <span className="text-[10px] text-muted-foreground">/ 100</span>
                   </div>
                 </div>
-                <div>
+                <div className="min-w-0">
                   <h2 className="text-2xl font-semibold">Life Score</h2>
                   <p className="text-muted-foreground text-sm">{scoreLabel}</p>
                 </div>
@@ -420,7 +418,7 @@ export function LifeTrackerPage() {
                   <ScoreRing
                     key={pillar}
                     score={score}
-                    label={pillar}
+                    label={pillar === "Digital Wellbeing" ? "Digital" : pillar}
                     color={PILLAR_COLORS[pillar] || "#6366f1"}
                   />
                 ))}
@@ -431,8 +429,8 @@ export function LifeTrackerPage() {
               <div className="life-tracker-trend gloss-panel rounded-2xl p-4">
                 <div className="flex items-center gap-2 mb-3">
                   <TrendingUp className="w-4 h-4 text-primary" />
-                  <span className="text-sm font-medium">14-Day Life Score Trend</span>
-                  <span className="text-[10px] text-muted-foreground">click a bar to open that day</span>
+                  <span className="text-sm font-medium">14-day trend</span>
+                  <span className="text-[10px] text-muted-foreground ml-auto">tap a day</span>
                 </div>
                 <div className="flex items-end gap-1 h-12">
                   {chartDays.map((histEntry) => {
@@ -462,185 +460,6 @@ export function LifeTrackerPage() {
             )}
           </aside>
         </div>
-
-        <section className="life-tracker-pillars">
-          <div className="life-tracker-section-heading">
-            <div>
-              <span>Your systems</span>
-              <h2>Daily pillars</h2>
-            </div>
-            <p>Open a pillar to see the inputs behind its score.</p>
-          </div>
-        <div className="life-tracker-pillars__grid grid gap-4 lg:grid-cols-2">
-          <Card className="gloss-panel rounded-2xl overflow-hidden min-w-0">
-            <button
-              type="button"
-              className="w-full flex items-center justify-between p-4 hover:bg-muted/20 transition-colors"
-              onClick={() => setExpandedPillar(expandedPillar === "Health" ? null : "Health")}
-            >
-              <div className="flex items-center gap-2">
-                <Flame className="w-5 h-5 text-emerald-400" />
-                <span className="font-semibold">Health</span>
-                <span className="text-sm text-muted-foreground">— {breakdown.Health}/100</span>
-              </div>
-              {expandedPillar === "Health" ? (
-                <ChevronUp className="w-4 h-4" />
-              ) : (
-                <ChevronDown className="w-4 h-4" />
-              )}
-            </button>
-            {expandedPillar === "Health" && (
-              <div className="px-4 pb-4 space-y-3 border-t border-border/40 pt-3">
-                <PillarBody>
-                  <StatRow icon={Moon} label="Sleep hours" value={entry.sleepHours} unit="h" source="watch" />
-                  <StatRow
-                    icon={Moon}
-                    label="Sleep quality"
-                    value={`${entry.sleepQuality}/5`}
-                    source="watch"
-                  />
-                  <StatRow
-                    icon={Dumbbell}
-                    label="Exercise"
-                    value={entry.exerciseMinutes}
-                    unit="min"
-                    source="steps est."
-                  />
-                  <StatRow icon={Droplets} label="Water glasses" value={entry.waterGlasses} source="—" />
-                  <StatRow icon={Smile} label="Healthy meals" value={entry.mealsHealthy} source="—" />
-                </PillarBody>
-              </div>
-            )}
-          </Card>
-
-          <Card className="gloss-panel rounded-2xl overflow-hidden min-w-0">
-            <button
-              type="button"
-              className="w-full flex items-center justify-between p-4 hover:bg-muted/20 transition-colors"
-              onClick={() =>
-                setExpandedPillar(expandedPillar === "Productivity" ? null : "Productivity")
-              }
-            >
-              <div className="flex items-center gap-2">
-                <Brain className="w-5 h-5 text-indigo-400" />
-                <span className="font-semibold">Productivity</span>
-                <span className="text-sm text-muted-foreground">— {breakdown.Productivity}/100</span>
-              </div>
-              {expandedPillar === "Productivity" ? (
-                <ChevronUp className="w-4 h-4" />
-              ) : (
-                <ChevronDown className="w-4 h-4" />
-              )}
-            </button>
-            {expandedPillar === "Productivity" && (
-              <div className="px-4 pb-4 space-y-3 border-t border-border/40 pt-3">
-                <PillarBody>
-                  <StatRow
-                    icon={Clock}
-                    label="Study time"
-                    value={entry.studyMinutes}
-                    unit="min"
-                    source="pomodoro"
-                  />
-                  <StatRow icon={CheckSquare} label="Tasks done" value={entry.tasksCompleted} source="—" />
-                  <StatRow
-                    icon={Brain}
-                    label="Deep work blocks"
-                    value={entry.deepWorkBlocks}
-                    source="—"
-                  />
-                </PillarBody>
-              </div>
-            )}
-          </Card>
-
-          <Card className="gloss-panel rounded-2xl overflow-hidden min-w-0">
-            <button
-              type="button"
-              className="w-full flex items-center justify-between p-4 hover:bg-muted/20 transition-colors"
-              onClick={() =>
-                setExpandedPillar(
-                  expandedPillar === "Digital Wellbeing" ? null : "Digital Wellbeing",
-                )
-              }
-            >
-              <div className="flex items-center gap-2">
-                <Monitor className="w-5 h-5 text-amber-400" />
-                <span className="font-semibold">Digital Wellbeing</span>
-                <span className="text-sm text-muted-foreground">
-                  — {breakdown["Digital Wellbeing"]}/100
-                </span>
-              </div>
-              {expandedPillar === "Digital Wellbeing" ? (
-                <ChevronUp className="w-4 h-4" />
-              ) : (
-                <ChevronDown className="w-4 h-4" />
-              )}
-            </button>
-            {expandedPillar === "Digital Wellbeing" && (
-              <div className="px-4 pb-4 space-y-3 border-t border-border/40 pt-3">
-                <PillarBody>
-                  <StatRow
-                    icon={Monitor}
-                    label="Screen time"
-                    value={entry.screenTimeHours}
-                    unit="h"
-                    source="—"
-                  />
-                  <StatRow
-                    icon={Monitor}
-                    label="Social media"
-                    value={entry.socialMediaMinutes}
-                    unit="min"
-                    source="—"
-                  />
-                  <StatRow
-                    icon={TreePine}
-                    label="Outdoors"
-                    value={entry.outdoorMinutes}
-                    unit="min"
-                    source="—"
-                  />
-                </PillarBody>
-              </div>
-            )}
-          </Card>
-
-          <Card className="gloss-panel rounded-2xl overflow-hidden min-w-0">
-            <button
-              type="button"
-              className="w-full flex items-center justify-between p-4 hover:bg-muted/20 transition-colors"
-              onClick={() => setExpandedPillar(expandedPillar === "Mental" ? null : "Mental")}
-            >
-              <div className="flex items-center gap-2">
-                <Smile className="w-5 h-5 text-pink-400" />
-                <span className="font-semibold">Mental & Mindfulness</span>
-                <span className="text-sm text-muted-foreground">— {breakdown.Mental}/100</span>
-              </div>
-              {expandedPillar === "Mental" ? (
-                <ChevronUp className="w-4 h-4" />
-              ) : (
-                <ChevronDown className="w-4 h-4" />
-              )}
-            </button>
-            {expandedPillar === "Mental" && (
-              <div className="px-4 pb-4 space-y-3 border-t border-border/40 pt-3">
-                <PillarBody>
-                  <StatRow icon={Smile} label="Mood" value={`${entry.moodScore}/5`} source="—" />
-                  <StatRow icon={Smile} label="Stress level" value={`${entry.stressLevel}/5`} source="—" />
-                  <StatRow
-                    icon={Brain}
-                    label="Meditation"
-                    value={entry.meditationMinutes}
-                    unit="min"
-                    source="—"
-                  />
-                </PillarBody>
-              </div>
-            )}
-          </Card>
-        </div>
-        </section>
       </div>
     </div>
   );

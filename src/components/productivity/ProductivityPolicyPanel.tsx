@@ -79,9 +79,12 @@ export function ProductivityPolicyPanel({ onSaved, variant = "all" }: Props) {
     setLoading(true);
     setError(null);
     try {
+      const needScores = variant === "all" || variant === "scoring";
       const [p, s, g] = await Promise.all([
         fetchProductivityPolicy(),
-        fetchCategoryScores(),
+        needScores
+          ? fetchCategoryScores().catch(() => ({ scores: {} as Record<string, number> }))
+          : Promise.resolve({ scores: {} as Record<string, number> }),
         fetchDistractionGate().catch(() => null),
       ]);
       setPolicy({
@@ -95,11 +98,16 @@ export function ProductivityPolicyPanel({ onSaved, variant = "all" }: Props) {
       setScores(s.scores || {});
       setGate(g);
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Failed to load policy");
+      const raw = e instanceof Error ? e.message : "Failed to load policy";
+      setError(
+        raw === "Failed to fetch"
+          ? "Can't reach Focus data — open calt_focus or start the enforcer."
+          : raw,
+      );
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [variant]);
 
   useEffect(() => {
     void load();
@@ -194,18 +202,39 @@ export function ProductivityPolicyPanel({ onSaved, variant = "all" }: Props) {
     setOverrideKey("");
   };
 
+  const embedded = variant !== "all";
+
   if (loading) {
     return (
-      <div className="gloss-panel rounded-xl p-4 flex items-center gap-2 text-sm text-muted-foreground">
-        <Loader2 size={14} className="animate-spin" /> Loading productivity policy…
+      <div
+        className={
+          embedded
+            ? "flex items-center gap-2 text-sm text-muted-foreground py-2"
+            : "gloss-panel rounded-xl p-4 flex items-center gap-2 text-sm text-muted-foreground"
+        }
+      >
+        <Loader2 size={14} className="animate-spin" /> Loading…
       </div>
     );
   }
 
   if (!policy) {
     return (
-      <div className="gloss-panel rounded-xl p-4 text-sm text-rose-300">
-        {error || "No policy"}
+      <div
+        className={
+          embedded
+            ? "rounded-xl border border-rose-400/25 bg-rose-500/5 px-4 py-3 text-sm text-rose-200 space-y-2"
+            : "gloss-panel rounded-xl p-4 text-sm text-rose-300 space-y-2"
+        }
+      >
+        <p>{error || "No policy"}</p>
+        <button
+          type="button"
+          onClick={() => void load()}
+          className="text-xs underline text-rose-100/90 hover:text-white"
+        >
+          Retry
+        </button>
       </div>
     );
   }
@@ -214,8 +243,25 @@ export function ProductivityPolicyPanel({ onSaved, variant = "all" }: Props) {
     new Set([...COMMON_CATEGORIES, ...Object.keys(scores), ...policy.productive_categories, ...policy.blocked_categories]),
   ).sort();
 
+  const saveBtn = (
+    <button
+      type="button"
+      disabled={saving}
+      onClick={() => void save()}
+      className={
+        embedded
+          ? "min-h-11 inline-flex items-center gap-1.5 rounded-lg border border-[#0B6B63] bg-[#0B6B63] px-4 text-[13px] font-medium text-white hover:opacity-90 disabled:opacity-50"
+          : "flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-violet-600/80 hover:bg-violet-600 text-xs disabled:opacity-50"
+      }
+    >
+      {saving ? <Loader2 size={12} className="animate-spin" /> : <Save size={12} />}
+      {saving ? "Saving…" : "Save"}
+    </button>
+  );
+
   return (
-    <div className="gloss-panel rounded-xl p-4 space-y-4">
+    <div className={embedded ? "space-y-4" : "gloss-panel rounded-xl p-4 space-y-4"}>
+      {!embedded ? (
       <div className="flex items-start justify-between gap-3">
         <div>
           <h3 className="text-sm font-semibold flex items-center gap-2">
@@ -227,33 +273,34 @@ export function ProductivityPolicyPanel({ onSaved, variant = "all" }: Props) {
             planned block. Override apps or single sessions for edge cases.
           </p>
         </div>
-        <button
-          type="button"
-          disabled={saving}
-          onClick={() => void save()}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-violet-600/80 hover:bg-violet-600 text-xs disabled:opacity-50"
-        >
-          {saving ? <Loader2 size={12} className="animate-spin" /> : <Save size={12} />}
-          Save
-        </button>
+        {saveBtn}
       </div>
+      ) : null}
 
       {error && <p className="text-xs text-rose-300">{error}</p>}
       {hint && <p className="text-xs text-emerald-300">{hint}</p>}
 
       {showCommitmentBox && (
-      <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 space-y-3">
+      <div
+        className={
+          embedded
+            ? "space-y-3"
+            : "rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 space-y-3"
+        }
+      >
         {showSoftlandToggle && (
-        <div className="flex items-start justify-between gap-2">
-          <div>
-            <p className="text-xs font-semibold text-sky-100">SoftLand (sites)</p>
-            <p className="text-[11px] text-muted-foreground mt-0.5">
-              On: blocks listed / watch / built-in sites in Edge when mode says so. Off: SoftLand
-              allows all sites (hosts-file device lock and Arm stay independent). SoftLand ON never
-              means Armed.
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-[13px] font-medium text-foreground">
+              {embedded ? "Site block" : "SoftLand (sites)"}
+            </p>
+            <p className="text-[12px] text-muted-foreground mt-0.5 leading-snug">
+              {embedded
+                ? "On: Edge follows allow / watch / block lists. Off: every site opens. Never arms the kill list."
+                : "On: blocks listed / watch / built-in sites in Edge when mode says so. Off: SoftLand allows all sites (hosts-file device lock and Arm stay independent). SoftLand ON never means Armed."}
             </p>
           </div>
-          <label className="flex items-center gap-2 text-xs shrink-0">
+          <label className="flex items-center gap-2 text-[13px] shrink-0 pt-0.5">
             <input
               type="checkbox"
               checked={Boolean(policy.softland_enabled ?? policy.hard_block_enabled)}
@@ -268,12 +315,13 @@ export function ProductivityPolicyPanel({ onSaved, variant = "all" }: Props) {
                 setPolicy({ ...policy, softland_enabled: on, hard_block_enabled: on });
               }}
             />
-            SoftLand on
+            {embedded ? "On" : "SoftLand on"}
           </label>
         </div>
         )}
         {showUnlockExtras && (
         <>
+        {!embedded ? (
         <p className="text-[11px] text-muted-foreground">
           Day unlocks when you hit your <strong className="text-foreground/80">study goal</strong>{" "}
           and tick <strong className="text-foreground/80">1 Bible chapter</strong> (until midnight).{" "}
@@ -281,6 +329,7 @@ export function ProductivityPolicyPanel({ onSaved, variant = "all" }: Props) {
             Open Bible reader
           </a>
         </p>
+        ) : null}
         {!isFocusDesktopShell() ? (
         <div className="rounded-md border border-white/10 bg-black/20 p-2.5 space-y-2">
           <div className="flex flex-wrap items-center justify-between gap-2">
@@ -561,6 +610,7 @@ export function ProductivityPolicyPanel({ onSaved, variant = "all" }: Props) {
             Auto-block Gaming category
           </label>
         </div>
+        {variant === "all" ? (
         <div>
           <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">
             SoftLand game-bank exes (not OS kill list)
@@ -620,6 +670,7 @@ export function ProductivityPolicyPanel({ onSaved, variant = "all" }: Props) {
             </button>
           </div>
         </div>
+        ) : null}
         </>
         )}
       </div>
@@ -756,6 +807,8 @@ export function ProductivityPolicyPanel({ onSaved, variant = "all" }: Props) {
       )}
 
       {showDevice && <DeviceBlockPanel />}
+
+      {embedded ? <div className="flex justify-end pt-1">{saveBtn}</div> : null}
     </div>
   );
 }

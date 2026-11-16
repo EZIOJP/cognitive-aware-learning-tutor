@@ -6,7 +6,6 @@ import {
   Route,
   Navigate,
   Outlet,
-  useLocation,
 } from "react-router";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { AuthProvider } from "@/context/AuthContext";
@@ -24,48 +23,40 @@ import { ProductivityPage } from "@/pages/ProductivityPage";
 import FocusPage from "@/pages/FocusPage";
 import { JournalPage } from "@/pages/JournalPage";
 import { BibleReaderPage } from "@/pages/bible/BibleReaderPage";
-import { MathRoadmapPage } from "@/pages/MathRoadmapPage";
 import { LifeTrackerPage } from "@/pages/LifeTrackerPage";
-import { NutritionPage } from "@/plugins/nutrinode/NutritionPage";
-import { NutritionProvider } from "@/plugins/nutrinode/NutritionContext";
 import { CurvedScrollArea } from "@/components/ui/CurvedScrollArea";
 import { BodyCareRuntime } from "@/components/productivity/BodyCareRuntime";
+import { BodyCareVisionHost } from "@/components/productivity/BodyCareVisionHost";
+import { PlanningPrefsSheet } from "@/components/productivity/PlanningPrefsSheet";
+import { PlannerRemindersRuntime } from "@/components/productivity/PlannerRemindersRuntime";
 
-/** Lean chrome: no Study presence / data-pipeline / Face overlay graph. */
+/** Lean chrome: SoftLand≠Arm shell — no Math / Nutri / Study plugins. */
 function FocusShell() {
-  const { pathname } = useLocation();
-  const onMath = pathname === "/math" || pathname.endsWith("/math");
-
   return (
     <DashboardChromeProvider>
-    <div className="relative flex h-screen w-screen overflow-hidden bg-background">
-        <BodyCareRuntime />
-        <MorningGateRedirect />
-        <MorningBibleOverlay />
-        <MorningPlanOverlay />
-        <AppSidebar />
-        <div className="flex min-w-0 flex-1 flex-col min-h-0">
-          <main className="flex min-h-0 flex-1 flex-col">
-            <CurvedScrollArea
-              className="min-h-0 flex-1"
-              tone="accent"
-              radius={24}
-              contentClassName="curved-scrollbar__content--flush px-3 py-4 sm:px-4 sm:py-5"
-            >
-              {/* Keep Math iframe mounted so leaving /math does not reload the companion. */}
-              <div className={onMath ? "hidden" : undefined}>
-                <Outlet />
-              </div>
-              <div
-                className={onMath ? "min-h-[26rem]" : "hidden"}
-                aria-hidden={!onMath}
+      <BodyCareVisionHost>
+        <div className="focus-shell-root relative flex h-screen w-screen overflow-hidden bg-background">
+          <BodyCareRuntime />
+          <PlannerRemindersRuntime />
+          <MorningGateRedirect />
+          <PlanningPrefsSheet />
+          <AppSidebar />
+          <div className="flex min-w-0 flex-1 flex-col min-h-0">
+            <MorningBibleOverlay />
+            <MorningPlanOverlay />
+            <main className="focus-shell-main flex min-h-0 flex-1 flex-col">
+              <CurvedScrollArea
+                className="min-h-0 flex-1"
+                tone="accent"
+                radius={24}
+                contentClassName="curved-scrollbar__content--focus-shell"
               >
-                <MathRoadmapPage />
-              </div>
-            </CurvedScrollArea>
-          </main>
+                <Outlet />
+              </CurvedScrollArea>
+            </main>
+          </div>
         </div>
-      </div>
+      </BodyCareVisionHost>
     </DashboardChromeProvider>
   );
 }
@@ -79,17 +70,7 @@ function FocusRoutes() {
         <Route path="productivity/focus" element={<FocusPage />} />
         <Route path="journal" element={<JournalPage />} />
         <Route path="bible" element={<BibleReaderPage />} />
-        {/* Math is kept alive in FocusShell — empty outlet stub */}
-        <Route path="math" element={<span className="sr-only">Math → ML</span>} />
         <Route path="life" element={<LifeTrackerPage />} />
-        <Route
-          path="nutrition"
-          element={
-            <NutritionProvider>
-              <NutritionPage />
-            </NutritionProvider>
-          }
-        />
         <Route path="*" element={<Navigate to="/productivity?tab=home" replace />} />
       </Route>
     </Routes>
@@ -109,6 +90,17 @@ export function FocusApp() {
 
   useEffect(() => installFocusStatusPushListener(), []);
   useEmailDailyReport(true);
+
+  useEffect(() => {
+    document.documentElement.setAttribute("data-focus-shell", "1");
+    // ThemeProvider owns light/dark — do not force dark (Settings → Appearance).
+    if (!document.documentElement.getAttribute("data-typography-pack")) {
+      document.documentElement.setAttribute("data-typography-pack", "hero");
+    }
+    return () => {
+      document.documentElement.removeAttribute("data-focus-shell");
+    };
+  }, []);
 
   return (
     <ThemeProvider>

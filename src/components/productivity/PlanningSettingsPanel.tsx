@@ -16,6 +16,8 @@ import {
 type Props = {
   refreshKey?: number;
   onPlannerChange?: () => void;
+  /** Sheet = in-gate prefs (no Settings nav / Demo footer). */
+  variant?: "settings" | "sheet";
 };
 
 function KnobRow({
@@ -39,9 +41,15 @@ function KnobRow({
 }
 
 /**
- * Planning-related Settings — routine auto-apply pref + read-only morning/browser knobs.
+ * Planning-related Settings — routine auto-apply + read-only morning/browser knobs.
+ * Morning path: Bible → Plan → Apply/Confirm (plan-first).
  */
-export function PlanningSettingsPanel({ refreshKey = 0, onPlannerChange }: Props) {
+export function PlanningSettingsPanel({
+  refreshKey = 0,
+  onPlannerChange,
+  variant = "settings",
+}: Props) {
+  const sheet = variant === "sheet";
   const [prefs, setPrefs] = useState<PlanningPrefs>(() => loadPlanningPrefs());
   const [morning, setMorning] = useState<MorningGate | null>(null);
   const [browser, setBrowser] = useState<BrowserGateSection | null>(null);
@@ -120,23 +128,43 @@ export function PlanningSettingsPanel({ refreshKey = 0, onPlannerChange }: Props
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h3 className="font-semibold flex items-center gap-2 text-sm">
-            <Settings2 size={16} className="text-primary" />
-            Planning
-          </h3>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Morning window, routine auto-apply, and browser study vs free defaults.
-          </p>
+      {!sheet ? (
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h3 className="font-semibold flex items-center gap-2 text-sm">
+              <Settings2 size={16} className="text-primary" />
+              Planning
+            </h3>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Morning path is Bible → Plan → Apply/Confirm. SoftLand and Arm are not part of
+              planning — while the plan gate is open, use <strong className="font-medium text-foreground/90">Planning prefs</strong> on
+              the Plan tab.
+            </p>
+          </div>
+          <Link
+            to="/productivity?tab=plan"
+            className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline"
+          >
+            <CalendarCheck size={13} />
+            Open Plan tab
+          </Link>
         </div>
-        <Link
-          to="/productivity?tab=plan"
-          className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline"
-        >
-          <CalendarCheck size={13} />
-          Open Plan tab
-        </Link>
+      ) : null}
+
+      <div className="space-y-2">
+        <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+          Morning plan phase
+        </p>
+        <label className="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-sm">
+          <span>
+            <span className="block font-medium">Require Confirm plan</span>
+            <span className="text-xs text-muted-foreground">
+              Always on. Bible, then finish the plan (Apply / Confirm), then the day runs. SoftLand ≠
+              Arm.
+            </span>
+          </span>
+          <input type="checkbox" checked readOnly disabled />
+        </label>
       </div>
 
       <div className="space-y-2">
@@ -199,9 +227,7 @@ export function PlanningSettingsPanel({ refreshKey = 0, onPlannerChange }: Props
           />
           <KnobRow
             label="MORNING_AUTO_PLAN"
-            value={
-              autoPlanOn === null ? "—" : autoPlanOn ? "on" : "off"
-            }
+            value={autoPlanOn === null ? "—" : autoPlanOn ? "on" : "off"}
             hint="Draft after Bible"
           />
           <KnobRow
@@ -210,17 +236,15 @@ export function PlanningSettingsPanel({ refreshKey = 0, onPlannerChange }: Props
             hint="Usually off — keep Confirm CTA"
           />
         </div>
-        {morning?.enabled && (
+        {morning?.enabled ? (
           <p className="text-[11px] text-muted-foreground">
             Today: next=<code className="text-foreground/80">{morning.next}</code>
             {" · "}
             blocks={morning.blocks_today}
             {morning.plan_done ? " · plan confirmed" : ""}
-            {morning.plan_window?.phase
-              ? ` · window=${morning.plan_window.phase}`
-              : ""}
+            {morning.plan_window?.phase ? ` · window=${morning.plan_window.phase}` : ""}
           </p>
-        )}
+        ) : null}
       </div>
 
       <div className="space-y-2">
@@ -239,28 +263,20 @@ export function PlanningSettingsPanel({ refreshKey = 0, onPlannerChange }: Props
             hint="Evening free window (local)"
           />
         </div>
-        {browser?.mode_label && (
+        {browser?.mode_label ? (
           <p className="text-[11px] text-muted-foreground">
-            Now:{" "}
-            <span className="font-semibold text-foreground">{browser.mode_label}</span>
+            Now: <span className="font-semibold text-foreground">{browser.mode_label}</span>
             {browser.note ? ` — ${browser.note}` : ""}
           </p>
-        )}
+        ) : null}
       </div>
 
-      {hint && <p className="text-xs text-sky-300">{hint}</p>}
-      {error && (
+      {hint ? <p className="text-xs text-sky-300">{hint}</p> : null}
+      {error ? (
         <p className="text-sm text-red-300 bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">
           {error}
         </p>
-      )}
-      <p className="text-[11px] text-muted-foreground pt-1">
-        Need Soft-land demos?{" "}
-        <Link to="/productivity?tab=settings#demo-mode" className="text-amber-200 underline underline-offset-2 hover:text-white">
-          Open Demo mode
-        </Link>{" "}
-        (same Settings tab, below).
-      </p>
+      ) : null}
     </div>
   );
 }

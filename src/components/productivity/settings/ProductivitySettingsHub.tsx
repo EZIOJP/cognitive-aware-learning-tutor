@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
 import { WeaponCallout, SettingSection, NativeOrApiBadge } from "./SettingPrimitives";
-import FocusControlPanel from "../FocusControlPanel";
 import SoftLandSiteRulesPanel from "../SoftLandSiteRulesPanel";
 import GateSchedulesPanel from "../GateSchedulesPanel";
 import AppKillRulesPanel from "../AppKillRulesPanel";
@@ -9,6 +8,8 @@ import ProductivityPolicyPanel from "../ProductivityPolicyPanel";
 import { DeviceBlockPanel } from "../DeviceBlockPanel";
 import { DesktopManagedBanner } from "../DesktopManagedBanner";
 import { EnforcerWriteGate } from "../EnforcerWriteGate";
+import { UnlockGuidePanel } from "../UnlockGuidePanel";
+import { ArmControlCard } from "../ArmControlCard";
 
 /** Prefer MakeSettingsApp in Focus; hub kept for Study interstitial / deep links. */
 export type SettingsSectionId =
@@ -134,7 +135,7 @@ export function ProductivitySettingsHub({
                 why="Allow always wins. Watch is study-only. Block survives reward days."
                 availability="native"
               >
-                <SoftLandSiteRulesPanel />
+                <SoftLandSiteRulesPanel mode="blocker" />
               </SettingSection>
               <SettingSection
                 title="Schedule"
@@ -147,6 +148,13 @@ export function ProductivitySettingsHub({
           )}
           {blockSub === "apps" && (
             <>
+              <SettingSection
+                title="Arm"
+                why="Own switch from SoftLand. Edit the kill list below, then Arm."
+                availability="native"
+              >
+                <ArmControlCard />
+              </SettingSection>
               <SettingSection
                 title="Time limits"
                 why="Daily minutes per app. When they're used, the enforcer closes that app until midnight."
@@ -179,17 +187,10 @@ export function ProductivitySettingsHub({
         <div className="space-y-6">
           <SettingSection
             title="Unlock"
-            why="Earn goal+Bible, reward day, or day pass. SoftLand ON ≠ Armed."
+            why="How SoftLand free time works — goal, reward day, day pass. SoftLand ≠ Arm."
             availability="native"
           >
-            <ProductivityPolicyPanel variant="unlock" onSaved={onPolicySaved} />
-          </SettingSection>
-          <SettingSection
-            title="Now"
-            why="Live SoftLand mode and OS Arm."
-            availability="native"
-          >
-            <FocusControlPanel />
+            <UnlockGuidePanel onSaved={onPolicySaved} />
           </SettingSection>
         </div>
       )}

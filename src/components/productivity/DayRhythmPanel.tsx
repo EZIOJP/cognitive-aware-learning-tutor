@@ -55,12 +55,13 @@ function subtractMinutesHm(hm: string, mins: number): string | null {
 
 /**
  * Compact sleep / wake targets — Routines (fixed day anchors).
- * Shows sleep length + when to start wind-down before bed.
+ * Rhythm strip (not a nested card): sleep length + bed/wake/Save.
  */
 export function DayRhythmPanel() {
   const [bedtimeHm, setBedtimeHm] = useState("23:00");
   const [wakeHm, setWakeHm] = useState("06:30");
   const [hint, setHint] = useState<string | null>(null);
+  const [hintOk, setHintOk] = useState(true);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -81,28 +82,28 @@ export function DayRhythmPanel() {
   );
 
   return (
-    <div className="rounded-lg border border-indigo-500/20 bg-indigo-500/[0.04] px-2.5 py-2 space-y-1.5">
-      <div className="flex items-center gap-2 min-w-0">
-        <Moon size={13} className="text-indigo-300 shrink-0" aria-hidden />
-        <span className="text-[11px] font-semibold text-foreground shrink-0">Sleep</span>
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 py-2 mt-1 border-t border-white/[0.07]">
+      <div className="inline-flex items-center gap-1.5 shrink-0">
+        <Moon size={13} className="text-sky-300/80" aria-hidden />
+        <span className="text-[11px] font-medium text-foreground/90">Sleep</span>
         {sleepMins != null ? (
-          <span className="text-[11px] font-mono tabular-nums text-indigo-200/90 shrink-0">
+          <span className="text-[11px] font-mono tabular-nums text-sky-200/80">
             {formatSleepHours(sleepMins)}
           </span>
         ) : null}
         {windDownHm ? (
-          <span className="text-[10px] text-muted-foreground truncate min-w-0">
+          <span className="text-[10px] text-muted-foreground/70 hidden sm:inline">
             · wind-down {formatClock(windDownHm)}
           </span>
         ) : null}
       </div>
 
-      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px]">
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] min-w-0">
         <label className="inline-flex items-center gap-1 text-muted-foreground">
           Bed
           <input
             type="time"
-            className="rounded border border-white/10 bg-black/40 px-1 py-0.5 text-[11px] text-foreground"
+            className="rounded border border-white/10 bg-black/30 px-1 py-0.5 text-[11px] text-foreground"
             value={bedtimeHm}
             onChange={(e) => {
               setBedtimeHm(e.target.value);
@@ -114,7 +115,7 @@ export function DayRhythmPanel() {
           Wake
           <input
             type="time"
-            className="rounded border border-white/10 bg-black/40 px-1 py-0.5 text-[11px] text-foreground"
+            className="rounded border border-white/10 bg-black/30 px-1 py-0.5 text-[11px] text-foreground"
             value={wakeHm}
             onChange={(e) => {
               setWakeHm(e.target.value);
@@ -125,15 +126,18 @@ export function DayRhythmPanel() {
         <button
           type="button"
           disabled={saving || sleepMins == null}
-          className="rounded-md bg-indigo-600/80 px-2 py-0.5 text-[10px] font-semibold text-white disabled:opacity-50"
+          className="rounded-md border border-white/10 bg-white/[0.06] hover:bg-white/10 px-2 py-0.5 text-[10px] font-medium text-foreground/90 disabled:opacity-50"
           onClick={() => {
             void (async () => {
               setSaving(true);
-              const ok = await setBedtime(bedtimeHm, wakeHm);
+              const res = await setBedtime(bedtimeHm, wakeHm);
+              setHintOk(res.ok);
               setHint(
-                ok
-                  ? `Saved · ${formatSleepHours(sleepMins!)} · wind-down ${formatClock(windDownHm!)}`
-                  : "Could not save (enforcer?)",
+                res.ok
+                  ? `Saved · ${formatSleepHours(sleepMins!)}`
+                  : res.error === "enforcer_unreachable"
+                    ? "Enforcer unreachable — open CALT Focus, then save again."
+                    : "Could not save sleep.",
               );
               setSaving(false);
             })();
@@ -142,12 +146,16 @@ export function DayRhythmPanel() {
           {saving ? "…" : "Save"}
         </button>
         {hint ? (
-          <span className="text-[10px] text-indigo-200/80 truncate">{hint}</span>
-        ) : (
-          <span className="text-[10px] text-muted-foreground/80 truncate">
-            Follow wind-down → lights out at bed
+          <span
+            className={
+              hintOk
+                ? "text-[10px] text-emerald-200/80 truncate"
+                : "text-[10px] text-red-300/90 truncate"
+            }
+          >
+            {hint}
           </span>
-        )}
+        ) : null}
       </div>
     </div>
   );

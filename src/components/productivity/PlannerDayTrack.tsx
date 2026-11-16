@@ -1,14 +1,28 @@
-import { useEffect, useMemo, useState, type ReactNode, type RefObject } from "react";
+import {
+  useEffect,
+  useMemo,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+  type RefObject,
+} from "react";
 
 type Props = {
   day: Date;
-  /** Total body height in px (24 hour rows). */
+  /** Total body height in px for the full rail (24 + leadHours rows). */
   height: number;
   bodyRef: RefObject<HTMLDivElement | null>;
   children?: ReactNode;
   /** Shown centered in the body when the day has no blocks. */
   emptyHint?: string | null;
   onHourLabelClick?: (hourStart: Date, el: HTMLElement) => void;
+  /**
+   * Prefer this minute-of-rail for initial scroll.
+   * Negative minutes = overnight lead rows (e.g. -60 = previous 11 PM).
+   */
+  scrollToMinute?: number | null;
+  /** Extra rows before midnight for overnight sleep (1 ⇒ show 11 PM). */
+  leadHours?: number;
 };
 
 function hourParts(hour: number): { time: string; meridiem: string } {
@@ -30,8 +44,12 @@ export function PlannerDayTrack({
   children,
   emptyHint,
   onHourLabelClick,
+  scrollToMinute = null,
+  leadHours = 0,
 }: Props) {
   const [nowTop, setNowTop] = useState<number | null>(null);
+  const lead = Math.max(0, Math.min(6, Math.floor(leadHours)));
+  const railHours = 24 + lead;
 
   const dayKey = useMemo(() => {
     const y = day.getFullYear();
@@ -39,6 +57,18 @@ export function PlannerDayTrack({
     const d = String(day.getDate()).padStart(2, "0");
     return `${y}-${m}-${d}`;
   }, [day]);
+
+  const rail = useMemo(() => {
+    const rows: Array<{ railHour: number; clockHour: number; prev: boolean }> = [];
+    for (let i = 0; i < lead; i++) {
+      const clockHour = 24 - lead + i;
+      rows.push({ railHour: clockHour - 24, clockHour, prev: true });
+    }
+    for (let hour = 0; hour < 24; hour++) {
+      rows.push({ railHour: hour, clockHour: hour, prev: false });
+    }
+    return rows;
+  }, [lead]);
 
   useEffect(() => {
     const tick = () => {
@@ -49,20 +79,29 @@ export function PlannerDayTrack({
         return;
       }
       const mins = n.getHours() * 60 + n.getMinutes() + n.getSeconds() / 60;
-      setNowTop((mins / (24 * 60)) * height);
+      setNowTop(((mins + lead * 60) / (railHours * 60)) * height);
     };
     tick();
     const id = window.setInterval(tick, 30_000);
     return () => window.clearInterval(id);
-  }, [dayKey, height]);
+  }, [dayKey, height, lead, railHours]);
 
-  // Jump the nearest scroll parent so "today" doesn't open stuck on empty midnight.
+  // Initial scroll: prefer sleep / anchor minute so overnight Amazfit sleep isn't off-screen.
+  // Otherwise jump to "now" so today isn't stuck on empty midnight.
   useEffect(() => {
     const n = new Date();
     const key = `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, "0")}-${String(n.getDate()).padStart(2, "0")}`;
-    if (key !== dayKey) return;
-    const mins = n.getHours() * 60 + n.getMinutes();
-    const top = (mins / (24 * 60)) * height;
+    const isToday = key === dayKey;
+    let mins: number | null = null;
+    if (scrollToMinute != null && Number.isFinite(scrollToMinute)) {
+      // scrollToMinute is minutes on the extended rail (can be negative → lead).
+      mins = Math.max(0, Math.min(railHours * 60 - 1, scrollToMinute + lead * 60));
+    } else if (isToday) {
+      mins = n.getHours() * 60 + n.getMinutes() + lead * 60;
+    } else {
+      return;
+    }
+    const top = (mins / (railHours * 60)) * height;
     const id = window.requestAnimationFrame(() => {
       const track = bodyRef.current?.closest(".planner-day-track") as HTMLElement | null;
       if (!track) return;
@@ -84,13 +123,19 @@ export function PlannerDayTrack({
       }
     });
     return () => window.cancelAnimationFrame(id);
-  }, [dayKey, height, bodyRef]);
+  }, [dayKey, height, bodyRef, scrollToMinute, lead, railHours]);
 
   return (
     <div
       className="planner-day-track"
-      style={{ ["--planner-day-body-h" as string]: `${height}px` }}
+      style={
+        {
+          ["--planner-day-body-h" as string]: `${height}px`,
+          ["--planner-day-rail-rows" as string]: String(railHours),
+        } as CSSProperties
+      }
       data-day={dayKey}
+      data-lead-hours={lead}
     >
       <div className="planner-day-track__corner" aria-hidden>
         <span className="planner-day-track__min-zero" title="Start of hour">
@@ -144,17 +189,18 @@ export function PlannerDayTrack({
       </div>
 
       <div className="planner-day-track__hours" aria-hidden={false}>
-        {Array.from({ length: 24 }, (_, hour) => {
-          const { time, meridiem } = hourParts(hour);
+        {rail.map(({ railHour, clockHour, prev }) => {
+          const { time, meridiem } = hourParts(clockHour);
           return (
             <button
-              key={hour}
+              key={`h-${railHour}`}
               type="button"
-              className="planner-day-track__hour"
-              data-hour={hour}
+              className={`planner-day-track__hour${prev ? " planner-day-track__hour--prev" : ""}`}
+              data-hour={railHour}
               onClick={(e) => {
                 const hourStart = new Date(day);
-                hourStart.setHours(hour, 0, 0, 0);
+                if (prev) hourStart.setDate(hourStart.getDate() - 1);
+                hourStart.setHours(clockHour, 0, 0, 0);
                 onHourLabelClick?.(hourStart, e.currentTarget);
               }}
             >
@@ -170,11 +216,11 @@ export function PlannerDayTrack({
         className="planner-day-track__body"
         data-day-track-body="1"
       >
-        {Array.from({ length: 24 }, (_, hour) => (
+        {rail.map(({ railHour }) => (
           <div
-            key={hour}
+            key={`r-${railHour}`}
             className="planner-day-track__row"
-            data-hour={hour}
+            data-hour={railHour}
             data-day-track-row="1"
           />
         ))}

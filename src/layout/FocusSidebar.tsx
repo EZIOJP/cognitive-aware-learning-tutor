@@ -22,33 +22,47 @@ import {
   BookMarked,
   ChartColumn,
   NotebookPen,
-  BookOpen,
+  HeartPulse,
   CircleUserRound,
   MoreHorizontal,
   RefreshCw,
   PanelBottom,
   ClipboardCopy,
+  Play,
+  RotateCcw,
+  Download,
+  Terminal,
 } from "lucide-react";
 import { copyClientErrorLog, getClientErrorLog } from "../lib/clientErrorLog";
 import { cn } from "../app/components/ui/utils";
 import { useAuth } from "../context/AuthContext";
 import { ThemeToggle } from "../components/theme/ThemeToggle";
 import { PomodoroDock } from "./topbar/PomodoroDock";
+import { focusShellAction } from "../lib/focusBehaviorFile";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "../app/components/ui/dropdown-menu";
 import { fetchEnforcerStatusMirror } from "../api/focusMirrors";
 import { focusDataUrl } from "../utils/focusDataUrl";
 import { resolveFocusShellTitle } from "./pageTitles";
 import { ContourStickerLabel } from "../components/theme/ContourStickerLabel";
+import { useFocusStatus } from "../hooks/useFocusStatus";
+import { dayGateAllowsPath, dayGateTarget, morningLockActive } from "../lib/dayGate";
 import { CurvedScrollArea } from "../components/ui/CurvedScrollArea";
 import { useTheme } from "../context/ThemeContext";
 import { SIDEBAR_STICKER_FONTS } from "../theme/layers";
+import {
+  focusOwnerDisplayLabel,
+  loadFocusOwnerProfile,
+} from "../lib/focusOwnerProfile";
 
 /** Icon rail width when peeked / expanded overlay. Pages are full-bleed (no layout inset). */
 const RAIL_W = 56;
@@ -58,20 +72,10 @@ const PANEL_W = 300;
 const EDGE_HIT_W = 10;
 const LS_KEY = "sidebar:collapsed";
 
-const STUDY_SITE_URL = "http://127.0.0.1:5173/";
-
-function openStudyInBrowser() {
-  const w = window as Window & {
-    chrome?: { webview?: { postMessage: (m: unknown) => void } };
-  };
-  if (w.chrome?.webview?.postMessage) {
-    w.chrome.webview.postMessage({ type: "open_external", v: 1, url: STUDY_SITE_URL });
-    return;
-  }
-  window.open(STUDY_SITE_URL, "_blank", "noopener,noreferrer");
-}
-
-function postFocusShell(action: string) {
+function postFocusShell(
+  action: Parameters<typeof focusShellAction>[0] | "popup_tray" | "ensure_tray" | "quit" | "open_settings" | "reload_ui",
+) {
+  if (focusShellAction(action as Parameters<typeof focusShellAction>[0])) return true;
   const w = window as Window & {
     chrome?: { webview?: { postMessage: (m: unknown) => void } };
   };
@@ -82,12 +86,12 @@ function postFocusShell(action: string) {
   return false;
 }
 
+
 type NavItem = {
   to?: string;
   label: string;
   icon: ComponentType<{ className?: string }>;
   end?: boolean;
-  action?: "study";
 };
 
 type NavSection = { id: string; label: string; items: NavItem[] };
@@ -108,6 +112,7 @@ function focusSections(): NavSection[] {
       id: "life",
       label: "Life",
       items: [
+        { to: "/life", label: "Health", icon: HeartPulse, end: true },
         { to: "/bible", label: "Bible", icon: BookMarked, end: true },
         { to: "/journal", label: "Journal", icon: NotebookPen, end: true },
       ],
@@ -115,13 +120,15 @@ function focusSections(): NavSection[] {
     {
       id: "system",
       label: "System",
-      items: [
-        { to: "/productivity?tab=settings", label: "Settings", icon: Settings2 },
-        { label: "Study", icon: BookOpen, action: "study" },
-      ],
+      items: [{ to: "/productivity?tab=settings", label: "Settings", icon: Settings2 }],
     },
   ];
 }
+
+/** SoftLand master (sites) — SoftLand ON ≠ Arm. */
+const SETTINGS_SOFTLAND = "/productivity?tab=settings&section=sites";
+/** Arm / hard_block_armed (kills) — separate from SoftLand. */
+const SETTINGS_ARM = "/productivity?tab=settings&section=unlock";
 
 function StatusDots({ collapsed }: { collapsed: boolean }) {
   const [softlandOn, setSoftlandOn] = useState<boolean | null>(null);
@@ -151,31 +158,35 @@ function StatusDots({ collapsed }: { collapsed: boolean }) {
 
   if (softlandOn == null && armed == null) return null;
 
-  const title = [
-    softlandOn != null ? (softlandOn ? "SoftLand on" : "SoftLand off") : null,
-    armed != null ? (armed ? "Armed" : "Disarmed") : null,
-  ]
-    .filter(Boolean)
-    .join(" · ");
+  const softlandLabel = softlandOn ? "SoftLand on" : "SoftLand off";
+  const armLabel = armed ? "Armed" : "Disarmed";
+  const softlandTitle =
+    "SoftLand = sites · open Settings Site block. SoftLand ON ≠ Armed.";
+  const armTitle = "Arm = kills · open Settings Arm. SoftLand ON ≠ Armed.";
 
   if (collapsed) {
     return (
-      <div
-        className="flex flex-col items-center gap-1 py-1"
-        title={title}
-        aria-label={title}
-      >
+      <div className="flex flex-col items-center gap-1 py-1" role="group" aria-label="SoftLand and Arm status">
         {softlandOn != null ? (
-          <span
+          <Link
+            to={SETTINGS_SOFTLAND}
             className={cn(
-              "h-1.5 w-1.5 rounded-full",
-              softlandOn ? "bg-emerald-400" : "bg-muted-foreground/35",
+              "block h-1.5 w-1.5 rounded-full outline-none transition-opacity hover:opacity-100 focus-visible:ring-2 focus-visible:ring-emerald-400/60",
+              softlandOn ? "bg-emerald-400 opacity-90" : "bg-muted-foreground/35 opacity-80",
             )}
+            title={softlandTitle}
+            aria-label={`${softlandLabel} — open SoftLand settings`}
           />
         ) : null}
         {armed != null ? (
-          <span
-            className={cn("h-1.5 w-1.5 rounded-full", armed ? "bg-rose-400" : "bg-muted-foreground/35")}
+          <Link
+            to={SETTINGS_ARM}
+            className={cn(
+              "block h-1.5 w-1.5 rounded-full outline-none transition-opacity hover:opacity-100 focus-visible:ring-2 focus-visible:ring-rose-400/60",
+              armed ? "bg-rose-400 opacity-90" : "bg-muted-foreground/35 opacity-80",
+            )}
+            title={armTitle}
+            aria-label={`${armLabel} — open Arm settings`}
           />
         ) : null}
       </div>
@@ -185,24 +196,31 @@ function StatusDots({ collapsed }: { collapsed: boolean }) {
   return (
     <div
       className="focus-sidebar-status"
-      title="SoftLand = sites · Arm = kills · SoftLand ON ≠ Armed"
+      role="group"
+      aria-label="SoftLand = sites · Arm = kills · SoftLand ON ≠ Armed"
     >
       {softlandOn != null ? (
-        <span
+        <Link
+          to={SETTINGS_SOFTLAND}
           className={cn(
             "focus-sidebar-status__chip",
             softlandOn ? "is-on" : "is-off",
           )}
+          title={softlandTitle}
+          aria-label={`${softlandLabel} — open SoftLand settings`}
         >
           SoftLand {softlandOn ? "on" : "off"}
-        </span>
+        </Link>
       ) : null}
       {armed != null ? (
-        <span
+        <Link
+          to={SETTINGS_ARM}
           className={cn("focus-sidebar-status__chip", armed ? "is-armed" : "is-off")}
+          title={armTitle}
+          aria-label={`${armLabel} — open Arm settings`}
         >
-          {armed ? "Armed" : "Disarmed"}
-        </span>
+          {armLabel}
+        </Link>
       ) : null}
     </div>
   );
@@ -243,6 +261,9 @@ export function FocusSidebar() {
   const [collapsed, setCollapsed] = useState(true);
   /** Peek only while pointer is over the edge/rail — leave hides immediately. */
   const [railHot, setRailHot] = useState(false);
+  /** Keep peek open while a tools dropdown is open (portal leaves the rail). */
+  const [toolsMenuOpen, setToolsMenuOpen] = useState(false);
+  const [ownerLabel, setOwnerLabel] = useState(() => focusOwnerDisplayLabel());
   const { user, isAuthenticated, isAdmin } = useAuth();
   const {
     sidebarStickerFont,
@@ -251,6 +272,19 @@ export function FocusSidebar() {
   } = useTheme();
   const location = useLocation();
   const nav = useNavigate();
+  const focusStatus = useFocusStatus();
+  const gateLocked = morningLockActive(focusStatus);
+  const gateTarget = dayGateTarget(focusStatus);
+  const openProfileSettings = () => {
+    if (gateLocked && gateTarget) {
+      nav(gateTarget);
+      return;
+    }
+    nav("/productivity?tab=settings&section=profile");
+  };
+  const accountTitle = isAuthenticated
+    ? user?.display_name || user?.username || ownerLabel
+    : ownerLabel;
   const currentTab = new URLSearchParams(location.search).get("tab");
   const sections = useMemo(() => focusSections(), []);
   const pageTitle = resolveFocusShellTitle(location.pathname, currentTab);
@@ -268,6 +302,17 @@ export function FocusSidebar() {
     } catch {
       /* ignore */
     }
+  }, []);
+
+  useEffect(() => {
+    const sync = () => setOwnerLabel(focusOwnerDisplayLabel(loadFocusOwnerProfile()));
+    sync();
+    window.addEventListener("calt-focus-owner-profile", sync as EventListener);
+    window.addEventListener("storage", sync);
+    return () => {
+      window.removeEventListener("calt-focus-owner-profile", sync as EventListener);
+      window.removeEventListener("storage", sync);
+    };
   }, []);
 
   useEffect(() => {
@@ -324,7 +369,7 @@ export function FocusSidebar() {
           if (collapsed) setRailHot(true);
         }}
         onMouseLeave={() => {
-          setRailHot(false);
+          if (!toolsMenuOpen) setRailHot(false);
         }}
       >
         <nav
@@ -412,34 +457,6 @@ export function FocusSidebar() {
                   {section.items.map((item) => {
                     const Icon = item.icon;
                     const delay = collapsed ? 0 : Math.min(animIndex++, 16) * 0.018;
-
-                    if (item.action === "study") {
-                      return (
-                        <li key="study" className={collapsed ? "flex w-full justify-center" : undefined}>
-                          <button
-                            type="button"
-                            title={collapsed ? item.label : undefined}
-                            onClick={openStudyInBrowser}
-                            className={navItemClass(false)}
-                          >
-                            <span className={iconWrapClass}>
-                              <Icon className="h-[18px] w-[18px] opacity-75 group-hover:opacity-100" />
-                            </span>
-                            {!collapsed ? (
-                              <span
-                                className="min-w-0 max-w-[10rem] truncate opacity-100 transition-[opacity,max-width] duration-200"
-                                style={{ transitionDelay: `${delay * 1000}ms` }}
-                              >
-                                {item.label}
-                              </span>
-                            ) : (
-                              <span className="sr-only">{item.label}</span>
-                            )}
-                          </button>
-                        </li>
-                      );
-                    }
-
                     const to = item.to || "/";
                     const qIdx = to.indexOf("?");
                     const toPath = qIdx >= 0 ? to.slice(0, qIdx) : to;
@@ -457,14 +474,28 @@ export function FocusSidebar() {
                           ? !currentTab || currentTab === "home"
                           : Boolean(toTab) && currentTab === toTab
                         : pathActive && (!toTab || currentTab === toTab);
+                    const allowed =
+                      !gateLocked || dayGateAllowsPath(focusStatus, `${toPath}${toSearch}`);
+                    const dest =
+                      allowed || !gateTarget
+                        ? toSearch
+                          ? { pathname: toPath, search: toSearch }
+                          : to
+                        : gateTarget;
 
                     return (
                       <li key={to} className={collapsed ? "flex w-full justify-center" : undefined}>
                         <Link
-                          to={toSearch ? { pathname: toPath, search: toSearch } : to}
+                          to={dest}
                           aria-current={active ? "page" : undefined}
-                          title={collapsed ? item.label : undefined}
-                          className={navItemClass(active)}
+                          title={
+                            collapsed
+                              ? item.label
+                              : !allowed
+                                ? "Finish Bible and today's plan first"
+                                : undefined
+                          }
+                          className={cn(navItemClass(active), !allowed && "opacity-45")}
                         >
                           <span className={iconWrapClass}>
                             <Icon
@@ -528,25 +559,23 @@ export function FocusSidebar() {
                 <ThemeToggle size="sm" />
               </div>
 
-              <DropdownMenu>
+              <DropdownMenu
+                onOpenChange={(open) => {
+                  setToolsMenuOpen(open);
+                  if (open && collapsed) setRailHot(true);
+                }}
+              >
                 <DropdownMenuTrigger asChild>
-                  <RailBtn
-                    aria-label="Account"
-                    title={isAuthenticated ? user?.display_name || user?.username : "Profile"}
-                  >
+                  <RailBtn aria-label="Account" title={accountTitle}>
                     <CircleUserRound className="h-[18px] w-[18px]" />
                   </RailBtn>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" side="top" className="w-52">
-                  <DropdownMenuLabel>
-                    {isAuthenticated
-                      ? user?.display_name || user?.username || "Owner"
-                      : "This machine"}
-                  </DropdownMenuLabel>
+                <DropdownMenuContent align="start" side="top" className="w-52" sideOffset={8}>
+                  <DropdownMenuLabel>{accountTitle}</DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => nav("/profile")}>
+                  <DropdownMenuItem onClick={openProfileSettings}>
                     <CircleUserRound className="mr-2 h-4 w-4" />
-                    Profile
+                    Profile settings
                   </DropdownMenuItem>
                   {isAdmin ? (
                     <DropdownMenuItem onClick={() => nav("/admin")}>
@@ -557,14 +586,74 @@ export function FocusSidebar() {
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              <DropdownMenu>
+              {/* Tray mirror — keep; useful when system tray is hard to reach */}
+              <DropdownMenu
+                onOpenChange={(open) => {
+                  setToolsMenuOpen(open);
+                  if (open && collapsed) setRailHot(true);
+                }}
+              >
                 <DropdownMenuTrigger asChild>
-                  <RailBtn aria-label="Focus menu" title="Focus menu">
+                  <RailBtn aria-label="Focus menu" title="Tray actions in-app">
                     <MoreHorizontal className="h-[18px] w-[18px]" />
                   </RailBtn>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" side="top" className="w-56">
+                <DropdownMenuContent align="start" side="top" className="w-64" sideOffset={8}>
                   <DropdownMenuLabel>CALT Focus</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => {
+                      if (gateLocked && gateTarget) nav(gateTarget);
+                      else nav("/productivity?tab=home");
+                    }}
+                  >
+                    <Home className="mr-2 h-4 w-4" />
+                    Open Focus
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      if (gateLocked && gateTarget) nav(gateTarget);
+                      else nav("/productivity?tab=calendar");
+                    }}
+                  >
+                    <CalendarDays className="mr-2 h-4 w-4" />
+                    Open Calendar
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      if (gateLocked && gateTarget && !gateTarget.includes("tab=plan")) {
+                        nav(gateTarget);
+                      } else {
+                        nav("/productivity?tab=plan");
+                      }
+                    }}
+                  >
+                    <ListTodo className="mr-2 h-4 w-4" />
+                    Open Plan
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      if (gateLocked && gateTarget) {
+                        nav(gateTarget);
+                        return;
+                      }
+                      if (!postFocusShell("open_settings")) {
+                        nav("/productivity?tab=settings");
+                      }
+                    }}
+                  >
+                    <Settings2 className="mr-2 h-4 w-4" />
+                    Open Settings
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => postFocusShell("ensure_enforcer")}>
+                    <Play className="mr-2 h-4 w-4" />
+                    Ensure enforcer + open
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => postFocusShell("restart_enforcer")}>
+                    <RotateCcw className="mr-2 h-4 w-4" />
+                    Restart CALT (enforcer + UI)
+                  </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     onClick={() => {
@@ -574,16 +663,26 @@ export function FocusSidebar() {
                     <RefreshCw className="mr-2 h-4 w-4" />
                     Reload UI
                   </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => {
-                      if (!postFocusShell("open_settings")) {
-                        nav("/productivity?tab=settings");
-                      }
-                    }}
-                  >
-                    <Settings2 className="mr-2 h-4 w-4" />
-                    Open Settings
+                  <DropdownMenuItem onClick={() => postFocusShell("update_ui")}>
+                    <Download className="mr-2 h-4 w-4" />
+                    Update UI (rebuild + reload)
                   </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuSub>
+                    <DropdownMenuSubTrigger>
+                      <Terminal className="mr-2 h-4 w-4" />
+                      Rebuild
+                    </DropdownMenuSubTrigger>
+                    <DropdownMenuSubContent className="w-60">
+                      <DropdownMenuItem onClick={() => postFocusShell("update_stack")}>
+                        Update stack (UI + natives + rules)
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => postFocusShell("apply_update")}>
+                        Apply pending update & restart
+                      </DropdownMenuItem>
+                    </DropdownMenuSubContent>
+                  </DropdownMenuSub>
+                  <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => postFocusShell("popup_tray")}>
                     <PanelBottom className="mr-2 h-4 w-4" />
                     Show tray menu
@@ -609,7 +708,7 @@ export function FocusSidebar() {
                     className="text-rose-300 focus:text-rose-200"
                     onClick={() => postFocusShell("quit")}
                   >
-                    Quit Focus
+                    Quit
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>

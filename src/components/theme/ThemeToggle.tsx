@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { Sun } from "lucide-react";
 import { useTheme } from "../../context/ThemeContext";
 import { useNavigate } from "react-router";
+import { isFocusDesktopShell } from "../../utils/focusDesktopShell";
 
 /** Smooth crescent — two-circle mask anti-aliases better than Lucide Moon at small sizes. */
 function SmoothMoon({
@@ -96,8 +97,12 @@ export function ThemeToggle({ className = "", size = "md", variant: variantProp 
   const pressTimer = React.useRef<NodeJS.Timeout | null>(null);
   const handlePointerDown = () => {
     pressTimer.current = setTimeout(() => {
-      // Navigate to theme settings on long press (~600ms)
-      navigate("/settings/theme");
+      // Long press → theme / appearance settings
+      if (isFocusDesktopShell()) {
+        navigate("/productivity?tab=settings&section=appearance");
+      } else {
+        navigate("/settings/theme");
+      }
     }, 600);
   };
   const handlePointerUp = () => {

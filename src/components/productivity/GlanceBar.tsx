@@ -1,8 +1,11 @@
-import { BookOpen, Clock, Moon, Target } from "lucide-react";
+import { Clock, Moon, Target } from "lucide-react";
 import type { ReactNode } from "react";
 import type { DesktopStats, GoalsStatusResponse } from "../../api/behaviorClient";
 import { formatHoursMins } from "../../utils/formatDuration";
 import { cn } from "../../app/components/ui/utils";
+
+/** Sleep goal for the glance fill (hours). */
+export const SLEEP_GOAL_HOURS = 8;
 
 export function scoreColor(score: number): string {
   if (score >= 80) return "text-emerald-400";
@@ -16,6 +19,20 @@ export function scoreRingStroke(score: number): string {
   if (score >= 60) return "stroke-green-400";
   if (score >= 40) return "stroke-yellow-400";
   return "stroke-orange-400";
+}
+
+function scoreFillClass(score: number): string {
+  if (score >= 80) return "bg-emerald-400/20";
+  if (score >= 60) return "bg-green-400/20";
+  if (score >= 40) return "bg-yellow-400/18";
+  return "bg-orange-400/18";
+}
+
+function scoreBarClass(score: number): string {
+  if (score >= 80) return "bg-emerald-400/70";
+  if (score >= 60) return "bg-green-400/70";
+  if (score >= 40) return "bg-yellow-400/65";
+  return "bg-orange-400/65";
 }
 
 function MiniScoreRing({ score, size = 36 }: { score: number; size?: number }) {
@@ -49,8 +66,6 @@ function MiniScoreRing({ score, size = 36 }: { score: number; size?: number }) {
 
 type Props = {
   desktop: DesktopStats | null;
-  dueReviews: number;
-  onScheduleReview?: () => void;
   /** e.g. "today", "this week", "this month" */
   rangeLabel?: string;
   /** Last-night / selected-day sleep from wearables (hours) */
@@ -69,7 +84,6 @@ type Props = {
 function glanceValues(props: Props) {
   const {
     desktop,
-    dueReviews,
     rangeLabel = "today",
     sleepHours = null,
     sleepScore = null,
@@ -88,7 +102,11 @@ function glanceValues(props: Props) {
       ? "Sleep · no data"
       : sleepScore != null && sleepScore > 0
         ? `Sleep · watch ${sleepScore}`
-        : "Sleep";
+        : `Sleep · of ${SLEEP_GOAL_HOURS}h`;
+  const sleepPct =
+    sleepHours != null && sleepHours > 0
+      ? Math.min(100, Math.round((sleepHours / SLEEP_GOAL_HOURS) * 100))
+      : 0;
   const trackedLabel = (() => {
     const mins: number[] = [];
     if (desktop && Number.isFinite(desktop.total_seconds)) {
@@ -111,8 +129,8 @@ function glanceValues(props: Props) {
     showPulse,
     sleepLabel,
     sleepCaption,
+    sleepPct,
     trackedLabel,
-    dueReviews,
     dailyGoal,
     goalPct,
     goalMet,
@@ -122,9 +140,10 @@ function glanceValues(props: Props) {
 
 /**
  * Glance metrics — bar (legacy strip) or rail (Home compact cells).
+ * Focus-only: Score, Sleep, Tracked, Daily goal. No Study SRS.
  */
 export function GlanceBar(props: Props) {
-  const { variant = "bar", hideTracked = false, onScheduleReview } = props;
+  const { variant = "bar", hideTracked = false } = props;
   const v = glanceValues(props);
 
   if (variant === "rail") {
@@ -132,10 +151,15 @@ export function GlanceBar(props: Props) {
       <div
         className={cn(
           "grid gap-px bg-white/[0.06] border-t border-white/10",
-          hideTracked ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-2 sm:grid-cols-3 lg:grid-cols-5",
+          hideTracked ? "grid-cols-1 sm:grid-cols-3" : "grid-cols-2 sm:grid-cols-4",
         )}
       >
-        <RailCell>
+        <RailProgressCell
+          pct={Math.max(0, Math.min(100, v.displayScore))}
+          fillClass={scoreFillClass(v.displayScore)}
+          barClass={scoreBarClass(v.displayScore)}
+          ariaLabel={`Score ${v.displayScore} percent`}
+        >
           <div className="flex items-center gap-2.5">
             <div className="relative flex items-center justify-center">
               <MiniScoreRing score={v.displayScore} size={32} />
@@ -154,10 +178,10 @@ export function GlanceBar(props: Props) {
               </p>
             </div>
           </div>
-        </RailCell>
+        </RailProgressCell>
 
         {!hideTracked ? (
-          <RailCell>
+          <RailProgressCell pct={0} fillClass="bg-sky-400/15" barClass="bg-sky-400/55">
             <div className="flex items-center gap-1.5 text-sky-300/90">
               <Clock size={13} aria-hidden />
               <span className="text-lg font-semibold tabular-nums leading-none text-sky-100">
@@ -167,10 +191,19 @@ export function GlanceBar(props: Props) {
             <p className="mt-1 text-[10px] uppercase tracking-wider text-muted-foreground">
               Tracked · {v.rangeLabel}
             </p>
-          </RailCell>
+          </RailProgressCell>
         ) : null}
 
-        <RailCell>
+        <RailProgressCell
+          pct={v.sleepPct}
+          fillClass="bg-violet-400/18"
+          barClass="bg-violet-400/65"
+          ariaLabel={
+            v.sleepPct > 0
+              ? `Sleep ${v.sleepLabel} of ${SLEEP_GOAL_HOURS} hours, ${v.sleepPct} percent`
+              : "Sleep no data"
+          }
+        >
           <div className="flex items-center gap-1.5 text-violet-300/80">
             <Moon size={13} aria-hidden />
             <span className="text-lg font-semibold tabular-nums leading-none text-violet-100">
@@ -180,33 +213,15 @@ export function GlanceBar(props: Props) {
           <p className="mt-1 text-[10px] uppercase tracking-wider text-muted-foreground truncate">
             {v.sleepCaption}
           </p>
-        </RailCell>
-
-        <RailCell>
-          <div className="flex items-center gap-1.5 text-amber-300/90">
-            <BookOpen size={13} aria-hidden />
-            <span className="text-lg font-semibold tabular-nums leading-none">
-              {v.dueReviews > 0 ? v.dueReviews : "0"}
-            </span>
-          </div>
-          <div className="mt-1 flex flex-wrap items-center gap-1.5">
-            <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
-              {v.dueReviews > 0 ? "SRS due" : "SRS clear"}
-            </span>
-            {v.dueReviews > 0 && onScheduleReview ? (
-              <button
-                type="button"
-                onClick={onScheduleReview}
-                className="text-[10px] px-1.5 py-0.5 rounded border border-amber-500/35 text-amber-200/90 hover:bg-amber-500/10"
-              >
-                Schedule
-              </button>
-            ) : null}
-          </div>
-        </RailCell>
+        </RailProgressCell>
 
         {v.dailyGoal ? (
-          <RailCell>
+          <RailProgressCell
+            pct={Math.max(0, Math.min(100, v.goalPct))}
+            fillClass={v.goalMet ? "bg-emerald-400/20" : "bg-teal-400/18"}
+            barClass={v.goalMet ? "bg-emerald-400/70" : "bg-teal-400/70"}
+            ariaLabel={`Daily goal ${v.goalPct} percent`}
+          >
             <div className="flex items-center gap-1.5 text-teal-300/90">
               <Target size={13} aria-hidden />
               <span className="text-lg font-semibold tabular-nums leading-none">{v.goalPct}%</span>
@@ -214,12 +229,12 @@ export function GlanceBar(props: Props) {
             <p className="mt-1 text-[10px] uppercase tracking-wider text-muted-foreground">
               {v.goalMet ? "Goal met" : "Daily goal"}
             </p>
-          </RailCell>
+          </RailProgressCell>
         ) : (
-          <RailCell>
+          <RailProgressCell pct={0} fillClass="bg-teal-400/12" barClass="bg-teal-400/40">
             <p className="text-lg font-semibold tabular-nums leading-none text-muted-foreground/50">—</p>
             <p className="mt-1 text-[10px] uppercase tracking-wider text-muted-foreground">Daily goal</p>
-          </RailCell>
+          </RailProgressCell>
         )}
       </div>
     );
@@ -273,29 +288,6 @@ export function GlanceBar(props: Props) {
           </div>
         </div>
 
-        <div className="min-w-[6.5rem] flex-1 sm:flex-initial">
-          <div className="flex items-center gap-1.5 text-amber-300/90">
-            <BookOpen size={14} aria-hidden />
-            <span className="text-2xl font-bold tabular-nums leading-none">
-              {v.dueReviews > 0 ? v.dueReviews : "0"}
-            </span>
-          </div>
-          <div className="mt-1 flex flex-wrap items-center gap-2">
-            <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
-              {v.dueReviews > 0 ? "SRS due" : "SRS clear"}
-            </span>
-            {v.dueReviews > 0 && onScheduleReview ? (
-              <button
-                type="button"
-                onClick={onScheduleReview}
-                className="text-[10px] px-2 py-0.5 rounded-md border border-amber-500/40 text-amber-200/90 hover:bg-amber-500/10"
-              >
-                Schedule
-              </button>
-            ) : null}
-          </div>
-        </div>
-
         {v.dailyGoal ? (
           <div className="min-w-[5.5rem]">
             <div className="flex items-center gap-1.5 text-teal-300/90">
@@ -312,8 +304,47 @@ export function GlanceBar(props: Props) {
   );
 }
 
-function RailCell({ children }: { children: ReactNode }) {
-  return <div className="bg-black/35 px-3.5 py-2.5 min-w-0">{children}</div>;
+/** Compact rail cell with left-to-right progress fill + bottom accent. */
+export function RailProgressCell({
+  pct,
+  fillClass,
+  barClass,
+  children,
+  ariaLabel,
+  title,
+}: {
+  pct: number;
+  fillClass: string;
+  barClass: string;
+  children: ReactNode;
+  ariaLabel?: string;
+  title?: string;
+}) {
+  const clamped = Math.max(0, Math.min(100, Number.isFinite(pct) ? pct : 0));
+  return (
+    <div
+      className="relative bg-black/35 px-3.5 py-2.5 min-w-0 overflow-hidden"
+      title={title}
+      role={ariaLabel ? "img" : undefined}
+      aria-label={ariaLabel}
+    >
+      <div
+        className={cn(
+          "pointer-events-none absolute inset-y-0 left-0 transition-[width] duration-500",
+          fillClass,
+        )}
+        style={{ width: `${clamped}%` }}
+        aria-hidden
+      />
+      <div className="relative z-[1] pb-1">{children}</div>
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[3px] bg-white/10" aria-hidden>
+        <div
+          className={cn("h-full transition-[width] duration-500", barClass)}
+          style={{ width: `${clamped}%` }}
+        />
+      </div>
+    </div>
+  );
 }
 
 export default GlanceBar;

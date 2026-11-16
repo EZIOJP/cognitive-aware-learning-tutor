@@ -14,6 +14,19 @@ type Props = {
   refreshKey?: number;
 };
 
+/** Show youtube.com instead of msedge:youtube.com for browser tracker rows. */
+function prettyActivityLabel(row: ActivityRow): string {
+  const label = String(row.label || row.key || "").trim();
+  const m = label.match(/^(?:chrome|msedge|msedgewebview2|firefox|brave|opera|vivaldi|arc|zen|chromium)(?::|\.)(.+)$/i);
+  if (m?.[1] && m[1].includes(".")) {
+    return m[1].replace(/^www\./i, "");
+  }
+  const key = String(row.key || "");
+  const km = key.match(/^app:(?:chrome|msedge|firefox|brave|opera|vivaldi|arc|zen):(.+)$/i);
+  if (km?.[1] && km[1].includes(".")) return km[1].replace(/^www\./i, "");
+  return label || key;
+}
+
 export function ActivitiesPanel({ day, trackerNoData = false, refreshKey = 0 }: Props) {
   const [data, setData] = useState<ActivitiesResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -96,7 +109,7 @@ export function ActivitiesPanel({ day, trackerNoData = false, refreshKey = 0 }: 
                 <tr key={row.key} className="border-b border-white/5 hover:bg-white/[0.03]">
                   <td className="px-3 py-2">
                     <div className="font-medium text-foreground truncate max-w-[14rem] sm:max-w-none">
-                      {row.label}
+                      {prettyActivityLabel(row)}
                     </div>
                     {row.kind === "site" && row.parent ? (
                       <div className="text-[10px] text-muted-foreground truncate">{row.parent}</div>

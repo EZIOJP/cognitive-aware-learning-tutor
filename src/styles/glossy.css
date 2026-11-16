@@ -388,21 +388,18 @@ html[data-topbar-title-style="contour"] .topbar-title-card__heading::after {
 }
 
 /*
- * Focus brand block — symmetrical layout math:
- * PANEL 300px · tight gutter · sticker well uses minimal --sticker-bleed
- * so SVG contour (feMorphology) never clips L/R/T/B.
+ * Focus brand block. The sticker SVG already includes its contour and
+ * shadow, so this pad is even space around the whole mark.
  */
 .focus-sidebar-brand {
-  --focus-brand-gutter: 10px;
-  --sticker-bleed: 2px;
+  --focus-brand-gutter: 12px;
   display: flex;
   flex-direction: column;
   align-items: stretch;
   gap: 0;
   box-sizing: border-box;
   width: 100%;
-  /* Tight pad — title may expand into the brand well */
-  padding: 8px var(--focus-brand-gutter) 10px;
+  padding: 10px var(--focus-brand-gutter) 10px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   overflow: visible;
 }
@@ -419,13 +416,15 @@ html[data-topbar-title-style="contour"] .topbar-title-card__heading::after {
   align-items: center;
   box-sizing: border-box;
   width: 100%;
-  /* Minimal pad — sticker grows freely; filter halo can bleed */
-  padding: var(--sticker-bleed);
+  padding: 0;
   overflow: visible;
 }
 
 .contour-sticker-label {
-  overflow: visible !important;
+  display: block;
+  overflow: hidden;
+  max-width: 100%;
+  height: auto;
 }
 
 /* Supersample sticker: paint at 2×, CSS-scale to 1× (sharper filter raster) */
@@ -458,6 +457,8 @@ html[data-topbar-title-style="contour"] .topbar-title-card__heading::after {
   display: flex;
   align-items: center;
   justify-content: center;
+  box-sizing: border-box;
+  width: 100%;
   min-height: 1.65rem;
   padding: 0.2rem 0.45rem;
   border-radius: 0.5rem;
@@ -467,8 +468,24 @@ html[data-topbar-title-style="contour"] .topbar-title-card__heading::after {
   font-weight: 500;
   letter-spacing: 0.02em;
   text-align: center;
+  text-decoration: none;
   color: rgba(156, 163, 175, 0.95);
   background: rgba(255, 255, 255, 0.03);
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.focus-sidebar-status__chip:hover {
+  border-color: rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.focus-sidebar-status__chip:focus-visible {
+  outline: 2px solid rgba(125, 211, 252, 0.55);
+  outline-offset: 2px;
 }
 
 .focus-sidebar-status__chip.is-on {
@@ -477,10 +494,20 @@ html[data-topbar-title-style="contour"] .topbar-title-card__heading::after {
   color: rgba(110, 231, 183, 0.98);
 }
 
+.focus-sidebar-status__chip.is-on:hover {
+  border-color: rgba(16, 185, 129, 0.55);
+  background: rgba(16, 185, 129, 0.16);
+}
+
 .focus-sidebar-status__chip.is-armed {
   border-color: rgba(244, 63, 94, 0.35);
   background: rgba(244, 63, 94, 0.1);
   color: rgba(253, 164, 175, 0.98);
+}
+
+.focus-sidebar-status__chip.is-armed:hover {
+  border-color: rgba(244, 63, 94, 0.55);
+  background: rgba(244, 63, 94, 0.16);
 }
 
 .focus-sidebar-status__chip.is-off {
@@ -1362,11 +1389,7 @@ html[data-sidebar-sticker-font="homemade"] .sidebar-contour-title {
   --focus-edge-hit: 10px;
   width: var(--focus-edge-hit);
   transition: none;
-  background: linear-gradient(
-    90deg,
-    color-mix(in srgb, var(--foreground, #fff) 14%, transparent) 0%,
-    transparent 100%
-  );
+  background: transparent;
 }
 
 .focus-sidebar-edge[data-rail-hot="1"] {

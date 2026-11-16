@@ -20,8 +20,6 @@ import { GlanceBar } from "../components/productivity/GlanceBar";
 import HomeModeBoard from "../components/productivity/HomeModeBoard";
 import DayLoopLanding from "../components/productivity/DayLoopLanding";
 import BedtimeOverlay from "../components/productivity/BedtimeOverlay";
-import MorningBibleOverlay from "../components/productivity/MorningBibleOverlay";
-import MorningPlanOverlay from "../components/productivity/MorningPlanOverlay";
 import { PlanVsActualDashboard } from "../components/productivity/PlanVsActualDashboard";
 import { ConfirmPlanButton } from "../components/productivity/ConfirmPlanButton";
 import { TimetablePanel } from "../components/productivity/TimetablePanel";
@@ -1091,8 +1089,22 @@ export function ProductivityPage() {
 
   return (
     <>
-    <div className="h-full overflow-y-auto bg-background text-foreground px-0 py-0 sm:px-0">
-      <div className="w-full max-w-none space-y-5 pb-16">
+    <div
+      className={
+        focusShell
+          ? "focus-shell-page-root min-h-0 overflow-visible bg-background text-foreground"
+          : tab === "settings"
+            ? "settings-no-scrollbar flex min-h-0 flex-col bg-background text-foreground"
+            : "h-full overflow-y-auto bg-background text-foreground px-0 py-0 sm:px-0"
+      }
+    >
+      <div
+        className={
+          tab === "settings"
+            ? "w-full max-w-none min-h-0"
+            : "w-full max-w-none space-y-5 pb-16"
+        }
+      >
 
       {demoClock?.enabled ? (
         <div className="rounded-xl border border-amber-400/40 bg-amber-500/15 px-4 py-2.5 text-sm text-amber-50 flex flex-wrap items-center justify-between gap-2">
@@ -1836,8 +1848,7 @@ export function ProductivityPage() {
 
     </div>
     </div>
-    {focusShell ? <MorningBibleOverlay /> : null}
-    {focusShell ? <MorningPlanOverlay /> : null}
+    {/* Gate strip lives in FocusApp column chrome — avoid a second copy here. */}
     {focusShell ? <BedtimeOverlay /> : null}
     </>
   );

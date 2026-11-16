@@ -69,12 +69,28 @@ export function SoftLandModeFlagsPanel() {
     setError(null);
     try {
       const r = await fetch(focusDataUrl("softland_policy.json"), { cache: "no-store" });
-      if (!r.ok) throw new Error(`softland_policy.json ${r.status}`);
+      if (!r.ok) {
+        setStudy(DEFAULTS.study);
+        setFree(DEFAULTS.free);
+        setError(
+          r.status === 404
+            ? "SoftLand mirror missing — defaults shown. Start calt_enforcer / Focus shell to edit."
+            : `softland_policy.json ${r.status}`,
+        );
+        return;
+      }
       const j = (await r.json()) as { mode_flags?: { study?: Partial<Flags>; free?: Partial<Flags> } };
       setStudy(mergeFlags(j.mode_flags?.study, "study"));
       setFree(mergeFlags(j.mode_flags?.free, "free"));
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Could not load mode flags");
+      setStudy(DEFAULTS.study);
+      setFree(DEFAULTS.free);
+      const raw = e instanceof Error ? e.message : "Could not load mode flags";
+      setError(
+        raw === "Failed to fetch"
+          ? "Can't reach Focus data — defaults shown until enforcer / shell is up."
+          : raw,
+      );
     } finally {
       setLoading(false);
     }
@@ -121,9 +137,9 @@ export function SoftLandModeFlagsPanel() {
   }
 
   return (
-    <div className="space-y-3">
-      <div className="overflow-x-auto rounded-lg border border-border/40">
-        <table className="w-full text-[13px]">
+    <div className="space-y-3 min-w-0">
+      <div className="overflow-x-auto max-w-full rounded-lg border border-border/40">
+        <table className="w-full min-w-[18rem] text-[13px]">
           <thead>
             <tr className="border-b border-border/40 text-left text-muted-foreground">
               <th className="px-3 py-2 font-medium">Rule</th>
@@ -132,10 +148,13 @@ export function SoftLandModeFlagsPanel() {
             </tr>
           </thead>
           <tbody>
-            {LIVE.map(({ key, label }) => (
+            {LIVE.map(({ key, label, consequence }) => (
               <tr key={key} className="border-b border-border/30 last:border-0">
-                <td className="px-3 py-2.5 text-foreground/90">{label}</td>
                 <td className="px-3 py-2.5">
+                  <p className="text-foreground/90">{label}</p>
+                  <p className="mt-0.5 text-[11px] text-muted-foreground leading-snug">{consequence}</p>
+                </td>
+                <td className="px-3 py-2.5 align-top">
                   <input
                     type="checkbox"
                     aria-label={`${label} in study`}
@@ -143,7 +162,7 @@ export function SoftLandModeFlagsPanel() {
                     onChange={() => toggle("study", key)}
                   />
                 </td>
-                <td className="px-3 py-2.5">
+                <td className="px-3 py-2.5 align-top">
                   <input
                     type="checkbox"
                     aria-label={`${label} in free`}
@@ -156,6 +175,10 @@ export function SoftLandModeFlagsPanel() {
           </tbody>
         </table>
       </div>
+      <p className="text-[11px] text-muted-foreground">
+        Social / keywords / other / strict allowlist are not shown — they are not enforced. Device
+        hosts lock (Filters) is separate from SoftLand porn.
+      </p>
 
       {error ? <p className="text-xs text-rose-300">{error}</p> : null}
       {hint ? <p className="text-xs text-emerald-300">{hint}</p> : null}

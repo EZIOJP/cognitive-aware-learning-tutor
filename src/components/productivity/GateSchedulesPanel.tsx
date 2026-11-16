@@ -38,7 +38,7 @@ async function loadSchedulesFocus(): Promise<GateSchedulesResponse> {
   return { enabled: false, windows: [newWindow()] };
 }
 
-export function GateSchedulesPanel() {
+export function GateSchedulesPanel({ compact = false }: { compact?: boolean }) {
   const [data, setData] = useState<GateSchedulesResponse | null>(null);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -53,7 +53,13 @@ export function GateSchedulesPanel() {
       }
       setError(null);
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Failed to load schedules");
+      const raw = e instanceof Error ? e.message : "Failed to load schedules";
+      setData({ enabled: false, windows: [newWindow()] });
+      setError(
+        raw === "Failed to fetch"
+          ? "Can't reach Focus data — empty schedule shown until enforcer / shell is up."
+          : raw,
+      );
     }
   }, []);
 
@@ -120,23 +126,26 @@ export function GateSchedulesPanel() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 min-w-0">
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h3 className="font-semibold text-sm flex items-center gap-2">
-            <CalendarClock size={16} className="text-primary" />
-            Recurring gate schedules
-          </h3>
-          <p className="text-xs text-muted-foreground mt-1">
-            SoftLand schedule — week strip is the calendar for each window (Mon–Sun). First match wins.
-            SoftLand schedule windows → <code className="text-[10px]">softland_policy.json</code> (Phase 2 SoT).
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
+        {!compact ? (
+          <div className="min-w-0">
+            <h3 className="font-semibold text-sm flex items-center gap-2">
+              <CalendarClock size={16} className="text-[#7DCFC4]" />
+              Recurring gate schedules
+            </h3>
+            <p className="text-xs text-muted-foreground mt-1">
+              Week strip is Mon–Sun. First match wins. Incubation still forces study.
+            </p>
+          </div>
+        ) : (
+          <span className="sr-only">Recurring gate schedules</span>
+        )}
+        <div className="flex flex-wrap gap-2 ml-auto">
           <button
             type="button"
             onClick={addWindow}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/15 text-xs hover:bg-white/5"
+            className="min-h-11 inline-flex items-center gap-1.5 rounded-lg border border-border/50 px-3 text-[13px] hover:bg-white/5"
           >
             <Plus size={12} /> Add window
           </button>
@@ -144,13 +153,13 @@ export function GateSchedulesPanel() {
             type="button"
             onClick={() => void save()}
             disabled={saving}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600/70 hover:bg-emerald-600 text-xs disabled:opacity-50"
+            className="min-h-11 inline-flex items-center gap-1.5 rounded-lg border border-[#0B6B63] bg-[#0B6B63] px-4 text-[13px] font-medium text-white hover:opacity-90 disabled:opacity-50"
           >
             <Save size={12} /> {saving ? "Saving…" : saved ? "Saved" : "Save"}
           </button>
         </div>
       </div>
-      <label className="flex items-center gap-2 text-xs">
+      <label className="flex items-center gap-2 text-[13px]">
         <input
           type="checkbox"
           checked={data.enabled}
@@ -164,12 +173,12 @@ export function GateSchedulesPanel() {
       {error ? <p className="text-xs text-rose-300">{error}</p> : null}
       <ul className="space-y-3">
         {data.windows.map((win, idx) => (
-          <li key={win.id} className="rounded-xl border border-white/10 bg-black/20 p-3 space-y-2 text-xs">
-            <div className="flex gap-2 items-start">
+          <li key={win.id} className="rounded-xl border border-border/40 bg-background/30 p-3 space-y-2 text-xs min-w-0">
+            <div className="flex gap-2 items-start min-w-0">
               <input
                 value={win.label}
                 onChange={(e) => updateWindow(idx, { label: e.target.value })}
-                className="flex-1 rounded border border-white/10 bg-black/30 px-2 py-1 font-medium"
+                className="min-w-0 flex-1 rounded-lg border border-border/50 bg-background px-2 py-1.5 font-medium"
               />
               <button
                 type="button"
@@ -181,22 +190,22 @@ export function GateSchedulesPanel() {
               </button>
             </div>
             <div className="flex flex-wrap gap-2 items-center">
-              <label>
+              <label className="inline-flex items-center gap-1">
                 Start
                 <input
                   type="time"
                   value={win.start}
                   onChange={(e) => updateWindow(idx, { start: e.target.value })}
-                  className="ml-1 rounded border border-white/10 bg-black/30 px-2 py-1"
+                  className="rounded-lg border border-border/50 bg-background px-2 py-1"
                 />
               </label>
-              <label>
+              <label className="inline-flex items-center gap-1">
                 End
                 <input
                   type="time"
                   value={win.end}
                   onChange={(e) => updateWindow(idx, { end: e.target.value })}
-                  className="ml-1 rounded border border-white/10 bg-black/30 px-2 py-1"
+                  className="rounded-lg border border-border/50 bg-background px-2 py-1"
                 />
               </label>
               <select
@@ -204,7 +213,7 @@ export function GateSchedulesPanel() {
                 onChange={(e) =>
                   updateWindow(idx, { mode: e.target.value as GateScheduleWindow["mode"] })
                 }
-                className="rounded border border-white/10 bg-black/30 px-2 py-1"
+                className="rounded-lg border border-border/50 bg-background px-2 py-1"
               >
                 <option value="study">Study</option>
                 <option value="free">Free</option>
@@ -227,8 +236,8 @@ export function GateSchedulesPanel() {
                     }}
                     className={`px-2 py-0.5 rounded border text-[10px] ${
                       on
-                        ? "border-indigo-400/50 bg-indigo-500/20 text-indigo-100"
-                        : "border-white/10 text-muted-foreground"
+                        ? "border-[#0B6B63]/50 bg-[#0B6B63]/20 text-[#7DCFC4]"
+                        : "border-border/40 text-muted-foreground"
                     }`}
                   >
                     {label}

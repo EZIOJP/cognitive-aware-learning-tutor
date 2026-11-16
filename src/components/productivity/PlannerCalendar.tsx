@@ -17,6 +17,7 @@ import {
   deletePlannerBlock,
   fetchActualOverlayFull,
   fetchPlannerBlocks,
+  sleepSessionsFromFocusMirrors,
   rollForwardPlannerBlock,
   startPlannerBlock,
   updatePlannerBlock,
@@ -35,13 +36,15 @@ import {
   intervalsInHour,
   intervalDisplayName,
   fmtDurationMinutes,
+  isSleepSession,
   type MergedInterval,
 } from "./planVsActualUtils";
 import type { HourSlice, SessionSegment } from "./hourSliceTypes";
 import { planBlocksToHourSegs, type PlanHourSeg } from "./planHourSegments";
 import { HourSliceProvider } from "./HourSliceProvider";
 import { DayGridActualLayer } from "./DayGridActualLayer";
-import { buildHourSlicesFromSessions } from "./buildHourSlices";
+import { buildHourSlicesFromSessions, overnightLeadHoursFromSlices } from "./buildHourSlices";
+import { agentDebugLog } from "../../lib/agentDebugLog";
 import { DayGridCreateLayer } from "./DayGridCreateLayer";
 import { PlannerDayTrack } from "./PlannerDayTrack";
 import { ActualStackEvent } from "./ActualStackEvent";
@@ -138,7 +141,7 @@ export function calendarLayerVisibility({
   return {
     // The dedicated Planning agenda must always render its editable schedule.
     showPlanned: planningOnly || planned,
-    // Tracked chips on Plan + Calendar when the Display toggle is on.
+    // Desktop tracked chips when Display → Actual is on. Amazfit sleep always loads.
     showActual: actual,
     loadOverlay: true,
   };
@@ -538,21 +541,116 @@ export function PlannerCalendar({
       hasPaintedRef.current = true;
       setLoading(false);
 
-      if (!loadOverlay || !effectiveShowActual) {
+      if (!loadOverlay) {
         setActuals([]);
         setHourSlices([]);
         return;
       }
-      // Overlay second so the calendar grid paints before tracked chips.
-      // Focus/C++ returns hour_slices: [] — build them client-side from sessions.
-      const overlay = await fetchActualOverlayFull(range.from, range.to);
-      const a = overlay.sessions ?? [];
-      let slices = overlay.hour_slices ?? [];
-      if (a.length && !slices.length) {
-        slices = buildHourSlicesFromSessions(a, date);
+      // Amazfit sleep from mirrors first (no enforcer pipe). Overlay may hang when
+      // the named pipe is busy — day view must still show real start/end windows.
+      const sleep = await sleepSessionsFromFocusMirrors(range.from, range.to);
+      const sleepOnly = effectiveShowActual ? sleep : sleep.filter(isSleepSession);
+      if (sleepOnly.length) {
+        setActuals(sleepOnly);
+        setHourSlices(buildHourSlicesFromSessions(sleepOnly, date));
       }
-      setHourSlices(slices);
-      setActuals(a);
+
+      const applyOverlay = (overlay: Awaited<ReturnType<typeof fetchActualOverlayFull>>) => {
+        const all = overlay.sessions ?? [];
+        const a = effectiveShowActual ? all : all.filter(isSleepSession);
+        let slices = overlay.hour_slices ?? [];
+        if (a.length && (!slices.length || !effectiveShowActual)) {
+          slices = buildHourSlicesFromSessions(a, date);
+        } else if (!a.length) {
+          slices = sleepOnly.length ? buildHourSlicesFromSessions(sleepOnly, date) : [];
+        }
+        const painted = a.length ? a : sleepOnly;
+        setHourSlices(
+          a.length ? slices : sleepOnly.length ? buildHourSlicesFromSessions(sleepOnly, date) : [],
+        );
+        setActuals(painted);
+        // #region agent log
+        agentDebugLog({
+          hypothesisId: "E",
+          location: "PlannerCalendar.tsx:load",
+          message: "calendar load final paint",
+          data: {
+            day: format(date, "yyyy-MM-dd"),
+            view,
+            effectiveShowActual,
+            loadOverlay,
+            mirrorSleep: sleep.length,
+            overlaySessions: all.length,
+            paintedActuals: painted.length,
+            paintedSleep: painted.filter(isSleepSession).length,
+            paintedDesktop: painted.filter((s) => !isSleepSession(s)).length,
+            sliceCount: a.length ? slices.length : 0,
+            usedSleepOnlyFallback: !a.length && !!sleepOnly.length,
+            leadHours: overnightLeadHoursFromSlices(
+              a.length ? slices : sleepOnly.length ? buildHourSlicesFromSessions(sleepOnly, date) : [],
+            ),
+          },
+        });
+        // #endregion
+      };
+
+      // Never block the day grid on pipe-busy overlay — sleep already painted;
+      // desktop actuals land when the pool accepts the request (with retries).
+      // #region agent log
+      agentDebugLog({
+        hypothesisId: "F",
+        location: "PlannerCalendar.tsx:load",
+        message: "overlay fetch started (non-blocking)",
+        data: {
+          day: format(date, "yyyy-MM-dd"),
+          mirrorSleep: sleepOnly.length,
+          effectiveShowActual,
+        },
+      });
+      // #endregion
+      const pullOverlay = (attempt: number) => {
+        void fetchActualOverlayFull(range.from, range.to)
+          .then((o) => {
+            const desk = (o.sessions ?? []).filter((s) => !isSleepSession(s)).length;
+            // #region agent log
+            agentDebugLog({
+              hypothesisId: "F",
+              location: "PlannerCalendar.tsx:overlay-ok",
+              message: "overlay resolved",
+              data: { attempt, desk, total: (o.sessions ?? []).length },
+            });
+            // #endregion
+            applyOverlay(o);
+          })
+          .catch((e) => {
+            const sleepFb =
+              e && typeof e === "object" && "sleepFallback" in e
+                ? (e as { sleepFallback?: ActualSession[] }).sleepFallback
+                : undefined;
+            // #region agent log
+            agentDebugLog({
+              hypothesisId: "C",
+              location: "PlannerCalendar.tsx:overlay-retry",
+              message: "overlay failed; will retry",
+              data: {
+                attempt,
+                err: e instanceof Error ? e.message : String(e),
+                mirrorSleep: sleepOnly.length,
+                hasSleepFb: Array.isArray(sleepFb) ? sleepFb.length : 0,
+              },
+            });
+            // #endregion
+            if (sleepOnly.length === 0 && Array.isArray(sleepFb) && sleepFb.length) {
+              const keep = effectiveShowActual ? sleepFb : sleepFb.filter(isSleepSession);
+              setActuals(keep);
+              setHourSlices(buildHourSlicesFromSessions(keep, date));
+            }
+            if (attempt < 4) {
+              window.setTimeout(() => pullOverlay(attempt + 1), 800 + attempt * 600);
+            }
+          });
+      };
+      pullOverlay(0);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load planner");
       setLoading(false);
@@ -669,6 +767,30 @@ export function PlannerCalendar({
   }, [blocks, actuals, effectiveShowActual, effectiveShowPlanned, view, draftBlocks, use2dLayer, planningOnly]);
 
   const mergedActuals = useMemo(() => mergeForCalendar(actuals), [actuals]);
+
+  const dayLeadHours = useMemo(() => overnightLeadHoursFromSlices(hourSlices), [hourSlices]);
+
+  /** Day-track scroll: open on Amazfit sleep (negative = previous-evening lead row). */
+  const sleepScrollMinute = useMemo(() => {
+    const day0 = startOfDay(date).getTime();
+    const day1 = endOfDay(date).getTime();
+    let best: number | null = null;
+    for (const s of actuals) {
+      if (!isSleepSession(s) || !s.start_time) continue;
+      const t = parseApiDate(s.start_time).getTime();
+      if (!Number.isFinite(t) || t >= day1 || t < day0 - 12 * 3600_000) continue;
+      if (t < day0) {
+        // Minutes before midnight on the extended rail (e.g. 23:00 → -60).
+        const mins = Math.round((t - day0) / 60_000);
+        if (best == null || mins < best) best = mins;
+        continue;
+      }
+      const local = new Date(t);
+      const mins = local.getHours() * 60 + local.getMinutes();
+      if (best == null || mins < best) best = mins;
+    }
+    return best;
+  }, [actuals, date]);
 
   const planHourSegs = useMemo(() => {
     if (!use2dLayer || !effectiveShowPlanned) return [];
@@ -888,15 +1010,15 @@ export function PlannerCalendar({
           ? isFocused
             ? {
                 background:
-                  "linear-gradient(165deg, rgba(99, 102, 241, 0.95) 0%, rgba(49, 46, 129, 0.98) 100%)",
+                  "linear-gradient(165deg, rgba(165, 180, 252, 0.98) 0%, rgba(79, 70, 229, 0.98) 100%)",
                 boxShadow:
-                  "0 5px 0 rgba(30, 27, 75, 0.95), 0 10px 24px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(199, 210, 254, 0.4)",
+                  "0 5px 0 rgba(49, 46, 129, 0.95), 0 10px 24px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(224, 231, 255, 0.55)",
               }
             : {
                 background:
-                  "linear-gradient(165deg, rgba(99, 102, 241, 0.65) 0%, rgba(67, 56, 202, 0.75) 100%)",
+                  "linear-gradient(165deg, rgba(129, 140, 248, 0.9) 0%, rgba(79, 70, 229, 0.92) 100%)",
                 boxShadow:
-                  "0 3px 0 rgba(49, 46, 129, 0.85), 0 6px 14px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(165, 180, 252, 0.25)",
+                  "0 3px 0 rgba(67, 56, 202, 0.9), 0 6px 14px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(199, 210, 254, 0.4)",
               }
           : isFocused
             ? {
@@ -1075,10 +1197,11 @@ export function PlannerCalendar({
     [mergedActuals],
   );
 
+  // Sleep counts as content even when Display → Actual is off (sleep always loads).
   const isEmpty =
     !loading &&
     blocks.filter((b) => b.status !== "rolled").length === 0 &&
-    (!effectiveShowActual || actuals.length === 0);
+    actuals.length === 0;
 
   if (planningOnly && planAgendaEdit) {
     return (
@@ -1157,7 +1280,7 @@ export function PlannerCalendar({
       {planningOnly ? (
         <div className="mb-2 flex flex-wrap items-center justify-between gap-2 px-0.5">
           <p className="text-[10px] text-muted-foreground">
-            Drag across minutes; move into the next/previous hour to extend · 1m while creating · click a block to edit
+            Drag across minutes in one hour · 1m while creating · click a block to edit
           </p>
           <div className="flex gap-1.5">
             <button
@@ -1363,8 +1486,10 @@ export function PlannerCalendar({
             {use2dLayer ? (
               <PlannerDayTrack
                 day={date}
-                height={calendarHeight}
+                height={Math.round(calendarHeight * ((24 + dayLeadHours) / 24))}
                 bodyRef={dayTrackBodyRef}
+                scrollToMinute={sleepScrollMinute}
+                leadHours={dayLeadHours}
                 emptyHint={
                   isEmpty ? "Drag across the grid to add a block" : null
                 }
@@ -1378,7 +1503,7 @@ export function PlannerCalendar({
                 />
                 <DayGridActualLayer
                   day={date}
-                  slices={effectiveShowActual ? hourSlices : []}
+                  slices={hourSlices}
                   planSegs={planHourSegs}
                   focusedPlanId={focusedEventId}
                   containerRef={calendarWrapRef}
@@ -1433,6 +1558,17 @@ export function PlannerCalendar({
                 }}
                 step={step}
                 timeslots={Math.max(1, 60 / step)}
+                scrollToTime={
+                  sleepScrollMinute != null
+                    ? new Date(
+                        date.getFullYear(),
+                        date.getMonth(),
+                        date.getDate(),
+                        Math.floor(sleepScrollMinute / 60),
+                        sleepScrollMinute % 60,
+                      )
+                    : undefined
+                }
                 allDayMaxRows={0}
                 allDayAccessor={() => false}
                 showMultiDayTimes

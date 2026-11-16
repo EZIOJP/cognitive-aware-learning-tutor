@@ -322,6 +322,108 @@ export interface DesktopTimeline {
  * Browser-tab stats (from Edge SelfTracker → /ws/behavior).
  */
 export async function fetchBrowserStats(day?: string): Promise<BrowserStats> {
+  const { isFocusDesktopShell } = await import("../utils/focusDesktopShell");
+  if (isFocusDesktopShell()) {
+    // Build from day_activities + plan overlay — no Study :8000.
+    const empty: BrowserStats = {
+      connected: true,
+      events_today: 0,
+      total_events: 0,
+      top_category: "",
+      avg_productivity_score: 0,
+      top_domains: [],
+      recent_sites: [],
+      category_breakdown: {},
+      date: day || new Date().toISOString().slice(0, 10),
+      source: "focus_mirrors",
+    };
+    try {
+      const { fetchDayActivitiesMirror } = await import("./focusMirrors");
+      const { fetchActualOverlay } = await import("./plannerClient");
+      const mir = await fetchDayActivitiesMirror();
+      const dayKey = day || mir?.date || empty.date;
+      if (mir?.date && day && mir.date !== day) {
+        // Historical day: derive from overlay sessions only.
+      }
+      const from = new Date(`${dayKey}T00:00:00`);
+      const to = new Date(`${dayKey}T23:59:59`);
+      const sessions = await fetchActualOverlay(from, to).catch(() => []);
+      const domainMap = new Map<string, { domain: string; seconds: number; score: number; n: number }>();
+      const cats: Record<string, number> = {};
+      let events = 0;
+      let scoreSum = 0;
+      let scoreN = 0;
+
+      const addDomain = (domain: string, seconds: number, score: number | null, cat: string | null) => {
+        if (!domain || seconds <= 0) return;
+        const cur = domainMap.get(domain) || { domain, seconds: 0, score: 0, n: 0 };
+        cur.seconds += seconds;
+        if (score != null && score > 0) {
+          cur.score += score;
+          cur.n += 1;
+          scoreSum += score;
+          scoreN += 1;
+        }
+        domainMap.set(domain, cur);
+        events += 1;
+        if (cat) cats[cat] = (cats[cat] || 0) + seconds;
+      };
+
+      for (const s of sessions) {
+        const site = (s.site || "").toLowerCase().replace(/^www\./, "");
+        const app = (s.app_name || "").toLowerCase();
+        let host = site;
+        if (!host && app.includes(":")) host = app.slice(app.lastIndexOf(":") + 1);
+        if (!host) continue;
+        const start = s.start_time ? Date.parse(s.start_time) : NaN;
+        const end = s.end_time ? Date.parse(s.end_time) : Date.now();
+        const sec = Number.isFinite(start) && Number.isFinite(end) ? Math.max(0, (end - start) / 1000) : 0;
+        addDomain(host, sec, s.productivity_score ?? null, s.category ?? null);
+      }
+
+      if ((!day || mir?.date === day) && mir?.activities?.length) {
+        for (const a of mir.activities) {
+          const key = String(a.key || "");
+          const label = String(a.label || "");
+          let host = "";
+          if (key.includes(":")) {
+            const parts = key.split(":");
+            host = parts[parts.length - 1];
+          } else if (label.includes(".") && !label.endsWith(".exe")) {
+            host = label.includes(":") ? label.slice(label.lastIndexOf(":") + 1) : label;
+          }
+          if (!host || !host.includes(".") || host.endsWith(".exe")) continue;
+          addDomain(host.replace(/^www\./, ""), a.seconds || 0, a.productivity_score ?? null, a.category ?? null);
+        }
+      }
+
+      const top_domains = [...domainMap.values()]
+        .map((d) => ({
+          domain: d.domain,
+          seconds: Math.round(d.seconds),
+          productivity_score: d.n ? Math.round(d.score / d.n) : 0,
+        }))
+        .sort((a, b) => b.seconds - a.seconds)
+        .slice(0, 20);
+
+      const topCat =
+        Object.entries(cats).sort((a, b) => b[1] - a[1])[0]?.[0] || "";
+      return {
+        connected: true,
+        events_today: events || top_domains.length,
+        total_events: events || top_domains.length,
+        top_category: topCat,
+        avg_productivity_score: scoreN ? Math.round(scoreSum / scoreN) : 0,
+        top_domains,
+        recent_sites: top_domains.slice(0, 8).map((d) => d.domain),
+        category_breakdown: cats,
+        date: dayKey,
+        source: "focus_mirrors",
+      };
+    } catch {
+      return empty;
+    }
+  }
   const qs = day ? `?day=${day}` : "";
   const res = await fetch(resolveApiUrl(`/api/behavior/stats${qs}`), {
     headers: authHeaders(),
@@ -346,6 +448,36 @@ export async function fetchActivities(
   day?: string,
   uncategorizedOnly = false,
 ): Promise<ActivitiesResponse> {
+  const { isFocusDesktopShell } = await import("../utils/focusDesktopShell");
+  if (isFocusDesktopShell()) {
+    // Enforcer mirror only — never Study :8000 in Focus.
+    const { fetchDayActivitiesMirror } = await import("./focusMirrors");
+    const mir = await fetchDayActivitiesMirror();
+    if (!mir) {
+      return {
+        date: day || new Date().toISOString().slice(0, 10),
+        total_seconds: 0,
+        activities: [],
+        uncategorized_count: 0,
+      };
+    }
+    // Mirror is always "today"; other days stay empty until we add day-scoped mirrors.
+    if (day && mir.date && day !== mir.date) {
+      return {
+        date: day,
+        total_seconds: 0,
+        activities: [],
+        uncategorized_count: 0,
+      };
+    }
+    if (!uncategorizedOnly) return mir;
+    const activities = mir.activities.filter((a) => a.uncategorized);
+    return {
+      ...mir,
+      activities,
+      uncategorized_count: activities.length,
+    };
+  }
   const params = new URLSearchParams();
   if (day) params.set("day", day);
   if (uncategorizedOnly) params.set("uncategorized_only", "true");
@@ -1619,7 +1751,57 @@ export async function saveProductivityPolicy(
   return res.json();
 }
 
+/** SoftLand goals.planning_enabled — false removes Confirm-plan morning phase. */
+export async function setPlanningPhaseEnabled(enabled: boolean): Promise<void> {
+  const { enforcerNativeCmd, isFocusEnforcerBridgeAvailable } = await import(
+    "../lib/enforcerNativeCmd"
+  );
+  if (!isFocusEnforcerBridgeAvailable()) {
+    throw new Error("Enforcer bridge required to change planning phase");
+  }
+  let goalsObj: Record<string, unknown> = {
+    daily_focus_minutes: 180,
+    goal_met: false,
+    bible_done: false,
+    plan_confirmed: false,
+    planning_enabled: enabled,
+  };
+  try {
+    const { focusDataUrl } = await import("../utils/focusDataUrl");
+    const r = await fetch(focusDataUrl("softland_policy.json"), { cache: "no-store" });
+    if (r.ok) {
+      const j = (await r.json()) as { goals?: Record<string, unknown> };
+      if (j.goals && typeof j.goals === "object") {
+        goalsObj = { ...j.goals, planning_enabled: enabled };
+      }
+    }
+  } catch {
+    /* defaults */
+  }
+  const res = await enforcerNativeCmd("softland.patch_goals", { goals: goalsObj });
+  if (res && res.ok === false) {
+    throw new Error(String(res.error || "softland.patch_goals failed"));
+  }
+}
+
 export async function fetchCategoryScores(): Promise<{ scores: Record<string, number> }> {
+  const { isFocusDesktopShell } = await import("../utils/focusDesktopShell");
+  if (isFocusDesktopShell()) {
+    // Focus SoT is classify_rules + enforcer mirrors — no Study :8000 category-scores API.
+    try {
+      const { focusDataUrl } = await import("../utils/focusDataUrl");
+      const r = await fetch(focusDataUrl("classify_rules.json"), { cache: "no-store" });
+      if (r.ok) {
+        const j = (await r.json()) as { scores?: Record<string, number> };
+        if (j.scores && typeof j.scores === "object") {
+          return { scores: j.scores };
+        }
+      }
+    } catch {
+      /* empty scores below */
+    }
+    return { scores: {} };
+  }
   const res = await fetch(resolveApiUrl("/api/behavior/category-scores"), {
     headers: authHeaders(),
   });
@@ -1630,6 +1812,11 @@ export async function fetchCategoryScores(): Promise<{ scores: Record<string, nu
 export async function saveCategoryScores(
   scores: Record<string, number>,
 ): Promise<{ updated: number; scores: Record<string, number> }> {
+  const { isFocusDesktopShell } = await import("../utils/focusDesktopShell");
+  if (isFocusDesktopShell()) {
+    // Scoring writes stay Study-side until native classify write exists.
+    return { updated: 0, scores };
+  }
   const res = await fetch(resolveApiUrl("/api/behavior/category-scores"), {
     method: "PUT",
     headers: authHeaders(),

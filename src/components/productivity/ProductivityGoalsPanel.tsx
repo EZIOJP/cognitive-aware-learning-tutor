@@ -1,16 +1,15 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { Check, ChevronDown, ChevronUp, Plus, Target, Trash2 } from "lucide-react";
+import { Target } from "lucide-react";
 import type { AdherenceSummary } from "../../api/plannerClient";
 import type { StudyTask } from "../../api/plannerClient";
 import {
   fetchProductivityPolicy,
   saveProductivityPolicy,
 } from "../../api/behaviorClient";
-import { cn } from "../../app/components/ui/utils";
 import { isFocusDesktopShell } from "../../utils/focusDesktopShell";
 import { focusDataUrl } from "../../utils/focusDataUrl";
 import { enforcerNativeCmd, isFocusEnforcerBridgeAvailable } from "../../lib/enforcerNativeCmd";
-import BlockerPanel from "./BlockerPanel";
+import PlanRulesSettingsCue from "./PlanRulesSettingsCue";
 import { GoalsTodayPlanBlocks } from "./GoalsTodayPlanBlocks";
 
 /** Fixed system reward — not user-edited copy */
@@ -78,6 +77,8 @@ export type ExtraGoal = {
   id: string;
   title: string;
   done: boolean;
+  /** Minutes this task claims from the daily focus goal (allocator). */
+  minutes: number;
 };
 
 export type ProductivityGoals = {
@@ -131,73 +132,6 @@ function normalizeStudyTasks(raw: unknown): StudyTask[] {
     .filter((t) => t.title);
 }
 
-function FocusHoursHero({
-  value,
-  min,
-  max,
-  step,
-  effectiveHours,
-  plannedHours,
-  onChange,
-}: {
-  value: number;
-  min: number;
-  max: number;
-  step: number;
-  effectiveHours: number;
-  /** Hours already on today's calendar (all blocks). */
-  plannedHours?: number;
-  onChange: (n: number) => void;
-}) {
-  const bump = (dir: 1 | -1) => {
-    const next = Math.round((value + dir * step) * 10) / 10;
-    onChange(Math.min(max, Math.max(min, next)));
-  };
-  const pct = value > 0 ? Math.min(100, Math.round((effectiveHours / value) * 100)) : 0;
-  const remaining = Math.max(0, value - effectiveHours);
-  const met = remaining <= 0 && value > 0;
-  const planned = typeof plannedHours === "number" && plannedHours > 0 ? plannedHours : null;
-
-  return (
-    <section className="goals-focus-hero">
-      <div className="goals-focus-hero__row">
-        <div className="min-w-0">
-          <p className="goals-focus-hero__label">Daily focus</p>
-          <div className="goals-focus-hero__value-row">
-            <span className="goals-focus-hero__value tabular-nums">{value}</span>
-            <span className="goals-focus-hero__unit">hours</span>
-          </div>
-        </div>
-        <div className="goals-focus-hero__stepper" aria-label="Adjust daily focus hours">
-          <button type="button" aria-label="Increase daily focus" onClick={() => bump(1)}>
-            <ChevronUp size={14} />
-          </button>
-          <button type="button" aria-label="Decrease daily focus" onClick={() => bump(-1)}>
-            <ChevronDown size={14} />
-          </button>
-        </div>
-      </div>
-
-      <div className="goals-focus-hero__meter" aria-hidden={!value}>
-        <div className="goals-focus-hero__bar">
-          <div
-            className={cn("goals-focus-hero__fill", met && "is-met")}
-            style={{ width: `${pct}%` }}
-          />
-        </div>
-        <p className={cn("goals-focus-hero__status", met && "is-met")}>
-          {met
-            ? "Focus met — Blocker lifts"
-            : `${effectiveHours.toFixed(1)} / ${value}h · ${remaining.toFixed(1)}h left`}
-          {planned != null ? (
-            <span className="text-sky-300/80"> · {planned.toFixed(1)}h study planned</span>
-          ) : null}
-        </p>
-      </div>
-    </section>
-  );
-}
-
 type Props = {
   adherence: AdherenceSummary | null;
   /** Hours already locked by routines / blocks on the selected day */
@@ -244,6 +178,7 @@ export function loadProductivityGoals(): ProductivityGoals {
         id: g.id || newExtraId(),
         title: g.title,
         done: Boolean(g.done),
+        minutes: Math.max(5, Math.min(480, Number((g as ExtraGoal).minutes) || 25)),
       }));
     parsed.studyTasks = normalizeStudyTasks(parsed.studyTasks);
     const wk = currentWeekKey();
@@ -295,7 +230,6 @@ export function formatGoalsForPrompt(goals: ProductivityGoals): string {
 
 export function ProductivityGoalsPanel({
   adherence,
-  lockedHours,
   onGoalsTextChange,
   onPlanBlocksChange,
   planRefreshKey = 0,
@@ -304,7 +238,6 @@ export function ProductivityGoalsPanel({
 }: Props) {
   const [goals, setGoals] = useState<ProductivityGoals>(() => loadProductivityGoals());
   const [saveError, setSaveError] = useState<string | null>(null);
-  const [draftExtra, setDraftExtra] = useState("");
   const [focusHydrated, setFocusHydrated] = useState(false);
   const lastSavedFocusHours = useRef<number | null>(null);
 
@@ -341,7 +274,6 @@ export function ProductivityGoalsPanel({
     };
   }, []);
 
-  // Local persist on any edit (silent — avoid GOALS_UPDATED echo loop).
   useEffect(() => {
     localStorage.setItem(
       LS_KEY,
@@ -366,16 +298,6 @@ export function ProductivityGoalsPanel({
     return () => window.clearTimeout(t);
   }, [goals.focusHoursPerDay, focusHydrated]);
 
-  const addExtra = () => {
-    const title = draftExtra.trim();
-    if (!title) return;
-    setGoals({
-      ...goals,
-      extraGoals: [...goals.extraGoals, { id: newExtraId(), title, done: false }],
-    });
-    setDraftExtra("");
-  };
-
   return (
     <div className="goals-panel space-y-5">
       <header className="flex items-center justify-between gap-3">
@@ -386,116 +308,19 @@ export function ProductivityGoalsPanel({
         {saveError ? <p className="text-[11px] text-rose-300">{saveError}</p> : null}
       </header>
 
-      <FocusHoursHero
-        value={goals.focusHoursPerDay}
-        min={0.5}
-        max={16}
-        step={0.5}
-        effectiveHours={effectiveHours}
-        plannedHours={lockedHours}
-        onChange={(n) => setGoals({ ...goals, focusHoursPerDay: n })}
-      />
-
       <GoalsTodayPlanBlocks
         focusHours={goals.focusHoursPerDay}
+        onFocusHoursChange={(n) => setGoals({ ...goals, focusHoursPerDay: n })}
         studyTasks={goals.studyTasks}
         refreshKey={planRefreshKey}
         onChanged={onPlanBlocksChange}
         onOpenCalendar={onOpenCalendar}
+        extraGoals={goals.extraGoals}
+        onExtraGoalsChange={(extraGoals) => setGoals({ ...goals, extraGoals })}
+        effectiveHours={effectiveHours}
       />
 
-      {isFocusDesktopShell() ? <BlockerPanel /> : null}
-
-      <section className="goals-todos space-y-2">
-        <div className="flex items-center justify-between gap-2">
-          <h4 className="text-xs font-semibold text-foreground">Todos</h4>
-          {goals.extraGoals.filter((g) => !g.done && g.title.trim()).length > 0 ? (
-            <span className="text-[10px] text-muted-foreground tabular-nums">
-              {goals.extraGoals.filter((g) => !g.done && g.title.trim()).length} open
-            </span>
-          ) : null}
-        </div>
-        <ul className="space-y-1">
-          {goals.extraGoals.length === 0 ? (
-            <li className="text-[11px] text-muted-foreground py-0.5">Optional side goals</li>
-          ) : (
-            goals.extraGoals.map((g) => (
-              <li key={g.id} className="flex items-center gap-2 group">
-                <button
-                  type="button"
-                  onClick={() =>
-                    setGoals({
-                      ...goals,
-                      extraGoals: goals.extraGoals.map((x) =>
-                        x.id === g.id ? { ...x, done: !x.done } : x,
-                      ),
-                    })
-                  }
-                  className={cn(
-                    "h-5 w-5 rounded border flex items-center justify-center shrink-0",
-                    g.done
-                      ? "border-emerald-500/60 bg-emerald-500/30 text-emerald-200"
-                      : "border-white/20 hover:border-white/40",
-                  )}
-                  aria-label={g.done ? "Mark open" : "Mark done"}
-                >
-                  {g.done ? <Check size={12} /> : null}
-                </button>
-                <input
-                  value={g.title}
-                  onChange={(e) =>
-                    setGoals({
-                      ...goals,
-                      extraGoals: goals.extraGoals.map((x) =>
-                        x.id === g.id ? { ...x, title: e.target.value } : x,
-                      ),
-                    })
-                  }
-                  className={cn(
-                    "flex-1 min-w-0 rounded border border-transparent bg-transparent px-1.5 py-1 text-xs text-foreground focus:border-white/15 focus:bg-black/30",
-                    g.done && "line-through text-muted-foreground",
-                  )}
-                />
-                <button
-                  type="button"
-                  onClick={() =>
-                    setGoals({
-                      ...goals,
-                      extraGoals: goals.extraGoals.filter((x) => x.id !== g.id),
-                    })
-                  }
-                  className="opacity-0 group-hover:opacity-100 p-1 text-muted-foreground hover:text-rose-300"
-                  aria-label="Remove goal"
-                >
-                  <Trash2 size={12} />
-                </button>
-              </li>
-            ))
-          )}
-        </ul>
-        <div className="flex gap-2">
-          <input
-            value={draftExtra}
-            onChange={(e) => setDraftExtra(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                addExtra();
-              }
-            }}
-            placeholder="Add a todo…"
-            className="flex-1 rounded-lg border border-white/10 bg-black/25 px-2.5 py-1.5 text-xs text-foreground"
-          />
-          <button
-            type="button"
-            onClick={addExtra}
-            disabled={!draftExtra.trim()}
-            className="inline-flex items-center gap-1 rounded-lg border border-white/12 px-2.5 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-white/5 disabled:opacity-40"
-          >
-            <Plus size={12} /> Add
-          </button>
-        </div>
-      </section>
+      {isFocusDesktopShell() ? <PlanRulesSettingsCue /> : null}
 
       {footer}
     </div>

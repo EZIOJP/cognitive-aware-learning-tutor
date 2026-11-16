@@ -8,6 +8,8 @@ type Reachability = "unknown" | "ok" | "down" | "no_bridge";
 
 /**
  * Reachability from the shared status bus (no per-panel pipe poll).
+ * Prefer fresh enforcer mirrors over a single timed-out pipe probe — that flicker
+ * made Bible/Plan look like the enforcer was dying every few seconds.
  */
 export function useEnforcerReachability(): Reachability {
   const snap = useFocusStatus();
@@ -16,15 +18,15 @@ export function useEnforcerReachability(): Reachability {
   if (!isFocusEnforcerBridgeAvailable()) return "no_bridge";
   if (!snap.updatedAt) return "unknown";
 
-  if (snap.pipeOk === false) return "down";
-
   const m = snap.enforcerStatus;
   if (m?.owns || m?.lock_present || m?.armed != null) {
     const ageMs = m.updated_at ? Date.now() - Date.parse(m.updated_at) : Infinity;
-    if (Number.isFinite(ageMs) && ageMs < 60_000) return "ok";
+    if (Number.isFinite(ageMs) && ageMs < 90_000) return "ok";
   }
   if (snap.pipeOk === true) return "ok";
   if (snap.source === "sidecar" || snap.source === "push") return "ok";
+  // Only report down when mirrors are stale AND the bus says pipe failed.
+  if (snap.pipeOk === false) return "down";
   return "unknown";
 }
 

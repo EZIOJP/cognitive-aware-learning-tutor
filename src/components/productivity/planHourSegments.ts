@@ -1,5 +1,6 @@
 /**
- * Split calendar plan blocks into per-hour segments for 2D track (X = minutes 0–60).
+ * Plan blocks → hour segments for the 2D track (X = minutes 0–60).
+ * Each block paints only in its start hour (no carry into later rows).
  */
 import type { PlannerBlock, ProposedPlannerBlock } from "../../api/plannerClient";
 
@@ -44,48 +45,35 @@ type BlockLike = {
   isDraft?: boolean;
 };
 
-/** Materialize one plan/draft into hour segments for `day` (local). */
+/** Materialize one plan/draft into hour segments for `day` (local).
+ *  One segment only — the start hour. No carry into later hour rows.
+ */
 export function planBlockToHourSegs(block: BlockLike, day: Date): PlanHourSeg[] {
   const dayK = dayKeyLocal(day);
   const start = new Date(block.start_at);
   const end = new Date(block.end_at);
   if (!(end > start)) return [];
+  if (dayKeyLocal(start) !== dayK) return [];
 
-  const out: PlanHourSeg[] = [];
-  // Walk each local hour the block touches
-  const cursor = new Date(start);
-  cursor.setSeconds(0, 0);
-  // Align to hour floor of start
-  let guard = 0;
-  while (cursor < end && guard++ < 48) {
-    if (dayKeyLocal(cursor) !== dayK) {
-      cursor.setHours(cursor.getHours() + 1, 0, 0, 0);
-      continue;
-    }
-    const hour = cursor.getHours();
-    const hourStart = new Date(cursor);
-    hourStart.setMinutes(0, 0, 0);
-    const hourEnd = new Date(hourStart);
-    hourEnd.setHours(hourEnd.getHours() + 1);
+  const hour = start.getHours();
+  const hourStart = new Date(start);
+  hourStart.setMinutes(0, 0, 0);
+  const hourEnd = new Date(hourStart);
+  hourEnd.setHours(hourEnd.getHours() + 1);
 
-    const segStart = start > hourStart ? start : hourStart;
-    const segEnd = end < hourEnd ? end : hourEnd;
-    if (segEnd <= segStart) {
-      cursor.setTime(hourEnd.getTime());
-      continue;
-    }
+  // Clip paint to the start hour (do not continue into the next row).
+  const segStart = start;
+  const segEnd = end < hourEnd ? end : hourEnd;
+  if (segEnd <= segStart) return [];
 
-    const start_min = Math.max(0, Math.min(59, segStart.getMinutes()));
-    let end_min =
-      segEnd.getTime() >= hourEnd.getTime()
-        ? 60
-        : Math.max(start_min + 1, Math.min(60, segEnd.getMinutes()));
-    // If end is exactly on hour boundary minutes=0 → already handled as 60
-    if (segEnd.getTime() < hourEnd.getTime() && segEnd.getSeconds() === 0 && segEnd.getMinutes() === 0) {
-      end_min = 60;
-    }
+  const start_min = Math.max(0, Math.min(59, segStart.getMinutes()));
+  const end_min =
+    segEnd.getTime() >= hourEnd.getTime()
+      ? 60
+      : Math.max(start_min + 1, Math.min(60, segEnd.getMinutes()));
 
-    out.push({
+  return [
+    {
       blockId: block.id,
       title: block.title,
       category: block.category,
@@ -93,15 +81,12 @@ export function planBlockToHourSegs(block: BlockLike, day: Date): PlanHourSeg[] 
       hour,
       start_min,
       end_min: Math.max(start_min + 1, end_min),
-      seamLeft: start < hourStart,
-      seamRight: end > hourEnd,
+      seamLeft: false,
+      seamRight: false,
       isDraft: block.isDraft,
       status: block.status,
-    });
-
-    cursor.setTime(hourEnd.getTime());
-  }
-  return out;
+    },
+  ];
 }
 
 export function planBlocksToHourSegs(

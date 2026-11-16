@@ -208,13 +208,18 @@
 
 .planner-day-track__hours {
   display: grid;
-  grid-template-rows: repeat(24, minmax(0, 1fr));
+  /* 24 + overnight lead rows (data-lead-hours on .planner-day-track) */
+  grid-template-rows: repeat(var(--planner-day-rail-rows, 24), minmax(0, 1fr));
   /* Single 0-minute line (do not also paint a 0 rail on the body) */
   border-right: 1px solid rgba(226, 232, 240, 0.35);
   background: rgba(255, 255, 255, 0.02);
   min-height: 0;
   border-bottom-left-radius: 0.875rem;
   overflow: hidden;
+}
+
+.planner-day-track__hour--prev {
+  color: rgba(167, 139, 250, 0.75);
 }
 
 .planner-day-track__hour {
@@ -259,7 +264,7 @@
 .planner-day-track__body {
   position: relative;
   display: grid;
-  grid-template-rows: repeat(24, minmax(0, 1fr));
+  grid-template-rows: repeat(var(--planner-day-rail-rows, 24), minmax(0, 1fr));
   min-height: 0;
   cursor: crosshair;
   user-select: none;

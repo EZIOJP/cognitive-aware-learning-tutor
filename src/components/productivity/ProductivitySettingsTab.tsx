@@ -17,6 +17,7 @@ import { ExportRangeCalendar } from "./ExportRangeCalendar";
 import { FocusImportUpdatePanel } from "./FocusImportUpdatePanel";
 import { BodyCarePanel } from "./BodyCarePanel";
 import { DesktopManagedBanner } from "./DesktopManagedBanner";
+import { FocusOwnerProfilePanel } from "./FocusOwnerProfilePanel";
 import MakeSettingsApp, {
   parseSettingsSection,
   type SettingsSectionId,
@@ -47,105 +48,57 @@ export type ProductivitySettingsTabProps = {
   toApiDay: (d: Date) => string;
 };
 
-export function ProductivitySettingsTab(props: ProductivitySettingsTabProps) {
-  const focusShell = isFocusDesktopShell();
-  const productiveExtra = (
-    <div className="space-y-4">
-      <DesktopManagedBanner feature="Session override & classification" />
-      <div className="rounded-2xl border border-border/50 bg-card/30 p-4 sm:p-6">
-        <SessionOverridePanel
-          timeline={props.timeline}
-          onSaved={() => {
-            props.onLoad();
-            props.bumpPlanner();
-          }}
-        />
+function Chunk({
+  title,
+  children,
+  hint,
+}: {
+  title: string;
+  children: ReactNode;
+  hint?: string;
+}) {
+  return (
+    <div className="settings-chrome__card space-y-3">
+      <div>
+        <h3 className="text-[15px] font-semibold text-foreground tracking-tight">{title}</h3>
+        {hint ? (
+          <p className="mt-1 text-[13px] leading-relaxed text-muted-foreground">{hint}</p>
+        ) : null}
       </div>
-      <div className="rounded-2xl border border-border/50 bg-card/30 p-4 sm:p-6">
-        <ActivitiesPanel
-          day={props.plannerDayApi}
-          trackerNoData={props.trackerNoData}
-          refreshKey={props.plannerRefresh}
-        />
-      </div>
-      <div className="rounded-2xl border border-border/50 bg-card/30 p-4 sm:p-6">
-        <ClassificationReview trackerNoData={props.trackerNoData} />
-      </div>
+      {children}
     </div>
   );
+}
 
-  const toolsContent: ReactNode = (
+export function ProductivitySettingsTab(props: ProductivitySettingsTabProps) {
+  const focusShell = isFocusDesktopShell();
+
+  const dayContent: ReactNode = (
     <div className="space-y-6">
-      <div className="space-y-2">
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Planning</h3>
+      <BodyCarePanel />
+      <Chunk title="Watch ↔ PC" hint="ZeppBridge pull preferred; CALT Sync optional.">
+        <WearablesSyncPanel />
+      </Chunk>
+      <Chunk title="Plan reminders">
+        <PlannerRemindersPanel />
+      </Chunk>
+      <Chunk title="Planning" hint="Morning Confirm and related day-loop prefs.">
         <PlanningSettingsPanel
           refreshKey={props.plannerRefresh}
           onPlannerChange={props.bumpPlanner}
         />
-      </div>
-      <div className="space-y-2">
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          Focus AI brain
-        </h3>
-        <FocusLlmHostPanel />
-      </div>
-      <div className="space-y-2">
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Jarvis</h3>
-        <FocusJarvisPanel variant="settings" />
-      </div>
-      <div className="space-y-2">
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          OpenJarvis
-        </h3>
-        <FocusOpenJarvisPanel />
-      </div>
-      <div className="space-y-2">
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          Telegram remote
-        </h3>
-        <FocusTelegramRemotePanel />
-      </div>
-      <div className="space-y-2">
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          Email report
-        </h3>
-        <FocusEmailReportPanel />
-      </div>
-      {focusShell ? (
-        <div className="space-y-2">
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Quit
-          </h3>
-          <QuitHowToPanel />
-        </div>
-      ) : null}
-      {!focusShell ? (
-        <div className="space-y-2">
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-amber-200/90">Demo mode</h3>
-          <p className="text-[11px] text-muted-foreground">
-            Advanced: fake the SoftLand schedule clock for testing. Leave off for real days.
-          </p>
-          <DemoModePanel onChanged={props.onDemoChanged} onJumpToDay={props.onJumpToDay} />
-        </div>
-      ) : null}
-      <div className="space-y-2">
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Watch ↔ PC</h3>
-        <WearablesSyncPanel />
-      </div>
-      <div className="space-y-2">
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Plan reminders</h3>
-        <PlannerRemindersPanel />
-      </div>
-      <BodyCarePanel />
-      <div className="space-y-3">
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-          <Download size={14} /> Export
-        </h3>
-        {props.exportHint && (
+      </Chunk>
+    </div>
+  );
+
+  const dataContent: ReactNode = (
+    <div className="space-y-6">
+      <Chunk title="Export">
+        {props.exportHint ? (
           <span className="inline-block max-w-full truncate rounded-full border border-sky-500/25 bg-sky-500/10 px-3 py-1 text-xs text-sky-300">
             {props.exportHint}
           </span>
-        )}
+        ) : null}
         <div className="flex flex-wrap gap-1.5">
           {([7, 30, 90, 365] as const).map((days) => (
             <button
@@ -188,11 +141,7 @@ export function ProductivitySettingsTab(props: ProductivitySettingsTabProps) {
           onRangeChange={(start, end) => props.applyExportWindow(start, end)}
         />
         <p className="text-[11px] text-muted-foreground leading-relaxed max-w-lg">
-          Burnout-ready export: nested{" "}
-          <code className="text-[10px] bg-black/30 px-1 rounded">by_day</code> plus tidy{" "}
-          <code className="text-[10px] bg-black/30 px-1 rounded">tables</code> (day×hour, categories,
-          blocks, health). In Focus desktop, files save to your{" "}
-          <span className="text-foreground/80">Downloads</span> folder (opens after export).
+          Saves to your Downloads folder in Focus desktop (JSON / CSV).
         </p>
         <div className="flex flex-wrap gap-2">
           <button
@@ -221,8 +170,10 @@ export function ProductivitySettingsTab(props: ProductivitySettingsTabProps) {
             <Download size={13} /> CSV (wide)
           </button>
         </div>
-      </div>
+      </Chunk>
+
       <FocusImportUpdatePanel />
+
       <div className="space-y-2 rounded-xl border border-border/50 bg-background/35 p-4">
         <h3 className="font-semibold flex items-center gap-2 text-sm">
           <Terminal size={15} className="text-sky-400" />
@@ -239,14 +190,98 @@ export function ProductivitySettingsTab(props: ProductivitySettingsTabProps) {
     </div>
   );
 
+  const advancedContent: ReactNode = (
+    <div className="space-y-6">
+      <Chunk title="Voice & LLM" hint="Optional. Home brief / Jarvis use this when enabled.">
+        <div className="space-y-4">
+          <FocusLlmHostPanel />
+          <FocusJarvisPanel variant="settings" />
+        </div>
+      </Chunk>
+
+      <details className="rounded-xl border border-border/50 bg-background/25 p-4 group">
+        <summary className="cursor-pointer text-sm font-medium list-none flex items-center justify-between">
+          Remote & email
+          <span className="text-[11px] text-muted-foreground font-normal group-open:hidden">
+            Telegram · daily mail · OpenJarvis
+          </span>
+        </summary>
+        <div className="mt-4 space-y-4">
+          <FocusTelegramRemotePanel />
+          <FocusEmailReportPanel />
+          <FocusOpenJarvisPanel />
+        </div>
+      </details>
+
+      {focusShell ? (
+        <Chunk title="Quit">
+          <QuitHowToPanel />
+        </Chunk>
+      ) : null}
+
+      {!focusShell ? (
+        <Chunk title="Demo mode" hint="Fake SoftLand clock for testing. Leave off for real days.">
+          <DemoModePanel onChanged={props.onDemoChanged} onJumpToDay={props.onJumpToDay} />
+        </Chunk>
+      ) : null}
+
+      <details className="rounded-xl border border-border/50 bg-background/25 p-4 group">
+        <summary className="cursor-pointer text-sm font-medium list-none flex items-center justify-between">
+          Activity review
+          <span className="text-[11px] text-muted-foreground font-normal group-open:hidden">
+            Day table · classify
+          </span>
+        </summary>
+        <div className="mt-4 space-y-4">
+          <DesktopManagedBanner feature="Activity review" />
+          <div className="rounded-2xl border border-border/50 bg-card/30 p-4 sm:p-6">
+            <ActivitiesPanel
+              day={props.plannerDayApi}
+              trackerNoData={props.trackerNoData}
+              refreshKey={props.plannerRefresh}
+            />
+          </div>
+          <div className="rounded-2xl border border-border/50 bg-card/30 p-4 sm:p-6">
+            <ClassificationReview trackerNoData={props.trackerNoData} />
+          </div>
+          {!focusShell ? (
+            <div className="rounded-2xl border border-border/50 bg-card/30 p-4 sm:p-6 space-y-2">
+              <p className="text-[11px] text-muted-foreground">
+                Session override needs Study API — hidden in Focus desktop.
+              </p>
+              <SessionOverridePanel
+                timeline={props.timeline}
+                onSaved={() => {
+                  props.onLoad();
+                  props.bumpPlanner();
+                }}
+              />
+            </div>
+          ) : (
+            <p className="text-[11px] text-muted-foreground px-1">
+              Session productive override is Study-only (needs <code className="text-[10px]">:8000</code>
+              ). Focus uses day activities + OpenJarvis classify when enabled.
+            </p>
+          )}
+        </div>
+      </details>
+    </div>
+  );
+
   return (
-    <div className="gloss-panel rounded-3xl border border-border/50 overflow-hidden min-h-[70vh]">
+    <div className="focus-panel settings-no-scrollbar min-h-0 w-full overflow-visible">
       <MakeSettingsApp
         section={props.section}
         onSectionChange={props.onSectionChange}
         onPolicySaved={props.onPolicySaved}
-        productiveExtra={productiveExtra}
-        toolsContent={toolsContent}
+        dayContent={dayContent}
+        profileContent={
+          <div className="settings-chrome__card">
+            <FocusOwnerProfilePanel />
+          </div>
+        }
+        dataContent={dataContent}
+        advancedContent={advancedContent}
       />
     </div>
   );

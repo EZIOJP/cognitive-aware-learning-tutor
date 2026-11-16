@@ -28,7 +28,11 @@ async function lifeGateway(
   payload: Record<string, unknown> = {},
   timeoutMs = 12000,
 ): Promise<Record<string, unknown>> {
-  if (!isFocusEnforcerBridgeAvailable()) throw new Error("enforcer_unreachable");
+  if (!isFocusEnforcerBridgeAvailable()) {
+    throw new Error(
+      "no_bridge — open CALT Focus from the tray (WebView2). Design host cannot write SoftLand/Bible SoT.",
+    );
+  }
   let lastErr = "enforcer_unreachable";
   for (let attempt = 0; attempt < 3; attempt++) {
     const res = await enforcerNativeCmd(op, payload, timeoutMs);
@@ -36,16 +40,32 @@ async function lifeGateway(
       lastErr = "enforcer_unreachable";
     } else if (res.ok !== false && !res.error) {
       return res as Record<string, unknown>;
-    } else if (res.error && res.error !== "timeout" && res.error !== "queue_dropped" && res.error !== "coalesced") {
+    } else if (
+      res.error &&
+      res.error !== "timeout" &&
+      res.error !== "queue_dropped" &&
+      res.error !== "coalesced" &&
+      res.error !== "enforcer_unreachable"
+    ) {
       throw new Error(String(res.error));
     } else {
       lastErr = res.error ? String(res.error) : "enforcer_unreachable";
     }
-    await new Promise((r) => window.setTimeout(r, 200 + attempt * 250));
+    await new Promise((r) => window.setTimeout(r, 250 + attempt * 350));
   }
-  throw new Error(lastErr === "timeout" || lastErr === "queue_dropped" || lastErr === "coalesced"
-    ? "enforcer_unreachable"
-    : lastErr);
+  if (
+    lastErr === "timeout" ||
+    lastErr === "queue_dropped" ||
+    lastErr === "coalesced" ||
+    lastErr === "enforcer_unreachable"
+  ) {
+    throw new Error(
+      lastErr === "enforcer_unreachable"
+        ? "Enforcer pipe busy — retry Set for today in a moment (status may still show live)."
+        : "Enforcer busy — retry Set for today in a moment",
+    );
+  }
+  throw new Error(lastErr);
 }
 
 export type BibleBookmark = {
@@ -458,6 +478,18 @@ export type DevotionTodayPayload = {
   hymns_catalog?: { id: string; title: string; theme: string }[];
 };
 
+/** Enrich devotion payload with WEB chapter text from the local corpus (Focus shell). */
+export async function hydrateDevotionPayload(d: DevotionTodayPayload): Promise<DevotionTodayPayload> {
+  const copy: DevotionTodayPayload = {
+    ...d,
+    morning: d.morning ? { ...d.morning } : d.morning,
+    afternoon: d.afternoon ? { ...d.afternoon } : d.afternoon,
+    evening: d.evening ? { ...d.evening } : d.evening,
+    today_chapter: d.today_chapter ? { ...d.today_chapter } : d.today_chapter,
+  };
+  return hydrateDevotionChapters(copy);
+}
+
 async function hydrateDevotionChapters(d: DevotionTodayPayload): Promise<DevotionTodayPayload> {
   const tc = d.today_chapter;
   if (tc?.book && tc?.chapter) {
@@ -530,8 +562,12 @@ export async function markDevotionDone(
   done = true,
 ): Promise<DevotionTodayPayload | BibleState> {
   if (lifeTransport() === "gateway") {
-    const res = await lifeGateway("bible.devotion.done", { slot, done });
-    return (res.devotion as DevotionTodayPayload) || ({} as DevotionTodayPayload);
+    const res = await lifeGateway("bible.devotion.done", { slot, done }, 20000);
+    const devotion = res.devotion as DevotionTodayPayload | undefined;
+    if (devotion && (devotion.today_chapter || devotion.morning)) {
+      return hydrateDevotionPayload(devotion);
+    }
+    return ({} as DevotionTodayPayload);
   }
   const r = await fetch(resolveApiUrl(`/api/bible/devotion/${slot}/done`), {
     method: "POST",
@@ -548,7 +584,11 @@ export async function saveDevotionNotes(
 ): Promise<DevotionTodayPayload> {
   if (lifeTransport() === "gateway") {
     const res = await lifeGateway("bible.devotion.notes", { slot, notes });
-    return (res.devotion as DevotionTodayPayload) || ({} as DevotionTodayPayload);
+    const devotion = res.devotion as DevotionTodayPayload | undefined;
+    if (devotion && (devotion.today_chapter || devotion.morning)) {
+      return hydrateDevotionPayload(devotion);
+    }
+    return ({} as DevotionTodayPayload);
   }
   const r = await fetch(resolveApiUrl("/api/bible/devotion/notes"), {
     method: "PATCH",
@@ -564,16 +604,39 @@ export async function assignDevotionChapter(
   book: string,
   chapter: number,
 ): Promise<DevotionTodayPayload> {
-  const res = await lifeGateway("bible.devotion.assign", { slot, book, chapter });
-  return (res.devotion as DevotionTodayPayload) || ({} as DevotionTodayPayload);
+  if (lifeTransport() === "gateway") {
+    const res = await lifeGateway(
+      "bible.devotion.assign",
+      { slot, book, chapter },
+      20000,
+    );
+    const devotion = res.devotion as DevotionTodayPayload | undefined;
+    if (devotion && typeof devotion === "object" && (devotion.today_chapter || devotion.morning)) {
+      return hydrateDevotionPayload(devotion);
+    }
+    // Gateway ok but empty — re-read mirror after assign published it.
+    const mirrored = await fetchDevotionFromMirror();
+    if (mirrored) return mirrored;
+    return {} as DevotionTodayPayload;
+  }
+  throw new Error("Chapter assign needs CALT Focus (enforcer bridge)");
 }
 
 export async function stepDevotionChapter(
   slot: DevotionSlot,
   delta: -1 | 1,
 ): Promise<DevotionTodayPayload> {
-  const res = await lifeGateway("bible.devotion.step", { slot, delta });
-  return (res.devotion as DevotionTodayPayload) || ({} as DevotionTodayPayload);
+  if (lifeTransport() === "gateway") {
+    const res = await lifeGateway("bible.devotion.step", { slot, delta }, 20000);
+    const devotion = res.devotion as DevotionTodayPayload | undefined;
+    if (devotion && typeof devotion === "object" && (devotion.today_chapter || devotion.morning)) {
+      return hydrateDevotionPayload(devotion);
+    }
+    const mirrored = await fetchDevotionFromMirror();
+    if (mirrored) return mirrored;
+    return {} as DevotionTodayPayload;
+  }
+  throw new Error("Chapter step needs CALT Focus (enforcer bridge)");
 }
 
 export async function saveDevotionPrayer(
@@ -581,6 +644,15 @@ export async function saveDevotionPrayer(
   text: string,
   reset = false,
 ): Promise<DevotionTodayPayload> {
-  const res = await lifeGateway("bible.devotion.prayer", { slot, text, reset });
-  return (res.devotion as DevotionTodayPayload) || ({} as DevotionTodayPayload);
+  if (lifeTransport() === "gateway") {
+    const res = await lifeGateway("bible.devotion.prayer", { slot, text, reset }, 20000);
+    const devotion = res.devotion as DevotionTodayPayload | undefined;
+    if (devotion && typeof devotion === "object" && (devotion.today_chapter || devotion.morning)) {
+      return hydrateDevotionPayload(devotion);
+    }
+    const mirrored = await fetchDevotionFromMirror();
+    if (mirrored) return mirrored;
+    return {} as DevotionTodayPayload;
+  }
+  throw new Error("Prayer save needs CALT Focus (enforcer bridge)");
 }

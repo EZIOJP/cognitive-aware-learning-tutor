@@ -115,6 +115,19 @@ export default function App() {
 
   useEffect(() => installFocusStatusPushListener(), []);
 
+  useEffect(() => {
+    const on = isFocusDesktopShell();
+    document.documentElement.setAttribute("data-focus-shell", on ? "1" : "0");
+    if (on) {
+      document.documentElement.classList.add("dark");
+      document.documentElement.setAttribute("data-color-scheme", "dark");
+      document.documentElement.setAttribute("data-typography-pack", "hero");
+    }
+    return () => {
+      document.documentElement.removeAttribute("data-focus-shell");
+    };
+  }, []);
+
   return (
     <ThemeProvider>
       <AuthProvider>

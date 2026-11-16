@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { CalendarDays, CheckCircle2, Clock, PenLine } from "lucide-react";
 import { ScrollPage } from "../components/layout/ScrollPage";
 import {
@@ -9,6 +9,8 @@ import {
   type JournalSummary,
 } from "../api/journalClient";
 import { useEaster } from "../easter";
+
+const AUTOSAVE_MS = 1500;
 
 function formatDateLabel(day: string): string {
   const d = new Date(`${day}T00:00:00`);
@@ -30,6 +32,13 @@ function formatUpdatedAt(value?: string | null): string {
   }).format(new Date(value));
 }
 
+function formatSavedClock(d = new Date()): string {
+  return new Intl.DateTimeFormat(undefined, {
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(d);
+}
+
 function localDayString(d = new Date()): string {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, "0");
@@ -44,10 +53,19 @@ export function JournalPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
+  const [savedAt, setSavedAt] = useState<string | null>(null);
+  const [dirty, setDirty] = useState(false);
   const [journalTitle, setJournalTitle] = useState("");
   const [journalContent, setJournalContent] = useState("");
   const todayDay = localDayString();
+  const titleRef = useRef(journalTitle);
+  const contentRef = useRef(journalContent);
+  const dirtyRef = useRef(false);
+  const savingRef = useRef(false);
+  titleRef.current = journalTitle;
+  contentRef.current = journalContent;
+  dirtyRef.current = dirty;
+  savingRef.current = saving;
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -61,10 +79,15 @@ export function JournalPage() {
       if (s.journal_entry) {
         setJournalTitle(s.journal_entry.title || "");
         setJournalContent(s.journal_entry.content);
+        if (s.journal_entry.updated_at) {
+          setSavedAt(formatUpdatedAt(s.journal_entry.updated_at));
+        }
       } else {
         setJournalTitle("");
         setJournalContent("");
+        setSavedAt(null);
       }
+      setDirty(false);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load");
     } finally {
@@ -76,29 +99,93 @@ export function JournalPage() {
     void load();
   }, [load]);
 
-  const handleSave = async () => {
-    if (!journalContent.trim()) return;
+  const persist = useCallback(async (opts?: { silent?: boolean }) => {
+    const content = contentRef.current.trim();
+    if (!content || savingRef.current) return false;
+    savingRef.current = true;
     setSaving(true);
-    setError(null);
-    setSuccess(null);
+    if (!opts?.silent) setError(null);
     try {
       await saveJournalEntry({
-        title: journalTitle.trim() || undefined,
-        content: journalContent.trim(),
+        title: titleRef.current.trim() || undefined,
+        content,
         entry_date: todayDay,
       });
-      setSuccess("Journal saved.");
-      await load();
+      setDirty(false);
+      dirtyRef.current = false;
+      setSavedAt(formatSavedClock());
+      setSummary((prev) =>
+        prev
+          ? {
+              ...prev,
+              journal_written: true,
+              journal_entry: {
+                ...(prev.journal_entry || { id: 0, entry_date: todayDay, content }),
+                title: titleRef.current.trim() || undefined,
+                content,
+                updated_at: new Date().toISOString(),
+              },
+            }
+          : prev,
+      );
+      return true;
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not save");
+      return false;
     } finally {
+      savingRef.current = false;
       setSaving(false);
     }
+  }, [todayDay]);
+
+  // Debounced autosave
+  useEffect(() => {
+    if (!dirty || loading) return;
+    if (!journalContent.trim()) return;
+    const t = window.setTimeout(() => {
+      void persist({ silent: true });
+    }, AUTOSAVE_MS);
+    return () => window.clearTimeout(t);
+  }, [dirty, journalContent, journalTitle, loading, persist]);
+
+  // Save on blur / unload
+  useEffect(() => {
+    const onVis = () => {
+      if (document.visibilityState === "hidden" && dirtyRef.current) {
+        void persist({ silent: true });
+      }
+    };
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (!dirtyRef.current) return;
+      void persist({ silent: true });
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    document.addEventListener("visibilitychange", onVis);
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => {
+      document.removeEventListener("visibilitychange", onVis);
+      window.removeEventListener("beforeunload", onBeforeUnload);
+    };
+  }, [persist]);
+
+  const markDirty = () => {
+    setDirty(true);
+    dirtyRef.current = true;
   };
 
   const activeDay = summary?.day ?? todayDay;
   const todayLabel = formatDateLabel(activeDay);
   const previousEntries = logEntries.filter((entry) => entry.entry_date !== activeDay);
+  const statusLabel = saving
+    ? "Saving…"
+    : dirty
+      ? "Unsaved changes"
+      : savedAt
+        ? `Saved ${savedAt}`
+        : summary?.journal_entry?.updated_at
+          ? `Updated ${formatUpdatedAt(summary.journal_entry.updated_at)}`
+          : "Not saved yet";
 
   return (
     <ScrollPage>
@@ -110,7 +197,7 @@ export function JournalPage() {
               My Journal
             </h1>
             <p className="text-sm text-muted-foreground mt-0.5">
-              Your private daily journal
+              Your private daily journal — autosaves while you type
             </p>
           </div>
           <div className="inline-flex items-center gap-2 rounded-full border border-amber-500/25 bg-amber-500/10 px-3 py-1 text-xs text-amber-100">
@@ -129,9 +216,6 @@ export function JournalPage() {
         {error && (
           <p className="text-sm text-red-300 bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">{error}</p>
         )}
-        {success && (
-          <p className="text-sm text-emerald-300 bg-emerald-500/10 border border-emerald-500/30 rounded-lg px-3 py-2">{success}</p>
-        )}
 
         {loading ? (
           <div className="h-48 rounded-xl bg-white/5 animate-pulse" />
@@ -139,18 +223,22 @@ export function JournalPage() {
           <section className="space-y-3 rounded-2xl border border-white/10 bg-white/[0.03] p-5">
             <div className="flex items-center justify-between gap-3 text-xs text-muted-foreground">
               <span>Today&apos;s entry</span>
-              {summary?.journal_entry?.updated_at && (
-                <span className="inline-flex items-center gap-1">
-                  <Clock size={12} />
-                  Updated {formatUpdatedAt(summary.journal_entry.updated_at)}
-                </span>
-              )}
+              <span className="inline-flex items-center gap-1 tabular-nums">
+                <Clock size={12} />
+                {statusLabel}
+              </span>
             </div>
             <input
               className="w-full text-sm bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-foreground"
               placeholder="Title (optional)"
               value={journalTitle}
-              onChange={(e) => setJournalTitle(e.target.value)}
+              onChange={(e) => {
+                setJournalTitle(e.target.value);
+                markDirty();
+              }}
+              onBlur={() => {
+                if (dirtyRef.current) void persist({ silent: true });
+              }}
             />
             <textarea
               className="w-full h-64 text-sm bg-black/30 border border-white/10 rounded-lg p-3 resize-y leading-relaxed text-foreground"
@@ -158,19 +246,24 @@ export function JournalPage() {
               value={journalContent}
               onChange={(e) => {
                 const v = e.target.value;
+                const prev = journalContent;
                 setJournalContent(v);
-                if (/\bgrateful\b/i.test(v) && !/\bgrateful\b/i.test(journalContent)) {
+                markDirty();
+                if (/\bgrateful\b/i.test(v) && !/\bgrateful\b/i.test(prev)) {
                   burst("glow");
                 }
+              }}
+              onBlur={() => {
+                if (dirtyRef.current) void persist({ silent: true });
               }}
             />
             <button
               type="button"
-              disabled={saving || !journalContent.trim()}
-              onClick={() => void handleSave()}
+              disabled={saving || !journalContent.trim() || !dirty}
+              onClick={() => void persist()}
               className="text-sm px-4 py-2 rounded-lg bg-amber-600/90 hover:bg-amber-600 disabled:opacity-50 text-white"
             >
-              {saving ? "Saving…" : summary?.journal_written ? "Update today's entry" : "Save today's entry"}
+              {saving ? "Saving…" : dirty ? "Save now" : "Saved"}
             </button>
           </section>
         )}

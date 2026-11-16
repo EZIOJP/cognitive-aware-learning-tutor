@@ -13,3 +13,8 @@
 @import './planner-calendar.css';
 @import './life-tracker.css';
 @import './curved-scrollbar.css';
+@import './karma-orb.css';
+/* After glossy + curved-scrollbar so Settings can hide native bars. */
+@import './settingsChrome.css';
+/* Focus shell visual system — last so it wins over Study gloss/theme. */
+@import './focusShell.css';

@@ -7,6 +7,8 @@ import { MorningGateRedirect } from "../components/MorningGateRedirect";
 import { useStudyPresenceHeartbeat } from "../hooks/useStudyPresenceHeartbeat";
 import { startDataPipelineWatch } from "../utils/dataPipelineBus";
 import { DashboardChromeProvider } from "../context/DashboardChromeContext";
+import { isFocusDesktopShell } from "../utils/focusDesktopShell";
+import { cn } from "../app/components/ui/utils";
 
 /** Left gutter reserved for the auto-hide rail (expanded drawer overlays on top). */
 export const SIDEBAR_RAIL_INSET = `${SIDEBAR_RAIL_PX}px`;
@@ -14,10 +16,16 @@ export const SIDEBAR_RAIL_INSET = `${SIDEBAR_RAIL_PX}px`;
 export function AppShell() {
   useEffect(() => startDataPipelineWatch(), []);
   useStudyPresenceHeartbeat();
+  const focusShell = isFocusDesktopShell();
 
   return (
     <DashboardChromeProvider>
-      <div className="relative flex h-screen w-screen overflow-hidden bg-background">
+      <div
+        className={cn(
+          "relative flex h-screen w-screen overflow-hidden bg-background",
+          focusShell && "focus-shell-root",
+        )}
+      >
         <FocusOverlay />
         <MorningGateRedirect />
         <AppSidebar />
@@ -26,7 +34,14 @@ export function AppShell() {
           style={{ paddingLeft: SIDEBAR_RAIL_INSET }}
         >
           <AppTopBar />
-          <main className="flex-1 min-h-0 overflow-y-auto px-3 py-4 sm:px-4 sm:py-5">
+          <main
+            className={cn(
+              "flex-1 min-h-0 overflow-y-auto",
+              focusShell
+                ? "focus-shell-main overflow-hidden px-0 py-0"
+                : "px-3 py-4 sm:px-4 sm:py-5",
+            )}
+          >
             <Outlet />
           </main>
         </div>

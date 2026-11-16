@@ -2,12 +2,15 @@ import './shared/device-polyfill'
 import { MessageBuilder } from './shared/message'
 import { getPackageInfo } from '@zos/app'
 import * as ble from '@zos/ble'
+import { isAutoLaunchParam } from './page/autoAlarm'
 
 App({
   globalData: {
     messageBuilder: null,
+    autoLaunch: false,
   },
-  onCreate() {
+  onCreate(params) {
+    this.globalData.autoLaunch = isAutoLaunchParam(params)
     const { appId } = getPackageInfo()
     const messageBuilder = new MessageBuilder({
       appId,

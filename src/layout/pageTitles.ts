@@ -24,8 +24,10 @@ export const PAGE_TITLES: Record<string, string> = {
   "/productivity": "Home",
   "/productivity/focus": "Settings",
   "/bible": "Bible",
+  "/math": "Math → ML",
+  "/life": "Health",
   "/life-tracker": "Life Tracker",
-  "/nutrition": "Nutrition",
+  "/nutrition": "NutriNode",
   "/focus/calibrate": "Focus Calibrate",
 };
 
@@ -36,13 +38,15 @@ export const PAGE_SUBTITLES: Record<string, string> = {
   "/productivity": "Mode, progress, and SoftLand blocks",
   "/productivity/focus": "Gate control and native enforcer",
   "/bible": "Chapter reading for SoftLand unlock",
+  "/math": "Daily math → ML drills and roadmap",
   "/lecture-notes": "Capture and study lectures",
   "/review": "Vocab · lecture · math · decks · FSRS",
   "/settings": "Appearance, AI, and plugins",
   "/settings/theme": "Preview and switch look",
   "/journal": "Reflect and track mood",
+  "/life": "Watch sleep, steps, vitals in Focus",
   "/life-tracker": "Habits and life score",
-  "/nutrition": "Macros and meals",
+  "/nutrition": "Log meals and daily macros",
 };
 
 export function matchLongestPrefix(pathname: string, table: Record<string, string>): string | null {
@@ -106,7 +110,10 @@ export function resolveFocusShellTitle(pathname: string, tab: string | null): st
     return "Home";
   }
   if (pathname.startsWith("/bible")) return "Bible";
+  if (pathname.startsWith("/math")) return "Math → ML";
   if (pathname.startsWith("/journal")) return "Journal";
+  if (pathname.startsWith("/life")) return "Health";
+  if (pathname.startsWith("/nutrition")) return "NutriNode";
   if (pathname.startsWith("/profile")) return "Profile";
   return resolvePageTitle(pathname);
 }

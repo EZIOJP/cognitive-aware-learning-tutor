@@ -10,7 +10,8 @@ function hashHue(s: string): number {
 
 export function segmentFill(seg: SessionSegment): string {
   if (seg.source === "sleep") {
-    return "linear-gradient(165deg, rgba(99, 102, 241, 0.55) 0%, rgba(67, 56, 202, 0.65) 100%)";
+    // Brighter indigo so sleep reads on dark calendar (was near-black / “blank”).
+    return "linear-gradient(165deg, rgba(129, 140, 248, 0.88) 0%, rgba(79, 70, 229, 0.92) 100%)";
   }
   const cat = (seg.category || "").toLowerCase();
   const known = CATEGORY_COLORS[cat];

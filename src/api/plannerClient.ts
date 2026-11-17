@@ -933,9 +933,9 @@ async function downloadProductivityWeekExportFocus(
       productive_only: !!options?.productiveOnly,
       skip_empty: options?.skipEmpty !== false,
       end_day: options?.endDay,
-      // Settings exports are for trend/burnout analysis. Avoid shipping a huge
-      // raw window-title stream through WebView2; aggregate tables remain.
-      analysis_only: true,
+      // Full dump: planned_blocks + sessions (actual) + health_days (Zepp/life).
+      // Native copy_downloads avoids shipping multi-MB JSON through WebView2 fetch.
+      analysis_only: false,
     },
     90_000,
   );

@@ -6,6 +6,7 @@ import {
   ChevronUp,
   ClipboardCopy,
   FileUp,
+  GripVertical,
   Loader2,
   Minus,
   Plus,
@@ -196,7 +197,9 @@ export function GoalsTodayPlanBlocks({
   const [importText, setImportText] = useState("");
   const [importMode, setImportMode] = useState<"append" | "replace">("append");
   const [promptCopied, setPromptCopied] = useState(false);
-  const prevFocusRef = useRef<number | null>(null);
+  const [wakeHm, setWakeHm] = useState<string | null>(null);
+  const [bedtimeHm, setBedtimeHm] = useState<string | null>(null);
+  const [dragId, setDragId] = useState<string | null>(null);
   const syncingRef = useRef(false);
 
   const load = useCallback(async () => {
@@ -218,6 +221,13 @@ export function GoalsTodayPlanBlocks({
           .sort((a, b) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime()),
       );
       setRoutines(Array.isArray(routineRows) ? routineRows : []);
+      try {
+        const loop = await fetchDayLoopMirror();
+        setWakeHm(typeof loop?.wake_hm === "string" ? loop.wake_hm : null);
+        setBedtimeHm(typeof loop?.bedtime_hm === "string" ? loop.bedtime_hm : null);
+      } catch {
+        /* sleep clocks optional */
+      }
     } catch (e: unknown) {
       setBlocks([]);
       setRoutines([]);
@@ -237,10 +247,10 @@ export function GoalsTodayPlanBlocks({
     [blocks],
   );
 
-  /** Max focus from free windows between first→last routine today (schedule, else applied). */
+  /** Max focus: waking window (sleep clocks) minus routines, else routine-gap fallback. */
   const availableHours = useMemo(
-    () => availableFocusGapHours({ blocks, routines }),
-    [blocks, routines],
+    () => availableFocusGapHours({ blocks, routines, wakeHm, bedtimeHm }),
+    [blocks, routines, wakeHm, bedtimeHm],
   );
   const hasRoutineCap = availableHours > 0;
 
@@ -352,21 +362,6 @@ export function GoalsTodayPlanBlocks({
     }
   }, [focusHours, studyTasks, focusBlocks, extraGoals, load, onChanged]);
 
-  useEffect(() => {
-    const prev = prevFocusRef.current;
-    prevFocusRef.current = focusHours;
-    if (prev == null) return;
-    if (focusHours >= prev - 0.05) return;
-    if (loading || focusBlocks.length === 0) return;
-    const have = studyMinutesFromBlocks(blocks);
-    const goal = Math.round(Math.max(0, focusHours) * 60);
-    if (have - goal < 25) return;
-    const t = window.setTimeout(() => {
-      void runSync();
-    }, 350);
-    return () => window.clearTimeout(t);
-  }, [focusHours, loading, blocks, focusBlocks.length, runSync]);
-
   const addTodo = () => {
     const title = draftTodo.trim();
     if (!title) return;
@@ -445,6 +440,28 @@ export function GoalsTodayPlanBlocks({
     onExtraGoalsChange(copy);
   };
 
+  const reorderTodo = (fromId: string, toId: string) => {
+    if (fromId === toId) return;
+    const from = extraGoals.findIndex((g) => g.id === fromId);
+    const to = extraGoals.findIndex((g) => g.id === toId);
+    if (from < 0 || to < 0) return;
+    const copy = [...extraGoals];
+    const [item] = copy.splice(from, 1);
+    copy.splice(to, 0, item);
+    onExtraGoalsChange(copy);
+  };
+
+  const formatSleepClock = (hm: string) => {
+    const m = /^(\d{1,2}):(\d{2})/.exec(hm.trim());
+    if (!m) return hm;
+    const h24 = Number(m[1]);
+    const min = m[2];
+    const am = h24 < 12;
+    let h12 = h24 % 12;
+    if (h12 === 0) h12 = 12;
+    return `${h12}:${min} ${am ? "AM" : "PM"}`;
+  };
+
   const bumpTodoMinutes = (id: string, dir: 1 | -1) => {
     onExtraGoalsChange(
       extraGoals.map((g) => {
@@ -506,6 +523,12 @@ export function GoalsTodayPlanBlocks({
               ) : null}
               <span className="text-sm text-muted-foreground">hours</span>
             </div>
+            {wakeHm && bedtimeHm ? (
+              <p className="mt-0.5 text-[10px] text-muted-foreground/85">
+                Wake {formatSleepClock(wakeHm)} · Bed {formatSleepClock(bedtimeHm)}
+                <span className="text-muted-foreground/60"> · edit on Routines</span>
+              </p>
+            ) : null}
           </div>
           <div className="flex items-center gap-2">
             <div className="flex flex-col rounded-lg border border-white/12 overflow-hidden" aria-label="Adjust daily focus hours">
@@ -702,11 +725,37 @@ Title | minutes`}</pre>
               return (
                 <li
                   key={g.id}
+                  onDragOver={(e) => {
+                    if (!dragId) return;
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = "move";
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    const from = e.dataTransfer.getData("text/plain") || dragId;
+                    if (from) reorderTodo(from, g.id);
+                    setDragId(null);
+                  }}
                   className={cn(
                     "rounded-xl border border-white/8 bg-black/30 px-2 py-1.5 flex flex-wrap items-center gap-2",
                     g.done && "opacity-55",
+                    dragId === g.id && "opacity-70 ring-1 ring-sky-400/40",
                   )}
                 >
+                  <span
+                    draggable
+                    onDragStart={(e) => {
+                      setDragId(g.id);
+                      e.dataTransfer.effectAllowed = "move";
+                      e.dataTransfer.setData("text/plain", g.id);
+                    }}
+                    onDragEnd={() => setDragId(null)}
+                    className="shrink-0 cursor-grab active:cursor-grabbing p-0.5 text-muted-foreground/70 hover:text-foreground"
+                    title="Drag to reorder"
+                    aria-label="Drag to reorder"
+                  >
+                    <GripVertical size={14} />
+                  </span>
                   <div className="flex flex-col shrink-0">
                     <button
                       type="button"

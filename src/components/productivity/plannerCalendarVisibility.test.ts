@@ -10,9 +10,9 @@ describe("calendarLayerVisibility", () => {
     });
   });
 
-  it("keeps plan-only agendas planned and still allows tracked actuals", () => {
+  it("respects P/A toggles on plan schedule preview too", () => {
     expect(calendarLayerVisibility({ planned: false, actual: true, planningOnly: true })).toEqual({
-      showPlanned: true,
+      showPlanned: false,
       showActual: true,
       loadOverlay: true,
     });

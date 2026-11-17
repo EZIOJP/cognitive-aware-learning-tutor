@@ -637,6 +637,12 @@
   height: var(--planner-cal-control-h);
 }
 
+.planner-calendar-shell .planner-cal-toolbar__layers {
+  margin-left: 0.15rem;
+  padding-left: 0.35rem;
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+}
+
 /* Compact letter-only D / W / M — equal min-width, shared control height */
 .planner-calendar-shell .planner-cal-toolbar__view-pill {
   display: inline-flex;

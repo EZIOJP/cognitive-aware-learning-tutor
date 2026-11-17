@@ -119,12 +119,17 @@ export function AppTimeLimitsPanel() {
   }, []);
 
   const load = useCallback(async () => {
+    const empty = (): void => {
+      if (!dirtyRef.current) applyDoc({ enabled: false, limits: [], usage: [] }, true);
+      loadedRef.current = true;
+      setLoaded(true);
+    };
     try {
       const res = await fetch(focusDataUrl("app_limits.json"), { cache: "no-store" });
+      // WebView2 virtual host often throws / non-404 when the mirror file is missing.
       if (res.status === 404) {
-        if (!dirtyRef.current) applyDoc({ enabled: false, limits: [], usage: [] }, true);
-        loadedRef.current = true;
-        setLoaded(true);
+        empty();
+        setError(null);
         return;
       }
       if (!res.ok) throw new Error(`app_limits: ${res.status}`);
@@ -134,7 +139,21 @@ export function AppTimeLimitsPanel() {
       loadedRef.current = true;
       setLoaded(true);
     } catch (e: unknown) {
-      if (!loadedRef.current) setError(e instanceof Error ? e.message : "Couldn't load time limits");
+      const raw = e instanceof Error ? e.message : "Couldn't load time limits";
+      // Missing mirror / shell data plane — treat as empty so the panel stays usable.
+      if (raw === "Failed to fetch" || raw.includes("NetworkError") || raw.includes("Load failed")) {
+        empty();
+        setError(null);
+        return;
+      }
+      if (!loadedRef.current) {
+        empty();
+        setError(
+          raw.startsWith("app_limits:")
+            ? "Time limits mirror unavailable — add apps and Save when the enforcer is up."
+            : raw,
+        );
+      }
     }
   }, [applyDoc]);
 

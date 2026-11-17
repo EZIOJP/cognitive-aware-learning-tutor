@@ -79,7 +79,8 @@ export default function BedtimeOverlay() {
       <div className="space-y-2 max-w-md">
         <h1 className="text-2xl font-semibold tracking-tight text-sky-50">Bedtime</h1>
         <p className="text-sm text-sky-100/70">
-          SoftLand sleep window is active. Rest well — tomorrow’s plan is waiting.
+          Sleep window is active — Focus sites stay blocked and Armed apps stay killed until wake.
+          Emergency opens limited web only.
         </p>
       </div>
       {doneTitles.length ? (

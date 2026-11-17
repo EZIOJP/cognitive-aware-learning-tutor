@@ -6,7 +6,7 @@ import { focusDataUrl } from "../../utils/focusDataUrl";
 import { cn } from "../../app/components/ui/utils";
 
 const SETTINGS_SITES = "/productivity?tab=settings&section=sites";
-const SETTINGS_APPS = "/productivity?tab=settings&section=apps";
+const SETTINGS_REVIEW = "/productivity?tab=settings&section=review";
 
 /**
  * Plan/Goals keeps SoftLand≠Arm status only — site/app rule editors live in Settings → Blocks.
@@ -96,20 +96,21 @@ export function PlanRulesSettingsCue() {
         ) : null}
       </div>
       <p className="text-[11px] text-muted-foreground leading-snug">
-        Site and app lists live in Settings — SoftLand ON ≠ Armed.
+        Board + Limits + Review live in Settings — SoftLand ON ≠ Armed. Sleep (Day) blocks Focus
+        items while bedtime is active.
       </p>
       <div className="flex flex-wrap gap-2">
         <Link
           to={SETTINGS_SITES}
           className="inline-flex items-center rounded-lg border border-sky-400/30 bg-sky-500/10 px-2.5 py-1 text-[11px] text-sky-100 hover:bg-sky-500/20"
         >
-          Edit site rules
+          Blocks board
         </Link>
         <Link
-          to={SETTINGS_APPS}
+          to={SETTINGS_REVIEW}
           className="inline-flex items-center rounded-lg border border-white/15 px-2.5 py-1 text-[11px] text-muted-foreground hover:bg-white/5 hover:text-foreground"
         >
-          Edit app kill list
+          Classify review
         </Link>
       </div>
     </section>

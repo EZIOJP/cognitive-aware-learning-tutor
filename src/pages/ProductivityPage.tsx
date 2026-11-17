@@ -1460,7 +1460,6 @@ export function ProductivityPage() {
           {(() => {
             const stepActions = (
               <div className="space-y-2 border-t border-white/10 pt-3">
-                {planStep !== "routines" ? <ConfirmPlanButton size="block" /> : null}
                 <div
                   className={
                     planStep === "routines"
@@ -1666,16 +1665,19 @@ export function ProductivityPage() {
                 </h2>
                 <p className="mt-1 text-xs text-muted-foreground">
                   {focusShell
-                    ? "Lock the days, apply routines across them, then fine-tune on Calendar."
+                    ? "Apply puts routines on those days. Confirm plan locks SoftLand + Arm for today."
                     : "Apply your draft to the calendar, then sync to Watch when ready."}
                 </p>
               </div>
               <div className="mt-4 min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain pr-1">
                 <PlanningRangePanel onApplied={bumpPlanner} />
                 {focusShell ? (
-                  <p className="text-sm text-emerald-200/90">
-                    SoftLand follows active plan blocks. Fine-tune any day on Calendar after you apply.
-                  </p>
+                  <div className="space-y-2">
+                    <ConfirmPlanButton size="block" />
+                    <p className="text-sm text-emerald-200/90">
+                      SoftLand follows active plan blocks. Fine-tune any day on Calendar after you apply.
+                    </p>
+                  </div>
                 ) : finishDone ? (
                   <div className="space-y-3">
                     <p className="text-sm text-emerald-200">

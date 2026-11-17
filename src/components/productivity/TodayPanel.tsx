@@ -10,6 +10,7 @@ import {
   type PlannerBlock,
 } from "../../api/plannerClient";
 import { fetchDistractionGate, type MorningGate } from "../../api/behaviorClient";
+import { isFocusDesktopShell } from "../../utils/focusDesktopShell";
 import { PlannerBlockForm } from "./PlannerBlockForm";
 import { ConfirmPlanButton } from "./ConfirmPlanButton";
 import { formatHoursMins } from "../../utils/formatDuration";
@@ -76,6 +77,7 @@ export function TodayPanel({
     incubationSec?: number;
   } | null>(null);
   const isToday = startOfDay(day).getTime() === startOfDay(new Date()).getTime();
+  const focusShell = isFocusDesktopShell();
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -208,7 +210,7 @@ export function TodayPanel({
 
   return (
     <div className={`rounded-2xl border border-white/10 bg-white/[0.03] ${compact ? "p-4 space-y-3" : "p-5 space-y-4"}`}>
-      {isToday && morning?.enabled && morning.next === "plan" && (
+      {isToday && !focusShell && morning?.enabled && morning.next === "plan" && (
         <div className="space-y-2">
           <p className="text-[11px] text-amber-200/85">
             Confirm today’s plan to leave morning planning
@@ -224,6 +226,11 @@ export function TodayPanel({
             }}
           />
         </div>
+      )}
+      {isToday && focusShell && morning?.enabled && morning.next === "plan" && (
+        <p className="text-[11px] text-amber-200/85">
+          Finish Plan → Range, then Confirm plan to lock SoftLand + Arm for today.
+        </p>
       )}
       {isToday && morning?.enabled && morning.plan_done && (
         <p className="text-[11px] text-emerald-300/90">

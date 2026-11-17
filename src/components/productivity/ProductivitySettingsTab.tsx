@@ -190,6 +190,41 @@ export function ProductivitySettingsTab(props: ProductivitySettingsTabProps) {
     </div>
   );
 
+  const reviewContent: ReactNode = (
+    <div className="space-y-4">
+      <DesktopManagedBanner feature="Activity review" />
+      <div className="rounded-2xl border border-border/50 bg-card/30 p-4 sm:p-6">
+        <ActivitiesPanel
+          day={props.plannerDayApi}
+          trackerNoData={props.trackerNoData}
+          refreshKey={props.plannerRefresh}
+        />
+      </div>
+      <div className="rounded-2xl border border-border/50 bg-card/30 p-4 sm:p-6">
+        <ClassificationReview trackerNoData={props.trackerNoData} />
+      </div>
+      {!focusShell ? (
+        <div className="rounded-2xl border border-border/50 bg-card/30 p-4 sm:p-6 space-y-2">
+          <p className="text-[11px] text-muted-foreground">
+            Session override needs Study API — hidden in Focus desktop.
+          </p>
+          <SessionOverridePanel
+            timeline={props.timeline}
+            onSaved={() => {
+              props.onLoad();
+              props.bumpPlanner();
+            }}
+          />
+        </div>
+      ) : (
+        <p className="text-[11px] text-muted-foreground px-1">
+          Approve a label, then put the app on the Board or a Limit. SoftLand ≠ Arm — classify never
+          arms either switch.
+        </p>
+      )}
+    </div>
+  );
+
   const advancedContent: ReactNode = (
     <div className="space-y-6">
       <Chunk title="Voice & LLM" hint="Optional. Home brief / Jarvis use this when enabled.">
@@ -225,46 +260,17 @@ export function ProductivitySettingsTab(props: ProductivitySettingsTabProps) {
         </Chunk>
       ) : null}
 
-      <details className="rounded-xl border border-border/50 bg-background/25 p-4 group">
-        <summary className="cursor-pointer text-sm font-medium list-none flex items-center justify-between">
-          Activity review
-          <span className="text-[11px] text-muted-foreground font-normal group-open:hidden">
-            Day table · classify
-          </span>
-        </summary>
-        <div className="mt-4 space-y-4">
-          <DesktopManagedBanner feature="Activity review" />
-          <div className="rounded-2xl border border-border/50 bg-card/30 p-4 sm:p-6">
-            <ActivitiesPanel
-              day={props.plannerDayApi}
-              trackerNoData={props.trackerNoData}
-              refreshKey={props.plannerRefresh}
-            />
-          </div>
-          <div className="rounded-2xl border border-border/50 bg-card/30 p-4 sm:p-6">
-            <ClassificationReview trackerNoData={props.trackerNoData} />
-          </div>
-          {!focusShell ? (
-            <div className="rounded-2xl border border-border/50 bg-card/30 p-4 sm:p-6 space-y-2">
-              <p className="text-[11px] text-muted-foreground">
-                Session override needs Study API — hidden in Focus desktop.
-              </p>
-              <SessionOverridePanel
-                timeline={props.timeline}
-                onSaved={() => {
-                  props.onLoad();
-                  props.bumpPlanner();
-                }}
-              />
-            </div>
-          ) : (
-            <p className="text-[11px] text-muted-foreground px-1">
-              Session productive override is Study-only (needs <code className="text-[10px]">:8000</code>
-              ). Focus uses day activities + OpenJarvis classify when enabled.
-            </p>
-          )}
-        </div>
-      </details>
+      <p className="text-[12px] text-muted-foreground px-1">
+        Day activity + classify live under{" "}
+        <button
+          type="button"
+          className="text-[#7DCFC4] underline-offset-2 hover:underline"
+          onClick={() => props.onSectionChange?.("review")}
+        >
+          Blocks → Review
+        </button>
+        .
+      </p>
     </div>
   );
 
@@ -282,6 +288,7 @@ export function ProductivitySettingsTab(props: ProductivitySettingsTabProps) {
         }
         dataContent={dataContent}
         advancedContent={advancedContent}
+        reviewContent={reviewContent}
       />
     </div>
   );

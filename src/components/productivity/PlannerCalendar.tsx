@@ -132,16 +132,16 @@ type CalendarEvent = {
 export function calendarLayerVisibility({
   planned,
   actual,
-  planningOnly,
+  planningOnly: _planningOnly,
 }: {
   planned: boolean;
   actual: boolean;
   planningOnly: boolean;
 }) {
   return {
-    // The dedicated Planning agenda must always render its editable schedule.
-    showPlanned: planningOnly || planned,
-    // Desktop tracked chips when Display → Actual is on. Amazfit sleep always loads.
+    // Toolbar P / Display → Planned (keep at least one layer via toggles).
+    showPlanned: planned,
+    // Toolbar A / Display → Actual. Amazfit sleep still loads with the overlay.
     showActual: actual,
     loadOverlay: true,
   };
@@ -481,11 +481,11 @@ export function PlannerCalendar({
 
   const togglePlanned = useCallback(() => {
     setShowPlanned((on) => {
-      // Keep at least one layer visible on the calendar tab
-      if (on && !planningOnly && !showActual) return true;
+      // Keep at least one layer visible
+      if (on && !showActual) return true;
       return !on;
     });
-  }, [planningOnly, showActual]);
+  }, [showActual]);
 
   const toggleActual = useCallback(() => {
     setShowActual((on) => {
@@ -1319,6 +1319,10 @@ export function PlannerCalendar({
             onView={setView}
             navRange={navRange}
             onNavRangeChange={setNavRange}
+            showPlanned={showPlanned}
+            showActual={showActual}
+            onTogglePlanned={togglePlanned}
+            onToggleActual={toggleActual}
           />
         </div>
         <div className="planner-cal-header__brand">
@@ -1338,31 +1342,29 @@ export function PlannerCalendar({
                 </button>
               </PopoverTrigger>
               <PopoverContent align="end" className="planner-cal-display-pop w-56 space-y-3 bg-popover/95 backdrop-blur-sm">
-                {!planningOnly ? (
-                  <div>
-                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1.5">Layers</p>
-                    <div className="planner-cal-display-pop__toggles" role="group" aria-label="Visible layers">
-                      <button
-                        type="button"
-                        className={`planner-cal-display-pop__toggle ${showPlanned ? "is-on" : ""}`}
-                        aria-pressed={showPlanned}
-                        title="Scheduled blocks and draft plan"
-                        onClick={togglePlanned}
-                      >
-                        Planned
-                      </button>
-                      <button
-                        type="button"
-                        className={`planner-cal-display-pop__toggle ${showActual ? "is-on" : ""}`}
-                        aria-pressed={showActual}
-                        title="Tracked app / site sessions"
-                        onClick={toggleActual}
-                      >
-                        Actual
-                      </button>
-                    </div>
+                <div>
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1.5">Layers</p>
+                  <div className="planner-cal-display-pop__toggles" role="group" aria-label="Visible layers">
+                    <button
+                      type="button"
+                      className={`planner-cal-display-pop__toggle ${showPlanned ? "is-on" : ""}`}
+                      aria-pressed={showPlanned}
+                      title="Scheduled blocks and draft plan (toolbar P)"
+                      onClick={togglePlanned}
+                    >
+                      Planned
+                    </button>
+                    <button
+                      type="button"
+                      className={`planner-cal-display-pop__toggle ${showActual ? "is-on" : ""}`}
+                      aria-pressed={showActual}
+                      title="Tracked app / site sessions (toolbar A)"
+                      onClick={toggleActual}
+                    >
+                      Actual
+                    </button>
                   </div>
-                ) : null}
+                </div>
                 <div>
                   <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1.5">
                     Row height

@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
 import { WeaponCallout, SettingSection, NativeOrApiBadge } from "./SettingPrimitives";
 import SoftLandSiteRulesPanel from "../SoftLandSiteRulesPanel";
-import GateSchedulesPanel from "../GateSchedulesPanel";
 import AppKillRulesPanel from "../AppKillRulesPanel";
 import AppTimeLimitsPanel from "../AppTimeLimitsPanel";
 import ProductivityPolicyPanel from "../ProductivityPolicyPanel";
@@ -132,17 +131,10 @@ export function ProductivitySettingsHub({
               </SettingSection>
               <SettingSection
                 title="Site lists"
-                why="Allow always wins. Watch is study-only. Block survives reward days."
+                why="Allow always wins. Watch is study-only. Block survives reward days. Day loop + bedtime set mode — no weekly schedule."
                 availability="native"
               >
                 <SoftLandSiteRulesPanel mode="blocker" />
-              </SettingSection>
-              <SettingSection
-                title="Schedule"
-                why="First matching week window sets study/free mode."
-                availability="native"
-              >
-                <GateSchedulesPanel />
               </SettingSection>
             </>
           )}

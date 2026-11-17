@@ -22,6 +22,11 @@ export type PlannerToolbarProps = {
   /** Multi-week (or custom) navigation highlight — not KPI export */
   navRange: NavRange | null;
   onNavRangeChange: (range: NavRange | null) => void;
+  /** Layer toggles — Planned (P) / Actual (A), same circle style as D|W|M */
+  showPlanned?: boolean;
+  showActual?: boolean;
+  onTogglePlanned?: () => void;
+  onToggleActual?: () => void;
 };
 
 function resolveViewList(views: PlannerToolbarProps["views"]): View[] {
@@ -54,10 +59,19 @@ export function PlannerCalendarToolbar({
   onView,
   navRange,
   onNavRangeChange,
+  showPlanned,
+  showActual,
+  onTogglePlanned,
+  onToggleActual,
 }: PlannerToolbarProps) {
   const [miniOpen, setMiniOpen] = useState(false);
   const viewList = resolveViewList(views);
   const chipLabel = formatDateChipLabel(view, date, navRange);
+  const showLayers =
+    typeof showPlanned === "boolean" &&
+    typeof showActual === "boolean" &&
+    typeof onTogglePlanned === "function" &&
+    typeof onToggleActual === "function";
 
   const clearRangeAnd = (fn: () => void) => {
     onNavRangeChange(null);
@@ -161,6 +175,41 @@ export function PlannerCalendarToolbar({
             );
           })}
         </div>
+
+        {showLayers ? (
+          <div
+            className="planner-cal-toolbar__views planner-cal-toolbar__layers"
+            role="group"
+            aria-label="Plan vs actual layers"
+          >
+            <button
+              type="button"
+              title="Planned — scheduled blocks"
+              aria-label="Planned"
+              aria-pressed={showPlanned}
+              className={cn(
+                "planner-cal-toolbar__view-pill",
+                showPlanned && "planner-cal-toolbar__view-pill--active",
+              )}
+              onClick={onTogglePlanned}
+            >
+              P
+            </button>
+            <button
+              type="button"
+              title="Actual — tracked time"
+              aria-label="Actual"
+              aria-pressed={showActual}
+              className={cn(
+                "planner-cal-toolbar__view-pill",
+                showActual && "planner-cal-toolbar__view-pill--active",
+              )}
+              onClick={onToggleActual}
+            >
+              A
+            </button>
+          </div>
+        ) : null}
       </div>
     </div>
   );

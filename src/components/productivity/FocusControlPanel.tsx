@@ -574,7 +574,7 @@ export function FocusControlPanel() {
       <SectionBar title="Arm (apps)">
         <p className="text-[11px] text-muted-foreground -mt-1 mb-2 max-w-xl">
           Arm on: kills processes on the kill list about every 1.5s. Arm off: no OS kills. Edit the
-          list under Blocks → Apps. SoftLand site lists never belong here.
+          list under Blocks → Board. SoftLand site lists never belong here.
           {!freeDay
             ? " Arm and disarm on a free day or a day pass (not during morning Plan)."
             : ""}
@@ -631,7 +631,7 @@ export function FocusControlPanel() {
             <div className="flex flex-wrap gap-1.5 min-h-[2rem]">
               {exes.length === 0 ? (
                 <span className="text-[11px] text-muted-foreground">
-                  Empty — add exes under Blocks → Apps before Arm.
+                  Empty — add exes under Blocks → Board before Arm.
                 </span>
               ) : (
                 exes.map((exe) => (
@@ -650,13 +650,13 @@ export function FocusControlPanel() {
                 className="underline text-sky-300/90"
                 href="/productivity?tab=settings&section=apps"
               >
-                Settings → Blocks → Apps
+                Settings → Blocks → Board
               </a>
               {" "}— Unlock Arms the saved list (no second editor).
             </p>
             {killListLocked ? (
               <p className="text-[11px] text-amber-200/90">
-                Locked while armed — unlock/disarm to edit the list under Blocks → Apps.
+                Locked while armed — unlock/disarm to edit the list under Blocks → Board.
               </p>
             ) : null}
           </div>
@@ -767,7 +767,7 @@ export function FocusControlPanel() {
             to="/productivity?tab=settings&section=apps"
             className="rounded-lg border border-border px-3 py-1.5 text-muted-foreground hover:text-foreground"
           >
-            Blocks → Apps
+            Blocks → Board
           </Link>
           <Link
             to="/bible"

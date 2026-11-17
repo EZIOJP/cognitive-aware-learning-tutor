@@ -254,7 +254,7 @@ export function UnlockGuidePanel({ onSaved }: Props) {
           to="/productivity?tab=settings&section=apps"
           className="underline text-foreground/80 hover:text-foreground"
         >
-          Blocks → Apps
+          Blocks → Board
         </Link>
         .
       </p>

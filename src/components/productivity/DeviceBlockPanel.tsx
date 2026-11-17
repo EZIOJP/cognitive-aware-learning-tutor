@@ -139,7 +139,6 @@ export function DeviceBlockPanel() {
   };
 
   const s = status?.settings;
-  const verify = status?.verify_sample;
   const active = Boolean(status?.active);
 
   return (
@@ -170,8 +169,7 @@ export function DeviceBlockPanel() {
         </p>
         <ul className="list-disc pl-4 space-y-0.5 text-amber-100/85">
           <li>Windows <code className="text-amber-50/90">hosts</code> — every app. SoftLand Allow does not override.</li>
-          <li>Native enforcer only — no Study API. Type {CONFIRM_PHRASE} to enable or remove.</li>
-          <li>Default porn-only; YouTube stays off unless you opt into streaming under details.</li>
+          <li>Porn domains only. Type {CONFIRM_PHRASE} to enable or remove.</li>
         </ul>
       </div>
 
@@ -284,56 +282,6 @@ export function DeviceBlockPanel() {
         </div>
       )}
 
-      <details className="text-xs text-muted-foreground">
-        <summary className="cursor-pointer hover:text-foreground">Optional: also lock streaming / social in hosts</summary>
-        <p className="mt-1.5 text-[10px] text-amber-200/80">
-          Warning: hosts streaming/social stays blocked after SoftLand unlock — prefer SoftLand Block for those.
-        </p>
-        <div className="grid gap-2 text-sm pl-1 border-l-2 border-white/10 mt-2">
-          <label className="flex items-center justify-between gap-3">
-            <span className="text-muted-foreground">YouTube / streaming (hosts)</span>
-            <input
-              type="checkbox"
-              disabled={busy || !s || !nativeOk}
-              checked={Boolean(s?.block_watch)}
-              onChange={(e) =>
-                void saveDeviceBlockNative({ block_watch: e.target.checked, apply_now: true }).then(setStatus)
-              }
-            />
-          </label>
-          <label className="flex items-center justify-between gap-3">
-            <span className="text-muted-foreground">Social (Reddit, X, …)</span>
-            <input
-              type="checkbox"
-              disabled={busy || !s || !nativeOk}
-              checked={Boolean(s?.block_social)}
-              onChange={(e) =>
-                void saveDeviceBlockNative({ block_social: e.target.checked, apply_now: true }).then(setStatus)
-              }
-            />
-          </label>
-        </div>
-      </details>
-
-      {status ? (
-        <p className="text-[10px] text-muted-foreground font-mono break-all">
-          {active ? (
-            <span className="text-emerald-300">ACTIVE · </span>
-          ) : (
-            <span className="text-rose-300">NOT in hosts · </span>
-          )}
-          {status.configured_domain_count} domains · {status.managed_host_entries} host lines
-          {s?.enabled ? " · settings on" : " · settings off"}
-          {status.refresh ? ` · refresh ${status.refresh}` : ""}
-          {verify ? (
-            <>
-              {" "}
-              · sample {verify.hostname}
-              {verify.blocked ? " ✓" : " ✗"}
-            </>
-          ) : null}
-        </p>
-      ) : null}
     </div>
   );
 }

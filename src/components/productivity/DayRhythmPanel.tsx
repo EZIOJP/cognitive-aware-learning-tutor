@@ -134,7 +134,7 @@ export function DayRhythmPanel() {
               setHintOk(res.ok);
               setHint(
                 res.ok
-                  ? `Saved · ${formatSleepHours(sleepMins!)}`
+                  ? `Saved · ${formatSleepHours(sleepMins!)} · bedtime blocks Focus sites + Armed apps`
                   : res.error === "enforcer_unreachable"
                     ? "Enforcer unreachable — open CALT Focus, then save again."
                     : "Could not save sleep.",

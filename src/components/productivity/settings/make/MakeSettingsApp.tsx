@@ -11,13 +11,9 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { WeaponCallout } from "../SettingPrimitives";
-import SoftLandSiteRulesPanel, { SOFTLAND_LADDER_ONE_LINER } from "../../SoftLandSiteRulesPanel";
-import SoftLandModeFlagsPanel from "../../SoftLandModeFlagsPanel";
-import GateSchedulesPanel from "../../GateSchedulesPanel";
-import AppKillRulesPanel from "../../AppKillRulesPanel";
-import AppTimeLimitsPanel from "../../AppTimeLimitsPanel";
 import ProductivityPolicyPanel from "../../ProductivityPolicyPanel";
 import { DeviceBlockPanel } from "../../DeviceBlockPanel";
+import { BlocksBoardPanel } from "../../BlocksBoardPanel";
 import { EnforcerWriteGate, useEnforcerReachability } from "../../EnforcerWriteGate";
 import { FocusPerfReviewPanel } from "../../FocusPerfReviewPanel";
 import { FocusAiStatusChip } from "../../FocusAiStatusChip";
@@ -39,7 +35,9 @@ export type SettingsSectionId =
   | "blocks"
   | "sites"
   | "apps"
+  | "limits"
   | "filters"
+  | "review"
   | "unlock"
   | "day"
   | "appearance"
@@ -53,7 +51,7 @@ export type SettingsSectionId =
   /** @deprecated → day */
   | "more";
 
-type BlockSubId = "sites" | "apps" | "filters";
+type BlockSubId = "board" | "review";
 type NavId =
   | "overview"
   | "blocks"
@@ -66,20 +64,22 @@ type NavId =
 
 const NAV: { id: NavId; label: string; blurb: string; Icon: LucideIcon }[] = [
   { id: "overview", label: "Overview", blurb: "What’s on right now", Icon: LayoutDashboard },
-  { id: "blocks", label: "Blocks", blurb: "Sites, apps, filters", Icon: Shield },
+  { id: "blocks", label: "Blocks", blurb: "Board + classify", Icon: Shield },
   { id: "unlock", label: "Unlock", blurb: "Free time types", Icon: Unlock },
-  { id: "day", label: "Day", blurb: "Body, ZeppBridge, plan", Icon: SunMedium },
+  { id: "day", label: "Day", blurb: "Body, sleep, ZeppBridge, plan", Icon: SunMedium },
   { id: "appearance", label: "Appearance", blurb: "Theme, UI, sidebar look", Icon: Palette },
   { id: "profile", label: "Profile", blurb: "Name, email, notes", Icon: CircleUserRound },
   { id: "data", label: "Data", blurb: "Export, import, update", Icon: Database },
-  { id: "advanced", label: "Advanced", blurb: "AI, remote, review", Icon: Settings2 },
+  { id: "advanced", label: "Advanced", blurb: "AI, remote, tools", Icon: Settings2 },
 ];
 
 const WRITE_SECTIONS: SettingsSectionId[] = [
   "blocks",
   "sites",
   "apps",
+  "limits",
   "filters",
+  "review",
   "unlock",
 ];
 
@@ -135,6 +135,7 @@ function softlandModeLabel(softland: ReturnType<typeof useFocusStatus>["softland
   if (!softland) return "—";
   if (!softland.softland_enabled) return "off";
   const rt = softland.runtime || {};
+  if (rt.bedtime_active) return "study (bedtime)";
   const now = Date.now();
   const inc = rt.incubation_until ? Date.parse(String(rt.incubation_until)) : NaN;
   if (Number.isFinite(inc) && inc > now) return "study (incubation)";
@@ -242,7 +243,7 @@ function OverviewSection({ onJump }: { onJump: (id: SettingsSectionId) => void }
           kicker="Lists"
           Icon={Shield}
           title="Blocks"
-          blurb="Site allow/block, app kill list, device hosts."
+          blurb="Unified Focus / Normal / Block board, time limits, hosts."
           onClick={() => onJump("sites")}
         />
         <JumpCard
@@ -296,22 +297,23 @@ function BlocksSection({
   sub,
   onSubChange,
   onPolicySaved,
+  reviewContent,
 }: {
   sub: BlockSubId;
   onSubChange: (id: BlockSubId) => void;
   onPolicySaved?: () => void;
+  reviewContent?: ReactNode;
 }) {
   const tabs: { id: BlockSubId; label: string; note: string }[] = [
-    { id: "sites", label: "Sites", note: "browser" },
-    { id: "apps", label: "Apps", note: "OS kill list" },
-    { id: "filters", label: "Filters", note: "hosts file" },
+    { id: "board", label: "Board", note: "sites + apps" },
+    { id: "review", label: "Review", note: "classify" },
   ];
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       <SectionHeader
         title="Blocks"
-        description="What gets blocked. Site block ≠ Arm — edit lists here; arm the kill list under Unlock."
+        description="Edit sites and apps here. Site block On/Off and Arm live under Unlock."
       />
       <div
         className="flex flex-wrap gap-4 border-b border-border/40"
@@ -324,7 +326,7 @@ function BlocksSection({
             type="button"
             role="tab"
             aria-selected={sub === t.id}
-            onClick={() => onSubChange(t.id)}
+            onClick={() => onSubChange(blockSubToSection(t.id))}
             className={cn(
               "min-h-11 px-1 pb-2 text-[15px] transition-colors -mb-px",
               sub === t.id
@@ -338,81 +340,35 @@ function BlocksSection({
         ))}
       </div>
 
-      {sub === "sites" ? (
-        <div className="grid gap-5 min-w-0 2xl:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
-          <div className="space-y-5 min-w-0">
-            <Card className="min-w-0 overflow-hidden">
-              <div className="mb-3">
-                <h3 className="text-[15px] font-semibold">Site block</h3>
-                <p className="text-[13px] text-muted-foreground mt-1">
-                  Master switch for websites only. Off allows every site.
-                </p>
-              </div>
-              <ProductivityPolicyPanel variant="softland" onSaved={onPolicySaved} />
-            </Card>
-            <Card className="min-w-0 overflow-hidden">
-              <h3 className="text-[15px] font-semibold mb-1">Site rules</h3>
-              <p className="text-[13px] text-muted-foreground mb-3">
-                {SOFTLAND_LADDER_ONE_LINER} Tag a domain Allow / Focus / Always — click × to remove.
-              </p>
-              <SoftLandSiteRulesPanel mode="blocker" />
-            </Card>
-          </div>
-          <div className="space-y-5 min-w-0">
-            <Card className="min-w-0 overflow-hidden">
-              <h3 className="text-[15px] font-semibold mb-1">What each mode blocks</h3>
-              <p className="text-[13px] text-muted-foreground mb-3">
-                Live SoftLand flags only (watch sites + porn heuristic). Inert flags are omitted.
-              </p>
-              <SoftLandModeFlagsPanel />
-            </Card>
-            <Card className="min-w-0 overflow-hidden">
-              <h3 className="text-[15px] font-semibold mb-1">Schedule</h3>
-              <p className="text-[13px] text-muted-foreground mb-3">
-                First matching window wins. Incubation overrides both and puts you back in study.
-              </p>
-              <GateSchedulesPanel compact />
-            </Card>
-          </div>
+      {sub === "board" ? (
+        <div className="space-y-4">
+          <Card className="min-w-0 overflow-hidden">
+            <BlocksBoardPanel />
+          </Card>
+
+          <details className="rounded-xl border border-border/40 bg-background/20 open:pb-1 group">
+            <summary className="cursor-pointer list-none px-3 py-2.5 text-[13px] font-medium marker:content-none [&::-webkit-details-marker]:hidden flex items-center justify-between gap-2">
+              <span>Device hosts lock</span>
+              <span className="text-[11px] font-normal text-muted-foreground group-open:hidden">
+                porn · PC-wide · admin
+              </span>
+            </summary>
+            <div className="border-t border-border/30 px-3 py-3">
+              <DeviceBlockPanel />
+            </div>
+          </details>
         </div>
       ) : null}
 
-      {sub === "apps" ? (
-        <div className="space-y-5">
-          <Card>
-            <h3 className="text-[15px] font-semibold mb-1">Arm</h3>
-            <p className="text-[13px] text-muted-foreground mb-3">
-              Own switch from SoftLand. Edit the kill list below, then Arm.
-            </p>
-            <ArmControlCard />
-          </Card>
-          <Card>
-            <h3 className="text-[15px] font-semibold mb-1">Time limits</h3>
-            <p className="text-[13px] text-muted-foreground mb-3">
-              A daily budget per app. When the minutes are gone, CALT closes that app until midnight.
-            </p>
-            <AppTimeLimitsPanel />
-          </Card>
-          <Card>
-            <h3 className="text-[15px] font-semibold mb-1">Kill list</h3>
-            <p className="text-[13px] text-muted-foreground mb-3">
-              Armed means any of these apps is closed on sight. Website domains never go here. Click an
-              app to remove it.
-            </p>
-            <AppKillRulesPanel />
-          </Card>
-        </div>
-      ) : null}
-
-      {sub === "filters" ? (
-        <Card>
-          <h3 className="text-[15px] font-semibold mb-1">Device lock (hosts file)</h3>
-          <p className="text-[13px] text-muted-foreground mb-3">
-            Blocks porn domains for every app on this PC. Site rules cannot override it. Needs admin
-            to apply.
+      {sub === "review" ? (
+        <div className="space-y-4">
+          <p className="text-[13px] text-muted-foreground">
+            Classify what ran, then put apps on the Board or a Limit. Labels never arm SoftLand or Arm.
           </p>
-          <DeviceBlockPanel />
-        </Card>
+          {reviewContent ?? (
+            <p className="text-[13px] text-muted-foreground">Activity review unavailable here.</p>
+          )}
+        </div>
       ) : null}
     </div>
   );
@@ -423,8 +379,24 @@ function UnlockSection({ onPolicySaved }: { onPolicySaved?: () => void }) {
     <div className="space-y-5">
       <SectionHeader
         title="Unlock"
-        description="How SoftLand free time works — goal met, reward day, and day pass. Arm lives under Blocks → Apps."
+        description="Site block and Arm masters live here. SoftLand free ≠ Arm. Lists and limits stay on Blocks → Board."
       />
+      <div className="grid gap-3 min-w-0 md:grid-cols-2">
+        <Card className="min-w-0 overflow-hidden !p-3">
+          <div className="mb-2 flex items-baseline justify-between gap-2">
+            <h3 className="text-[13px] font-semibold">Site block</h3>
+            <span className="text-[11px] text-muted-foreground">SoftLand · sites only</span>
+          </div>
+          <ProductivityPolicyPanel variant="softland" onSaved={onPolicySaved} />
+        </Card>
+        <Card className="min-w-0 overflow-hidden !p-3">
+          <div className="mb-2 flex items-baseline justify-between gap-2">
+            <h3 className="text-[13px] font-semibold">Arm</h3>
+            <span className="text-[11px] text-muted-foreground">apps · bedtime keeps kills</span>
+          </div>
+          <ArmControlCard />
+        </Card>
+      </div>
       <Card className="min-w-0 overflow-hidden">
         <UnlockGuidePanel onSaved={onPolicySaved} />
       </Card>
@@ -440,6 +412,8 @@ type MakeSettingsAppProps = {
   profileContent?: ReactNode;
   dataContent?: ReactNode;
   advancedContent?: ReactNode;
+  /** Blocks → Review (classify + day activities). */
+  reviewContent?: ReactNode;
   /** @deprecated use day/data/advanced slots */
   productiveExtra?: ReactNode;
   /** @deprecated use day/data/advanced slots */
@@ -447,7 +421,14 @@ type MakeSettingsAppProps = {
 };
 
 function navHighlight(section: SettingsSectionId): NavId {
-  if (section === "sites" || section === "apps" || section === "filters" || section === "blocks")
+  if (
+    section === "sites" ||
+    section === "apps" ||
+    section === "limits" ||
+    section === "filters" ||
+    section === "review" ||
+    section === "blocks"
+  )
     return "blocks";
   if (section === "day" || section === "tools" || section === "more") return "day";
   if (section === "appearance") return "appearance";
@@ -459,8 +440,14 @@ function navHighlight(section: SettingsSectionId): NavId {
 }
 
 function blockSubFromSection(section: SettingsSectionId): BlockSubId {
-  if (section === "apps" || section === "filters") return section;
-  return "sites";
+  if (section === "review") return "review";
+  // sites / apps / limits / filters / blocks → one Board page
+  return "board";
+}
+
+function blockSubToSection(sub: BlockSubId): SettingsSectionId {
+  if (sub === "review") return "review";
+  return "sites"; // board
 }
 
 function navClickTarget(id: NavId): SettingsSectionId {
@@ -476,6 +463,7 @@ export default function MakeSettingsApp({
   profileContent,
   dataContent,
   advancedContent,
+  reviewContent,
   productiveExtra,
   toolsContent,
 }: MakeSettingsAppProps) {
@@ -506,6 +494,7 @@ export default function MakeSettingsApp({
         sub={blockSub}
         onSubChange={(id) => setSection(id)}
         onPolicySaved={onPolicySaved}
+        reviewContent={reviewContent}
       />
     ) : highlight === "unlock" ? (
       <UnlockSection onPolicySaved={onPolicySaved} />
@@ -609,14 +598,17 @@ export function parseSettingsSection(raw: string | null): SettingsSectionId {
 
   if (id === "blocks") return "sites";
   if (id === "more" || id === "tools") return "day";
-  if (id === "productive" || id === "scoring" || id === "classification") return "advanced";
+  if (id === "productive" || id === "scoring") return "advanced";
+  if (id === "classification" || id === "classify" || id === "activity") return "review";
   if (id === "theme" || id === "ui" || id === "look" || id === "sticker") return "appearance";
+  if (id === "timelimits" || id === "time-limits" || id === "app-limits") return "sites";
+  if (id === "limits" || id === "filters") return "sites";
 
   const known: SettingsSectionId[] = [
     "overview",
     "sites",
     "apps",
-    "filters",
+    "review",
     "unlock",
     "day",
     "appearance",

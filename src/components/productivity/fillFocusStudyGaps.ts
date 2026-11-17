@@ -137,22 +137,130 @@ export function availableGapMinutesFromSpans(spans: { start: number; end: number
   return Math.max(0, spanEnd - spanStart - occupied);
 }
 
+/** Minute-of-day now, rounded up to the next 5 minutes (never plan into the past). */
+export function nowMinuteOfDayCeil(day: Date = new Date(), step = 5): number {
+  const today = new Date();
+  if (
+    day.getFullYear() !== today.getFullYear() ||
+    day.getMonth() !== today.getMonth() ||
+    day.getDate() !== today.getDate()
+  ) {
+    return 0; // future days: full day from midnight
+  }
+  const raw = today.getHours() * 60 + today.getMinutes();
+  const s = Math.max(1, step);
+  return Math.min(24 * 60, Math.ceil(raw / s) * s);
+}
+
+/**
+ * Waking window from sleep clocks (wake → bed). Overnight bed after midnight
+ * clamps end to 24:00 for same-day capacity (multi-day spans not modeled).
+ * For today, start is also clamped to now so past morning is not counted.
+ */
+export function wakingWindowMinutes(
+  wakeHm?: string | null,
+  bedtimeHm?: string | null,
+  day: Date = new Date(),
+): { start: number; end: number } | null {
+  const wake = parseHmToDayMinutes(wakeHm ?? null);
+  const bed = parseHmToDayMinutes(bedtimeHm ?? null);
+  if (wake == null || bed == null) return null;
+  let end = bed;
+  if (end <= wake) end = 24 * 60; // overnight bed → end of waking day
+  let start = wake;
+  start = Math.max(start, nowMinuteOfDayCeil(day));
+  if (end <= start) return null;
+  return { start, end };
+}
+
 /**
  * Max focus hours for the day: prefer today's enabled routine *schedule*
  * (first→last template), else fall back to applied routine plan blocks.
+ * When wake/bed are set, capacity is waking span minus overlapping routines
+ * (or the full waking span if no routines).
  */
 export function availableFocusGapHours(opts: {
   blocks: PlannerBlock[];
   routines?: RoutineScheduleLike[] | null;
   day?: Date;
+  wakeHm?: string | null;
+  bedtimeHm?: string | null;
 }): number {
   const day = opts.day ?? new Date();
+  const wakeWin = wakingWindowMinutes(opts.wakeHm, opts.bedtimeHm, day);
   const scheduleSpans = routineScheduleSpansForDay(opts.routines || [], day);
+
+  if (wakeWin) {
+    const routineSpans =
+      scheduleSpans.length > 0
+        ? scheduleSpans
+        : opts.blocks
+            .filter(
+              (b) =>
+                b.status !== "cancelled" &&
+                b.status !== "rolled" &&
+                isRoutineLifeCategory(b.category || ""),
+            )
+            .map(blockSpanMinutes);
+    const free = freeGapsInsideWindow(routineSpans, wakeWin.start, wakeWin.end);
+    return Math.round((Math.max(0, free) / 60) * 10) / 10;
+  }
+
+  // No sleep clocks: still ignore gaps before now on today.
+  const nowCeil = nowMinuteOfDayCeil(day);
+  const routineSpans =
+    scheduleSpans.length > 0
+      ? scheduleSpans
+      : opts.blocks
+          .filter(
+            (b) =>
+              b.status !== "cancelled" &&
+              b.status !== "rolled" &&
+              isRoutineLifeCategory(b.category || ""),
+          )
+          .map(blockSpanMinutes);
+  if (routineSpans.length > 0) {
+    const spanEnd = Math.max(...routineSpans.map((s) => s.end));
+    if (spanEnd > nowCeil) {
+      const free = freeGapsInsideWindow(routineSpans, nowCeil, spanEnd);
+      if (free > 0) return Math.round((free / 60) * 10) / 10;
+    }
+  }
   const fromSchedule = availableGapMinutesFromSpans(scheduleSpans);
   if (fromSchedule > 0) {
     return Math.round((fromSchedule / 60) * 10) / 10;
   }
   return availableRoutineGapHours(opts.blocks);
+}
+
+/** Free minutes inside [windowStart, windowEnd] not covered by routine spans. */
+function freeGapsInsideWindow(
+  spans: { start: number; end: number }[],
+  windowStart: number,
+  windowEnd: number,
+): number {
+  if (!(windowEnd > windowStart)) return 0;
+  const sorted = [...spans]
+    .map((g) => ({
+      start: Math.max(windowStart, g.start),
+      end: Math.min(windowEnd, g.end),
+    }))
+    .filter((g) => g.end > g.start)
+    .sort((a, b) => a.start - b.start);
+
+  const merged: Gap[] = [];
+  for (const g of sorted) {
+    const last = merged[merged.length - 1];
+    if (last && g.start <= last.end) {
+      last.end = Math.max(last.end, g.end);
+    } else {
+      merged.push({ start: g.start, end: g.end });
+    }
+  }
+
+  let occupied = 0;
+  for (const m of merged) occupied += m.end - m.start;
+  return Math.max(0, windowEnd - windowStart - occupied);
 }
 
 /** Auto-filled study blocks we may trim when the focus goal shrinks. */
@@ -332,13 +440,20 @@ async function packStudyIntoGaps(opts: {
       : Math.max(0, Math.round(opts.focusHours * 60) - studyMinutesFromBlocks(opts.blocks));
   if (need < 25) return { created: 0, minutesAdded: 0, shortfallAfter: need };
 
+  const day = new Date();
+  const nowCeil = nowMinuteOfDayCeil(day);
   const wake = parseHmToMinutes(opts.wakeHm, 7 * 60);
   const bed = parseHmToMinutes(opts.bedtimeHm, 23 * 60);
-  let winStart = Math.min(Math.max(wake + 30, 8 * 60), 12 * 60);
-  let winEnd = bed > 12 * 60 ? Math.max(winStart + 60, bed - 60) : 21 * 60;
+  // Pack from wake (or now — never the past) through bed; no morning-only clamp.
+  let winStart = Math.max(wake, nowCeil);
+  let winEnd = bed > wake ? bed : 24 * 60;
   if (winEnd <= winStart) {
-    winStart = 9 * 60;
-    winEnd = 18 * 60;
+    winStart = nowCeil;
+    winEnd = Math.max(winStart + 60, 21 * 60);
+    if (winEnd > 24 * 60) winEnd = 24 * 60;
+  }
+  if (winEnd - winStart < 25) {
+    return { created: 0, minutesAdded: 0, shortfallAfter: need };
   }
 
   const occupied = opts.blocks
@@ -346,14 +461,13 @@ async function packStudyIntoGaps(opts: {
     .map(blockSpanMinutes);
 
   const gaps = freeGaps(occupied, winStart, winEnd);
-  const day = new Date();
   const tasks = (opts.studyTasks || []).filter((t) => t.title?.trim());
   let taskIdx = 0;
   let created = 0;
   let minutesAdded = 0;
 
   for (const gap of gaps) {
-    let cursor = gap.start;
+    let cursor = Math.max(gap.start, nowCeil);
     while (need >= 25 && cursor + 25 <= gap.end) {
       const room = gap.end - cursor;
       const task = tasks[taskIdx];

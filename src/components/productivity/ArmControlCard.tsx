@@ -1,6 +1,7 @@
 /**
- * Slim Arm controls for Blocks → Apps.
- * SoftLand ≠ Arm. Kill list CRUD stays in AppKillRulesPanel below.
+ * Slim Arm controls for Settings → Unlock.
+ * SoftLand ≠ Arm. Kill membership is edited on Blocks → Board.
+ * Lock mode / anti-tamper UI removed — free-day gate protects Arm edits.
  */
 import { useCallback, useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
@@ -15,17 +16,11 @@ import { useFocusStatus, useFreeDay } from "../../hooks/useFocusStatus";
 import { focusDataUrl } from "../../utils/focusDataUrl";
 import { cn } from "../../app/components/ui/utils";
 
-type LockMode = "none" | "timer" | "password" | "phrase";
-
 export function ArmControlCard() {
   const status = useFocusStatus();
   const freeDay = useFreeDay();
   const [snap, setSnap] = useState<FocusDashboardSnapshot | null>(null);
   const [exes, setExes] = useState<string[]>([]);
-  const [lockMode, setLockMode] = useState<LockMode>("none");
-  const [timerMinutes, setTimerMinutes] = useState(25);
-  const [lockSecret, setLockSecret] = useState("");
-  const [antiTamper, setAntiTamper] = useState(true);
   const [busy, setBusy] = useState(false);
   const [hint, setHint] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -37,29 +32,13 @@ export function ArmControlCard() {
       setError(null);
       const list = s.enforcer_policy?.exes;
       if (Array.isArray(list)) setExes(list.map(String));
-      const lm = String(s.enforcer_policy?.lock_mode || "none");
-      if (lm === "timer" || lm === "password" || lm === "phrase" || lm === "none") {
-        setLockMode(lm);
-      }
-      if (typeof s.enforcer_policy?.anti_tamper === "boolean") {
-        setAntiTamper(s.enforcer_policy.anti_tamper);
-      }
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : String(e));
       try {
         const r = await fetch(focusDataUrl("enforcer_policy.json"), { cache: "no-store" });
         if (r.ok) {
-          const pol = (await r.json()) as {
-            exes?: string[];
-            lock_mode?: string;
-            anti_tamper?: boolean;
-          };
+          const pol = (await r.json()) as { exes?: string[] };
           if (Array.isArray(pol.exes)) setExes(pol.exes.map(String));
-          const lm = String(pol.lock_mode || "none");
-          if (lm === "timer" || lm === "password" || lm === "phrase" || lm === "none") {
-            setLockMode(lm);
-          }
-          if (typeof pol.anti_tamper === "boolean") setAntiTamper(pol.anti_tamper);
         }
       } catch {
         /* keep last */
@@ -105,14 +84,9 @@ export function ArmControlCard() {
           gate_locked: true,
           incubation_active: false,
           exes: killList,
-          lock_mode: lockMode,
-          anti_tamper: antiTamper,
+          lock_mode: "none",
+          anti_tamper: false,
         };
-        if (lockMode === "timer") {
-          body.lock_until_unix = Math.floor(Date.now() / 1000) + Math.max(1, timerMinutes) * 60;
-        }
-        if (lockMode === "password") body.unlock_password = lockSecret;
-        if (lockMode === "phrase") body.unlock_phrase = lockSecret;
 
         if (isFocusEnforcerBridgeAvailable()) {
           const native = await enforcerNativeCmd("arm.set", {
@@ -120,11 +94,8 @@ export function ArmControlCard() {
             gate_locked: true,
             incubation_active: false,
             exes: killList,
-            lock_mode: lockMode,
-            anti_tamper: antiTamper,
-            lock_until_unix: body.lock_until_unix,
-            unlock_password: body.unlock_password,
-            unlock_phrase: body.unlock_phrase,
+            lock_mode: "none",
+            anti_tamper: false,
           });
           if (native?.ok) {
             setHint(
@@ -144,7 +115,7 @@ export function ArmControlCard() {
         setHint("Armed via policy write.");
       } else {
         let provided = "";
-        const mode = String(pol?.lock_mode || lockMode || "none");
+        const mode = String(pol?.lock_mode || "none");
         if (mode === "password" || mode === "phrase") {
           provided = window.prompt(mode === "password" ? "Unlock password" : "Unlock phrase") ?? "";
         }
@@ -157,7 +128,7 @@ export function ArmControlCard() {
             exes: killList,
             lock_mode: "none",
             provided_unlock: provided,
-            anti_tamper: antiTamper,
+            anti_tamper: false,
           });
           if (native?.ok) {
             setHint("Disarmed.");
@@ -177,7 +148,9 @@ export function ArmControlCard() {
           gate_locked: false,
           incubation_active: false,
           exes: killList,
+          lock_mode: "none",
           provided_unlock: provided,
+          anti_tamper: false,
         });
         setHint("Disarmed.");
       }
@@ -195,8 +168,8 @@ export function ArmControlCard() {
   return (
     <div className="space-y-4">
       <p className="text-[13px] leading-relaxed text-muted-foreground">
-        Arm on kills processes on the kill list about every 1.5s. SoftLand (browser) is a separate
-        switch under Blocks → Sites. Free SoftLand does not disarm Arm.
+        Arm on kills apps on the Blocks board kill list about every 1.5s. SoftLand free does not
+        disarm Arm. Bedtime keeps kills on even after a goal unlock.
       </p>
 
       <div className="flex flex-wrap items-center gap-2">
@@ -219,55 +192,6 @@ export function ArmControlCard() {
           </span>
         ) : null}
       </div>
-
-      <label className="block text-xs text-muted-foreground space-y-1 max-w-md">
-        <span>Lock mode (required to disarm when set)</span>
-        <select
-          value={lockMode}
-          onChange={(e) => setLockMode(e.target.value as LockMode)}
-          className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
-        >
-          <option value="none">None</option>
-          <option value="timer">Timer</option>
-          <option value="password">Password</option>
-          <option value="phrase">Phrase</option>
-        </select>
-      </label>
-
-      {lockMode === "timer" ? (
-        <label className="block text-xs text-muted-foreground space-y-1 max-w-md">
-          <span>Lock minutes</span>
-          <input
-            type="number"
-            min={1}
-            max={24 * 60}
-            value={timerMinutes}
-            onChange={(e) => setTimerMinutes(Math.max(1, parseInt(e.target.value, 10) || 1))}
-            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
-          />
-        </label>
-      ) : null}
-
-      {lockMode === "password" || lockMode === "phrase" ? (
-        <label className="block text-xs text-muted-foreground space-y-1 max-w-md">
-          <span>{lockMode === "password" ? "Unlock password" : "Unlock phrase"}</span>
-          <input
-            type={lockMode === "password" ? "password" : "text"}
-            value={lockSecret}
-            onChange={(e) => setLockSecret(e.target.value)}
-            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
-          />
-        </label>
-      ) : null}
-
-      <label className="flex items-center gap-2 text-xs text-muted-foreground">
-        <input
-          type="checkbox"
-          checked={antiTamper}
-          onChange={(e) => setAntiTamper(e.target.checked)}
-        />
-        Anti-tamper while locked
-      </label>
 
       <div className="flex flex-wrap gap-2">
         <button
@@ -294,7 +218,7 @@ export function ArmControlCard() {
 
       <details className="rounded-lg border border-border/40 bg-background/20 open:pb-1">
         <summary className="cursor-pointer list-none px-3 py-2 text-[12px] text-muted-foreground marker:content-none [&::-webkit-details-marker]:hidden">
-          Kill list preview · edit below
+          Kill list preview · edit on Blocks → Board
         </summary>
         <div className="flex flex-wrap gap-1.5 border-t border-border/30 px-3 py-2">
           {exes.length === 0 ? (

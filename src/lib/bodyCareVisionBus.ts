@@ -13,6 +13,8 @@ export type BodyCareVisionSample = {
   /** True when score is below coach threshold for a sustained hold. */
   slouching: boolean;
   attention: number;
+  /** Sidecar upper-body sit/stand hint (calibrated Y + face scale). */
+  sitStandHint?: "sit" | "stand" | "unknown";
 };
 
 const EVT = "calt:bodycare:vision";
@@ -24,6 +26,7 @@ let latest: BodyCareVisionSample = {
   postureScore: 100,
   slouching: false,
   attention: 0,
+  sitStandHint: "unknown",
 };
 
 export function publishBodyCareVision(sample: Omit<BodyCareVisionSample, "at">): void {
@@ -42,6 +45,7 @@ export function clearBodyCareVision(): void {
     postureScore: 100,
     slouching: false,
     attention: 0,
+    sitStandHint: "unknown",
   });
 }
 

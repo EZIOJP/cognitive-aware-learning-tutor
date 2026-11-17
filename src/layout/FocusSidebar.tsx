@@ -60,6 +60,7 @@ import { CurvedScrollArea } from "../components/ui/CurvedScrollArea";
 import { useTheme } from "../context/ThemeContext";
 import { SIDEBAR_STICKER_FONTS } from "../theme/layers";
 import {
+  focusOwnerAvatarUrl,
   focusOwnerDisplayLabel,
   loadFocusOwnerProfile,
 } from "../lib/focusOwnerProfile";
@@ -264,6 +265,9 @@ export function FocusSidebar() {
   /** Keep peek open while a tools dropdown is open (portal leaves the rail). */
   const [toolsMenuOpen, setToolsMenuOpen] = useState(false);
   const [ownerLabel, setOwnerLabel] = useState(() => focusOwnerDisplayLabel());
+  const [ownerAvatarUrl, setOwnerAvatarUrl] = useState(() =>
+    focusOwnerAvatarUrl(loadFocusOwnerProfile(), 72),
+  );
   const { user, isAuthenticated, isAdmin } = useAuth();
   const {
     sidebarStickerFont,
@@ -305,7 +309,11 @@ export function FocusSidebar() {
   }, []);
 
   useEffect(() => {
-    const sync = () => setOwnerLabel(focusOwnerDisplayLabel(loadFocusOwnerProfile()));
+    const sync = () => {
+      const p = loadFocusOwnerProfile();
+      setOwnerLabel(focusOwnerDisplayLabel(p));
+      setOwnerAvatarUrl(focusOwnerAvatarUrl(p, 72));
+    };
     sync();
     window.addEventListener("calt-focus-owner-profile", sync as EventListener);
     window.addEventListener("storage", sync);
@@ -567,11 +575,28 @@ export function FocusSidebar() {
               >
                 <DropdownMenuTrigger asChild>
                   <RailBtn aria-label="Account" title={accountTitle}>
-                    <CircleUserRound className="h-[18px] w-[18px]" />
+                    <img
+                      src={ownerAvatarUrl}
+                      alt=""
+                      width={22}
+                      height={22}
+                      className="h-[22px] w-[22px] rounded-full"
+                      referrerPolicy="no-referrer"
+                    />
                   </RailBtn>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start" side="top" className="w-52" sideOffset={8}>
-                  <DropdownMenuLabel>{accountTitle}</DropdownMenuLabel>
+                  <DropdownMenuLabel className="flex items-center gap-2">
+                    <img
+                      src={ownerAvatarUrl}
+                      alt=""
+                      width={20}
+                      height={20}
+                      className="h-5 w-5 rounded-full"
+                      referrerPolicy="no-referrer"
+                    />
+                    {accountTitle}
+                  </DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={openProfileSettings}>
                     <CircleUserRound className="mr-2 h-4 w-4" />

@@ -30,6 +30,10 @@ import { MORNING_UPDATED_EVENT } from "./ConfirmPlanButton";
 import { GlanceBar, RailProgressCell } from "./GlanceBar";
 import type { DesktopStats, GoalsStatusResponse } from "../../api/behaviorClient";
 import { formatHoursMins } from "../../utils/formatDuration";
+import {
+  DAY_WRAP_UPDATED_EVENT,
+  yesterdayTomorrowFix,
+} from "../../lib/dayWrapPrefs";
 
 
 function pickActiveBlock(blocks: PlannerBlock[], now: Date): PlannerBlock | null {
@@ -490,6 +494,14 @@ export default function HomeModeBoard({
     return () => window.removeEventListener(GOALS_UPDATED_EVENT, sync);
   }, []);
 
+  const [morningFix, setMorningFix] = useState(() => yesterdayTomorrowFix());
+  useEffect(() => {
+    const sync = () => setMorningFix(yesterdayTomorrowFix());
+    sync();
+    window.addEventListener(DAY_WRAP_UPDATED_EVENT, sync as EventListener);
+    return () => window.removeEventListener(DAY_WRAP_UPDATED_EVENT, sync as EventListener);
+  }, [refreshKey]);
+
   const persistPreviewTasks = (next: { id: number; title: string; done: boolean }[]) => {
     setPreviewTasks(next);
     try {
@@ -611,6 +623,14 @@ export default function HomeModeBoard({
 
   return (
     <div className="space-y-5">
+      {morningFix ? (
+        <div className="rounded-xl border border-amber-500/25 bg-amber-500/[0.07] px-4 py-2.5">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-amber-200/90">
+            Yesterday’s one fix
+          </p>
+          <p className="mt-0.5 text-[13px] text-foreground/90 leading-snug">{morningFix.fix}</p>
+        </div>
+      ) : null}
       {/* Mode card first: SoftLand mode + glance + blocks + tasks */}
       <section className="focus-panel focus-panel--hero">
         <div className="flex items-start justify-between gap-4 px-5 pt-5 pb-4">

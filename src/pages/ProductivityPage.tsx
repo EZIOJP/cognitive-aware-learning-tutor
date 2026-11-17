@@ -56,6 +56,7 @@ import {
 } from "../api/plannerClient";
 import { fetchHubDaily } from "../api/hubClient";
 import ShutdownRitualPanel from "../components/productivity/ShutdownRitualPanel";
+import DayWrapCard from "../components/productivity/DayWrapCard";
 import WeeklyDigestPanel from "../components/productivity/WeeklyDigestPanel";
 import ProductivityGoalsPanel, {
   formatGoalsForPrompt,
@@ -1156,7 +1157,16 @@ export function ProductivityPage() {
             />
           </>
         )}
-        {planDrift && planDrift.block_count > 0 ? (
+        {focusShell ? (
+          <DayWrapCard
+            day={plannerDay}
+            adherence={adherence}
+            planDrift={planDrift}
+            desktop={desktop}
+            sleepHours={sleepHours}
+            refreshKey={plannerRefresh}
+          />
+        ) : planDrift && planDrift.block_count > 0 ? (
           <div className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 space-y-1">
             <p className="text-xs font-medium text-foreground">Plan vs actual</p>
             <p className="text-[11px] text-muted-foreground">{planDrift.summary}</p>

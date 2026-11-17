@@ -1,8 +1,13 @@
 /**
  * Always-on sit/stand + eye-rest + posture timers for Focus (panel only edits prefs).
- * When attention reader is live: pause sit clock while away; warn on sustained slouch.
+ * Prefers Python sidecar mirrors when fresh; else Human.js vision bus.
+ * When sidecar reports sit_stand_hint=stand, the sit clock freezes.
  */
 import { useEffect, useRef } from "react";
+import {
+  bodyCareMirrorIsLive,
+  fetchBodyCareMirror,
+} from "../../api/bodyCareClient";
 import { loadBodyCarePrefs } from "../../lib/bodyCarePrefs";
 import {
   readBodyCareVision,
@@ -20,11 +25,18 @@ function notify(title: string, body: string) {
   }
 }
 
+function normalizeHint(raw: string | undefined | null): "sit" | "stand" | "unknown" {
+  if (raw === "sit" || raw === "stand") return raw;
+  return "unknown";
+}
+
 export function BodyCareRuntime() {
   const lastInputRef = useRef(Date.now());
   const lastSitNotifyRef = useRef(0);
   const lastEyeNotifyRef = useRef(Date.now());
   const lastPostureNotifyRef = useRef(0);
+  const sidecarRef = useRef<BodyCareVisionSample | null>(null);
+  const sidecarLiveRef = useRef(false);
 
   /** Accumulated seated ms while present (camera) or while input-active (no camera). */
   const sitAccumMsRef = useRef(0);
@@ -44,18 +56,55 @@ export function BodyCareRuntime() {
   }, []);
 
   useEffect(() => {
+    const pull = async () => {
+      const m = await fetchBodyCareMirror();
+      const live = bodyCareMirrorIsLive(m);
+      sidecarLiveRef.current = live;
+      if (!live || !m?.sample) {
+        sidecarRef.current = null;
+        return;
+      }
+      const s = m.sample;
+      const thr = loadBodyCarePrefs().postureScoreThreshold;
+      sidecarRef.current = {
+        at: Date.now(),
+        tracking: true,
+        faceDetected: Boolean(s.present),
+        postureScore: typeof s.posture_score === "number" ? s.posture_score : 50,
+        slouching: typeof s.posture_score === "number" ? s.posture_score < thr : false,
+        attention: typeof s.attention_pct === "number" ? s.attention_pct : 0,
+        sitStandHint: normalizeHint(s.sit_stand_hint),
+      };
+    };
+    void pull();
+    const id = window.setInterval(() => void pull(), 4_000);
+    return () => window.clearInterval(id);
+  }, []);
+
+  useEffect(() => {
     const id = window.setInterval(() => {
       const p = loadBodyCarePrefs();
       const now = Date.now();
-      const vision = readBodyCareVision();
-      const camLive = visionIsLive() && vision.tracking;
+      const human = readBodyCareVision();
+      const sidecar = sidecarRef.current;
+      const vision = sidecarLiveRef.current && sidecar ? sidecar : human;
+      const camLive =
+        (sidecarLiveRef.current && Boolean(sidecar?.tracking)) ||
+        (visionIsLive() && human.tracking);
 
       // --- Sit accumulator ---
       if (p.sitStandEnabled) {
-        if (camLive && p.presencePauseSit) {
+        if (camLive && vision.sitStandHint === "stand") {
+          // Calibrated upper-body stand → freeze sit clock.
+          awaySinceRef.current = null;
+          if (sitSegmentStartRef.current != null) {
+            sitAccumMsRef.current += now - sitSegmentStartRef.current;
+            sitSegmentStartRef.current = null;
+          }
+        } else if (camLive && p.presencePauseSit) {
           applyPresenceSit(vision, p.presenceAwaySec, now);
         } else {
-          // Input-idle heuristic (no camera / pause off).
+          // Input-idle heuristic (no camera / pause off / unknown posture).
           awaySinceRef.current = null;
           const idleMs = now - lastInputRef.current;
           if (idleMs < 90_000) {
@@ -77,7 +126,8 @@ export function BodyCareRuntime() {
             `Still ~${p.sitMinutes} min. Stand ${p.standMinutes} min, then sit.`,
           );
           sitAccumMsRef.current = 0;
-          sitSegmentStartRef.current = camLive && vision.faceDetected ? now : null;
+          sitSegmentStartRef.current =
+            camLive && vision.faceDetected && vision.sitStandHint !== "stand" ? now : null;
           lastInputRef.current = now;
         }
       }

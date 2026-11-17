@@ -2,8 +2,12 @@
  * Focus Body care — sit/stand + eye rest + optional attention reader.
  * Client-only timers/notifications; SoftLand/Arm untouched.
  */
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { Armchair, Eye, Loader2, ScanFace, PersonStanding } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { Armchair, Eye, Loader2, ScanFace, PersonStanding, Crosshair } from "lucide-react";
+import {
+  requestBodyCareCalibrate,
+  type BodyCareCalibrateMode,
+} from "../../api/bodyCareClient";
 import {
   DEFAULT_BODY_CARE,
   loadBodyCarePrefs,
@@ -12,16 +16,6 @@ import {
 } from "../../lib/bodyCarePrefs";
 import { focusDataUrl } from "../../utils/focusDataUrl";
 import { isFocusDesktopShell } from "../../utils/focusDesktopShell";
-
-function notify(title: string, body: string) {
-  if (typeof Notification === "undefined") return;
-  if (Notification.permission !== "granted") return;
-  try {
-    new Notification(title, { body, silent: false });
-  } catch {
-    /* ignore */
-  }
-}
 
 function notificationSupported(): boolean {
   return typeof window !== "undefined" && "Notification" in window;
@@ -177,14 +171,26 @@ export function BodyCarePanel() {
   const [perm, setPerm] = useState<NotificationPermission | "unsupported">(
     notificationSupported() ? Notification.permission : "unsupported",
   );
-  const [sitLeftMin, setSitLeftMin] = useState<number | null>(null);
-  const [eyeLeftMin, setEyeLeftMin] = useState<number | null>(null);
   const [standHint, setStandHint] = useState<string | null>(null);
-  const lastInputRef = useRef(Date.now());
-  const lastSitNotifyRef = useRef(0);
-  const lastEyeNotifyRef = useRef(Date.now());
-  const prefsRef = useRef(prefs);
-  prefsRef.current = prefs;
+  const [sidecarLive, setSidecarLive] = useState<{
+    attention_pct?: number;
+    posture_score?: number;
+    distance_proxy?: number | null;
+    present?: boolean;
+    sit_stand_hint?: string;
+    sit_stand_ready?: boolean;
+    sit_samples?: number;
+    stand_samples?: number;
+    blink_rate?: number;
+    blink_just_now?: boolean;
+    calibrating?: string | null;
+    remain_sec?: number;
+    control_port?: number;
+    gaze_ready?: boolean;
+    gaze_samples?: number;
+  } | null>(null);
+  const [calBusy, setCalBusy] = useState(false);
+  const [calMsg, setCalMsg] = useState<string | null>(null);
 
   const patch = useCallback((partial: Partial<BodyCarePrefs>) => {
     setPrefs((prev) => {
@@ -194,23 +200,34 @@ export function BodyCarePanel() {
     });
   }, []);
 
+  const runCalibrate = useCallback(
+    async (mode: BodyCareCalibrateMode) => {
+      setCalBusy(true);
+      setCalMsg(
+        mode === "neutral"
+          ? "Hold a neutral gaze ~12s…"
+          : mode === "sit"
+            ? "Sit still ~4s…"
+            : "Stand at desk ~4s…",
+      );
+      const r = await requestBodyCareCalibrate(mode, sidecarLive?.control_port);
+      if (!r.ok) {
+        setCalMsg(r.detail || "Calibrate failed");
+        setCalBusy(false);
+        return;
+      }
+      setCalMsg(`Running ${mode}…`);
+      // Mirror poll will clear busy when calibrating ends.
+      window.setTimeout(() => setCalBusy(false), mode === "neutral" ? 13_000 : 5_000);
+    },
+    [sidecarLive?.control_port],
+  );
+
   const requestPerm = async () => {
     if (!notificationSupported()) return;
     const p = await Notification.requestPermission();
     setPerm(p);
   };
-
-  // Presence = any input resets sit clock.
-  useEffect(() => {
-    const bump = () => {
-      lastInputRef.current = Date.now();
-    };
-    const evs = ["mousemove", "keydown", "pointerdown", "wheel", "touchstart"] as const;
-    for (const e of evs) window.addEventListener(e, bump, { passive: true });
-    return () => {
-      for (const e of evs) window.removeEventListener(e, bump);
-    };
-  }, []);
 
   // Wearable stand hint (optional).
   useEffect(() => {
@@ -237,45 +254,80 @@ export function BodyCarePanel() {
     };
   }, []);
 
-  // Timers.
+  // Sidecar live strip (prefs + readout only — BodyCareRuntime owns nudges).
   useEffect(() => {
-    const id = window.setInterval(() => {
-      const p = prefsRef.current;
-      const now = Date.now();
-      const seatedMs = now - lastInputRef.current;
-
-      if (p.sitStandEnabled) {
-        const limit = p.sitMinutes * 60_000;
-        const left = Math.max(0, Math.ceil((limit - seatedMs) / 60_000));
-        setSitLeftMin(left);
-        if (seatedMs >= limit && now - lastSitNotifyRef.current > 5 * 60_000) {
-          lastSitNotifyRef.current = now;
-          notify(
-            "CALT — stand up",
-            `You've been still ~${p.sitMinutes} min. Stand ${p.standMinutes} min, then sit.`,
-          );
-          lastInputRef.current = now; // avoid spam until next sit window
+    let cancelled = false;
+    const pull = async () => {
+      try {
+        const res = await fetch(`${focusDataUrl("body_care.json")}?t=${Date.now()}`, {
+          cache: "no-store",
+        });
+        if (!res.ok || cancelled) {
+          if (!cancelled && !res.ok) setSidecarLive(null);
+          return;
         }
-      } else {
-        setSitLeftMin(null);
-      }
-
-      if (p.eyeRestEnabled) {
-        const elapsed = now - lastEyeNotifyRef.current;
-        const limit = p.eyeRestMinutes * 60_000;
-        setEyeLeftMin(Math.max(0, Math.ceil((limit - elapsed) / 60_000)));
-        if (elapsed >= limit) {
-          lastEyeNotifyRef.current = now;
-          notify(
-            "CALT — eye rest",
-            `Look away ${p.eyeRestSeconds}s (20–20–20). Soften focus, then return.`,
-          );
+        const j = (await res.json()) as {
+          sample?: {
+            attention_pct?: number;
+            posture_score?: number;
+            distance_proxy?: number | null;
+            present?: boolean;
+            sit_stand_hint?: string;
+            sit_stand_ready?: boolean;
+            blink_rate?: number;
+            blink_just_now?: boolean;
+            calibrating?: string | null;
+          };
+          calibration?: {
+            sit_stand_ready?: boolean;
+            sit_samples?: number;
+            stand_samples?: number;
+            ready?: boolean;
+            samples?: number;
+          };
+          control?: {
+            port?: number;
+            calibrating?: string | null;
+            remain_sec?: number;
+            sit_stand_ready?: boolean;
+            sit_samples?: number;
+            stand_samples?: number;
+            gaze_ready?: boolean;
+            gaze_samples?: number;
+          };
+          updated_at?: string;
+        };
+        if (cancelled) return;
+        const live = j.sample
+          ? {
+              ...j.sample,
+              sit_stand_ready:
+                j.control?.sit_stand_ready ??
+                j.sample.sit_stand_ready ??
+                j.calibration?.sit_stand_ready,
+              sit_samples: j.control?.sit_samples ?? j.calibration?.sit_samples,
+              stand_samples: j.control?.stand_samples ?? j.calibration?.stand_samples,
+              calibrating: j.control?.calibrating ?? j.sample.calibrating,
+              remain_sec: j.control?.remain_sec,
+              control_port: j.control?.port,
+              gaze_ready: j.control?.gaze_ready ?? j.calibration?.ready,
+              gaze_samples: j.control?.gaze_samples ?? j.calibration?.samples,
+            }
+          : null;
+        setSidecarLive(live);
+        if (live && !live.calibrating) {
+          setCalBusy(false);
         }
-      } else {
-        setEyeLeftMin(null);
+      } catch {
+        if (!cancelled) setSidecarLive(null);
       }
-    }, 15_000);
-    return () => window.clearInterval(id);
+    };
+    void pull();
+    const id = window.setInterval(() => void pull(), 4_000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(id);
+    };
   }, []);
 
   const focusShell = isFocusDesktopShell();
@@ -299,10 +351,45 @@ export function BodyCarePanel() {
             <PersonStanding size={14} /> Body care
           </h3>
           <p className="mt-1 text-[11px] text-muted-foreground leading-relaxed max-w-lg">
-            Sit/stand + eye rest run locally. Opt-in webcam adds posture coach and pauses the sit
-            clock when you leave the desk. Does not touch SoftLand or Arm.
+            Sit/stand + eye rest run in the background (BodyCareRuntime). Opt-in webcam or the
+            Python body-care sidecar adds posture/attention. Does not touch SoftLand or Arm.
           </p>
           <p className="mt-1 text-[11px] text-sky-300/90">{summary}</p>
+          {sidecarLive ? (
+            <p className="mt-1 text-[11px] tabular-nums text-emerald-200/90">
+              Sidecar
+              {sidecarLive.present === false ? " · away" : " · present"}
+              {typeof sidecarLive.attention_pct === "number"
+                ? ` · attn ${Math.round(sidecarLive.attention_pct)}%`
+                : ""}
+              {typeof sidecarLive.posture_score === "number"
+                ? ` · posture ${Math.round(sidecarLive.posture_score)}`
+                : ""}
+              {typeof sidecarLive.distance_proxy === "number"
+                ? ` · dist ~${sidecarLive.distance_proxy.toFixed(2)}`
+                : ""}
+              {typeof sidecarLive.blink_rate === "number"
+                ? ` · blink ${Math.round(sidecarLive.blink_rate)}/m${
+                    sidecarLive.blink_just_now ? " *" : ""
+                  }`
+                : ""}
+              {sidecarLive.sit_stand_hint && sidecarLive.sit_stand_hint !== "unknown"
+                ? ` · ${sidecarLive.sit_stand_hint}`
+                : ""}
+              {sidecarLive.calibrating
+                ? ` · cal ${sidecarLive.calibrating}${
+                    typeof sidecarLive.remain_sec === "number"
+                      ? ` ${sidecarLive.remain_sec.toFixed(0)}s`
+                      : ""
+                  }`
+                : ""}
+            </p>
+          ) : (
+            <p className="mt-1 text-[10px] text-muted-foreground/80">
+              Sidecar offline — Human.js fallback when attention is on. Run{" "}
+              <span className="font-mono">scripts\run\run_bodycare_sidecar.bat</span>
+            </p>
+          )}
         </div>
         {perm !== "granted" && perm !== "unsupported" ? (
           <button
@@ -313,6 +400,55 @@ export function BodyCarePanel() {
             Allow notifications
           </button>
         ) : null}
+      </div>
+
+      <div className="rounded-xl border border-border/50 bg-background/30 p-3 space-y-3">
+        <div className="flex items-center gap-2 text-sm">
+          <Crosshair size={15} className="text-emerald-300/90" />
+          Recalibrate (sidecar)
+        </div>
+        <p className="text-[10px] text-muted-foreground leading-relaxed pl-6">
+          Sidecar must be running. Gaze ~12s (eyes open, look at screen). Sit then Stand ~4s each
+          (same screen angle).{" "}
+          {sidecarLive
+            ? `Gaze ${sidecarLive.gaze_ready ? "ready" : `${sidecarLive.gaze_samples ?? 0}/15`} · sit ${
+                sidecarLive.sit_samples ?? 0
+              }/6 · stand ${sidecarLive.stand_samples ?? 0}/6${
+                sidecarLive.sit_stand_ready ? " · sit/stand ready" : ""
+              }`
+            : "Start scripts\\run\\run_bodycare_sidecar.bat first."}
+        </p>
+        <div className="flex flex-wrap gap-2 pl-6">
+          <button
+            type="button"
+            disabled={calBusy || !sidecarLive || Boolean(sidecarLive?.calibrating)}
+            onClick={() => void runCalibrate("neutral")}
+            className="rounded-lg border border-border/50 bg-background/40 px-3 py-1.5 text-xs hover:bg-accent/40 disabled:opacity-40"
+          >
+            Gaze
+          </button>
+          <button
+            type="button"
+            disabled={calBusy || !sidecarLive || Boolean(sidecarLive?.calibrating)}
+            onClick={() => void runCalibrate("sit")}
+            className="rounded-lg border border-border/50 bg-background/40 px-3 py-1.5 text-xs hover:bg-accent/40 disabled:opacity-40"
+          >
+            Sit pose
+          </button>
+          <button
+            type="button"
+            disabled={calBusy || !sidecarLive || Boolean(sidecarLive?.calibrating)}
+            onClick={() => void runCalibrate("stand")}
+            className="rounded-lg border border-border/50 bg-background/40 px-3 py-1.5 text-xs hover:bg-accent/40 disabled:opacity-40"
+          >
+            Stand pose
+          </button>
+          {calMsg ? (
+            <span className="self-center text-[11px] text-sky-300/90" role="status">
+              {calMsg}
+            </span>
+          ) : null}
+        </div>
       </div>
 
       <div className="rounded-xl border border-border/50 bg-background/30 p-3 space-y-3">
@@ -343,20 +479,20 @@ export function BodyCarePanel() {
               max={15}
               suffix="min stand"
             />
-            {sitLeftMin != null ? (
-              <span className="text-[11px] text-muted-foreground">
-                Next stand nudge in ~{sitLeftMin}m
-              </span>
-            ) : null}
+            <span className="text-[11px] text-muted-foreground">Nudges via runtime</span>
           </div>
         ) : null}
         {standHint ? <p className="pl-6 text-[11px] text-muted-foreground">{standHint}</p> : null}
+        <p className="pl-6 text-[10px] text-muted-foreground leading-relaxed">
+          Webcam sit/stand uses upper-body Y-shift + face scale. Use the Recalibrate buttons above
+          (or bats). Frames stay in RAM only.
+        </p>
         {prefs.sitStandEnabled && prefs.attentionEnabled ? (
           <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border/30 pt-3 pl-6">
             <div>
-              <p className="text-xs text-foreground/90">Pause sit clock when away</p>
+              <p className="text-xs text-foreground/90">Pause sit clock when away / standing</p>
               <p className="text-[10px] text-muted-foreground">
-                No face for {prefs.presenceAwaySec}s freezes the timer (camera).
+                No face for {prefs.presenceAwaySec}s, or sidecar hint = stand, freezes the timer.
               </p>
             </div>
             <Toggle
@@ -396,9 +532,7 @@ export function BodyCarePanel() {
               max={60}
               suffix="sec look away"
             />
-            {eyeLeftMin != null ? (
-              <span className="text-[11px] text-muted-foreground">Next eye rest ~{eyeLeftMin}m</span>
-            ) : null}
+            <span className="text-[11px] text-muted-foreground">Nudges via runtime</span>
           </div>
         ) : null}
       </div>
@@ -464,8 +598,6 @@ export function BodyCarePanel() {
         onClick={() => {
           saveBodyCarePrefs(DEFAULT_BODY_CARE);
           setPrefs({ ...DEFAULT_BODY_CARE });
-          lastEyeNotifyRef.current = Date.now();
-          lastInputRef.current = Date.now();
         }}
       >
         Reset body care defaults

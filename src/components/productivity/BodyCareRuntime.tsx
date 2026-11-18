@@ -3,7 +3,7 @@
  * Prefers Python sidecar mirrors when fresh; else Human.js vision bus.
  * When sidecar reports sit_stand_hint=stand, the sit clock freezes.
  */
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   bodyCareMirrorIsLive,
   fetchBodyCareMirror,
@@ -14,6 +14,7 @@ import {
   visionIsLive,
   type BodyCareVisionSample,
 } from "../../lib/bodyCareVisionBus";
+import { isFocusSleeperActive, subscribeFocusSleeper } from "../../lib/focusSleeper";
 
 function notify(title: string, body: string) {
   if (typeof Notification === "undefined") return;
@@ -31,6 +32,7 @@ function normalizeHint(raw: string | undefined | null): "sit" | "stand" | "unkno
 }
 
 export function BodyCareRuntime() {
+  const [sleeper, setSleeper] = useState(() => isFocusSleeperActive());
   const lastInputRef = useRef(Date.now());
   const lastSitNotifyRef = useRef(0);
   const lastEyeNotifyRef = useRef(Date.now());
@@ -44,7 +46,10 @@ export function BodyCareRuntime() {
   const awaySinceRef = useRef<number | null>(null);
   const slouchSinceRef = useRef<number | null>(null);
 
+  useEffect(() => subscribeFocusSleeper((s) => setSleeper(s.active)), []);
+
   useEffect(() => {
+    if (sleeper) return;
     const bump = () => {
       lastInputRef.current = Date.now();
     };
@@ -53,9 +58,14 @@ export function BodyCareRuntime() {
     return () => {
       for (const e of evs) window.removeEventListener(e, bump);
     };
-  }, []);
+  }, [sleeper]);
 
   useEffect(() => {
+    if (sleeper) {
+      sidecarRef.current = null;
+      sidecarLiveRef.current = false;
+      return;
+    }
     const pull = async () => {
       const m = await fetchBodyCareMirror();
       const live = bodyCareMirrorIsLive(m);
@@ -79,9 +89,10 @@ export function BodyCareRuntime() {
     void pull();
     const id = window.setInterval(() => void pull(), 4_000);
     return () => window.clearInterval(id);
-  }, []);
+  }, [sleeper]);
 
   useEffect(() => {
+    if (sleeper) return;
     const id = window.setInterval(() => {
       const p = loadBodyCarePrefs();
       const now = Date.now();
@@ -164,7 +175,7 @@ export function BodyCareRuntime() {
       }
     }, 5_000);
     return () => window.clearInterval(id);
-  }, []);
+  }, [sleeper]);
 
   function applyPresenceSit(vision: BodyCareVisionSample, awaySec: number, now: number) {
     if (vision.faceDetected) {

@@ -46,10 +46,13 @@ function renderStats(g) {
   const bible = g.chapter_goal_met ? "Done" : "Needed";
   const block = g.current_block;
   const inFocusMode = modeLc === "study" || modeLc === "bible" || modeLc === "planning";
-  const dayMet = Boolean(g.day_unlimited || g.reward_day || g.unlocked);
+  const goalMet = Boolean(g.goal_met || g.day_unlimited);
+  const rewardDay = Boolean(g.reward_day);
+  const dayPass = Boolean(g.day_pass);
+  const freeWin = Boolean(g.free_window) || (Boolean(g.unlocked) && !inFocusMode);
   const incubating = Boolean((g.incubation && g.incubation.active) || (g.browser && g.browser.incubation_active));
 
-  // "Games unlocked" under "Time left to unlock" was confusing when STUDY still blocks YouTube.
+  // Do not label timed SoftLand free (closeout) as "Goal met".
   let unlockKey = "Time left to unlock";
   let unlockVal = "Locked";
   if (incubating) {
@@ -58,16 +61,25 @@ function renderStats(g) {
     unlockVal = rem > 0
       ? Math.round(rem / 60) + " min left · entertainment blocked"
       : "Entertainment blocked — open CALT Desktop · Focus";
-  } else if (dayMet && inFocusMode) {
+  } else if ((goalMet || rewardDay || dayPass) && inFocusMode) {
     unlockKey = "Daily goal";
     unlockVal = block && block.title
       ? "Met — still locked for this study block"
       : "Met — still locked in " + mode + " mode";
-  } else if (dayMet) {
+  } else if (rewardDay) {
     unlockKey = "Daily unlock";
-    unlockVal = g.reward_day
-      ? "Reward day · YouTube & games OK"
-      : "Goal met · YouTube & games OK";
+    unlockVal = "Reward day · YouTube & games OK";
+  } else if (dayPass) {
+    unlockKey = "Daily unlock";
+    unlockVal = "Day pass · YouTube & games OK";
+  } else if (goalMet) {
+    unlockKey = "Daily unlock";
+    unlockVal = "Goal met · YouTube & games OK";
+  } else if (freeWin) {
+    unlockKey = "Timed free";
+    unlockVal = g.free_until
+      ? "Free until " + String(g.free_until).slice(11, 16) + " · not goal met"
+      : "Timed SoftLand free · daily goal still open";
   } else if (left != null) {
     unlockVal = fmtMin(left) + " study left";
   }
@@ -147,18 +159,22 @@ function applyGate(g, fromCache) {
   } else {
     title.textContent = "Distraction site blocked";
     const modeLc = String(browser.mode_label || browser.mode || "").toLowerCase();
-    const dayMet = Boolean(g.day_unlimited || g.reward_day || g.unlocked);
+    const goalMet = Boolean(g.goal_met || g.day_unlimited);
+    const freeWin = Boolean(g.free_window);
     const incubating = Boolean((g.incubation && g.incubation.active) || browser.incubation_active);
     if (incubating) {
       title.textContent = "Incubation break";
       body.textContent =
         "Mandatory rest — entertainment stays blocked. Stretch or walk. Manage timers in CALT Desktop · Focus (Windows enforcer owns app kills).";
-    } else if (modeLc === "free" || (dayMet && modeLc !== "bible" && modeLc !== "planning")) {
+    } else if (modeLc === "free" && (goalMet || g.reward_day || g.day_pass)) {
       body.textContent =
-        "Odd redirect in free mode — reload CALT Gate on Edge. Distractions stay blocked; YouTube should work after today's focus goal.";
-    } else if (dayMet && (modeLc === "study" || modeLc === "bible" || modeLc === "planning")) {
+        "Odd redirect in free mode — reload CALT Gate on Edge. Distractions stay blocked; YouTube should work after today's unlock.";
+    } else if (modeLc === "free" && freeWin) {
       body.textContent =
-        "Daily focus goal is met on the server, but this tab still sees study rules — reload CALT Gate on Edge so mode updates to FREE. Distractions stay blocked.";
+        "Timed SoftLand free is active (not full daily goal). Distractions stay blocked. Reload CALT Gate if this page should not appear.";
+    } else if (goalMet && (modeLc === "study" || modeLc === "bible" || modeLc === "planning")) {
+      body.textContent =
+        "Daily focus goal is met on the server, but this tab still sees study rules — reload CALT Gate on Edge so mode updates to FREE. Distracted stay blocked.";
     } else {
       body.textContent =
         "This tab was redirected. Control blocks in CALT Desktop · Focus. YouTube stays blocked until today's focus goal; distractions are always blocked.";

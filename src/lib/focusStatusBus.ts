@@ -70,6 +70,8 @@ type Listener = (snap: FocusStatusSnapshot) => void;
 
 /** Mirror file reads are cheap — keep UI snappy; enforcer DB sync is 1 min. */
 const TICK_MS = 2500;
+/** Game Sleeper — sparse ticks so Focus stays low-CPU while gaming. */
+const TICK_SLEEPER_MS = 45_000;
 /** Pipe reachability only — never used to load SoftLand/plan/bible UI state. */
 const PIPE_RECONCILE_EVERY_MS = 600_000;
 const PUSH_HEALTHY_MS = 120_000;
@@ -88,6 +90,7 @@ let snap: FocusStatusSnapshot = {
 const listeners = new Set<Listener>();
 let timer: number | null = null;
 let ticking = false;
+let sleeperMode = false;
 let pipeInFlight = false;
 let lastPipeAt = 0;
 let pushHealthyUntil = 0;
@@ -320,12 +323,27 @@ async function tick(forcePipe = false): Promise<void> {
   }
 }
 
+function tickIntervalMs(): number {
+  return sleeperMode ? TICK_SLEEPER_MS : TICK_MS;
+}
+
+function restartTimer() {
+  if (typeof window === "undefined") return;
+  if (timer != null) {
+    window.clearInterval(timer);
+    timer = null;
+  }
+  if (listeners.size === 0) return;
+  void tick(false);
+  timer = window.setInterval(() => void tick(false), tickIntervalMs());
+}
+
 function ensureTimer() {
   if (timer != null) return;
   if (typeof window === "undefined") return;
   // Mirrors first — do not force a pipe hit on every subscriber mount (lag).
   void tick(false);
-  timer = window.setInterval(() => void tick(false), TICK_MS);
+  timer = window.setInterval(() => void tick(false), tickIntervalMs());
 }
 
 function stopTimerIfIdle() {
@@ -334,6 +352,13 @@ function stopTimerIfIdle() {
     window.clearInterval(timer);
     timer = null;
   }
+}
+
+/** Game Sleeper: slow shared status ticker (does not touch SoftLand/Arm). */
+export function setFocusStatusSleeper(on: boolean): void {
+  if (sleeperMode === on) return;
+  sleeperMode = on;
+  if (listeners.size > 0) restartTimer();
 }
 
 /** Subscribe; starts the shared ticker while anyone is listening. */

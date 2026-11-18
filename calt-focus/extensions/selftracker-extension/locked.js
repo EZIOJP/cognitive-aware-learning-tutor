@@ -46,21 +46,40 @@ function renderStats(g) {
   const bible = g.chapter_goal_met ? "Done" : "Needed";
   const block = g.current_block;
   const inFocusMode = modeLc === "study" || modeLc === "bible" || modeLc === "planning";
-  const dayMet = Boolean(g.day_unlimited || g.reward_day || g.unlocked);
+  const goalMet = Boolean(g.goal_met || g.day_unlimited);
+  const rewardDay = Boolean(g.reward_day);
+  const dayPass = Boolean(g.day_pass);
+  const freeWin = Boolean(g.free_window) || (Boolean(g.unlocked) && !inFocusMode);
+  const incubating = Boolean((g.incubation && g.incubation.active) || (g.browser && g.browser.incubation_active));
 
-  // "Games unlocked" under "Time left to unlock" was confusing when STUDY still blocks YouTube.
+  // Do not label timed SoftLand free (closeout) as "Goal met".
   let unlockKey = "Time left to unlock";
   let unlockVal = "Locked";
-  if (dayMet && inFocusMode) {
+  if (incubating) {
+    unlockKey = "Incubation break";
+    const rem = (g.incubation && g.incubation.remaining_sec) || 0;
+    unlockVal = rem > 0
+      ? Math.round(rem / 60) + " min left · entertainment blocked"
+      : "Entertainment blocked — open CALT Desktop · Focus";
+  } else if ((goalMet || rewardDay || dayPass) && inFocusMode) {
     unlockKey = "Daily goal";
     unlockVal = block && block.title
       ? "Met — still locked for this study block"
       : "Met — still locked in " + mode + " mode";
-  } else if (dayMet) {
+  } else if (rewardDay) {
     unlockKey = "Daily unlock";
-    unlockVal = g.reward_day
-      ? "Reward day · YouTube & games OK"
-      : "Goal met · YouTube & games OK";
+    unlockVal = "Reward day · YouTube & games OK";
+  } else if (dayPass) {
+    unlockKey = "Daily unlock";
+    unlockVal = "Day pass · YouTube & games OK";
+  } else if (goalMet) {
+    unlockKey = "Daily unlock";
+    unlockVal = "Goal met · YouTube & games OK";
+  } else if (freeWin) {
+    unlockKey = "Timed free";
+    unlockVal = g.free_until
+      ? "Free until " + String(g.free_until).slice(11, 16) + " · not goal met"
+      : "Timed SoftLand free · daily goal still open";
   } else if (left != null) {
     unlockVal = fmtMin(left) + " study left";
   }
@@ -140,22 +159,33 @@ function applyGate(g, fromCache) {
   } else {
     title.textContent = "Distraction site blocked";
     const modeLc = String(browser.mode_label || browser.mode || "").toLowerCase();
-    const dayMet = Boolean(g.day_unlimited || g.reward_day || g.unlocked);
-    if (modeLc === "free" || (dayMet && modeLc !== "bible" && modeLc !== "planning")) {
+    const goalMet = Boolean(g.goal_met || g.day_unlimited);
+    const freeWin = Boolean(g.free_window);
+    const incubating = Boolean((g.incubation && g.incubation.active) || browser.incubation_active);
+    if (incubating) {
+      title.textContent = "Incubation break";
       body.textContent =
-        "Odd redirect in free mode — reload SelfTracker on Edge. Distractions stay blocked; YouTube should work after today's focus goal.";
-    } else if (dayMet && (modeLc === "study" || modeLc === "bible" || modeLc === "planning")) {
+        "Mandatory rest — entertainment stays blocked. Stretch or walk. Manage timers in CALT Desktop · Focus (Windows enforcer owns app kills).";
+    } else if (modeLc === "free" && (goalMet || g.reward_day || g.day_pass)) {
       body.textContent =
-        "Daily focus goal is met on the server, but this tab still sees study rules — reload SelfTracker on Edge so mode updates to FREE. Distractions stay blocked.";
+        "Odd redirect in free mode — reload CALT Gate on Edge. Distractions stay blocked; YouTube should work after today's unlock.";
+    } else if (modeLc === "free" && freeWin) {
+      body.textContent =
+        "Timed SoftLand free is active (not full daily goal). Distractions stay blocked. Reload CALT Gate if this page should not appear.";
+    } else if (goalMet && (modeLc === "study" || modeLc === "bible" || modeLc === "planning")) {
+      body.textContent =
+        "Daily focus goal is met on the server, but this tab still sees study rules — reload CALT Gate on Edge so mode updates to FREE. Distracted stay blocked.";
     } else {
       body.textContent =
-        "This tab was redirected. Other Edge tabs stay open. YouTube stays blocked until today's focus goal; distractions are always blocked.";
+        "This tab was redirected. Control blocks in CALT Desktop · Focus. YouTube stays blocked until today's focus goal; distractions are always blocked.";
     }
   }
   const mode = (browser.mode_label || browser.mode || "").toUpperCase();
   const bits = ["Mode: " + (mode || "—")];
+  if ((g.incubation && g.incubation.active) || browser.incubation_active) bits.push("incubation");
   if (g.locked) bits.push("games locked");
   bits.push("tab-local lock");
+  if (g.desktop && g.desktop.enforcer_owns_kills) bits.push("enforcer on");
   if (fromCache) bits.push("cached");
   if (g.stale || g.degraded) bits.push("stale");
   status.textContent = bits.join(" · ");
@@ -168,6 +198,8 @@ function parseBlockedHost() {
     const params = new URLSearchParams(window.location.search || "");
     let host = (params.get("host") || "").toLowerCase().replace(/^www\./, "");
     const from = params.get("from") || "";
+    const why = (params.get("why") || "").trim();
+    const until = (params.get("until") || "").trim();
     if (!host && from) {
       try {
         host = new URL(from).hostname.toLowerCase().replace(/^www\./, "");
@@ -175,10 +207,40 @@ function parseBlockedHost() {
         host = "";
       }
     }
-    return { host: host, from: from };
+    return { host: host, from: from, why: why, until: until };
   } catch (e) {
-    return { host: "", from: "" };
+    return { host: "", from: "", why: "", until: "" };
   }
+}
+
+function showRedirectDialog(parsed) {
+  const dlg = document.getElementById("redirectDialog");
+  const hostEl = document.getElementById("redirectHost");
+  const detailEl = document.getElementById("redirectDetail");
+  const btn = document.getElementById("redirectDismiss");
+  if (!dlg || !hostEl || !detailEl || !btn) return;
+  const host = parsed.host || "unknown site";
+  const from = parsed.from || "";
+  const why = parsed.why || "";
+  const until = parsed.until || "";
+  hostEl.textContent = host;
+  const whyLabel = why ? "Reason: " + why + ". " : "";
+  const untilLabel = until ? " Until: " + until + "." : "";
+  detailEl.textContent =
+    whyLabel +
+    "CALT SoftLand blocked this webpage. Your browser stayed open — open Focus to change SoftLand rules." +
+    untilLabel +
+    (from ? " Logged for your history." : "");
+  dlg.classList.remove("hidden");
+  btn.onclick = function () {
+    dlg.classList.add("hidden");
+  };
+}
+
+function reportLockedPageLoad() {
+  const parsed = parseBlockedHost();
+  showRedirectDialog(parsed);
+  // Study :8000 logging removed — Gate is native SoftLand only.
 }
 
 function reopenUrl(host, from) {
@@ -332,20 +394,17 @@ async function initTempAllowUi() {
 }
 
 async function refresh() {
-  const api = extRuntime();
-  // Prefer live gate; fall back to background gateCache (includes stats + links).
+  // Native-first: ask SW gateCache (populated by get_softland_doc). No Study :8000.
   try {
-    const r = await fetch(GATE_API_URL, {
-      cache: "no-store",
-      headers: { "X-CALT-Extension": "selftracker-locked" },
-    });
-    if (!r.ok) throw new Error("HTTP " + r.status);
-    const g = await r.json();
-    applyGate(g, false);
-    return;
+    const resp = await sendExtMessage({ type: "GET_GATE" });
+    if (resp && resp.gateCache) {
+      applyGate(resp.gateCache, Boolean(resp.gateCache.stale || resp.gateCache.degraded));
+      return;
+    }
   } catch (err) {
-    /* try cache */
+    /* fall through */
   }
+  const api = extRuntime();
   if (api && api.storage && api.storage.local) {
     try {
       const result = await new Promise(function (resolve) {
@@ -355,11 +414,14 @@ async function refresh() {
         applyGate(result.gateCache, true);
         return;
       }
-    } catch (e) { /* ignore */ }
+    } catch (e) {
+      /* ignore */
+    }
   }
   applyGate({ _offline: true }, false);
 }
 
 refresh();
-setInterval(refresh, 5000);
+setInterval(refresh, 8000);
 initTempAllowUi();
+reportLockedPageLoad();

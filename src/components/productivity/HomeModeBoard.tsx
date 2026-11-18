@@ -714,7 +714,9 @@ export default function HomeModeBoard({
                     setHint(
                       r.granted
                         ? `1h free until ${r.free_until || "soon"}`
-                        : "Dual gate not met yet (checkboxes + ≥50% planned time).",
+                        : r.reason === "daily_goal_pending"
+                          ? "Plan dual-gate OK, but daily focus goal still open — YouTube stays locked."
+                          : "Dual gate not met yet (checkboxes + ≥50% planned time).",
                     );
                     invalidateFocusStatusBus({ pipe: true });
                   })

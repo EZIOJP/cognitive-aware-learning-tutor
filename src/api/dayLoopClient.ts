@@ -107,6 +107,7 @@ export async function evaluateDayClose(): Promise<{
   ok: boolean;
   granted?: boolean;
   free_until?: string;
+  reason?: string;
   loop?: DayLoopSnapshot;
   error?: string;
 }> {
@@ -117,6 +118,7 @@ export async function evaluateDayClose(): Promise<{
     ok: true,
     granted: Boolean(r.granted),
     free_until: typeof r.free_until === "string" ? r.free_until : undefined,
+    reason: typeof r.reason === "string" ? r.reason : undefined,
     loop: r.loop as DayLoopSnapshot | undefined,
   };
 }

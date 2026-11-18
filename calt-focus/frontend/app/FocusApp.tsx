@@ -27,6 +27,7 @@ import { LifeTrackerPage } from "@/pages/LifeTrackerPage";
 import { CurvedScrollArea } from "@/components/ui/CurvedScrollArea";
 import { BodyCareRuntime } from "@/components/productivity/BodyCareRuntime";
 import { BodyCareVisionHost } from "@/components/productivity/BodyCareVisionHost";
+import { FocusSleeperRuntime } from "@/components/productivity/FocusSleeperRuntime";
 import { PlanningPrefsSheet } from "@/components/productivity/PlanningPrefsSheet";
 import { PlannerRemindersRuntime } from "@/components/productivity/PlannerRemindersRuntime";
 
@@ -36,6 +37,7 @@ function FocusShell() {
     <DashboardChromeProvider>
       <BodyCareVisionHost>
         <div className="focus-shell-root relative flex h-screen w-screen overflow-hidden bg-background">
+          <FocusSleeperRuntime />
           <BodyCareRuntime />
           <PlannerRemindersRuntime />
           <MorningGateRedirect />

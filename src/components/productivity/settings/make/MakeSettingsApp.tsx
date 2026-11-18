@@ -18,6 +18,8 @@ import { EnforcerWriteGate, useEnforcerReachability } from "../../EnforcerWriteG
 import { FocusPerfReviewPanel } from "../../FocusPerfReviewPanel";
 import { FocusAiStatusChip } from "../../FocusAiStatusChip";
 import { UnlockGuidePanel } from "../../UnlockGuidePanel";
+import { FocusSleeperPanel } from "../../FocusSleeperPanel";
+import { GameSessionPanel } from "../../GameSessionPanel";
 import { ArmControlCard } from "../../ArmControlCard";
 import { SidebarTitleStickerPanel } from "../SidebarTitleStickerPanel";
 import { ThemeSettingsPanel } from "../ThemeSettingsPanel";
@@ -399,6 +401,12 @@ function UnlockSection({ onPolicySaved }: { onPolicySaved?: () => void }) {
       </div>
       <Card className="min-w-0 overflow-hidden">
         <UnlockGuidePanel onSaved={onPolicySaved} />
+      </Card>
+      <Card className="min-w-0 overflow-hidden !p-3">
+        <FocusSleeperPanel />
+      </Card>
+      <Card className="min-w-0 overflow-hidden opacity-90">
+        <GameSessionPanel />
       </Card>
     </div>
   );

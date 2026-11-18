@@ -161,7 +161,34 @@ function AttentionReaderBlock({ enabled }: { enabled: boolean }) {
     );
   }
   if (err || !mod) {
-    return <p className="text-xs text-rose-300">{err || "Attention reader unavailable"}</p>;
+    return (
+      <div className="space-y-2">
+        <p className="text-xs text-rose-300">{err || "Attention reader unavailable"}</p>
+        <p className="text-[11px] text-muted-foreground">
+          Usually a stale UI build after an update. Reload Focus UI, then turn attention back on.
+        </p>
+        <button
+          type="button"
+          className="rounded-md border border-border/50 bg-background/40 px-2.5 py-1 text-[11px] hover:bg-accent/40"
+          onClick={() => {
+            try {
+              const w = window as Window & {
+                chrome?: { webview?: { postMessage: (m: unknown) => void } };
+              };
+              if (w.chrome?.webview?.postMessage) {
+                w.chrome.webview.postMessage({ type: "focus_shell", v: 1, action: "reload_ui" });
+                return;
+              }
+            } catch {
+              /* fall through */
+            }
+            window.location.reload();
+          }}
+        >
+          Reload Focus UI
+        </button>
+      </div>
+    );
   }
   return <AttentionPanelMount {...mod} />;
 }
@@ -556,7 +583,8 @@ export function BodyCarePanel() {
               <div>
                 <p className="text-xs text-foreground/90">Posture coach</p>
                 <p className="text-[10px] text-muted-foreground">
-                  Neck/lean from head pitch — warn after a sustained hold.
+                  Uses the same webcam: scores neck/lean. If you stay slumped past the minutes
+                  below, Focus nudges you to sit tall. SoftLand/Arm untouched.
                 </p>
               </div>
               <Toggle
